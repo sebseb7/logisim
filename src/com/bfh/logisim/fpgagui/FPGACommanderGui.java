@@ -1018,6 +1018,7 @@ public class FPGACommanderGui implements ActionListener {
 		if (root == null) {
 			DRCResult = Netlist.DRC_ERROR;
 		} else {
+			root.getNetList().ClearNetlist();
 			DRCResult = root.getNetList().DesignRuleCheckResult(MyReporter,
 					HDLType.getSelectedItem().toString(), true,
 					MyBoardInformation.fpga.getVendor(), SheetNames);
