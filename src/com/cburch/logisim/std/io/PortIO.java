@@ -172,15 +172,18 @@ public class PortIO extends InstanceFactory {
 
 	}
 
+        /* kwalsh - I don't think this should be here. It causes the label and
+         * component name to be identical, which is not supported.
+         */
 	@Override
 	public String getHDLName(AttributeSet attrs) {
-		StringBuffer CompleteName = new StringBuffer();
-		CompleteName.append(CorrectLabel.getCorrectLabel(attrs
-				.getValue(StdAttr.LABEL)));
-		if (CompleteName.length() == 0) {
-			CompleteName.append("PORTIO");
-		}
-		return CompleteName.toString();
+            String label = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
+            if (label == null || label.length() == 0) {
+                return "PORTIO";
+            }
+            StringBuffer CompleteName = new StringBuffer("PORTIO_");
+            CompleteName.append(label);
+            return CompleteName.toString();
 	}
 
 	public MappableResourcesContainer getMapInfo() {
@@ -194,8 +197,11 @@ public class PortIO extends InstanceFactory {
 					10 + attrs.getValue(ATTR_SIZE).intValue() * 10, 40).rotate(
 					Direction.NORTH, Direction.NORTH, 0, 0);
 		} else {
-			return Bounds.create(0, 0, 100, 40).rotate(Direction.NORTH,
-					Direction.NORTH, 0, 0);
+                        int n = attrs.getValue(ATTR_SIZE).intValue();
+                        if (n < 8)
+                            n = 8;
+			return Bounds.create(0, 0, 10 + n/2 * 10 , 40).rotate(
+                                        Direction.NORTH, Direction.NORTH, 0, 0);
 		}
 	}
 
@@ -268,9 +274,9 @@ public class PortIO extends InstanceFactory {
 			}
 		} else {
 			g.setColor(Color.LIGHT_GRAY);
-			for (int i = 0; i < 9; i++) {
-				g.fillRect(bds.getX() + 6 + (i * 10), bds.getY() + 15, 6, 6);
-				g.fillRect(bds.getX() + 6 + (i * 10), bds.getY() + 25, 6, 6);
+                        int n = painter.getAttributeValue(ATTR_SIZE);
+			for (int i = 0; i < n; i++) {
+				g.fillRect(bds.getX() + 6 + ((i/2) * 10), bds.getY() + 15 + (i%2)*10, 6, 6);
 			}
 			g.setColor(Color.WHITE);
 			g.setFont(StdAttr.DEFAULT_LABEL_FONT);

@@ -30,6 +30,7 @@
 
 package com.bfh.logisim.fpgagui;
 
+import java.awt.EventQueue;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -46,6 +47,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.text.DefaultCaret;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -376,6 +378,11 @@ public class FPGACommanderGui implements ActionListener {
 		Color fg = Color.GRAY;
 		Color bg = Color.black;
 
+                ((DefaultCaret)textAreaInfo.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+                ((DefaultCaret)textAreaWarnings.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+                ((DefaultCaret)textAreaErrors.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+                ((DefaultCaret)textAreaConsole.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+
 		textAreaInfo.setForeground(fg);
 		textAreaInfo.setBackground(bg);
 		textAreaInfo.setFont(new Font("monospaced", Font.PLAIN, FONT_SIZE));
@@ -586,7 +593,10 @@ public class FPGACommanderGui implements ActionListener {
 		Rectangle rect = tabbedPane.getBounds();
 		rect.x = 0;
 		rect.y = 0;
-		tabbedPane.paintImmediately(rect);
+                if (EventQueue.isDispatchThread())
+                    tabbedPane.paintImmediately(rect);
+                else
+                    tabbedPane.repaint(rect);
 	}
 
 	public void AddErrors(String Message) {
@@ -613,7 +623,10 @@ public class FPGACommanderGui implements ActionListener {
 		Rectangle rect = tabbedPane.getBounds();
 		rect.x = 0;
 		rect.y = 0;
-		tabbedPane.paintImmediately(rect);
+                if (EventQueue.isDispatchThread())
+                    tabbedPane.paintImmediately(rect);
+                else
+                    tabbedPane.repaint(rect);
 	}
 
 	public void AddInfo(String Message) {
@@ -640,7 +653,10 @@ public class FPGACommanderGui implements ActionListener {
 		Rectangle rect = tabbedPane.getBounds();
 		rect.x = 0;
 		rect.y = 0;
-		tabbedPane.paintImmediately(rect);
+                if (EventQueue.isDispatchThread())
+                    tabbedPane.paintImmediately(rect);
+                else
+                    tabbedPane.repaint(rect);
 	}
 
 	public void AddWarning(String Message) {
@@ -668,7 +684,10 @@ public class FPGACommanderGui implements ActionListener {
 		Rectangle rect = tabbedPane.getBounds();
 		rect.x = 0;
 		rect.y = 0;
-		tabbedPane.paintImmediately(rect);
+                if (EventQueue.isDispatchThread())
+                    tabbedPane.paintImmediately(rect);
+                else
+                    tabbedPane.repaint(rect);
 	}
 
 	private void Annotate(boolean ClearExistingLabels) {
@@ -742,7 +761,10 @@ public class FPGACommanderGui implements ActionListener {
 		Rectangle rect = tabbedPane.getBounds();
 		rect.x = 0;
 		rect.y = 0;
-		tabbedPane.paintImmediately(rect);
+                if (EventQueue.isDispatchThread())
+                    tabbedPane.paintImmediately(rect);
+                else
+                    tabbedPane.repaint(rect);
 	}
 
 	public void ClearConsole() {
@@ -753,6 +775,10 @@ public class FPGACommanderGui implements ActionListener {
 		rect.x = 0;
 		rect.y = 0;
 		tabbedPane.paintImmediately(rect);
+                if (EventQueue.isDispatchThread())
+                    tabbedPane.paintImmediately(rect);
+                else
+                    tabbedPane.repaint(rect);
 	}
 
 	private void DownLoad() {

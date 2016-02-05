@@ -345,7 +345,7 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	@Override
 	public SortedMap<String, Integer> GetInOutList(Netlist TheNetlist,
 			AttributeSet attrs) {
-		String ComponentName = attrs.getValue(StdAttr.LABEL);
+		String ComponentName = "PORTIO_" + attrs.getValue(StdAttr.LABEL);
 		SortedMap<String, Integer> InOuts = new TreeMap<String, Integer>();
 		for (int i = 0; i < compMap.get(ComponentName).size(); i++) {
 			if (compMap.get(ComponentName).get(i).getType() == Type.INOUT) {
@@ -361,7 +361,7 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	@Override
 	public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
 			AttributeSet attrs) {
-		String ComponentName = attrs.getValue(StdAttr.LABEL);
+		String ComponentName = "PORTIO_" + attrs.getValue(StdAttr.LABEL);
 		SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
 		for (int i = 0; i < compMap.get(ComponentName).size(); i++) {
 			if (compMap.get(ComponentName).get(i).getType() == Type.IN) {
@@ -377,7 +377,7 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	@Override
 	public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
 			AttributeSet attrs) {
-		String ComponentName = attrs.getValue(StdAttr.LABEL);
+		String ComponentName = "PORTIO_" + attrs.getValue(StdAttr.LABEL);
 		SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
 		for (int i = 0; i < compMap.get(ComponentName).size(); i++) {
 			if (compMap.get(ComponentName).get(i).getType() == Type.OUT) {
@@ -393,7 +393,7 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	@Override
 	public SortedMap<String, String> GetPortMap(Netlist Nets,
 			NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-		String ComponentName = ComponentInfo.GetComponent().getAttributeSet()
+		String ComponentName = "PORTIO_" + ComponentInfo.GetComponent().getAttributeSet()
 				.getValue(StdAttr.LABEL);
 		SortedMap<String, String> PortMap = new TreeMap<String, String>();
 

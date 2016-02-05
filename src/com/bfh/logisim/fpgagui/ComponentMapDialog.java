@@ -94,8 +94,15 @@ public class ComponentMapDialog implements ActionListener,
 
 		public MappedComponentIdContainer(String key,
 				BoardRectangle SelectedItem) {
-			this.key = key;
 			rect = SelectedItem;
+                        String label = rect.GetLabel();
+                        if (label != null && label.length() != 0) {
+                            if (key == null || key.length() == 0)
+                                key = "[" + label + "]";
+                            else
+                                key = "[" + label + "] " + key;
+                        }
+			this.key = key;
 		}
 
 		public BoardRectangle getRectangle() {
@@ -185,7 +192,7 @@ public class ComponentMapDialog implements ActionListener,
 
 		public void mouseMoved(MouseEvent e) {
 			HandleSelect(e);
-			if (MappableComponents.hasMappedComponents()) {
+			if (MappableComponents.hasMappedComponents() || !SelectableItems.isEmpty()) {
 				if (Note != null) {
 					if (Note.getRectangle().PointInside(e.getX(), e.getY())) {
 						return;
@@ -202,6 +209,14 @@ public class ComponentMapDialog implements ActionListener,
 						break;
 					}
 				}
+                                if (NewItem == null) {
+                                    for (BoardRectangle Item : SelectableItems) {
+                                            if (Item.PointInside(e.getX(), e.getY()) && Item.GetLabel() != null && Item.GetLabel().length() != 0) {
+                                                    NewItem = Item;
+                                                    break;
+                                            }
+                                    }
+                                }
 				if (Note == null) {
 					if (NewItem != null) {
 						Note = new MappedComponentIdContainer(newKey, NewItem);
@@ -363,12 +378,16 @@ public class ComponentMapDialog implements ActionListener,
 	@SuppressWarnings("rawtypes")
 	public ComponentMapDialog(JFrame parrentFrame, String projectPath) {
 
-		OldDirectory = projectPath;
+		OldDirectory = new File(projectPath).getParent();
+                if (OldDirectory == null)
+                    OldDirectory = "";
+                else if (OldDirectory.length() != 0 && !OldDirectory.endsWith(File.separator))
+                    OldDirectory += File.separator;
 
 		panel = new JDialog(parrentFrame, ModalityType.APPLICATION_MODAL);
 		panel.setTitle("Component to FPGA board mapping");
 		panel.setResizable(false);
-		panel.setAlwaysOnTop(true);
+		panel.setAlwaysOnTop(false);
 		panel.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
 
 		GridBagLayout thisLayout = new GridBagLayout();
@@ -540,35 +559,36 @@ public class ComponentMapDialog implements ActionListener,
 		SelectableItems.clear();
 	}
 
-	private String getDirName(String window_name) {
+	private String getFileName(String window_name, String suggested_name) {
 		JFileChooser fc = new JFileChooser(OldDirectory);
-		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		fc.setDialogTitle(window_name);
-		if (!OldDirectory.isEmpty()) {
-			File SelFile = new File(OldDirectory);
-			fc.setSelectedFile(SelFile);
-		}
+                File SelFile = new File(OldDirectory + suggested_name);
+                fc.setSelectedFile(SelFile);
 		FileFilter ff = new FileFilter() {
 			@Override
 			public boolean accept(File f) {
-				return f.isDirectory();
+				return true; // f.isDirectory();
 			}
 
 			@Override
 			public String getDescription() {
-				return "Select Directory";
+				return "Select Filename";
 			}
 		};
 		fc.setFileFilter(ff);
 		fc.setAcceptAllFileFilterUsed(false);
-		int retval = fc.showOpenDialog(null);
+		int retval = fc.showSaveDialog(null);
 		if (retval == JFileChooser.APPROVE_OPTION) {
 			File file = fc.getSelectedFile();
-			OldDirectory = file.getPath();
-			if (!OldDirectory.endsWith(File.separator)) {
-				OldDirectory += File.separator;
-			}
-			return OldDirectory;
+                        if (file.getParent() != null) {
+                            OldDirectory = file.getParent();
+                            if (OldDirectory == null)
+                                OldDirectory = "";
+                            else if (OldDirectory.length() != 0 && !OldDirectory.endsWith(File.separator))
+                                OldDirectory += File.separator;
+                        }
+			return file.getPath();
 		} else {
 			return "";
 		}
@@ -748,12 +768,11 @@ public class ComponentMapDialog implements ActionListener,
 
 	private void Save() {
 		panel.setVisible(false);
-		String SelectedDir = getDirName("Select Directory to save the current map");
-		if (!SelectedDir.isEmpty()) {
-			String SaveFileName = SelectedDir
-					+ CorrectLabel.getCorrectLabel(MappableComponents
-							.GetToplevelName()) + "-"
-					+ BoardInfo.getBoardName() + "-MAP.xml";
+                String suggestedName =
+                    CorrectLabel.getCorrectLabel(MappableComponents.GetToplevelName())
+                    + "-" + BoardInfo.getBoardName() + "-MAP.xml";
+		String SaveFileName = getFileName("Select filename to save the current map", suggestedName);
+		if (!SaveFileName.isEmpty()) {
 			try {
 				// Create instance of DocumentBuilderFactory
 				DocumentBuilderFactory factory = DocumentBuilderFactory

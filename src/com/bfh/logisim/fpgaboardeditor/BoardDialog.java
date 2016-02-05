@@ -727,7 +727,7 @@ public class BoardDialog implements ActionListener, ComponentListener {
 		selWindow.setModal(true);
 		selWindow.setResizable(false);
 		selWindow.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-		selWindow.setAlwaysOnTop(true);
+		selWindow.setAlwaysOnTop(false);
 		boolean save_settings;
 		while ((!abort) && (!TheBoard.fpga.FpgaInfoPresent())) {
 			selWindow.setVisible(true);
@@ -945,7 +945,7 @@ public class BoardDialog implements ActionListener, ComponentListener {
 		dialog.add(close, c);
 		dialog.pack();
 		dialog.setLocationRelativeTo(panel);
-		dialog.setAlwaysOnTop(true);
+		dialog.setAlwaysOnTop(false);
 		dialog.setVisible(true);
 
 	}
@@ -985,7 +985,7 @@ public class BoardDialog implements ActionListener, ComponentListener {
 		dialog.add(close, c);
 		dialog.pack();
 		dialog.setLocationRelativeTo(panel);
-		dialog.setAlwaysOnTop(true);
+		dialog.setAlwaysOnTop(false);
 		dialog.setVisible(true);
 
 	}
@@ -1032,7 +1032,7 @@ public class BoardDialog implements ActionListener, ComponentListener {
 		// selWindow.setLocation(mlocation.x,mlocation.y);
 		selWindow.setModal(true);
 		selWindow.setResizable(false);
-		selWindow.setAlwaysOnTop(true);
+		selWindow.setAlwaysOnTop(false);
 		selWindow.setVisible(true);
 		selWindow.dispose();
 		return action_id;

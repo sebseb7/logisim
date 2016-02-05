@@ -103,7 +103,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		if (HDLType.endsWith(Settings.VERILOG)) {
 			return true;
 		}
-		if (Contents.isEmpty()) {
+		if (Contents == null || Contents.isEmpty()) {
 			Reporter.AddFatalError("INTERNAL ERROR: Empty entity description received!");
 			return false;
 		}

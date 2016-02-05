@@ -33,6 +33,7 @@ package com.bfh.logisim.download;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Rectangle;
+import java.awt.Dimension;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -58,29 +59,55 @@ import com.bfh.logisim.hdlgenerator.ToplevelHDLGeneratorFactory;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.proj.Projects;
 
-public class AlteraDownload {
+public class AlteraDownload implements Runnable {
 
-	public static boolean Download(Settings MySettings, String scriptPath,
+	public static void Download(Settings MySettings, String scriptPath,
 			String ProjectPath, String SandboxPath, FPGAReport MyReporter) {
-		boolean SofFileExists = new File(SandboxPath
-				+ ToplevelHDLGeneratorFactory.FPGAToplevelName + ".sof")
-				.exists();
+        AlteraDownload downloader = new AlteraDownload(MySettings, scriptPath,
+                ProjectPath, SandboxPath, MyReporter);
+        new Thread(downloader).start();
+    }
+
+    private JFrame panel;
+    private JLabel LocText;
+    private JProgressBar progres;
+    private boolean stopRequested = false;
+
+    private Settings MySettings;
+    private String scriptPath;
+    private String ProjectPath;
+    private String SandboxPath;
+    private FPGAReport MyReporter;
+
+	public AlteraDownload(Settings MySettings, String scriptPath,
+			String ProjectPath, String SandboxPath, FPGAReport MyReporter) {
+        this.MySettings = MySettings;
+        this.scriptPath = scriptPath;
+        this.ProjectPath = ProjectPath;
+        this.SandboxPath = SandboxPath;
+        this.MyReporter = MyReporter;
 		GridBagConstraints gbc = new GridBagConstraints();
-		JFrame panel = new JFrame("Altera Downloading");
+		panel = new JFrame("Altera Downloading");
 		panel.setResizable(false);
 		panel.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        panel.addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                cancel();
+            }
+        });
 		GridBagLayout thisLayout = new GridBagLayout();
 		panel.setLayout(thisLayout);
 		// PointerInfo mouseloc = MouseInfo.getPointerInfo();
 		// Point mlocation = mouseloc.getLocation();
 		// panel.setLocation(mlocation.x, mlocation.y);
-		JLabel LocText = new JLabel(
-				"Generating FPGA files and performing download; this may take a while");
+		LocText = new JLabel("Altera Downloader");
+        LocText.setMinimumSize(new Dimension(600, 30));
+        LocText.setPreferredSize(new Dimension(600, 30));
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		panel.add(LocText, gbc);
-		JProgressBar progres = new JProgressBar(0, 5);
+		progres = new JProgressBar(0, 5);
 		progres.setValue(1);
 		progres.setStringPainted(true);
 		gbc.gridx = 0;
@@ -91,221 +118,136 @@ public class AlteraDownload {
 		panel.setLocation(Projects.getCenteredLoc(panel.getWidth(),
 				panel.getHeight() * 4));
 		panel.setVisible(true);
-		Rectangle labelRect = LocText.getBounds();
-		labelRect.x = 0;
-		labelRect.y = 0;
-		LocText.paintImmediately(labelRect);
-		List<String> command = new ArrayList<String>();
-		if (!SofFileExists) {
-			try {
-				LocText.setText("Creating Project");
-				labelRect = LocText.getBounds();
-				labelRect.x = 0;
-				labelRect.y = 0;
-				LocText.paintImmediately(labelRect);
-				command.add(MySettings.GetAlteraToolPath() + File.separator
-						+ Settings.AlteraPrograms[0]);
-				command.add("-t");
-				command.add(scriptPath.replace(ProjectPath, ".."
-						+ File.separator)
-						+ "AlteraDownload.tcl");
-				ProcessBuilder Altera1 = new ProcessBuilder(command);
-				Altera1.directory(new File(SandboxPath));
-				final Process CreateProject = Altera1.start();
-				InputStream is = CreateProject.getInputStream();
-				InputStreamReader isr = new InputStreamReader(is);
-				BufferedReader br = new BufferedReader(isr);
-				String line;
-				MyReporter.ClsScr();
-				while ((line = br.readLine()) != null) {
-					MyReporter.print(line);
-				}
-				CreateProject.waitFor();
-				if (CreateProject.exitValue() != 0) {
-					MyReporter
-							.AddFatalError("Failed to Create a Quartus Project, cannot download");
-					panel.dispose();
-					return false;
-				}
-			} catch (IOException e) {
-				MyReporter
-						.AddFatalError("Internal Error during Altera download");
-				panel.dispose();
-				return false;
-			} catch (InterruptedException e) {
-				MyReporter
-						.AddFatalError("Internal Error during Altera download");
-				panel.dispose();
-				return false;
-			}
-		}
-		progres.setValue(2);
+    }
+
+    private void setStatus(String msg) {
+        LocText.setText(msg);
+        Rectangle labelRect = LocText.getBounds();
+        labelRect.x = 0;
+        labelRect.y = 0;
+        LocText.repaint(labelRect);
+    }
+
+    private void setProgress(int val) {
+		progres.setValue(val);
 		Rectangle ProgRect = progres.getBounds();
 		ProgRect.x = 0;
 		ProgRect.y = 0;
-		progres.paintImmediately(ProgRect);
-		command.clear();
+		progres.repaint(ProgRect);
+    }
+
+    public void cancel() {
+        setStatus("Cancelling... please wait");
+        stopRequested = true;
+        synchronized(lock) {
+            if (altera != null) {
+                altera.destroy();
+            }
+        }
+    }
+
+    public void run() {
+        try {
+            String fatal = download();
+            if (fatal != null) {
+                MyReporter.AddFatalError(fatal);
+            }
+        } catch (IOException e) {
+            MyReporter.AddFatalError("Internal Error during Altera download");
+        } catch (InterruptedException e) {
+            MyReporter.AddFatalError("Internal Error during Altera download");
+        }
+        panel.setVisible(false);
+        panel.dispose();
+    }
+
+    private Process altera = null;
+    private Object lock = new Object();
+
+    private boolean alteraCommand(int progid, String... args) throws IOException, InterruptedException {
+		List<String> command = new ArrayList<String>();
+        command.add(MySettings.GetAlteraToolPath() + File.separator + Settings.AlteraPrograms[progid]);
+        for (String arg: args)
+            command.add(arg);
+        ProcessBuilder Altera1 = new ProcessBuilder(command);
+        Altera1.directory(new File(SandboxPath));
+        synchronized(lock) {
+            altera = Altera1.start();
+        }
+        InputStream is = altera.getInputStream();
+        InputStreamReader isr = new InputStreamReader(is);
+        BufferedReader br = new BufferedReader(isr);
+        String line;
+        MyReporter.ClsScr();
+        while ((line = br.readLine()) != null) {
+            MyReporter.print(line);
+        }
+        altera.waitFor();
+        return (altera.exitValue() == 0);
+    }
+
+    private String download() throws IOException, InterruptedException {
+        setStatus("Generating FPGA files and performing download; this may take a while");
+		boolean SofFileExists = new File(SandboxPath
+				+ ToplevelHDLGeneratorFactory.FPGAToplevelName + ".sof")
+				.exists();
+
+		setProgress(1);
+        if (stopRequested)
+            return null;
 		if (!SofFileExists) {
-			try {
-				LocText.setText("Optimize Project");
-				labelRect = LocText.getBounds();
-				labelRect.x = 0;
-				labelRect.y = 0;
-				LocText.paintImmediately(labelRect);
-				command.add(MySettings.GetAlteraToolPath() + File.separator
-						+ Settings.AlteraPrograms[2]);
-				command.add(ToplevelHDLGeneratorFactory.FPGAToplevelName);
-				command.add("--optimize=area");
-				ProcessBuilder Altera1 = new ProcessBuilder(command);
-				Altera1.directory(new File(SandboxPath));
-				final Process CreateProject = Altera1.start();
-				InputStream is = CreateProject.getInputStream();
-				InputStreamReader isr = new InputStreamReader(is);
-				BufferedReader br = new BufferedReader(isr);
-				String line;
-				MyReporter.ClsScr();
-				while ((line = br.readLine()) != null) {
-					MyReporter.print(line);
-				}
-				CreateProject.waitFor();
-				if (CreateProject.exitValue() != 0) {
-					MyReporter
-							.AddFatalError("Failed to optimize (AREA) Project, cannot download");
-					panel.dispose();
-					return false;
-				}
-			} catch (IOException e) {
-				MyReporter
-						.AddFatalError("Internal Error during Altera download");
-				panel.dispose();
-				return false;
-			} catch (InterruptedException e) {
-				MyReporter
-						.AddFatalError("Internal Error during Altera download");
-				panel.dispose();
-				return false;
-			}
+            setStatus("Creating Project");
+            if (!alteraCommand(0, "-t", scriptPath.replace(ProjectPath, ".." + File.separator) + "AlteraDownload.tcl"))
+                return "Failed to Create a Quartus Project, cannot download";
 		}
-		LocText.setText("Synthesizing and creating configuration file (this may take a while)");
-		labelRect = LocText.getBounds();
-		labelRect.x = 0;
-		labelRect.y = 0;
-		LocText.paintImmediately(labelRect);
-		progres.setValue(3);
-		ProgRect = progres.getBounds();
-		ProgRect.x = 0;
-		ProgRect.y = 0;
-		progres.paintImmediately(ProgRect);
+
+		setProgress(2);
+        if (stopRequested)
+            return null;
 		if (!SofFileExists) {
-			try {
-				command.clear();
-				command.add(MySettings.GetAlteraToolPath() + File.separator
-						+ Settings.AlteraPrograms[0]);
-				command.add("--flow");
-				command.add("compile");
-				command.add(ToplevelHDLGeneratorFactory.FPGAToplevelName);
-				ProcessBuilder Altera1 = new ProcessBuilder(command);
-				Altera1.directory(new File(SandboxPath));
-				final Process CreateProject = Altera1.start();
-				InputStream is = CreateProject.getInputStream();
-				InputStreamReader isr = new InputStreamReader(is);
-				BufferedReader br = new BufferedReader(isr);
-				String line;
-				MyReporter.ClsScr();
-				while ((line = br.readLine()) != null) {
-					MyReporter.print(line);
-				}
-				CreateProject.waitFor();
-				if (CreateProject.exitValue() != 0) {
-					MyReporter
-							.AddFatalError("Failed to synthesize design and to create the configuration files, cannot download");
-					panel.dispose();
-					return false;
-				}
-			} catch (IOException e) {
-				MyReporter
-						.AddFatalError("Internal Error during Altera download");
-				panel.dispose();
-				return false;
-			} catch (InterruptedException e) {
-				MyReporter
-						.AddFatalError("Internal Error during Altera download");
-				panel.dispose();
-				return false;
-			}
+            setStatus("Optimize Project");
+            if (!alteraCommand(2, ToplevelHDLGeneratorFactory.FPGAToplevelName, "--optimize=area"))
+                return "Failed to optimize (AREA) Project, cannot download";
 		}
-		LocText.setText("Downloading");
+
+		setProgress(3);
+        if (stopRequested)
+            return null;
+		if (!SofFileExists) {
+            setStatus("Synthesizing and creating configuration file (this may take a while)");
+            if (!alteraCommand(0, "--flow", "compile", ToplevelHDLGeneratorFactory.FPGAToplevelName))
+                return "Failed to synthesize design and to create the configuration files, cannot download";
+		}
+
+		setStatus("Downloading");
+        if (stopRequested)
+            return null;
 		Object[] options = { "Yes, download" };
-		if (JOptionPane
-				.showOptionDialog(
+		if (JOptionPane.showOptionDialog(
 						progres,
 						"Verify that your board is connected and you are ready to download.",
 						"Ready to download ?", JOptionPane.YES_OPTION,
 						JOptionPane.WARNING_MESSAGE, null, options, options[0]) == JOptionPane.CLOSED_OPTION) {
 			MyReporter.AddSevereWarning("Download aborted.");
-			panel.dispose();
-			return false;
+			return null;
 		}
 
-		labelRect = LocText.getBounds();
-		labelRect.x = 0;
-		labelRect.y = 0;
-		LocText.paintImmediately(labelRect);
-		progres.setValue(4);
-		ProgRect = progres.getBounds();
-		ProgRect.x = 0;
-		ProgRect.y = 0;
-		progres.paintImmediately(ProgRect);
-		try {
-			command.clear();
-			command.add(MySettings.GetAlteraToolPath() + File.separator
-					+ Settings.AlteraPrograms[1]);
-			command.add("-c");
-			command.add("usb-blaster");
-			command.add("-m");
-			command.add("jtag");
-			command.add("-o");
-			// if there is no .sof generated, try with the .pof
-			if (new File(SandboxPath
-					+ ToplevelHDLGeneratorFactory.FPGAToplevelName + ".sof")
-					.exists()) {
-				command.add("P;" + ToplevelHDLGeneratorFactory.FPGAToplevelName
-						+ ".sof");
-			} else {
-				command.add("P;" + ToplevelHDLGeneratorFactory.FPGAToplevelName
-						+ ".pof");
-			}
-			MyReporter.AddInfo(command.toString());
-			ProcessBuilder Altera1 = new ProcessBuilder(command);
-			Altera1.directory(new File(SandboxPath));
-			final Process CreateProject = Altera1.start();
-			InputStream is = CreateProject.getInputStream();
-			InputStreamReader isr = new InputStreamReader(is);
-			BufferedReader br = new BufferedReader(isr);
-			String line;
-			MyReporter.ClsScr();
-			while ((line = br.readLine()) != null) {
-				MyReporter.print(line);
-			}
-			CreateProject.waitFor();
-			if (CreateProject.exitValue() != 0) {
-				MyReporter
-						.AddFatalError("Failed to Download design; did you connect the board?");
-				panel.dispose();
-				return false;
-			}
-		} catch (IOException e) {
-			MyReporter.AddFatalError("Internal Error during Altera download");
-			panel.dispose();
-			return false;
-		} catch (InterruptedException e) {
-			MyReporter.AddFatalError("Internal Error during Altera download");
-			panel.dispose();
-			return false;
-		}
+		setProgress(4);
+        if (stopRequested)
+            return null;
+        // if there is no .sof generated, try with the .pof
+        String bin;
+        if (new File(SandboxPath
+                + ToplevelHDLGeneratorFactory.FPGAToplevelName + ".sof")
+                .exists()) {
+            bin = "P;" + ToplevelHDLGeneratorFactory.FPGAToplevelName + ".sof";
+        } else {
+            bin = "P;" + ToplevelHDLGeneratorFactory.FPGAToplevelName + ".pof";
+        }
+        if (!alteraCommand(1, "-c", "usb-blaster", "-m", "jtag", "-o", bin))
+            return "Failed to Download design; did you connect the board?";
 
-		panel.dispose();
-		return true;
+        return null;
 	}
 
 	public static boolean GenerateQuartusScript(FPGAReport MyReporter,

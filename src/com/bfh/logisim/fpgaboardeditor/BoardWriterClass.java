@@ -69,6 +69,7 @@ class BoardWriterClass {
 	public static String LocationYString = "LocationY";
 	public static String WidthString = "Width";
 	public static String HeightString = "Height";
+	public static String LabelString = "Label";
 	public static String PinLocationString = "FPGAPinName";
 	public static String ImageInformationString = "BoardPicture";
 	public static String MultiPinInformationString = "NrOfPins";

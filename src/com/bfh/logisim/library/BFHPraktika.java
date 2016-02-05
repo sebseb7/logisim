@@ -14,7 +14,11 @@ public class BFHPraktika extends Library {
 		         "bin2bcd"), 
 		new FactoryDescription("BCD_to_7_Segment_decoder",
 		         Strings.getter("BCD2SevenSegment"), "",
-		         "bcd2sevenseg"),};
+		         "bcd2sevenseg"),
+		new FactoryDescription("Hex_to_7_Segment_decoder",
+		         Strings.getter("Hex2SevenSegment"), "",
+		         "hex2sevenseg"),
+        };
 
 private List<Tool> tools = null;
 

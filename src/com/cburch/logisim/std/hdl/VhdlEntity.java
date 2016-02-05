@@ -156,7 +156,7 @@ public class VhdlEntity extends InstanceFactory {
 
 		String label = "";
 
-		if (attrs.getValue(StdAttr.LABEL) != "")
+		if (attrs.getValue(StdAttr.LABEL) != null && attrs.getValue(StdAttr.LABEL).length() != 0)
 			label = "_" + attrs.getValue(StdAttr.LABEL).toLowerCase();
 
 		return getHDLName(attrs) + label;
