@@ -132,7 +132,7 @@ public class Multiplier extends InstanceFactory {
 	public static final int C_OUT = 4;
 
 	public static final Attribute<BitWidth> WIDTH_ATTR = Attributes
-			.forBitWidth("width", Strings.getter("stdDataWidthAttr"), 2, 31);
+			.forBitWidth("width", Strings.getter("stdDataWidthAttr"), 2, 32);
 
 	public Multiplier() {
 		super("Multiplier", Strings.getter("multiplierComponent"));
