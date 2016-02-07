@@ -34,6 +34,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
@@ -81,12 +82,12 @@ public class Divider extends InstanceFactory {
 	}
 
 	static final int PER_DELAY = 1;
-	private static final int IN0 = 0;
-	private static final int IN1 = 1;
-	private static final int OUT = 2;
-	private static final int UPPER = 3;
+	public static final int IN0 = 0;
+	public static final int IN1 = 1;
+	public static final int OUT = 2;
+	public static final int UPPER = 3;
 
-	private static final int REM = 4;
+	public static final int REM = 4;
 
 	public Divider() {
 		super("Divider", Strings.getter("dividerComponent"));
@@ -108,6 +109,14 @@ public class Divider extends InstanceFactory {
 		ps[UPPER].setToolTip(Strings.getter("dividerDividendUpperTip"));
 		ps[REM].setToolTip(Strings.getter("dividerRemainderTip"));
 		setPorts(ps);
+	}
+
+	@Override
+	public boolean HDLSupportedComponent(String HDLIdentifier,
+			AttributeSet attrs, char Vendor) {
+		if (MyHDLGenerator == null)
+			MyHDLGenerator = new DividerHDLGeneratorFactory();
+		return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
 	}
 
 	@Override
