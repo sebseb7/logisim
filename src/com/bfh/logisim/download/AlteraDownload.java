@@ -164,7 +164,7 @@ public class AlteraDownload implements Runnable {
     private Process altera = null;
     private Object lock = new Object();
 
-    private boolean alteraCommand(int progid, String... args) throws IOException, InterruptedException {
+    private boolean alteraCommand(String title, int progid, String... args) throws IOException, InterruptedException {
 		List<String> command = new ArrayList<String>();
         command.add(MySettings.GetAlteraToolPath() + File.separator + Settings.AlteraPrograms[progid]);
         for (String arg: args)
@@ -178,7 +178,7 @@ public class AlteraDownload implements Runnable {
         InputStreamReader isr = new InputStreamReader(is);
         BufferedReader br = new BufferedReader(isr);
         String line;
-        MyReporter.ClsScr();
+        MyReporter.NewConsole(title);
         while ((line = br.readLine()) != null) {
             MyReporter.print(line);
         }
@@ -197,7 +197,7 @@ public class AlteraDownload implements Runnable {
             return null;
 		if (!SofFileExists) {
             setStatus("Creating Project");
-            if (!alteraCommand(0, "-t", scriptPath.replace(ProjectPath, ".." + File.separator) + "AlteraDownload.tcl"))
+            if (!alteraCommand("init", 0, "-t", scriptPath.replace(ProjectPath, ".." + File.separator) + "AlteraDownload.tcl"))
                 return "Failed to Create a Quartus Project, cannot download";
 		}
 
@@ -206,7 +206,7 @@ public class AlteraDownload implements Runnable {
             return null;
 		if (!SofFileExists) {
             setStatus("Optimize Project");
-            if (!alteraCommand(2, ToplevelHDLGeneratorFactory.FPGAToplevelName, "--optimize=area"))
+            if (!alteraCommand("optimize", 2, ToplevelHDLGeneratorFactory.FPGAToplevelName, "--optimize=area"))
                 return "Failed to optimize (AREA) Project, cannot download";
 		}
 
@@ -215,7 +215,7 @@ public class AlteraDownload implements Runnable {
             return null;
 		if (!SofFileExists) {
             setStatus("Synthesizing and creating configuration file (this may take a while)");
-            if (!alteraCommand(0, "--flow", "compile", ToplevelHDLGeneratorFactory.FPGAToplevelName))
+            if (!alteraCommand("synthesize", 0, "--flow", "compile", ToplevelHDLGeneratorFactory.FPGAToplevelName))
                 return "Failed to synthesize design and to create the configuration files, cannot download";
 		}
 
@@ -244,7 +244,7 @@ public class AlteraDownload implements Runnable {
         } else {
             bin = "P;" + ToplevelHDLGeneratorFactory.FPGAToplevelName + ".pof";
         }
-        if (!alteraCommand(1, "-c", "usb-blaster", "-m", "jtag", "-o", bin))
+        if (!alteraCommand("download", 1, "-c", "usb-blaster", "-m", "jtag", "-o", bin))
             return "Failed to Download design; did you connect the board?";
 
         return null;

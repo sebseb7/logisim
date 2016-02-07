@@ -61,8 +61,8 @@ public class FPGAReport {
 		myCommander.AddWarning(Message);
 	}
 
-	public void ClsScr() {
-		myCommander.ClearConsole();
+	public void NewConsole(String title) {
+		myCommander.NewConsole(title);
 	}
 
 	public void print(String Message) {

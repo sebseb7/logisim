@@ -151,7 +151,7 @@ public class FPGACommanderGui implements ActionListener {
 	private JTextArea textAreaInfo = new JTextArea(10, 50);
 	private JTextArea textAreaWarnings = new JTextArea(10, 50);
 	private JTextArea textAreaErrors = new JTextArea(10, 50);
-	private JTextArea textAreaConsole = new JTextArea(10, 50);
+	private ArrayList<JTextArea> textAreaConsole = new ArrayList<JTextArea>();
 	private static final String OnlyHDLMessage = "Generate HDL only";
 	private static final String HDLandDownloadMessage = "Download to board";
 	public static final int INFOS = 0;
@@ -162,7 +162,8 @@ public class FPGACommanderGui implements ActionListener {
 	private LinkedList<String> consoleInfos = new LinkedList<String>();
 	private LinkedList<String> consoleWarnings = new LinkedList<String>();
 	private LinkedList<String> consoleErrors = new LinkedList<String>();
-	private LinkedList<String> consoleConsole = new LinkedList<String>();
+	private ArrayList<StringBuffer> consoleConsole = new ArrayList<StringBuffer>();
+	private ArrayList<String> consoleConsoleNames = new ArrayList<String>();
 	private Project MyProject;
 	private Settings MySettings = new Settings();
 	private BoardInformation MyBoardInformation = null;
@@ -381,7 +382,6 @@ public class FPGACommanderGui implements ActionListener {
                 ((DefaultCaret)textAreaInfo.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
                 ((DefaultCaret)textAreaWarnings.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
                 ((DefaultCaret)textAreaErrors.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-                ((DefaultCaret)textAreaConsole.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
 		textAreaInfo.setForeground(fg);
 		textAreaInfo.setBackground(bg);
@@ -392,13 +392,9 @@ public class FPGACommanderGui implements ActionListener {
 		textAreaErrors.setForeground(Color.RED);
 		textAreaErrors.setBackground(bg);
 		textAreaErrors.setFont(new Font("monospaced", Font.PLAIN, FONT_SIZE));
-		textAreaConsole.setForeground(Color.LIGHT_GRAY);
-		textAreaConsole.setBackground(Color.BLACK);
-		textAreaConsole.setFont(new Font("monospaced", Font.PLAIN, FONT_SIZE));
 		JScrollPane textMessages = new JScrollPane(textAreaInfo);
 		JScrollPane textWarnings = new JScrollPane(textAreaWarnings);
 		JScrollPane textErrors = new JScrollPane(textAreaErrors);
-		JScrollPane textConsole = new JScrollPane(textAreaConsole);
 		textMessages
 				.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		textMessages
@@ -410,22 +406,16 @@ public class FPGACommanderGui implements ActionListener {
 		textErrors
 				.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		textErrors
-				.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		textConsole
-				.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-		textConsole
 				.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
 		GridLayout consolesLayout = new GridLayout(1, 1);
 		JComponent panelInfos = new JPanel();
 		JComponent panelWarnings = new JPanel();
 		JComponent panelErrors = new JPanel();
-		JComponent panelConsole = new JPanel();
 
 		panelInfos.setLayout(consolesLayout);
 		panelWarnings.setLayout(consolesLayout);
 		panelErrors.setLayout(consolesLayout);
-		panelConsole.setLayout(consolesLayout);
 
 		panelInfos.add(textMessages);
 		panelInfos.setName("Infos (0)");
@@ -433,18 +423,14 @@ public class FPGACommanderGui implements ActionListener {
 		panelWarnings.setName("Warnings (0)");
 		panelErrors.add(textErrors);
 		panelErrors.setName("Errors (0)");
-		panelConsole.add(textConsole);
-		panelConsole.setName("Console");
 
 		tabbedPane.add(panelInfos); // index 0
 		tabbedPane.add(panelWarnings); // index 1
 		tabbedPane.add(panelErrors); // index 2
-		tabbedPane.add(panelConsole); // index 3
 
 		textAreaInfo.setEditable(false);
 		textAreaWarnings.setEditable(false);
 		textAreaErrors.setEditable(false);
-		textAreaConsole.setEditable(false);
 
 		consoleInfos.clear();
 		consoleWarnings.clear();
@@ -454,11 +440,11 @@ public class FPGACommanderGui implements ActionListener {
 		textAreaInfo.setText(null);
 		textAreaWarnings.setText(null);
 		textAreaErrors.setText(null);
-		textAreaConsole.setText(null);
 
 		c.gridx = 0;
 		c.gridy = 7;
 		c.gridwidth = 5;
+
 		tabbedPane.setPreferredSize(new Dimension(700, 20 * FONT_SIZE));
 		panel.add(tabbedPane, c);
 
@@ -478,6 +464,48 @@ public class FPGACommanderGui implements ActionListener {
 		}
 		MapPannel.SetBoardInformation(MyBoardInformation);
 	}
+
+        private void ClearConsoles() {
+            synchronized(consoleConsole) {
+                textAreaConsole.clear();
+                consoleConsole.clear();
+                consoleConsoleNames.clear();
+                tabbedPane.setSelectedIndex(0);
+                for (int i = tabbedPane.getTabCount() - 1; i >= CONSOLE; i--) {
+                    tabbedPane.removeTabAt(i); // index 3+i
+                }
+            }
+            Rectangle rect = tabbedPane.getBounds();
+            rect.x = 0;
+            rect.y = 0;
+            if (EventQueue.isDispatchThread())
+                tabbedPane.paintImmediately(rect);
+            else
+                tabbedPane.repaint(rect);
+        }
+
+        public void NewConsole(String title) {
+            JTextArea area = new JTextArea(10, 50);
+            ((DefaultCaret)area.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+            area.setForeground(Color.LIGHT_GRAY);
+            area.setBackground(Color.BLACK);
+            area.setFont(new Font("monospaced", Font.PLAIN, FONT_SIZE));
+            area.setEditable(false);
+            area.setText(null);
+            JScrollPane scrollpane = new JScrollPane(area);
+            scrollpane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+            scrollpane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+            JComponent panel = new JPanel();
+            panel.setLayout(new GridLayout(1, 1));
+            panel.add(scrollpane);
+            panel.setName(title);
+            synchronized(consoleConsole) {
+                textAreaConsole.add(area);
+                consoleConsole.add(new StringBuffer());
+                consoleConsoleNames.add(title);
+		tabbedPane.add(panel); // index 3+i
+            }
+        }
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -583,20 +611,27 @@ public class FPGACommanderGui implements ActionListener {
 	}
 
 	public void AddConsole(String Message) {
-		consoleConsole.add(Message + "\n");
-		StringBuffer Lines = new StringBuffer();
-		for (String mes : consoleConsole) {
-			Lines.append(mes);
-		}
-		tabbedPane.setSelectedIndex(CONSOLE);
-		textAreaConsole.setText(Lines.toString());
-		Rectangle rect = tabbedPane.getBounds();
-		rect.x = 0;
-		rect.y = 0;
-                if (EventQueue.isDispatchThread())
-                    tabbedPane.paintImmediately(rect);
-                else
-                    tabbedPane.repaint(rect);
+            StringBuffer Lines;
+            JTextArea area;
+            synchronized(consoleConsole) {
+                int i = consoleConsole.size() - 1;
+                if (i == -1) {
+                    NewConsole("Console");
+                    i = 0;
+                }
+                Lines = consoleConsole.get(i);
+		tabbedPane.setSelectedIndex(CONSOLE + i);
+                area = textAreaConsole.get(i);
+            }
+            Lines.append(Message + "\n");
+            area.setText(Lines.toString());
+            Rectangle rect = tabbedPane.getBounds();
+            rect.x = 0;
+            rect.y = 0;
+            if (EventQueue.isDispatchThread())
+                tabbedPane.paintImmediately(rect);
+            else
+                tabbedPane.repaint(rect);
 	}
 
 	public void AddErrors(String Message) {
@@ -768,17 +803,27 @@ public class FPGACommanderGui implements ActionListener {
 	}
 
 	public void ClearConsole() {
-		consoleConsole.clear();
-		tabbedPane.setSelectedIndex(CONSOLE);
-		textAreaConsole.setText(null);
-		Rectangle rect = tabbedPane.getBounds();
-		rect.x = 0;
-		rect.y = 0;
-		tabbedPane.paintImmediately(rect);
-                if (EventQueue.isDispatchThread())
-                    tabbedPane.paintImmediately(rect);
-                else
-                    tabbedPane.repaint(rect);
+            StringBuffer Lines;
+            JTextArea area;
+            synchronized(consoleConsole) {
+                int i = consoleConsole.size() - 1;
+                if (i == -1) {
+                    return;
+                }
+                Lines = consoleConsole.get(i);
+		tabbedPane.setSelectedIndex(CONSOLE + i);
+                area = textAreaConsole.get(i);
+            }
+            Lines.setLength(0);
+            area.setText(null);
+            Rectangle rect = tabbedPane.getBounds();
+            rect.x = 0;
+            rect.y = 0;
+            tabbedPane.paintImmediately(rect);
+            if (EventQueue.isDispatchThread())
+                tabbedPane.paintImmediately(rect);
+            else
+                tabbedPane.repaint(rect);
 	}
 
 	private void DownLoad() {
@@ -820,6 +865,7 @@ public class FPGACommanderGui implements ActionListener {
 		ArrayList<String> Behaviors = new ArrayList<String>();
 		GetVHDLFiles(ProjectDir, SourcePath, Entities, Behaviors,
 				MySettings.GetHDLType());
+                ClearConsoles();
 		if (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera) {
 			if (AlteraDownload.GenerateQuartusScript(MyReporter, ProjectDir
 					+ HDLPaths[ScriptPath] + File.separator,

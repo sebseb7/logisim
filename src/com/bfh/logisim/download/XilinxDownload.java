@@ -135,7 +135,7 @@ public class XilinxDownload {
 				InputStreamReader isr = new InputStreamReader(is);
 				BufferedReader br = new BufferedReader(isr);
 				String line;
-				MyReporter.ClsScr();
+				MyReporter.NewConsole("synthesize");
 				while ((line = br.readLine()) != null) {
 					MyReporter.print(line);
 				}
@@ -187,7 +187,7 @@ public class XilinxDownload {
 				InputStreamReader isr = new InputStreamReader(is);
 				BufferedReader br = new BufferedReader(isr);
 				String line;
-				MyReporter.ClsScr();
+				MyReporter.NewConsole("constrain");
 				while ((line = br.readLine()) != null) {
 					MyReporter.print(line);
 				}
@@ -237,7 +237,7 @@ public class XilinxDownload {
 				InputStreamReader isr = new InputStreamReader(is);
 				BufferedReader br = new BufferedReader(isr);
 				String line;
-				MyReporter.ClsScr();
+				MyReporter.NewConsole("mapping");
 				while ((line = br.readLine()) != null) {
 					MyReporter.print(line);
 				}
@@ -315,7 +315,7 @@ public class XilinxDownload {
 				InputStreamReader isr = new InputStreamReader(is);
 				BufferedReader br = new BufferedReader(isr);
 				String line;
-				MyReporter.ClsScr();
+				MyReporter.NewConsole("place & route");
 				while ((line = br.readLine()) != null) {
 					MyReporter.print(line);
 				}
@@ -381,7 +381,7 @@ public class XilinxDownload {
 				InputStreamReader isr = new InputStreamReader(is);
 				BufferedReader br = new BufferedReader(isr);
 				String line;
-				MyReporter.ClsScr();
+				MyReporter.NewConsole("generate");
 				while ((line = br.readLine()) != null) {
 					MyReporter.print(line);
 				}
@@ -442,7 +442,7 @@ public class XilinxDownload {
 				InputStreamReader isr = new InputStreamReader(is);
 				BufferedReader br = new BufferedReader(isr);
 				String line;
-				MyReporter.ClsScr();
+				MyReporter.NewConsole("download");
 				while ((line = br.readLine()) != null) {
 					MyReporter.print(line);
 				}
@@ -454,7 +454,7 @@ public class XilinxDownload {
 				}
 				/* Until here is the standard download with programmer */
 			} else {
-				MyReporter.ClsScr();
+				MyReporter.NewConsole("download");
 				/* Here we do the USBTMC Download */
 				boolean usbtmcdevice = new File("/dev/usbtmc0").exists();
 				if (!usbtmcdevice) {
