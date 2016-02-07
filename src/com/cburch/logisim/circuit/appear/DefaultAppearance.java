@@ -117,12 +117,13 @@ class DefaultAppearance {
 		int numWest = edge.get(Direction.WEST).size();
 		int maxHorz = Math.max(numEast, numWest);
 
-		int offsEast = computeOffset(numEast, numWest, 0);
-		int offsWest = computeOffset(numWest, numEast, 0);
-
 		int dy = ((TextHeight+(TextHeight>>2)+5)/10)*10;
+
+		int offsEast = computeOffset(numEast, numWest, dy);
+		int offsWest = computeOffset(numWest, numEast, dy);
+
 		int width = ((MaxLeftLabelLength+MaxRightLabelLength+35)/10)*10;
-		int height = maxHorz*dy;
+		int height = Math.max(dy+10, maxHorz*dy);
 
 		// compute position of anchor relative to top left corner of box
 		int ax;
@@ -154,22 +155,18 @@ class DefaultAppearance {
 		return ret;
 	}
 
-	private static int computeOffset(int numFacing, int numOpposite,
-			int maxOthers) {
+	private static int computeOffset(int numFacing, int numOpposite, int dy) {
 		int maxThis = Math.max(numFacing, numOpposite);
 		int maxOffs;
 		switch (maxThis) {
 		case 0:
 		case 1:
-			maxOffs = (maxOthers == 0 ? 15 : 10);
-			break;
-		case 2:
-			maxOffs = 10;
+			maxOffs = (dy+10)/2;
 			break;
 		default:
-			maxOffs = (maxOthers == 0 ? 5 : 10);
+			maxOffs = dy/2;
 		}
-		return maxOffs + 10 * ((maxThis - numFacing) / 2);
+		return maxOffs + dy * ((maxThis - numFacing) / 2);
 	}
 
 	private static void placePins(List<CanvasObject> dest, List<Instance> pins,
