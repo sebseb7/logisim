@@ -1052,9 +1052,8 @@ class XmlReader {
                             break;
                         }
                     }
-                    System.out.println("mem lib is " + memLibName);
                     for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
-                        setClassicAsDefaultAppearance(doc, circElt);
+                        setDefaultAttribute(doc, circElt, "appearance", "classic");
                         if (memLibName != null) {
                             for (Element compElt : XmlIterator.forChildElements(circElt, "comp")) {
                                 String lib = compElt.getAttribute("lib");
@@ -1064,7 +1063,11 @@ class XmlReader {
                                 if (name.equals("J-K Flip-Flop") || name.equals("S-R Flip-Flop") ||
                                         name.equals("T Flip-Flop") || name.equals("D Flip-Flop") ||
                                         name.equals("Register") || name.equals("Shift Register")) {
-                                    setClassicAsDefaultAppearance(doc, compElt);
+                                    setDefaultAttribute(doc, compElt, "appearance", "classic");
+                                }
+                                if (name.equals("J-K Flip-Flop") || name.equals("S-R Flip-Flop") ||
+                                        name.equals("T Flip-Flop") || name.equals("D Flip-Flop")) {
+                                    setDefaultAttribute(doc, compElt, "enable", "true");
                                 }
                             }
                         }
@@ -1091,10 +1094,8 @@ class XmlReader {
             for (Library lib : ((Loader)loader).getBuiltin().getLibraries()) {
                 String desc = ((Loader)loader).getDescriptor(lib);
                 if (desc == null || found.contains(desc)) {
-                    System.out.println("lib already included " + desc);
                     continue;
                 }
-                System.out.println("lib missing " + desc);
 		Element libElt = doc.createElement("lib");
 		libElt.setAttribute("name", "" + (maxLib + 1));
 		libElt.setAttribute("desc", desc);
@@ -1153,19 +1154,19 @@ class XmlReader {
 		}
 	}
 
-        private void setClassicAsDefaultAppearance(Document doc, Element elt) {
+        private void setDefaultAttribute(Document doc, Element elt, String attrib, String val) {
             Node end = elt.getFirstChild();
             for (Element attrElt : XmlIterator.forChildElements(elt, "a")) {
                 String name = attrElt.getAttribute("name");
-                if (name != null && name.equals("appearance")) {
+                if (name != null && name.equals(attrib)) {
                     return;
                 }
                 end = attrElt.getNextSibling();
             }
-            Element classic = doc.createElement("a");
-            classic.setAttribute("name", "appearance");
-            classic.setAttribute("val", "classic");
-            elt.insertBefore(classic, end);
+            Element a = doc.createElement("a");
+            a.setAttribute("name", attrib);
+            a.setAttribute("val", val);
+            elt.insertBefore(a, end);
         }
 
 	private Document loadXmlFrom(InputStream is) throws SAXException,
