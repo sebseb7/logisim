@@ -37,6 +37,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -1037,6 +1038,7 @@ class XmlReader {
 			repairForLegacyLibrary(doc, root);
 		}
                 if (version.compareTo(LogisimVersion.get(2, 7, 2)) < 0) {
+                    addBuiltinLibrariesIfMissing(doc, root);
                     // pre logisim-evolution, we didn't have "Appearance" labels
                     // on many components. Add StdAttr.APPEAR_CLASSIC on each subcircuit
                     // and instances of FlipFlops, Registers, Counters, and
@@ -1052,8 +1054,7 @@ class XmlReader {
                     }
                     System.out.println("mem lib is " + memLibName);
                     for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
-                                String cname = circElt.getAttribute("name");
-                        setClassicAsDefaultAppearance(doc, circElt, cname);
+                        setClassicAsDefaultAppearance(doc, circElt);
                         if (memLibName != null) {
                             for (Element compElt : XmlIterator.forChildElements(circElt, "comp")) {
                                 String lib = compElt.getAttribute("lib");
@@ -1063,7 +1064,7 @@ class XmlReader {
                                 if (name.equals("J-K Flip-Flop") || name.equals("S-R Flip-Flop") ||
                                         name.equals("T Flip-Flop") || name.equals("D Flip-Flop") ||
                                         name.equals("Register") || name.equals("Shift Register")) {
-                                    setClassicAsDefaultAppearance(doc, compElt, name);
+                                    setClassicAsDefaultAppearance(doc, compElt);
                                 }
                             }
                         }
@@ -1071,8 +1072,88 @@ class XmlReader {
                 }
 	}
 
-        private void setClassicAsDefaultAppearance(Document doc, Element elt, String ename) {
-            System.out.println("Checking " + ename);
+        private void addBuiltinLibrariesIfMissing(Document doc, Element root) {
+            HashSet<String> found = new HashSet<String>();
+            Node end = root.getFirstChild();
+            int maxLib = 0;
+            for (Element libElt : XmlIterator.forChildElements(root, "lib")) {
+                String desc = libElt.getAttribute("desc");
+                String name = libElt.getAttribute("name");
+                if (desc != null) 
+                    found.add(desc);
+                if (name != null) {
+                    int thisLabel = Integer.parseInt(name);
+                    if (thisLabel > maxLib)
+                        maxLib = thisLabel;
+                }
+                end = libElt.getNextSibling();
+            }
+            for (Library lib : ((Loader)loader).getBuiltin().getLibraries()) {
+                String desc = ((Loader)loader).getDescriptor(lib);
+                if (desc == null || found.contains(desc)) {
+                    System.out.println("lib already included " + desc);
+                    continue;
+                }
+                System.out.println("lib missing " + desc);
+		Element libElt = doc.createElement("lib");
+		libElt.setAttribute("name", "" + (maxLib + 1));
+		libElt.setAttribute("desc", desc);
+		for (Tool t : lib.getTools()) {
+			AttributeSet attrs = t.getAttributeSet();
+			if (attrs != null) {
+				Element toAdd = doc.createElement("tool");
+				toAdd.setAttribute("name", t.getName());
+				addAttributeSetContent(doc, toAdd, attrs, t);
+				if (toAdd.getChildNodes().getLength() > 0) {
+					libElt.appendChild(toAdd);
+				}
+			}
+		}
+                root.insertBefore(libElt, end);
+                found.add(desc);
+                maxLib++;
+            }
+        }
+
+	void addAttributeSetContent(Document doc, Element elt, AttributeSet attrs,
+			AttributeDefaultProvider source) {
+                String outFilepath = null;
+		if (attrs == null)
+			return;
+		LogisimVersion ver = Main.VERSION;
+		if (source != null && source.isAllDefaultValues(attrs, ver))
+			return;
+		for (Attribute<?> attrBase : attrs.getAttributes()) {
+			@SuppressWarnings("unchecked")
+			Attribute<Object> attr = (Attribute<Object>) attrBase;
+			Object val = attrs.getValue(attr);
+			if (attrs.isToSave(attr) && val != null) {
+				Object dflt = source == null ? null : source
+						.getDefaultAttributeValue(attr, ver);
+				if (dflt == null || !dflt.equals(val)) {
+					Element a = doc.createElement("a");
+					a.setAttribute("name", attr.getName());
+					String value = attr.toStandardString(val);
+					if (attr.getName().equals("filePath")
+							&& outFilepath != null) {
+						Path outFP = Paths.get(outFilepath);
+						Path attrValP = Paths.get(value);
+						value = (outFP.relativize(attrValP)).toString();
+						a.setAttribute("val", value);
+					} else {
+						if (value.indexOf("\n") >= 0) {
+							a.appendChild(doc.createTextNode(value));
+						} else {
+							a.setAttribute("val", attr.toStandardString(val));
+						}
+					}
+					elt.appendChild(a);
+				}
+			}
+		}
+	}
+
+        private void setClassicAsDefaultAppearance(Document doc, Element elt) {
             Node end = elt.getFirstChild();
             for (Element attrElt : XmlIterator.forChildElements(elt, "a")) {
                 String name = attrElt.getAttribute("name");
@@ -1081,7 +1162,6 @@ class XmlReader {
                 }
                 end = attrElt.getNextSibling();
             }
-            System.out.println("Adding appearance to " + ename);
             Element classic = doc.createElement("a");
             classic.setAttribute("name", "appearance");
             classic.setAttribute("val", "classic");
