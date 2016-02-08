@@ -39,6 +39,7 @@ import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
+import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
@@ -68,9 +69,9 @@ public class ShiftRegister extends InstanceFactory {
 	public ShiftRegister() {
 		super("Shift Register", Strings.getter("shiftRegisterComponent"));
 		setAttributes(new Attribute[] { StdAttr.WIDTH, ATTR_LENGTH, ATTR_LOAD,
-				StdAttr.EDGE_TRIGGER, StdAttr.LABEL, StdAttr.LABEL_FONT },
+				StdAttr.EDGE_TRIGGER, StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.APPEARANCE },
 				new Object[] { BitWidth.ONE, Integer.valueOf(8), Boolean.TRUE,
-						StdAttr.TRIG_RISING, "", StdAttr.DEFAULT_LABEL_FONT });
+						StdAttr.TRIG_RISING, "", StdAttr.DEFAULT_LABEL_FONT, StdAttr.APPEAR_FPGA });
 		setKeyConfigurator(JoinedConfigurator
 				.create(new IntegerConfigurator(ATTR_LENGTH, 1, 32, 0),
 						new BitWidthConfigurator(StdAttr.WIDTH)));
@@ -94,24 +95,45 @@ public class ShiftRegister extends InstanceFactory {
 		Port[] ps;
 		Integer lenObj = instance.getAttributeValue(ATTR_LENGTH);
 		int len = lenObj == null ? 8 : lenObj.intValue();
-		if (parallelObj == null || parallelObj.booleanValue()) {
-			ps = new Port[6 + 2 * len - 1];
-			ps[LD] = new Port(0, 30, Port.INPUT, 1);
-			ps[LD].setToolTip(Strings.getter("shiftRegLoadTip"));
-			for (int i = 0; i < len; i++) {
-				ps[6 + 2 * i] = new Port(0, 90 + i * 20, Port.INPUT, width);
-				if (i < (len - 1))
-					ps[6 + 2 * i + 1] = new Port(SymbolWidth + 20, 90 + i * 20,
-							Port.OUTPUT, width);
-			}
-		} else {
-			ps = new Port[5];
-		}
-		ps[OUT] = new Port(SymbolWidth + 20, 70 + len * 20, Port.OUTPUT, width);
-		ps[IN] = new Port(0, 80, Port.INPUT, width);
-		ps[SH] = new Port(0, 40, Port.INPUT, 1);
-		ps[CK] = new Port(0, 50, Port.INPUT, 1);
-		ps[CLR] = new Port(0, 20, Port.INPUT, 1);
+                if (instance.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
+                    if (parallelObj == null || parallelObj.booleanValue()) {
+                        ps = new Port[6 + 2 * len];
+                        ps[LD] = new Port(10, -20, Port.INPUT, 1);
+                        for (int i = 0; i < len; i++) {
+                            ps[6 + 2 * i]     = new Port(20 + 10 * i, -20, Port.INPUT, width);
+                            ps[6 + 2 * i + 1] = new Port(20 + 10 * i,  20, Port.OUTPUT, width);
+                        }
+                    } else {
+                        ps = new Port[5];
+                    }
+                    ps[OUT] = new Port(bds.getWidth(), 0, Port.OUTPUT, width);
+                    ps[SH]  = new Port( 0, -10, Port.INPUT, 1);
+                    ps[IN]  = new Port( 0,   0, Port.INPUT, width);
+                    ps[CK]  = new Port( 0,  10, Port.INPUT, 1);
+                    ps[CLR] = new Port(10,  20, Port.INPUT, 1);
+                } else {
+                    if (parallelObj == null || parallelObj.booleanValue()) {
+                        ps = new Port[6 + 2 * len - 1];
+                        ps[LD] = new Port(0, 30, Port.INPUT, 1);
+                        for (int i = 0; i < len; i++) {
+                            ps[6 + 2 * i] = new Port(0, 90 + i * 20, Port.INPUT, width);
+                            if (i < (len - 1))
+                                ps[6 + 2 * i + 1] = new Port(SymbolWidth + 20, 90 + i * 20,
+                                        Port.OUTPUT, width);
+                        }
+                        ps[LD].setToolTip(Strings.getter("shiftRegLoadTip"));
+                    } else {
+                        ps = new Port[5];
+                    }
+
+
+                    ps[OUT] = new Port(SymbolWidth + 20, 70 + len * 20, Port.OUTPUT, width);
+                    ps[IN] = new Port(0, 80, Port.INPUT, width);
+                    ps[SH] = new Port(0, 40, Port.INPUT, 1);
+                    ps[CK] = new Port(0, 50, Port.INPUT, 1);
+                    ps[CLR] = new Port(0, 20, Port.INPUT, 1);
+                }
+
 		ps[OUT].setToolTip(Strings.getter("shiftRegOutTip"));
 		ps[SH].setToolTip(Strings.getter("shiftRegShiftTip"));
 		ps[IN].setToolTip(Strings.getter("shiftRegInTip"));
@@ -305,8 +327,18 @@ public class ShiftRegister extends InstanceFactory {
 
 	@Override
 	public Bounds getOffsetBounds(AttributeSet attrs) {
-		int len = attrs.getValue(ATTR_LENGTH).intValue();
-		return Bounds.create(0, 0, SymbolWidth + 20, 80 + 20 * len);
+            if (attrs.getValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
+                Object parallel = attrs.getValue(ATTR_LOAD);
+                if (parallel == null || ((Boolean) parallel).booleanValue()) {
+                    int len = attrs.getValue(ATTR_LENGTH).intValue();
+                    return Bounds.create(0, -20, 20 + 10 * len, 40); 
+                } else {
+                    return Bounds.create(0, -20, 30, 40);
+                }
+            } else {
+                int len = attrs.getValue(ATTR_LENGTH).intValue();
+                return Bounds.create(0, 0, SymbolWidth + 20, 80 + 20 * len);
+            }
 	}
 
 	@Override
@@ -319,7 +351,7 @@ public class ShiftRegister extends InstanceFactory {
 
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-		if (attr == ATTR_LOAD || attr == ATTR_LENGTH || attr == StdAttr.WIDTH) {
+		if (attr == ATTR_LOAD || attr == ATTR_LENGTH || attr == StdAttr.WIDTH || attr == StdAttr.APPEARANCE) {
 			instance.recomputeBounds();
 			configurePorts(instance);
 		}
@@ -327,6 +359,14 @@ public class ShiftRegister extends InstanceFactory {
 
 	@Override
 	public void paintInstance(InstancePainter painter) {
+		if (painter.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
+                    paintInstanceClassic(painter);
+                } else {
+                    paintInstanceEvolution(painter);
+                }
+        }
+
+	private void paintInstanceEvolution(InstancePainter painter) {
 		// draw boundary, label
 		painter.drawLabel();
 		int xpos = painter.getLocation().getX();
@@ -373,7 +413,66 @@ public class ShiftRegister extends InstanceFactory {
 			for (int i = 0; i < len - 1; i++) {
 				state.setPort(6 + 2 * i + 1, data.get(len - 1 - i), 4);
 			}
+                        if (state.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
+				state.setPort(6 + 2 * (len-1) + 1, data.get(0), 4);
+                        }
 		}
+	}
+
+	private void paintInstanceClassic(InstancePainter painter) {
+		// draw boundary, label
+		painter.drawBounds();
+		painter.drawLabel();
+		
+		// draw state
+		boolean parallel = painter.getAttributeValue(ATTR_LOAD).booleanValue();
+		if (parallel) {
+			BitWidth widObj = painter.getAttributeValue(StdAttr.WIDTH);
+			int wid = widObj.getWidth();
+			Integer lenObj = painter.getAttributeValue(ATTR_LENGTH);
+			int len = lenObj == null ? 8 : lenObj.intValue();
+			if (painter.getShowState()) {
+				if (wid <= 4) {
+					ShiftRegisterData data = getData(painter);
+					Bounds bds = painter.getBounds();
+					int x = bds.getX() + 20;
+					int y = bds.getY();
+					Object label = painter.getAttributeValue(StdAttr.LABEL);
+					if (label == null || label.equals("")) {
+						y += bds.getHeight() / 2;
+					} else {
+						y += 3 * bds.getHeight() / 4;
+					}
+					Graphics g = painter.getGraphics();
+					for (int i = 0; i < len; i++) {
+						String s = data.get(len - 1 - i).toHexString();
+						GraphicsUtil.drawCenteredText(g, s, x, y);
+						x += 10;
+					}
+				}
+			} else {
+				Bounds bds = painter.getBounds();
+				int x = bds.getX() + bds.getWidth() / 2;
+				int y = bds.getY();
+				int h = bds.getHeight();
+				Graphics g = painter.getGraphics();
+				Object label = painter.getAttributeValue(StdAttr.LABEL);
+				if (label == null || label.equals("")) {
+					String a = Strings.get("shiftRegisterLabel1");
+					GraphicsUtil.drawCenteredText(g, a, x, y + h / 4);
+				}
+				String b = Strings.get("shiftRegisterLabel2", "" + len,
+						"" + wid);
+				GraphicsUtil.drawCenteredText(g, b, x, y + 3 * h / 4);
+			}
+		}
+
+		// draw input and output ports
+		int ports = painter.getInstance().getPorts().size();
+		for (int i = 0; i < ports; i++) {
+			if (i != CK) painter.drawPort(i);
+		}
+		painter.drawClock(CK, Direction.EAST);
 	}
 
 }
