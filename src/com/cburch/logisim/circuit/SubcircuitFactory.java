@@ -342,8 +342,6 @@ public class SubcircuitFactory extends InstanceFactory {
 		} else if (attr == CircuitAttributes.LABEL_LOCATION_ATTR) {
 			configureLabel(instance);
 		} else if (attr == CircuitAttributes.CIRCUIT_APPEARANCE_ATTR) {
-                        // Need to aquire locks here, or make a transaction
-                        System.out.println("appearance attr changed");
                         final Circuit src = source;
                         CircuitTransaction xn = new ChangeAppearanceTransaction();
                         source.getLocker().execute(xn);

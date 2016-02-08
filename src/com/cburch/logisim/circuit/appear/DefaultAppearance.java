@@ -90,12 +90,9 @@ class DefaultAppearance {
 	}
 
 	public static List<CanvasObject> build(Collection<Instance> pins, AttributeOption style) {
-            System.out.println("building appearance, style = " + style);
             if (style == StdAttr.APPEAR_CLASSIC) {
-            System.out.println(" will be classic");
                 return DefaultClassicAppearance.build(pins);
             } else {
-            System.out.println(" will be evolution");
                 return DefaultEvolutionAppearance.build(pins);
             }
         }

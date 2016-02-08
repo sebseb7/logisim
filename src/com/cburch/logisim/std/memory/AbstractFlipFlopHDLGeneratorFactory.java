@@ -349,7 +349,8 @@ public class AbstractFlipFlopHDLGeneratorFactory extends
 	@Override
 	public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
 			char Vendor) {
-		return true;
+            // TODO: HDL doesn't yet support enable pin
+                return attrs.getValue(AbstractFlipFlop.ATTR_ENABLE) == Boolean.FALSE;
 	}
 
 	public boolean IsFlipFlop(AttributeSet attrs) {
