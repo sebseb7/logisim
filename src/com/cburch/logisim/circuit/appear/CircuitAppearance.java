@@ -44,10 +44,13 @@ import com.cburch.draw.model.CanvasModelListener;
 import com.cburch.draw.model.CanvasObject;
 import com.cburch.draw.model.Drawing;
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
 public class CircuitAppearance extends Drawing {
@@ -200,6 +203,13 @@ public class CircuitAppearance extends Drawing {
 		return circuitPins;
 	}
 
+        public AttributeOption getCircuitAppearance() {
+                if (circuit == null || circuit.getStaticAttributes() == null)
+                    return null;
+                else 
+                    return circuit.getStaticAttributes().getValue(CircuitAttributes.CIRCUIT_APPEARANCE_ATTR);
+        }
+
 	public Direction getFacing() {
 		AppearanceAnchor anchor = findAnchor();
 		if (anchor == null) {
@@ -267,10 +277,10 @@ public class CircuitAppearance extends Drawing {
 		}
 	}
 
-	private void recomputeDefaultAppearance() {
+	public void recomputeDefaultAppearance() {
 		if (isDefault) {
 			List<CanvasObject> shapes;
-			shapes = DefaultAppearance.build(circuitPins.getPins());
+			shapes = DefaultAppearance.build(circuitPins.getPins(), getCircuitAppearance());
 			setObjectsForce(shapes);
 		}
 	}

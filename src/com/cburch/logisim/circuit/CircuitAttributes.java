@@ -38,6 +38,7 @@ import com.cburch.logisim.circuit.appear.CircuitAppearanceEvent;
 import com.cburch.logisim.circuit.appear.CircuitAppearanceListener;
 import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.AttributeSet;
@@ -116,19 +117,21 @@ public class CircuitAttributes extends AbstractAttributeSet {
 	public static final Attribute<String> CIRCUIT_VHDL_PATH = Attributes
 			.forString("circuitvhdlpath", Strings.getter("circuitVhdlPath"));
 
+	public static final Attribute<AttributeOption> CIRCUIT_APPEARANCE_ATTR = StdAttr.APPEARANCE;
+
 	private static final Attribute<?>[] STATIC_ATTRS = { NAME_ATTR,
 			CIRCUIT_LABEL_ATTR, CIRCUIT_LABEL_FACING_ATTR,
-			CIRCUIT_LABEL_FONT_ATTR, CIRCUIT_IS_VHDL_BOX, CIRCUIT_VHDL_PATH, };
+			CIRCUIT_LABEL_FONT_ATTR, CIRCUIT_IS_VHDL_BOX, CIRCUIT_VHDL_PATH, CIRCUIT_APPEARANCE_ATTR};
 
 	private static final Object[] STATIC_DEFAULTS = { "", "", Direction.EAST,
-			StdAttr.DEFAULT_LABEL_FONT, false, "", };
+			StdAttr.DEFAULT_LABEL_FONT, false, "", StdAttr.APPEAR_FPGA};
 
 	private static final List<Attribute<?>> INSTANCE_ATTRS = Arrays
 			.asList(new Attribute<?>[] { StdAttr.FACING, StdAttr.LABEL,
 					LABEL_LOCATION_ATTR, StdAttr.LABEL_FONT,
 					CircuitAttributes.NAME_ATTR, CIRCUIT_LABEL_ATTR,
 					CIRCUIT_LABEL_FACING_ATTR, CIRCUIT_LABEL_FONT_ATTR,
-					CIRCUIT_IS_VHDL_BOX, CIRCUIT_VHDL_PATH, });
+					CIRCUIT_IS_VHDL_BOX, CIRCUIT_VHDL_PATH, CIRCUIT_APPEARANCE_ATTR });
 
 	private Circuit source;
 	private Instance subcircInstance;

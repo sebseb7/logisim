@@ -69,4 +69,12 @@ public interface StdAttr {
 	public static final Font DEFAULT_LABEL_FONT = new Font("SansSerif",
 			Font.PLAIN, 12);
 
+	public static final AttributeOption APPEAR_CLASSIC = new AttributeOption(
+			"classic", Strings.getter("stdClassicAppearance"));
+	public static final AttributeOption APPEAR_FPGA = new AttributeOption(
+			"evolution", Strings.getter("stdEvolutionAppearance"));
+	public static final Attribute<AttributeOption> APPEARANCE = Attributes
+			.forOption("appearance", Strings.getter("stdAppearanceAttr"),
+					new AttributeOption[] { APPEAR_CLASSIC, APPEAR_FPGA });
+
 }

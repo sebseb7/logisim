@@ -45,6 +45,7 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.circuit.CircuitAttributes;
 
 class PortManager {
 	private static Location computeDefaultLocation(CircuitAppearance appear,
@@ -159,7 +160,7 @@ class PortManager {
 
 		// ensure we have the anchor in the circuit
 		if (anchor == null) {
-			for (CanvasObject o : DefaultAppearance.build(allPins)) {
+			for (CanvasObject o : DefaultAppearance.build(allPins, appearance.getCircuitAppearance())) {
 				if (o instanceof AppearanceAnchor) {
 					anchor = (AppearanceAnchor) o;
 				}

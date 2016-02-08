@@ -40,6 +40,7 @@ import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Map;
+import java.util.HashMap;
 
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -60,6 +61,8 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
+import com.cburch.draw.undo.Action;
+import com.cburch.logisim.gui.appear.CanvasActionAdapter;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.MenuExtender;
 import com.cburch.logisim.util.GraphicsUtil;
@@ -338,8 +341,30 @@ public class SubcircuitFactory extends InstanceFactory {
 			computePorts(instance);
 		} else if (attr == CircuitAttributes.LABEL_LOCATION_ATTR) {
 			configureLabel(instance);
-		}
+		} else if (attr == CircuitAttributes.CIRCUIT_APPEARANCE_ATTR) {
+                        // Need to aquire locks here, or make a transaction
+                        System.out.println("appearance attr changed");
+                        final Circuit src = source;
+                        CircuitTransaction xn = new ChangeAppearanceTransaction();
+                        source.getLocker().execute(xn);
+                }
 	}
+
+        private class ChangeAppearanceTransaction extends CircuitTransaction {
+                ChangeAppearanceTransaction() { }
+                @Override
+                protected Map<Circuit, Integer> getAccessedCircuits() {
+                        Map<Circuit, Integer> accessMap = new HashMap<Circuit, Integer>();
+                        for (Circuit supercirc : source.getCircuitsUsingThis()) {
+                                accessMap.put(supercirc, READ_WRITE);
+                        }
+                        return accessMap;
+                }
+                @Override
+                protected void run(CircuitMutator mutator) {
+                    source.getAppearance().recomputeDefaultAppearance();
+                }
+        }
 
 	private void paintBase(InstancePainter painter, Graphics g) {
 		CircuitAttributes attrs = (CircuitAttributes) painter.getAttributeSet();
