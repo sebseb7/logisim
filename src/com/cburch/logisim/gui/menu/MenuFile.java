@@ -125,7 +125,9 @@ class MenuFile extends Menu implements ActionListener {
 			ProjectActions.doOpen(proj == null ? null : proj.getFrame()
 					.getCanvas(), proj);
 			/* This trick allows to open a single window, if the current project hasn't been touched */
-			if (!proj.isFileDirty()) {
+                        /* and was not a saved file that was opened */
+			if (!proj.isFileDirty() &&
+                                          (proj == null || proj.getLogisimFile().getLoader().getMainFile() == null)) {
 				Frame frame = proj.getFrame();
 				frame.dispose();
 			}
