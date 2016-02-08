@@ -51,6 +51,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import com.cburch.draw.model.AbstractCanvasObject;
@@ -1035,7 +1036,57 @@ class XmlReader {
 			repairForWiringLibrary(doc, root);
 			repairForLegacyLibrary(doc, root);
 		}
+                if (version.compareTo(LogisimVersion.get(2, 7, 2)) < 0) {
+                    // pre logisim-evolution, we didn't have "Appearance" labels
+                    // on many components. Add StdAttr.APPEAR_CLASSIC on each subcircuit
+                    // and instances of FlipFlops, Registers, Counters, and
+                    // Shift Registers.
+                    String memLibName = null;
+                    for (Element libElt : XmlIterator.forChildElements(root, "lib")) {
+                        String desc = libElt.getAttribute("desc");
+                        String name = libElt.getAttribute("name");
+                        if (name != null && desc != null && desc.equals("#Memory")) {
+                            memLibName = name;
+                            break;
+                        }
+                    }
+                    System.out.println("mem lib is " + memLibName);
+                    for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
+                                String cname = circElt.getAttribute("name");
+                        setClassicAsDefaultAppearance(doc, circElt, cname);
+                        if (memLibName != null) {
+                            for (Element compElt : XmlIterator.forChildElements(circElt, "comp")) {
+                                String lib = compElt.getAttribute("lib");
+                                String name = compElt.getAttribute("name");
+                                if (lib == null || name == null || !lib.equals(memLibName))
+                                    continue;
+                                if (name.equals("J-K Flip-Flop") || name.equals("S-R Flip-Flop") ||
+                                        name.equals("T Flip-Flop") || name.equals("D Flip-Flop") ||
+                                        name.equals("Register") || name.equals("Shift Register")) {
+                                    setClassicAsDefaultAppearance(doc, compElt, name);
+                                }
+                            }
+                        }
+                    }
+                }
 	}
+
+        private void setClassicAsDefaultAppearance(Document doc, Element elt, String ename) {
+            System.out.println("Checking " + ename);
+            Node end = elt.getFirstChild();
+            for (Element attrElt : XmlIterator.forChildElements(elt, "a")) {
+                String name = attrElt.getAttribute("name");
+                if (name != null && name.equals("appearance")) {
+                    return;
+                }
+                end = attrElt.getNextSibling();
+            }
+            System.out.println("Adding appearance to " + ename);
+            Element classic = doc.createElement("a");
+            classic.setAttribute("name", "appearance");
+            classic.setAttribute("val", "classic");
+            elt.insertBefore(classic, end);
+        }
 
 	private Document loadXmlFrom(InputStream is) throws SAXException,
 			IOException {
