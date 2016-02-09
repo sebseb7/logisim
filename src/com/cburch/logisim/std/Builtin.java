@@ -38,7 +38,6 @@ import com.bfh.logisim.library.BFHPraktika;
 import com.cburch.logisim.std.arith.Arithmetic;
 import com.cburch.logisim.std.base.Base;
 import com.cburch.logisim.std.gates.Gates;
-import com.cburch.logisim.std.hdl.Hdl;
 import com.cburch.logisim.std.io.Io;
 import com.cburch.logisim.std.memory.Memory;
 import com.cburch.logisim.std.plexers.Plexers;
@@ -53,7 +52,7 @@ public class Builtin extends Library {
 	public Builtin() {
 		libraries = Arrays.asList(new Library[] { new Base(), new Gates(),
 				new Wiring(), new Plexers(), new Arithmetic(), new Memory(),
-				new Io(),  new Hdl(), new Tcl(), new BFHPraktika(), });
+				new Io(),  new Tcl(), new BFHPraktika(), });
 	}
 
 	@Override

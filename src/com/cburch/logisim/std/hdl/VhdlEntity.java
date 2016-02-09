@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
@@ -59,6 +60,7 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringUtil;
+import com.cburch.logisim.util.StringGetter;
 
 public class VhdlEntity extends InstanceFactory {
 
@@ -77,10 +79,7 @@ public class VhdlEntity extends InstanceFactory {
 
 		@Override
 		public VhdlContent parse(String value) {
-			VhdlContent content = VhdlContent.create();
-			if (!content.compare(value))
-				content.setContent(value);
-			return content;
+                        return VhdlContent.parse(value, null /* todo: get project file */);
 		}
 
 		@Override
@@ -113,6 +112,9 @@ public class VhdlEntity extends InstanceFactory {
 
 	final static Logger logger = LoggerFactory.getLogger(VhdlEntity.class);
 
+	static final Attribute<String> NAME_ATTR = Attributes.forString(
+			"vhdlEntity", Strings.getter("vhdlEntityName"));
+
 	static final Attribute<VhdlContent> CONTENT_ATTR = new ContentAttribute();
 	static final int WIDTH = 140;
 	static final int HEIGHT = 40;
@@ -122,12 +124,44 @@ public class VhdlEntity extends InstanceFactory {
 
 	private WeakHashMap<Instance, VhdlEntityListener> contentListeners;
 
-	public VhdlEntity() {
-		super("VHDL Entity", Strings.getter("vhdlComponent"));
+        private VhdlContent content;
 
+        /*
+        public VhdlEntity() {
+            super("", null);
+            content = null;
+            this.contentListeners = new WeakHashMap<Instance, VhdlEntityListener>();
+            this.setIconName("vhdl.gif");
+        }
+        */
+
+	public VhdlEntity(VhdlContent content) {
+		super("", null);
+                this.content = content;
 		this.contentListeners = new WeakHashMap<Instance, VhdlEntityListener>();
 		this.setIconName("vhdl.gif");
 	}
+
+	@Override
+	public String getName() {
+            if (content == null)
+                return "VHDL Entity";
+            else
+		return content.getName();
+	}
+
+	@Override
+	public StringGetter getDisplayGetter() {
+            if (content == null)
+                    return Strings.getter("vhdlComponent");
+            else
+		return StringUtil.constantGetter(content.getName());
+	}
+        
+
+        public VhdlContent getContent() {
+            return content;
+        }
 
 	@Override
 	protected void configureNewInstance(Instance instance) {
@@ -143,7 +177,11 @@ public class VhdlEntity extends InstanceFactory {
 
 	@Override
 	public AttributeSet createAttributeSet() {
-		return new VhdlEntityAttributes();
+                // if (content == null) {
+                //     return new VhdlEntityAttributes(VhdlContent.create());
+                // } else {
+                return new VhdlEntityAttributes(content);
+                // }
 	}
 
 	@Override
@@ -365,4 +403,5 @@ public class VhdlEntity extends InstanceFactory {
 		VhdlContent content = instance.getAttributeValue(CONTENT_ATTR);
 		instance.setPorts(content.getPorts());
 	}
+
 }

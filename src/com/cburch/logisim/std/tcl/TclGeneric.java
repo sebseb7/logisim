@@ -74,10 +74,7 @@ public class TclGeneric extends TclComponent {
 
 		@Override
 		public VhdlContent parse(String value) {
-			VhdlContent content = VhdlContent.create();
-			if (!content.compare(value))
-				content.setContent(value);
-			return content;
+			return VhdlContent.parse(value, null /* todo: get project file */);
 		}
 
 		@Override

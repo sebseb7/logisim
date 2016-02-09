@@ -81,7 +81,7 @@ public class MenuFPGA extends JMenu implements ActionListener {
 
 	public void localeChanged() {
 		this.setText(Strings.get("FPGAMenu"));
-		BoardEditor.setText(Strings.get("BoardEditor"));
-		FPGACommander.setText(Strings.get("FPGA Commander"));
+		BoardEditor.setText(Strings.get("FPGABoardEditor"));
+		FPGACommander.setText(Strings.get("FPGACommander"));
 	}
 }

@@ -35,6 +35,8 @@ import java.util.Arrays;
 import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
 import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.circuit.CircuitListener;
+import com.cburch.logisim.circuit.CircuitEvent;
 
 public abstract class HdlContent implements HdlModel, Cloneable {
 
@@ -45,6 +47,7 @@ public abstract class HdlContent implements HdlModel, Cloneable {
 	}
 
 	protected EventSourceWeakSupport<HdlModelListener> listeners;
+	//protected EventSourceWeakSupport<CircuitListener> circlisteners;
 
 	protected HdlContent() {
 		this.listeners = null;
@@ -57,6 +60,21 @@ public abstract class HdlContent implements HdlModel, Cloneable {
 		}
 		listeners.add(l);
 	}
+
+        /*
+        public void addCircuitListener(CircuitListener l) {
+		if (circlisteners == null) {
+			circlisteners = new EventSourceWeakSupport<CircuitListener>();
+		}
+		circlisteners.add(l);
+        }
+        public void removeCircuitListener(CircuitListener l) {
+		if (circlisteners == null) {
+			return;
+		}
+		circlisteners.remove(l);
+        }
+        */
 
 	@Override
 	public HdlContent clone() throws CloneNotSupportedException {
@@ -85,7 +103,26 @@ public abstract class HdlContent implements HdlModel, Cloneable {
 		if (!found) {
 			listeners = null;
 		}
+                // fireNameChange();
 	}
+
+        /*
+        protected void fireNameChange() {
+		if (circlisteners == null) {
+			return;
+		}
+
+		boolean found = false;
+		for (CircuitListener l : circlisteners) {
+			found = true;
+			l.circuitChanged(CircuitEvent.ACTION_SET_NAME);
+		}
+
+		if (!found) {
+			circlisteners = null;
+		}
+	}
+        */
 
 	@Override
 	public abstract String getContent();

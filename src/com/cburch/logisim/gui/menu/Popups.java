@@ -50,6 +50,7 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.std.hdl.VhdlContent;
 
 public class Popups {
 	@SuppressWarnings("serial")
@@ -124,6 +125,44 @@ public class Popups {
 				ProjectCircuitActions.doSetAsMainCircuit(proj, circuit);
 			} else if (source == remove) {
 				ProjectCircuitActions.doRemoveCircuit(proj, circuit);
+			}
+		}
+	}
+
+	private static class VhdlPopup extends JPopupMenu implements
+			ActionListener {
+		Project proj;
+		VhdlContent vhdl;
+		JMenuItem edit = new JMenuItem(
+				Strings.get("projectEditVhdlItem"));
+		JMenuItem remove = new JMenuItem(
+				Strings.get("projectRemoveVhdlItem"));
+
+		VhdlPopup(Project proj, Tool tool, VhdlContent vhdl) {
+			super(Strings.get("vhdlMenu"));
+			this.proj = proj;
+			/* this.tool = tool; */
+			this.vhdl = vhdl;
+
+			add(edit);
+			edit.addActionListener(this);
+			add(remove);
+			remove.addActionListener(this);
+
+                        edit.setEnabled(true);
+
+			boolean canChange = proj.getLogisimFile().contains(vhdl);
+			LogisimFile file = proj.getLogisimFile();
+			remove.setEnabled(canChange && proj.getDependencies().canRemove(vhdl));
+		}
+
+		public void actionPerformed(ActionEvent e) {
+			Object source = e.getSource();
+			if (source == edit) {
+				proj.getFrame().setEditorView(Frame.EDIT_LAYOUT);
+                                vhdl.openEditor(proj);
+			} else if (source == remove) {
+				ProjectCircuitActions.doRemoveVhdl(proj, vhdl);
 			}
 		}
 	}
@@ -206,6 +245,10 @@ public class Popups {
 
 	public static JPopupMenu forCircuit(Project proj, AddTool tool, Circuit circ) {
 		return new CircuitPopup(proj, tool, circ);
+	}
+
+	public static JPopupMenu forVhdl(Project proj, AddTool tool, VhdlContent vhdl) {
+		return new VhdlPopup(proj, tool, vhdl);
 	}
 
 	public static JPopupMenu forLibrary(Project proj, Library lib, boolean isTop) {

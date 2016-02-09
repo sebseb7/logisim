@@ -194,11 +194,13 @@ public class HdlContentEditor extends JDialog implements JInputDialog {
 	public HdlContentEditor(Dialog parent, Project proj, HdlModel model) {
 		super(parent, Strings.get("hdlFrameTitle"), true);
 		configure(proj, model);
+                setLocationRelativeTo(parent);
 	}
 
 	public HdlContentEditor(Frame parent, Project proj, HdlModel model) {
 		super(parent, Strings.get("hdlFrameTitle"), true);
 		configure(proj, model);
+                setLocationRelativeTo(parent);
 	}
 
 	private void close() {

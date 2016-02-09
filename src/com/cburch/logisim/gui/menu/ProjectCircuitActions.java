@@ -37,21 +37,28 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.util.ArrayList;
 import java.util.Map;
+import java.io.File;
+import java.io.IOException;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import com.cburch.hdl.HdlFile;
+import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.analyze.gui.Analyzer;
 import com.cburch.logisim.analyze.gui.AnalyzerManager;
 import com.cburch.logisim.analyze.model.AnalyzerModel;
 import com.cburch.logisim.circuit.Analyze;
 import com.cburch.logisim.circuit.AnalyzeException;
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.file.LogisimFileActions;
+import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
@@ -111,6 +118,47 @@ public class ProjectCircuitActions {
 		}
 	}
 
+	public static void doAddVhdl(Project proj) {
+		String name = promptForVhdlName(proj.getFrame(),
+				proj.getLogisimFile(), "");
+		if (name != null) {
+                        VhdlContent content = VhdlContent.create(name, proj.getLogisimFile());
+                        if (content == null)
+                            return;
+			proj.doAction(LogisimFileActions.addVhdl(content));
+                        content.openEditor(proj);
+		}
+	}
+
+	public static void doImportVhdl(Project proj) {
+		JFileChooser chooser = proj.getLogisimFile().getLoader().createChooser();
+		chooser.setFileFilter(Loader.VHDL_FILTER);
+		int returnVal = chooser.showOpenDialog(proj.getFrame());
+		if (returnVal != JFileChooser.APPROVE_OPTION)
+                    return;
+		File selected = chooser.getSelectedFile();
+		if (selected == null)
+                    return;
+                try {
+                    String vhdl = HdlFile.load(selected);
+                    VhdlContent content = VhdlContent.parse(vhdl, proj.getLogisimFile());
+                    if (content == null)
+                        return;
+                    if (VhdlContent.labelVHDLInvalidNotify(content.getName(), proj.getLogisimFile())) {
+                        return;
+                    }
+                    proj.doAction(LogisimFileActions.addVhdl(content));
+                    content.openEditor(proj);
+                } catch (IOException e) {
+                    JOptionPane.showMessageDialog(proj.getFrame(),
+                            "There was an error opening the file",
+                            "Can't open file",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+
+	}
+
+
 	public static void doAnalyze(Project proj, Circuit circuit) {
 		Map<Instance, String> pinNames = Analyze.getPinLabels(circuit);
 		ArrayList<String> inputNames = new ArrayList<String>();
@@ -157,7 +205,7 @@ public class ProjectCircuitActions {
 	public static void doMoveCircuit(Project proj, Circuit cur, int delta) {
 		AddTool tool = proj.getLogisimFile().getAddTool(cur);
 		if (tool != null) {
-			int oldPos = proj.getLogisimFile().getCircuits().indexOf(cur);
+			int oldPos = proj.getLogisimFile().indexOfCircuit(cur);
 			int newPos = oldPos + delta;
 			int toolsCount = proj.getLogisimFile().getTools().size();
 			if (newPos >= 0 && newPos < toolsCount) {
@@ -167,7 +215,7 @@ public class ProjectCircuitActions {
 	}
 
 	public static void doRemoveCircuit(Project proj, Circuit circuit) {
-		if (proj.getLogisimFile().getTools().size() == 1) {
+		if (proj.getLogisimFile().getCircuits().size() == 1) {
 			JOptionPane.showMessageDialog(proj.getFrame(),
 					Strings.get("circuitRemoveLastError"),
 					Strings.get("circuitRemoveErrorTitle"),
@@ -179,6 +227,17 @@ public class ProjectCircuitActions {
 					JOptionPane.ERROR_MESSAGE);
 		} else {
 			proj.doAction(LogisimFileActions.removeCircuit(circuit));
+		}
+	}
+
+	public static void doRemoveVhdl(Project proj, VhdlContent vhdl) {
+		if (!proj.getDependencies().canRemove(vhdl)) {
+			JOptionPane.showMessageDialog(proj.getFrame(),
+					Strings.get("circuitRemoveUsedError"),
+					Strings.get("circuitRemoveErrorTitle"),
+					JOptionPane.ERROR_MESSAGE);
+		} else {
+			proj.doAction(LogisimFileActions.removeVhdl(vhdl));
 		}
 	}
 
@@ -200,7 +259,31 @@ public class ProjectCircuitActions {
 	 */
 	private static String promptForCircuitName(JFrame frame, Library lib,
 			String initialValue) {
-		JLabel label = new JLabel(Strings.get("circuitNamePrompt"));
+            return promptForNewName(frame, lib, initialValue, false);
+        }
+
+	private static String promptForVhdlName(JFrame frame, LogisimFile file,
+			String initialValue) {
+            String name = promptForNewName(frame, file, initialValue, true);
+            if (name == null)
+                return null;
+            if (VhdlContent.labelVHDLInvalidNotify(name, file)) {
+                return null;
+            }
+            return name;
+        }
+
+	private static String promptForNewName(JFrame frame, Library lib,
+			String initialValue, boolean vhdl) {
+                String title, prompt;
+                if (vhdl) {
+                    title = Strings.get("vhdlNameDialogTitle");
+                    prompt = Strings.get("vhdlNamePrompt");
+                } else {
+                    title = Strings.get("circuitNameDialogTitle");
+                    prompt = Strings.get("circuitNamePrompt");
+                }
+		JLabel label = new JLabel(prompt);
 		final JTextField field = new JTextField(15);
 		field.setText(initialValue);
 		JLabel error = new JLabel(" ");
@@ -226,8 +309,7 @@ public class ProjectCircuitActions {
 		JOptionPane pane = new JOptionPane(panel, JOptionPane.QUESTION_MESSAGE,
 				JOptionPane.OK_CANCEL_OPTION);
 		pane.setInitialValue(field);
-		JDialog dlog = pane.createDialog(frame,
-				Strings.get("circuitNameDialogTitle"));
+		JDialog dlog = pane.createDialog(frame,title);
 		dlog.addWindowFocusListener(new WindowFocusListener() {
 			public void windowGainedFocus(WindowEvent arg0) {
 				field.requestFocus();

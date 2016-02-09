@@ -41,8 +41,7 @@ import com.cburch.logisim.std.hdl.HdlContentEditor;
 
 public class HdlFile {
 
-	public static void open(File file, HdlContentEditor editor)
-			throws IOException {
+	public static String load(File file) throws IOException {
 		BufferedReader in = null;
 
 		try {
@@ -55,15 +54,18 @@ public class HdlFile {
 				content.append(l);
 				content.append(System.getProperty("line.separator"));
 			}
-			editor.setText(content.toString());
+			return content.toString();
 		} catch (IOException ex) {
 			throw new IOException(Strings.get("hdlFileReaderError"));
 		} finally {
-			if (in != null) {
+			if (in != null)
 				in.close();
-			}
 		}
 	}
+
+	public static void open(File file, HdlContentEditor editor) throws IOException {
+            editor.setText(load(file));
+        }
 
 	public static void save(File file, HdlContentEditor editor)
 			throws IOException {

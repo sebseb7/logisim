@@ -58,6 +58,7 @@ import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.Wire;
+import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
@@ -216,6 +217,12 @@ class XmlWriter {
 		return ret;
 	}
 
+	Element fromVhdl(VhdlContent vhdl) {
+		Element ret = doc.createElement("vhdl");
+                ret.setTextContent(vhdl.getContent());
+                return ret;
+        }
+
 	Element fromComponent(Component comp) {
 		ComponentFactory source = comp.getFactory();
 		Library lib = findLibrary(source);
@@ -296,6 +303,9 @@ class XmlWriter {
 
 		for (Circuit circ : file.getCircuits()) {
 			ret.appendChild(fromCircuit(circ));
+		}
+		for (VhdlContent vhdl : file.getVhdlContents()) {
+			ret.appendChild(fromVhdl(vhdl));
 		}
 		return ret;
 	}

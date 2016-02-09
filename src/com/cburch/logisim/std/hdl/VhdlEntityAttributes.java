@@ -61,7 +61,8 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
 	}
 
 	private static List<Attribute<?>> attributes = Arrays.asList(
-			VhdlEntity.CONTENT_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT);
+			VhdlEntity.NAME_ATTR, VhdlEntity.CONTENT_ATTR,
+                        StdAttr.LABEL, StdAttr.LABEL_FONT);
 
 	private final static WeakHashMap<HdlContent, HdlContentEditor> windowRegistry = new WeakHashMap<HdlContent, HdlContentEditor>();
 
@@ -69,15 +70,16 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
 	private String label = "";
 	private Font labelFont = StdAttr.DEFAULT_LABEL_FONT;
 
-	VhdlEntityAttributes() {
-		content = VhdlContent.create();
+	VhdlEntityAttributes(VhdlContent content) {
+                this.content = content;
+		// content = VhdlContent.create();
 	}
 
 	@Override
 	protected void copyInto(AbstractAttributeSet dest) {
 		VhdlEntityAttributes attr = (VhdlEntityAttributes) dest;
 		attr.labelFont = labelFont;
-		attr.content = content.clone();
+		attr.content = content; // .clone();
 	}
 
 	@Override
@@ -91,6 +93,9 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
 		if (attr == VhdlEntity.CONTENT_ATTR) {
 			return (V) content;
 		}
+                if (attr == VhdlEntity.NAME_ATTR) {
+                        return (V) content.getName();
+                }
 		if (attr == StdAttr.LABEL) {
 			return (V) label;
 		}
@@ -101,21 +106,37 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
 	}
 
 	@Override
+	public boolean isToSave(Attribute<?> attr) {
+            return (attr != VhdlEntity.CONTENT_ATTR && attr != VhdlEntity.NAME_ATTR);
+	}
+
+	@Override
 	public <V> void setValue(Attribute<V> attr, V value) {
 		if (attr == VhdlEntity.CONTENT_ATTR) {
 			VhdlContent newContent = (VhdlContent) value;
-			if (!content.equals(newContent))
-				content = newContent;
-			fireAttributeValueChanged(attr, value);
+			if (content.equals(newContent))
+			    return;
+                        content = newContent;
+                        fireAttributeValueChanged(attr, value);
+                        fireAttributeValueChanged(VhdlEntity.NAME_ATTR, content.getName());
 		}
-		if (attr == StdAttr.LABEL && value instanceof String) {
+                else if (attr == VhdlEntity.NAME_ATTR) {
+                        String newValue = (String)value;
+                        if (content.getName().equals(newValue))
+                            return;
+                        if (!content.setName(newValue))
+                            return;
+                        fireAttributeValueChanged(attr, value);
+                        fireAttributeValueChanged(VhdlEntity.CONTENT_ATTR, content);
+                }
+                else if (attr == StdAttr.LABEL && value instanceof String) {
 			String newLabel = (String) value;
 			if (label.equals(newLabel))
 				return;
 			label = newLabel;
 			fireAttributeValueChanged(attr, value);
 		}
-		if (attr == StdAttr.LABEL_FONT && value instanceof Font) {
+                else if (attr == StdAttr.LABEL_FONT && value instanceof Font) {
 			Font newFont = (Font) value;
 			if (labelFont.equals(newFont))
 				return;

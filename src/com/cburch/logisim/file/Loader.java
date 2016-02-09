@@ -91,6 +91,18 @@ public class Loader implements LibraryLoader {
 		}
 	}
 
+	private static class VhdlFileFilter extends FileFilter {
+		@Override
+		public boolean accept(File f) {
+			return f.isDirectory() || f.getName().endsWith(".vhd") || f.getName().endsWith(".vhdl");
+		}
+
+		@Override
+		public String getDescription() {
+			return Strings.get("vhdlFileFilter");
+		}
+	}
+
 	private static File determineBackupName(File base) {
 		File dir = base.getParentFile();
 		String name = base.getName();
@@ -121,6 +133,7 @@ public class Loader implements LibraryLoader {
 
 	public static final FileFilter JAR_FILTER = new JarFileFilter();
 	public static final FileFilter TCL_FILTER = new TclFileFilter();
+	public static final FileFilter VHDL_FILTER = new VhdlFileFilter();
 
 	// fixed
 	private Component parent;
@@ -295,7 +308,8 @@ public class Loader implements LibraryLoader {
 		} finally {
 			filesOpening.pop();
 		}
-		ret.setName(toProjectName(actual));
+                if (ret != null)
+                    ret.setName(toProjectName(actual));
 		return ret;
 	}
 

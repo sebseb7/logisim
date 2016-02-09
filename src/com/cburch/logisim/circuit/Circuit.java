@@ -68,6 +68,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.wiring.Clock;
+import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.util.CollectionUtil;
 import com.cburch.logisim.util.EventSourceWeakSupport;
@@ -633,7 +634,8 @@ public class Circuit {
 	}
 
 	public boolean hasConflict(Component comp) {
-		return wires.points.hasConflict(comp);
+            // return wires.points.hasConflict(comp) || logiFile.hasConflict(comp);
+            return wires.points.hasConflict(comp);
 	}
 
 	public boolean isConnected(Location loc, Component ignore) {
@@ -671,7 +673,10 @@ public class Circuit {
 			} else if (factory instanceof SubcircuitFactory) {
 				SubcircuitFactory subcirc = (SubcircuitFactory) factory;
 				subcirc.getSubcircuit().circuitsUsingThis.put(c, this);
-			}
+			/* } else if (factory instanceof VhdlEntity) {
+                                VhdlEntity vhdl = (VhdlEntity)factory;
+                                logiFile.addVhdlContent(vhdl.getContent()); */
+                        }
 			c.addComponentListener(myComponentListener);
 			// c.addComponentListener(this.);
 		}

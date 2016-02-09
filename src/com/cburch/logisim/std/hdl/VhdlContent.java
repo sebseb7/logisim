@@ -45,13 +45,29 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import com.cburch.hdl.HdlModel;
+import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.instance.Port;
+import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.util.Softwares;
+import com.cburch.logisim.std.hdl.VhdlEntityAttributes;
+import com.bfh.logisim.designrulecheck.CorrectLabel;
 
 public class VhdlContent extends HdlContent {
 
-	public static VhdlContent create() {
-		return new VhdlContent();
+	public static VhdlContent create(String name, LogisimFile file) {
+                VhdlContent content = new VhdlContent(file);
+                if (!content.parseContent(TEMPLATE.replaceAll("%entityname%", name))) {
+                    return null;
+                }
+                return content;
+	}
+
+	public static VhdlContent parse(String vhdl, LogisimFile file) {
+                VhdlContent content = new VhdlContent(file);
+                if (!content.setContent(vhdl)) {
+                    return null;
+                }
+                return content;
 	}
 
 	private static String loadTemplate() {
@@ -91,9 +107,10 @@ public class VhdlContent extends HdlContent {
 	protected String name;
 	protected String libraries;
 	protected String architecture;
+        private LogisimFile logiFile;
 
-	protected VhdlContent() {
-		this.parseContent(TEMPLATE);
+	protected VhdlContent(LogisimFile file) {
+            logiFile = file;
 	}
 
 	public VhdlContent clone() {
@@ -198,6 +215,14 @@ public class VhdlContent extends HdlContent {
 		}
 
 		name = parser.getName();
+                if (labelVHDLInvalid(name)) {
+                    JOptionPane.showMessageDialog(null,
+                                    Strings.get("vhdlInvalidNameError"),
+                                    Strings.get("validationParseError"),
+                                    JOptionPane.ERROR_MESSAGE);
+                    return false;
+                }
+
 		libraries = parser.getLibraries();
 		architecture = parser.getArchitecture();
 
@@ -225,6 +250,61 @@ public class VhdlContent extends HdlContent {
 
 		return true;
 	}
+
+        public void openEditor(Project proj) {
+            VhdlEntityAttributes.getContentEditor(proj.getFrame(), this, proj).setVisible(true);
+        }
+
+        static final String ENTITY_PATTERN = "(\\s*\\bentity\\s+)%entityname%(\\s+is)\\b";
+	static final String ARCH_PATTERN = "(\\s*\\barchitecture\\s+\\w+\\s+of\\s+)%entityname%\\b";
+	static final String END_PATTERN = "(\\s*\\bend\\s+)%entityname%(\\s*;)";    
+
+	/**
+	 * Check if a given label could be a valid VHDL variable name
+	 * 
+	 * @param label
+	 *            candidate VHDL variable name
+	 * @return true if the label is NOT a valid name, false otherwise
+	 */
+	public static boolean labelVHDLInvalid(String label) {
+		if (!label.matches("^[A-Za-z][A-Za-z0-9_]*") || label.endsWith("_")
+				|| label.matches(".*__.*"))
+			return (true);
+                if (CorrectLabel.VHDLKeywords.contains(label.toLowerCase()))
+                    return true;
+		return (false);
+	}
+
+        public static boolean labelVHDLInvalidNotify(String label, LogisimFile file) {
+            String err = null;
+            if (!label.matches("^[A-Za-z][A-Za-z0-9_]*") || label.endsWith("_") || label.matches(".*__.*")) {
+                err = Strings.get("vhdlInvalidNameError");
+            } else if (CorrectLabel.VHDLKeywords.contains(label.toLowerCase())) {
+                err = Strings.get("vhdlKeywordNameError");
+            } else if (file.containsFactory(label)) {
+                err = Strings.get("vhdlDuplicateNameError");
+            } else {
+                return false;
+            }
+            JOptionPane.showMessageDialog(null, err, Strings.get("validationParseError"),
+                            JOptionPane.ERROR_MESSAGE);
+            return true;
+        }
+
+        public boolean setName(String name) {
+            if (name == null)
+                return false;
+            if (labelVHDLInvalidNotify(name, logiFile))
+                return false;
+            String entPat = ENTITY_PATTERN.replaceAll("%entityname%", this.name);
+            String archPat = ARCH_PATTERN.replaceAll("%entityname%", this.name);
+            String endPat = END_PATTERN.replaceAll("%entityname%", this.name);
+            String s = content.toString();
+            s = s.replaceAll("(?is)" + entPat, "$1"+name+"$2"); // entity NAME is
+            s = s.replaceAll("(?is)" + archPat, "$1"+name); // architecture foo of NAME
+            s = s.replaceAll("(?is)" + endPat, "$1"+name+"$2"); // end NAME ;
+            return setContent(s);
+        }
 
 	@Override
 	public boolean setContent(String content) {

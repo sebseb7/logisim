@@ -14,7 +14,7 @@ library ieee;
   use ieee.std_logic_1164.all;
   --use ieee.numeric_std.all;
 
-entity VHDL_Component is
+entity %entityname% is
   port(
   ------------------------------------------------------------------------------
   --Insert input ports below
@@ -25,11 +25,11 @@ entity VHDL_Component is
     max_o      : out std_logic;                    -- output bit example
     cpt_o      : out std_logic_Vector(3 downto 0)  -- output vector example
     );
-end VHDL_Component;
+end %entityname%;
 
 --------------------------------------------------------------------------------
 --Complete your VHDL description below
-architecture type_architecture of VHDL_Component is
+architecture type_architecture of %entityname% is
 
 
 begin
