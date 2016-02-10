@@ -78,14 +78,15 @@ public abstract class AttributeSetTableModel implements AttrTableModel,
 			return !attrs.isReadOnly(attr);
 		}
 
-		public void setValue(Object value) throws AttrTableSetException {
+		public void setValue(Window parent, Object value) throws AttrTableSetException {
 			Attribute<Object> attr = this.attr;
 			if (attr == null || value == null)
 				return;
 
 			try {
 				if (value instanceof String) {
-					value = attr.parse((String) value);
+                                    System.out.println("callling parse");
+					value = attr.parse(parent, (String) value);
 				}
 				setValueRequested(attr, value);
 			} catch (ClassCastException e) {

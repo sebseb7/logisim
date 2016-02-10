@@ -33,6 +33,7 @@ package com.cburch.logisim.file;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -97,27 +98,29 @@ public class XmlReaderTest {
 	 * {@link com.cburch.logisim.file.XmlReader#labelVHDLInvalid(java.lang.String)}
 	 * .
 	 */
+        /*
 	@Test
 	public final void testLabelVHDLInvalid() {
 		// Invalid labels
-		assertTrue(XmlReader.labelVHDLInvalid("AAAA_"));
-		assertTrue(XmlReader.labelVHDLInvalid("_AAAA"));
-		assertTrue(XmlReader.labelVHDLInvalid("12"));
-		assertTrue(XmlReader.labelVHDLInvalid("1A"));
-		assertTrue(XmlReader.labelVHDLInvalid("aaaèaa"));
-		assertTrue(XmlReader.labelVHDLInvalid("1 A"));
-		assertTrue(XmlReader.labelVHDLInvalid("A 1"));
-		assertTrue(XmlReader.labelVHDLInvalid("AAA "));
-		assertTrue(XmlReader.labelVHDLInvalid("AA A"));
-		assertTrue(XmlReader.labelVHDLInvalid("aa a1"));
-		assertTrue(XmlReader.labelVHDLInvalid(" aa"));
-		assertTrue(XmlReader.labelVHDLInvalid("a__a"));
-		assertTrue(XmlReader.labelVHDLInvalid("1 2"));
+		assertTrue(VhdlContent.labelVHDLInvalid("AAAA_"));
+		assertTrue(VhdlContent.labelVHDLInvalid("_AAAA"));
+		assertTrue(VhdlContent.labelVHDLInvalid("12"));
+		assertTrue(VhdlContent.labelVHDLInvalid("1A"));
+		assertTrue(VhdlContent.labelVHDLInvalid("aaaèaa"));
+		assertTrue(VhdlContent.labelVHDLInvalid("1 A"));
+		assertTrue(VhdlContent.labelVHDLInvalid("A 1"));
+		assertTrue(VhdlContent.labelVHDLInvalid("AAA "));
+		assertTrue(VhdlContent.labelVHDLInvalid("AA A"));
+		assertTrue(VhdlContent.labelVHDLInvalid("aa a1"));
+		assertTrue(VhdlContent.labelVHDLInvalid(" aa"));
+		assertTrue(VhdlContent.labelVHDLInvalid("a__a"));
+		assertTrue(VhdlContent.labelVHDLInvalid("1 2"));
 		// Valid labels
-		assertFalse(XmlReader.labelVHDLInvalid("a1"));
-		assertFalse(XmlReader.labelVHDLInvalid("a13566356aa"));
-		assertFalse(XmlReader.labelVHDLInvalid("A13566356aA"));
-		assertFalse(XmlReader.labelVHDLInvalid("a_B_c"));
+		assertFalse(VhdlContent.labelVHDLInvalid("a1"));
+		assertFalse(VhdlContent.labelVHDLInvalid("a13566356aa"));
+		assertFalse(VhdlContent.labelVHDLInvalid("A13566356aA"));
+		assertFalse(VhdlContent.labelVHDLInvalid("a_B_c"));
 	}
+        */
 
 }

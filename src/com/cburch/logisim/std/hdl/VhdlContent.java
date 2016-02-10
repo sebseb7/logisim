@@ -214,14 +214,14 @@ public class VhdlContent extends HdlContent {
 			return false;
 		}
 
-		name = parser.getName();
-                if (labelVHDLInvalid(name)) {
-                    JOptionPane.showMessageDialog(null,
-                                    Strings.get("vhdlInvalidNameError"),
-                                    Strings.get("validationParseError"),
-                                    JOptionPane.ERROR_MESSAGE);
-                    return false;
+                if (!parser.getName().equals(name)) {
+                    if (labelVHDLInvalidNotify(parser.getName(), logiFile))
+                        return false;
+                } else {
+                    if (labelVHDLInvalidNotify(parser.getName(), null))
+                        return false;
                 }
+                name = parser.getName();
 
 		libraries = parser.getLibraries();
 		architecture = parser.getArchitecture();
@@ -281,12 +281,12 @@ public class VhdlContent extends HdlContent {
                 err = Strings.get("vhdlInvalidNameError");
             } else if (CorrectLabel.VHDLKeywords.contains(label.toLowerCase())) {
                 err = Strings.get("vhdlKeywordNameError");
-            } else if (file.containsFactory(label)) {
+            } else if (file != null && file.containsFactory(label)) {
                 err = Strings.get("vhdlDuplicateNameError");
             } else {
                 return false;
             }
-            JOptionPane.showMessageDialog(null, err, Strings.get("validationParseError"),
+            JOptionPane.showMessageDialog(null, label + ": " + err, Strings.get("validationParseError"),
                             JOptionPane.ERROR_MESSAGE);
             return true;
         }
