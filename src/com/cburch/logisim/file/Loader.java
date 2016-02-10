@@ -46,6 +46,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.filechooser.FileFilter;
+import java.awt.Component;
 
 import com.cburch.logisim.std.Builtin;
 import com.cburch.logisim.tools.Library;
@@ -53,6 +54,7 @@ import com.cburch.logisim.util.JFileChoosers;
 import com.cburch.logisim.util.MacCompatibility;
 import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.util.ZipClassLoader;
+import com.cburch.hdl.HdlFile;
 
 public class Loader implements LibraryLoader {
 	private static class JarFileFilter extends FileFilter {
@@ -498,5 +500,27 @@ public class Loader implements LibraryLoader {
 			return ret;
 		}
 	}
+
+	public String vhdlImportChooser(Component window) {
+            JFileChooser chooser = createChooser();
+            chooser.setFileFilter(Loader.VHDL_FILTER);
+            chooser.setDialogTitle(Strings.get("hdlOpenButton"));
+            int returnVal = chooser.showOpenDialog(window);
+            if (returnVal != JFileChooser.APPROVE_OPTION)
+                return null;
+            File selected = chooser.getSelectedFile();
+            if (selected == null)
+                return null;
+            try {
+                String vhdl = HdlFile.load(selected);
+                return vhdl;
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(window,
+                        e.getMessage(),
+                        Strings.get("hexOpenErrorTitle"),
+                        JOptionPane.ERROR_MESSAGE);
+                return null;
+            }
+        }
 
 }
