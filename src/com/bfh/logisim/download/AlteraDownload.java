@@ -179,6 +179,7 @@ public class AlteraDownload implements Runnable {
         BufferedReader br = new BufferedReader(isr);
         String line;
         MyReporter.NewConsole(title);
+        MyReporter.print("Command: " + command + "\n");
         while ((line = br.readLine()) != null) {
             MyReporter.print(line);
         }

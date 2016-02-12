@@ -319,7 +319,7 @@ public class Settings {
                     }
                 }
                 if (projectFile != null) {
-                    String dir = projectFile.getParent();
+                    String dir = projectFile.getAbsoluteFile().getParentFile().getAbsolutePath();
                     String name = projectFile.getName();
                     name = name.replaceAll(".circ$", "") + "_fpga_workspace";
                     return Join(dir, name);
