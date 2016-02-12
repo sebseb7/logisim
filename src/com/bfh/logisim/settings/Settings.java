@@ -32,6 +32,8 @@ package com.bfh.logisim.settings;
 
 import java.io.File;
 import java.util.Collection;
+import java.net.URLDecoder;
+import java.io.UnsupportedEncodingException;
 
 import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilder;
@@ -81,7 +83,8 @@ public class Settings {
 	}
 
 	private static String WorkSpace = "WorkSpace";
-	private static String DirectoryName = "WorkPath";
+	private static String WorkPath = "WorkPath";
+	private static String WorkPathName = "logisim_fpga_workspace" + File.separator;
 	private static String XilinxName = "XilinxToolsPath";
 	private static String AlteraName = "AlteraToolsPath";
 	private static String HdlName = "GenerateHDLOnly";
@@ -93,7 +96,11 @@ public class Settings {
 	private static String SelectedBoard = "SelectedBoard";
 	private static String ExternalBoard = "ExternalBoardFile";
 	private String HomePath;
-	private String SettingsFileName = ".LogisimFPGASettings";
+	private String SharedPath;
+	private String SettingsElement = "LogisimFPGASettings";
+	private String UserSettingsFileName = ".LogisimFPGASettings.xml";
+	private String SharedSettingsFileName = "LogisimFPGASettings.xml";
+        private String LoadedSettingsFileName = "";
 	private Document SettingsDocument;
 	boolean modified = false;
 	private BoardList KnownBoards = new BoardList();
@@ -105,64 +112,78 @@ public class Settings {
 	/* big TODO: add language support */
 	public Settings() {
 		HomePath = System.getProperty("user.home");
-		if (!HomePath.endsWith(File.separator))
-			HomePath += File.separator;
+                SharedPath = "";
+                try {
+                    String path = Settings.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+                    String decodedPath = URLDecoder.decode(path, "UTF-8");
+                    SharedPath = new File(decodedPath).getParent();
+                } catch (UnsupportedEncodingException e) {
+                }
 
-		File SettingsFile = new File(HomePath + SettingsFileName + ".xml");
-		if (SettingsFile.exists()) {
-			try {
-				// Create instance of DocumentBuilderFactory
-				DocumentBuilderFactory factory = DocumentBuilderFactory
-						.newInstance();
-				// Get the DocumentBuilder
-				DocumentBuilder parser = factory.newDocumentBuilder();
-				// Create blank DOM Document
-				SettingsDocument = parser.parse(SettingsFile);
-			} catch (Exception e) {
-				JOptionPane.showMessageDialog(null,
-						"Fatal Error: Cannot read FPGA settings file: "
-								+ SettingsFile.getPath());
-				System.exit(-1);
-			}
-			NodeList SettingsList = SettingsDocument
-					.getElementsByTagName(Boards);
-			if (SettingsList.getLength() != 1) {
-				return;
-			}
-			Node ThisWorkspace = SettingsList.item(0);
-			NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-			for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-				if (WorkspaceParameters.item(i).getNodeName().contains(ExternalBoard)) {
-					File TestFile = new File(WorkspaceParameters.item(i).getNodeValue());
-					if (TestFile.exists())
-					   KnownBoards.AddExternalBoard(WorkspaceParameters.item(i).getNodeValue());
-				}
-			}
-		}
+                if (!readFrom(HomePath, UserSettingsFileName)) {
+                    readFrom(SharedPath, SharedSettingsFileName);
+                }
+
 		if (!SettingsComplete()) {
-			if (!WriteXml(SettingsFile)) {
-				JOptionPane.showMessageDialog(null,
-						"Fatal Error: Cannot write FPGA settings file: "
-								+ SettingsFile.getPath());
-				System.exit(-1);
+			if (!WriteXml()) {
+				JOptionPane.showMessageDialog(null, "Fatal Error: Cannot write FPGA settings file");
 			}
 		}
 	}
 
+        private boolean readFrom(String dir, String name) {
+		File SettingsFile = new File(Join(dir, name));
+		if (!SettingsFile.exists())
+                    return false;
+                LoadedSettingsFileName = SettingsFile.getPath();
+                try {
+                        // Create instance of DocumentBuilderFactory
+                        DocumentBuilderFactory factory = DocumentBuilderFactory
+                                        .newInstance();
+                        // Get the DocumentBuilder
+                        DocumentBuilder parser = factory.newDocumentBuilder();
+                        // Create blank DOM Document
+                        SettingsDocument = parser.parse(SettingsFile);
+                } catch (Exception e) {
+                        JOptionPane.showMessageDialog(null,
+                                        "Fatal Error: Cannot read FPGA settings file: "
+                                                        + SettingsFile.getPath());
+                        return false;
+                }
+                NodeList SettingsList = SettingsDocument
+                                .getElementsByTagName(Boards);
+                if (SettingsList.getLength() != 1) {
+                        JOptionPane.showMessageDialog(null,
+                                        "Fatal Error: Cannot parse FPGA settings file: "
+                                                        + SettingsFile.getPath());
+                        return false;
+                }
+                Node ThisWorkspace = SettingsList.item(0);
+                NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
+                for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
+                        if (WorkspaceParameters.item(i).getNodeName().contains(ExternalBoard)) {
+                                File TestFile = new File(WorkspaceParameters.item(i).getNodeValue());
+                                if (TestFile.exists())
+                                   KnownBoards.AddExternalBoard(WorkspaceParameters.item(i).getNodeValue());
+                        }
+                }
+                return true;
+        }
+
 	private boolean AlteraToolsFound(String path) {
 		for (int i = 0; i < AlteraPrograms.length; i++) {
-			File test = new File(CorrectPath(path) + AlteraPrograms[i]);
+			File test = new File(Join(path, AlteraPrograms[i]));
 			if (!test.exists())
 				return false;
 		}
 		return true;
 	}
 
-	private String CorrectPath(String path) {
+	private String Join(String path, String name) {
 		if (path.endsWith(File.separator))
-			return path;
+			return path + name;
 		else
-			return path + File.separator;
+			return path + File.separator + name;
 	}
 
 	public String GetAlteraToolPath() {
@@ -282,20 +303,28 @@ public class Settings {
 		return KnownBoards.GetBoardFilePath(SelectedBoardName);
 	}
 
-	public String GetWorkspacePath() {
+	public String GetWorkspacePath(File projectFile) {
 		NodeList SettingsList = SettingsDocument
 				.getElementsByTagName(WorkSpace);
-		if (SettingsList.getLength() != 1) {
-			return HomePath;
-		}
-		Node ThisWorkspace = SettingsList.item(0);
-		NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-		for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-			if (WorkspaceParameters.item(i).getNodeName().equals(DirectoryName))
-				return WorkspaceParameters.item(i).getNodeValue();
-		}
-
-		return HomePath;
+		if (SettingsList.getLength() == 1) {
+                    Node ThisWorkspace = SettingsList.item(0);
+                    NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
+                    for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
+                            if (WorkspaceParameters.item(i).getNodeName().equals(WorkPath)) {
+                                    String p = WorkspaceParameters.item(i).getNodeValue();
+                                    if (p !=  null && p.length() > 0) {
+                                        return p;
+                                    }
+                            }
+                    }
+                }
+                if (projectFile != null) {
+                    String dir = projectFile.getParent();
+                    String name = projectFile.getName();
+                    name = name.replaceAll(".circ$", "") + "_fpga_workspace";
+                    return Join(dir, name);
+                }
+		return Join(HomePath, WorkPathName);
 	}
 
 	public String GetXilixToolPath() {
@@ -424,8 +453,7 @@ public class Settings {
 						"Fatal Error: Cannot create settings Document!");
 				System.exit(-4);
 			}
-			Element root = SettingsDocument.createElement(SettingsFileName
-					.replace('.', '_'));
+			Element root = SettingsDocument.createElement(SettingsElement);
 			SettingsDocument.appendChild(root);
 		}
 
@@ -434,7 +462,7 @@ public class Settings {
 		if (RootList.getLength() != 1) {
 			JOptionPane.showMessageDialog(null,
 					"Fatal Error: Settings file corrupted; please delete the file:"
-							+ HomePath + SettingsFileName + ".xml");
+							+ LoadedSettingsFileName);
 			System.exit(-5);
 		}
 
@@ -443,13 +471,13 @@ public class Settings {
 		if (SettingsList.getLength() > 1) {
 			JOptionPane.showMessageDialog(null,
 					"Fatal Error: Settings file corrupted; please delete the file:"
-							+ HomePath + SettingsFileName + ".xml");
+							+ LoadedSettingsFileName + ".xml");
 			System.exit(-5);
 		}
 		if (SettingsList.getLength() == 0) {
 			Element workspace = SettingsDocument.createElement(WorkSpace);
-			workspace.setAttribute(DirectoryName, HomePath
-					+ "logisim_workspace" + File.separator);
+			// workspace.setAttribute(WorkPath, Join(HomePath, WorkPathName));
+			workspace.setAttribute(WorkPath, "");
 			RootList.item(0).appendChild(workspace);
 			SettingsList = SettingsDocument.getElementsByTagName(WorkSpace);
 			result = false;
@@ -463,7 +491,7 @@ public class Settings {
 		if (SettingsList.getLength() > 1) {
 			JOptionPane.showMessageDialog(null,
 					"Fatal Error: Settings file corrupted; please delete the file:"
-							+ HomePath + SettingsFileName + ".xml");
+							+ LoadedSettingsFileName + ".xml");
 			System.exit(-5);
 		}
 		if (SettingsList.getLength() == 0) {
@@ -518,13 +546,15 @@ public class Settings {
 		Node ThisWorkspace = SettingsList.item(0);
 		NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
 		for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-			if (WorkspaceParameters.item(i).getNodeName().equals(DirectoryName)) {
+			if (WorkspaceParameters.item(i).getNodeName().equals(WorkPath)) {
 				WorkspaceParameters.item(i).setNodeValue(path);
 				modified = true;
 				return true;
 			}
 		}
-		return false;
+                ((Element)ThisWorkspace).setAttribute(WorkPath, path);
+                modified = true;
+		return true;
 	}
 
 	public boolean SetXilinxToolPath(String path) {
@@ -550,30 +580,38 @@ public class Settings {
 	public boolean UpdateSettingsFile() {
 		if (!modified)
 			return true;
-		File target = new File(HomePath + SettingsFileName + ".xml");
-		return WriteXml(target);
+		return WriteXml();
 	}
+	
+        private boolean WriteXml() {
+            try {
+                writeTo(SharedPath, SharedSettingsFileName);
+                return true;
+            } catch (Exception e) { }
+            try {
+                writeTo(HomePath, UserSettingsFileName);
+                return true;
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, e.getMessage());
+                return false;
+            }
+        }
 
-	private boolean WriteXml(File target) {
-		try {
-			TransformerFactory tranFactory = TransformerFactory.newInstance();
-			tranFactory.setAttribute("indent-number", 3);
-			Transformer aTransformer = tranFactory.newTransformer();
-			aTransformer.setOutputProperty(OutputKeys.INDENT, "yes");
-			Source src = new DOMSource(SettingsDocument);
-			Result dest = new StreamResult(target);
-			aTransformer.transform(src, dest);
-			modified = false;
-			return true;
-		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null, e.getMessage());
-			return false;
-		}
+        private void writeTo(String dir, String name) throws Exception {
+                File SettingsFile = new File(Join(dir, name));
+                TransformerFactory tranFactory = TransformerFactory.newInstance();
+                tranFactory.setAttribute("indent-number", 3);
+                Transformer aTransformer = tranFactory.newTransformer();
+                aTransformer.setOutputProperty(OutputKeys.INDENT, "yes");
+                Source src = new DOMSource(SettingsDocument);
+                Result dest = new StreamResult(SettingsFile);
+                aTransformer.transform(src, dest);
+                modified = false;
 	}
 
 	private boolean XilinxToolsFound(String path) {
 		for (int i = 0; i < XilinxPrograms.length; i++) {
-			File test = new File(CorrectPath(path) + XilinxPrograms[i]);
+			File test = new File(Join(path, XilinxPrograms[i]));
 			if (!test.exists())
 				return false;
 		}

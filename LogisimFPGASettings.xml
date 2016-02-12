@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<LogisimFPGASettings>
+<WorkSpace AlteraToolsPath="/opt/altera/13.0sp1/quartus/bin/" GenerateHDLOnly="false" HDLTypeToGenerate="VHDL" XilinxToolsPath="Unknown"/>
+<FPGABoards SelectedBoard="TERASIC_DE0"/>
+</LogisimFPGASettings>

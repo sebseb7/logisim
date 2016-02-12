@@ -143,8 +143,8 @@ public class FPGACommanderGui implements ActionListener {
 	private JComboBox<String> circuitsList = new JComboBox<>();
 	private JComboBox<String> frequenciesList = new JComboBox<>();
 	private JComboBox<String> annotationList = new JComboBox<>();
-	private JButton HDLType = new JButton();
-	private JButton HDLOnly = new JButton();
+	private JComboBox<String> HDLType = new JComboBox<>();
+	private JComboBox<String> HDLOnly = new JComboBox<>();
 	private JButton ToolPath = new JButton();
 	private JButton Workspace = new JButton();
 	private JCheckBox skipHDL = new JCheckBox("Skip VHDL generation?");
@@ -153,7 +153,7 @@ public class FPGACommanderGui implements ActionListener {
 	private JTextArea textAreaErrors = new JTextArea(10, 50);
 	private ArrayList<JTextArea> textAreaConsole = new ArrayList<JTextArea>();
 	private static final String OnlyHDLMessage = "Generate HDL only";
-	private static final String HDLandDownloadMessage = "Download to board";
+	private static final String HDLandDownloadMessage = "Synthesize and Download";
 	public static final int INFOS = 0;
 	public static final int WARNINGS = 1;
 	public static final int ERRORS = 2;
@@ -181,6 +181,26 @@ public class FPGACommanderGui implements ActionListener {
 	private static final Integer SandboxPath = 3;
 	private static final Integer UCFPath = 4;
 	private FPGAReport MyReporter = new FPGAReport(this);
+
+        void HDLOnlyUpdate() {
+		if ((MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera && MySettings
+				.GetAlteraToolPath().equals(Settings.Unknown))
+				|| (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorXilinx && MySettings
+						.GetXilixToolPath().equals(Settings.Unknown))) {
+			if (!MySettings.GetHDLOnly()) {
+				MySettings.SetHdlOnly(true);
+				MySettings.UpdateSettingsFile();
+			}
+                        HDLOnly.setSelectedItem(OnlyHDLMessage);
+                        HDLOnly.setEnabled(false);
+		} else if (MySettings.GetHDLOnly()) {
+                        HDLOnly.setSelectedItem(OnlyHDLMessage);
+                        HDLOnly.setEnabled(true);
+                } else {
+                        HDLOnly.setSelectedItem(HDLandDownloadMessage);
+                        HDLOnly.setEnabled(true);
+		}
+        }
 
 	public FPGACommanderGui(Project Main) {
 		MyProject = Main;
@@ -328,29 +348,20 @@ public class FPGACommanderGui implements ActionListener {
 		panel.add(annotateButton, c);
 
 		// HDL Type Button
-		HDLType.setText(MySettings.GetHDLType());
-		HDLType.setActionCommand("HDLType");
+		HDLType.addItem(Settings.VHDL);
+		HDLType.addItem(Settings.VERILOG);
+                HDLType.setSelectedItem(MySettings.GetHDLType());
+		HDLType.setEnabled(true);
 		HDLType.addActionListener(this);
+		HDLType.setActionCommand("HDLType");
 		c.gridx = 0;
 		c.gridy = 0;
 		panel.add(HDLType, c);
 
 		// HDL Only Radio
-		if ((MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera && MySettings
-				.GetAlteraToolPath().equals(Settings.Unknown))
-				|| (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorXilinx && MySettings
-						.GetXilixToolPath().equals(Settings.Unknown))) {
-			if (!MySettings.GetHDLOnly()) {
-				MySettings.SetHdlOnly(true);
-				MySettings.UpdateSettingsFile();
-			}
-			HDLOnly.setText(OnlyHDLMessage);
-			HDLOnly.setEnabled(false);
-		} else if (MySettings.GetHDLOnly()) {
-			HDLOnly.setText(OnlyHDLMessage);
-		} else {
-			HDLOnly.setText(HDLandDownloadMessage);
-		}
+                HDLOnly.addItem(OnlyHDLMessage);
+                HDLOnly.addItem(HDLandDownloadMessage);
+                HDLOnlyUpdate();
 		HDLOnly.setActionCommand("HDLOnly");
 		HDLOnly.addActionListener(this);
 		c.gridwidth = 2;
@@ -535,21 +546,7 @@ public class FPGACommanderGui implements ActionListener {
 				boardIcon = new BoardIcon(MyBoardInformation.GetImage());
 				boardPic.setIcon(boardIcon);
 				boardPic.repaint();
-				if ((MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera && MySettings
-						.GetAlteraToolPath().equals(Settings.Unknown))
-						|| (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorXilinx && MySettings
-								.GetXilixToolPath().equals(Settings.Unknown))) {
-					if (!MySettings.GetHDLOnly()) {
-						MySettings.SetHdlOnly(true);
-						MySettings.UpdateSettingsFile();
-					}
-					HDLOnly.setText(OnlyHDLMessage);
-					HDLOnly.setEnabled(false);
-				} else if (MySettings.GetHDLOnly()) {
-					HDLOnly.setText(OnlyHDLMessage);
-				} else {
-					HDLOnly.setText(HDLandDownloadMessage);
-				}
+                                HDLOnlyUpdate();
 				writeToFlash.setSelected(false);
 				writeToFlash.setVisible(MyBoardInformation.fpga.isFlashDefined());
 			} else {
@@ -582,21 +579,7 @@ public class FPGACommanderGui implements ActionListener {
 						boardIcon = new BoardIcon(MyBoardInformation.GetImage());
 						boardPic.setIcon(boardIcon);
 						boardPic.repaint();
-						if ((MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera && MySettings
-								.GetAlteraToolPath().equals(Settings.Unknown))
-								|| (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorXilinx && MySettings
-								.GetXilixToolPath().equals(Settings.Unknown))) {
-							if (!MySettings.GetHDLOnly()) {
-								MySettings.SetHdlOnly(true);
-								MySettings.UpdateSettingsFile();
-							}
-							HDLOnly.setText(OnlyHDLMessage);
-							HDLOnly.setEnabled(false);
-						} else if (MySettings.GetHDLOnly()) {
-							HDLOnly.setText(OnlyHDLMessage);
-						} else {
-							HDLOnly.setText(HDLandDownloadMessage);
-						}
+                                                HDLOnlyUpdate();
 						writeToFlash.setSelected(false);
 						writeToFlash.setVisible(MyBoardInformation.fpga.isFlashDefined());
 					} else {
@@ -843,6 +826,11 @@ public class FPGACommanderGui implements ActionListener {
 		}
 	}
 
+        private String GetWorkspacePath() {
+                File projFile = MyProject.getLogisimFile().getLoader().getMainFile();
+		return MySettings.GetWorkspacePath(projFile);
+        }
+
 	private void DownLoadDesign(boolean generateOnly) {
 		if (!MapPannel.isDoneAssignment()) {
 			MyReporter.AddError("Download to board canceled");
@@ -850,7 +838,7 @@ public class FPGACommanderGui implements ActionListener {
 		}
 
 		String CircuitName = circuitsList.getSelectedItem().toString();
-		String ProjectDir = MySettings.GetWorkspacePath() + File.separator
+		String ProjectDir = GetWorkspacePath() + File.separator
 				+ MyProject.getLogisimFile().getName();
 		if (!ProjectDir.endsWith(File.separator)) {
 			ProjectDir += File.separator;
@@ -947,22 +935,18 @@ public class FPGACommanderGui implements ActionListener {
 	}
 
 	private void handleHDLOnly() {
-		if (HDLOnly.getText().equals(OnlyHDLMessage)) {
-			HDLOnly.setText(HDLandDownloadMessage);
+		if (HDLOnly.getSelectedItem().toString().equals(OnlyHDLMessage)) {
 			MySettings.SetHdlOnly(false);
 		} else {
-			HDLOnly.setText(OnlyHDLMessage);
 			MySettings.SetHdlOnly(true);
 		}
 	}
 
 	private void handleHDLType() {
-		if (MySettings.GetHDLType().equals(Settings.VHDL)) {
-			MySettings.SetHDLType(Settings.VERILOG);
-		} else {
+                if (HDLType.getSelectedIndex() == 0)
 			MySettings.SetHDLType(Settings.VHDL);
-		}
-		HDLType.setText(MySettings.GetHDLType());
+		else
+			MySettings.SetHDLType(Settings.VERILOG);
 		if (!MySettings.UpdateSettingsFile()) {
 			AddErrors("***SEVERE*** Could not update the FPGACommander settings file");
 		} else {
@@ -1035,7 +1019,7 @@ public class FPGACommanderGui implements ActionListener {
 			DRCResult = Netlist.DRC_ERROR;
 		} else {
 			DRCResult = root.getNetList().DesignRuleCheckResult(MyReporter,
-					HDLType.getText(), true,
+					HDLType.getSelectedItem().toString(), true,
 					MyBoardInformation.fpga.getVendor(), SheetNames);
 		}
 		return (DRCResult == Netlist.DRC_PASSED);
@@ -1082,7 +1066,7 @@ public class FPGACommanderGui implements ActionListener {
 				if (MySettings.SetAlteraToolPath(ToolPath)) {
 					HDLOnly.setEnabled(true);
 					MySettings.SetHdlOnly(false);
-					HDLOnly.setText(HDLandDownloadMessage);
+					HDLOnly.setSelectedItem(HDLandDownloadMessage);
 					if (!MySettings.UpdateSettingsFile()) {
 						AddErrors("***SEVERE*** Could not update the FPGACommander settings file");
 					} else {
@@ -1096,7 +1080,7 @@ public class FPGACommanderGui implements ActionListener {
 				if (MySettings.SetXilinxToolPath(ToolPath)) {
 					HDLOnly.setEnabled(true);
 					MySettings.SetHdlOnly(false);
-					HDLOnly.setText(HDLandDownloadMessage);
+					HDLOnly.setSelectedItem(HDLandDownloadMessage);
 					if (!MySettings.UpdateSettingsFile()) {
 						AddErrors("***SEVERE*** Could not update the FPGACommander settings file");
 					} else {
@@ -1111,11 +1095,11 @@ public class FPGACommanderGui implements ActionListener {
 	}
 	
 	private String GetBoardFile() {
-		JFileChooser fc = new JFileChooser(MySettings.GetWorkspacePath());
+		JFileChooser fc = new JFileChooser(GetWorkspacePath());
 		FileNameExtensionFilter filter = new FileNameExtensionFilter("Board files", "xml", "xml");
 		fc.setFileFilter(filter);
 		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		File test = new File(MySettings.GetWorkspacePath());
+		File test = new File(GetWorkspacePath());
 		if (test.exists()) {
 			fc.setSelectedFile(test);
 		}
@@ -1128,9 +1112,9 @@ public class FPGACommanderGui implements ActionListener {
 	}
 
 	private void selectWorkSpace() {
-		JFileChooser fc = new JFileChooser(MySettings.GetWorkspacePath());
+		JFileChooser fc = new JFileChooser(GetWorkspacePath());
 		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		File test = new File(MySettings.GetWorkspacePath());
+		File test = new File(GetWorkspacePath());
 		if (test.exists()) {
 			fc.setSelectedFile(test);
 		}
@@ -1172,14 +1156,14 @@ public class FPGACommanderGui implements ActionListener {
 
 	private boolean writeHDL() {
 		String CircuitName = circuitsList.getSelectedItem().toString();
-		if (!GenDirectory(MySettings.GetWorkspacePath() + File.separator
+		if (!GenDirectory(GetWorkspacePath() + File.separator
 				+ MyProject.getLogisimFile().getName())) {
 			MyReporter.AddFatalError("Unable to create directory: \""
-					+ MySettings.GetWorkspacePath() + File.separator
+					+ GetWorkspacePath() + File.separator
 					+ MyProject.getLogisimFile().getName() + "\"");
 			return false;
 		}
-		String ProjectDir = MySettings.GetWorkspacePath() + File.separator
+		String ProjectDir = GetWorkspacePath() + File.separator
 				+ MyProject.getLogisimFile().getName();
 		if (!ProjectDir.endsWith(File.separator)) {
 			ProjectDir += File.separator;
