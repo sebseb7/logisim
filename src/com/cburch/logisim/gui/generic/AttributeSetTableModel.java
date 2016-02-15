@@ -85,7 +85,6 @@ public abstract class AttributeSetTableModel implements AttrTableModel,
 
 			try {
 				if (value instanceof String) {
-                                    System.out.println("callling parse");
 					value = attr.parse(parent, (String) value);
 				}
 				setValueRequested(attr, value);
