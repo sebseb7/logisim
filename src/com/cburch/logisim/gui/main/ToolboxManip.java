@@ -60,6 +60,7 @@ import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.std.hdl.VhdlContent;
+import com.cburch.logisim.std.base.Base;
 
 class ToolboxManip implements ProjectExplorerListener {
 	private class MyListener implements ProjectListener, LibraryListener,
@@ -236,11 +237,22 @@ class ToolboxManip implements ProjectExplorerListener {
 		proj.doAction(LogisimFileActions.moveCircuit(dragged, targetIndex));
 	}
 
+        private static void setSelectTool(Project proj) {
+            for (Library sub : proj.getLogisimFile().getLibraries()) {
+                if (sub instanceof Base) {
+                    Tool tool = ((Base)sub).getTool("Edit Tool");
+                    if (tool != null)
+                        proj.setTool(tool);
+                }
+            }
+        }
+                                                                              
+
 	public void selectionChanged(ProjectExplorerEvent event) {
 		Object selected = event.getTarget();
 		if (selected instanceof ProjectExplorerToolNode) {
 			Tool tool = ((ProjectExplorerToolNode) selected).getValue();
-			if (selected instanceof AddTool) {
+			if (tool instanceof AddTool) {
 				AddTool addTool = (AddTool) tool;
 				ComponentFactory source = addTool.getFactory();
 				if (source instanceof SubcircuitFactory) {
@@ -249,6 +261,7 @@ class ToolboxManip implements ProjectExplorerListener {
 					if (proj.getCurrentCircuit() == circ) {
 						AttrTableModel m = new AttrTableCircuitModel(proj, circ);
 						proj.getFrame().setAttrTableModel(m);
+                                                setSelectTool(proj);
 						return;
 					}
 				}
