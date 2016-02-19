@@ -41,6 +41,7 @@ import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.instance.Port;
 
 public class VhdlHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
@@ -59,6 +60,43 @@ public class VhdlHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		contents.add(content.getArchitecture());
 
 		return contents;
+	}
+
+	public SortedMap<String, Integer> GetParameterMap(Netlist Nets,
+			NetlistComponent ComponentInfo, FPGAReport Reporter) {
+		AttributeSet attrs = ComponentInfo.GetComponent().getAttributeSet();
+		VhdlContent content = attrs.getValue(VhdlEntity.CONTENT_ATTR);
+		SortedMap<String, Integer> ParameterMap = new TreeMap<String, Integer>();
+                for (Attribute<Integer> a : content.getGenericAttributes()) {
+                    VhdlEntityAttributes.VhdlGenericAttribute va = (VhdlEntityAttributes.VhdlGenericAttribute)a;
+                    VhdlContent.Generic g = va.getGeneric();
+                    Integer v = attrs.getValue(a);
+                    if (v != null) {
+                        ParameterMap.put(g.getName(), v);
+                        /* 
+                    } else if (!g.hasDefaultValue()) {
+                        FPGAReport.AddFatalError("VHDL entity instance " +
+                                attrs.getValue(VhdlEntity.NAME_ATTR) +
+                                " is missing parameter " +
+                                g.getName() +", and "
+                                + content.getName() + " does not provide " +
+                                " a default value for this parameter.");
+                        */
+                    } else {
+                        ParameterMap.put(g.getName(), g.getDefaultValue());
+                    }
+                }
+		return ParameterMap;
+	}
+
+	public SortedMap<Integer, String> GetParameterList(AttributeSet attrs) {
+		VhdlContent content = attrs.getValue(VhdlEntity.CONTENT_ATTR);
+		SortedMap<Integer, String> Parameters = new TreeMap<Integer, String>();
+                int i = -1;
+                for (VhdlContent.Generic g : content.getGenerics()) {
+                   Parameters.put(i--, g.getName());
+                }
+		return Parameters;
 	}
 
 	@Override

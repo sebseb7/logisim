@@ -54,7 +54,7 @@ import com.cburch.hdl.HdlModelListener;
 
 public class VhdlEntityAttributes extends AbstractAttributeSet {
 
-	private static class VhdlGenericAttribute extends Attribute<Integer> {
+	public static class VhdlGenericAttribute extends Attribute<Integer> {
 		int start, end;
                 VhdlContent.Generic g;
 
@@ -64,6 +64,10 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
 			this.end = end;
                         this.g = g;
 		}
+
+                public VhdlContent.Generic getGeneric() {
+                    return g;
+                }
 
 		@Override
 		public java.awt.Component getCellEditor(Integer value) {
