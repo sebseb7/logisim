@@ -54,8 +54,10 @@ import com.cburch.logisim.util.FileUtil;
 import com.cburch.logisim.util.JFileChoosers;
 import com.cburch.draw.toolbar.ToolbarModel;
 import com.cburch.logisim.proj.Action;
+import com.cburch.hdl.HdlModelListener;
+import com.cburch.hdl.HdlModel;
 
-public class HdlContentView extends JPanel implements DocumentListener {
+public class HdlContentView extends JPanel implements DocumentListener, HdlModelListener {
 
         private class HdlEditAction extends Action {
             HdlModel model;
@@ -85,6 +87,8 @@ public class HdlContentView extends JPanel implements DocumentListener {
                 */
                 setText(original);
                 model.setContent(original);
+                toolbar.setDirty(!model.isValid());
+                dirty = false;
                 if (HdlContentView.this.model != model)
                     setHdlModel(model);
             }
@@ -141,6 +145,10 @@ public class HdlContentView extends JPanel implements DocumentListener {
 
         void doValidate() {
             model.setContent(editor.getText());
+            dirty = false;
+            toolbar.setDirty(!model.isValid());
+            if (!model.isValid())
+                model.showErrors();
         }
 
 	public static boolean confirmImport(Component parent) {
@@ -256,12 +264,23 @@ public class HdlContentView extends JPanel implements DocumentListener {
         }
 
         public void clearHdlModel() {
-            if (this.model == null)
+            if (model == null)
                 return;
             if (!editor.getText().equals(model.getContent()))
                 model.setContent(editor.getText());
             model.removeHdlModelListener(toolbar);
+            model.removeHdlModelListener(this);
             setText("");
+            dirty = false;
+            model = null;
+        }
+
+        @Override
+        public void contentSet(HdlModel source) {
+            System.out.println("view content set");
+            if (!editor.getText().equals(model.getContent()))
+                setText(model.getContent());
+            dirty = false;
         }
 
         public void setHdlModel(HdlModel model) {
@@ -271,7 +290,9 @@ public class HdlContentView extends JPanel implements DocumentListener {
             this.model = model;
             if (this.model != null) {
                 this.model.addHdlModelListener(toolbar);
+                this.model.addHdlModelListener(this);
                 setText(model.getContent());
+                toolbar.setDirty(!model.isValid());
             }
         }
 

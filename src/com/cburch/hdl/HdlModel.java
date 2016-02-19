@@ -67,4 +67,14 @@ public interface HdlModel {
 	 */
 	public boolean setContent(String content);
 
+	/**
+	 * Checks whether the content of the component is valid.
+	 */
+	public boolean isValid();
+
+	/**
+	 * Displays errors, if any.
+	 */
+	public void showErrors();
+
 }

@@ -61,7 +61,7 @@ import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.util.StringGetter;
 
-public class VhdlEntity extends InstanceFactory {
+public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
 	static class ContentAttribute extends Attribute<VhdlContent> {
 
@@ -116,6 +116,7 @@ public class VhdlEntity extends InstanceFactory {
 	public VhdlEntity(VhdlContent content) {
 		super("", null);
                 this.content = content;
+                this.content.addHdlModelListener(this);
                 if (content.isValid()) 
                     this.setIconName("vhdl.gif");
                 else
@@ -376,5 +377,14 @@ public class VhdlEntity extends InstanceFactory {
 		VhdlContent content = instance.getAttributeValue(CONTENT_ATTR);
 		instance.setPorts(content.getPorts());
 	}
+
+        @Override
+	public void contentSet(HdlModel source) {
+            System.out.println("factory content set");
+            if (content.isValid()) 
+                this.setIconName("vhdl.gif");
+            else
+                this.setIconName("vhdl-invalid.gif");
+        }
 
 }

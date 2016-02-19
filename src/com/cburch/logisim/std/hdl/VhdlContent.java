@@ -160,6 +160,7 @@ public class VhdlContent extends HdlContent {
 				.equals(value.replaceAll("\\r\\n|\\r|\\n", " "));
 	}
 
+        @Override
         public boolean isValid() {
             return valid;
         }
@@ -315,6 +316,7 @@ public class VhdlContent extends HdlContent {
         private StringBuffer errMessage = new StringBuffer();
         private int errCode = 0;
         private Exception errException;
+        @Override
         public void showErrors() {
             if (valid && errTitle.length() == 0 && errMessage.length() == 0)
                 return;
@@ -434,6 +436,7 @@ public class VhdlContent extends HdlContent {
                 valid = true;
                 return true;
             } finally {
+                System.out.println("firing content set");
                 fireContentSet();
             }
         }
