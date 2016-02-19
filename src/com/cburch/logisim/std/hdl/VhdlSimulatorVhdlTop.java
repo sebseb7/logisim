@@ -97,8 +97,7 @@ public class VhdlSimulatorVhdlTop {
 				InstanceState state = vhdlSimulator.getProject()
 						.getCircuitState().getInstanceState(comp);
 
-				VhdlContent content = state
-						.getAttributeValue(VhdlEntity.CONTENT_ATTR);
+                                VhdlContent content = ((VhdlEntityAttributes)state.getAttributeSet()).getContent();
 
 				String vhdlEntityName = comp.getFactory().getHDLTopName(
 						state.getInstance().getAttributeSet());

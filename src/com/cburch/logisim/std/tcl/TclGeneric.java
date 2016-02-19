@@ -74,7 +74,7 @@ public class TclGeneric extends TclComponent {
 
 		@Override
 		public VhdlContent parse(String value) {
-			return VhdlContent.parse(value, null /* todo: get project file */);
+			return VhdlContent.parse(null, value, null /* todo: get project file */);
 		}
 
 		@Override

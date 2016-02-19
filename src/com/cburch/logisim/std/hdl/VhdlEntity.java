@@ -63,6 +63,7 @@ import com.cburch.logisim.util.StringGetter;
 
 public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
+    /*
 	static class ContentAttribute extends Attribute<VhdlContent> {
 
 		public ContentAttribute() {
@@ -80,7 +81,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 		public VhdlContent parse(Window source, String value) {
 			Project proj = source instanceof Frame ? ((Frame) source)
 					.getProject() : null;
-                        return VhdlContent.parse(value, proj.getLogisimFile());
+                        return VhdlContent.parse(null, value, proj.getLogisimFile());
 		}
 
 		@Override
@@ -98,13 +99,13 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 			return value.getContent();
 		}
 	}
+        */
 
 	final static Logger logger = LoggerFactory.getLogger(VhdlEntity.class);
 
 	static final Attribute<String> NAME_ATTR = Attributes.forString(
 			"vhdlEntity", Strings.getter("vhdlEntityName"));
 
-	static final Attribute<VhdlContent> CONTENT_ATTR = new ContentAttribute();
 	static final int WIDTH = 140;
 	static final int HEIGHT = 40;
 	static final int PORT_GAP = 10;
@@ -160,7 +161,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
 	@Override
 	public String getHDLName(AttributeSet attrs) {
-		return attrs.getValue(CONTENT_ATTR).getName().toLowerCase();
+		return content.getName().toLowerCase();
 	}
 
 	@Override
@@ -176,7 +177,6 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
 	@Override
 	public Bounds getOffsetBounds(AttributeSet attrs) {
-		VhdlContent content = attrs.getValue(CONTENT_ATTR);
 		int nbInputs = content.getInputsNumber();
 		int nbOutputs = content.getOutputsNumber();
 
@@ -194,16 +194,11 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-		if (attr == CONTENT_ATTR) {
-			updatePorts(instance);
-			instance.recomputeBounds();
-		}
 	}
 
 	@Override
 	public void paintInstance(InstancePainter painter) {
 		Graphics g = painter.getGraphics();
-		VhdlContent content = painter.getAttributeValue(CONTENT_ATTR);
 		FontMetrics metric = g.getFontMetrics();
 
 		Bounds bds = painter.getBounds();
@@ -355,7 +350,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 			writer = new PrintWriter(VhdlSimulator.SIM_SRC_PATH
 					+ getHDLTopName(attrs) + ".vhdl", "UTF-8");
 
-			String content = attrs.getValue(CONTENT_ATTR).getContent();
+			String content = this.content.getContent();
 
 			content = content.replaceAll("(?i)" + getHDLName(attrs),
 					getHDLTopName(attrs));
@@ -374,7 +369,6 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 	}
 
 	void updatePorts(Instance instance) {
-		VhdlContent content = instance.getAttributeValue(CONTENT_ATTR);
 		instance.setPorts(content.getPorts());
 	}
 

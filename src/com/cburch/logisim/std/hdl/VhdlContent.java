@@ -77,14 +77,14 @@ public class VhdlContent extends HdlContent {
 	}
 
 	public static VhdlContent create(String name, LogisimFile file) {
-                VhdlContent content = new VhdlContent(file);
+                VhdlContent content = new VhdlContent(name, file);
                 if (!content.setContent(TEMPLATE.replaceAll("%entityname%", name)))
                     content.showErrors();
                 return content;
 	}
 
-	public static VhdlContent parse(String vhdl, LogisimFile file) {
-                VhdlContent content = new VhdlContent(file);
+	public static VhdlContent parse(String name, String vhdl, LogisimFile file) {
+                VhdlContent content = new VhdlContent(name, file);
                 if (!content.setContent(vhdl))
                     content.showErrors();
                 return content;
@@ -133,8 +133,9 @@ public class VhdlContent extends HdlContent {
 	protected String architecture;
         private LogisimFile logiFile;
 
-	protected VhdlContent(LogisimFile file) {
+	protected VhdlContent(String name, LogisimFile file) {
             logiFile = file;
+            this.name = name;
 	}
 
 	public VhdlContent clone() {
@@ -220,7 +221,6 @@ public class VhdlContent extends HdlContent {
 	public String getName() {
 		if (name == null)
 			return "";
-
 		return name;
 	}
 

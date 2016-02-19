@@ -133,7 +133,7 @@ public class ProjectCircuitActions {
 		String vhdl = proj.getLogisimFile().getLoader().vhdlImportChooser(proj.getFrame());
 		if (vhdl == null)
                     return;
-                VhdlContent content = VhdlContent.parse(vhdl, proj.getLogisimFile());
+                VhdlContent content = VhdlContent.parse(null, vhdl, proj.getLogisimFile());
                 if (content == null)
                     return;
                 if (VhdlContent.labelVHDLInvalidNotify(content.getName(), proj.getLogisimFile())) {

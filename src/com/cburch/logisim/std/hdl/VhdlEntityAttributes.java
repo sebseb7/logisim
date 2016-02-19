@@ -107,25 +107,22 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
         }
 
 	private static List<Attribute<?>> static_attributes = Arrays.asList(
-			VhdlEntity.NAME_ATTR, VhdlEntity.CONTENT_ATTR,
-                        StdAttr.LABEL, StdAttr.LABEL_FONT);
+            (Attribute<?>)VhdlEntity.NAME_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT);
 
         static AttributeSet createBaseAttrs(VhdlContent content) {
                 VhdlContent.Generic[] g = content.getGenerics();
                 List<Attribute<Integer>> a = content.getGenericAttributes();
-                Attribute<?>[] attrs = new Attribute<?>[4 + g.length];
-                Object[] value = new Object[4 + g.length];
+                Attribute<?>[] attrs = new Attribute<?>[3 + g.length];
+                Object[] value = new Object[3 + g.length];
                 attrs[0] = VhdlEntity.NAME_ATTR;
                 value[0] = content.getName();
-                attrs[1] = VhdlEntity.CONTENT_ATTR;
-                value[1] = content;
-                attrs[2] = StdAttr.LABEL;
-                value[2] = "";
-                attrs[3] = StdAttr.LABEL_FONT;
-                value[3] = StdAttr.DEFAULT_LABEL_FONT;
+                attrs[1] = StdAttr.LABEL;
+                value[1] = "";
+                attrs[2] = StdAttr.LABEL_FONT;
+                value[2] = StdAttr.DEFAULT_LABEL_FONT;
                 for (int i = 0; i < g.length; i++) {
-                    attrs[4+i] = a.get(i);
-                    value[4+i] = new Integer(g[i].getDefaultValue());
+                    attrs[3+i] = a.get(i);
+                    value[3+i] = new Integer(g[i].getDefaultValue());
                 }
 		AttributeSet ret = AttributeSets.fixedSet(attrs, value);
 		ret.addAttributeListener(new StaticListener(content));
@@ -162,6 +159,10 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
                 updateGenerics();
         }
 
+        public VhdlContent getContent() {
+            return content;
+        }
+
         void setInstance(Instance value) {
             vhdlInstance = value;
             if (vhdlInstance != null && listener != null) {
@@ -172,9 +173,8 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
 
         void updateGenerics() {
             List<Attribute<Integer>> genericAttrs = content.getGenericAttributes();
-            instanceAttrs = new ArrayList<Attribute<?>>(4 + genericAttrs.size());
+            instanceAttrs = new ArrayList<Attribute<?>>(3 + genericAttrs.size());
             instanceAttrs.add(VhdlEntity.NAME_ATTR);
-            instanceAttrs.add(VhdlEntity.CONTENT_ATTR);
             instanceAttrs.add(StdAttr.LABEL);
             instanceAttrs.add(StdAttr.LABEL_FONT);
             for (Attribute<Integer> a : genericAttrs) {
@@ -214,9 +214,6 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> V getValue(Attribute<V> attr) {
-		if (attr == VhdlEntity.CONTENT_ATTR) {
-			return (V) content;
-		}
                 if (attr == VhdlEntity.NAME_ATTR) {
                         return (V) content.getName();
                 }
@@ -237,21 +234,11 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
 
 	@Override
 	public boolean isToSave(Attribute<?> attr) {
-            return (attr != VhdlEntity.CONTENT_ATTR && attr != VhdlEntity.NAME_ATTR);
+            return true;
 	}
 
 	@Override
 	public <V> void setValue(Attribute<V> attr, V value) {
-		if (attr == VhdlEntity.CONTENT_ATTR) {
-			VhdlContent newContent = (VhdlContent) value;
-			if (content.equals(newContent))
-			    return;
-                        content = newContent;
-                        updateGenerics();
-                        fireAttributeValueChanged(attr, value);
-                        fireAttributeValueChanged(VhdlEntity.NAME_ATTR, content.getName());
-                        return;
-		}
                 if (attr == VhdlEntity.NAME_ATTR) {
                         String newValue = (String)value;
                         if (content.getName().equals(newValue))
@@ -259,7 +246,6 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
                         if (!content.setName(newValue))
                             return;
                         fireAttributeValueChanged(attr, value);
-                        fireAttributeValueChanged(VhdlEntity.CONTENT_ATTR, content);
                         return;
                 }
                 if (attr == StdAttr.LABEL && value instanceof String) {
