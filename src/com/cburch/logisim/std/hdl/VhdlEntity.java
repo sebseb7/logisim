@@ -116,7 +116,10 @@ public class VhdlEntity extends InstanceFactory {
 	public VhdlEntity(VhdlContent content) {
 		super("", null);
                 this.content = content;
-		this.setIconName("vhdl.gif");
+                if (content.isValid()) 
+                    this.setIconName("vhdl.gif");
+                else
+                    this.setIconName("vhdl-invalid.gif");
 	}
 
 	@Override

@@ -125,6 +125,7 @@ public class VhdlContent extends HdlContent {
 
         protected AttributeSet staticAttrs;
 	protected StringBuffer content;
+        protected boolean valid;
 	protected Port[] inputs;
 	protected Port[] outputs;
         protected Generic[] generics;
@@ -143,6 +144,7 @@ public class VhdlContent extends HdlContent {
 		try {
 			VhdlContent ret = (VhdlContent) super.clone();
 			ret.content = new StringBuffer(this.content);
+                        ret.valid = this.valid;
 			return ret;
 		} catch (CloneNotSupportedException ex) {
 			return this;
@@ -159,6 +161,10 @@ public class VhdlContent extends HdlContent {
 		return content.toString().replaceAll("\\r\\n|\\r|\\n", " ")
 				.equals(value.replaceAll("\\r\\n|\\r|\\n", " "));
 	}
+
+        public boolean isValid() {
+            return valid;
+        }
 
 	public String getArchitecture() {
 		if (architecture == null)
@@ -248,6 +254,9 @@ public class VhdlContent extends HdlContent {
 	}
 
 	public boolean parseContent(String content) {
+		this.content = new StringBuffer(content);
+                this.valid = false;
+
 		VhdlParser parser = new VhdlParser(content.toString());
 		try {
 			parser.parse();
@@ -323,7 +332,7 @@ public class VhdlContent extends HdlContent {
                 }
 
                 // System.out.println("changing content");
-		this.content = new StringBuffer(content);
+                this.valid = true;
                 this.staticAttrs = VhdlEntityAttributes.createBaseAttrs(this);
 
 		fireContentSet();

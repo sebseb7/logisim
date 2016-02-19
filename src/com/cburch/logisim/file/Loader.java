@@ -506,7 +506,7 @@ public class Loader implements LibraryLoader {
 	public String vhdlImportChooser(Component window) {
             JFileChooser chooser = createChooser();
             chooser.setFileFilter(Loader.VHDL_FILTER);
-            chooser.setDialogTitle(Strings.get("hdlOpenButton"));
+            chooser.setDialogTitle(Strings.get("hdlOpenDialog"));
             int returnVal = chooser.showOpenDialog(window);
             if (returnVal != JFileChooser.APPROVE_OPTION)
                 return null;

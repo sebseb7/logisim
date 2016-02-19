@@ -110,7 +110,7 @@ public class HdlContentEditor extends JDialog implements JInputDialog {
 				if (choice == JFileChooser.APPROVE_OPTION) {
 					File f = chooser.getSelectedFile();
 					try {
-						HdlFile.save(f, HdlContentEditor.this);
+						HdlFile.save(f, getText());
 					} catch (IOException e) {
 						JOptionPane.showMessageDialog(HdlContentEditor.this,
 								e.getMessage(),
@@ -132,7 +132,7 @@ public class HdlContentEditor extends JDialog implements JInputDialog {
 			setTitle(Strings.get("hdlFrameTitle"));
 			open.setText(Strings.get("hdlOpenButton"));
 			save.setText(Strings.get("hdlSaveButton"));
-			validate.setText(Strings.get("validateButton"));
+			validate.setText(Strings.get("validateAndSaveButton"));
 			close.setText(Strings.get("closeButton"));
 		}
 

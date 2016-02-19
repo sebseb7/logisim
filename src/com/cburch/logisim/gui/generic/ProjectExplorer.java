@@ -36,6 +36,7 @@ package com.cburch.logisim.gui.generic;
  */
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -60,6 +61,8 @@ import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import com.cburch.logisim.std.hdl.VhdlContent;
+import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.ComponentDrawContext;
@@ -276,6 +279,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 
 		Tool tool;
 		Circuit circ = null;
+		VhdlContent vhdl = null;
 
 		ToolIcon(Tool tool) {
 			this.tool = tool;
@@ -283,7 +287,9 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 				ComponentFactory fact = ((AddTool) tool).getFactory(false);
 				if (fact instanceof SubcircuitFactory) {
 					circ = ((SubcircuitFactory) fact).getSubcircuit();
-				}
+				} else if (fact instanceof VhdlEntity) {
+					vhdl = ((VhdlEntity) fact).getContent();
+                                }
 			}
 		}
 
@@ -296,12 +302,22 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 		}
 
 		public void paintIcon(java.awt.Component c, Graphics g, int x, int y) {
+                        boolean viewed;
+                        if (proj.getFrame().getHdlEditorView() == null)
+                            viewed = (circ != null && circ == proj.getCurrentCircuit());
+                        else
+                            viewed = (vhdl != null && vhdl == proj.getFrame().getHdlEditorView());
+                        boolean haloed = !viewed &&
+                                (tool == haloedTool && AppPreferences.ATTRIBUTE_HALO.getBoolean());
+
 			// draw halo if appropriate
-			if (tool == haloedTool
-					&& AppPreferences.ATTRIBUTE_HALO.getBoolean()) {
+			if (haloed) {
+                                Shape s = g.getClip();
+                                g.clipRect(x, y, 20, 20);
 				g.setColor(Canvas.HALO_COLOR);
-				g.fillRoundRect(x, y, 20, 20, 10, 10);
+				g.fillOval(x-2, y-2, 23, 23);
 				g.setColor(Color.BLACK);
+                                g.setClip(s);
 			}
 
 			// draw tool icon
@@ -312,7 +328,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 			gIcon.dispose();
 
 			// draw magnifying glass if appropriate
-			if (circ == proj.getCurrentCircuit()) {
+			if (viewed) {
 				int tx = x + 13;
 				int ty = y + 13;
 				int[] xp = { tx - 1, x + 18, x + 20, tx + 1 };

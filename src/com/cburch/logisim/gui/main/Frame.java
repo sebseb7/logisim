@@ -30,6 +30,8 @@
 
 package com.cburch.logisim.gui.main;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
@@ -57,7 +59,9 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import com.cburch.draw.toolbar.Toolbar;
+import com.cburch.draw.toolbar.ToolbarItem;
 import com.cburch.draw.toolbar.ToolbarModel;
+import com.cburch.draw.toolbar.AbstractToolbarModel;
 import com.cburch.logisim.Main; //for version name
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
@@ -87,6 +91,8 @@ import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.std.hdl.VhdlSimulatorConsole;
 import com.cburch.logisim.std.hdl.VhdlSimulatorListener;
+import com.cburch.logisim.std.hdl.HdlContentView;
+import com.cburch.hdl.HdlModel;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.HorizontalSplitPane;
 import com.cburch.logisim.util.JFileChoosers;
@@ -134,10 +140,14 @@ public class Frame extends LFrame implements LocaleListener {
 				proj.setTool(proj.getOptions().getToolbarData().getFirstTool());
 				placeToolbar();
 			} else if (action == ProjectEvent.ACTION_SET_CURRENT) {
-				setEditorView(EDIT_LAYOUT);
-				if (appearance != null) {
-					appearance.setCircuit(proj, proj.getCircuitState());
-				}
+                                if (event.getData() instanceof Circuit) {
+                                    setEditorView(EDIT_LAYOUT);
+                                    if (appearance != null) {
+                                            appearance.setCircuit(proj, proj.getCircuitState());
+                                    }
+                                } else if (event.getData() instanceof HdlModel) {
+                                    setHdlEditorView((HdlModel)event.getData());
+                                }
 				viewAttributes(proj.getTool());
 				computeTitle();
 			} else if (action == ProjectEvent.ACTION_SET_TOOL) {
@@ -324,7 +334,7 @@ public class Frame extends LFrame implements LocaleListener {
 	private LogisimMenuBar menubar;
 	private MenuListener menuListener;
 	private Toolbar toolbar;
-	private HorizontalSplitPane leftRegion, rightRegion;
+	private HorizontalSplitPane leftRegion, rightRegion, editRegion;
 	private VerticalSplitPane mainRegion;
 	private JPanel mainPanelSuper;
 	private CardPanel mainPanel;
@@ -340,6 +350,7 @@ public class Frame extends LFrame implements LocaleListener {
 	private LayoutToolbarModel layoutToolbarModel;
 	private Canvas layoutCanvas;
 	private VhdlSimulatorConsole vhdlSimulatorConsole;
+        private HdlContentView hdlEditor;
 
 	private ZoomModel layoutZoomModel;
 
@@ -349,6 +360,9 @@ public class Frame extends LFrame implements LocaleListener {
 
 	// for the Appearance view
 	private AppearanceView appearance;
+
+        // for VHDL Editor
+	private ToolbarModel hdlToolbarModel;
 
 	private Double lastFraction = AppPreferences.WINDOW_RIGHT_SPLIT.get();
 
@@ -429,8 +443,11 @@ public class Frame extends LFrame implements LocaleListener {
 		leftRegion = new HorizontalSplitPane(explPanel, attrPanel,
 				AppPreferences.WINDOW_LEFT_SPLIT.get().doubleValue());
 
+                hdlEditor = new HdlContentView(proj);
 		vhdlSimulatorConsole = new VhdlSimulatorConsole(proj);
-		rightRegion = new HorizontalSplitPane(mainPanelSuper,
+		editRegion = new HorizontalSplitPane(mainPanelSuper,
+				hdlEditor, 0.8);
+		rightRegion = new HorizontalSplitPane(editRegion,
 				vhdlSimulatorConsole, 1.0);
 
 		mainRegion = new VerticalSplitPane(leftRegion, rightRegion,
@@ -636,9 +653,11 @@ public class Frame extends LFrame implements LocaleListener {
 
 	public void setEditorView(String view) {
 		String curView = mainPanel.getView();
-		if (curView.equals(view)) {
+		if (hdlEditor.getHdlModel() == null && curView.equals(view)) {
 			return;
 		}
+                editRegion.setFraction(1.0);
+                hdlEditor.setHdlModel(null);
 
 		if (view.equals(EDIT_APPEARANCE)) { // appearance view
 			AppearanceView app = appearance;
@@ -677,6 +696,23 @@ public class Frame extends LFrame implements LocaleListener {
 			rightRegion.setFraction(1);
 		}
 	}
+
+        public void setHdlEditorView(HdlModel hdl) {
+            hdlEditor.setHdlModel(hdl);
+            editRegion.setFraction(0.0);
+
+            toolbar.setToolbarModel(hdlEditor.getToolbarModel());
+            // toolbar.setToolbarModel(app.getToolbarModel());
+            // app.getAttrTableDrawManager(attrTable).attributesSelected();
+            // zoom.setZoomModel(app.getZoomModel());
+            // menuListener.setEditHandler(app.getEditHandler());
+            // mainPanel.setView(view);
+            // app.getCanvas().requestFocus();
+        }
+
+        public HdlModel getHdlEditorView() {
+            return hdlEditor.getHdlModel();
+        }
 
 	void viewAttributes(Tool newTool) {
 		viewAttributes(null, newTool, false);

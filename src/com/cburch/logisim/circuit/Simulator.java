@@ -275,7 +275,7 @@ public class Simulator {
 	}
 
 	public void setCircuitState(CircuitState state) {
-		manager.setPropagator(state.getPropagator());
+		manager.setPropagator(state == null ? null : state.getPropagator());
 		renewTickerAwake();
 	}
 

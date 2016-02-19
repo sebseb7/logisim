@@ -35,6 +35,7 @@ import java.util.LinkedList;
 
 import javax.swing.JFileChooser;
 
+import com.cburch.hdl.HdlModel;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitListener;
 import com.cburch.logisim.circuit.CircuitState;
@@ -106,6 +107,7 @@ public class Project {
 
 	private LogisimFile file;
 	private CircuitState circuitState;
+	private HdlModel hdlModel;
 	private HashMap<Circuit, CircuitState> stateMap = new HashMap<Circuit, CircuitState>();
 	private Frame frame = null;
 	private OptionsFrame optionsFrame = null;
@@ -274,6 +276,54 @@ public class Project {
 	public Circuit getCurrentCircuit() {
 		return circuitState == null ? null : circuitState.getCircuit();
 	}
+
+        public HdlModel getCurrentHdl() {
+                return hdlModel;
+        }
+
+        public void setCurrentHdlModel(HdlModel hdl) {
+                if (hdlModel == hdl)
+                    return;
+
+		CircuitState old = circuitState;
+                Object oldHdl = hdlModel;
+
+                /*
+                Canvas canvas = frame == null ? null : frame.getCanvas();
+                if (canvas != null) {
+                        if (tool != null)
+                                tool.deselect(canvas);
+                        Selection selection = canvas.getSelection();
+                        if (selection != null) {
+                                Action act = SelectionActions.dropAll(selection);
+                                if (act != null) {
+                                        doAction(act);
+                                }
+                        }
+                        if (tool != null)
+                                tool.select(canvas);
+                }
+                */
+		Circuit oldCircuit = old == null ? null : old.getCircuit();
+                if (oldCircuit != null) {
+                        for (CircuitListener l : circuitListeners) {
+                                oldCircuit.removeCircuitListener(l);
+                        }
+                }
+
+                circuitState = null;
+                hdlModel = hdl;
+                if (old != null) {
+                    simulator.setCircuitState(null);
+                }
+
+                Object oldActive = old;
+                if (oldHdl != null)
+                    oldActive = oldHdl;
+                fireEvent(ProjectEvent.ACTION_SET_CURRENT, oldActive, hdl);
+                if (old != null)
+                    fireEvent(ProjectEvent.ACTION_SET_STATE, old, null);
+        }
 
 	public Dependencies getDependencies() {
 		return depends;
@@ -456,6 +506,7 @@ public class Project {
 				}
 			}
 		}
+                hdlModel = null;
 		circuitState = value;
 		stateMap.put(circuitState.getCircuit(), circuitState);
 		simulator.setCircuitState(circuitState);

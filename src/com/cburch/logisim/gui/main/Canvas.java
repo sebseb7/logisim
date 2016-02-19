@@ -763,6 +763,8 @@ public class Canvas extends JPanel implements LocaleListener,
 	}
 
 	private void completeAction() {
+                if (proj.getCurrentCircuit() == null)
+                    return;
 		computeSize(false);
 		// TODO for SimulatorPrototype: proj.getSimulator().releaseUserEvents();
 		proj.getSimulator().requestPropagate();
@@ -770,6 +772,8 @@ public class Canvas extends JPanel implements LocaleListener,
 	}
 
 	public void computeSize(boolean immediate) {
+                if (proj.getCurrentCircuit() == null)
+                    return;
 		Bounds bounds = proj.getCurrentCircuit().getBounds();
 		int width = bounds.getX() + bounds.getWidth() + BOUNDS_BUFFER;
 		int height = bounds.getY() + bounds.getHeight() + BOUNDS_BUFFER;
