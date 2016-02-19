@@ -294,7 +294,7 @@ public class Attributes {
 		@SuppressWarnings("rawtypes")
 		@Override
 		public java.awt.Component getCellEditor(Integer value) {
-			if (end - start + 1 > 32) {
+			if (end - start > 32 - 1) {
 				return super.getCellEditor(value);
 			} else {
 				if (options == null) {

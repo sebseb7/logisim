@@ -47,6 +47,7 @@ import com.cburch.logisim.circuit.CircuitTransaction;
 import com.cburch.logisim.circuit.CircuitTransactionResult;
 import com.cburch.logisim.circuit.ReplacementMap;
 import com.cburch.logisim.circuit.SubcircuitFactory;
+import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
@@ -511,7 +512,8 @@ public class SelectionActions {
 						} else if (fact == factory) {
 							return fact;
 						} else if (fact.getClass() == factory.getClass()
-								&& !(fact instanceof SubcircuitFactory)) {
+								&& !(fact instanceof SubcircuitFactory)
+								&& !(fact instanceof VhdlEntity)) {
 							return fact;
 						}
 					}

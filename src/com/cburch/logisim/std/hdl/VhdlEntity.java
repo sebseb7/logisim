@@ -38,7 +38,6 @@ import java.awt.Window;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.WeakHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +73,7 @@ public class VhdlEntity extends InstanceFactory {
 		public java.awt.Component getCellEditor(Window source, VhdlContent value) {
 			Project proj = source instanceof Frame ? ((Frame) source)
 					.getProject() : null;
-			return VhdlEntityAttributes.getContentEditor(source, value, proj);
+			return HdlContentEditor.getContentEditor(source, value, proj);
 		}
 
 		@Override
@@ -100,23 +99,6 @@ public class VhdlEntity extends InstanceFactory {
 		}
 	}
 
-	static class VhdlEntityListener implements HdlModelListener {
-
-		Instance instance;
-
-		VhdlEntityListener(Instance instance) {
-			this.instance = instance;
-		}
-
-		@Override
-		public void contentSet(HdlModel source) {
-			// ((InstanceState)
-			// instance).getProject().getSimulator().getVhdlSimulator().fireInvalidated();
-			instance.fireInvalidated();
-			instance.recomputeBounds();
-		}
-	}
-
 	final static Logger logger = LoggerFactory.getLogger(VhdlEntity.class);
 
 	static final Attribute<String> NAME_ATTR = Attributes.forString(
@@ -129,23 +111,11 @@ public class VhdlEntity extends InstanceFactory {
 
 	static final int X_PADDING = 5;
 
-	private WeakHashMap<Instance, VhdlEntityListener> contentListeners;
-
         private VhdlContent content;
-
-        /*
-        public VhdlEntity() {
-            super("", null);
-            content = null;
-            this.contentListeners = new WeakHashMap<Instance, VhdlEntityListener>();
-            this.setIconName("vhdl.gif");
-        }
-        */
 
 	public VhdlEntity(VhdlContent content) {
 		super("", null);
                 this.content = content;
-		this.contentListeners = new WeakHashMap<Instance, VhdlEntityListener>();
 		this.setIconName("vhdl.gif");
 	}
 
@@ -172,23 +142,16 @@ public class VhdlEntity extends InstanceFactory {
 
 	@Override
 	protected void configureNewInstance(Instance instance) {
-		VhdlContent content = instance.getAttributeValue(CONTENT_ATTR);
-		VhdlEntityListener listener = new VhdlEntityListener(instance);
+                VhdlEntityAttributes attrs = (VhdlEntityAttributes)instance.getAttributeSet();
+                attrs.setInstance(instance);
+                instance.addAttributeListener();
 
-		contentListeners.put(instance, listener);
-		content.addHdlModelListener(listener);
-
-		instance.addAttributeListener();
 		updatePorts(instance);
 	}
 
 	@Override
 	public AttributeSet createAttributeSet() {
-                // if (content == null) {
-                //     return new VhdlEntityAttributes(VhdlContent.create());
-                // } else {
                 return new VhdlEntityAttributes(content);
-                // }
 	}
 
 	@Override

@@ -139,6 +139,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
 				in = new ReaderInputStream(new FileReader(file), "UTF8");
 				return loadSub(in, loader, file);
 			} catch (Exception t) {
+                                firstExcept.printStackTrace();
 				loader.showError(StringUtil.format(
 						Strings.get("xmlFormatError"), firstExcept.toString()));
 			} finally {
@@ -157,6 +158,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
 		try {
 			return loadSub(in, loader);
 		} catch (SAXException e) {
+                        e.printStackTrace();
 			loader.showError(StringUtil.format(Strings.get("xmlFormatError"),
 					e.toString()));
 			return null;
@@ -239,6 +241,8 @@ public class LogisimFile extends Library implements LibraryEventSource {
             AddTool tool = new AddTool(new VhdlEntity(content));
             tools.add(index, tool);
             fireEvent(LibraryEvent.ADD_TOOL, tool);
+                    com.cburch.logisim.tools.FactoryAttributes s =
+                        (com.cburch.logisim.tools.FactoryAttributes) tool.getAttributeSet();
         }
 
 	public void addLibrary(Library lib) {

@@ -35,12 +35,14 @@ import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Frame;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.WeakHashMap;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -330,5 +332,22 @@ public class HdlContentEditor extends JDialog implements JInputDialog {
 
 		super.setVisible(b);
 	}
+
+	public static HdlContentEditor getContentEditor(Window source,
+			HdlContent value, Project proj) {
+		synchronized (windowRegistry) {
+			HdlContentEditor ret = windowRegistry.get(value);
+			if (ret == null) {
+				if (source instanceof Frame)
+					ret = new HdlContentEditor((Frame) source, proj, value);
+				else
+					ret = new HdlContentEditor((Dialog) source, proj, value);
+				windowRegistry.put(value, ret);
+			}
+			return ret;
+		}
+	}
+
+	private final static WeakHashMap<HdlContent, HdlContentEditor> windowRegistry = new WeakHashMap<HdlContent, HdlContentEditor>();
 
 }

@@ -64,7 +64,11 @@ public abstract class AttributeSetTableModel implements AttrTableModel,
 		public String getValue() {
 			Object value = attrs.getValue(attr);
 			if (value == null) {
+                            try {
+                                return attr.toDisplayString(value);
+                            } catch (NullPointerException e) {
 				return "";
+                            }
 			} else {
 				try {
 					return attr.toDisplayString(value);

@@ -49,6 +49,41 @@ import com.cburch.logisim.std.wiring.Pin;
 
 class DefaultEvolutionAppearance {
 
+        private static int[] asciiWidths = {
+             4,  5,  5, 10,  8, 11, 10,  3,  // ' ', '!', '"', '#', '$',  '%', '&', ''', 
+             5,  5,  6, 10,  4,  4,  4,  4,  // '(', ')', '*', '+', ',',  '-', '.', '/', 
+             8,  8,  8,  8,  8,  8,  8,  8,  // '0', '1', '2', '3', '4',  '5', '6', '7', 
+             8,  8,  4,  4, 10, 10, 10,  6,  // '8', '9', ':', ';', '<',  '=', '>', '?', 
+            13,  8,  8,  8,  9,  8,  7,  9,  // '@', 'A', 'B', 'C', 'D',  'E', 'F', 'G', 
+             9,  3,  3,  7,  6, 10,  9,  9,  // 'H', 'I', 'J', 'K', 'L',  'M', 'N', 'O', 
+             8,  9,  8,  8,  7,  9,  8, 11,  // 'P', 'Q', 'R', 'S', 'T',  'U', 'V', 'W', 
+             7,  7,  9,  5,  4,  5, 10,  6,  // 'X', 'Y', 'Z', '[', '\\', ']', '^', '_', 
+             6,  8,  8,  7,  8,  8,  4,  8,  // '`', 'a', 'b', 'c', 'd',  'e', 'f', 'g', 
+             8,  3,  3,  7,  3, 11,  8,  8,  // 'h', 'i', 'j', 'k', 'l',  'm', 'n', 'o', 
+             8,  8,  5,  7,  5,  8,  6,  9,  // 'p', 'q', 'r', 's', 't',  'u', 'v', 'w', 
+             6,  6,  5,  8,  4,  8, 10,      // 'x', 'y', 'z', '{', '|',  '}', '~',
+        };
+
+        static boolean done = false;
+        private static int textWidth(String s) {
+            // Default font is Sans Serif 12 pt, but the precise dimensions
+            // vary based on the platform. We need component widths to be
+            // stable.
+            // Text label = new Text(0,0,pin.getAttributeValue(StdAttr.LABEL));
+            // return label.getLabel().getWidth();
+            int w = 0;
+            for (int i = 0; i < s.length(); i++) {
+                char c = s.charAt(i);
+                if (i >= ' ' && i <= '~') {
+                    w += asciiWidths[c - ' '];
+                } else {
+                    w += 8;
+                }
+            }
+            return w;
+        }
+
+
 	public static List<CanvasObject> build(Collection<Instance> pins) {
 		Map<Direction, List<Instance>> edge;
 		edge = new HashMap<Direction, List<Instance>>();
@@ -56,18 +91,19 @@ class DefaultEvolutionAppearance {
 		edge.put(Direction.WEST, new ArrayList<Instance>());
 		int MaxLeftLabelLength = 0;
 		int MaxRightLabelLength = 0;
-		int TextHeight = 0;
-		int TextAscent = 0;
+		int TextHeight = 12; // use constant text dimensions
+		int TextAscent = 15; // use constant text dimensions
 		for (Instance pin : pins) {
 //			Direction pinFacing = pin.getAttributeValue(StdAttr.FACING);
 //			Direction pinEdge = pinFacing.reverse();
 			Direction pinEdge;
 			Text label = new Text(0,0,pin.getAttributeValue(StdAttr.LABEL));
-			int LabelWidth = label.getLabel().getWidth();
-			if (TextHeight==0) {
-				TextHeight = label.getLabel().getHeight();
-				TextAscent = label.getLabel().getAscent();
-			}
+                        String labelString = pin.getAttributeValue(StdAttr.LABEL);
+			int LabelWidth = textWidth(labelString);
+			// if (TextHeight==0) {
+			//	TextHeight = label.getLabel().getHeight();
+			//	TextAscent = label.getLabel().getAscent();
+			// }
 			if (pin.getAttributeValue(Pin.ATTR_TYPE)) {
 				pinEdge=Direction.EAST;
 				if (LabelWidth>MaxRightLabelLength)
