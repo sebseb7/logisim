@@ -53,22 +53,63 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.FileUtil;
 import com.cburch.logisim.util.JFileChoosers;
 import com.cburch.draw.toolbar.ToolbarModel;
+import com.cburch.logisim.proj.Action;
 
 public class HdlContentView extends JPanel implements DocumentListener {
+
+        private class HdlEditAction extends Action {
+            HdlModel model;
+            String original;
+            HdlEditAction(HdlModel model, String original) {
+                this.model = model;
+                this.original = original;
+            }
+            public void doIt(Project proj) { /* nop b/c already done */ }
+            public String getName() { return "VHDL edits"; }
+            public boolean isModification() { return true; }
+            public boolean shouldAppendTo(Action other) {
+                    return (other instanceof HdlEditAction)
+                        && ((HdlEditAction)other).model == model;
+            }
+            public void undo(Project proj) {
+                // JOptionPane.showMessageDialog(HdlContentView.this,
+                //         "Not yet implemented: use right-click undo instead.",
+                //         "undo error",
+                //         JOptionPane.ERROR_MESSAGE);
+                /* if (HdlContentView.this.model == model) {
+                    editor.undoLastAction();
+                    if (editor.canUndo()) {
+                        project.doAction(this);
+                    }
+                } else
+                */
+                setText(original);
+                model.setContent(original);
+                if (HdlContentView.this.model != model)
+                    setHdlModel(model);
+            }
+            public Action append(Action other) {
+                    return this;
+            }
+        }
+
 
         @Override
         public void changedUpdate(DocumentEvent de) { }
 
         @Override
-        public void insertUpdate(DocumentEvent de) {
-            if (model != null)
-                toolbar.setDirty(!editor.getText().equals(model.getContent()));
-        }
+        public void insertUpdate(DocumentEvent de) { docChanged(); }
 
         @Override
-        public void removeUpdate(DocumentEvent de) {
-            if (model != null)
-                toolbar.setDirty(!editor.getText().equals(model.getContent()));
+        public void removeUpdate(DocumentEvent de) { docChanged(); }
+
+        void docChanged() {
+            if (dirty || model == null)
+                return;
+            // toolbar.setDirty(!editor.getText().equals(model.getContent()));
+            toolbar.setDirty(true);
+            project.doAction(new HdlEditAction(model, model.getContent()));
+            dirty = true;
         }
 
 
@@ -205,9 +246,12 @@ public class HdlContentView extends JPanel implements DocumentListener {
             return toolbar;
         }
 
+        boolean dirty = false;
         public void setText(String content) {
+            dirty = true;
             editor.setText(content);
             editor.discardAllEdits();
+            dirty = false;
             editor.setCaretPosition(0);
         }
 

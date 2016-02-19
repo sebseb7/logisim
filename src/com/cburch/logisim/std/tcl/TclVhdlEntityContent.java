@@ -86,7 +86,7 @@ public class TclVhdlEntityContent extends VhdlContent {
 
 	protected TclVhdlEntityContent() {
                 super(null); /* todo: get project file */
-		super.parseContent(TEMPLATE);
+		super.setContent(TEMPLATE);
 	}
 
 }

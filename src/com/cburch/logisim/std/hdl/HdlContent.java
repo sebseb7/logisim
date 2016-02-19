@@ -168,6 +168,6 @@ public abstract class HdlContent implements HdlModel, Cloneable {
 	}
 
 	@Override
-	public abstract boolean setContent(String content);
+	public abstract boolean setContent(String content); // does not necessarily validate
 
 }

@@ -65,10 +65,12 @@ import com.hepia.logisim.chronogui.ChronoFrame;
 public class Project {
 	private static class ActionData {
 		CircuitState circuitState;
+		HdlModel hdlModel;
 		Action action;
 
-		public ActionData(CircuitState circuitState, Action action) {
+		public ActionData(CircuitState circuitState, HdlModel hdlModel, Action action) {
 			this.circuitState = circuitState;
+                        this.hdlModel = hdlModel;
 			this.action = action;
 		}
 	}
@@ -181,7 +183,7 @@ public class Project {
 			}
 			toAdd = first.append(act);
 			if (toAdd != null) {
-				undoLog.add(new ActionData(circuitState, toAdd));
+				undoLog.add(new ActionData(circuitState, hdlModel, toAdd));
 				if (toAdd.isModification())
 					++undoMods;
 			}
@@ -193,7 +195,7 @@ public class Project {
 					toAdd));
 			return;
 		}
-		undoLog.add(new ActionData(circuitState, toAdd));
+		undoLog.add(new ActionData(circuitState, hdlModel, toAdd));
 		fireEvent(new ProjectEvent(ProjectEvent.ACTION_START, this, act));
 		act.doIt(this);
 		while (undoLog.size() > MAX_UNDO_SIZE) {
@@ -437,7 +439,10 @@ public class Project {
 			ActionData data = redoLog.removeLast();
 
 			// Restore the circuit state to the redo's state
-			setCircuitState(data.circuitState);
+                        if (data.circuitState != null)
+                            setCircuitState(data.circuitState);
+                        else if (data.hdlModel != null)
+                            setCurrentHdlModel(data.hdlModel);
 
 			// Get the actions required to make that state change happen
 			Action action = data.action;
@@ -614,7 +619,10 @@ public class Project {
 		if (undoLog != null && undoLog.size() > 0) {
 			redoLog.addLast(undoLog.getLast());
 			ActionData data = undoLog.removeLast();
-			setCircuitState(data.circuitState);
+                        if (data.circuitState != null)
+                            setCircuitState(data.circuitState);
+                        else if (data.hdlModel != null)
+                            setCurrentHdlModel(data.hdlModel);
 			Action action = data.action;
 			if (action.isModification()) {
 				--undoMods;
