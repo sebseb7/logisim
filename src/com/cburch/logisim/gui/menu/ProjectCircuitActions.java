@@ -125,7 +125,7 @@ public class ProjectCircuitActions {
                         if (content == null)
                             return;
 			proj.doAction(LogisimFileActions.addVhdl(content));
-                        content.openEditor(proj);
+                        proj.setCurrentHdlModel(content);
 		}
 	}
 
@@ -140,7 +140,7 @@ public class ProjectCircuitActions {
                     return;
                 }
                 proj.doAction(LogisimFileActions.addVhdl(content));
-                content.openEditor(proj);
+                proj.setCurrentHdlModel(content);
 	}
 
 

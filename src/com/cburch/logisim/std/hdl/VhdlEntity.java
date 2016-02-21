@@ -63,44 +63,6 @@ import com.cburch.logisim.util.StringGetter;
 
 public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
-    /*
-	static class ContentAttribute extends Attribute<VhdlContent> {
-
-		public ContentAttribute() {
-			super("content", Strings.getter("vhdlContentAttr"));
-		}
-
-		@Override
-		public java.awt.Component getCellEditor(Window source, VhdlContent value) {
-			Project proj = source instanceof Frame ? ((Frame) source)
-					.getProject() : null;
-			return HdlContentEditor.getContentEditor(source, value, proj);
-		}
-
-		@Override
-		public VhdlContent parse(Window source, String value) {
-			Project proj = source instanceof Frame ? ((Frame) source)
-					.getProject() : null;
-                        return VhdlContent.parse(null, value, proj.getLogisimFile());
-		}
-
-		@Override
-		public VhdlContent parse(String value) {
-                        return null;
-		}
-
-		@Override
-		public String toDisplayString(VhdlContent value) {
-			return Strings.get("vhdlContentValue");
-		}
-
-		@Override
-		public String toStandardString(VhdlContent value) {
-			return value.getContent();
-		}
-	}
-        */
-
 	final static Logger logger = LoggerFactory.getLogger(VhdlEntity.class);
 
 	static final Attribute<String> NAME_ATTR = Attributes.forString(

@@ -37,8 +37,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import com.cburch.logisim.std.hdl.HdlContentEditor;
-
 public class HdlFile {
 
 	public static String load(File file) throws IOException {

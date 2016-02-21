@@ -256,10 +256,6 @@ public class VhdlContent extends HdlContent {
             return staticAttrs;
         }
 
-        public void openEditor(Project proj) {
-            HdlContentEditor.getContentEditor(proj.getFrame(), this, proj).setVisible(true);
-        }
-
         public void aboutToSave() {
             fireAboutToSave();
         }
