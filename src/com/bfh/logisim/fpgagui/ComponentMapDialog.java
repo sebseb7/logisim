@@ -409,27 +409,26 @@ public class ComponentMapDialog implements ActionListener,
 
 		/* Add some text */
 		JLabel UnmappedText = new JLabel();
-		UnmappedText.setText("Unmapped components List:  (?)");
+		UnmappedText.setText("Unmapped Components: ");
 		UnmappedText.setHorizontalTextPosition(JLabel.CENTER);
 		UnmappedText.setPreferredSize(new Dimension(
 				(BoardPic.getWidth() * 2) / 5, 25));
-		UnmappedText
-				.setToolTipText("<html>Select component and place it on the board.<br>"
-						+ "To expand component (Port, DIP, ...) or change type (Button<->Pin),<br>"
-						+ "double clic on it.</html>");
+		UnmappedText.setToolTipText("<html>Select component and place it on the board.<br>"
+						+ "Double click to expand component (PortIO, DIP, ...) or<br>"
+                                                + "or change component type (Button, Pin, ...).</html>");
 		c.gridx = 0;
 		c.gridy = 1;
 		c.gridwidth = 1;
 		panel.add(UnmappedText, c);
 		JLabel MappedText = new JLabel();
-		MappedText.setText("Mapped components List:");
+		MappedText.setText("Mapped Components:");
 		MappedText.setHorizontalTextPosition(JLabel.CENTER);
 		MappedText.setPreferredSize(new Dimension(
 				(BoardPic.getWidth() * 2) / 5, 25));
 		c.gridx = 1;
 		panel.add(MappedText, c);
 		JLabel CommandText = new JLabel();
-		CommandText.setText("Command buttons:");
+		CommandText.setText("");
 		CommandText.setHorizontalTextPosition(JLabel.CENTER);
 		CommandText.setPreferredSize(new Dimension((BoardPic.getWidth()) / 5,
 				25));
