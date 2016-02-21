@@ -69,12 +69,21 @@ public class PortIO extends InstanceFactory {
 					MAX_IO);
 	// public static final Attribute<Boolean> ATTR_BUS =
 	// Attributes.forBoolean("showBus", Strings.getter("pioShowBus"));
-	public static final String BUSES = Strings.getter("pioBuses").toString();
-	public static final String PINS = Strings.getter("pioPins").toString();
-	public static final String[] OPTIONS = { BUSES, PINS };
+	// public static final String BUSES = Strings.getter("pioBuses").toString();
+	// public static final String PINS = Strings.getter("pioPins").toString();
+	// public static final String[] OPTIONS = { BUSES, PINS };
 
-	public static final Attribute<String> ATTR_BUS = Attributes.forOption(
-			"showBus", Strings.getter("pioShowBus"), OPTIONS);
+	// public static final Attribute<String> ATTR_BUS = Attributes.forOption(
+	//		"showBus", Strings.getter("pioShowBus"), OPTIONS);
+
+
+	public static final String INPUT = "input";
+	public static final String OUTPUT = "output";
+	public static final String INOUT = "inout";
+
+	public static final String[] DIRECTIONS = { INPUT, OUTPUT, INOUT };
+	public static final Attribute<String> ATTR_DIR = Attributes.forOption(
+			"direction", Strings.getter("pioDirection"), DIRECTIONS);
 
 	private MappableResourcesContainer mapInfo;
 
@@ -82,9 +91,9 @@ public class PortIO extends InstanceFactory {
 		super("PortIO", Strings.getter("pioComponent"));
 		int portSize = 8;
 		setAttributes(new Attribute[] { StdAttr.LABEL, Io.ATTR_LABEL_LOC,
-				StdAttr.LABEL_FONT, Io.ATTR_LABEL_COLOR, ATTR_SIZE, ATTR_BUS },
+				StdAttr.LABEL_FONT, Io.ATTR_LABEL_COLOR, ATTR_SIZE, ATTR_DIR},
 				new Object[] { "", Direction.EAST, StdAttr.DEFAULT_LABEL_FONT,
-						Color.BLACK, portSize, BUSES });
+						Color.BLACK, portSize, INOUT });
 		setFacingAttribute(StdAttr.FACING);
 		setIconName("pio.gif");
 		// setInstancePoker(Poker.class);
@@ -143,7 +152,7 @@ public class PortIO extends InstanceFactory {
 	}
 
 	private void configurePorts(Instance instance) {
-		if (instance.getAttributeValue(ATTR_BUS).equals(PINS)) {
+		if (false /* instance.getAttributeValue(ATTR_BUS).equals(PINS) */) {
 			// TODO YSY PINS
 			// Port[] ps = new Port[instance.getAttributeValue(ATTR_SIZE)];
 			// for (int i = 0; i < instance.getAttributeValue(ATTR_SIZE); i++) {
@@ -154,27 +163,40 @@ public class PortIO extends InstanceFactory {
 			// instance.setPorts(ps);
 		} else {
 			int nbPorts = instance.getAttributeValue(ATTR_SIZE);
-			Port[] ps = new Port[((nbPorts - 1) / 32) + 1];
-			int i = 0;
-			while (nbPorts > 0) {
-				ps[i] = new Port((i + 1) * 10, 0, Port.INOUT,
-						(nbPorts > 32) ? 32 : nbPorts);
-				ps[i].setToolTip(StringUtil.constantGetter(String
-						.valueOf((32 * i))
-						+ " to "
-						+ String.valueOf(32 * i + (nbPorts > 32 ? 32 : nbPorts)
-								- 1)));
-				i++;
-				nbPorts -= (nbPorts > 32) ? 32 : nbPorts;
-			}
+			String dir = instance.getAttributeValue(ATTR_DIR);
+                        int k = (dir == INOUT ? 3 : 1);
+			Port[] ps = new Port[k*(((nbPorts - 1) / 32) + 1)];
+			int i = 0, p = 0;
+                        int x = (dir == INOUT ? 0 : 10);
+                        while (nbPorts > 0) {
+                            int n = (nbPorts > 32 ? 32 : nbPorts);
+                            String range = "[" + i + " to " + (i + n - 1) +"]";
+                            if (dir == INOUT) {
+                                ps[p] = new Port(x, 10, Port.INPUT, n);
+                                ps[p].setToolTip(StringUtil.constantGetter("OutEnable"+range));
+                                p++;
+                                x += 10;
+                            }
+                            if (dir == OUTPUT || dir == INOUT) {
+                                ps[p] = new Port(x, 0, Port.INPUT, n);
+                                ps[p].setToolTip(StringUtil.constantGetter("Out"+range));
+                                p++;
+                                x += 10;
+                            }
+                            if (dir == INPUT || dir == INOUT) {
+                                ps[p] = new Port(x, 0, Port.OUTPUT, n);
+                                ps[p].setToolTip(StringUtil.constantGetter("In"+range));
+                                p++;
+                                x += 10;
+                            }
+                            i += 32;
+                            nbPorts -= n;
+                        }
 			instance.setPorts(ps);
 		}
 
 	}
 
-        /* kwalsh - I don't think this should be here. It causes the label and
-         * component name to be identical, which is not supported.
-         */
 	@Override
 	public String getHDLName(AttributeSet attrs) {
             String label = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
@@ -192,7 +214,7 @@ public class PortIO extends InstanceFactory {
 
 	@Override
 	public Bounds getOffsetBounds(AttributeSet attrs) {
-		if (attrs.getValue(ATTR_BUS).equals(PINS)) {
+		if (false /* attrs.getValue(ATTR_BUS).equals(PINS) */) {
 			return Bounds.create(0, 0,
 					10 + attrs.getValue(ATTR_SIZE).intValue() * 10, 40).rotate(
 					Direction.NORTH, Direction.NORTH, 0, 0);
@@ -200,7 +222,7 @@ public class PortIO extends InstanceFactory {
                         int n = attrs.getValue(ATTR_SIZE).intValue();
                         if (n < 8)
                             n = 8;
-			return Bounds.create(0, 0, 10 + n/2 * 10 , 40).rotate(
+			return Bounds.create(0, 0, 10 + n/2 * 10 , 60).rotate(
                                         Direction.NORTH, Direction.NORTH, 0, 0);
 		}
 	}
@@ -235,7 +257,7 @@ public class PortIO extends InstanceFactory {
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
 		if (attr == Io.ATTR_LABEL_LOC) {
 			computeTextField(instance);
-		} else if (attr == ATTR_SIZE) {
+		} else if (attr == ATTR_SIZE || attr == ATTR_DIR) {
 			instance.recomputeBounds();
 			configurePorts(instance);
 			computeTextField(instance);
@@ -252,14 +274,18 @@ public class PortIO extends InstanceFactory {
 		 * new State(0,painter.getAttributeValue(ATTR_SIZE));
 		 * painter.setData(state); }
 		 */
-		Bounds bds = painter.getBounds().expand(-1);
+		Bounds bds = painter.getBounds();
+                int x = bds.getX();
+                int y = bds.getY();
+                int w = bds.getWidth();
+                int h = bds.getHeight();
 
 		Graphics g = painter.getGraphics();
 		GraphicsUtil.switchToWidth(g, 2);
 		g.setColor(Color.darkGray);
-		g.fillRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
+		g.fillRect(x+1, y+20, w-2, h-24);
 		GraphicsUtil.switchToWidth(g, 1);
-		if (painter.getAttributeValue(ATTR_BUS).equals(PINS)) {
+		if (false /* painter.getAttributeValue(ATTR_BUS).equals(PINS) */) {
 			// TODO YSY PINS
 			g.setColor(Color.white);
 			g.setFont(StdAttr.DEFAULT_LABEL_FONT
@@ -276,19 +302,45 @@ public class PortIO extends InstanceFactory {
 			g.setColor(Color.LIGHT_GRAY);
                         int n = painter.getAttributeValue(ATTR_SIZE);
 			for (int i = 0; i < n; i++) {
-				g.fillRect(bds.getX() + 6 + ((i/2) * 10), bds.getY() + 15 + (i%2)*10, 6, 6);
+				g.fillRect(x + 7 + ((i/2) * 10), y + 35 + (i%2)*10, 6, 6);
 			}
 			g.setColor(Color.WHITE);
 			g.setFont(StdAttr.DEFAULT_LABEL_FONT);
-			String text = painter.getAttributeValue(ATTR_SIZE).toString()
-					+ " PIN";
-			g.drawChars(text.toCharArray(), 0, text.toCharArray().length,
-					bds.getX() + 6, bds.getY() + 12);
+			String text = "" + n + " PIN";
+			g.drawChars(text.toCharArray(), 0, text.toCharArray().length, x + 7, y + 32);
+                        g.setColor(Color.BLACK);
+                        String dir = painter.getAttributeValue(ATTR_DIR);
+                        int px = (dir == INOUT ? x : x + 10);
+                        int py = y;
+                        GraphicsUtil.switchToWidth(g, 2);
+                        while (n > 0) {
+                            if (dir == INOUT) {
+                                g.drawLine(px, py+10, px+6, py+10);
+                                px += 10;
+                            }
+                            if (dir == OUTPUT || dir == INOUT) {
+                                g.drawLine(px, py, px, py+4);
+                                int[] xp = {px, px-4, px+4, px};
+                                int[] yp = {py+15, py+5, py+5, py+15};
+                                g.drawPolyline(xp, yp, 4);
+                                g.drawLine(px, py+15, px, py+20);
+                                px += 10;
+                            }
+                            if (dir == INPUT || dir == INOUT) {
+                                g.drawLine(px, py, px, py+5);
+                                int[] xp = {px, px-4, px+4, px};
+                                int[] yp = {py+6, py+16, py+16, py+6};
+                                g.drawPolyline(xp, yp, 4);
+                                g.drawLine(px, py+16, px, py+20);
+                                px += 10;
+                            }
+                            n -= 32;
+                        }
+                        GraphicsUtil.switchToWidth(g, 1);
 		}
 		g.setColor(painter.getAttributeValue(Io.ATTR_LABEL_COLOR));
 		painter.drawLabel();
 		painter.drawPorts();
-
 	}
 
 	@Override
