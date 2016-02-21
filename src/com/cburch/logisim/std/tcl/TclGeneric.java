@@ -101,6 +101,10 @@ public class TclGeneric extends TclComponent {
 			instance.fireInvalidated();
 			instance.recomputeBounds();
 		}
+                @Override
+                public void aboutToSave(HdlModel source) { }
+                @Override
+                public void displayChanged(HdlModel source) { }
 	}
 
 	static final Attribute<VhdlContent> CONTENT_ATTR = new ContentAttribute();

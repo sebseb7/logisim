@@ -60,7 +60,7 @@ public class ProjectExplorerToolNode extends ProjectExplorerModel.Node<Tool>
 			if (factory instanceof SubcircuitFactory) {
 				circuit = ((SubcircuitFactory) factory).getSubcircuit();
 				circuit.addCircuitListener(this);
-			} else if (factory instanceof VhdlContent) {
+			} else if (factory instanceof VhdlEntity) {
                                 vhdl = ((VhdlEntity) factory).getContent();
                                 vhdl.addHdlModelListener(this);
                         }
@@ -69,18 +69,22 @@ public class ProjectExplorerToolNode extends ProjectExplorerModel.Node<Tool>
 
 	public void circuitChanged(CircuitEvent event) {
 		int act = event.getAction();
-
-		if (act == CircuitEvent.ACTION_SET_NAME) {
-			fireStructureChanged();
-			// The following almost works - but the labels aren't made
-			// bigger, so you get "..." behavior with longer names.
-			// fireNodesChanged(findPath(this));
+		if (act == CircuitEvent.ACTION_SET_NAME || act == CircuitEvent.ACTION_DISPLAY_CHANGE) {
+                        fireNodeChanged();
 		}
 	}
 
+        @Override
         public void contentSet(HdlModel model) {
-            // fireStructureChanged();
-            fireStructureChanged();
+            fireNodeChanged();
+        }
+
+        @Override
+        public void aboutToSave(HdlModel source) { }
+
+        @Override
+        public void displayChanged(HdlModel source) {
+            fireNodeChanged();
         }
 
 	@Override

@@ -436,6 +436,10 @@ public class Circuit {
 		fireEvent(new CircuitEvent(action, this, data));
 	}
 
+        public void displayChanged() {
+                fireEvent(CircuitEvent.ACTION_DISPLAY_CHANGE, null);
+        }
+
 	public Collection<Component> getAllContaining(Location pt) {
 		HashSet<Component> ret = new HashSet<Component>();
 		for (Component comp : getComponents()) {

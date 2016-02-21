@@ -139,7 +139,6 @@ public class VhdlContent extends HdlContent {
 	}
 
 	public VhdlContent clone() {
-                // System.out.println("cloning vhdl");
 		try {
 			VhdlContent ret = (VhdlContent) super.clone();
 			ret.content = new StringBuffer(this.content);
@@ -261,6 +260,10 @@ public class VhdlContent extends HdlContent {
             HdlContentEditor.getContentEditor(proj.getFrame(), this, proj).setVisible(true);
         }
 
+        public void aboutToSave() {
+            fireAboutToSave();
+        }
+
         static final String ENTITY_PATTERN = "(\\s*\\bentity\\s+)%entityname%(\\s+is)\\b";
 	static final String ARCH_PATTERN = "(\\s*\\barchitecture\\s+\\w+\\s+of\\s+)%entityname%\\b";
 	static final String END_PATTERN = "(\\s*\\bend\\s+)%entityname%(\\s*;)";    
@@ -347,6 +350,8 @@ public class VhdlContent extends HdlContent {
 
 	@Override
         public boolean setContent(String vhdl) {
+            if (valid && content.toString().equals(vhdl))
+                return true;
             content = new StringBuffer(vhdl);
             valid = false;
             try {
@@ -436,7 +441,6 @@ public class VhdlContent extends HdlContent {
                 valid = true;
                 return true;
             } finally {
-                System.out.println("firing content set");
                 fireContentSet();
             }
         }

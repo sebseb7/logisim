@@ -35,6 +35,7 @@ package com.cburch.logisim.gui.generic;
  * http://www.cs.cornell.edu/courses/cs3410/2015sp/
  */
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
@@ -44,6 +45,7 @@ import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import javax.swing.SwingUtilities;
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.Icon;
@@ -97,25 +99,49 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 
 		private static final long serialVersionUID = 1L;
 
-		@Override
+                Font plainFont, boldFont;
+		
+                @Override
 		public java.awt.Component getTreeCellRendererComponent(JTree tree,
 				Object value, boolean selected, boolean expanded, boolean leaf,
 				int row, boolean hasFocus) {
 			java.awt.Component ret;
 			ret = super.getTreeCellRendererComponent(tree, value, selected,
 					expanded, leaf, row, hasFocus);
-
+                        if (plainFont == null) {
+                            plainFont = ret.getFont();
+                            boldFont = new Font(plainFont.getFontName(), Font.BOLD, plainFont.getSize());
+                        }
+                        ret.setFont(plainFont);
 			if (ret instanceof JComponent) {
 				JComponent comp = (JComponent) ret;
 				comp.setToolTipText(null);
+
 			}
 			if (value instanceof ProjectExplorerToolNode) {
 				ProjectExplorerToolNode toolNode = (ProjectExplorerToolNode) value;
 				Tool tool = toolNode.getValue();
 				if (ret instanceof JLabel) {
-					((JLabel) ret).setText(tool.getDisplayName());
-					((JLabel) ret).setIcon(new ToolIcon(tool));
-					((JLabel) ret).setToolTipText(tool.getDescription());
+                                        JLabel label = (JLabel)ret;
+                                        boolean viewed = false;
+                                        if (tool instanceof AddTool && proj != null && proj.getFrame() != null) {
+                                                Circuit circ = null;
+                                                VhdlContent vhdl = null;
+                                                ComponentFactory fact = ((AddTool) tool).getFactory(false);
+                                                if (fact instanceof SubcircuitFactory) {
+                                                        circ = ((SubcircuitFactory) fact).getSubcircuit();
+                                                } else if (fact instanceof VhdlEntity) {
+                                                        vhdl = ((VhdlEntity) fact).getContent();
+                                                }
+                                                if (proj.getFrame().getHdlEditorView() == null)
+                                                    viewed = (circ != null && circ == proj.getCurrentCircuit());
+                                                else
+                                                    viewed = (vhdl != null && vhdl == proj.getFrame().getHdlEditorView());
+                                        }
+                                        label.setFont(viewed ? boldFont : plainFont);
+					label.setText(tool.getDisplayName());
+					label.setIcon(new ToolIcon(tool));
+					label.setToolTipText(tool.getDescription());
 				}
 			} else if (value instanceof ProjectExplorerLibraryNode) {
 				ProjectExplorerLibraryNode libNode = (ProjectExplorerLibraryNode) value;
@@ -172,22 +198,26 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 
 		public void mouseReleased(MouseEvent e) {
 			checkForPopup(e);
-		}
+                }
+
+                void changedNode(Object o) {
+                    ProjectExplorerModel model = (ProjectExplorerModel) getModel();
+                    if (model != null && o instanceof Tool) {
+                        ProjectExplorerModel.Node<Tool> node = model.findTool((Tool)o);
+                        if (node != null)
+                            node.fireNodeChanged();
+                    }
+                }
 
 		//
 		// project/library file/circuit listener methods
 		//
 		public void projectChanged(ProjectEvent event) {
 			int act = event.getAction();
-			if (act == ProjectEvent.ACTION_SET_TOOL) {
-				TreePath path = getSelectionPath();
-				if (path != null
-						&& path.getLastPathComponent() != event.getTool()) {
-					clearSelection();
-				}
-			} else if (act == ProjectEvent.ACTION_SET_CURRENT) {
-				ProjectExplorer.this.repaint();
-			}
+                        if (act == ProjectEvent.ACTION_SET_CURRENT || act == ProjectEvent.ACTION_SET_TOOL) {
+                            changedNode(event.getOldData());
+                            changedNode(event.getData());
+                        }
 		}
 
 		//
@@ -195,7 +225,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 		//
 		public void propertyChange(PropertyChangeEvent event) {
 			if (AppPreferences.GATE_SHAPE.isSource(event)) {
-				repaint();
+                            ProjectExplorer.this.repaint();
 			}
 		}
 
@@ -394,19 +424,20 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 		}
 	}
 
+        public void updateStructure() {
+            ProjectExplorerModel model = (ProjectExplorerModel) getModel();
+            model.updateStructure();
+        }
+
 	public void localeChanged() {
 		// repaint() would work, except that names that get longer will be
 		// abbreviated with an ellipsis, even when they fit into the window.
-		ProjectExplorerModel model = (ProjectExplorerModel) getModel();
+		final ProjectExplorerModel model = (ProjectExplorerModel) getModel();
 		model.fireStructureChanged();
 	}
 
 	public void setHaloedTool(Tool t) {
-		if (haloedTool == t)
-			return;
-
 		haloedTool = t;
-		repaint();
 	}
 
 	public void setListener(ProjectExplorerListener value) {

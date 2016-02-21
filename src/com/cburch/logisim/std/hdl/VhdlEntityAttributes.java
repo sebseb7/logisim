@@ -281,6 +281,10 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
                 attrs.vhdlInstance.fireInvalidated();
                 attrs.vhdlInstance.recomputeBounds();
             }
+            @Override
+            public void aboutToSave(HdlModel source) { }
+            @Override
+            public void displayChanged(HdlModel source) { }
         }
 
 }

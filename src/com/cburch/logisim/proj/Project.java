@@ -288,7 +288,7 @@ public class Project {
                     return;
 
 		CircuitState old = circuitState;
-                Object oldHdl = hdlModel;
+                HdlModel oldHdl = hdlModel;
 
                 /*
                 Canvas canvas = frame == null ? null : frame.getCanvas();
@@ -325,6 +325,11 @@ public class Project {
                 fireEvent(ProjectEvent.ACTION_SET_CURRENT, oldActive, hdl);
                 if (old != null)
                     fireEvent(ProjectEvent.ACTION_SET_STATE, old, null);
+                if (oldCircuit != null)
+                    oldCircuit.displayChanged();
+                if (oldHdl != null)
+                    oldHdl.displayChanged();
+                hdl.displayChanged();
         }
 
 	public Dependencies getDependencies() {
@@ -482,11 +487,17 @@ public class Project {
 		fireEvent(new ProjectEvent(ProjectEvent.REPAINT_REQUEST, this, null));
 	}
 
+        public static Project theFirst;
 	public void setCircuitState(CircuitState value) {
 		if (value == null || circuitState == value)
 			return;
 
 		CircuitState old = circuitState;
+                HdlModel oldHdl = hdlModel;
+                Object oldActive = old;
+                if (oldHdl != null)
+                    oldActive = oldHdl;
+
 		Circuit oldCircuit = old == null ? null : old.getCircuit();
 		Circuit newCircuit = value.getCircuit();
 		boolean circuitChanged = old == null || oldCircuit != newCircuit;
@@ -516,12 +527,17 @@ public class Project {
 		stateMap.put(circuitState.getCircuit(), circuitState);
 		simulator.setCircuitState(circuitState);
 		if (circuitChanged) {
-			fireEvent(ProjectEvent.ACTION_SET_CURRENT, oldCircuit, newCircuit);
+			fireEvent(ProjectEvent.ACTION_SET_CURRENT, oldActive, newCircuit);
 			if (newCircuit != null) {
 				for (CircuitListener l : circuitListeners) {
 					newCircuit.addCircuitListener(l);
 				}
 			}
+                        if (oldCircuit != null)
+                            oldCircuit.displayChanged();
+                        if (oldHdl != null)
+                            oldHdl.displayChanged();
+                        newCircuit.displayChanged();
 		}
 		fireEvent(ProjectEvent.ACTION_SET_STATE, old, circuitState);
 	}

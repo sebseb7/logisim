@@ -108,6 +108,9 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
         public void removeUpdate(DocumentEvent de) { docChanged(); }
 
         void docChanged() {
+            if (model == null)
+                return;
+            model.setContent(editor.getText());
             if (dirty || model == null)
                 return;
             // toolbar.setDirty(!editor.getText().equals(model.getContent()));
@@ -270,18 +273,32 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
                 model.setContent(editor.getText());
             model.removeHdlModelListener(toolbar);
             model.removeHdlModelListener(this);
+            model = null;
             setText("");
             dirty = false;
-            model = null;
         }
 
         @Override
         public void contentSet(HdlModel source) {
-            System.out.println("view content set");
+            if (model != source)
+                return;
             if (!editor.getText().equals(model.getContent()))
                 setText(model.getContent());
             dirty = false;
         }
+
+        @Override
+        public void aboutToSave(HdlModel source) {
+            if (model != source)
+                return;
+            if (!editor.getText().equals(model.getContent())) {
+                model.setContent(editor.getText());
+                dirty = false;
+                toolbar.setDirty(!model.isValid());
+            }
+        }
+        @Override
+        public void displayChanged(HdlModel source) { }
 
         public void setHdlModel(HdlModel model) {
             if (this.model == model)

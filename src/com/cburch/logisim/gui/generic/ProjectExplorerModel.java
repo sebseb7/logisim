@@ -34,6 +34,8 @@ package com.cburch.logisim.gui.generic;
  * Code taken from Cornell's version of Logisim:
  * http://www.cs.cornell.edu/courses/cs3410/2015sp/
  */
+import java.util.Enumeration;
+import javax.swing.tree.TreePath;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.SwingUtilities;
@@ -42,6 +44,7 @@ import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
+import com.cburch.logisim.tools.Tool;
 
 class ProjectExplorerModel extends DefaultTreeModel implements ProjectListener {
 
@@ -61,7 +64,7 @@ class ProjectExplorerModel extends DefaultTreeModel implements ProjectListener {
 
 		abstract void decommission();
 
-		void fireNodeChanged() {
+		public void fireNodeChanged() {
 			Node<?> parent = (Node<?>) this.getParent();
 
 			if (parent == null) {
@@ -114,11 +117,23 @@ class ProjectExplorerModel extends DefaultTreeModel implements ProjectListener {
 		proj.addProjectListener(this);
 	}
 
+        Node<Tool> findTool(Tool tool) {
+            final Node<?> root = (Node<?>) getRoot();
+            if (root == null || tool == null)
+                return null;
+            Enumeration<DefaultMutableTreeNode> en = root.depthFirstEnumeration();
+            while (en.hasMoreElements()) {
+                Node<?> node = (Node<?>)en.nextElement();
+                if (node.getValue() == tool)
+                    return (Node<Tool>)node;
+            }
+            return null;
+        }
+
 	void fireStructureChanged() {
                 final ProjectExplorerModel model = this;
                 final Node<?> root = (Node<?>) getRoot();
-                try {
-                    SwingUtilities.invokeAndWait(new Runnable() {
+                    SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run() {
                             if (root != null) {
@@ -130,19 +145,20 @@ class ProjectExplorerModel extends DefaultTreeModel implements ProjectListener {
                             }
                         }
                     });
-                } catch (InterruptedException e) {
-                } catch (java.lang.reflect.InvocationTargetException e) {
-                }
 	}
 
 	// ProjectListener methods
 	public void projectChanged(ProjectEvent event) {
 		int act = event.getAction();
-
 		if (act == ProjectEvent.ACTION_SET_FILE) {
 			setLogisimFile(proj.getLogisimFile());
-		}
+		        fireStructureChanged();
+                }
 	}
+
+        public void updateStructure() {
+            fireStructureChanged();
+        }
 
 	private void setLogisimFile(LogisimFile file) {
 		Node<?> oldRoot = (Node<?>) getRoot();
@@ -171,6 +187,7 @@ class ProjectExplorerModel extends DefaultTreeModel implements ProjectListener {
 			value.addProjectListener(this);
 			setLogisimFile(value.getLogisimFile());
 		}
+		fireStructureChanged();
 	}
 
 }

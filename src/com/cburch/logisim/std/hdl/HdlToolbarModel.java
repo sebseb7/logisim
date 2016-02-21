@@ -132,12 +132,17 @@ class HdlToolbarModel extends AbstractToolbarModel implements HdlModelListener {
 
     @Override
     public void contentSet(HdlModel source) {
-        System.out.println("toolbar content set");
         if (validateEnabled) {
             validateEnabled = false;
             fireToolbarContentsChanged();
         }
     }
+
+    @Override
+    public void aboutToSave(HdlModel source) { }
+
+    @Override
+    public void displayChanged(HdlModel source) { }
 
     private class HdlToolbarItem implements ToolbarItem {
         Icon icon;

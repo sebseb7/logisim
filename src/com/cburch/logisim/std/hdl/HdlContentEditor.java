@@ -144,11 +144,14 @@ public class HdlContentEditor extends JDialog implements JInputDialog {
 	}
 
 	private class ModelListener implements HdlModelListener {
-
 		@Override
 		public void contentSet(HdlModel source) {
 			validate.setEnabled(false);
 		}
+                @Override
+                public void aboutToSave(HdlModel source) { }
+                @Override
+                public void displayChanged(HdlModel source) { }
 
 	}
 

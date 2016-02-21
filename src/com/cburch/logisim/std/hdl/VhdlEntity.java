@@ -374,11 +374,16 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
         @Override
 	public void contentSet(HdlModel source) {
-            System.out.println("factory content set");
             if (content.isValid()) 
                 this.setIconName("vhdl.gif");
             else
                 this.setIconName("vhdl-invalid.gif");
         }
+
+        @Override
+        public void aboutToSave(HdlModel source) { }
+
+        @Override
+        public void displayChanged(HdlModel source) { }
 
 }

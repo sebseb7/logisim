@@ -77,4 +77,9 @@ public interface HdlModel {
 	 */
 	public void showErrors();
 
+	/**
+	 * Fire notification that the display has changed.
+	 */
+	public void displayChanged();
+
 }

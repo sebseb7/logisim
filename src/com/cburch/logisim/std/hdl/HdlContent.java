@@ -55,7 +55,6 @@ public abstract class HdlContent implements HdlModel, Cloneable {
 
 	@Override
 	public void addHdlModelListener(HdlModelListener l) {
-                //System.out.println("Adding " + l.getClass() + " for " + toString());
 		if (listeners == null) {
 			listeners = new EventSourceWeakSupport<HdlModelListener>();
 		}
@@ -80,16 +79,13 @@ public abstract class HdlContent implements HdlModel, Cloneable {
 	@Override
 	public HdlContent clone() throws CloneNotSupportedException {
 		HdlContent ret = (HdlContent) super.clone();
-                //System.out.println("cloning");
 		ret.listeners = null;
                 int n = 0;
                 if (listeners != null) {
                     for (HdlModelListener l : listeners) {
-                        //System.out.println("dropping " + l.getClass());
                         n++;
                     }
                 }
-                //System.out.println("cloned from " + n + " to " + 0);
 		return ret;
 	}
 
@@ -113,22 +109,50 @@ public abstract class HdlContent implements HdlModel, Cloneable {
 
 	protected void fireContentSet() {
 		if (listeners == null) {
-                        //System.out.println("no listeners on " + listeners);
 			return;
 		}
 
 		boolean found = false;
 		for (HdlModelListener l : listeners) {
 			found = true;
-                        //System.out.println(this.toString() + " notifying " + l.getClass() + " " + l);
 			l.contentSet(this);
 		}
 
 		if (!found) {
-                        //System.out.println("clearning listeners " + listeners);
 			listeners = null;
 		}
-                // fireNameChange();
+	}
+
+	protected void fireAboutToSave() {
+		if (listeners == null) {
+			return;
+		}
+
+		boolean found = false;
+		for (HdlModelListener l : listeners) {
+			found = true;
+			l.aboutToSave(this);
+		}
+
+		if (!found) {
+			listeners = null;
+		}
+	}
+
+	public void displayChanged() {
+		if (listeners == null) {
+			return;
+		}
+
+		boolean found = false;
+		for (HdlModelListener l : listeners) {
+			found = true;
+			l.displayChanged(this);
+		}
+
+		if (!found) {
+			listeners = null;
+		}
 	}
 
         /*
@@ -157,7 +181,6 @@ public abstract class HdlContent implements HdlModel, Cloneable {
 
 	@Override
 	public void removeHdlModelListener(HdlModelListener l) {
-                //System.out.println("Removing " + l.getClass() + " for " + toString());
 		if (listeners == null) {
 			return;
 		}
