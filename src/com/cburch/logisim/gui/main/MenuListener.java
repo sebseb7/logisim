@@ -229,8 +229,8 @@ class MenuListener {
 			menubar.setEnabled(LogisimMenuBar.REMOVE_CIRCUIT, canRemove);
 			menubar.setEnabled(LogisimMenuBar.VIEW_TOOLBOX, !viewToolbox);
 			menubar.setEnabled(LogisimMenuBar.VIEW_SIMULATION, !viewSimulation);
-			menubar.setEnabled(LogisimMenuBar.EDIT_LAYOUT, !viewLayout);
-			menubar.setEnabled(LogisimMenuBar.EDIT_APPEARANCE, !viewAppearance);
+			menubar.setEnabled(LogisimMenuBar.EDIT_LAYOUT, viewAppearance);
+			menubar.setEnabled(LogisimMenuBar.EDIT_APPEARANCE, viewLayout);
 			menubar.setEnabled(LogisimMenuBar.REVERT_APPEARANCE, canRevert);
 			menubar.setEnabled(LogisimMenuBar.ANALYZE_CIRCUIT, true);
 			menubar.setEnabled(LogisimMenuBar.CIRCUIT_STATS, true);

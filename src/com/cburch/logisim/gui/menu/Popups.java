@@ -149,7 +149,7 @@ public class Popups {
 			add(remove);
 			remove.addActionListener(this);
 
-                        edit.setEnabled(true);
+			edit.setEnabled(vhdl != proj.getFrame().getHdlEditorView());
 
 			boolean canChange = proj.getLogisimFile().contains(vhdl);
 			LogisimFile file = proj.getLogisimFile();
@@ -159,8 +159,7 @@ public class Popups {
 		public void actionPerformed(ActionEvent e) {
 			Object source = e.getSource();
 			if (source == edit) {
-				proj.getFrame().setEditorView(Frame.EDIT_LAYOUT);
-                                vhdl.openEditor(proj);
+				proj.setCurrentHdlModel(vhdl);
 			} else if (source == remove) {
 				ProjectCircuitActions.doRemoveVhdl(proj, vhdl);
 			}

@@ -156,7 +156,7 @@ public class Frame extends LFrame implements LocaleListener {
 				}
 				Tool oldTool = (Tool) event.getOldData();
 				Tool newTool = (Tool) event.getData();
-				if (getEditorView().equals(EDIT_LAYOUT)) {
+				if (!getEditorView().equals(EDIT_APPEARANCE)) {
 					viewAttributes(oldTool, newTool, false);
 				}
 			}
@@ -323,6 +323,7 @@ public class Frame extends LFrame implements LocaleListener {
 	public static final String EXPLORER_VIEW = "explorerView";
 	public static final String EDIT_LAYOUT = "layout";
 	public static final String EDIT_APPEARANCE = "appearance";
+	public static final String EDIT_HDL = "hdl";
 	public static final String VIEW_TOOLBOX = "toolbox";
 	public static final String VIEW_SIMULATION = "simulation";
 	public static final String VIEW_TRACKER = "tracker";
@@ -535,7 +536,7 @@ public class Frame extends LFrame implements LocaleListener {
 	}
 
 	public String getEditorView() {
-		return mainPanel.getView();
+		return (getHdlEditorView() != null ? EDIT_HDL : mainPanel.getView());
 	}
 
 	public String getExplorerView() {
@@ -698,7 +699,7 @@ public class Frame extends LFrame implements LocaleListener {
 		}
 	}
 
-        public void setHdlEditorView(HdlModel hdl) {
+        private void setHdlEditorView(HdlModel hdl) {
             hdlEditor.setHdlModel(hdl);
             editRegion.setFraction(0.0);
 
