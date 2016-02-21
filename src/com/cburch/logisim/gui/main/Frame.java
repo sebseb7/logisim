@@ -447,7 +447,7 @@ public class Frame extends LFrame implements LocaleListener {
                 hdlEditor = new HdlContentView(proj);
 		vhdlSimulatorConsole = new VhdlSimulatorConsole(proj);
 		editRegion = new HorizontalSplitPane(mainPanelSuper,
-				hdlEditor, 0.8);
+				hdlEditor, 1.0);
 		rightRegion = new HorizontalSplitPane(editRegion,
 				vhdlSimulatorConsole, 1.0);
 
