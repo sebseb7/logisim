@@ -179,7 +179,12 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 				if (path != null && listener != null) {
 					listener.doubleClicked(new ProjectExplorerEvent(path));
 				}
-			}
+			} else {
+				TreePath path = getPathForLocation(e.getX(), e.getY());
+                                if (listener != null) {
+                                        listener.selectionChanged(new ProjectExplorerEvent(path));
+                                }
+                        }
 		}
 
 		//
