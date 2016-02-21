@@ -45,6 +45,7 @@ import javax.swing.event.DocumentListener;
 
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rsyntaxtextarea.RSyntaxDocument;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import com.cburch.hdl.HdlFile;
@@ -56,6 +57,8 @@ import com.cburch.draw.toolbar.ToolbarModel;
 import com.cburch.logisim.proj.Action;
 import com.cburch.hdl.HdlModelListener;
 import com.cburch.hdl.HdlModel;
+
+import com.kwalsh.logisim.vhdl.VhdlSyntax;
 
 public class HdlContentView extends JPanel implements DocumentListener, HdlModelListener {
 
@@ -180,15 +183,21 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
 		this.project = proj;
                 this.model = null;
                 this.toolbar = new HdlToolbarModel(proj, this);
-                configure();
+                configure("vhdl");
 	}
 
-	private void configure() {
+	private void configure(String lang) {
 		JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
 		editor = new RSyntaxTextArea(ROWS, COLUMNS);
-		editor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_DELPHI);
-		editor.setCodeFoldingEnabled(true);
+               
+                if (lang.equals("vhdl")) {
+                    ((RSyntaxDocument)editor.getDocument()).setSyntaxStyle(new VhdlSyntax());
+                    editor.setCodeFoldingEnabled(true);
+                } else {
+                    editor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_DELPHI);
+                    editor.setCodeFoldingEnabled(true);
+                }
 		editor.setAntiAliasingEnabled(true);
 		editor.getDocument().addDocumentListener(this);
 
