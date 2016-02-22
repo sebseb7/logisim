@@ -1,5 +1,29 @@
+logisim-evolution (Holy Cross Edition)
+======================================
+
+This is a fork of
+[reds-heig logisim-evolution](https://github.com/reds-heig/logisim-evolution), which in
+turn is a fork of the original
+[Logisim by Dr. Carl Burch](http://www.cburch.com/logisim/). Mainly, the changes
+revolve around:
+* better support for the Altera DE0 FPGA prototype board;
+* bidirectional FPGA I/O ports (e.g. to support the DE0 keyboard and LCD module).
+* new HDL components (multipliers, divmod, etc.);
+* support for VHDL _generics_;
+* UI changes to aid in HDL editing and FPGA downloading.
+
+On a historical note: I am also the author of all the scattered code mentioning
+"Cornell's version of Logisim", both in the reds-heig fork and Carl Burch's
+version. That code was written when I taught cs3410 (previously cs314) as a grad
+student and, before that, as an undergrad at Cornell. Unsurprisingly, this new
+fork is to support the course I now teach, csci226, at
+[Holy Cross](http://mathcs.holycross.edu/~csci226/).
+
+Below is the README.md file from the upstream reds-heig fork.
+
 logisim-evolution
 =================
+
 Logisim is an educational tool for designing and simulating digital logic circuits.
 It has been originally created by [Dr. Carl Burch](http://www.cburch.com/logisim/) and actively developed until 2011.
 After this date the author focused on other projects, and recently the development has been officially stopped  [(see his message here)](http://www.cburch.com/logisim/retire-note.html).
