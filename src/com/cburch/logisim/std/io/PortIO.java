@@ -31,6 +31,7 @@ package com.cburch.logisim.std.io;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 
 import com.bfh.logisim.designrulecheck.CorrectLabel;
@@ -79,9 +80,10 @@ public class PortIO extends InstanceFactory {
 
 	public static final String INPUT = "input";
 	public static final String OUTPUT = "output";
-	public static final String INOUT = "inout";
+	public static final String INOUT_1 = "in/out (single enable)";
+	public static final String INOUT_N = "in/out (per-bit enable)";
 
-	public static final String[] DIRECTIONS = { INPUT, OUTPUT, INOUT };
+	public static final String[] DIRECTIONS = { INPUT, OUTPUT, INOUT_1, INOUT_N };
 	public static final Attribute<String> ATTR_DIR = Attributes.forOption(
 			"direction", Strings.getter("pioDirection"), DIRECTIONS);
 
@@ -90,10 +92,10 @@ public class PortIO extends InstanceFactory {
 	public PortIO() {
 		super("PortIO", Strings.getter("pioComponent"));
 		int portSize = 8;
-		setAttributes(new Attribute[] { StdAttr.LABEL, Io.ATTR_LABEL_LOC,
+		setAttributes(new Attribute[] { StdAttr.FACING, StdAttr.LABEL, Io.ATTR_LABEL_LOC,
 				StdAttr.LABEL_FONT, Io.ATTR_LABEL_COLOR, ATTR_SIZE, ATTR_DIR},
-				new Object[] { "", Direction.EAST, StdAttr.DEFAULT_LABEL_FONT,
-						Color.BLACK, portSize, INOUT });
+				new Object[] { Direction.EAST, "", Direction.EAST, StdAttr.DEFAULT_LABEL_FONT,
+						Color.BLACK, portSize, INOUT_1 });
 		setFacingAttribute(StdAttr.FACING);
 		setIconName("pio.gif");
 		// setInstancePoker(Poker.class);
@@ -151,51 +153,77 @@ public class PortIO extends InstanceFactory {
 				GetLabels(instance.getAttributeValue(ATTR_SIZE)));
 	}
 
-	private void configurePorts(Instance instance) {
-		if (false /* instance.getAttributeValue(ATTR_BUS).equals(PINS) */) {
-			// TODO YSY PINS
-			// Port[] ps = new Port[instance.getAttributeValue(ATTR_SIZE)];
-			// for (int i = 0; i < instance.getAttributeValue(ATTR_SIZE); i++) {
-			//
-			// ps[i] = new Port((i + 1) * 10, 0, Port.OUTPUT, 1);
-			// ps[i].setToolTip(StringUtil.constantGetter(String.valueOf(i+1)));
-			// }
-			// instance.setPorts(ps);
-		} else {
-			int nbPorts = instance.getAttributeValue(ATTR_SIZE);
-			String dir = instance.getAttributeValue(ATTR_DIR);
-                        int k = (dir == INOUT ? 3 : 1);
-			Port[] ps = new Port[k*(((nbPorts - 1) / 32) + 1)];
-			int i = 0, p = 0;
-                        int x = (dir == INOUT ? 0 : 10);
-                        while (nbPorts > 0) {
-                            int n = (nbPorts > 32 ? 32 : nbPorts);
-                            String range = "[" + i + " to " + (i + n - 1) +"]";
-                            if (dir == INOUT) {
-                                ps[p] = new Port(x, 10, Port.INPUT, n);
-                                ps[p].setToolTip(StringUtil.constantGetter("OutEnable"+range));
-                                p++;
-                                x += 10;
-                            }
-                            if (dir == OUTPUT || dir == INOUT) {
-                                ps[p] = new Port(x, 0, Port.INPUT, n);
-                                ps[p].setToolTip(StringUtil.constantGetter("Out"+range));
-                                p++;
-                                x += 10;
-                            }
-                            if (dir == INPUT || dir == INOUT) {
-                                ps[p] = new Port(x, 0, Port.OUTPUT, n);
-                                ps[p].setToolTip(StringUtil.constantGetter("In"+range));
-                                p++;
-                                x += 10;
-                            }
-                            i += 32;
-                            nbPorts -= n;
-                        }
-			instance.setPorts(ps);
-		}
+        private void configurePorts(Instance instance) {
+            Direction facing = instance.getAttributeValue(StdAttr.FACING);
+            String dir = instance.getAttributeValue(ATTR_DIR);
+            int size = instance.getAttributeValue(ATTR_SIZE);
+            // logisim max bus size is 32, so use multiple buses if needed
+            int nBus = (((size - 1) / 32) + 1);
+            int nPorts = -1;
+            if (dir == INPUT || dir == OUTPUT)
+                nPorts = nBus;
+            else if (dir == INOUT_N)
+                nPorts = 3*nBus;
+            else if (dir == INOUT_1)
+                nPorts = 2*nBus + 1;
+            Port[] ps = new Port[nPorts];
+            int p = 0;
 
-	}
+            int x = 0, y = 0, dx = 0, dy = 0;
+            if (facing == Direction.NORTH)
+                dy = -10;
+            else if (facing == Direction.SOUTH)
+                dy = 10;
+            else if (facing == Direction.WEST)
+                dx = -10;
+            else 
+                dx = 10;
+            if (dir == INPUT || dir == OUTPUT) {
+                x += dx; y += dy;
+            }
+            if (dir == INOUT_1) {
+                ps[p] = new Port(x-dy, y+dx, Port.INPUT, 1);
+                ps[p].setToolTip(StringUtil.constantGetter("OutEnable"));
+                p++;
+                x += dx; y += dy;
+            }
+            int n = size;
+            int i = 0;
+            while (n > 0) {
+                int e = (n > 32 ? 32 : n);
+                String range = "[" + i + " to " + (i + e - 1) +"]";
+                if (dir == INOUT_N) {
+                    ps[p] = new Port(x-dy, y+dx, Port.INPUT, e);
+                    ps[p].setToolTip(StringUtil.constantGetter("OutEnable"+range));
+                    p++;
+                    x += dx; y += dy;
+                }
+                if (dir == OUTPUT || dir == INOUT_1 || dir == INOUT_N) {
+                    ps[p] = new Port(x, y, Port.INPUT, e);
+                    ps[p].setToolTip(StringUtil.constantGetter("Out"+range));
+                    p++;
+                    x += dx; y += dy;
+                }
+                i += 32;
+                n -= e;
+            }
+            n = size;
+            i = 0;
+            while (n > 0) {
+                int e = (n > 32 ? 32 : n);
+                String range = "[" + i + " to " + (i + e - 1) +"]";
+                if (dir == INPUT || dir == INOUT_1 || dir == INOUT_N) {
+                    ps[p] = new Port(x, y, Port.OUTPUT, e);
+                    ps[p].setToolTip(StringUtil.constantGetter("In"+range));
+                    p++;
+                    x += dx; y += dy;
+                }
+                i += 32;
+                n -= e;
+            }
+            instance.setPorts(ps);
+
+        }
 
 	@Override
 	public String getHDLName(AttributeSet attrs) {
@@ -214,17 +242,12 @@ public class PortIO extends InstanceFactory {
 
 	@Override
 	public Bounds getOffsetBounds(AttributeSet attrs) {
-		if (false /* attrs.getValue(ATTR_BUS).equals(PINS) */) {
-			return Bounds.create(0, 0,
-					10 + attrs.getValue(ATTR_SIZE).intValue() * 10, 40).rotate(
-					Direction.NORTH, Direction.NORTH, 0, 0);
-		} else {
-                        int n = attrs.getValue(ATTR_SIZE).intValue();
-                        if (n < 8)
-                            n = 8;
-			return Bounds.create(0, 0, 10 + n/2 * 10 , 60).rotate(
-                                        Direction.NORTH, Direction.NORTH, 0, 0);
-		}
+		Direction facing = attrs.getValue(StdAttr.FACING);
+                int n = attrs.getValue(ATTR_SIZE).intValue();
+                if (n < 8)
+                    n = 8;
+                return Bounds.create(0, 0, 10 + n/2 * 10 , 50)
+                    .rotate(Direction.EAST, facing, 0, 0);
 	}
 
 	/*
@@ -257,7 +280,7 @@ public class PortIO extends InstanceFactory {
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
 		if (attr == Io.ATTR_LABEL_LOC) {
 			computeTextField(instance);
-		} else if (attr == ATTR_SIZE || attr == ATTR_DIR) {
+		} else if (attr == ATTR_SIZE || attr == ATTR_DIR || attr == StdAttr.FACING) {
 			instance.recomputeBounds();
 			configurePorts(instance);
 			computeTextField(instance);
@@ -269,78 +292,88 @@ public class PortIO extends InstanceFactory {
 
 	@Override
 	public void paintInstance(InstancePainter painter) {
-		/*
-		 * State state = (State) painter.getData(); if (state == null) { state =
-		 * new State(0,painter.getAttributeValue(ATTR_SIZE));
-		 * painter.setData(state); }
-		 */
-		Bounds bds = painter.getBounds();
-                int x = bds.getX();
-                int y = bds.getY();
+		Direction facing = painter.getAttributeValue(StdAttr.FACING);
+
+		Bounds bds = painter.getBounds().rotate(Direction.EAST, facing, 0, 0);
                 int w = bds.getWidth();
                 int h = bds.getHeight();
+                int x = painter.getLocation().getX();
+                int y = painter.getLocation().getY();
+                Graphics g = painter.getGraphics(); 
+                g.translate(x, y); 
+                double rotate = 0.0; 
+                if (facing != Direction.EAST && g instanceof Graphics2D) { 
+                    rotate = -facing.toRadians(); 
+                    ((Graphics2D) g).rotate(rotate); 
+                } 
 
-		Graphics g = painter.getGraphics();
 		GraphicsUtil.switchToWidth(g, 2);
-		g.setColor(Color.darkGray);
-		g.fillRect(x+1, y+20, w-2, h-24);
+		g.setColor(Color.DARK_GRAY);
+                int bx[] = {1, 1, 5, w-6, w-2, w-2, 1};
+                int by[] = {20, h-8, h-4, h-4, h-8, 20, 20};
+                g.fillPolygon(bx, by, 6);
+		g.setColor(Color.BLACK);
 		GraphicsUtil.switchToWidth(g, 1);
-		if (false /* painter.getAttributeValue(ATTR_BUS).equals(PINS) */) {
-			// TODO YSY PINS
-			g.setColor(Color.white);
-			g.setFont(StdAttr.DEFAULT_LABEL_FONT
-					.deriveFont(StdAttr.DEFAULT_LABEL_FONT.getSize2D() * 0.6f));
-			for (int i = 0; i < painter.getAttributeValue(ATTR_SIZE); i++) {
-				g.fillRect(bds.getX() + 6 + (i * 10), bds.getY() + 15, 6, 6);
-				if (i == 0 || i == painter.getAttributeValue(ATTR_SIZE) - 1) {
-					g.drawChars(Integer.toString(i).toCharArray(), 0, Integer
-							.toString(i).toCharArray().length, bds.getX() + 6
-							+ (i < 10 ? 0 : -2) + i * 10, bds.getY() + 12);
-				}
-			}
-		} else {
-			g.setColor(Color.LIGHT_GRAY);
-                        int n = painter.getAttributeValue(ATTR_SIZE);
-			for (int i = 0; i < n; i++) {
-				g.fillRect(x + 7 + ((i/2) * 10), y + 35 + (i%2)*10, 6, 6);
-			}
-			g.setColor(Color.WHITE);
-			g.setFont(StdAttr.DEFAULT_LABEL_FONT);
-			String text = "" + n + " PIN";
-			g.drawChars(text.toCharArray(), 0, text.toCharArray().length, x + 7, y + 32);
-                        g.setColor(Color.BLACK);
-                        String dir = painter.getAttributeValue(ATTR_DIR);
-                        int px = (dir == INOUT ? x : x + 10);
-                        int py = y;
-                        GraphicsUtil.switchToWidth(g, 2);
-                        while (n > 0) {
-                            if (dir == INOUT) {
-                                g.drawLine(px, py+10, px+6, py+10);
-                                px += 10;
-                            }
-                            if (dir == OUTPUT || dir == INOUT) {
-                                g.drawLine(px, py, px, py+4);
-                                int[] xp = {px, px-4, px+4, px};
-                                int[] yp = {py+15, py+5, py+5, py+15};
-                                g.drawPolyline(xp, yp, 4);
-                                g.drawLine(px, py+15, px, py+20);
-                                px += 10;
-                            }
-                            if (dir == INPUT || dir == INOUT) {
-                                g.drawLine(px, py, px, py+5);
-                                int[] xp = {px, px-4, px+4, px};
-                                int[] yp = {py+6, py+16, py+16, py+6};
-                                g.drawPolyline(xp, yp, 4);
-                                g.drawLine(px, py+16, px, py+20);
-                                px += 10;
-                            }
-                            n -= 32;
+                g.drawPolyline(bx, by, 7);
+		
+                g.setColor(Color.LIGHT_GRAY);
+                int size = painter.getAttributeValue(ATTR_SIZE);
+                int nBus = (((size - 1) / 32) + 1);
+                for (int i = 0; i < size; i++) {
+                        g.fillRect(7 + ((i/2) * 10),  25 + (i%2)*10, 6, 6);
+                }
+                g.setColor(Color.BLACK);
+                String dir = painter.getAttributeValue(ATTR_DIR);
+                int px = ((dir == INOUT_1 || dir == INOUT_N) ? 0 : 10);
+                int py = 0;
+                for (int p = 0; p < nBus; p++) {
+                    if (dir == INOUT_1) {
+                        GraphicsUtil.switchToWidth(g, 3);
+                        if (p == 0) {
+                            g.drawLine(px, py+10, px+6, py+10);
+                            px += 10;
+                        } else {
+                            g.drawLine(px-6, py+10, px-4, py+10);
                         }
-                        GraphicsUtil.switchToWidth(g, 1);
-		}
+                    }
+                    if (dir == INOUT_N) {
+                        GraphicsUtil.switchToWidth(g, 3);
+                        g.drawLine(px, py+10, px+6, py+10);
+                        px += 10;
+                    }
+                    if (dir == OUTPUT || dir == INOUT_1 || dir == INOUT_N) {
+                        GraphicsUtil.switchToWidth(g, 3);
+                        g.drawLine(px, py, px, py+4);
+                        g.drawLine(px, py+15, px, py+20);
+                        GraphicsUtil.switchToWidth(g, 2);
+                        int[] xp = {px, px-4, px+4, px};
+                        int[] yp = {py+15, py+5, py+5, py+15};
+                        g.drawPolyline(xp, yp, 4);
+                        px += 10;
+                    }
+                }
+
+                for (int p = 0; p < nBus; p++) {
+                    if (dir == INPUT || dir == INOUT_1 || dir == INOUT_N) {
+                        GraphicsUtil.switchToWidth(g, 3);
+                        g.drawLine(px, py, px, py+5);
+                        g.drawLine(px, py+16, px, py+20);
+                        GraphicsUtil.switchToWidth(g, 2);
+                        int[] xp = {px, px-4, px+4, px};
+                        int[] yp = {py+6, py+16, py+16, py+6};
+                        g.drawPolyline(xp, yp, 4);
+                        px += 10;
+                    }
+                }
+
+		painter.drawPorts();
+
+                ((Graphics2D) g).rotate(-rotate); 
+                g.translate(-x, -y);
+
+                GraphicsUtil.switchToWidth(g, 1);
 		g.setColor(painter.getAttributeValue(Io.ATTR_LABEL_COLOR));
 		painter.drawLabel();
-		painter.drawPorts();
 	}
 
 	@Override
