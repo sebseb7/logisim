@@ -32,7 +32,9 @@ package com.cburch.logisim.std.io;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
@@ -41,10 +43,14 @@ import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
+import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
+import com.cburch.logisim.data.Value;
+import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.Instance;
-//import com.cburch.logisim.instance.InstanceData;
+import com.cburch.logisim.instance.InstanceData;
+import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
@@ -98,7 +104,7 @@ public class PortIO extends InstanceFactory {
 						Color.BLACK, portSize, INOUT_1 });
 		setFacingAttribute(StdAttr.FACING);
 		setIconName("pio.gif");
-		// setInstancePoker(Poker.class);
+		setInstancePoker(PortPoker.class);
 		MyIOInformation = new IOComponentInformationContainer(0, 0, portSize,
 				null, null, GetLabels(portSize),
 				FPGAIOInformationContainer.IOComponentTypes.PortIO);
@@ -250,22 +256,80 @@ public class PortIO extends InstanceFactory {
                     .rotate(Direction.EAST, facing, 0, 0);
 	}
 
-	/*
-	 * private static class State implements InstanceData, Cloneable {
-	 * 
-	 * private int Value; private int size;
-	 * 
-	 * public State(int value, int size) { Value = value; this.size = size; }
-	 * 
-	 * public boolean BitSet(int bitindex) { if (bitindex >= size) { return
-	 * false; } int mask = 1 << bitindex; return (Value & mask) != 0; }
-	 * 
-	 * public void ToggleBit(int bitindex) { if ((bitindex < 0) || (bitindex >=
-	 * size)) { return; } int mask = 1 << bitindex; Value ^= mask; }
-	 * 
-	 * @Override public Object clone() { try { return super.clone(); } catch
-	 * (CloneNotSupportedException e) { return null; } } }
-	 */
+	
+        private static class PortState implements InstanceData, Cloneable {
+
+            Value pin[]; // pindata = usrdata + indata
+            Value usr[]; // usrdata
+            int size;
+
+            public PortState(int size) {
+                this.size = size;
+                int nBus = (((size - 1) / 32) + 1);
+                pin = new Value[nBus];
+                usr = new Value[nBus];
+                for (int i = 0; i < nBus; i++) {
+                    int n = (size > 32 ? 32 : size);
+                    pin[i] = Value.createUnknown(BitWidth.create(n));
+                    usr[i] = Value.createUnknown(BitWidth.create(n));
+                    size -= n;
+                }
+            }
+
+            public void resize(int sz) {
+                int nBus = (((sz - 1) / 32) + 1);
+                if (nBus != (((size - 1) / 32) + 1)) {
+                    pin = Arrays.copyOf(pin, nBus);
+                    usr = Arrays.copyOf(usr, nBus);
+                }
+                for (int i = 0; i < nBus; i++) {
+                    int n = (sz > 32 ? 32 : sz);
+                    if (pin[i] == null)
+                        pin[i] = Value.createUnknown(BitWidth.create(n));
+                    else
+                        pin[i] = pin[i].extendWidth(n, Value.UNKNOWN);
+                    if (usr[i] == null)
+                        usr[i] = Value.createUnknown(BitWidth.create(n));
+                    else
+                        usr[i] = usr[i].extendWidth(n, Value.UNKNOWN);
+                }
+                size = sz;
+            }
+
+            public void toggle(int i) {
+                int n = i / 32;
+                i = i % 32;
+                Value v = usr[n].get(i);
+                if (v == Value.UNKNOWN)
+                    v = Value.FALSE;
+                else if (v == Value.FALSE)
+                    v = Value.TRUE;
+                else 
+                    v = Value.UNKNOWN;
+                usr[n] = usr[n].set(i, v);
+            }
+
+            public Value get(int i) {
+                return pin[i/32].get(i%32);
+            }
+
+            public Color getColor(int i) {
+                Value v = get(i);
+                return (v == Value.UNKNOWN ? Color.LIGHT_GRAY : v.getColor());
+            }
+
+            @Override
+            public Object clone() {
+                try {
+                    PortState other = (PortState)super.clone();
+                    other.pin = Arrays.copyOf(pin, pin.length);
+                    other.usr = Arrays.copyOf(usr, usr.length);
+                    return other;
+                }
+                catch (CloneNotSupportedException e) { return null; }
+            }
+        }
+	
 
 	@Override
 	public boolean HDLSupportedComponent(String HDLIdentifier,
@@ -316,11 +380,18 @@ public class PortIO extends InstanceFactory {
 		GraphicsUtil.switchToWidth(g, 1);
                 g.drawPolyline(bx, by, 7);
 		
-                g.setColor(Color.LIGHT_GRAY);
                 int size = painter.getAttributeValue(ATTR_SIZE);
                 int nBus = (((size - 1) / 32) + 1);
-                for (int i = 0; i < size; i++) {
+                if (!painter.getShowState()) {
+                    g.setColor(Color.LIGHT_GRAY);
+                    for (int i = 0; i < size; i++)
                         g.fillRect(7 + ((i/2) * 10),  25 + (i%2)*10, 6, 6);
+                }  else {
+                    PortState data = getState(painter);
+                    for (int i = 0; i < size; i++) {
+                        g.setColor(data.getColor(i));
+                        g.fillRect(7 + ((i/2) * 10),  25 + (i%2)*10, 6, 6);
+                    }
                 }
                 g.setColor(Color.BLACK);
                 String dir = painter.getAttributeValue(ATTR_DIR);
@@ -366,44 +437,92 @@ public class PortIO extends InstanceFactory {
                     }
                 }
 
-		painter.drawPorts();
-
+                GraphicsUtil.switchToWidth(g, 1);
                 ((Graphics2D) g).rotate(-rotate); 
                 g.translate(-x, -y);
 
-                GraphicsUtil.switchToWidth(g, 1);
+		painter.drawPorts();
 		g.setColor(painter.getAttributeValue(Io.ATTR_LABEL_COLOR));
 		painter.drawLabel();
 	}
 
+	protected static final int DELAY = 1;
+
+        private static PortState getState(InstanceState state) {
+            int size = state.getAttributeValue(ATTR_SIZE);
+            PortState data = (PortState) state.getData();
+            if (data == null) {
+                data = new PortState(size);
+                state.setData(data);
+                return data;
+            }
+            if (data.size != size)
+                data.resize(size);
+            return data;
+        }
+
 	@Override
 	public void propagate(InstanceState state) {
-		throw new UnsupportedOperationException(
-				"PortIO simulation not implemented");
-		// State pins = (State) state.getData();
-		// if (pins == null) {
-		// pins = new State(0, state.getAttributeValue(ATTR_SIZE));
-		// state.setData(pins);
-		// }
-		// for (int i = 0; i < state.getAttributeValue(ATTR_SIZE); i++) {
-		// Value pinstate = (pins.BitSet(i)) ? Value.TRUE : Value.FALSE;
-		// state.setPort(i, pinstate, 1);
-		// }
+            String dir = state.getAttributeValue(ATTR_DIR);
+            int size = state.getAttributeValue(ATTR_SIZE);
+            int nBus = (((size - 1) / 32) + 1);
+
+            PortState data = getState(state);
+
+            if (dir == OUTPUT) {
+                for (int i = 0; i < nBus; i++) {
+                    data.pin[i] = state.getPortValue(i);
+                }
+            } else if (dir == INPUT) {
+                for (int i = 0; i < nBus; i++) {
+                    data.pin[i] = data.usr[i];
+                    state.setPort(i, data.pin[i], DELAY);
+                }
+            } else if (dir == INOUT_1) {
+                Value en = state.getPortValue(0);
+                // pindata = usrdata + en.controls(indata)
+                // where "+" resolves like:
+                //     Z 0 1 E
+                //     -------
+                // Z | Z 0 1 E
+                // 0 | 0 0 E E
+                // 1 | 1 E 1 E
+                for (int i = 0; i < nBus; i++) {
+                    Value in = state.getPortValue(i+1);
+                    data.pin[i] = data.usr[i].combine(en.controls(in));
+                    state.setPort(1+nBus+i, data.pin[i], DELAY);
+                }
+            } else if (dir == INOUT_N) {
+                for (int i = 0; i < nBus; i++) {
+                    Value en = state.getPortValue(i*2);
+                    Value in = state.getPortValue(i*2+1);
+                    data.pin[i] = data.usr[i].combine(en.controls(in));
+                    state.setPort(2*nBus+i, data.pin[i], DELAY);
+                }
+            }
 	}
 
-	// public static class Poker extends InstancePoker {
-	//
-	// @Override
-	// public void mousePressed(InstanceState state, MouseEvent e) {
-	// State val = (State) state.getData();
-	// Location loc = state.getInstance().getLocation();
-	// int cx = e.getX() - loc.getX() - 5;
-	// int i = cx / 10;
-	// val.ToggleBit(i);
-	// state.getInstance().fireInvalidated();
-	// }
-	// }
-	//
+        public static class PortPoker extends InstancePoker {
+            @Override
+            public void mouseReleased(InstanceState state, MouseEvent e) {
+                Location loc = state.getInstance().getLocation();
+                int cx = e.getX() - loc.getX() - 7 + 2;
+                int cy = e.getY() - loc.getY() - 25 + 2;
+                if (cx < 0 || cy < 0)
+                    return;
+                int i = cx / 10;
+                int j = cy / 10;
+                if (j > 1)
+                    return;
+                int n = 2*i + j;
+                PortState data = getState(state);
+                if (n < 0 || n >= data.size)
+                    return;
+                data.toggle(n);
+                state.getInstance().fireInvalidated();
+            }
+	}
+	
 	@Override
 	public boolean RequiresNonZeroLabel() {
 		return true;
