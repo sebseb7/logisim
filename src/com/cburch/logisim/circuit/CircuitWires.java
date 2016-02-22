@@ -530,6 +530,7 @@ class CircuitWires {
 						} else {
 							radius = wb.isBus() ? Wire.WIDTH_BUS : Wire.WIDTH;
 						}
+                                                radius = (int)(radius * Wire.DOT_MULTIPLY_FACTOR);
 						g.fillOval(loc.getX() - radius, loc.getY() - radius, radius*2, radius*2);
 					}
 				}
@@ -593,6 +594,7 @@ class CircuitWires {
 							} else {
 								radius = wb.isBus() ? Wire.WIDTH_BUS : Wire.WIDTH;
 							}
+                                                        radius = (int)(radius * Wire.DOT_MULTIPLY_FACTOR);
 							g.fillOval(loc.getX() - radius, loc.getY() - radius, radius*2, radius*2);
 						}
 					}
