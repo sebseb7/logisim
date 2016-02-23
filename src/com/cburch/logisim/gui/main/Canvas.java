@@ -711,7 +711,7 @@ public class Canvas extends JPanel implements LocaleListener,
 
 	private CanvasPainter painter;
 
-	private boolean paintDirty = false; // only for within paintComponent
+	private volatile boolean paintDirty = false; // only for within paintComponent
 
 	private boolean inPaint = false; // only for within paintComponent
 
@@ -1012,12 +1012,25 @@ public class Canvas extends JPanel implements LocaleListener,
 		Graphics2D g2d = (Graphics2D) g;
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
 				RenderingHints.VALUE_ANTIALIAS_ON);
+		// g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+		//		RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
 		inPaint = true;
 		try {
 			super.paintComponent(g);
+                        boolean clear = false;
 			do {
+                                if (clear) {
+                                    // Clear the screen so we don't get
+                                    // artifacts due to aliasing (e.g. where
+                                    // semi-transparent (gray) pixels on the
+                                    // edges of a line turn woudl darker if
+                                    // painted a second time.
+                                    g.setColor(Color.WHITE);
+                                    g.fillRect(0, 0, getWidth(), getHeight());
+                                }
 				painter.paintContents(g, proj);
+                                clear = true;
 			} while (paintDirty);
 			if (canvasPane == null) {
 				viewport.paintContents(g);
