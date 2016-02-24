@@ -82,6 +82,7 @@ import com.cburch.logisim.file.LibraryListener;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.menu.MenuSimulate;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
 
@@ -147,7 +148,7 @@ public class FPGACommanderGui implements ActionListener {
 	private JComboBox<String> HDLOnly = new JComboBox<>();
 	private JButton ToolPath = new JButton();
 	private JButton Workspace = new JButton();
-	private JCheckBox skipHDL = new JCheckBox("Skip VHDL generation?");
+	private JCheckBox skipHDL = new JCheckBox("Skip VHDL generation and synthesis?");
 	private JTextArea textAreaInfo = new JTextArea(10, 50);
 	private JTextArea textAreaWarnings = new JTextArea(10, 50);
 	private JTextArea textAreaErrors = new JTextArea(10, 50);
@@ -193,12 +194,24 @@ public class FPGACommanderGui implements ActionListener {
 			}
                         HDLOnly.setSelectedItem(OnlyHDLMessage);
                         HDLOnly.setEnabled(false);
+			AddInfo("Tool path is not set correctly. " +
+				"Synthesis and download will not be available.");
+			AddInfo("Please set the path to Altera or Xilinx tools using the \"ToolPath\" button");
+			AddConsole("Tool path is not set correctly. " +
+				"Synthesis and download will not be available.");
+			AddConsole("Please set the path to Altera or Xilinx tools using the \"ToolPath\" button");
+			skipHDL.setSelected(false);
+			skipHDL.setEnabled(false);
 		} else if (MySettings.GetHDLOnly()) {
                         HDLOnly.setSelectedItem(OnlyHDLMessage);
                         HDLOnly.setEnabled(true);
+			skipHDL.setSelected(false);
+			skipHDL.setEnabled(false);
                 } else {
                         HDLOnly.setSelectedItem(HDLandDownloadMessage);
                         HDLOnly.setEnabled(true);
+			skipHDL.setSelected(false);
+			skipHDL.setEnabled(readyForDownload());
 		}
         }
 
@@ -290,8 +303,11 @@ public class FPGACommanderGui implements ActionListener {
 		MyProject.getSimulator().addSimulatorListener(mysimlistener);
 
 		c.gridx = 2;
+		c.gridy = 4;
+		skipHDL.setSelected(false);
 		skipHDL.setVisible(true);
 		panel.add(skipHDL, c);
+
 
 		// select annotation level
 		c.gridx = 0;
@@ -361,7 +377,6 @@ public class FPGACommanderGui implements ActionListener {
 		// HDL Only Radio
                 HDLOnly.addItem(OnlyHDLMessage);
                 HDLOnly.addItem(HDLandDownloadMessage);
-                HDLOnlyUpdate();
 		HDLOnly.setActionCommand("HDLOnly");
 		HDLOnly.addActionListener(this);
 		c.gridwidth = 2;
@@ -460,11 +475,10 @@ public class FPGACommanderGui implements ActionListener {
 		panel.add(tabbedPane, c);
 
 		panel.pack();
-		/*
-		 * panel.setLocation(Projects.getCenteredLoc(panel.getWidth(),
-		 * panel.getHeight()));
-		 */
-		panel.setLocationRelativeTo(null);
+
+		panel.setLocation(Projects.getCenteredLoc(panel.getWidth(), panel.getHeight()));
+		// panel.setLocationRelativeTo(null);
+		
 		panel.setVisible(false);
 		if (MyProject.getLogisimFile().getLoader().getMainFile() != null) {
 			MapPannel = new ComponentMapDialog(panel, MyProject
@@ -474,6 +488,9 @@ public class FPGACommanderGui implements ActionListener {
 			MapPannel = new ComponentMapDialog(panel, "");
 		}
 		MapPannel.SetBoardInformation(MyBoardInformation);
+
+                HDLOnlyUpdate();
+		validateButton.requestFocus();
 	}
 
         private void ClearConsoles() {
@@ -809,21 +826,35 @@ public class FPGACommanderGui implements ActionListener {
                 tabbedPane.repaint(rect);
 	}
 
+	private boolean generateHDL() {
+	    if (!performDRC()) {
+		AddErrors("DRC Failed");
+		return false;
+	    }
+	    if (!MapDesign()) {
+		AddErrors("Design could not be mapped");
+		return false;
+	    }
+	    if (!writeHDL()) {
+		AddErrors("COuld not create HDL files");
+		return false;
+	    }
+	    AddConsole("Successfully created HDL files");
+	    return true;
+	}
+
 	private void DownLoad() {
-		if (MySettings.GetHDLOnly() || !skipHDL.isSelected()) {
-			if (!performDRC()) {
-				return;
-			}
-			if (!MapDesign()) {
-				return;
-			}
-			if (!writeHDL()) {
-				return;
-			}
+		if (MySettings.GetHDLOnly()) {
+			generateHDL();
+			return;
 		}
-		if (!MySettings.GetHDLOnly() || skipHDL.isSelected()) {
-			DownLoadDesign(MySettings.GetHDLOnly());
+		if (skipHDL.isSelected()) {
+		    AddConsole("*** Warning *** Skipping HDL file generation and synthesis.");
+		    AddConsole("*** Warning *** Recent changes to circuits will not take effect.");
+		} else if (!generateHDL()) {
+		    return;
 		}
+		DownLoadDesign(MySettings.GetHDLOnly());
 	}
 
         private String GetWorkspacePath() {
@@ -831,12 +862,28 @@ public class FPGACommanderGui implements ActionListener {
 		return MySettings.GetWorkspacePath(projFile);
         }
 
-	private void DownLoadDesign(boolean generateOnly) {
-		if (!MapPannel.isDoneAssignment()) {
-			MyReporter.AddError("Download to board canceled");
-			return;
-		}
+	private boolean readyForDownload() {
+	    String CircuitName = circuitsList.getSelectedItem().toString();
+	    String ProjectDir = GetWorkspacePath() + File.separator
+			    + MyProject.getLogisimFile().getName();
+	    if (!ProjectDir.endsWith(File.separator)) {
+		    ProjectDir += File.separator;
+	    }
+	    LogisimFile myfile = MyProject.getLogisimFile();
+	    Circuit RootSheet = myfile.getCircuit(CircuitName);
+	    ProjectDir += CorrectLabel.getCorrectLabel(RootSheet.getName())
+			    + File.separator;
+	    String SourcePath = ProjectDir + MySettings.GetHDLType().toLowerCase()
+			    + File.separator;
+	    if (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera) {
+		return AlteraDownload.readyForDownload(ProjectDir + HDLPaths[SandboxPath] + File.separator);
+	    } else {
+		// todo: xilinx readyForDownload()
+		return MapPannel.isDoneAssignment();
+	    }
+	}
 
+	private void DownLoadDesign(boolean generateOnly) {
 		String CircuitName = circuitsList.getSelectedItem().toString();
 		String ProjectDir = GetWorkspacePath() + File.separator
 				+ MyProject.getLogisimFile().getName();
@@ -849,37 +896,50 @@ public class FPGACommanderGui implements ActionListener {
 				+ File.separator;
 		String SourcePath = ProjectDir + MySettings.GetHDLType().toLowerCase()
 				+ File.separator;
-		ArrayList<String> Entities = new ArrayList<String>();
-		ArrayList<String> Behaviors = new ArrayList<String>();
-		GetVHDLFiles(ProjectDir, SourcePath, Entities, Behaviors,
-				MySettings.GetHDLType());
-                ClearConsoles();
+		if (!skipHDL.isSelected()) {
+		    if (!MapPannel.isDoneAssignment()) {
+			    MyReporter.AddError("Download to board canceled");
+			    return;
+		    }
+		    ArrayList<String> Entities = new ArrayList<String>();
+		    ArrayList<String> Behaviors = new ArrayList<String>();
+		    GetVHDLFiles(ProjectDir, SourcePath, Entities, Behaviors,
+				    MySettings.GetHDLType());
+		    ClearConsoles();
+		    if (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera) {
+			    if (AlteraDownload.GenerateQuartusScript(MyReporter, ProjectDir
+					    + HDLPaths[ScriptPath] + File.separator,
+					    RootSheet.getNetList(), MyMappableResources,
+					    MyBoardInformation, Entities, Behaviors,
+					    MySettings.GetHDLType())) {
+				AddConsole("Can't generate quartus script");
+				return;
+			    }
+		    } else {
+			    if (XilinxDownload.GenerateISEScripts(MyReporter, ProjectDir,
+					    ProjectDir + HDLPaths[ScriptPath] + File.separator,
+					    ProjectDir + HDLPaths[UCFPath] + File.separator,
+					    RootSheet.getNetList(), MyMappableResources,
+					    MyBoardInformation, Entities, Behaviors,
+					    MySettings.GetHDLType(),
+					    writeToFlash.isSelected())
+					    && !generateOnly) {
+				AddConsole("Can't generate xilinx script");
+				return;
+			    }
+		    }
+		}
 		if (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera) {
-			if (AlteraDownload.GenerateQuartusScript(MyReporter, ProjectDir
-					+ HDLPaths[ScriptPath] + File.separator,
-					RootSheet.getNetList(), MyMappableResources,
-					MyBoardInformation, Entities, Behaviors,
-					MySettings.GetHDLType())) {
-				AlteraDownload.Download(MySettings, ProjectDir
-						+ HDLPaths[ScriptPath] + File.separator, SourcePath,
-						ProjectDir + HDLPaths[SandboxPath] + File.separator,
-						MyReporter);
-			}
+		    AlteraDownload.Download(MySettings, ProjectDir
+				    + HDLPaths[ScriptPath] + File.separator, SourcePath,
+				    ProjectDir + HDLPaths[SandboxPath] + File.separator,
+				    MyReporter);
 		} else {
-			if (XilinxDownload.GenerateISEScripts(MyReporter, ProjectDir,
-					ProjectDir + HDLPaths[ScriptPath] + File.separator,
-					ProjectDir + HDLPaths[UCFPath] + File.separator,
-					RootSheet.getNetList(), MyMappableResources,
-					MyBoardInformation, Entities, Behaviors,
-					MySettings.GetHDLType(),
-					writeToFlash.isSelected())
-					&& !generateOnly) {
-				XilinxDownload.Download(MySettings, MyBoardInformation,
-						ProjectDir + HDLPaths[ScriptPath] + File.separator,
-						ProjectDir + HDLPaths[UCFPath] + File.separator,
-						ProjectDir, ProjectDir + HDLPaths[SandboxPath]
-								+ File.separator, MyReporter);
-			}
+		    XilinxDownload.Download(MySettings, MyBoardInformation,
+				    ProjectDir + HDLPaths[ScriptPath] + File.separator,
+				    ProjectDir + HDLPaths[UCFPath] + File.separator,
+				    ProjectDir, ProjectDir + HDLPaths[SandboxPath]
+						    + File.separator, MyReporter);
 		}
 	}
 
@@ -935,11 +995,10 @@ public class FPGACommanderGui implements ActionListener {
 	}
 
 	private void handleHDLOnly() {
-		if (HDLOnly.getSelectedItem().toString().equals(OnlyHDLMessage)) {
-			MySettings.SetHdlOnly(false);
-		} else {
-			MySettings.SetHdlOnly(true);
-		}
+		boolean hdlonly = HDLOnly.getSelectedItem().toString().equals(OnlyHDLMessage);
+		MySettings.SetHdlOnly(hdlonly);
+		skipHDL.setSelected(false);
+		skipHDL.setEnabled(!hdlonly && readyForDownload());
 	}
 
 	private void handleHDLType() {
@@ -1060,9 +1119,6 @@ public class FPGACommanderGui implements ActionListener {
 		if (retval == JFileChooser.APPROVE_OPTION) {
 			File file = fc.getSelectedFile();
 			ToolPath = file.getPath();
-			if (!ToolPath.endsWith(File.separator)) {
-				ToolPath += File.separator;
-			}
 			if (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera) {
 				if (MySettings.SetAlteraToolPath(ToolPath)) {
 					HDLOnly.setEnabled(true);
@@ -1076,6 +1132,11 @@ public class FPGACommanderGui implements ActionListener {
 
 				} else {
 					AddErrors("***FATAL*** Required programs of the Altera toolsuite not found! Ignoring update.");
+					String prgs = "";
+					for (String p : Settings.AlteraPrograms) {
+					    prgs = prgs + "\n     " + p;
+					}
+					AddErrors("***INFO*** Please select a directory containing these Altera programs:" + prgs);
 				}
 			} else {
 				if (MySettings.SetXilinxToolPath(ToolPath)) {
@@ -1090,6 +1151,11 @@ public class FPGACommanderGui implements ActionListener {
 
 				} else {
 					AddErrors("***FATAL*** Required programs of the Xilinx toolsuite not found! Ignoring update.");
+					String prgs = "";
+					for (String p : Settings.XilinxPrograms) {
+					    prgs = prgs + "\n     " + p;
+					}
+					AddErrors("***INFO*** Please select a directory containing these Xilinx programs:" + prgs);
 				}
 			}
 		}

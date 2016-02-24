@@ -164,7 +164,25 @@ public class AlteraDownload implements Runnable {
     private Process altera = null;
     private Object lock = new Object();
 
-    private boolean alteraCommand(String title, int progid, String... args) throws IOException, InterruptedException {
+    private String shell(List<String> cmd) {
+	String s = "";
+	for (String c : cmd) {
+	    if (!c.matches("[a-zA-Z0-9-+_=:,.]*")) {
+		c = c.replaceAll("\\\\", "\\\\");
+		c = c.replaceAll("`", "\\`");
+		c = c.replaceAll("\\$", "\\$");
+		c = c.replaceAll("!", "\\!");
+		c = c.replaceAll("'", "'\\''");
+		c = "'" + c + "'";
+	    }
+	    if (s.length() > 0)
+		s += " ";
+	    s += c;
+	}
+	return s;
+    }
+
+    private boolean alteraCommand(String title, List<String> out, int progid, String... args) throws IOException, InterruptedException {
 		List<String> command = new ArrayList<String>();
         command.add(MySettings.GetAlteraToolPath() + File.separator + Settings.AlteraPrograms[progid]);
         for (String arg: args)
@@ -178,14 +196,36 @@ public class AlteraDownload implements Runnable {
         InputStreamReader isr = new InputStreamReader(is);
         BufferedReader br = new BufferedReader(isr);
         String line;
-        MyReporter.NewConsole(title);
-        MyReporter.print("Command: " + command + "\n");
+	if (out == null) {
+	    MyReporter.NewConsole(title);
+	    MyReporter.print("Command: " + shell(command) + "\n");
+	}
         while ((line = br.readLine()) != null) {
-            MyReporter.print(line);
+	    if (out != null)
+		out.add(line);
+	    else
+		MyReporter.print(line);
         }
         altera.waitFor();
-        return (altera.exitValue() == 0);
+        if (altera.exitValue() != 0) {
+	    if (out != null) {
+		MyReporter.NewConsole(title);
+		MyReporter.print("Command: " + shell(command) + "\n");
+		for (String msg : out)
+		    MyReporter.print(msg);
+	    }
+	    return false;
+	}
+	return true;
     }
+
+    public static boolean readyForDownload(String SandboxPath) {
+	    boolean SofFileExists = new File(SandboxPath
+			    + ToplevelHDLGeneratorFactory.FPGAToplevelName + ".sof")
+			    .exists();
+	    return SofFileExists;
+    }
+
 
     private String download() throws IOException, InterruptedException {
         setStatus("Generating FPGA files and performing download; this may take a while");
@@ -198,7 +238,7 @@ public class AlteraDownload implements Runnable {
             return null;
 		if (!SofFileExists) {
             setStatus("Creating Project");
-            if (!alteraCommand("init", 0, "-t", scriptPath.replace(ProjectPath, ".." + File.separator) + "AlteraDownload.tcl"))
+            if (!alteraCommand("init", null, 0, "-t", scriptPath.replace(ProjectPath, ".." + File.separator) + "AlteraDownload.tcl"))
                 return "Failed to Create a Quartus Project, cannot download";
 		}
 
@@ -207,7 +247,7 @@ public class AlteraDownload implements Runnable {
             return null;
 		if (!SofFileExists) {
             setStatus("Optimize Project");
-            if (!alteraCommand("optimize", 2, ToplevelHDLGeneratorFactory.FPGAToplevelName, "--optimize=area"))
+            if (!alteraCommand("optimize", null, 2, ToplevelHDLGeneratorFactory.FPGAToplevelName, "--optimize=area"))
                 return "Failed to optimize (AREA) Project, cannot download";
 		}
 
@@ -216,7 +256,7 @@ public class AlteraDownload implements Runnable {
             return null;
 		if (!SofFileExists) {
             setStatus("Synthesizing and creating configuration file (this may take a while)");
-            if (!alteraCommand("synthesize", 0, "--flow", "compile", ToplevelHDLGeneratorFactory.FPGAToplevelName))
+            if (!alteraCommand("synthesize", null, 0, "--flow", "compile", ToplevelHDLGeneratorFactory.FPGAToplevelName))
                 return "Failed to synthesize design and to create the configuration files, cannot download";
 		}
 
@@ -242,14 +282,75 @@ public class AlteraDownload implements Runnable {
                 + ToplevelHDLGeneratorFactory.FPGAToplevelName + ".sof")
                 .exists()) {
             bin = "P;" + ToplevelHDLGeneratorFactory.FPGAToplevelName + ".sof";
-        } else {
+	} else if (new File(SandboxPath
+                + ToplevelHDLGeneratorFactory.FPGAToplevelName + ".pof")
+                .exists()) {
             bin = "P;" + ToplevelHDLGeneratorFactory.FPGAToplevelName + ".pof";
+        } else {
+	    MyReporter.AddFatalError("File not found: " +
+		SandboxPath + ToplevelHDLGeneratorFactory.FPGAToplevelName + ".sof");
+	    return "Error: Design must be synthesized before download.";
         }
-        if (!alteraCommand("download", 1, "-c", "usb-blaster", "-m", "jtag", "-o", bin))
-            return "Failed to Download design; did you connect the board?";
+// Info: *******************************************************************
+// Info: Running Quartus II 32-bit Programmer
+//     Info: Version 13.0.0 Build 156 04/24/2013 SJ Web Edition
+//     ...
+//     Info: Processing started: Wed Feb 24 17:39:18 2016
+// Info: Command: quartus_pgm --list
+// 1) USB-Blaster [1-1.3]
+// 2) USB-Blaster on grace.holycross.edu [1-1.3]
+// Info: Quartus II 32-bit Programmer was successful. 0 errors, 0 warnings
+//     Info: Peak virtual memory: 126 megabytes
+//     ...
+
+	ArrayList<String> lines = new ArrayList<>();
+        if (!alteraCommand("download", lines, 1, "--list"))
+            return "Failed to list devices; did you connect the board?";
+	ArrayList<String> dev = new ArrayList<>();
+	for (String line: lines) {
+	    int n  = dev.size() + 1;
+	    if (!line.matches("^" + n + "\\) .*" ))
+		continue;
+	    line = line.replaceAll("^" + n + "\\) ", "");
+	    dev.add(line.trim());
+	}
+	String cablename = "usb-blaster";
+	if (dev.size() == 0) {
+	    MyReporter.AddSevereWarning("No USB-Blaster cable detected");
+	} else if (dev.size() > 1) {
+	    MyReporter.print("" + dev.size() + " FPGA devices detected:");
+	    int i = 1;
+	    for (String d : dev) {
+		MyReporter.print("   " + i + ") " + d);
+		i++;
+	    }
+	    cablename = chooseDevice(dev);
+	    if (cablename == null) {
+		MyReporter.print("Download cancelled.");
+		return null;
+	    }
+	}
+
+	MyReporter.print("Downloading to FPGA device: " + cablename);
+
+        if (!alteraCommand("download", null, 1, "-c", cablename, "-m", "jtag", "-o", bin))
+            return "Failed to download design; did you connect the board?";
 
         return null;
 	}
+
+	String chooseDevice(List<String> names) {
+	   String[] choices = new String[names.size()];
+	   for (int i = 0; i < names.size(); i++)
+	       choices[i] = names.get(i);
+	    String choice = (String) JOptionPane.showInputDialog(progres,
+		"Multiple FPGA devices detected. Select one to be programmed...",
+		"Select FPGA Device",
+		JOptionPane.QUESTION_MESSAGE, null,
+		choices,
+		choices[0]);
+	    return choice;
+	  }
 
 	public static boolean GenerateQuartusScript(FPGAReport MyReporter,
 			String ScriptPath, Netlist RootNetList,

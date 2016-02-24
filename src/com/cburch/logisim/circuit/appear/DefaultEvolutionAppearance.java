@@ -214,8 +214,6 @@ public class DefaultEvolutionAppearance {
                     label.getLabel().setVerticalAlignment(EditableLabel.TOP);
                     label.getLabel().setColor(Color.BLACK);
                     ret.add(label);
-                    Font f = label.getLabel().getFont();
-                    // System.out.println(f + " " + f.hashCode());
                 }
 
 		ret.add(new AppearanceAnchor(Location.create(rx + ax, ry + ay)));

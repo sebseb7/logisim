@@ -524,7 +524,7 @@ public class ComponentMapDialog implements ActionListener,
 		 * panel.setLocation(Projects.getCenteredLoc(panel.getWidth(),
 		 * panel.getHeight()));
 		 */
-		panel.setLocationRelativeTo(null);
+		panel.setLocationRelativeTo(parrentFrame);
 		panel.setVisible(false);
 	}
 
@@ -595,6 +595,13 @@ public class ComponentMapDialog implements ActionListener,
 
 	public boolean isDoneAssignment() {
 		return doneAssignment;
+	}
+
+	public void LoadDefaultSaved() {
+	    String suggestedName =
+		CorrectLabel.getCorrectLabel(MappableComponents.GetToplevelName())
+		+ "-" + BoardInfo.getBoardName() + "-MAP.xml";
+
 	}
 
 	private void Load() {

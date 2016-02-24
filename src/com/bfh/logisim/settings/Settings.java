@@ -356,6 +356,8 @@ public class Settings {
 	}
 
 	public boolean SetAlteraToolPath(String path) {
+		if (path.length() > 1 && path.endsWith(File.separator))
+			path = path.substring(0, path.length() - 1);
 		if (!AlteraToolsFound(path))
 			return false;
 		NodeList SettingsList = SettingsDocument
@@ -558,6 +560,8 @@ public class Settings {
 	}
 
 	public boolean SetXilinxToolPath(String path) {
+		if (path.length() > 1 && path.endsWith(File.separator))
+			path = path.substring(0, path.length() - 1);
 		if (!XilinxToolsFound(path))
 			return false;
 		NodeList SettingsList = SettingsDocument
