@@ -19,7 +19,7 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.StdAttr;
 
-class DefaultClassicAppearance {
+public class DefaultClassicAppearance {
 	private static final int OFFS = 50;
 	
 	private DefaultClassicAppearance() { }

@@ -86,6 +86,8 @@ public class ProjectExplorerToolNode extends ProjectExplorerModel.Node<Tool>
         public void displayChanged(HdlModel source) {
             fireNodeChanged();
         }
+        @Override
+        public void appearanceChanged(HdlModel source) { }
 
 	@Override
 	ProjectExplorerToolNode create(Tool userObject) {

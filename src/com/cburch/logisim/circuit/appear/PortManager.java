@@ -160,7 +160,7 @@ class PortManager {
 
 		// ensure we have the anchor in the circuit
 		if (anchor == null) {
-			for (CanvasObject o : DefaultAppearance.build(allPins, appearance.getCircuitAppearance())) {
+			for (CanvasObject o : DefaultAppearance.build(allPins, null, appearance.getCircuitAppearance())) {
 				if (o instanceof AppearanceAnchor) {
 					anchor = (AppearanceAnchor) o;
 				}

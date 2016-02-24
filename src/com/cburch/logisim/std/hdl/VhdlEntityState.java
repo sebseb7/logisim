@@ -86,6 +86,9 @@ class VhdlEntityState implements InstanceData, Cloneable, HdlModelListener,
         @Override
         public void displayChanged(HdlModel source) { }
 
+        @Override
+        public void appearanceChanged(HdlModel source) { }
+
 	public VhdlContent getContent() {
 		return this.content;
 	}

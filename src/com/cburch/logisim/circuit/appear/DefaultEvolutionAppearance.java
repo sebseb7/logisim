@@ -31,6 +31,8 @@
 package com.cburch.logisim.circuit.appear;
 
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -46,35 +48,84 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.Pin;
+import com.cburch.logisim.util.StringUtil;
+                
+public class DefaultEvolutionAppearance {
+        // Precise font dimensions vary based on the platform. We need component
+        // widths to be stable, so we approximate the widths when sizing
+        // components.
 
-class DefaultEvolutionAppearance {
+	public static final int OFFS = 50; // ?
+        public static final int LABEL_OUTSIDE = 5; // space from edge of box to label
+        public static final int LABEL_GAP = 15; // minimum gap between left and right labels
+        public static final int PORT_GAP = 10; // gap between ports
+        public static final int TOP_MARGIN = 30; // extra space above ports
+        public static final int TOP_TEXT_MARGIN = 5; // space above text label
+        public static final int BOTTOM_MARGIN = 5; // extra space below ports
 
-        private static int[] asciiWidths = {
-             4,  5,  5, 10,  8, 11, 10,  3,  // ' ', '!', '"', '#', '$',  '%', '&', ''', 
-             5,  5,  6, 10,  4,  4,  4,  4,  // '(', ')', '*', '+', ',',  '-', '.', '/', 
-             8,  8,  8,  8,  8,  8,  8,  8,  // '0', '1', '2', '3', '4',  '5', '6', '7', 
-             8,  8,  4,  4, 10, 10, 10,  6,  // '8', '9', ':', ';', '<',  '=', '>', '?', 
-            13,  8,  8,  8,  9,  8,  7,  9,  // '@', 'A', 'B', 'C', 'D',  'E', 'F', 'G', 
-             9,  3,  3,  7,  6, 10,  9,  9,  // 'H', 'I', 'J', 'K', 'L',  'M', 'N', 'O', 
-             8,  9,  8,  8,  7,  9,  8, 11,  // 'P', 'Q', 'R', 'S', 'T',  'U', 'V', 'W', 
-             7,  7,  9,  5,  4,  5, 10,  6,  // 'X', 'Y', 'Z', '[', '\\', ']', '^', '_', 
-             6,  8,  8,  7,  8,  8,  4,  8,  // '`', 'a', 'b', 'c', 'd',  'e', 'f', 'g', 
-             8,  3,  3,  7,  3, 11,  8,  8,  // 'h', 'i', 'j', 'k', 'l',  'm', 'n', 'o', 
-             8,  8,  5,  7,  5,  8,  6,  9,  // 'p', 'q', 'r', 's', 't',  'u', 'v', 'w', 
-             6,  6,  5,  8,  4,  8, 10,      // 'x', 'y', 'z', '{', '|',  '}', '~',
+        public static final int MIN_WIDTH = 100; // minimum width (e.g. if no port labels)
+        public static final int MIN_HEIGHT = 40; // minimum height (e.g. if no ports)
+
+        /*
+        private static int[] asciiWidths = { // 12 point font
+             4,  5,  5, 10,  8, 11, 10,  3,  // ' ', '!', '"', '#', '$', '%', '&', ''', 
+             5,  5,  6, 10,  4,  4,  4,  4,  // '(', ')', '*', '+', ',', '-', '.', '/', 
+             8,  8,  8,  8,  8,  8,  8,  8,  // '0', '1', '2', '3', '4', '5', '6', '7', 
+             8,  8,  4,  4, 10, 10, 10,  6,  // '8', '9', ':', ';', '<', '=', '>', '?', 
+            13,  8,  8,  8,  9,  8,  7,  9,  // '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 
+             9,  3,  3,  7,  6, 10,  9,  9,  // 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 
+             8,  9,  8,  8,  7,  9,  8, 11,  // 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 
+             7,  7,  9,  5,  4,  5, 10,  6,  // 'X', 'Y', 'Z', '[', '\', ']', '^', '_', 
+             6,  8,  8,  7,  8,  8,  4,  8,  // '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 
+             8,  3,  3,  7,  3, 11,  8,  8,  // 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 
+             8,  8,  5,  7,  5,  8,  6,  9,  // 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 
+             6,  6,  5,  8,  4,  8, 10,      // 'x', 'y', 'z', '{', '|', '}', '~',
+        };
+        */
+        private static int[] asciiWidths = { // 10 point font
+            3,  4,  5,  8,  6, 10,  9,  3,  // ' ', '!', '"', '#', '$', '%', '&', ''',
+            4,  4,  5,  8,  3,  4,  3,  3,  // '(', ')', '*', '+', ',', '-', '.', '/',
+            6,  6,  6,  6,  6,  6,  6,  6,  // '0', '1', '2', '3', '4', '5', '6', '7',
+            6,  6,  3,  3,  8,  8,  8,  5,  // '8', '9', ':', ';', '<', '=', '>', '?',
+            11,  7,  7,  8,  8,  7,  6,  8,  // '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
+            8,  3,  3,  7,  6,  9,  8,  8,  // 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+            7,  8,  7,  7,  5,  8,  7,  9,  // 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
+            6,  7,  6,  4,  3,  4,  8,  5,  // 'X', 'Y', 'Z', '[', '\', ']', '^', '_',
+            5,  6,  6,  5,  6,  6,  4,  6,  // '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
+            6,  2,  2,  5,  2, 10,  6,  6,  // 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+            6,  6,  4,  5,  4,  6,  6,  8,  // 'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
+            6,  6,  5,  6,  3,  6,          // 'x', 'y', 'z', '{', '|', '}',
         };
 
-        static boolean done = false;
+        public static void calculateTextDimensions(float fontsize) {
+            Text label = new Text(0,0,"a");
+            Font f = label.getLabel().getFont().deriveFont(fontsize);
+            System.out.println("private static int[] asciiWidths = {");
+            for (char row = ' '; row <= '~'; row += 8) {
+                String comment = "//";
+                String chars = "    ";
+                for (char c = row; c < row+8; c++) {
+                    if (c >= '~') {
+                        chars += "    ";
+                    } else {
+                        comment += String.format(" '%c',", c);
+                        label = new Text(0, 0, "" + c);
+                        label.getLabel().setFont(f);
+                        int w = label.getLabel().getWidth();
+                        chars += String.format(" %2d,", w);
+                    }
+                }
+                System.out.println(chars + "  " + comment);
+            }
+            System.out.println("};");
+            System.exit(0);
+        }
+
         private static int textWidth(String s) {
-            // Default font is Sans Serif 12 pt, but the precise dimensions
-            // vary based on the platform. We need component widths to be
-            // stable.
-            // Text label = new Text(0,0,pin.getAttributeValue(StdAttr.LABEL));
-            // return label.getLabel().getWidth();
             int w = 0;
             for (int i = 0; i < s.length(); i++) {
                 char c = s.charAt(i);
-                if (i >= ' ' && i <= '~') {
+                if (c >= ' ' && c <= '~') {
                     w += asciiWidths[c - ' '];
                 } else {
                     w += 8;
@@ -83,36 +134,31 @@ class DefaultEvolutionAppearance {
             return w;
         }
 
-
-	public static List<CanvasObject> build(Collection<Instance> pins) {
+	public static List<CanvasObject> build(Collection<Instance> pins, String name) {
 		Map<Direction, List<Instance>> edge;
 		edge = new HashMap<Direction, List<Instance>>();
 		edge.put(Direction.EAST, new ArrayList<Instance>());
 		edge.put(Direction.WEST, new ArrayList<Instance>());
 		int MaxLeftLabelLength = 0;
 		int MaxRightLabelLength = 0;
-		int TextHeight = 12; // use constant text dimensions
-		int TextAscent = 15; // use constant text dimensions
+                String a = "", b = "";
 		for (Instance pin : pins) {
-//			Direction pinFacing = pin.getAttributeValue(StdAttr.FACING);
-//			Direction pinEdge = pinFacing.reverse();
 			Direction pinEdge;
-			Text label = new Text(0,0,pin.getAttributeValue(StdAttr.LABEL));
                         String labelString = pin.getAttributeValue(StdAttr.LABEL);
 			int LabelWidth = textWidth(labelString);
-			// if (TextHeight==0) {
-			//	TextHeight = label.getLabel().getHeight();
-			//	TextAscent = label.getLabel().getAscent();
-			// }
 			if (pin.getAttributeValue(Pin.ATTR_TYPE)) {
 				pinEdge=Direction.EAST;
-				if (LabelWidth>MaxRightLabelLength)
+				if (LabelWidth>MaxRightLabelLength) {
 					MaxRightLabelLength = LabelWidth;
+                                        b = labelString;
+                                }
 			}
 			else {
 				pinEdge=Direction.WEST;
-				if (LabelWidth>MaxLeftLabelLength)
+				if (LabelWidth>MaxLeftLabelLength) {
 					MaxLeftLabelLength = LabelWidth;
+                                        a = labelString;
+                                }
 			}
 			List<Instance> e = edge.get(pinEdge);
 			e.add(pin);
@@ -125,13 +171,16 @@ class DefaultEvolutionAppearance {
 		int numWest = edge.get(Direction.WEST).size();
 		int maxHorz = Math.max(numEast, numWest);
 
-		int dy = ((TextHeight+(TextHeight>>2)+5)/10)*10;
+		int offsEast = computeOffset(numEast, numWest);
+		int offsWest = computeOffset(numWest, numEast);
 
-		int offsEast = computeOffset(numEast, numWest, dy);
-		int offsWest = computeOffset(numWest, numEast, dy);
-
-		int width = ((MaxLeftLabelLength+MaxRightLabelLength+35)/10)*10;
-		int height = Math.max(dy+10, maxHorz*dy);
+		int width = 2*LABEL_OUTSIDE
+                            + MaxLeftLabelLength + MaxRightLabelLength
+                            + LABEL_GAP;
+                width = Math.max(MIN_WIDTH, (width + 9)/10*10);
+                
+		int height = PORT_GAP * maxHorz + TOP_MARGIN + BOTTOM_MARGIN;
+                height = Math.max(MIN_HEIGHT, height);
 
 		// compute position of anchor relative to top left corner of box
 		int ax;
@@ -155,54 +204,57 @@ class DefaultEvolutionAppearance {
 		rect.setValue(DrawAttr.STROKE_WIDTH, Integer.valueOf(2));
 		List<CanvasObject> ret = new ArrayList<CanvasObject>();
 		ret.add(rect);
-		placePins(ret, edge.get(Direction.WEST), rx, ry + offsWest, 0, dy,true,
-				TextAscent/3);
-		placePins(ret, edge.get(Direction.EAST), rx + width, ry + offsEast, 0,
-				dy,false,TextAscent/3);
+
+		placePins(ret, edge.get(Direction.WEST), rx, ry + offsWest, 0, PORT_GAP, true);
+		placePins(ret, edge.get(Direction.EAST), rx + width, ry + offsEast, 0, PORT_GAP, false);
+
+                if (name != null && name.length() > 0) {
+                    Text label = new Text(rx+width/2,ry+TOP_TEXT_MARGIN, name);
+                    label.getLabel().setHorizontalAlignment(EditableLabel.CENTER);
+                    label.getLabel().setVerticalAlignment(EditableLabel.TOP);
+                    label.getLabel().setColor(Color.BLACK);
+                    ret.add(label);
+                    Font f = label.getLabel().getFont();
+                    // System.out.println(f + " " + f.hashCode());
+                }
+
 		ret.add(new AppearanceAnchor(Location.create(rx + ax, ry + ay)));
 		return ret;
 	}
 
-	private static int computeOffset(int numFacing, int numOpposite, int dy) {
-		int maxThis = Math.max(numFacing, numOpposite);
-		int maxOffs;
-		switch (maxThis) {
-		case 0:
-		case 1:
-			maxOffs = (dy+10)/2;
-			break;
-		default:
-			maxOffs = dy/2;
-		}
-		return maxOffs + dy * ((maxThis - numFacing) / 2);
+	private static int computeOffset(int numFacing, int numOpposite) {
+            return TOP_MARGIN;
 	}
 
 	private static void placePins(List<CanvasObject> dest, List<Instance> pins,
-			int x, int y, int dx, int dy, boolean LeftSide, int ldy) {
+			int x, int y, int dx, int dy, boolean LeftSide) {
 		int halign;
-		Color color = Color.DARK_GRAY;
+		Color color = Color.DARK_GRAY; // maybe GRAY instead?
 		int ldx;
 		for (Instance pin : pins) {
 			dest.add(new AppearancePort(Location.create(x, y), pin));
 			if (LeftSide) {
-				ldx=5;
+				ldx=LABEL_OUTSIDE;
 				halign=EditableLabel.LEFT;
 			} else {
-				ldx=-5;
+				ldx=-LABEL_OUTSIDE;
 				halign=EditableLabel.RIGHT;
 			}
+                        Font pinFont = null;
 			if (pin.getAttributeSet().containsAttribute(StdAttr.LABEL)) {
-				Text label = new Text(x+ldx,y+ldy,pin.getAttributeValue(StdAttr.LABEL));
+				Text label = new Text(x+ldx,y,pin.getAttributeValue(StdAttr.LABEL));
 				label.getLabel().setHorizontalAlignment(halign);
+				label.getLabel().setVerticalAlignment(EditableLabel.MIDDLE);
 				label.getLabel().setColor(color);
+                                if (pinFont == null)
+                                    pinFont = label.getLabel().getFont().deriveFont((float) 10);
+                                label.getLabel().setFont(pinFont);
 				dest.add(label);
 			}
 			x += dx;
 			y += dy;
 		}
 	}
-
-	private static final int OFFS = 50;
 
 	private DefaultEvolutionAppearance() {
 	}

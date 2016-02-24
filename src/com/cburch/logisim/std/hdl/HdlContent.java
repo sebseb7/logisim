@@ -139,6 +139,22 @@ public abstract class HdlContent implements HdlModel, Cloneable {
 		}
 	}
 
+	protected void fireAppearanceChanged() {
+		if (listeners == null) {
+			return;
+		}
+
+		boolean found = false;
+		for (HdlModelListener l : listeners) {
+			found = true;
+			l.appearanceChanged(this);
+		}
+
+		if (!found) {
+			listeners = null;
+		}
+	}
+
 	public void displayChanged() {
 		if (listeners == null) {
 			return;

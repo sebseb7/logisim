@@ -89,11 +89,11 @@ class DefaultAppearance {
 		}
 	}
 
-	public static List<CanvasObject> build(Collection<Instance> pins, AttributeOption style) {
+	public static List<CanvasObject> build(Collection<Instance> pins, String name, AttributeOption style) {
             if (style == StdAttr.APPEAR_CLASSIC) {
                 return DefaultClassicAppearance.build(pins);
             } else {
-                return DefaultEvolutionAppearance.build(pins);
+                return DefaultEvolutionAppearance.build(pins, name);
             }
         }
 

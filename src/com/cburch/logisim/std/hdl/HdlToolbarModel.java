@@ -144,6 +144,9 @@ class HdlToolbarModel extends AbstractToolbarModel implements HdlModelListener {
     @Override
     public void displayChanged(HdlModel source) { }
 
+    @Override
+    public void appearanceChanged(HdlModel source) { }
+
     private class HdlToolbarItem implements ToolbarItem {
         Icon icon;
         String action;

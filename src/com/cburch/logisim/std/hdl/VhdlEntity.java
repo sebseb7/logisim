@@ -30,6 +30,10 @@
 
 package com.cburch.logisim.std.hdl;
 
+import java.util.Map;
+import javax.swing.SwingUtilities;
+import java.util.List;
+import java.util.ArrayList;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -44,22 +48,34 @@ import org.slf4j.LoggerFactory;
 
 import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
+import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.gui.main.Frame;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
-import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.util.StringGetter;
+
+import com.cburch.logisim.std.wiring.Pin;
+import com.cburch.logisim.instance.InstanceComponent;
+import com.cburch.logisim.data.Location;
+import com.cburch.logisim.circuit.appear.DefaultEvolutionAppearance;
+import com.cburch.logisim.circuit.appear.DefaultClassicAppearance;
+import com.cburch.logisim.circuit.appear.CircuitAppearance;
+import com.cburch.logisim.data.Direction;
+import com.cburch.logisim.comp.EndData;
+import com.cburch.draw.model.CanvasObject;
 
 public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
@@ -84,6 +100,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
                     this.setIconName("vhdl.gif");
                 else
                     this.setIconName("vhdl-invalid.gif");
+		setFacingAttribute(StdAttr.FACING);
 	}
 
 	@Override
@@ -139,11 +156,15 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
 	@Override
 	public Bounds getOffsetBounds(AttributeSet attrs) {
-		int nbInputs = content.getInputsNumber();
-		int nbOutputs = content.getOutputsNumber();
+		// int nbInputs = content.getInputsNumber();
+		// int nbOutputs = content.getOutputsNumber();
 
-		return Bounds.create(0, 0, WIDTH, Math.max(nbInputs, nbOutputs)
-				* PORT_GAP + HEIGHT);
+		// return Bounds.create(0, 0, WIDTH, Math.max(nbInputs, nbOutputs)
+		//		* PORT_GAP + HEIGHT);
+                if (appearance == null)
+                    return Bounds.create(0, 0, 100, 100);
+		Direction facing = attrs.getValue(StdAttr.FACING);
+                return appearance.getOffsetBounds().rotate(Direction.EAST, facing, 0, 0);
 	}
 
 	@Override
@@ -156,50 +177,53 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
+            if (attr == StdAttr.FACING) {
+                    updatePorts(instance);
+            } else if (attr == StdAttr.APPEARANCE) {
+                    updatePorts(instance);
+            } else {
+            }
 	}
+
+        private static class VhdlAppearance extends CircuitAppearance {
+            String style;
+            VhdlAppearance(List <CanvasObject> shapes) {
+                super(null);
+                setObjectsForce(shapes);
+            }
+            static VhdlAppearance create(List<Instance> pins, String name, AttributeOption style) {
+                if (style == StdAttr.APPEAR_CLASSIC) {
+                    VhdlAppearance a = new VhdlAppearance(DefaultClassicAppearance.build(pins));
+                    a.style = "classic";
+                    return a;
+                } else {
+                    VhdlAppearance a = new VhdlAppearance(DefaultEvolutionAppearance.build(pins, name));
+                    a.style = "evolution";
+                    return a;
+                }
+            }
+        }
 
 	@Override
 	public void paintInstance(InstancePainter painter) {
+		VhdlEntityAttributes attrs = (VhdlEntityAttributes) painter.getAttributeSet();
+		Direction facing = attrs.getFacing();
 		Graphics g = painter.getGraphics();
-		FontMetrics metric = g.getFontMetrics();
 
-		Bounds bds = painter.getBounds();
-		int x0 = bds.getX() + (bds.getWidth() / 2);
-		int y0 = bds.getY() + metric.getHeight() + 12;
-		GraphicsUtil.drawText(g,
-				StringUtil.resizeString(content.getName(), metric, WIDTH), x0,
-				y0, GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
+		Location loc = painter.getLocation();
+		g.translate(loc.getX(), loc.getY());
+                appearance.paintSubcircuit(g, facing);
+		g.translate(-loc.getX(), -loc.getY());
 
-		String glbLabel = painter.getAttributeValue(StdAttr.LABEL);
-		if (glbLabel != null) {
-			Font font = g.getFont();
+		String label = painter.getAttributeValue(StdAttr.LABEL);
+		if (label != null) {
+                        Bounds bds = painter.getBounds();
+			Font oldFont = g.getFont();
 			g.setFont(painter.getAttributeValue(StdAttr.LABEL_FONT));
-			GraphicsUtil.drawCenteredText(g, glbLabel,
-					bds.getX() + bds.getWidth() / 2, bds.getY()
-							- g.getFont().getSize());
-			g.setFont(font);
+			GraphicsUtil.drawCenteredText(g, label, bds.getX() + bds.getWidth() / 2, bds.getY() - g.getFont().getSize());
+			g.setFont(oldFont);
 		}
 
-		g.setColor(Color.GRAY);
-		g.setFont(g.getFont().deriveFont((float) 10));
-		metric = g.getFontMetrics();
-
-		Port[] inputs = content.getInputs();
-		Port[] outputs = content.getOutputs();
-
-		for (int i = 0; i < inputs.length; i++)
-			GraphicsUtil.drawText(g, StringUtil.resizeString(
-					inputs[i].getToolTip(), metric, (WIDTH / 2) - X_PADDING),
-					bds.getX() + 5, bds.getY() + HEIGHT - 2 + (i * PORT_GAP),
-					GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
-		for (int i = 0; i < outputs.length; i++)
-			GraphicsUtil.drawText(g, StringUtil.resizeString(
-					outputs[i].getToolTip(), metric, (WIDTH / 2) - X_PADDING),
-					bds.getX() + WIDTH - 5, bds.getY() + HEIGHT - 2
-							+ (i * PORT_GAP), GraphicsUtil.H_RIGHT,
-					GraphicsUtil.V_CENTER);
-
-		painter.drawBounds();
 		painter.drawPorts();
 	}
 
@@ -330,9 +354,46 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 		}
 	}
 
-	void updatePorts(Instance instance) {
-		instance.setPorts(content.getPorts());
-	}
+        private VhdlAppearance appearance;
+
+        void updatePorts(Instance instance) {
+            ArrayList<Instance> pins = new ArrayList<Instance>();
+            int y = 0;
+            for (VhdlParser.PortDescription p: content.getPorts()) {
+                AttributeSet a = Pin.FACTORY.createAttributeSet();
+                a.setValue(StdAttr.LABEL, p.getName());
+                a.setValue(Pin.ATTR_TYPE, p.getType() != Port.INPUT);
+                a.setValue(StdAttr.FACING, p.getType() != Port.INPUT ? Direction.WEST : Direction.EAST);
+                a.setValue(StdAttr.WIDTH, p.getWidth());
+                InstanceComponent ic = (InstanceComponent)Pin.FACTORY.createComponent(Location.create(100, y), a);
+                pins.add(ic.getInstance());
+                y += 10;
+            }
+            AttributeOption style = instance.getAttributeValue(StdAttr.APPEARANCE);
+            appearance = VhdlAppearance.create(pins, getName(), style);
+
+            Direction facing = instance.getAttributeValue(StdAttr.FACING);
+            Map<Location, Instance> portLocs = appearance.getPortOffsets(facing);
+
+            Port[] ports = new Port[portLocs.size()];
+            int i = -1;
+            for (Map.Entry<Location, Instance> portLoc : portLocs.entrySet()) {
+                i++;
+                Location loc = portLoc.getKey();
+                Instance pin = portLoc.getValue();
+                String type = Pin.FACTORY.isInputPin(pin) ? Port.INPUT
+                    : Port.OUTPUT;
+                BitWidth width = pin.getAttributeValue(StdAttr.WIDTH);
+                ports[i] = new Port(loc.getX(), loc.getY(), type, width);
+
+                String label = pin.getAttributeValue(StdAttr.LABEL);
+                if (label != null && label.length() > 0) {
+                    ports[i].setToolTip(StringUtil.constantGetter(label));
+                }
+            }
+            instance.setPorts(ports);
+            instance.recomputeBounds();
+        }
 
         @Override
 	public void contentSet(HdlModel source) {
@@ -347,5 +408,8 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
         @Override
         public void displayChanged(HdlModel source) { }
+
+        @Override
+        public void appearanceChanged(HdlModel source) { }
 
 }

@@ -105,6 +105,8 @@ public class TclGeneric extends TclComponent {
                 public void aboutToSave(HdlModel source) { }
                 @Override
                 public void displayChanged(HdlModel source) { }
+                @Override
+                public void appearanceChanged(HdlModel source) { }
 	}
 
 	static final Attribute<VhdlContent> CONTENT_ATTR = new ContentAttribute();
@@ -142,8 +144,8 @@ public class TclGeneric extends TclComponent {
 	@Override
 	public Bounds getOffsetBounds(AttributeSet attrs) {
 		VhdlContent content = attrs.getValue(CONTENT_ATTR);
-		int nbInputs = content.getInputsNumber();
-		int nbOutputs = content.getOutputsNumber();
+		int nbInputs = 1; // content.getInputsNumber(); // FIXME (kwalsh)
+		int nbOutputs = 1; // content.getOutputsNumber(); // FIXME(kwalsh)
 
 		return Bounds.create(0, 0, WIDTH, Math.max(nbInputs, nbOutputs)
 				* PORT_GAP + HEIGHT);
@@ -184,8 +186,8 @@ public class TclGeneric extends TclComponent {
 		g.setFont(g.getFont().deriveFont((float) 10));
 		metric = g.getFontMetrics();
 
-		Port[] inputs = content.getInputs();
-		Port[] outputs = content.getOutputs();
+		Port[] inputs = null; // FIXME(kwalsh) content.getInputs();
+		Port[] outputs = null; // FIXME(kwalsh) content.getOutputs();
 
 		for (int i = 0; i < inputs.length; i++)
 			GraphicsUtil.drawText(g, StringUtil.resizeString(
@@ -206,7 +208,8 @@ public class TclGeneric extends TclComponent {
 	@Override
 	void updatePorts(Instance instance) {
 		VhdlContent content = instance.getAttributeValue(CONTENT_ATTR);
-		instance.setPorts(content.getPorts());
-		setPorts(content.getPorts());
+		// instance.setPorts(content.getPorts());
+		// setPorts(content.getPorts());
+                // // FIXME(kwalsh)
 	}
 }

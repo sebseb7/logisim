@@ -210,6 +210,13 @@ public class CircuitAppearance extends Drawing {
                     return circuit.getStaticAttributes().getValue(CircuitAttributes.CIRCUIT_APPEARANCE_ATTR);
         }
 
+        public String getCircuitName() {
+                if (circuit == null || circuit.getStaticAttributes() == null)
+                    return null;
+                else 
+                    return circuit.getStaticAttributes().getValue(CircuitAttributes.NAME_ATTR);
+        }
+
 	public Direction getFacing() {
 		AppearanceAnchor anchor = findAnchor();
 		if (anchor == null) {
@@ -280,7 +287,8 @@ public class CircuitAppearance extends Drawing {
 	public void recomputeDefaultAppearance() {
 		if (isDefault) {
 			List<CanvasObject> shapes;
-			shapes = DefaultAppearance.build(circuitPins.getPins(), getCircuitAppearance());
+			shapes = DefaultAppearance.build(circuitPins.getPins(),
+                                getCircuitName(), getCircuitAppearance());
 			setObjectsForce(shapes);
 		}
 	}

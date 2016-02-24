@@ -47,12 +47,15 @@ import javax.swing.JTextArea;
 
 import com.cburch.hdl.HdlModel;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.util.Softwares;
+import com.cburch.logisim.data.BitWidth;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Attributes;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.std.hdl.VhdlEntityAttributes;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 
@@ -121,14 +124,16 @@ public class VhdlContent extends HdlContent {
 
 	private static final String TEMPLATE = loadTemplate();
 
+        private static final Port EMPTY[] = new Port[0];
+
         protected AttributeSet staticAttrs;
 	protected StringBuffer content;
         protected boolean valid;
-	protected Port[] inputs;
-	protected Port[] outputs;
+	protected List<VhdlParser.PortDescription> ports;
         protected Generic[] generics;
         protected List<Attribute<Integer>> genericAttrs;
 	protected String name;
+	protected AttributeOption appearance = StdAttr.APPEAR_FPGA;
 	protected String libraries;
 	protected String architecture;
         private LogisimFile logiFile;
@@ -136,6 +141,7 @@ public class VhdlContent extends HdlContent {
 	protected VhdlContent(String name, LogisimFile file) {
             logiFile = file;
             this.name = name;
+            ports = new ArrayList<VhdlParser.PortDescription>();
 	}
 
 	public VhdlContent clone() {
@@ -194,21 +200,6 @@ public class VhdlContent extends HdlContent {
                 return genericAttrs;
         }
 
-	public Port[] getInputs() {
-		if (inputs == null)
-			return new Port[0];
-
-		return inputs;
-	}
-
-
-	public int getInputsNumber() {
-		if (inputs == null)
-			return 0;
-
-		return inputs.length;
-	}
-
 	public String getLibraries() {
 		if (libraries == null)
 			return "";
@@ -223,34 +214,18 @@ public class VhdlContent extends HdlContent {
 		return name;
 	}
 
-	public Port[] getOutputs() {
-		if (outputs == null)
-			return new Port[0];
-
-		return outputs;
+	public AttributeOption getAppearance() {
+		return appearance;
 	}
 
-	public int getOutputsNumber() {
-		if (outputs == null)
-			return 0;
-
-		return outputs.length;
+	public void setAppearance(AttributeOption a) {
+		appearance = a;
+                fireAppearanceChanged();
 	}
 
-	public Port[] getPorts() {
-		if (inputs == null || outputs == null)
-			return new Port[0];
-
-		return concat(inputs, outputs);
+	public List<VhdlParser.PortDescription> getPorts() {
+		return ports;
 	}
-
-	public int getPortsNumber() {
-		if (inputs == null || outputs == null)
-			return 0;
-
-		return inputs.length + outputs.length;
-	}
-
 
         public AttributeSet getStaticAttributes() {
             return staticAttrs;
@@ -384,25 +359,9 @@ public class VhdlContent extends HdlContent {
                 libraries = parser.getLibraries();
                 architecture = parser.getArchitecture();
 
-                List<VhdlParser.PortDescription> inputsDesc = parser.getInputs();
-                List<VhdlParser.PortDescription> outputsDesc = parser.getOutputs();
-                inputs = new Port[inputsDesc.size()];
-                outputs = new Port[outputsDesc.size()];
-
-                for (int i = 0; i < inputsDesc.size(); i++) {
-                    VhdlParser.PortDescription desc = inputsDesc.get(i);
-                    inputs[i] = new Port(0, (i * VhdlEntity.PORT_GAP)
-                            + VhdlEntity.HEIGHT, desc.getType(), desc.getWidth());
-                    inputs[i].setToolTip(Strings.getter(desc.getName()));
-                }
-
-                for (int i = 0; i < outputsDesc.size(); i++) {
-                    VhdlParser.PortDescription desc = outputsDesc.get(i);
-                    outputs[i] = new Port(VhdlEntity.WIDTH, (i * VhdlEntity.PORT_GAP)
-                            + VhdlEntity.HEIGHT, desc.getType(), desc.getWidth());
-                    outputs[i].setToolTip(Strings.getter(desc.getName()));
-                }
-
+                ports.clear();
+                ports.addAll(parser.getInputs());
+                ports.addAll(parser.getOutputs());
 
                 // If name and type is unchanged, keep old generic and attribute.
                 Generic[] oldGenerics = generics;

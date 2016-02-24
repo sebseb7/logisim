@@ -110,6 +110,17 @@ public class VhdlParser {
 			return this.type;
 		}
 
+                public  String getVhdlType() {
+                    if (type == Port.INPUT)
+                        return "in";
+                    else if (type == Port.OUTPUT)
+                        return "out";
+                    else if (type == Port.INOUT)
+                        return "inout";
+                    else
+                        throw new IllegalArgumentException("Not recognized port type: " + type);
+                }
+
 		public BitWidth getWidth() {
 			return this.width;
 		}
