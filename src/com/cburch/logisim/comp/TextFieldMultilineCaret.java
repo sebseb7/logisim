@@ -47,61 +47,28 @@ import com.cburch.logisim.tools.Caret;
 import com.cburch.logisim.tools.CaretEvent;
 import com.cburch.logisim.tools.CaretListener;
 
-class TextFieldCaret implements Caret, TextFieldListener {
+class TextFieldMultilineCaret extends TextFieldCaret {
+	private TextFieldMultiline field;
 
-        public static final Color EDIT_BACKGROUND = new Color(0xff, 0xff, 0x99);
-        public static final Color EDIT_BORDER = Color.DARK_GRAY;
-
-	private LinkedList<CaretListener> listeners = new LinkedList<CaretListener>();
-	protected TextField field;
-	protected Graphics g;
-	protected String oldText;
-	protected String curText;
-	protected int pos;
-
-	public TextFieldCaret(TextField field, Graphics g, int pos) {
-		this.field = field;
-		this.g = g;
-		this.oldText = field.getText();
-		this.curText = field.getText();
-		this.pos = pos;
-
-		field.addTextFieldListener(this);
+	public TextFieldMultilineCaret(TextFieldMultiline field, Graphics g, int pos) {
+                super(field, g, pos);
+                this.field = field;
 	}
 
-	public TextFieldCaret(TextField field, Graphics g, int x, int y) {
+	public TextFieldMultilineCaret(TextFieldMultiline field, Graphics g, int x, int y) {
 		this(field, g, 0);
 		moveCaret(x, y);
 	}
 
-	public void addCaretListener(CaretListener l) {
-		listeners.add(l);
-	}
-
-	public void cancelEditing() {
-		CaretEvent e = new CaretEvent(this, oldText, oldText);
-		curText = oldText;
-		pos = curText.length();
-		for (CaretListener l : new ArrayList<CaretListener>(listeners)) {
-			l.editingCanceled(e);
-		}
-		field.removeTextFieldListener(this);
-	}
-
-	public void commitText(String text) {
-		curText = text;
-		pos = curText.length();
-		field.setText(text);
-	}
-
 	public void draw(Graphics g) {
+                String lines[] = curText.split("\n", -1); // keep blank lines at end
 		int x = field.getX();
 		int y = field.getY();
                 int halign = field.getHAlign();
                 int valign = field.getVAlign();
                 Font font = field.getFont();
-		if (field.getFont() != null)
-			g.setFont(field.getFont());
+		if (font != null)
+			g.setFont(font);
 
 		// draw boundary
                 Bounds box = getBounds(g);
@@ -112,26 +79,23 @@ class TextFieldCaret implements Caret, TextFieldListener {
 
 		// draw text
                 g.setColor(Color.BLACK);
-                GraphicsUtil.drawText(g, curText, x, y, halign, valign);
+                GraphicsUtil.drawText(g, lines, x, y, halign, valign);
 
 		// draw cursor
 		FontMetrics fm = g.getFontMetrics();
-                Point p = GraphicsUtil.getTextPoint(fm, curText, x, y, pos, halign, valign);
+                Point p = GraphicsUtil.getTextPoint(fm, lines, x, y, pos, halign, valign);
                 if (p != null)
                     g.drawLine(p.x, p.y + fm.getDescent(), p.x, p.y - fm.getAscent());
 	}
 
-	public String getText() {
-		return curText;
-	}
-
         public Bounds getBounds(Graphics g) {
+                String lines[] = curText.split("\n", -1); // keep blank lines at end
 		int x = field.getX();
 		int y = field.getY();
                 int halign = field.getHAlign();
                 int valign = field.getVAlign();
                 Font font = field.getFont();
-		Bounds bds = Bounds.create(GraphicsUtil.getTextBounds(g, font, curText, x, y, halign, valign));
+		Bounds bds = Bounds.create(GraphicsUtil.getTextBounds(g, font, lines, x, y, halign, valign));
                 Bounds box = bds.add(field.getBounds(g)).expand(3);
                 return box;
         }
@@ -141,7 +105,36 @@ class TextFieldCaret implements Caret, TextFieldListener {
 				| InputEvent.META_MASK;
 		if ((e.getModifiers() & ign) != 0)
 			return;
+                String lines[];
 		switch (e.getKeyCode()) {
+		case KeyEvent.VK_UP:
+		case KeyEvent.VK_KP_UP:
+                        lines = curText.split("\n", -1); // keep blank lines at end
+			if (lines.length > 1 && pos > lines[0].length()) {
+                            FontMetrics fm = g.getFontMetrics();
+                            int halign = field.getHAlign();
+                            int valign = field.getVAlign();
+                            Point p = GraphicsUtil.getTextPoint(fm, lines, 0, 0, pos, halign, valign);
+                            if (p != null) {
+                                pos = GraphicsUtil.getTextPosition(fm, lines,
+                                        p.x, p.y - fm.getHeight(), halign, valign);
+                            }
+                        }
+			break;
+		case KeyEvent.VK_DOWN:
+		case KeyEvent.VK_KP_DOWN:
+                        lines = curText.split("\n", -1); // keep blank lines at end
+			if (lines.length > 1 && pos < curText.length() - lines[lines.length-1].length()) {
+                            FontMetrics fm = g.getFontMetrics();
+                            int halign = field.getHAlign();
+                            int valign = field.getVAlign();
+                            Point p = GraphicsUtil.getTextPoint(fm, lines, 0, 0, pos, halign, valign);
+                            if (p != null) {
+                                pos = GraphicsUtil.getTextPosition(fm, lines,
+                                        p.x, p.y + fm.getHeight(), halign, valign);
+                            }
+                        }
+			break;
 		case KeyEvent.VK_LEFT:
 		case KeyEvent.VK_KP_LEFT:
 			if (pos > 0)
@@ -165,9 +158,6 @@ class TextFieldCaret implements Caret, TextFieldListener {
 		case KeyEvent.VK_CLEAR:
 			curText = "";
 			pos = 0;
-			break;
-		case KeyEvent.VK_ENTER:
-			stopEditing();
 			break;
 		case KeyEvent.VK_BACK_SPACE:
 			if (pos > 0) {
@@ -193,9 +183,6 @@ class TextFieldCaret implements Caret, TextFieldListener {
 		}
 	}
 
-	public void keyReleased(KeyEvent e) {
-	}
-
 	public void keyTyped(KeyEvent e) {
 		int ign = InputEvent.ALT_MASK | InputEvent.CTRL_MASK
 				| InputEvent.META_MASK;
@@ -203,9 +190,7 @@ class TextFieldCaret implements Caret, TextFieldListener {
 			return;
 
 		char c = e.getKeyChar();
-		if (c == '\n') {
-			stopEditing();
-		} else if (c != KeyEvent.CHAR_UNDEFINED && !Character.isISOControl(c)) {
+		if (c == '\n' || c == '\t' || (c != KeyEvent.CHAR_UNDEFINED && !Character.isISOControl(c))) {
 			if (pos < curText.length()) {
 				curText = curText.substring(0, pos) + c
 						+ curText.substring(pos);
@@ -216,45 +201,14 @@ class TextFieldCaret implements Caret, TextFieldListener {
 		}
 	}
 
-	public void mouseDragged(MouseEvent e) {
-		// TODO: enhance label editing
-	}
-
-	public void mousePressed(MouseEvent e) {
-		// TODO: enhance label editing
-		moveCaret(e.getX(), e.getY());
-	}
-
-	public void mouseReleased(MouseEvent e) {
-		// TODO: enhance label editing
-		moveCaret(e.getX(), e.getY());
-	}
-
 	protected void moveCaret(int x, int y) {
-                x -= field.getX();
-                x -= field.getY();
+		x -= field.getX();
+                y -= field.getY();
 		FontMetrics fm = g.getFontMetrics();
                 int halign = field.getHAlign();
                 int valign = field.getVAlign();
-                pos = GraphicsUtil.getTextPosition(fm, curText, x, y, halign, valign);
+                String lines[] = curText.split("\n", -1); // keep blank lines at end
+                pos = GraphicsUtil.getTextPosition(fm, lines, x, y, halign, valign);
 	}
 
-	public void removeCaretListener(CaretListener l) {
-		listeners.remove(l);
-	}
-
-	public void stopEditing() {
-		CaretEvent e = new CaretEvent(this, oldText, curText);
-		field.setText(curText);
-		for (CaretListener l : new ArrayList<CaretListener>(listeners)) {
-			l.editingStopped(e);
-		}
-		field.removeTextFieldListener(this);
-	}
-
-	public void textChanged(TextFieldEvent e) {
-		curText = field.getText();
-		oldText = curText;
-		pos = curText.length();
-	}
 }

@@ -39,6 +39,7 @@ import com.cburch.logisim.comp.TextField;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
@@ -47,9 +48,55 @@ import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.util.StringGetter;
 
 public class Text extends InstanceFactory {
-	public static Attribute<String> ATTR_TEXT = Attributes.forString("text",
+
+	private static class MultilineAttribute extends Attribute<String> {
+		MultilineAttribute(String name, StringGetter disp) {
+			super(name, disp);
+		}
+
+		@Override
+		public String parse(String escaped) {
+                        StringBuilder s = new StringBuilder();
+                        boolean escape = false;
+                        for (int i = 0; i < escaped.length(); i++) {
+                            char c = (char)escaped.charAt(i);
+                            if (c == '\\')
+                                escape = true;
+                            else if (escape) {
+                                escape = false;
+                                switch (c) {
+                                    case 't': s.append('\t'); break;
+                                    case 'n': s.append('\n'); break;
+                                    default: s.append(c); break;
+                                }
+                            } else {
+                                s.append(c);
+                            }
+                        }
+                        return s.toString();
+                }
+
+		public String toDisplayString(String s) {
+                        StringBuilder escaped = new StringBuilder();
+                        for (int i = 0; i < s.length(); i++) {
+                            char c = (char)s.charAt(i);
+                            switch (c) {
+                                case '\t': escaped.append("\\t"); break;
+                                case '\n': escaped.append("\\n"); break;
+                                case '\\': escaped.append("\\\\"); break;
+                                default: escaped.append(c); break;
+                            }
+                        }
+                        return escaped.toString();
+                }
+        }
+
+
+
+	public static Attribute<String> ATTR_TEXT = new MultilineAttribute("text",
 			Strings.getter("textTextAttr"));
 	public static Attribute<Font> ATTR_FONT = Attributes.forFont("font",
 			Strings.getter("textFontAttr"));
@@ -97,7 +144,7 @@ public class Text extends InstanceFactory {
 		TextAttributes attrs = (TextAttributes) instance.getAttributeSet();
 		Location loc = instance.getLocation();
 		instance.setTextField(ATTR_TEXT, ATTR_FONT, loc.getX(), loc.getY(),
-				attrs.getHorizontalAlign(), attrs.getVerticalAlign());
+				attrs.getHorizontalAlign(), attrs.getVerticalAlign(), true);
 	}
 
 	//
@@ -155,7 +202,7 @@ public class Text extends InstanceFactory {
 				bds = estimateBounds(attrs);
 				attrs.setOffsetBounds(bds);
 			}
-			return bds == null ? Bounds.EMPTY_BOUNDS : bds;
+			return bds;
 		}
 	}
 
@@ -181,43 +228,29 @@ public class Text extends InstanceFactory {
 		String text = attrs.getText();
 		if (text == null || text.equals(""))
 			return;
+                int halign = attrs.getHorizontalAlign();
+                int valign = attrs.getVerticalAlign();
+                Font font = attrs.getFont();
 
-		int halign = attrs.getHorizontalAlign();
-		int valign = attrs.getVerticalAlign();
 		Graphics g = painter.getGraphics();
-		Font old = g.getFont();
-		g.setFont(attrs.getFont());
-		GraphicsUtil.drawText(g, text, 0, 0, halign, valign);
+                Location loc = painter.getLocation();
 
-		String textTrim = text.endsWith(" ") ? text.substring(0,
-				text.length() - 1) : text;
-		Bounds newBds;
-		if (textTrim.equals("")) {
-			newBds = Bounds.EMPTY_BOUNDS;
-		} else {
-			Rectangle bdsOut = GraphicsUtil.getTextBounds(g, textTrim, 0, 0,
-					halign, valign);
-			newBds = Bounds.create(bdsOut).expand(4);
-		}
-		if (attrs.setOffsetBounds(newBds)) {
+                String lines[] = text.split("\n");
+                Rectangle r = GraphicsUtil.getTextBounds(g, font, lines, 0, 0, halign, valign);
+                Bounds b = Bounds.create(r).expand(4);
+		if (attrs.setOffsetBounds(b)) {
 			Instance instance = painter.getInstance();
 			if (instance != null)
 				instance.recomputeBounds();
 		}
 
-		g.setFont(old);
+                GraphicsUtil.drawText(g, font, lines, loc.getX(), loc.getY(), halign, valign);
 	}
 
 	@Override
 	public void paintInstance(InstancePainter painter) {
-		Location loc = painter.getLocation();
-		int x = loc.getX();
-		int y = loc.getY();
-		Graphics g = painter.getGraphics();
-		g.translate(x, y);
-		g.setColor(Color.BLACK);
-		paintGhost(painter);
-		g.translate(-x, -y);
+            painter.getGraphics().setColor(Color.BLACK);
+            paintGhost(painter);
 	}
 
 	@Override

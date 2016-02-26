@@ -38,6 +38,7 @@ import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentUserEvent;
 import com.cburch.logisim.comp.TextField;
+import com.cburch.logisim.comp.TextFieldMultiline;
 import com.cburch.logisim.comp.TextFieldEvent;
 import com.cburch.logisim.comp.TextFieldListener;
 import com.cburch.logisim.data.Attribute;
@@ -63,6 +64,7 @@ public class InstanceTextField implements AttributeListener, TextFieldListener,
 	private int fieldY;
 	private int halign;
 	private int valign;
+	private boolean multiline;
 
 	InstanceTextField(InstanceComponent comp) {
 		this.comp = comp;
@@ -86,7 +88,10 @@ public class InstanceTextField implements AttributeListener, TextFieldListener,
 
 	private void createField(AttributeSet attrs, String text) {
 		Font font = attrs.getValue(fontAttr);
-		field = new TextField(fieldX, fieldY, halign, valign, font);
+                if (multiline)
+                    field = new TextFieldMultiline(fieldX, fieldY, halign, valign, font);
+                else
+                    field = new TextField(fieldX, fieldY, halign, valign, font);
 		field.setText(text);
 		field.addTextFieldListener(this);
 	}
@@ -150,7 +155,7 @@ public class InstanceTextField implements AttributeListener, TextFieldListener,
 	}
 
 	void update(Attribute<String> labelAttr, Attribute<Font> fontAttr, int x,
-			int y, int halign, int valign) {
+			int y, int halign, int valign, boolean multiline) {
 		boolean wasReg = shouldRegister();
 		this.labelAttr = labelAttr;
 		this.fontAttr = fontAttr;
@@ -158,6 +163,7 @@ public class InstanceTextField implements AttributeListener, TextFieldListener,
 		this.fieldY = y;
 		this.halign = halign;
 		this.valign = valign;
+                this.multiline = multiline;
 		boolean shouldReg = shouldRegister();
 		AttributeSet attrs = comp.getAttributeSet();
 		if (!wasReg && shouldReg)

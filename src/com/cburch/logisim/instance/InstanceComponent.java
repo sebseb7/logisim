@@ -381,14 +381,14 @@ public class InstanceComponent implements Component, AttributeListener,
 	}
 
 	void setTextField(Attribute<String> labelAttr, Attribute<Font> fontAttr,
-			int x, int y, int halign, int valign) {
+			int x, int y, int halign, int valign, boolean multiline) {
 		InstanceTextField field = textField;
 		if (field == null) {
 			field = new InstanceTextField(this);
-			field.update(labelAttr, fontAttr, x, y, halign, valign);
+			field.update(labelAttr, fontAttr, x, y, halign, valign, multiline);
 			textField = field;
 		} else {
-			field.update(labelAttr, fontAttr, x, y, halign, valign);
+			field.update(labelAttr, fontAttr, x, y, halign, valign, multiline);
 		}
 	}
 }
