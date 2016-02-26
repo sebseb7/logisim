@@ -123,6 +123,7 @@ class SplitterPainter {
 		int y1 = y0 + parms.getEnd0Y();
 		int dx = parms.getEndToEndDeltaX();
 		int dy = parms.getEndToEndDeltaY();
+                int gap = 10 * attrs.spacing;
 		if (facing == Direction.NORTH || facing == Direction.SOUTH) {
 			int ySpine = (y0 + y1) / 2;
 			GraphicsUtil.switchToWidth(g, Wire.WIDTH);
@@ -142,7 +143,7 @@ class SplitterPainter {
 			if (fanout > 3) {
 				GraphicsUtil.switchToWidth(g, SPINE_WIDTH);
 				g.setColor(Color.BLACK);
-				g.drawLine(x1 + dx, ySpine, x1 + (fanout - 2) * dx, ySpine);
+				g.drawLine(x1 + (dx>0?10:-10), ySpine, x1 + (fanout - 1) * dx + (dx>0?-10:10), ySpine);
 			} else {
 				g.setColor(Color.BLACK);
 				g.fillOval(x0 - SPINE_DOT / 2, ySpine - SPINE_DOT / 2,
@@ -167,7 +168,7 @@ class SplitterPainter {
 			if (fanout >= 3) {
 				GraphicsUtil.switchToWidth(g, SPINE_WIDTH);
 				g.setColor(Color.BLACK);
-				g.drawLine(xSpine, y1 + dy, xSpine, y1 + (fanout - 2) * dy);
+				g.drawLine(xSpine, y1 + (dy>0?10:-10), xSpine, y1 + (fanout - 1) * dy + (dy>0?-10:10));
 			} else {
 				g.setColor(Color.BLACK);
 				g.fillOval(xSpine - SPINE_DOT / 2, y0 - SPINE_DOT / 2,
