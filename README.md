@@ -14,8 +14,8 @@ revolve around:
 
 You can download a compiled copy here:
 
-* [Java JAR file](mathcs.holycross.edu/~kwalsh/logisim-evolution-2.13.14hc.jar) (platform independent)
-* [Windows EXE file](mathcs.holycross.edu/~kwalsh/logisim-evolution-2.13.14hc.exe) (windows only)
+* [Java JAR file](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-2.13.14hc.jar) (platform independent)
+* [Windows EXE file](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-2.13.14hc.exe) (windows only)
 
 To run the JAR file, open a command line (or Mac Terminal or Windows CMD.exe
 prompt) and type `java -jar logisim-evolution-2.13.1hc.jar` from within the
