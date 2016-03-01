@@ -49,12 +49,12 @@ public class TextField {
 	public static final int V_BASELINE = GraphicsUtil.V_BASELINE;
 	public static final int V_BOTTOM = GraphicsUtil.V_BOTTOM;
 
-	private int x;
-	private int y;
-	private int halign;
-	private int valign;
-	private Font font;
-	private String text = "";
+	protected int x;
+	protected int y;
+	protected int halign;
+	protected int valign;
+	protected Font font;
+	protected String text = "";
 	private LinkedList<TextFieldListener> listeners = new LinkedList<TextFieldListener>();
 
 	public TextField(int x, int y, int halign, int valign) {
@@ -77,45 +77,8 @@ public class TextField {
 	}
 
 	public void draw(Graphics g) {
-		Font old = g.getFont();
-		if (font != null)
-			g.setFont(font);
-
-		int x = this.x;
-		int y = this.y;
-		FontMetrics fm = g.getFontMetrics();
-		int width = fm.stringWidth(text);
-		int ascent = fm.getAscent();
-		int descent = fm.getDescent();
-		switch (halign) {
-		case TextField.H_CENTER:
-			x -= width / 2;
-			break;
-		case TextField.H_RIGHT:
-			x -= width;
-			break;
-		default:
-			break;
-		}
-		switch (valign) {
-		case TextField.V_TOP:
-			y += ascent;
-			break;
-		case TextField.V_CENTER:
-			y += ascent / 2;
-			break;
-		case TextField.V_CENTER_OVERALL:
-			y += (ascent - descent) / 2;
-			break;
-		case TextField.V_BOTTOM:
-			y -= descent;
-			break;
-		default:
-			break;
-		}
-		g.drawString(text, x, y);
-		g.setFont(old);
-	}
+                GraphicsUtil.drawText(g, font, text, x, y, halign, valign);
+        }
 
 	public void fireTextChanged(TextFieldEvent e) {
 		for (TextFieldListener l : new ArrayList<TextFieldListener>(listeners)) {
@@ -124,52 +87,13 @@ public class TextField {
 	}
 
 	public Bounds getBounds(Graphics g) {
-		int x = this.x;
-		int y = this.y;
-		FontMetrics fm;
-		if (font == null)
-			fm = g.getFontMetrics();
-		else
-			fm = g.getFontMetrics(font);
-		int width = fm.stringWidth(text);
-		int ascent = fm.getAscent();
-		int descent = fm.getDescent();
-		switch (halign) {
-		case TextField.H_CENTER:
-			x -= width / 2;
-			break;
-		case TextField.H_RIGHT:
-			x -= width;
-			break;
-		default:
-			break;
-		}
-		switch (valign) {
-		case TextField.V_TOP:
-			y += ascent;
-			break;
-		case TextField.V_CENTER:
-			y += ascent / 2;
-			break;
-		case TextField.V_CENTER_OVERALL:
-			y += (ascent - descent) / 2;
-			break;
-		case TextField.V_BOTTOM:
-			y -= descent;
-			break;
-		default:
-			break;
-		}
-		return Bounds.create(x, y - ascent, width, ascent + descent);
+                return Bounds.create(GraphicsUtil.getTextBounds(g, font, text, x, y, halign, valign));
 	}
 
 	public TextFieldCaret getCaret(Graphics g, int pos) {
 		return new TextFieldCaret(this, g, pos);
 	}
 
-	//
-	// graphics methods
-	//
 	public TextFieldCaret getCaret(Graphics g, int x, int y) {
 		return new TextFieldCaret(this, g, x, y);
 	}
@@ -190,9 +114,6 @@ public class TextField {
 		return valign;
 	}
 
-	//
-	// access methods
-	//
 	public int getX() {
 		return x;
 	}
@@ -230,9 +151,6 @@ public class TextField {
 		this.valign = valign;
 	}
 
-	//
-	// modification methods
-	//
 	public void setText(String text) {
 		if (!text.equals(this.text)) {
 			TextFieldEvent e = new TextFieldEvent(this, this.text, text);

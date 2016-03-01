@@ -730,6 +730,7 @@ public class Canvas extends JPanel implements LocaleListener,
 		setBackground(Color.white);
 		addMouseListener(myListener);
 		addMouseMotionListener(myListener);
+                setFocusTraversalKeysEnabled(false);
 		addKeyListener(myListener);
 		addMouseWheelListener(myListener);
 

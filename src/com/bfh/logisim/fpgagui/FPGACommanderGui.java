@@ -104,7 +104,8 @@ public class FPGACommanderGui implements ActionListener {
 		@Override
 		public void projectChanged(ProjectEvent event) {
 			if (event.getAction() == ProjectEvent.ACTION_SET_CURRENT) {
-				SetCurrentSheet(event.getCircuit().getName());
+                                if (event.getCircuit() != null)
+                                    SetCurrentSheet(event.getCircuit().getName());
 			} else if (event.getAction() == ProjectEvent.ACTION_SET_FILE) {
 				RebuildCircuitSelection();
 			}
@@ -244,7 +245,8 @@ public class FPGACommanderGui implements ActionListener {
 		int i = 0;
 		for (Circuit thisCircuit : MyProject.getLogisimFile().getCircuits()) {
 			circuitsList.addItem(thisCircuit.getName());
-			if (thisCircuit.getName().equals(
+			if (MyProject.getCurrentCircuit() != null &&
+                                thisCircuit.getName().equals(
 					MyProject.getCurrentCircuit().getName())) {
 				circuitsList.setSelectedIndex(i);
 			}
@@ -1092,7 +1094,8 @@ public class FPGACommanderGui implements ActionListener {
 		int i = 0;
 		for (Circuit thisone : MyProject.getLogisimFile().getCircuits()) {
 			circuitsList.addItem(thisone.getName());
-			if (thisone.getName().equals(
+			if (MyProject.getCurrentCircuit() != null &&
+                                thisone.getName().equals(
 					MyProject.getCurrentCircuit().getName())) {
 				circuitsList.setSelectedIndex(i);
 			}

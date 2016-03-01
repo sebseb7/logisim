@@ -286,6 +286,7 @@ public class Project {
         public void setCurrentHdlModel(HdlModel hdl) {
                 if (hdlModel == hdl)
                     return;
+                setTool(null);
 
 		CircuitState old = circuitState;
                 HdlModel oldHdl = hdlModel;

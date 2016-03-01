@@ -124,7 +124,6 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
         n = size;
         for (int busNr = 0; busNr < (size - 1)/32 + 1; busNr++) {
             int e = (n > 32 ? 32 : n);
-            ports.add(new InOutMap(BUS, e - 1, 0, busNr, -1));
             if (dir == PortIO.INPUT || dir == PortIO.INOUT_1 || dir == PortIO.INOUT_N) {
                 ports.add(new InOutMap(OUTPUT, e - 1, 0, busNr, endNr++));
             }
