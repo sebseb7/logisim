@@ -45,6 +45,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 
+import com.bfh.logisim.library.DynamicClock;
 import com.bfh.logisim.fpgaboardeditor.FPGAClass;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.cburch.logisim.circuit.Circuit;
@@ -103,6 +104,7 @@ public class Netlist {
 	private int DRCStatus;
 	private Set<Wire> wires = new HashSet<Wire>();
 	private ArrayList<String> CurrentHierarchyLevel;
+        private NetlistComponent DynClock;
 	public static final int DRC_REQUIRED = -1;
 	public static final int DRC_PASSED = 0;
 	public static final int ANNOTATE_REQUIRED = 1;
@@ -138,6 +140,7 @@ public class Netlist {
 		LocalNrOfInportBubles = 0;
 		LocalNrOfOutportBubles = 0;
 		LocalNrOfInOutBubles = 0;
+                DynClock = null;
 		if (CurrentHierarchyLevel == null) {
 			CurrentHierarchyLevel = new ArrayList<String>();
 		} else {
@@ -287,6 +290,24 @@ public class Netlist {
 			Sheetnames.add(MyCircuit.getName());
 		}
 		for (Component comp : MyCircuit.getNonWires()) {
+                        if (comp.getFactory() instanceof DynamicClock) {
+                            if (!IsTopLevel) {
+				Reporter.AddFatalError("Found dynamic clock control in " +
+						" sub-circuit \"" + MyCircuit.getName() + "\"." +
+						" This component must only be placed in the top-level main circuit.");
+				DRCStatus = DRC_ERROR;
+				return DRCStatus;
+                            }
+                            if (DynClock != null) {
+				Reporter.AddFatalError("Found multiple dynamic clock controls in " +
+						" circuit \"" + MyCircuit.getName() + "\"." +
+						" Only a single instance of this component is allowed.");
+				DRCStatus = DRC_ERROR;
+				return DRCStatus;
+                            }
+                            // DynClock = new NetlistComponent(comp);
+                            continue;
+                        }
 			String ComponentName = comp.getFactory().getHDLName(
 					comp.getAttributeSet());
 			/*
@@ -899,6 +920,7 @@ public class Netlist {
 					return false;
 				}
 			} else if ((comp.getFactory() instanceof Pin)
+                                        || (comp.getFactory() instanceof DynamicClock)
 					|| (comp.getFactory().getIOInformation() != null)
 					|| (comp.getFactory().getHDLGenerator(HDLIdentifier,
 							comp.getAttributeSet(), FPGAClass.VendorUnknown) != null)) {
@@ -1559,6 +1581,9 @@ public class Netlist {
 			if (comp.getFactory().RequiresGlobalClock()) {
 				ClockSources.SetGloblaClockRequirement();
 			}
+                        // todo:
+                        //if (comp.getFactory() instanceof DynamicClockDivider) {
+                        //}
 		}
 		/* Second pass: We mark all clock sources */
 		for (NetlistComponent source : MyClockGenerators) {
@@ -1748,6 +1773,8 @@ public class Netlist {
 			} else {
 				MyInputPorts.add(NormalComponent);
 			}
+                } else if (comp.getFactory() instanceof DynamicClock) {
+                        DynClock = NormalComponent;
 		} else if (comp.getFactory() instanceof PortIO) {
 			MyInOutPorts.add(NormalComponent);
 			MyComponents.add(NormalComponent);
@@ -1833,6 +1860,18 @@ public class Netlist {
 		return MyClockInformation.GetSourceContainer()
 				.RequiresFPGAGlobalClock();
 	}
+
+	public boolean RawFPGAClock() {
+		return MyClockInformation.GetSourceContainer().RawFPGAClock();
+	}
+
+	public void SetRawFPGAClock() {
+		MyClockInformation.GetSourceContainer().SetRawFPGAClock();
+	}
+
+        public NetlistComponent GetDynamicClock() {
+            return DynClock;
+        }
 
 	public void SetCurrentHierarchyLevel(ArrayList<String> Level) {
 		CurrentHierarchyLevel.clear();

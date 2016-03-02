@@ -39,15 +39,18 @@ public class ClockSourceContainer {
 
 	ArrayList<Component> sources;
 	boolean RequiresFPGAGlobalClock;
+	boolean RawFPGAClock;
 
 	public ClockSourceContainer() {
 		sources = new ArrayList<Component>();
 		RequiresFPGAGlobalClock = false;
+		RawFPGAClock = false;
 	}
 
 	public void clear() {
 		sources.clear();
 		RequiresFPGAGlobalClock = false;
+		RawFPGAClock = false;
 	}
 
 	private boolean equals(Component comp1, Component comp2) {
@@ -90,4 +93,12 @@ public class ClockSourceContainer {
 	public void SetGloblaClockRequirement() {
 		RequiresFPGAGlobalClock = true;
 	}
+
+	public boolean RawFPGAClock() {
+		return RawFPGAClock;
+	}
+
+        public void SetRawFPGAClock() {
+                RawFPGAClock = true;
+        }
 }

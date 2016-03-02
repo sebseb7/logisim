@@ -113,20 +113,9 @@ public class FPGACommanderGui implements ActionListener {
 	}
 
 	private class MySimulatorListener implements SimulatorListener {
-
-		public void propagationCompleted(SimulatorEvent e) {
-		}
-
-		;
-
-		public void simulatorStateChanged(SimulatorEvent e) {
-			ChangeTickFrequency();
-		}
-
-		;
-
-		public void tickCompleted(SimulatorEvent e) {
-		}
+            public void propagationCompleted(SimulatorEvent e) { }
+            public void simulatorStateChanged(SimulatorEvent e) { ChangeTickFrequency(); }
+            public void tickCompleted(SimulatorEvent e) { }
 	}
 
 	public static final int FONT_SIZE = 12;
@@ -135,6 +124,7 @@ public class FPGACommanderGui implements ActionListener {
 	private JLabel textMainCircuit = new JLabel("Choose main circuit ");
 	private JLabel textTargetBoard = new JLabel("Choose target board ");
 	private JLabel textTargetFreq = new JLabel("Choose tick frequency ");
+	private JLabel textTargetDiv = new JLabel("Divide clock by...");
 	private JLabel textAnnotation = new JLabel("Annotation method");
 	private JLabel boardPic = new JLabel();
 	private BoardIcon boardIcon = null;
@@ -143,19 +133,24 @@ public class FPGACommanderGui implements ActionListener {
 	private JCheckBox writeToFlash = new JCheckBox("Write to flash?");
 	private JComboBox<String> boardsList = new JComboBox<>();
 	private JComboBox<String> circuitsList = new JComboBox<>();
-	private JComboBox<String> frequenciesList = new JComboBox<>();
+	private JComboBox<String> clockOption = new JComboBox<>();
+	private static final String clockMax = "Maximum Speed";
+	private static final String clockDiv = "Reduced Speed";
+	private static final String clockDyn = "Dynamic Speed";
+	private JComboBox<Object> clockDivRate = new JComboBox<>();
+	private JComboBox<Object> clockDivCount = new JComboBox<>();
 	private JComboBox<String> annotationList = new JComboBox<>();
 	private JComboBox<String> HDLType = new JComboBox<>();
 	private JComboBox<String> HDLOnly = new JComboBox<>();
 	private JButton ToolPath = new JButton();
 	private JButton Workspace = new JButton();
-	private JCheckBox skipHDL = new JCheckBox("Skip VHDL generation and synthesis?");
 	private JTextArea textAreaInfo = new JTextArea(10, 50);
 	private JTextArea textAreaWarnings = new JTextArea(10, 50);
 	private JTextArea textAreaErrors = new JTextArea(10, 50);
 	private ArrayList<JTextArea> textAreaConsole = new ArrayList<JTextArea>();
 	private static final String OnlyHDLMessage = "Generate HDL only";
 	private static final String HDLandDownloadMessage = "Synthesize and Download";
+	private static final String OnlyDownloadMessage = "Download only";
 	public static final int INFOS = 0;
 	public static final int WARNINGS = 1;
 	public static final int ERRORS = 2;
@@ -189,6 +184,7 @@ public class FPGACommanderGui implements ActionListener {
 				.GetAlteraToolPath().equals(Settings.Unknown))
 				|| (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorXilinx && MySettings
 						.GetXilixToolPath().equals(Settings.Unknown))) {
+                        // Synthesis/download not possible.
 			if (!MySettings.GetHDLOnly()) {
 				MySettings.SetHdlOnly(true);
 				MySettings.UpdateSettingsFile();
@@ -201,18 +197,14 @@ public class FPGACommanderGui implements ActionListener {
 			AddConsole("Tool path is not set correctly. " +
 				"Synthesis and download will not be available.");
 			AddConsole("Please set the path to Altera or Xilinx tools using the \"ToolPath\" button");
-			skipHDL.setSelected(false);
-			skipHDL.setEnabled(false);
 		} else if (MySettings.GetHDLOnly()) {
+                        // Synthesis/download possible, but user selected to only generate HDL.
                         HDLOnly.setSelectedItem(OnlyHDLMessage);
                         HDLOnly.setEnabled(true);
-			skipHDL.setSelected(false);
-			skipHDL.setEnabled(false);
                 } else {
+                        // Synthesis/download possible, user elects to do so.
                         HDLOnly.setSelectedItem(HDLandDownloadMessage);
                         HDLOnly.setEnabled(true);
-			skipHDL.setSelected(false);
-			skipHDL.setEnabled(readyForDownload());
 		}
         }
 
@@ -288,32 +280,37 @@ public class FPGACommanderGui implements ActionListener {
 		c.gridy = 4;
 		textTargetFreq.setEnabled(true);
 		panel.add(textTargetFreq, c);
-		frequenciesList.setEnabled(true);
-		for (String freq : MenuSimulate.getTickFrequencyStrings()) {
-			frequenciesList.addItem(freq);
-		}
-		for (i = 0; i < MenuSimulate.SupportedTickFrequencies.length; i++) {
-			if (MenuSimulate.SupportedTickFrequencies[i].equals(MyProject
-					.getSimulator().getTickFrequency())) {
-				frequenciesList.setSelectedIndex(i);
-			}
-		}
-		frequenciesList.setActionCommand("Frequency");
-		frequenciesList.addActionListener(this);
-		c.gridx = 1;
-		panel.add(frequenciesList, c);
-		MyProject.getSimulator().addSimulatorListener(mysimlistener);
-
-		c.gridx = 2;
+		clockOption.setEnabled(true);
+                clockOption.addItem(clockMax);
+                clockOption.addItem(clockDiv);
+                clockOption.addItem(clockDyn);
+                clockOption.setSelectedItem(clockDiv);
+                clockDivRate.setEnabled(true);
+                clockDivCount.setEnabled(true);
+                clockDivRate.setEditable(true);
+                clockDivCount.setEditable(true);
+		clockOption.setActionCommand("ClockOption");
+		clockDivRate.setActionCommand("ClockDivRate");
+		clockDivCount.setActionCommand("ClockDivCount");
+		clockOption.addActionListener(this);
+		clockDivRate.addActionListener(this);
+		clockDivCount.addActionListener(this);
 		c.gridy = 4;
-		skipHDL.setSelected(false);
-		skipHDL.setVisible(true);
-		panel.add(skipHDL, c);
+		c.gridx = 1;
+		panel.add(clockOption, c);
+		c.gridx = 2;
+		panel.add(clockDivRate, c);
+		c.gridy = 5;
+		c.gridx = 1;
+		textTargetDiv.setEnabled(true);
+		panel.add(textTargetDiv, c);
+		c.gridx = 2;
+		panel.add(clockDivCount, c);
 
 
 		// select annotation level
 		c.gridx = 0;
-		c.gridy = 5;
+		c.gridy = 6;
 		textAnnotation.setEnabled(true);
 		panel.add(textAnnotation, c);
 		annotationList.addItem("Relabel all components");
@@ -333,12 +330,16 @@ public class FPGACommanderGui implements ActionListener {
 		boardPic.setIcon(boardIcon);
 		c.gridx = 3;
 		c.gridy = 2;
-		c.gridheight = 5;
+		c.gridheight = 6;
 		// c.gridwidth = 2;
 		panel.add(boardPic, c);
 
 		c.gridheight = 1;
 		// c.gridwidth = 1;
+
+                populateClockDivOptions();
+                updateClockOptions();
+		MyProject.getSimulator().addSimulatorListener(mysimlistener);
 
 		// validate button
 		validateButton.setActionCommand("Download");
@@ -346,14 +347,14 @@ public class FPGACommanderGui implements ActionListener {
 		validateButton.addActionListener(this);
 		c.gridwidth = 1;
 		c.gridx = 1;
-		c.gridy = 6;
+		c.gridy = 7;
 		panel.add(validateButton, c);
 
 		// write to flash
 		writeToFlash.setVisible(MyBoardInformation.fpga.isFlashDefined());
 		writeToFlash.setSelected(false);
 		c.gridx = 2;
-		c.gridy = 6;
+		c.gridy = 7;
 		panel.add(writeToFlash, c);
 
 		// annotate button
@@ -362,7 +363,7 @@ public class FPGACommanderGui implements ActionListener {
 		annotateButton.addActionListener(this);
 		c.gridwidth = 1;
 		c.gridx = 0;
-		c.gridy = 6;
+		c.gridy = 7;
 		panel.add(annotateButton, c);
 
 		// HDL Type Button
@@ -379,6 +380,8 @@ public class FPGACommanderGui implements ActionListener {
 		// HDL Only Radio
                 HDLOnly.addItem(OnlyHDLMessage);
                 HDLOnly.addItem(HDLandDownloadMessage);
+                HDLOnly.addItem(OnlyDownloadMessage);
+                HDLOnlyUpdate();
 		HDLOnly.setActionCommand("HDLOnly");
 		HDLOnly.addActionListener(this);
 		c.gridwidth = 2;
@@ -470,7 +473,7 @@ public class FPGACommanderGui implements ActionListener {
 		textAreaErrors.setText(null);
 
 		c.gridx = 0;
-		c.gridy = 7;
+		c.gridy = 8;
 		c.gridwidth = 5;
 
 		tabbedPane.setPreferredSize(new Dimension(700, 20 * FONT_SIZE));
@@ -494,6 +497,214 @@ public class FPGACommanderGui implements ActionListener {
                 HDLOnlyUpdate();
 		validateButton.requestFocus();
 	}
+
+        private void updateClockOptions() {
+            /*
+            LogisimFile myfile = MyProject.getLogisimFile();
+            String CircuitName = circuitsList.getSelectedItem().toString();
+            Circuit RootSheet = myfile.getCircuit(CircuitName);
+            int nClocks = RootSheet.getNetList().NumberOfClockTrees();
+            clockOption.setEnabled(nClocks > 0);
+            clockDivRate.setEnabled(nClocks > 0);
+            clockDivCount.setEnabled(nClocks > 0);
+            */
+        }
+
+        private void populateClockDivOptions() {
+            clockDivCount.removeAllItems();
+            clockDivRate.removeAllItems();
+            long base = MyBoardInformation.fpga.getClockFrequency();
+            ArrayList<Integer> counts = new ArrayList<>();
+            ArrayList<Double> freqs = new ArrayList<>();
+            double ff = (double)base;
+            while (ff >= MenuSimulate.SupportedTickFrequencies[0]*2) {
+                freqs.add(ff);
+                ff /= 2;
+            }
+            for (double f : MenuSimulate.SupportedTickFrequencies) {
+                freqs.add(f);
+            }
+            for (double f : freqs) {
+                int count = countForFreq(base, f);
+                if (counts.contains(count))
+                    continue;
+                counts.add(count);
+                String rate = rateForCount(base, count);
+                clockDivCount.addItem(count);
+                clockDivRate.addItem(new ExactRate(base, count));
+                if (Math.abs((MyProject.getSimulator().getTickFrequency() - f)/f) < 0.0001) {
+                    clockDivCount.setSelectedItem(count);
+                    clockDivRate.setSelectedItem(new ExactRate(base, count));
+                }
+            }
+        }
+
+        private void setClockOption() {
+            boolean div = clockOption.getSelectedItem().equals(clockDiv);
+            boolean max = clockOption.getSelectedItem().equals(clockMax);
+            clockDivRate.setEnabled(div);
+            clockDivCount.setEnabled(div);
+            // textTargetDiv.setEnabled(div);
+            long base = MyBoardInformation.fpga.getClockFrequency();
+            if (max) {
+                clockDivRate.setSelectedItem(new ExactRate(base, 0));
+                clockDivCount.setSelectedItem("undivided");
+            } else if (div) {
+                if (prevSelectedDivCount > 0 && prevSelectedDivRate != null) {
+                    clockDivCount.setSelectedItem(prevSelectedDivCount);
+                    clockDivRate.setSelectedItem(prevSelectedDivRate);
+                } else {
+                    ChangeTickFrequency();
+                }
+            } else {
+                clockDivRate.setSelectedItem(new ExactRate(base, -1));
+                clockDivCount.setSelectedItem("set in circuit");
+            }
+        }
+
+        private int prevSelectedDivCount = 0;
+        private Object prevSelectedDivRate = null;
+
+        private static class ExactRate {
+            long base;
+            int count;
+            String rate;
+            public ExactRate(long base, int count) {
+                this.base = base;
+                this.count = count;
+                if (count < 0)
+                    rate = "varies";
+                else if (count == 0)
+                    rate = rateForFreq(2.0*base);
+                else
+                    rate = rateForCount(base, count);
+            }
+            public String toString() {
+                return rate;
+            }
+            @Override
+            public boolean equals(Object other) {
+                if (other instanceof ExactRate) {
+                    ExactRate that = (ExactRate)other;
+                    return (base == that.base && count == that.count);
+                }
+                return false;
+            }
+            @Override public int hashCode() {
+                return (int)(39 * (base + 27) + count);
+            }
+        }
+
+        private void setClockDivRate() {
+            if (!clockOption.getSelectedItem().equals(clockDiv))
+                return;
+            long base = MyBoardInformation.fpga.getClockFrequency();
+            Object o = clockDivRate.getSelectedItem();
+            Integer i;
+            if (o instanceof ExactRate) {
+                i = ((ExactRate)o).count;
+            } else {
+                // approximate
+                i = countForRate(base, o.toString());
+                if (i == null) {
+                    if (prevSelectedDivCount > 0 && prevSelectedDivRate != null) {
+                        clockDivCount.setSelectedItem(prevSelectedDivCount);
+                        clockDivRate.setSelectedItem(prevSelectedDivRate);
+                    } else {
+                        ChangeTickFrequency();
+                    }
+                    return;
+                }
+                String rate = rateForCount(base, i);
+                clockDivRate.setSelectedItem(rate); // rounds to nearest acceptable value
+            }
+            if (!clockDivCount.getSelectedItem().equals(i))
+                clockDivCount.setSelectedItem(i);
+            prevSelectedDivRate = clockDivRate.getSelectedItem();
+            prevSelectedDivCount = (Integer)clockDivCount.getSelectedItem();
+        }
+
+        private void setClockDivCount() {
+            if (!clockOption.getSelectedItem().equals(clockDiv))
+                return;
+            long base = MyBoardInformation.fpga.getClockFrequency();
+            String s = clockDivCount.getSelectedItem().toString();
+            int count = -1;
+            try { count = Integer.parseInt(s); }
+            catch (NumberFormatException e) { }
+            if (count <= 0) {
+                if (prevSelectedDivCount > 0 && prevSelectedDivRate != null) {
+                    clockDivCount.setSelectedItem(prevSelectedDivCount);
+                    clockDivRate.setSelectedItem(prevSelectedDivRate);
+                } else {
+                    ChangeTickFrequency();
+                }
+                return;
+            }
+            clockDivRate.setSelectedItem(new ExactRate(base, count));
+            prevSelectedDivRate = clockDivRate.getSelectedItem();
+            prevSelectedDivCount = (Integer)clockDivCount.getSelectedItem();
+        }
+	
+        private static Integer countForRate(long base, String rate) {
+            rate = rate.toLowerCase().trim();
+            int multiplier = 1;
+            if (rate.endsWith("khz")) {
+                multiplier = 1000;
+                rate = rate.substring(0, rate.length() - 3);
+            } else if (rate.endsWith("mhz")) {
+                multiplier = 1000000;
+                rate = rate.substring(0, rate.length() - 3);
+            } else if (rate.endsWith("hz")) {
+                multiplier = 1;
+                rate = rate.substring(0, rate.length() - 2);
+            }
+            double freq;
+            try {
+                freq = Double.parseDouble(rate) * multiplier;
+            } catch (NumberFormatException e) {
+                return null;
+            }
+            if (freq <= 0)
+                return null;
+            return countForFreq(base, freq);
+        }
+
+        // base=25mhz, actual=50mhz, count=1 --> 0 0 0 0 0 0 --> 25mhz = 25/1
+        // base=25mhz, actual=50mhz, count=2 --> 1 0 1 0 1 0 --> 12.5mhz = 25/2
+        // base=25mhz, actual=50mhz, count=3 --> 2 1 0 2 1 0 --> 8.3mhz = 25/3
+        private static int countForFreq(long base, double freq) {
+            long count = (long)((double)base / freq);
+            if ((count > (long) 0x7FFFFFFF) | (count < 0))
+                count = (long) 0x7FFFFFFF;
+            else if (count == 0)
+                count = 1;
+            return (int)count;
+        }
+
+        private static String rateForCount(long base, int count) {
+            double f = (double)base / count;
+            return rateForFreq(f);
+        }
+
+        private static String rateForFreq(double f) {
+            String suffix;
+            if (f < 0.1) {
+                return String.format("%g Hz", f);
+            } else if (f < 1000) {
+                suffix = "Hz";
+            } else if (f < 1000000) {
+                f /= 1000;
+                suffix = "kHz";
+            } else {
+                suffix = "MHz";
+                f /= 1000000;
+            }
+            if (Math.abs(f - Math.round(f)) < 0.1)
+                return String.format("%.0f %s", f, suffix);
+            else
+                return String.format("%.2f %s", f, suffix);
+        }
 
         private void ClearConsoles() {
             synchronized(consoleConsole) {
@@ -541,6 +752,12 @@ public class FPGACommanderGui implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		if (e.getActionCommand().equals("annotate")) {
 			Annotate(annotationList.getSelectedIndex() == 0);
+		} else if (e.getActionCommand().equals("ClockOption")) {
+			setClockOption();
+		} else if (e.getActionCommand().equals("ClockDivRate")) {
+			setClockDivRate();
+		} else if (e.getActionCommand().equals("ClockDivCount")) {
+			setClockDivCount();
 		} else if (e.getActionCommand().equals("Workspace")) {
 			selectWorkSpace();
 		} else if (e.getActionCommand().equals("HDLType")) {
@@ -551,7 +768,10 @@ public class FPGACommanderGui implements ActionListener {
 			handleHDLOnly();
 		} else if (e.getActionCommand().equals("Download")) {
 			DownLoad();
+                } else if (e.getActionCommand().equals("mainCircuit")) {
+                        updateClockOptions();
 		} else if (e.getActionCommand().equals("targetBoard")) {
+                        populateClockDivOptions();
 			if (!boardsList.getSelectedItem().equals("Other")) {
 				MySettings.SetSelectedBoard(boardsList.getSelectedItem()
 						.toString());
@@ -744,15 +964,14 @@ public class FPGACommanderGui implements ActionListener {
 	}
 
 	private void ChangeTickFrequency() {
-		for (int i = 0; i < MenuSimulate.SupportedTickFrequencies.length; i++) {
-			if (MenuSimulate.SupportedTickFrequencies[i].equals(MyProject
-					.getSimulator().getTickFrequency())) {
-				if (i != frequenciesList.getSelectedIndex()) {
-					frequenciesList.setSelectedIndex(i);
-				}
-				break;
-			}
-		}
+            long base = MyBoardInformation.fpga.getClockFrequency();
+            for (double f : MenuSimulate.SupportedTickFrequencies) {
+                int count = countForFreq(base, f);
+                if (Math.abs((MyProject.getSimulator().getTickFrequency() - f)/f) < 0.0001) {
+                    clockDivCount.setSelectedItem(count);
+                    clockDivRate.setSelectedItem(new ExactRate(base, count));
+                }
+            }
 	}
 
 	private boolean CleanDirectory(String dir) {
@@ -828,34 +1047,32 @@ public class FPGACommanderGui implements ActionListener {
                 tabbedPane.repaint(rect);
 	}
 
-	private boolean generateHDL() {
-	    if (!performDRC()) {
-		AddErrors("DRC Failed");
-		return false;
-	    }
-	    if (!MapDesign()) {
-		AddErrors("Design could not be mapped");
-		return false;
-	    }
-	    if (!writeHDL()) {
-		AddErrors("COuld not create HDL files");
-		return false;
-	    }
-	    AddConsole("Successfully created HDL files");
-	    return true;
-	}
+        private boolean skipHdl() {
+             return HDLOnly.getSelectedItem().toString().equals(OnlyDownloadMessage);
+        }
 
 	private void DownLoad() {
-		if (MySettings.GetHDLOnly()) {
-			generateHDL();
-			return;
-		}
-		if (skipHDL.isSelected()) {
-		    AddConsole("*** Warning *** Skipping HDL file generation and synthesis.");
-		    AddConsole("*** Warning *** Recent changes to circuits will not take effect.");
-		} else if (!generateHDL()) {
-		    return;
-		}
+		if (MySettings.GetHDLOnly() || !skipHdl()) {
+                    AddConsole("Performing DRC");
+                    if (!performDRC()) {
+                        AddErrors("DRC Failed");
+                        return;
+                    }
+                    AddConsole("Mapping Pins");
+                    if (!MapDesign()) {
+                        AddErrors("Design could not be mapped");
+                        return;
+                    }
+                    AddConsole("Generating HDL");
+                    if (!writeHDL()) {
+                        AddErrors("Could not create HDL files");
+                        return;
+                    }
+                    AddConsole("Successfully created HDL files");
+                } else if (!MySettings.GetHDLOnly()) {
+                    AddConsole("*** NOTE *** Skipping HDL file generation and synthesis.");
+                    AddConsole("*** NOTE *** Recent changes to circuits will not take effect.");
+                }
 		DownLoadDesign(MySettings.GetHDLOnly());
 	}
 
@@ -898,9 +1115,14 @@ public class FPGACommanderGui implements ActionListener {
 				+ File.separator;
 		String SourcePath = ProjectDir + MySettings.GetHDLType().toLowerCase()
 				+ File.separator;
-		if (!skipHDL.isSelected()) {
+		if (HDLOnly.getSelectedItem().toString().equals(OnlyDownloadMessage)) {
+                    if (!readyForDownload()) {
+                        MyReporter.AddError("HDL files are not ready for download. Use \"Synthesize and download\" instead.");
+                        return;
+                    }
+                } else {
 		    if (!MapPannel.isDoneAssignment()) {
-			    MyReporter.AddError("Download to board canceled");
+			    MyReporter.AddError("Not all pins have been assigned. Download to board canceled.");
 			    return;
 		    }
 		    ArrayList<String> Entities = new ArrayList<String>();
@@ -909,16 +1131,16 @@ public class FPGACommanderGui implements ActionListener {
 				    MySettings.GetHDLType());
 		    ClearConsoles();
 		    if (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera) {
-			    if (AlteraDownload.GenerateQuartusScript(MyReporter, ProjectDir
+			    if (!AlteraDownload.GenerateQuartusScript(MyReporter, ProjectDir
 					    + HDLPaths[ScriptPath] + File.separator,
 					    RootSheet.getNetList(), MyMappableResources,
 					    MyBoardInformation, Entities, Behaviors,
 					    MySettings.GetHDLType())) {
-				AddConsole("Can't generate quartus script");
+				MyReporter.AddError("Can't generate quartus script");
 				return;
 			    }
 		    } else {
-			    if (XilinxDownload.GenerateISEScripts(MyReporter, ProjectDir,
+			    if (!XilinxDownload.GenerateISEScripts(MyReporter, ProjectDir,
 					    ProjectDir + HDLPaths[ScriptPath] + File.separator,
 					    ProjectDir + HDLPaths[UCFPath] + File.separator,
 					    RootSheet.getNetList(), MyMappableResources,
@@ -926,7 +1148,7 @@ public class FPGACommanderGui implements ActionListener {
 					    MySettings.GetHDLType(),
 					    writeToFlash.isSelected())
 					    && !generateOnly) {
-				AddConsole("Can't generate xilinx script");
+				MyReporter.AddError("Can't generate xilinx script");
 				return;
 			    }
 		    }
@@ -997,10 +1219,17 @@ public class FPGACommanderGui implements ActionListener {
 	}
 
 	private void handleHDLOnly() {
+                /*
 		boolean hdlonly = HDLOnly.getSelectedItem().toString().equals(OnlyHDLMessage);
 		MySettings.SetHdlOnly(hdlonly);
 		skipHDL.setSelected(false);
 		skipHDL.setEnabled(!hdlonly && readyForDownload());
+                */
+		if (HDLOnly.getSelectedItem().toString().equals(OnlyHDLMessage)) {
+			MySettings.SetHdlOnly(true);
+		} else {
+			MySettings.SetHdlOnly(false);
+		}
 	}
 
 	private void handleHDLType() {
@@ -1275,11 +1504,18 @@ public class FPGACommanderGui implements ActionListener {
 			return false;
 		}
 		/* Here we generate the top-level shell */
+                int TickPeriod;
+                if (clockOption.getSelectedItem().equals(clockMax))
+                    TickPeriod = 0;
+                else if (clockOption.getSelectedItem().equals(clockDyn))
+                    TickPeriod = -1;
+                else
+                    TickPeriod = Integer.parseInt(clockDivCount.getSelectedItem().toString());
+
 		if (RootSheet.getNetList().NumberOfClockTrees() > 0) {
 			TickComponentHDLGeneratorFactory Ticker = new TickComponentHDLGeneratorFactory(
 					MyBoardInformation.fpga.getClockFrequency(),
-					MenuSimulate.SupportedTickFrequencies[frequenciesList
-							.getSelectedIndex()]/* , boardFreq.isSelected() */);
+					TickPeriod);
 			if (!AbstractHDLGeneratorFactory.WriteEntity(
 					ProjectDir
 							+ Ticker.GetRelativeDirectory(MySettings
@@ -1331,9 +1567,8 @@ public class FPGACommanderGui implements ActionListener {
 		}
 		Worker = new ToplevelHDLGeneratorFactory(
 				MyBoardInformation.fpga.getClockFrequency(),
-				MenuSimulate.SupportedTickFrequencies[frequenciesList
-						.getSelectedIndex()], RootSheet, MyMappableResources,
-				skipHDL.isSelected());
+						TickPeriod, RootSheet, MyMappableResources,
+                                                skipHdl());
 		if (!AbstractHDLGeneratorFactory.WriteEntity(
 				ProjectDir
 						+ Worker.GetRelativeDirectory(MySettings.GetHDLType()),

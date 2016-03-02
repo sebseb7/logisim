@@ -38,28 +38,30 @@ import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.settings.Settings;
+import com.bfh.logisim.library.DynamicClock;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.comp.Component;
 
 public class TickComponentHDLGeneratorFactory extends
 		AbstractHDLGeneratorFactory {
 
 	private long FpgaClockFrequency;
-	private double TickFrequency;
+	private int TickPeriod;
 	// private boolean useFPGAClock;
-	private static final String ReloadValueStr = "ReloadValue";
-	private static final Integer ReloadValueId = -1;
 	private static final String NrOfCounterBitsStr = "NrOfBits";
-	private static final Integer NrOfCounterBitsId = -2;
+	private static final Integer NrOfCounterBitsId = -1;
+	private static final String ReloadValueStr = "ReloadValue";
+	private static final Integer ReloadValueId = -2;
 
 	public static final String FPGAClock = "FPGA_GlobalClock";
 	public static final String FPGATick = "s_FPGA_Tick";
 
 	public TickComponentHDLGeneratorFactory(long fpga_clock_frequency,
-			double tick_frequency/*
+			int tick_period/*
 								 * , boolean useFPGAClock
 								 */) {
 		FpgaClockFrequency = fpga_clock_frequency;
-		TickFrequency = tick_frequency;
+		TickPeriod = tick_period;
 		// this.useFPGAClock = useFPGAClock;
 	}
 
@@ -73,6 +75,10 @@ public class TickComponentHDLGeneratorFactory extends
 			AttributeSet attrs) {
 		SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
 		Inputs.put("FPGAClock", 1);
+                if (TickPeriod < 0) {
+                    // dynamic divided clock
+                    Inputs.put("ReloadValueLessOne", NrOfCounterBitsId);
+                }
 		return Inputs;
 	}
 
@@ -85,13 +91,23 @@ public class TickComponentHDLGeneratorFactory extends
 		Contents.add("");
 		Contents.addAll(MakeRemarkBlock("Here the Output is defined", 3,
 				HDLType));
-		if (TheNetlist.RequiresGlobalClockConnection()) {
+		if (TheNetlist.RequiresGlobalClockConnection() || TickPeriod == 0) {
 			Contents.add("   " + Preamble + "FPGATick " + AssignOperator
 					+ " '1';");
-		} else {
-			Contents.add("   " + Preamble + "FPGATick " + AssignOperator
-					+ " s_tick_reg;");
+                        return Contents;
 		}
+                String ReloadValue;
+                if (TickPeriod < 0) {
+                    ReloadValue = "ReloadValueLessOne";
+                } else {
+                    if (HDLType.equals(Settings.VHDL)) {
+                        ReloadValue = "std_logic_vector(to_unsigned("
+                            +"("+ ReloadValueStr + "-1)," + NrOfCounterBitsStr + "))";
+                    } else {
+                        ReloadValue = ReloadValueStr + "-1";
+                    }
+                }
+                Contents.add("   " + Preamble + "FPGATick " + AssignOperator + " s_tick_reg;");
 		Contents.add("");
 		Contents.addAll(MakeRemarkBlock("Here the update logic is defined", 3,
 				HDLType));
@@ -99,8 +115,7 @@ public class TickComponentHDLGeneratorFactory extends
 			Contents.add("   s_tick_next   <= '1' WHEN s_count_reg = std_logic_vector(to_unsigned(0,"
 					+ NrOfCounterBitsStr + ")) ELSE '0';");
 			Contents.add("   s_count_next  <= (OTHERS => '0') WHEN s_tick_reg /= '0' AND s_tick_reg /= '1' ELSE -- For simulation only!");
-			Contents.add("                    std_logic_vector(to_unsigned((ReloadValue-1),"
-					+ NrOfCounterBitsStr + ")) WHEN s_tick_next = '1' ELSE");
+			Contents.add("                    " + ReloadValue + " WHEN s_tick_next = '1' ELSE");
 			Contents.add("                    std_logic_vector(unsigned(s_count_reg)-1);");
 			Contents.add("");
 		} else {
@@ -153,8 +168,16 @@ public class TickComponentHDLGeneratorFactory extends
 	@Override
 	public SortedMap<Integer, String> GetParameterList(AttributeSet attrs) {
 		SortedMap<Integer, String> Parameters = new TreeMap<Integer, String>();
-		Parameters.put(ReloadValueId, ReloadValueStr);
-		Parameters.put(NrOfCounterBitsId, NrOfCounterBitsStr);
+                if (TickPeriod == 0) {
+                    // raw fpga clock
+                } else if (TickPeriod < 0) {
+                    // dynamic divided clock
+                    Parameters.put(NrOfCounterBitsId, NrOfCounterBitsStr);
+                } else {
+                    // static divided clock
+                    Parameters.put(NrOfCounterBitsId, NrOfCounterBitsStr);
+                    Parameters.put(ReloadValueId, ReloadValueStr);
+                }
 		return Parameters;
 	}
 
@@ -162,17 +185,28 @@ public class TickComponentHDLGeneratorFactory extends
 	public SortedMap<String, Integer> GetParameterMap(Netlist Nets,
 			NetlistComponent ComponentInfo, FPGAReport Reporter) {
 		SortedMap<String, Integer> ParameterMap = new TreeMap<String, Integer>();
-		double ReloadValueAcc = ((double) FpgaClockFrequency) / TickFrequency;
-		long ReloadValue = (long) ReloadValueAcc;
-		int nr_of_bits = 0;
-		if ((ReloadValue > (long) 0x7FFFFFFF) | (ReloadValue < 0))
-			ReloadValue = (long) 0x7FFFFFFF;
-		ParameterMap.put(ReloadValueStr, (int) ReloadValue);
-		while (ReloadValue != 0) {
-			nr_of_bits++;
-			ReloadValue /= 2;
-		}
-		ParameterMap.put(NrOfCounterBitsStr, nr_of_bits);
+                if (TickPeriod == 0) {
+                    // raw fpga clock
+                } else if (TickPeriod < 0) {
+                    // dynamic divided clock
+                    NetlistComponent dynClock = Nets.GetDynamicClock();
+                    if (dynClock == null) {
+                        Reporter.AddFatalError("No dynamic clock control component found. "
+                                + "To use the dynamic clock speed feature, you must place a "
+                                + "dynamic clock control component in your main top-level circuit.");
+                        return ParameterMap;
+                    }
+                    ParameterMap.put(NrOfCounterBitsStr, dynClock.GetComponent().getAttributeSet().getValue(DynamicClock.WIDTH_ATTR).getWidth());
+                } else {
+                    int nr_of_bits = 0;
+                    int p = TickPeriod;
+                    while (p != 0) {
+                        nr_of_bits++;
+                        p /= 2;
+                    }
+                    ParameterMap.put(ReloadValueStr, TickPeriod);
+                    ParameterMap.put(NrOfCounterBitsStr, nr_of_bits);
+                }
 		return ParameterMap;
 	}
 
@@ -182,6 +216,17 @@ public class TickComponentHDLGeneratorFactory extends
 		SortedMap<String, String> PortMap = new TreeMap<String, String>();
 		PortMap.put("FPGAClock", TickComponentHDLGeneratorFactory.FPGAClock);
 		PortMap.put("FPGATick", TickComponentHDLGeneratorFactory.FPGATick);
+                if (TickPeriod < 0) {
+                    // dynamic divided clock
+                    NetlistComponent dynClock = Nets.GetDynamicClock();
+                    if (dynClock == null) {
+                        Reporter.AddFatalError("No dynamic clock control component found. "
+                                + "To use the dynamic clock speed feature, you must place a "
+                                + "dynamic clock control component in your main top-level circuit.");
+                        return PortMap;
+                    }
+                    PortMap.put("ReloadValueLessOne", "s_LOGISIM_DYNAMIC_CLOCK");
+                }
 		return PortMap;
 	}
 
@@ -189,8 +234,11 @@ public class TickComponentHDLGeneratorFactory extends
 	public SortedMap<String, Integer> GetRegList(AttributeSet attrs,
 			String HDLType) {
 		SortedMap<String, Integer> Regs = new TreeMap<String, Integer>();
-		Regs.put("s_tick_reg", 1);
-		Regs.put("s_count_reg", NrOfCounterBitsId);
+                if (TickPeriod != 0) {
+                    // dynamic or static divided clock
+                    Regs.put("s_tick_reg", 1);
+                    Regs.put("s_count_reg", NrOfCounterBitsId);
+                }
 		return Regs;
 	}
 
@@ -203,8 +251,11 @@ public class TickComponentHDLGeneratorFactory extends
 	public SortedMap<String, Integer> GetWireList(AttributeSet attrs,
 			Netlist Nets) {
 		SortedMap<String, Integer> Wires = new TreeMap<String, Integer>();
-		Wires.put("s_tick_next", 1);
-		Wires.put("s_count_next", NrOfCounterBitsId);
+                if (TickPeriod != 0) {
+                    // dynamic or static divided clock
+                    Wires.put("s_tick_next", 1);
+                    Wires.put("s_count_next", NrOfCounterBitsId);
+                }
 		return Wires;
 	}
 

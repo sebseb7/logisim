@@ -41,6 +41,7 @@ import com.bfh.logisim.fpgaboardeditor.FPGAClass;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
 import com.bfh.logisim.settings.Settings;
+import com.bfh.logisim.library.DynamicClock;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.AttributeSet;
@@ -53,17 +54,17 @@ import com.cburch.logisim.std.wiring.Pin;
 public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
 	private long FpgaClockFrequency;
-	private double TickFrequency;
+	private int TickPeriod; // 0:"use fpga clock", -1:"dynamic", >0:"divided clock"
 	private Circuit MyCircuit;
 	private MappableResourcesContainer MyIOComponents;
 
 	// private boolean useFPGAClock;
 
-	public ToplevelHDLGeneratorFactory(long FPGAClock, double TickClock,
+	public ToplevelHDLGeneratorFactory(long FPGAClock, int ClockTickPeriod,
 			Circuit TopLevel, MappableResourcesContainer IOComponents,
 			boolean useFPGAClock) {
 		FpgaClockFrequency = FPGAClock;
-		TickFrequency = TickClock;
+		TickPeriod = ClockTickPeriod;
 		MyCircuit = TopLevel;
 		MyIOComponents = IOComponents;
 		// this.useFPGAClock = useFPGAClock;
@@ -76,11 +77,16 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		int NrOfClockTrees = TheNetlist.NumberOfClockTrees();
 		if (NrOfClockTrees > 0) {
 			TickComponentHDLGeneratorFactory Ticker = new TickComponentHDLGeneratorFactory(
-					FpgaClockFrequency, TickFrequency/* , useFPGAClock */);
+					FpgaClockFrequency, TickPeriod/* , useFPGAClock */);
 			Components
 					.addAll(Ticker.GetComponentInstantiation(TheNetlist, null,
 							Ticker.getComponentStringIdentifier(),
 							Settings.VHDL/* , false */));
+                        if (TickPeriod == 0) {
+                            // raw fpga clock
+                            TheNetlist.SetRawFPGAClock();
+                        } else if (TickPeriod < 0) {
+                        }
 			HDLGeneratorFactory ClockWorker = TheNetlist
 					.GetAllClockSources()
 					.get(0)
@@ -275,8 +281,8 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			Contents.addAll(MakeRemarkBlock(
 					"Here the clock tree components are defined", 3, HDLType));
 			TickComponentHDLGeneratorFactory Ticker = new TickComponentHDLGeneratorFactory(
-					FpgaClockFrequency, TickFrequency/* , useFPGAClock */);
-			Contents.addAll(Ticker.GetComponentMap(null, (long) 0, null,
+					FpgaClockFrequency, TickPeriod/* , useFPGAClock */);
+			Contents.addAll(Ticker.GetComponentMap(TheNetlist, (long) 0, null,
 					Reporter, "", HDLType));
 			long index = 0;
 			for (Component Clockgen : TheNetlist.GetAllClockSources()) {
@@ -408,6 +414,11 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				Wires.put(SName, NrOfBits);
 			}
 		}
+                NetlistComponent dynClock = Nets.GetDynamicClock();
+                if (dynClock != null) {
+                    int w = dynClock.GetComponent().getAttributeSet().getValue(DynamicClock.WIDTH_ATTR).getWidth();
+                    Wires.put("s_LOGISIM_DYNAMIC_CLOCK", w);
+                }
 		return Wires;
 	}
 

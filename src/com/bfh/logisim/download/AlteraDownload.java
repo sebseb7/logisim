@@ -361,7 +361,11 @@ public class AlteraDownload implements Runnable {
 				"AlteraDownload.tcl", MyReporter);
 		if (ScriptFile == null) {
 			ScriptFile = new File(ScriptPath + "AlteraDownload.tcl");
-			return ScriptFile.exists();
+			if (!ScriptFile.exists()) {
+                            MyReporter.AddFatalError("Could not create " + ScriptFile);
+                            return false;
+                        }
+                        return true;
 		}
 		String FileType = (HDLType.equals(Settings.VHDL)) ? "VHDL_FILE"
 				: "VERILOG_FILE";

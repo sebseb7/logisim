@@ -50,6 +50,7 @@ import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
 import com.bfh.logisim.settings.Settings;
+import com.bfh.logisim.library.DynamicClock;
 import com.cburch.logisim.data.AttributeSet;
 
 public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {

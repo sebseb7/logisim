@@ -49,6 +49,7 @@ import com.bfh.logisim.fpgaboardeditor.FPGAClass;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
 import com.bfh.logisim.settings.Settings;
+import com.bfh.logisim.library.DynamicClock;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.circuit.SubcircuitFactory;
@@ -530,6 +531,16 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		// }
 		/* Now we define all output signals; hence Internal Net -> Input port */
 		FirstLine = true;
+                NetlistComponent dynClock = TheNetlist.GetDynamicClock();
+                if (dynClock != null) {
+                    Contents.add("");
+                    Contents.addAll(MakeRemarkBlock(
+                                    "Here all output connections are defined", 3, HDLType));
+                    FirstLine = false;
+                    Contents.add(GetSignalMap(
+                                    "LOGISIM_DYNAMIC_CLOCK_OUT",
+                                    dynClock, 0, 3, Reporter, HDLType, TheNetlist));
+                }
 		for (int i = 0; i < TheNetlist.NumberOfOutputPorts(); i++) {
 			if (FirstLine) {
 				Contents.add("");
@@ -661,6 +672,10 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	public SortedMap<String, Integer> GetOutputList(Netlist MyNetList,
 			AttributeSet attrs) {
 		SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
+                NetlistComponent dynClock = MyNetList.GetDynamicClock();
+                if (dynClock != null) {
+                    Outputs.put("LOGISIM_DYNAMIC_CLOCK_OUT", dynClock.GetComponent().getAttributeSet().getValue(DynamicClock.WIDTH_ATTR).getWidth());
+                }
 		int OutputBubbles = MyNetList.NumberOfOutputBubbles();
 		if (OutputBubbles > 0) {
 			if (OutputBubbles > 1) {
@@ -796,10 +811,14 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				PortMap.put(ClockTreeName + Integer.toString(i), "s_"
 						+ ClockTreeName + Integer.toString(i));
 			}
+                        NetlistComponent dynClock = Nets.GetDynamicClock();
 			if (Nets.RequiresGlobalClockConnection()) {
 				PortMap.put(TickComponentHDLGeneratorFactory.FPGAClock,
 						TickComponentHDLGeneratorFactory.FPGAClock);
 			}
+                        if (dynClock != null) {
+                            PortMap.put("LOGISIM_DYNAMIC_CLOCK_OUT", "s_LOGISIM_DYNAMIC_CLOCK");
+                        }
 			if (NrOfInputBubbles > 0) {
 				PortMap.put(HDLGeneratorFactory.LocalInputBubbleBusname,
 						"s_LOGISIM_INPUT_BUBBLES");
@@ -961,7 +980,10 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 						TheNets));
 			} else {
 				if (!comp.EndIsConnected(EndIndex)) {
-					Reporter.AddSevereWarning("Found an unconnected output pin, tied the pin to ground!");
+                                        Reporter.AddSevereWarning("In circuit " 
+                                                + "'" + MyCircuit.getName() + "', output pin "
+                                                + "'" + PortName + "'"
+                                                + " is not connected. The pin will be tied to ground!");
 				}
 				Source.append(GetNetName(comp, EndIndex, true, HDLType, TheNets));
 				Destination.append(PortName);
@@ -992,7 +1014,10 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				if (IsOutput) {
 					return Contents.toString();
 				} else {
-					Reporter.AddSevereWarning("Found an unconnected output bus pin, tied all the pin bits to ground!");
+                                        Reporter.AddSevereWarning("In circuit " 
+                                                + "'" + MyCircuit.getName() + "', output bus "
+                                                + "'" + PortName + "'"
+                                                + " is not connected. All bus pins will be tied to ground!");
 				}
 				Destination.append(PortName);
 				while (Destination.length() < SallignmentSize) {
@@ -1043,8 +1068,10 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 							if (IsOutput) {
 								continue;
 							} else {
-								Reporter.AddSevereWarning("Found an unconnected output bus pin, tied bit "
-										+ Integer.toString(bit) + " to ground!");
+                                                                Reporter.AddSevereWarning("In circuit " 
+                                                                        + "'" + MyCircuit.getName() + "', pin " + bit + " of output bus "
+                                                                        + "'" + PortName + "'"
+                                                                        + " is not connected. This bus pin will be tied to ground!");
 								Source.append(GetZeroVector(1, true, HDLType));
 							}
 						} else {

@@ -9,6 +9,9 @@ import com.cburch.logisim.tools.Tool;
 
 public class BFHPraktika extends Library {
 	private static FactoryDescription[] DESCRIPTIONS = {
+		new FactoryDescription("Dynamic_Clock_Control",
+		         Strings.getter("DynamicClockControl"), "",
+		         "DynamicClock"), 
 		new FactoryDescription("Binairy_to_BCD_converter",
 		         Strings.getter("Bin2BCD"), "",
 		         "bin2bcd"), 
