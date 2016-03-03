@@ -856,6 +856,20 @@ public class FPGACommanderGui implements ActionListener {
 
 	private void DownLoad() {
                 ClearConsoles();
+                String Name = MyProject.getLogisimFile().getName();
+                if (Name.indexOf(" ") != -1) {
+                    AddErrors("The file '" + Name + "' contains a space.");
+                    AddErrors("Spaces are not permitted by the HDL synthesis engine. Please");
+                    AddErrors("rename your file and directory to not have any spaces.");
+                    return;
+                }
+                String Dir = MyProject.getLogisimFile().getLoader().getMainFile().toString();
+                if (Dir.indexOf(" ") != -1) {
+                    AddErrors("The directory '" + Dir + "' contains a space.");
+                    AddErrors("Spaces are not permitted by the HDL synthesis engine. Please");
+                    AddErrors("rename your file and directory to not have any spaces.");
+                    return;
+                }
 		if (MySettings.GetHDLOnly() || !skipHdl()) {
                     AddInfo("Performing DRC");
                     if (!performDRC()) {
