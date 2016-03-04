@@ -109,6 +109,9 @@ public class Analyzer extends LFrame {
 			if (selected instanceof JScrollPane) {
 				selected = ((JScrollPane) selected).getViewport().getView();
 			}
+                        if (selected instanceof JPanel) {
+                                ((JPanel) selected).requestFocus();
+                        }
 			if (selected instanceof AnalyzerTab) {
 				((AnalyzerTab) selected).updateTab();
 			}
@@ -215,29 +218,24 @@ public class Analyzer extends LFrame {
 	}
 
 	private void addTab(int index, final JComponent comp) {
-		final JScrollPane pane = new JScrollPane(comp,
-				ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
-				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		if (comp instanceof TableTab) {
-			pane.setVerticalScrollBar(((TableTab) comp).getVerticalScrollBar());
-		}
-		pane.addComponentListener(new ComponentListener() {
-			public void componentHidden(ComponentEvent arg0) {
-			}
-
-			public void componentMoved(ComponentEvent arg0) {
-			}
-
-			public void componentResized(ComponentEvent event) {
-				int width = pane.getViewport().getWidth();
-				comp.setSize(new Dimension(width, comp.getHeight()));
-			}
-
-			public void componentShown(ComponentEvent arg0) {
-			}
-		});
-		tabbedPane.insertTab("Untitled", null, pane, null, index);
-	}
+                        tabbedPane.insertTab("Untitled", null, comp, null, index);
+                        return;
+                }
+                final JScrollPane pane = new JScrollPane(comp,
+                        ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
+                        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+                pane.addComponentListener(new ComponentListener() {
+                        public void componentHidden(ComponentEvent arg0) { }
+                        public void componentMoved(ComponentEvent arg0) { }
+                        public void componentShown(ComponentEvent arg0) { }
+                        public void componentResized(ComponentEvent event) {
+                                int width = pane.getViewport().getWidth();
+                                comp.setSize(new Dimension(width, comp.getHeight()));
+                        }
+                });
+                tabbedPane.insertTab("Untitled", null, pane, null, index);
+        }
 
 	public AnalyzerModel getModel() {
 		return model;

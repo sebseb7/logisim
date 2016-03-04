@@ -42,6 +42,7 @@ import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.circuit.ExpressionComputer;
+import com.cburch.logisim.circuit.Analyze;
 import com.cburch.logisim.comp.TextField;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -352,30 +353,33 @@ abstract class AbstractGate extends InstanceFactory {
 		if (key == ExpressionComputer.class) {
 			return new ExpressionComputer() {
 				public void computeExpression(
-						Map<Location, Expression> expressionMap) {
+						ExpressionComputer.Map expressionMap) {
 					GateAttributes attrs = (GateAttributes) instance
 							.getAttributeSet();
 					int inputCount = attrs.inputs;
 					int negated = attrs.negated;
+					int width = attrs.width.getWidth();
 
-					Expression[] inputs = new Expression[inputCount];
-					int numInputs = 0;
-					for (int i = 1; i <= inputCount; i++) {
-						Expression e = expressionMap.get(instance
-								.getPortLocation(i));
-						if (e != null) {
-							int negatedBit = (negated >> (i - 1)) & 1;
-							if (negatedBit == 1) {
-								e = Expressions.not(e);
+					for (int b = 0; b < width; b++) {
+						Expression[] inputs = new Expression[inputCount];
+						int numInputs = 0;
+						for (int i = 1; i <= inputCount; i++) {
+							Expression e = expressionMap.get(
+									instance.getPortLocation(i), b);
+							if (e != null) {
+								int negatedBit = (negated >> (i - 1)) & 1;
+								if (negatedBit == 1) {
+									e = Expressions.not(e);
+								}
+								inputs[numInputs] = e;
+								++numInputs;
 							}
-							inputs[numInputs] = e;
-							++numInputs;
 						}
-					}
-					if (numInputs > 0) {
-						Expression out = AbstractGate.this.computeExpression(
-								inputs, numInputs);
-						expressionMap.put(instance.getPortLocation(0), out);
+						if (numInputs > 0) {
+							Expression out = AbstractGate.this.computeExpression(
+									inputs, numInputs);
+							expressionMap.put(instance.getPortLocation(0), b, out);
+						}
 					}
 				}
 			};

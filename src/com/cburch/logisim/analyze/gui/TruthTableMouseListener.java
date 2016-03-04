@@ -52,6 +52,7 @@ class TruthTableMouseListener implements MouseListener {
 	}
 
 	public void mousePressed(MouseEvent event) {
+		/*
 		TruthTablePanel source = (TruthTablePanel) event.getSource();
 		TruthTable model = source.getTruthTable();
 		int cols = model.getInputColumnCount() + model.getOutputColumnCount();
@@ -68,9 +69,11 @@ class TruthTableMouseListener implements MouseListener {
 		else
 			newValue = Entry.ZERO;
 		source.setEntryProvisional(cellY, cellX, newValue);
+		*/
 	}
 
 	public void mouseReleased(MouseEvent event) {
+		/*
 		TruthTablePanel source = (TruthTablePanel) event.getSource();
 		TruthTable model = source.getTruthTable();
 		int cols = model.getInputColumnCount() + model.getOutputColumnCount();
@@ -81,11 +84,13 @@ class TruthTableMouseListener implements MouseListener {
 		int x = source.getOutputColumn(event);
 		int y = source.getRow(event);
 		TruthTable table = source.getTruthTable();
+                System.out.println("x,y=" + x + ","+y+"   cellx,y=" + cellX+","+cellY);
 		if (x == cellX && y == cellY) {
 			table.setOutputEntry(y, x, newValue);
 		}
 		source.setEntryProvisional(cellY, cellX, null);
 		cellX = -1;
 		cellY = -1;
+		*/
 	}
 }

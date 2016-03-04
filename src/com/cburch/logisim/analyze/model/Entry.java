@@ -32,7 +32,7 @@ package com.cburch.logisim.analyze.model;
 
 import com.cburch.logisim.util.StringGetter;
 
-public class Entry {
+public class Entry implements Comparable<Entry> {
 	public static Entry parse(String description) {
 		if (ZERO.description.equals(description))
 			return ZERO;
@@ -45,24 +45,19 @@ public class Entry {
 		return null;
 	}
 
-	public static final Entry ZERO = new Entry("0");
-	public static final Entry ONE = new Entry("1");
-	public static final Entry DONT_CARE = new Entry("x");
-	public static final Entry BUS_ERROR = new Entry(Strings.getter("busError"));
+	public static final Entry OSCILLATE_ERROR = new Entry(-2, "@", Strings.getter("oscillateError"));
+	public static final Entry BUS_ERROR = new Entry(-1, "E", Strings.getter("busError"));
+	public static final Entry ZERO = new Entry(0, "0", null);
+	public static final Entry DONT_CARE = new Entry(1, "x", null);
+	public static final Entry ONE = new Entry(2, "1", null);
 
-	public static final Entry OSCILLATE_ERROR = new Entry(
-			Strings.getter("oscillateError"));
-
+	private int sortOrder;
 	private String description;
 	private StringGetter errorMessage;
 
-	private Entry(String description) {
+	private Entry(int sortOrder, String description, StringGetter errorMessage) {
+		this.sortOrder = sortOrder;
 		this.description = description;
-		this.errorMessage = null;
-	}
-
-	private Entry(StringGetter errorMessage) {
-		this.description = "!!";
 		this.errorMessage = errorMessage;
 	}
 
@@ -81,5 +76,10 @@ public class Entry {
 	@Override
 	public String toString() {
 		return "Entry[" + description + "]";
+	}
+
+	@Override
+	public int compareTo(Entry other) {
+		return (this.sortOrder - other.sortOrder);
 	}
 }

@@ -39,6 +39,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
 import java.util.List;
+import java.util.Iterator;
 
 import javax.swing.JPanel;
 
@@ -50,12 +51,14 @@ import com.cburch.logisim.analyze.model.OutputExpressionsListener;
 import com.cburch.logisim.analyze.model.TruthTable;
 import com.cburch.logisim.analyze.model.TruthTableEvent;
 import com.cburch.logisim.analyze.model.TruthTableListener;
-import com.cburch.logisim.analyze.model.VariableList;
 import com.cburch.logisim.util.GraphicsUtil;
 
 class KarnaughMapPanel extends JPanel implements TruthTablePanel {
 	private class MyListener implements OutputExpressionsListener,
 			TruthTableListener {
+
+		public void rowsChanged(TruthTableEvent event) { }
+
 		public void cellsChanged(TruthTableEvent event) {
 			repaint();
 		}
@@ -173,7 +176,7 @@ class KarnaughMapPanel extends JPanel implements TruthTablePanel {
 	}
 
 	public int getOutputColumn(MouseEvent event) {
-		return model.getOutputs().indexOf(output);
+		return model.getOutputs().bits.indexOf(output);
 	}
 
 	private int getRow(int tableRow, int rows, int cols) {
@@ -225,15 +228,14 @@ class KarnaughMapPanel extends JPanel implements TruthTablePanel {
 		return model.getTruthTable();
 	}
 
-	private String header(int start, int stop) {
-		if (start >= stop)
+	private String header(List<String> inputs, int start, int end) {
+		if (start >= end)
 			return "";
-		VariableList inputs = model.getInputs();
 		StringBuilder ret = new StringBuilder(inputs.get(start));
-		for (int i = start + 1; i < stop; i++) {
-			ret.append(", ");
-			ret.append(inputs.get(i));
-		}
+                for (int i = start + 1; i < end; i++) {
+                        ret.append(", ");
+                        ret.append(inputs.get(i));
+                }
 		return ret.toString();
 	}
 
@@ -302,8 +304,9 @@ class KarnaughMapPanel extends JPanel implements TruthTablePanel {
 
 		g.setFont(HEAD_FONT);
 		FontMetrics headFm = g.getFontMetrics();
-		String rowHeader = header(0, rowVars);
-		String colHeader = header(rowVars, rowVars + colVars);
+                List<String> inputs = model.getInputs().bits;
+		String rowHeader = header(inputs, 0, rowVars);
+		String colHeader = header(inputs, rowVars, rowVars + colVars);
 		int xoffs = (tableWidth + headHeight + cellWidth - headFm
 				.stringWidth(colHeader)) / 2;
 		g.drawString(colHeader, x + xoffs, y + headFm.getAscent());
