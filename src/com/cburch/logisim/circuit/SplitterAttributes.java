@@ -352,8 +352,8 @@ public class SplitterAttributes extends AbstractAttributeSet {
 			int newValue = ((Integer) value).intValue();
 			byte[] bits = bit_end;
 			for (int i = 0; i < bits.length; i++) {
-				if (bits[i] >= newValue)
-					bits[i] = (byte) (newValue - 1);
+				if (bits[i] > newValue)
+					bits[i] = (byte) (newValue);
 			}
 			if (fanout == (byte) newValue)
 				return;
