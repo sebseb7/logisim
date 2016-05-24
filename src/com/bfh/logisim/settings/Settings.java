@@ -88,6 +88,7 @@ public class Settings {
 	private static String XilinxName = "XilinxToolsPath";
 	private static String AlteraName = "AlteraToolsPath";
 	private static String HdlName = "GenerateHDLOnly";
+	private static String Altera64Bit = "Altera64Bit";
 	private static String HdlTypeName = "HDLTypeToGenerate";
 	public static String Unknown = "Unknown";
 	public static String VHDL = "VHDL";
@@ -219,25 +220,33 @@ public class Settings {
 	}
 
 	public boolean GetHDLOnly() {
+		return GetBoolean(HdlName, true);
+	}
+
+	public boolean GetAltera64Bit() {
+		return GetBoolean(Altera64Bit, true);
+	}
+
+	private boolean GetBoolean(String name, boolean defVal) {
 		NodeList SettingsList = SettingsDocument
 				.getElementsByTagName(WorkSpace);
 		if (SettingsList.getLength() != 1) {
-			return true;
+			return defVal;
 		}
 		Node ThisWorkspace = SettingsList.item(0);
 		NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
 		for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-			if (WorkspaceParameters.item(i).getNodeName().equals(HdlName))
+			if (WorkspaceParameters.item(i).getNodeName().equals(name))
 				return WorkspaceParameters.item(i).getNodeValue()
 						.equals(Boolean.TRUE.toString());
 		}
 		/* The attribute does not exists so add it */
-		Attr hdl = SettingsDocument.createAttribute(HdlName);
-		hdl.setNodeValue(Boolean.TRUE.toString());
+		Attr hdl = SettingsDocument.createAttribute(name);
+		hdl.setNodeValue((defVal ? Boolean.TRUE : Boolean.FALSE).toString());
 		Element workspace = (Element) SettingsList.item(0);
 		workspace.setAttributeNode(hdl);
 		modified = true;
-		return true;
+		return defVal;
 	}
 
 	public String GetHDLType() {
@@ -303,31 +312,37 @@ public class Settings {
 		return KnownBoards.GetBoardFilePath(SelectedBoardName);
 	}
 
-	public String GetWorkspacePath(File projectFile) {
-		NodeList SettingsList = SettingsDocument
-				.getElementsByTagName(WorkSpace);
+	public String GetStaticWorkspacePath() {
+		NodeList SettingsList = SettingsDocument.getElementsByTagName(WorkSpace);
 		if (SettingsList.getLength() == 1) {
-                    Node ThisWorkspace = SettingsList.item(0);
-                    NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-                    for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-                            if (WorkspaceParameters.item(i).getNodeName().equals(WorkPath)) {
-                                    String p = WorkspaceParameters.item(i).getNodeValue();
-                                    if (p !=  null && p.length() > 0) {
-                                        return p;
-                                    }
-                            }
-                    }
-                }
-                if (projectFile != null) {
-                    String dir = projectFile.getAbsoluteFile().getParentFile().getAbsolutePath();
-                    String name = projectFile.getName();
-                    name = name.replaceAll(".circ$", "") + "_fpga_workspace";
-                    return Join(dir, name);
-                }
+			Node ThisWorkspace = SettingsList.item(0);
+			NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
+			for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
+				if (WorkspaceParameters.item(i).getNodeName().equals(WorkPath)) {
+					String p = WorkspaceParameters.item(i).getNodeValue();
+					if (p !=  null && p.length() > 0) {
+						return p;
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	public String GetWorkspacePath(File projectFile) {
+		String p = GetStaticWorkspacePath();
+		if (p != null)
+			return p;
+		if (projectFile != null) {
+			String dir = projectFile.getAbsoluteFile().getParentFile().getAbsolutePath();
+			String name = projectFile.getName();
+			name = name.replaceAll(".circ$", "") + "_fpga_workspace";
+			return Join(dir, name);
+		}
 		return Join(HomePath, WorkPathName);
 	}
 
-	public String GetXilixToolPath() {
+	public String GetXilinxToolPath() {
 		NodeList SettingsList = SettingsDocument
 				.getElementsByTagName(WorkSpace);
 		if (SettingsList.getLength() != 1) {
@@ -378,6 +393,14 @@ public class Settings {
 	}
 
 	public boolean SetHdlOnly(boolean only) {
+		return SetBoolean(HdlName, only);
+	}
+
+	public boolean SetAltera64Bit(boolean enable) {
+		return SetBoolean(Altera64Bit, enable);
+	}
+
+	private boolean SetBoolean(String name, boolean enable) {
 		NodeList SettingsList = SettingsDocument
 				.getElementsByTagName(WorkSpace);
 		if (SettingsList.getLength() != 1) {
@@ -386,9 +409,9 @@ public class Settings {
 		Node ThisWorkspace = SettingsList.item(0);
 		NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
 		for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-			if (WorkspaceParameters.item(i).getNodeName().equals(HdlName)) {
+			if (WorkspaceParameters.item(i).getNodeName().equals(name)) {
 				WorkspaceParameters.item(i)
-						.setNodeValue(Boolean.toString(only));
+						.setNodeValue(Boolean.toString(enable));
 				modified = true;
 				return true;
 			}
@@ -484,10 +507,11 @@ public class Settings {
 			SettingsList = SettingsDocument.getElementsByTagName(WorkSpace);
 			result = false;
 		}
-		GetXilixToolPath();
+		GetXilinxToolPath();
 		GetAlteraToolPath();
 		GetHDLOnly();
 		GetHDLType();
+		GetAltera64Bit();
 
 		SettingsList = SettingsDocument.getElementsByTagName(Boards);
 		if (SettingsList.getLength() > 1) {
@@ -539,7 +563,9 @@ public class Settings {
 		return true;
 	}
 
-	public boolean SetWorkspacePath(String path) {
+	public boolean SetStaticWorkspacePath(String path) {
+		if (path.length() > 1 && path.endsWith(File.separator))
+			path = path.substring(0, path.length() - 1);
 		NodeList SettingsList = SettingsDocument
 				.getElementsByTagName(WorkSpace);
 		if (SettingsList.getLength() != 1) {
@@ -554,8 +580,8 @@ public class Settings {
 				return true;
 			}
 		}
-                ((Element)ThisWorkspace).setAttribute(WorkPath, path);
-                modified = true;
+		((Element)ThisWorkspace).setAttribute(WorkPath, path);
+		modified = true;
 		return true;
 	}
 

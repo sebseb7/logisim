@@ -136,8 +136,7 @@ public class FPGACommanderGui implements ActionListener {
 	private JComboBox<String> annotationList = new JComboBox<>();
 	private JComboBox<String> HDLType = new JComboBox<>();
 	private JComboBox<String> HDLOnly = new JComboBox<>();
-	private JButton ToolPath = new JButton();
-	private JButton Workspace = new JButton();
+	private JButton ToolSettings = new JButton();
 	private Console messages = new Console("Messages");
 	private ArrayList<Console> consoles = new ArrayList<>();
 	private static final String OnlyHDLMessage = "Generate HDL only";
@@ -166,7 +165,7 @@ public class FPGACommanderGui implements ActionListener {
 		if ((MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera && MySettings
 				.GetAlteraToolPath().equals(Settings.Unknown))
 				|| (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorXilinx && MySettings
-						.GetXilixToolPath().equals(Settings.Unknown))) {
+						.GetXilinxToolPath().equals(Settings.Unknown))) {
                         // Synthesis/download not possible.
 			if (!MySettings.GetHDLOnly()) {
 				MySettings.SetHdlOnly(true);
@@ -176,10 +175,7 @@ public class FPGACommanderGui implements ActionListener {
                         HDLOnly.setEnabled(false);
 			AddInfo("Tool path is not set correctly. " +
 				"Synthesis and download will not be available.");
-			AddInfo("Please set the path to Altera or Xilinx tools using the \"ToolPath\" button");
-			AddInfo("Tool path is not set correctly. " +
-				"Synthesis and download will not be available.");
-			AddInfo("Please set the path to Altera or Xilinx tools using the \"ToolPath\" button");
+			AddInfo("Please set the path to Altera or Xilinx tools using the \"Settings\" button");
 		} else if (MySettings.GetHDLOnly()) {
                         // Synthesis/download possible, but user selected to only generate HDL.
                         HDLOnly.setSelectedItem(OnlyHDLMessage);
@@ -372,24 +368,14 @@ public class FPGACommanderGui implements ActionListener {
 		c.gridy = 0;
 		panel.add(HDLOnly, c);
 
-		// Tool Path
-		ToolPath.setText("Toolpath");
-		ToolPath.setActionCommand("ToolPath");
-		ToolPath.addActionListener(this);
-		c.gridwidth = 1;
+		// Tool Settings
+		ToolSettings.setText("Settings");
+		ToolSettings.setActionCommand("ToolSettings");
+		ToolSettings.addActionListener(this);
+		c.gridwidth = 2;
 		c.gridx = 3;
 		c.gridy = 0;
-		panel.add(ToolPath, c);
-
-		// Workspace
-		Workspace.setText("Workspace");
-		Workspace.setActionCommand("Workspace");
-		Workspace.addActionListener(this);
-                c.anchor = GridBagConstraints.WEST;
-		c.fill = GridBagConstraints.NONE;
-		c.gridx = 4;
-		c.gridy = 0;
-		panel.add(Workspace, c);
+		panel.add(ToolSettings, c);
 
 		tabbedPane.add(messages); // index 0
 
@@ -404,9 +390,9 @@ public class FPGACommanderGui implements ActionListener {
 		panel.add(tabbedPane, c);
 
 		panel.pack();
-                Dimension size = panel.getSize();
-                size.height -= 10 * Console.FONT_SIZE;
-                panel.setMinimumSize(size);
+		Dimension size = panel.getSize();
+		size.height -= 10 * Console.FONT_SIZE;
+		panel.setMinimumSize(size);
 
 		panel.setLocation(Projects.getCenteredLoc(panel.getWidth(), panel.getHeight()));
 		// panel.setLocationRelativeTo(null);
@@ -437,7 +423,9 @@ public class FPGACommanderGui implements ActionListener {
             */
         }
 
+		boolean updatingClockMenus = false;
         private void populateClockDivOptions() {
+			updatingClockMenus = true;
             clockDivCount.removeAllItems();
             clockDivRate.removeAllItems();
             long base = MyBoardInformation.fpga.getClockFrequency();
@@ -464,6 +452,14 @@ public class FPGACommanderGui implements ActionListener {
                     clockDivRate.setSelectedItem(new ExactRate(base, count));
                 }
             }
+			if (clockDivCount.getSelectedItem() == null && clockDivCount.getItemCount() > 0) {
+				clockDivCount.setSelectedIndex(0);
+			}
+			if (clockDivRate.getSelectedItem() == null && clockDivRate.getItemCount() > 0)
+				clockDivRate.setSelectedIndex(0);
+			updatingClockMenus = false;
+			setClockDivCount();
+			setClockDivRate();
         }
 
         private void setClockOption() {
@@ -523,6 +519,9 @@ public class FPGACommanderGui implements ActionListener {
         }
 
         private void setClockDivRate() {
+			if (updatingClockMenus) {
+				return;
+			}
             if (!clockOption.getSelectedItem().equals(clockDiv))
                 return;
             long base = MyBoardInformation.fpga.getClockFrequency();
@@ -545,17 +544,23 @@ public class FPGACommanderGui implements ActionListener {
                 String rate = rateForCount(base, i);
                 clockDivRate.setSelectedItem(rate); // rounds to nearest acceptable value
             }
-            if (!clockDivCount.getSelectedItem().equals(i))
+            if (clockDivCount.getSelectedItem() == null || !clockDivCount.getSelectedItem().equals(i)) {
                 clockDivCount.setSelectedItem(i);
+			}
             prevSelectedDivRate = clockDivRate.getSelectedItem();
             prevSelectedDivCount = (Integer)clockDivCount.getSelectedItem();
         }
 
         private void setClockDivCount() {
+			if (updatingClockMenus) {
+				return;
+			}
+
             if (!clockOption.getSelectedItem().equals(clockDiv))
                 return;
             long base = MyBoardInformation.fpga.getClockFrequency();
-            String s = clockDivCount.getSelectedItem().toString();
+			Object item = clockDivCount.getSelectedItem();
+            String s = item == null ? "-1" : item.toString();
             int count = -1;
             try { count = Integer.parseInt(s); }
             catch (NumberFormatException e) { }
@@ -570,7 +575,7 @@ public class FPGACommanderGui implements ActionListener {
             }
             clockDivRate.setSelectedItem(new ExactRate(base, count));
             prevSelectedDivRate = clockDivRate.getSelectedItem();
-            prevSelectedDivCount = (Integer)clockDivCount.getSelectedItem();
+            prevSelectedDivCount = count;
         }
 	
         private static Integer countForRate(long base, String rate) {
@@ -672,12 +677,10 @@ public class FPGACommanderGui implements ActionListener {
 			setClockDivRate();
 		} else if (e.getActionCommand().equals("ClockDivCount")) {
 			setClockDivCount();
-		} else if (e.getActionCommand().equals("Workspace")) {
-			selectWorkSpace();
 		} else if (e.getActionCommand().equals("HDLType")) {
 			handleHDLType();
-		} else if (e.getActionCommand().equals("ToolPath")) {
-			selectToolPath();
+		} else if (e.getActionCommand().equals("ToolSettings")) {
+			selectToolSettings();
 		} else if (e.getActionCommand().equals("HDLOnly")) {
 			handleHDLOnly();
 		} else if (e.getActionCommand().equals("Download")) {
@@ -1149,63 +1152,47 @@ public class FPGACommanderGui implements ActionListener {
 		}
 	}
 
-	private void selectToolPath() {
-		String ToolPath;
-		if (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera) {
-			ToolPath = MySettings.GetAlteraToolPath();
-		} else {
-			ToolPath = MySettings.GetXilixToolPath();
-		}
-		JFileChooser fc = new JFileChooser(ToolPath);
-		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		File test = new File(ToolPath);
-		if (test.exists()) {
-			fc.setSelectedFile(test);
-		}
-		fc.setDialogTitle(FPGAClass.Vendors[MyBoardInformation.fpga.getVendor()]
-				+ " Design Suite Path Selection");
-		int retval = fc.showOpenDialog(null);
-		if (retval == JFileChooser.APPROVE_OPTION) {
-			File file = fc.getSelectedFile();
-			ToolPath = file.getPath();
-			if (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera) {
-				if (MySettings.SetAlteraToolPath(ToolPath)) {
-					HDLOnly.setEnabled(true);
-					MySettings.SetHdlOnly(false);
-					HDLOnly.setSelectedItem(HDLandDownloadMessage);
-					if (!MySettings.UpdateSettingsFile()) {
-						AddErrors("***SEVERE*** Could not update the FPGACommander settings file");
-					} else {
-						AddInfo("Updated the FPGACommander settings file");
-					}
+	FPGASettingsDialog settings;
+	private void selectToolSettings() {
+		if (settings == null) 
+			settings = new FPGASettingsDialog(panel, MySettings);
+		settings.SetVisible(true);
 
+		if (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera) {
+			if (!MySettings.GetAlteraToolPath().equals(Settings.Unknown)) {
+				HDLOnly.setEnabled(true);
+				MySettings.SetHdlOnly(false);
+				HDLOnly.setSelectedItem(HDLandDownloadMessage);
+				if (!MySettings.UpdateSettingsFile()) {
+					AddErrors("***SEVERE*** Could not update the FPGACommander settings file");
 				} else {
-					AddErrors("***FATAL*** Required programs of the Altera toolsuite not found! Ignoring update.");
-					String prgs = "";
-					for (String p : Settings.AlteraPrograms) {
-					    prgs = prgs + "\n     " + p;
-					}
-					AddErrors("***INFO*** Please select a directory containing these Altera programs:" + prgs);
+					AddInfo("Updated the FPGACommander settings file");
 				}
 			} else {
-				if (MySettings.SetXilinxToolPath(ToolPath)) {
-					HDLOnly.setEnabled(true);
-					MySettings.SetHdlOnly(false);
-					HDLOnly.setSelectedItem(HDLandDownloadMessage);
-					if (!MySettings.UpdateSettingsFile()) {
-						AddErrors("***SEVERE*** Could not update the FPGACommander settings file");
-					} else {
-						AddInfo("Updated the FPGACommander settings file");
-					}
-
-				} else {
-					AddErrors("***FATAL*** Required programs of the Xilinx toolsuite not found! Ignoring update.");
-					String prgs = "";
-					for (String p : Settings.XilinxPrograms) {
-					    prgs = prgs + "\n     " + p;
-					}
-					AddErrors("***INFO*** Please select a directory containing these Xilinx programs:" + prgs);
+				AddErrors("***FATAL*** Required programs of the Altera toolsuite not found!");
+				String prgs = "";
+				for (String p : Settings.AlteraPrograms) {
+					prgs = prgs + "\n     " + p;
 				}
+				AddErrors("***INFO*** Please select a directory containing these Altera programs:" + prgs);
+			}
+		} else if (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorXilinx) {
+			if (!MySettings.GetXilinxToolPath().equals(Settings.Unknown)) {
+				HDLOnly.setEnabled(true);
+				MySettings.SetHdlOnly(false);
+				HDLOnly.setSelectedItem(HDLandDownloadMessage);
+				if (!MySettings.UpdateSettingsFile()) {
+					AddErrors("***SEVERE*** Could not update the FPGACommander settings file");
+				} else {
+					AddInfo("Updated the FPGACommander settings file");
+				}
+			} else {
+				AddErrors("***FATAL*** Required programs of the Xilinx toolsuite not found!");
+				String prgs = "";
+				for (String p : Settings.XilinxPrograms) {
+					prgs = prgs + "\n     " + p;
+				}
+				AddErrors("***INFO*** Please select a directory containing these Xilinx programs:" + prgs);
 			}
 		}
 	}
@@ -1239,9 +1226,9 @@ public class FPGACommanderGui implements ActionListener {
 		if (retval == JFileChooser.APPROVE_OPTION) {
 			File file = fc.getSelectedFile();
 			if (file.getPath().endsWith(File.separator)) {
-				MySettings.SetWorkspacePath(file.getPath());
+				MySettings.SetStaticWorkspacePath(file.getPath());
 			} else {
-				MySettings.SetWorkspacePath(file.getPath() + File.separator);
+				MySettings.SetStaticWorkspacePath(file.getPath() + File.separator);
 			}
 			if (!MySettings.UpdateSettingsFile()) {
 				AddErrors("***SEVERE*** Could not update the FPGACommander settings file");
@@ -1326,8 +1313,11 @@ public class FPGACommanderGui implements ActionListener {
                     TickPeriod = 0;
                 else if (clockOption.getSelectedItem().equals(clockDyn))
                     TickPeriod = -1;
-                else
-                    TickPeriod = Integer.parseInt(clockDivCount.getSelectedItem().toString());
+                else {
+					Object item = clockDivCount.getSelectedItem();
+					String s = item == null ? "1" : item.toString();
+					TickPeriod = Integer.parseInt(s);
+				}
 
 		if (RootSheet.getNetList().NumberOfClockTrees() > 0) {
 			TickComponentHDLGeneratorFactory Ticker = new TickComponentHDLGeneratorFactory(
