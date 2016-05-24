@@ -185,7 +185,8 @@ public class AlteraDownload implements Runnable {
     private boolean alteraCommand(String title, List<String> out, int progid, String... args) throws IOException, InterruptedException {
 		List<String> command = new ArrayList<String>();
         command.add(MySettings.GetAlteraToolPath() + File.separator + Settings.AlteraPrograms[progid]);
-		// command.add("--64bit");
+		if (MySettings.GetAltera64Bit())
+			command.add("--64bit");
         for (String arg: args)
             command.add(arg);
         ProcessBuilder Altera1 = new ProcessBuilder(command);
