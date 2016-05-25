@@ -31,6 +31,7 @@
 package com.cburch.logisim.circuit.appear;
 
 import java.awt.Color;
+import java.awt.Canvas;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.util.ArrayList;
@@ -100,6 +101,8 @@ public class DefaultEvolutionAppearance {
         public static void calculateTextDimensions(float fontsize) {
             Text label = new Text(0,0,"a");
             Font f = label.getLabel().getFont().deriveFont(fontsize);
+			Canvas canvas = new Canvas();
+			FontMetrics fm = canvas.getFontMetrics(f);
             System.out.println("private static int[] asciiWidths = {");
             for (char row = ' '; row <= '~'; row += 8) {
                 String comment = "//";
@@ -109,9 +112,10 @@ public class DefaultEvolutionAppearance {
                         chars += "    ";
                     } else {
                         comment += String.format(" '%c',", c);
-                        label = new Text(0, 0, "" + c);
-                        label.getLabel().setFont(f);
-                        int w = label.getLabel().getWidth();
+                        // label = new Text(0, 0, "" + c);
+                        // label.getLabel().setFont(f);
+						// int w = label.getLabel().getWidth();
+                        int w = fm.stringWidth("" + c);
                         chars += String.format(" %2d,", w);
                     }
                 }

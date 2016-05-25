@@ -176,8 +176,8 @@ public class Analyzer extends LFrame {
 	private BuildCircuitButton buildCircuit;
 
 	Analyzer() {
-		inputsPanel = new VariableTab(model.getInputs());
-		outputsPanel = new VariableTab(model.getOutputs());
+		inputsPanel = new VariableTab(model.getInputs(), AnalyzerModel.MAX_INPUTS);
+		outputsPanel = new VariableTab(model.getOutputs(), AnalyzerModel.MAX_OUTPUTS);
 		truthTablePanel = new TableTab(model.getTruthTable());
 		expressionPanel = new ExpressionTab(model);
 		minimizedPanel = new MinimizedTab(model);
