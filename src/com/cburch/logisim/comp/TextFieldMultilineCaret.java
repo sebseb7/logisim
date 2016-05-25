@@ -104,6 +104,7 @@ class TextFieldMultilineCaret extends TextFieldCaret {
 			| InputEvent.META_MASK;
 		if ((e.getModifiers() & ign) != 0)
 			return;
+		e.consume();
 		String lines[];
 		switch (e.getKeyCode()) {
 			case KeyEvent.VK_UP:
