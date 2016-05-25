@@ -297,16 +297,19 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 
 		@Override
 		public void setSelectionPath(TreePath path) {
-			if (isPathValid(path))
+			if (isPathValid(path)) {
+				clearSelection();
 				super.setSelectionPath(path);
+			}
 		}
 
 		@Override
 		public void setSelectionPaths(TreePath[] paths) {
 			paths = getValidPaths(paths);
-
-			if (paths != null)
+			if (paths != null) {
+				clearSelection();
 				super.setSelectionPaths(paths);
+			}
 		}
 	}
 

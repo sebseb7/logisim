@@ -638,9 +638,16 @@ public class Frame extends LFrame implements LocaleListener {
 		attrTable.setAttrTableModel(value);
 		if (value instanceof AttrTableToolModel) {
 			Tool tool = ((AttrTableToolModel) value).getTool();
+			System.out.println("set halo: " + tool);
 			toolbox.setHaloedTool(tool);
+			try {
+				throw new Exception("");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			layoutToolbarModel.setHaloedTool(tool);
 		} else {
+			System.out.println("clear halo: " + value);
 			toolbox.setHaloedTool(null);
 			layoutToolbarModel.setHaloedTool(null);
 		}
