@@ -32,6 +32,7 @@ package com.cburch.logisim.analyze.gui;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Insets;
 import java.awt.Dimension;
@@ -363,6 +364,9 @@ class TableTab extends JPanel implements TruthTablePanel, TabInterface {
 		return body;
 	}
 
+
+	private static Canvas canvas = new Canvas();
+
 	private void computePreferredSize() {
 		inputVars = table.getInputVariables();
 		outputVars = table.getOutputVariables();
@@ -380,12 +384,10 @@ class TableTab extends JPanel implements TruthTablePanel, TabInterface {
 		outDim.reset(outputVars);
 
 		Graphics g = getGraphics();
-		if (g != null) {
-			FontMetrics fm = g.getFontMetrics(HEAD_FONT);
-			cellHeight = fm.getHeight();
-			inDim.calculate(fm);
-			outDim.calculate(fm);
-		}
+		FontMetrics fm = (g != null ? g.getFontMetrics(HEAD_FONT) : canvas.getFontMetrics(HEAD_FONT));
+		cellHeight = fm.getHeight();
+		inDim.calculate(fm);
+		outDim.calculate(fm);
 
 		tableWidth = inDim.width + COLUMNS_HSEP + outDim.width;
 
