@@ -285,9 +285,7 @@ public class GraphicsUtil {
 			if (w > width)
 				width = w;
 		}
-		int height = n * tm.height;
-
-		Rectangle ret = new Rectangle(x, y, width, tm.height);
+		Rectangle ret = new Rectangle(x, y, width, n * tm.height);
 		switch (halign) {
 			case H_CENTER:
 				ret.translate(-(width / 2), 0);
@@ -302,8 +300,10 @@ public class GraphicsUtil {
 			case V_TOP:
 				break;
 			case V_CENTER:
-			case V_CENTER_OVERALL:
 				ret.translate(0, -(tm.height / 2));
+				break;
+			case V_CENTER_OVERALL:
+				ret.translate(0, -(n * tm.height / 2));
 				break;
 			case V_BASELINE:
 				ret.translate(0, -tm.ascent);
