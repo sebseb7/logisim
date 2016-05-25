@@ -73,7 +73,7 @@ class HdlToolbarModel extends AbstractToolbarModel implements HdlModelListener {
     HdlToolbarItem hdlImport, hdlExport, hdlValidate;
 
     public static final String HDL_IMPORT = "hdlImport";
-    public static final String HDL_EXPORT = "hdlImport";
+    public static final String HDL_EXPORT = "hdlExport";
     public static final String HDL_VALIDATE = "hdlValidate";
 
     public HdlToolbarModel(Project proj, HdlContentView editor) {
@@ -82,7 +82,7 @@ class HdlToolbarModel extends AbstractToolbarModel implements HdlModelListener {
 
         ArrayList<ToolbarItem> rawItems = new ArrayList<ToolbarItem>();
         hdlImport = new HdlToolbarItem("hdlimport.gif", HDL_IMPORT, Strings.getter("hdlOpenButton"));
-        hdlExport = new HdlToolbarItem("hdlexport.gif", HDL_IMPORT, Strings.getter("hdlSaveButton"));
+        hdlExport = new HdlToolbarItem("hdlexport.gif", HDL_EXPORT, Strings.getter("hdlSaveButton"));
         hdlValidate = new HdlToolbarItem("hdlvalidate.gif", HDL_VALIDATE, Strings.getter("validateButton"));
         rawItems.add(hdlImport);
         rawItems.add(hdlExport);
