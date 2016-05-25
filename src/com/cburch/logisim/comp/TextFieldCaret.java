@@ -31,9 +31,8 @@
 package com.cburch.logisim.comp;
 
 import java.awt.Color;
-import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -46,11 +45,12 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.tools.Caret;
 import com.cburch.logisim.tools.CaretEvent;
 import com.cburch.logisim.tools.CaretListener;
+import com.cburch.draw.util.TextMetrics;
 
 class TextFieldCaret implements Caret, TextFieldListener {
 
-        public static final Color EDIT_BACKGROUND = new Color(0xff, 0xff, 0x99);
-        public static final Color EDIT_BORDER = Color.DARK_GRAY;
+	public static final Color EDIT_BACKGROUND = new Color(0xff, 0xff, 0x99);
+	public static final Color EDIT_BORDER = Color.DARK_GRAY;
 
 	private LinkedList<CaretListener> listeners = new LinkedList<CaretListener>();
 	protected TextField field;
@@ -97,9 +97,9 @@ class TextFieldCaret implements Caret, TextFieldListener {
 	public void draw(Graphics g) {
 		int x = field.getX();
 		int y = field.getY();
-                int halign = field.getHAlign();
-                int valign = field.getVAlign();
-                Font font = field.getFont();
+		int halign = field.getHAlign();
+		int valign = field.getVAlign();
+		Font font = field.getFont();
 		if (field.getFont() != null)
 			g.setFont(field.getFont());
 
@@ -115,10 +115,8 @@ class TextFieldCaret implements Caret, TextFieldListener {
                 GraphicsUtil.drawText(g, curText, x, y, halign, valign);
 
 		// draw cursor
-		FontMetrics fm = g.getFontMetrics();
-                Point p = GraphicsUtil.getTextPoint(fm, curText, x, y, pos, halign, valign);
-                if (p != null)
-                    g.drawLine(p.x, p.y + fm.getDescent(), p.x, p.y - fm.getAscent());
+		Rectangle p = GraphicsUtil.getTextCursor(g, curText, x, y, pos, halign, valign);
+		g.drawLine(p.x, p.y, p.x, p.y + p.height);
 	}
 
 	public String getText() {
@@ -128,9 +126,9 @@ class TextFieldCaret implements Caret, TextFieldListener {
         public Bounds getBounds(Graphics g) {
 		int x = field.getX();
 		int y = field.getY();
-                int halign = field.getHAlign();
-                int valign = field.getVAlign();
-                Font font = field.getFont();
+		int halign = field.getHAlign();
+		int valign = field.getVAlign();
+		Font font = field.getFont();
 		Bounds bds = Bounds.create(GraphicsUtil.getTextBounds(g, font, curText, x, y, halign, valign));
                 Bounds box = bds.add(field.getBounds(g)).expand(3);
                 return box;
@@ -231,12 +229,11 @@ class TextFieldCaret implements Caret, TextFieldListener {
 	}
 
 	protected void moveCaret(int x, int y) {
-                x -= field.getX();
-                x -= field.getY();
-		FontMetrics fm = g.getFontMetrics();
-                int halign = field.getHAlign();
-                int valign = field.getVAlign();
-                pos = GraphicsUtil.getTextPosition(fm, curText, x, y, halign, valign);
+		x -= field.getX();
+		x -= field.getY();
+		int halign = field.getHAlign();
+		int valign = field.getVAlign();
+		pos = GraphicsUtil.getTextPosition(g, curText, x, y, halign, valign);
 	}
 
 	public void removeCaretListener(CaretListener l) {

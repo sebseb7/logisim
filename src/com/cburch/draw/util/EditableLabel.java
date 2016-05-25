@@ -33,18 +33,10 @@ package com.cburch.draw.util;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.font.FontRenderContext;
-import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
-import java.util.Arrays;
-import java.util.HashMap;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import com.cburch.logisim.data.Bounds;
@@ -91,63 +83,12 @@ public class EditableLabel implements Cloneable {
 		}
 	}
 
-        private static final Object lock = new Object();
-        private static final HashMap<Font, FontMetrics> metrics = new HashMap<Font, FontMetrics>();
-        private static final HashMap<Font, FontMetrics> imetrics = new HashMap<Font, FontMetrics>();
-        // Java bug? FontMetrics ascent and descent are negated when rendered
-        // upside-down, and they are both zero when rendered sideways. Also,
-        // strings are rendered smaller (small gaps between letters) when
-        // upside-down or left-rotated. So we cache two different metrics for
-        // each font: one for upright and right-rotated text; and one for
-        // upside-down and left-rotated text.
-        private static final FontMetrics fontMetricsFor(Graphics g, String text) {
-            Font font = g.getFont();
-            Graphics2D g2 = (Graphics2D)g;
-            HashMap<Font, FontMetrics> map;
-            int mask = AffineTransform.TYPE_QUADRANT_ROTATION
-                       | AffineTransform.TYPE_TRANSLATION
-                       | AffineTransform.TYPE_UNIFORM_SCALE;
-            int t = g2.getTransform().getType();
-            if ((t & ~mask) != 0) {
-                return g.getFontMetrics(); // unusual transformation, hope for the best
-            } else if ((t & AffineTransform.TYPE_QUADRANT_ROTATION) == 0) {
-                map = metrics; // upright
-            } else {
-                double m[] = new double[4];
-                g2.getTransform().getMatrix(m);
-                if (m[0] > 0.5) {
-                    map = metrics; // upright
-                } else if (m[0] < -0.5) {
-                    map = imetrics; // upside-down
-                } else if (m[1] > 0.5) {
-                    map = metrics; // right-rotated
-                    g2 = (Graphics2D)g2.create();
-                    g2.rotate(-Math.PI/2); // now upright
-                } else {
-                    map = imetrics; // left-rotated
-                    g2 = (Graphics2D)g2.create();
-                    g2.rotate(-Math.PI/2); // now upside-down
-                }
-            }
-            FontMetrics fm;
-            synchronized(lock) {
-                fm = map.get(font);
-                if (fm == null) {
-                    fm = g2.getFontMetrics();
-                    map.put(font, fm);
-                }
-            }
-            if (g != g2)
-                g2.dispose();
-            return fm;
-        }
-
 	private void computeDimensions(Graphics g) {
-                FontMetrics fm = fontMetricsFor(g, text);
-		width = fm.stringWidth(text);
-		ascent = Math.abs(fm.getAscent());
-		descent = Math.abs(fm.getDescent());
-                dimsKnown = true;
+		TextMetrics tm = new TextMetrics(g, text);
+		width = tm.width;
+		ascent = tm.ascent;
+		descent = tm.descent;
+		dimsKnown = true;
 	}
 
 	public void configureTextField(EditableLabelField field) {
@@ -167,10 +108,10 @@ public class EditableLabel implements Cloneable {
 		if (dimsKnown) {
 			w = width + 1 + 2 * border;
 		} else {
-			FontMetrics fm = field.getFontMetrics(font);
-			ascent = fm.getAscent();
-			descent = fm.getDescent();
-			w = 0;
+			TextMetrics tm = new TextMetrics(field, font, text);
+			ascent = tm.ascent;
+			descent = tm.descent;
+			w = tm.width;
 		}
 
 		float x0 = x;
@@ -294,57 +235,6 @@ public class EditableLabel implements Cloneable {
 		return y;
 	}
 	
-	public int getWidth() {
-		// a bit of a workaround to get the size of a label
-		if (dimsKnown)
-			return this.width;
-		JPanel panel = new JPanel();
-		JFrame frame = new JFrame();
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.add(panel);
-		frame.setVisible(true);
-		Graphics g = panel.getGraphics();
-		FontMetrics fm = g.getFontMetrics(font);
-		int width = fm.stringWidth(text);
-		frame.setVisible(false);
-		frame.dispose();
-		return width;
-	}
-	
-	public int getHeight() {
-		// a bit of a workaround to get the size of a label
-		if (dimsKnown)
-			return ascent + descent;
-		JPanel panel = new JPanel();
-		JFrame frame = new JFrame();
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.add(panel);
-		frame.setVisible(true);
-		Graphics g = panel.getGraphics();
-		FontMetrics fm = g.getFontMetrics(font);
-		int height = fm.getAscent()+fm.getDescent();
-		frame.setVisible(false);
-		frame.dispose();
-		return height;
-	}
-	
-	public int getAscent() {
-		// a bit of a workaround to get the size of a label
-		if (dimsKnown)
-			return ascent;
-		JPanel panel = new JPanel();
-		JFrame frame = new JFrame();
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.add(panel);
-		frame.setVisible(true);
-		Graphics g = panel.getGraphics();
-		FontMetrics fm = g.getFontMetrics(font);
-		int height = fm.getAscent();
-		frame.setVisible(false);
-		frame.dispose();
-		return height;
-	}
-	
 	@Override
 	public int hashCode() {
 		int ret = x * 31 + y;
@@ -358,12 +248,11 @@ public class EditableLabel implements Cloneable {
 
 	public void paint(Graphics g) {
 		g.setFont(font);
-		// if (!dimsKnown) // Don't cache in case rotation has changed
-			computeDimensions(g);
+		computeDimensions(g); // recompute, in case rotation has changed
 		float x0 = getLeftX();
 		float y0 = getBaseY();
+		g.setColor(color);
 		((Graphics2D)g).drawString(text, x0, y0);
-                // g.drawRect((int)x0, (int)y0-ascent, width, ascent);
 	}
 
 	public void setColor(Color value) {

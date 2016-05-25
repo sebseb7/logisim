@@ -31,9 +31,8 @@
 package com.cburch.logisim.comp;
 
 import java.awt.Color;
-import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -46,6 +45,7 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.tools.Caret;
 import com.cburch.logisim.tools.CaretEvent;
 import com.cburch.logisim.tools.CaretListener;
+import com.cburch.draw.util.TextMetrics;
 
 class TextFieldMultilineCaret extends TextFieldCaret {
 	private TextFieldMultiline field;
@@ -82,104 +82,103 @@ class TextFieldMultilineCaret extends TextFieldCaret {
                 GraphicsUtil.drawText(g, lines, x, y, halign, valign);
 
 		// draw cursor
-		FontMetrics fm = g.getFontMetrics();
-                Point p = GraphicsUtil.getTextPoint(fm, lines, x, y, pos, halign, valign);
-                if (p != null)
-                    g.drawLine(p.x, p.y + fm.getDescent(), p.x, p.y - fm.getAscent());
+		Rectangle p = GraphicsUtil.getTextCursor(g, lines, x, y, pos, halign, valign);
+		if (p != null)
+			g.drawLine(p.x, p.y, p.x, p.y + p.height);
 	}
 
-        public Bounds getBounds(Graphics g) {
-                String lines[] = curText.split("\n", -1); // keep blank lines at end
+	public Bounds getBounds(Graphics g) {
+		String lines[] = curText.split("\n", -1); // keep blank lines at end
 		int x = field.getX();
 		int y = field.getY();
-                int halign = field.getHAlign();
-                int valign = field.getVAlign();
-                Font font = field.getFont();
+		int halign = field.getHAlign();
+		int valign = field.getVAlign();
+		Font font = field.getFont();
 		Bounds bds = Bounds.create(GraphicsUtil.getTextBounds(g, font, lines, x, y, halign, valign));
-                Bounds box = bds.add(field.getBounds(g)).expand(3);
-                return box;
-        }
+		Bounds box = bds.add(field.getBounds(g)).expand(3);
+		return box;
+	}
 
 	public void keyPressed(KeyEvent e) {
 		int ign = InputEvent.ALT_MASK | InputEvent.CTRL_MASK
-				| InputEvent.META_MASK;
+			| InputEvent.META_MASK;
 		if ((e.getModifiers() & ign) != 0)
 			return;
-                String lines[];
+		String lines[];
 		switch (e.getKeyCode()) {
-		case KeyEvent.VK_UP:
-		case KeyEvent.VK_KP_UP:
-                        lines = curText.split("\n", -1); // keep blank lines at end
-			if (lines.length > 1 && pos > lines[0].length()) {
-                            FontMetrics fm = g.getFontMetrics();
-                            int halign = field.getHAlign();
-                            int valign = field.getVAlign();
-                            Point p = GraphicsUtil.getTextPoint(fm, lines, 0, 0, pos, halign, valign);
-                            if (p != null) {
-                                pos = GraphicsUtil.getTextPosition(fm, lines,
-                                        p.x, p.y - fm.getHeight(), halign, valign);
-                            }
-                        }
-			break;
-		case KeyEvent.VK_DOWN:
-		case KeyEvent.VK_KP_DOWN:
-                        lines = curText.split("\n", -1); // keep blank lines at end
-			if (lines.length > 1 && pos < curText.length() - lines[lines.length-1].length()) {
-                            FontMetrics fm = g.getFontMetrics();
-                            int halign = field.getHAlign();
-                            int valign = field.getVAlign();
-                            Point p = GraphicsUtil.getTextPoint(fm, lines, 0, 0, pos, halign, valign);
-                            if (p != null) {
-                                pos = GraphicsUtil.getTextPosition(fm, lines,
-                                        p.x, p.y + fm.getHeight(), halign, valign);
-                            }
-                        }
-			break;
-		case KeyEvent.VK_LEFT:
-		case KeyEvent.VK_KP_LEFT:
-			if (pos > 0)
-				--pos;
-			break;
-		case KeyEvent.VK_RIGHT:
-		case KeyEvent.VK_KP_RIGHT:
-			if (pos < curText.length())
-				++pos;
-			break;
-		case KeyEvent.VK_HOME:
-			pos = 0;
-			break;
-		case KeyEvent.VK_END:
-			pos = curText.length();
-			break;
-		case KeyEvent.VK_ESCAPE:
-		case KeyEvent.VK_CANCEL:
-			cancelEditing();
-			break;
-		case KeyEvent.VK_CLEAR:
-			curText = "";
-			pos = 0;
-			break;
-		case KeyEvent.VK_BACK_SPACE:
-			if (pos > 0) {
-				curText = curText.substring(0, pos - 1)
+			case KeyEvent.VK_UP:
+			case KeyEvent.VK_KP_UP:
+				lines = curText.split("\n", -1); // keep blank lines at end
+				if (lines.length > 1 && pos > lines[0].length()) {
+					TextMetrics tm = new TextMetrics(g);
+					int halign = field.getHAlign();
+					int valign = field.getVAlign();
+					Rectangle r = GraphicsUtil.getTextCursor(g, lines, 0, 0, pos, halign, valign);
+					if (r != null) {
+						pos = GraphicsUtil.getTextPosition(g, lines,
+								r.x, r.y + tm.ascent - tm.height, halign, valign);
+					}
+				}
+				break;
+			case KeyEvent.VK_DOWN:
+			case KeyEvent.VK_KP_DOWN:
+				lines = curText.split("\n", -1); // keep blank lines at end
+				if (lines.length > 1 && pos < curText.length() - lines[lines.length-1].length()) {
+					TextMetrics tm = new TextMetrics(g);
+					int halign = field.getHAlign();
+					int valign = field.getVAlign();
+					Rectangle p = GraphicsUtil.getTextCursor(g, lines, 0, 0, pos, halign, valign);
+					if (p != null) {
+						pos = GraphicsUtil.getTextPosition(g, lines,
+								p.x, p.y + tm.ascent + tm.height, halign, valign);
+					}
+				}
+				break;
+			case KeyEvent.VK_LEFT:
+			case KeyEvent.VK_KP_LEFT:
+				if (pos > 0)
+					--pos;
+				break;
+			case KeyEvent.VK_RIGHT:
+			case KeyEvent.VK_KP_RIGHT:
+				if (pos < curText.length())
+					++pos;
+				break;
+			case KeyEvent.VK_HOME:
+				pos = 0;
+				break;
+			case KeyEvent.VK_END:
+				pos = curText.length();
+				break;
+			case KeyEvent.VK_ESCAPE:
+			case KeyEvent.VK_CANCEL:
+				cancelEditing();
+				break;
+			case KeyEvent.VK_CLEAR:
+				curText = "";
+				pos = 0;
+				break;
+			case KeyEvent.VK_BACK_SPACE:
+				if (pos > 0) {
+					curText = curText.substring(0, pos - 1)
 						+ curText.substring(pos);
-				--pos;
-			}
-			break;
-		case KeyEvent.VK_DELETE:
-			if (pos < curText.length()) {
-				curText = curText.substring(0, pos)
+					--pos;
+				}
+				break;
+			case KeyEvent.VK_DELETE:
+				if (pos < curText.length()) {
+					curText = curText.substring(0, pos)
 						+ curText.substring(pos + 1);
-			}
-			break;
-		case KeyEvent.VK_INSERT:
-		case KeyEvent.VK_COPY:
-		case KeyEvent.VK_CUT:
-		case KeyEvent.VK_PASTE:
-			// TODO: enhance label editing
-			break;
-		default:
-			; // ignore
+				}
+				break;
+			case KeyEvent.VK_INSERT:
+			case KeyEvent.VK_COPY:
+			case KeyEvent.VK_CUT:
+			case KeyEvent.VK_PASTE:
+				// TODO: enhance label editing
+				break;
+			default:
+				; // ignore
 		}
 	}
 
@@ -203,12 +202,11 @@ class TextFieldMultilineCaret extends TextFieldCaret {
 
 	protected void moveCaret(int x, int y) {
 		x -= field.getX();
-                y -= field.getY();
-		FontMetrics fm = g.getFontMetrics();
-                int halign = field.getHAlign();
-                int valign = field.getVAlign();
-                String lines[] = curText.split("\n", -1); // keep blank lines at end
-                pos = GraphicsUtil.getTextPosition(fm, lines, x, y, halign, valign);
+		y -= field.getY();
+		int halign = field.getHAlign();
+		int valign = field.getVAlign();
+		String lines[] = curText.split("\n", -1); // keep blank lines at end
+		pos = GraphicsUtil.getTextPosition(g, lines, x, y, halign, valign);
 	}
 
 }

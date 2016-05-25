@@ -42,8 +42,8 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
+// import java.awt.event.MouseWheelEvent;
+// import java.awt.event.MouseWheelListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
@@ -103,7 +103,7 @@ public class Canvas extends JPanel implements LocaleListener,
 		CanvasPaneContents {
 
 	private class MyListener implements MouseInputListener, KeyListener,
-			PopupMenuListener, PropertyChangeListener, MouseWheelListener {
+			PopupMenuListener, PropertyChangeListener /*, MouseWheelListener */ {
 
 		boolean menu_on = false;
 
@@ -230,6 +230,7 @@ public class Canvas extends JPanel implements LocaleListener,
 			completeAction();
 		}
 
+		/*
 		@Override
 		public void mouseWheelMoved(MouseWheelEvent mwe) {
 			if (mwe.isControlDown()) {
@@ -252,6 +253,7 @@ public class Canvas extends JPanel implements LocaleListener,
 								mwe.getWheelRotation()));
 			}
 		}
+		*/
 
 		//
 		// PopupMenuListener mtehods
@@ -281,6 +283,7 @@ public class Canvas extends JPanel implements LocaleListener,
 			}
 		}
 
+		/*
 		private int scrollValue(JScrollBar bar, int val) {
 			if (val > 0) {
 				if (bar.getValue() < bar.getMaximum() + val * 2
@@ -295,6 +298,7 @@ public class Canvas extends JPanel implements LocaleListener,
 			}
 			return 0;
 		}
+		*/
 	}
 
 	private class MyProjectListener implements ProjectListener,
@@ -732,7 +736,7 @@ public class Canvas extends JPanel implements LocaleListener,
 		addMouseMotionListener(myListener);
                 setFocusTraversalKeysEnabled(false);
 		addKeyListener(myListener);
-		addMouseWheelListener(myListener);
+		// addMouseWheelListener(myListener);
 
 		// YSY
 		// try {
