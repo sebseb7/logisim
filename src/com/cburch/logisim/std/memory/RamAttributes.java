@@ -76,7 +76,8 @@ public class RamAttributes extends AbstractAttributeSet {
 	private static List<Attribute<?>> ATTRIBUTES = Arrays
 			.asList(new Attribute<?>[] { Mem.ADDR_ATTR, Mem.DATA_ATTR,
 					StdAttr.TRIGGER, ATTR_DBUS, ATTR_ByteEnables,
-					Ram.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT });
+			 		Ram.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,
+					StdAttr.APPEARANCE});
 
 	private static WeakHashMap<MemContents, HexFrame> windowRegistry = new WeakHashMap<MemContents, HexFrame>();
 	private BitWidth addrBits = BitWidth.create(8);
@@ -86,6 +87,7 @@ public class RamAttributes extends AbstractAttributeSet {
 	private AttributeOption Trigger = StdAttr.TRIG_RISING;
 	private AttributeOption BusStyle = BUS_BIDIR;
 	private Font LabelFont = StdAttr.DEFAULT_LABEL_FONT;
+	private AttributeOption Appearance = StdAttr.APPEAR_CLASSIC;
 	private AttributeOption ByteEnables = BUS_WITHOUT_BYTEENABLES;
 	private boolean SupportsByteEnables = false;
 
@@ -101,6 +103,7 @@ public class RamAttributes extends AbstractAttributeSet {
 		d.Trigger = Trigger;
 		d.BusStyle = BusStyle;
 		d.LabelFont = LabelFont;
+		d.Appearance = Appearance;
 		d.ByteEnables = ByteEnables;
 		d.contents = contents.clone();
 		d.SupportsByteEnables = SupportsByteEnables;
@@ -134,6 +137,9 @@ public class RamAttributes extends AbstractAttributeSet {
 		}
 		if (attr == StdAttr.LABEL_FONT) {
 			return (V) LabelFont;
+		}
+		if (attr == StdAttr.APPEARANCE) {
+			return (V) Appearance;
 		}
 		if (attr == ATTR_ByteEnables) {
 			return (V) ByteEnables;
@@ -220,6 +226,12 @@ public class RamAttributes extends AbstractAttributeSet {
 				return;
 			}
 			LabelFont = NewFont;
+			fireAttributeValueChanged(attr, value);
+		} else if (attr == StdAttr.APPEARANCE) {
+			AttributeOption NewAppearance = (AttributeOption) value;
+			if (Appearance.equals(NewAppearance))
+				return;
+			Appearance = NewAppearance;
 			fireAttributeValueChanged(attr, value);
 		} else if (attr == ATTR_ByteEnables) {
 			AttributeOption NewBE = (AttributeOption) value;

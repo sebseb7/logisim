@@ -89,6 +89,8 @@ class RomAttributes extends AbstractAttributeSet {
 		d.addrBits = addrBits;
 		d.dataBits = dataBits;
 		d.contents = contents.clone();
+		d.LabelFont = LabelFont;
+		d.Appearance = Appearance;
 	}
 
 	@Override
