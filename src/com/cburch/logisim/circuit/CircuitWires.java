@@ -228,7 +228,7 @@ class CircuitWires {
 	//
 	// NOTE: this could be made much more efficient in most cases to
 	// avoid voiding the bundle map.
-	boolean add(Component comp) {
+	synchronized boolean add(Component comp) {
 		boolean added = true;
 		if (comp instanceof Wire) {
 			added = addWire((Wire) comp);
@@ -251,7 +251,7 @@ class CircuitWires {
 		return added;
 	}
 
-	void add(Component comp, EndData end) {
+	synchronized void add(Component comp, EndData end) {
 		points.add(comp, end);
 		voidBundleMap();
 	}
@@ -607,7 +607,7 @@ class CircuitWires {
 		getBundleMap();
 	}
 
-	private BundleMap getBundleMap() {
+	synchronized private BundleMap getBundleMap() {
 		// Maybe we already have a valid bundle map (or maybe
 		// one is in progress).
 		BundleMap ret = bundleMap;
@@ -632,6 +632,7 @@ class CircuitWires {
 				}
 			}
 		} catch (RuntimeException ex) {
+			ex.printStackTrace();
 			ret.invalidate();
 			ret.markComputed();
 			throw ex;
@@ -859,7 +860,7 @@ class CircuitWires {
 		return bds;
 	}
 
-	void remove(Component comp) {
+	synchronized void remove(Component comp) {
 		if (comp instanceof Wire) {
 			removeWire((Wire) comp);
 		} else if (comp instanceof Splitter) {
@@ -878,7 +879,7 @@ class CircuitWires {
 		voidBundleMap();
 	}
 
-	void remove(Component comp, EndData end) {
+	synchronized void remove(Component comp, EndData end) {
 		points.remove(comp, end);
 		voidBundleMap();
 	}
@@ -897,7 +898,7 @@ class CircuitWires {
 		}
 	}
 
-	void replace(Component comp, EndData oldEnd, EndData newEnd) {
+	synchronized void replace(Component comp, EndData oldEnd, EndData newEnd) {
 		points.remove(comp, oldEnd);
 		points.add(comp, newEnd);
 		voidBundleMap();
