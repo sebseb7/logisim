@@ -225,7 +225,7 @@ public class Rom extends Mem {
 						+ " x "
 						+ Integer.toString(painter.getAttributeValue(
 								Mem.DATA_ATTR).getWidth()), xpos
-						+ (SymbolWidth / 2) + 20, ypos + 5);
+						+ (SymbolWidth / 2) + 20, ypos + 6);
 		GraphicsUtil.switchToWidth(g, 1);
 		DrawAddress(painter, xpos, ypos + 10,
 				painter.getAttributeValue(Mem.ADDR_ATTR).getWidth());
@@ -303,8 +303,11 @@ public class Rom extends Mem {
 	@Override
 	public Bounds getOffsetBounds(AttributeSet attrs) {
 		int len = attrs.getValue(Mem.DATA_ATTR).getWidth();
-		return Bounds.create(0, 0, SymbolWidth + 40, getControlHeight(attrs)
-				+ 20 * len);
+		if (attrs.getValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC)
+			return Bounds.create(0, 0, SymbolWidth + 40, 140);
+		else
+			return Bounds.create(0, 0, SymbolWidth + 40, getControlHeight(attrs)
+					+ 20 * len);
 	}
 
 	@Override
@@ -345,8 +348,15 @@ public class Rom extends Mem {
 		}
 	}
 
+	public void DrawRomClassic(InstancePainter painter) {
+		DrawMemClassic(painter);
+	}
+
 	@Override
 	public void paintInstance(InstancePainter painter) {
+            if (painter.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
+                DrawRomClassic(painter);
+            } else {
 		Graphics g = painter.getGraphics();
 		Bounds bds = painter.getBounds();
 
@@ -370,9 +380,11 @@ public class Rom extends Mem {
 		/* Draw contents */
 		if (painter.getShowState()) {
 			MemState state = getState(painter);
-			state.paint(painter.getGraphics(), bds.getX() + 20, bds.getY(),
-					false, getControlHeight(painter.getAttributeSet()));
+			state.paint(painter.getGraphics(), bds.getX(), bds.getY(),
+					25, getControlHeight(painter.getAttributeSet()) + 5, 
+					Mem.SymbolWidth - 20, 20 * NrOfBits - 10, false);
 		}
+			}
 	}
 
 	@Override

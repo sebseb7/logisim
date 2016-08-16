@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.WeakHashMap;
 
 import com.cburch.logisim.data.AbstractAttributeSet;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.gui.hex.HexFrame;
@@ -65,7 +66,8 @@ class RomAttributes extends AbstractAttributeSet {
 
 	private static List<Attribute<?>> ATTRIBUTES = Arrays
 			.asList(new Attribute<?>[] { Mem.ADDR_ATTR, Mem.DATA_ATTR,
-					Rom.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT });
+					Rom.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,
+					StdAttr.APPEARANCE});
 
 	private static WeakHashMap<MemContents, RomContentsListener> listenerRegistry = new WeakHashMap<MemContents, RomContentsListener>();
 
@@ -75,6 +77,7 @@ class RomAttributes extends AbstractAttributeSet {
 	private MemContents contents;
 	private String Label = "";
 	private Font LabelFont = StdAttr.DEFAULT_LABEL_FONT;
+	private AttributeOption Appearance = StdAttr.APPEAR_CLASSIC;
 
 	RomAttributes() {
 		contents = MemContents.create(addrBits.getWidth(), dataBits.getWidth());
@@ -110,6 +113,9 @@ class RomAttributes extends AbstractAttributeSet {
 		}
 		if (attr == StdAttr.LABEL_FONT) {
 			return (V) LabelFont;
+		}
+		if (attr == StdAttr.APPEARANCE) {
+			return (V) Appearance;
 		}
 		return null;
 	}
@@ -151,6 +157,12 @@ class RomAttributes extends AbstractAttributeSet {
 			if (LabelFont.equals(NewFont))
 				return;
 			LabelFont = NewFont;
+			fireAttributeValueChanged(attr, value);
+		} else if (attr == StdAttr.APPEARANCE) {
+			AttributeOption NewAppearance = (AttributeOption) value;
+			if (Appearance.equals(NewAppearance))
+				return;
+			Appearance = NewAppearance;
 			fireAttributeValueChanged(attr, value);
 		}
 	}

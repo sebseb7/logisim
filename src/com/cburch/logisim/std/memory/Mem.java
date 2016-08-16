@@ -44,6 +44,7 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.gui.hex.HexFile;
 import com.cburch.logisim.gui.hex.HexFrame;
 import com.cburch.logisim.instance.Instance;
@@ -56,6 +57,7 @@ import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.tools.key.JoinedConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringGetter;
+import com.cburch.logisim.util.StringUtil;
 
 abstract class Mem extends InstanceFactory {
 	// Note: The code is meant to be able to handle up to 32-bit addresses, but
@@ -211,5 +213,55 @@ abstract class Mem extends InstanceFactory {
 
 	void setCurrentImage(Instance instance, File value) {
 		currentInstanceFiles.put(instance, value);
+	}
+
+	public void DrawMemClassic(InstancePainter painter) {
+		Graphics g = painter.getGraphics();
+		Bounds bds = painter.getBounds();
+
+		// draw boundary
+		painter.drawBounds();
+
+		String mem = "ram", MEM = "RAM";
+		if (this instanceof Rom) {
+			mem = "rom";
+			MEM = "ROM";
+		}
+
+		// draw contents
+		if (painter.getShowState()) {
+			MemState state = getState(painter);
+			state.paint(painter.getGraphics(), bds.getX(), bds.getY(), 
+					15, 15, bds.getWidth() - 30, bds.getHeight() - 20, true);
+		} else {
+			BitWidth addr = painter.getAttributeValue(ADDR_ATTR);
+			int addrBits = addr.getWidth();
+			int bytes = 1 << addrBits;
+			String label;
+			if (addrBits >= 30) {
+				label = StringUtil.format(Strings.get(mem+"GigabyteLabel"), "" + (bytes >>> 30));
+			} else if (addrBits >= 20) {
+				label = StringUtil.format(Strings.get(mem+"MegabyteLabel"), "" + (bytes >> 20));
+			} else if (addrBits >= 10) {
+				label = StringUtil.format(Strings.get(mem+"KilobyteLabel"), "" + (bytes >> 10));
+			} else {
+				label = StringUtil.format(Strings.get(mem+"ByteLabel"), "" + bytes);
+			}
+			GraphicsUtil.drawCenteredText(g, label,
+					bds.getX() + bds.getWidth() / 2,
+					bds.getY() + bds.getHeight() / 2);
+		}
+
+		GraphicsUtil.drawCenteredText( g,
+				MEM + " " + GetSizeLabel(painter.getAttributeValue(Mem.ADDR_ATTR).getWidth())
+						+ " x "
+						+ Integer.toString(painter.getAttributeValue(Mem.DATA_ATTR).getWidth()),
+						bds.getX() + (SymbolWidth / 2) + 20, bds.getY() + 6);
+
+		// draw input and output ports
+		painter.drawPort(DATA, Strings.get("ramDataLabel"), Direction.WEST);
+		painter.drawPort(ADDR, Strings.get("ramAddrLabel"), Direction.EAST);
+		// g.setColor(Color.GRAY);
+		// painter.drawPort(CS, Strings.get("ramCSLabel"), Direction.SOUTH);
 	}
 }

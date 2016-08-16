@@ -747,8 +747,9 @@ public class Ram extends Mem {
 		/* Draw contents */
 		if (painter.getShowState()) {
 			RamState state = (RamState) getState(painter);
-			state.paint(painter.getGraphics(), bds.getX() + 20, bds.getY(),
-					true, getControlHeight(painter.getAttributeSet()));
+			state.paint(painter.getGraphics(), bds.getX(), bds.getY(),
+					40, getControlHeight(painter.getAttributeSet()) + 5,
+					Mem.SymbolWidth - 80, 20 * NrOfBits - 5, false);
 		}
 	}
 
