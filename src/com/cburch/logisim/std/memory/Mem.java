@@ -51,6 +51,7 @@ import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.MenuExtender;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
@@ -218,6 +219,15 @@ abstract class Mem extends InstanceFactory {
 	public void DrawMemClassic(InstancePainter painter) {
 		Graphics g = painter.getGraphics();
 		Bounds bds = painter.getBounds();
+
+		String Label = painter.getAttributeValue(StdAttr.LABEL);
+		if (Label != null) {
+			Font font = g.getFont();
+			g.setFont(painter.getAttributeValue(StdAttr.LABEL_FONT));
+			GraphicsUtil.drawCenteredText(g, Label, bds.getX() + bds.getWidth()
+					/ 2, bds.getY() - g.getFont().getSize());
+			g.setFont(font);
+		}
 
 		// draw boundary
 		painter.drawBounds();
