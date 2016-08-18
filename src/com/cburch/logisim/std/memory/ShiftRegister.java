@@ -214,7 +214,7 @@ public class ShiftRegister extends InstanceFactory {
 
 	private void DrawDataBlock(InstancePainter painter, int xpos, int ypos,
 			int nr_of_stages, int nr_of_bits, int current_stage,
-			int data_value, boolean has_load) {
+			Integer data_value, boolean has_load) {
 		int real_ypos = ypos + 70 + current_stage * 20;
 		if (current_stage > 0)
 			real_ypos += 10;
@@ -303,11 +303,13 @@ public class ShiftRegister extends InstanceFactory {
 			int boxXpos = ((blockwidth - 30) / 2 + 30) - (len * 4);
 			g.fillRect(real_xpos + boxXpos, real_ypos + yoff + 2, 2 + len * 8,
 					16);
-			g.setColor(Color.DARK_GRAY);
-			String Value = StringUtil.toHexString(nr_of_bits, data_value);
-			GraphicsUtil.drawText(g, Value, real_xpos + boxXpos + 1, real_ypos
-					+ yoff + 10, GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
-			g.setColor(Color.BLACK);
+			if (data_value != null) {
+				g.setColor(Color.DARK_GRAY);
+				String Value = StringUtil.toHexString(nr_of_bits, data_value.intValue());
+				GraphicsUtil.drawText(g, Value, real_xpos + boxXpos + 1, real_ypos
+						+ yoff + 10, GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+				g.setColor(Color.BLACK);
+			}
 		}
 	}
 
@@ -381,8 +383,11 @@ public class ShiftRegister extends InstanceFactory {
 		DrawControl(painter, xpos, ypos, len, wid, parallelObj, Negedge);
 		ShiftRegisterData data = (ShiftRegisterData) painter.getData();
 		for (int stage = 0; stage < len; stage++) {
+			Integer val = null;
+			if (data != null && data.get(len - stage - 1) != null)
+				val = new Integer(data.get(len - stage - 1).toIntValue());
 			DrawDataBlock(painter, xpos, ypos, len, wid, stage,
-					data.get(len - stage - 1).toIntValue(), parallelObj);
+					val, parallelObj);
 		}
 	}
 
@@ -445,8 +450,10 @@ public class ShiftRegister extends InstanceFactory {
 					}
 					Graphics g = painter.getGraphics();
 					for (int i = 0; i < len; i++) {
-						String s = data.get(len - 1 - i).toHexString();
-						GraphicsUtil.drawCenteredText(g, s, x, y);
+						if (data != null && data.get(len - 1 - i) != null) {
+							String s = data.get(len - 1 - i).toHexString();
+							GraphicsUtil.drawCenteredText(g, s, x, y);
+						}
 						x += 10;
 					}
 				}
