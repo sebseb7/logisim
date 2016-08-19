@@ -85,7 +85,7 @@ public class RamAttributes extends AbstractAttributeSet {
 	private MemContents contents;
 	private String Label = "";
 	private AttributeOption Trigger = StdAttr.TRIG_RISING;
-	private AttributeOption BusStyle = BUS_BIDIR;
+	private AttributeOption BusStyle = BUS_SEP; // BUS_BIDIR;
 	private Font LabelFont = StdAttr.DEFAULT_LABEL_FONT;
 	private AttributeOption Appearance = StdAttr.APPEAR_CLASSIC;
 	private AttributeOption ByteEnables = BUS_WITHOUT_BYTEENABLES;

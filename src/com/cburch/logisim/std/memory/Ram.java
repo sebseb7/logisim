@@ -45,6 +45,7 @@ import javax.swing.JLabel;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -64,6 +65,78 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.GraphicsUtil;
 
 public class Ram extends Mem {
+
+	// kwalsh: Notes on RAM behavior.
+	//
+	// Logisim simulation never used registered/clocked address and
+	// enable lines for writing -- when the clock rises, the addressed memory
+	// location changes immediately (if WE is high). For reading, Logisim did
+	// use a registered/clocked address, enable, and data output, however, sort
+	// of. When the clock rises, the value of the addressed memory location
+	// would be read and latched, and, if OE is high, also output immediately.
+	// But if OE was low, it would not be output immediately. But if OE
+	// subsequently went high, even absent a rising clock edge, then the output
+	// would change to be the latched value, then stay that way. This is,
+	// needless to say, unusual.
+	//
+	// FPGA synthesis behaved differently. The address, data in, and both
+	// enables are latched on rising clock edges. Writes happen soon after that:
+	// when running in fast "raw" clock mode, writes happen at the next rising
+	// clock edge; in slow "fake" clock mode, writes happen at the next rising
+	// edge of the internal fast clock, so they will appear to happen just
+	// following the slow clock edge. Reads would happen at the same time as
+	// writes, but the data output was latched into a register (only if OE is
+	// high) that gets updated on the next rising edge of the (fast) clock.
+	// So data output for reads would appear during the next cycle for slow fake
+	// clock mode and 2 full cycles later for fast raw clock mode.
+	// Fake slow clock writing exampe:
+	//   slow clock rises, start of cycle 0:
+	//       OE is 1
+	//       Address is aaa
+	//   slow clock rises, start of cycle 1
+	//       internal latched OEReg is now 1, AddressReg is now aaa
+	//       (soon after)
+	//       data is written to memory (if WE was 1)
+	//       data is read from memory (pre-update old data, if WE was 1)
+	//       (soon after)
+	//       data is latched into output register (since OE was 1)
+	// Raw fast clock writing exampe:
+	//   fast clock rises, start of cycle 0:
+	//       OE is 1
+	//       Address is aaa
+	//   fast clock rises, start of cycle 1
+	//       internal latched OEReg is now 1, AddressReg is now aaa
+	//   fast clock rises, start of cycle 2
+	//       data is written to memory (if WE was 1)
+	//       data is read from memory (pre-update old data, if WE was 1)
+	//    fast clock rises, start of cycle 3:
+	//       data is latched into output register (since OE was 1)
+	// 
+	// New behavior:
+	//
+	// For Logisim simulation, no internal registers. If you want registers, add
+	// them yourself outside the RAM component. If one bidirectional data bus is
+	// used, then output enable controls only the tristate for the data bus.
+	// Otherwise, there is no output or read enable or any sort. Data output
+	// always reflects the current addressed location. When the address changes,
+	// the addressed location and the output data changes immediately (or soon
+	// after, asynchronously). If you want a registered output, or a tristate
+	// output on a two-bus RAM, add one yourself outside the RAM component. If
+	// you want registered addresses, add a register yourself outside the RAM
+	// component. The clock is used only for writing: when the clock rises, if
+	// WE is high, then the addressed location (and data output) is updated
+	// immediately or soon after. This behavior is consistent with how registers
+	// behave.
+	//
+	// For FPGA synthesis, it isn't clear that the Cyclone III FPGA, or most
+	// other FPGAs, support fully unclocked, asynchronous reads. But we'll try
+	// it anyway.
+
+	static final int DIN = MEM_INPUTS + 0; // only if separate
+	static final int OE = MEM_INPUTS + 0;  // only if not separate
+	static final int WE = MEM_INPUTS + 1;  // always
+	static final int CLK = MEM_INPUTS + 2; // always
+	static final int BE = MEM_INPUTS + 3;  // as many as needed
 
 	static class ContentsAttribute extends Attribute<MemContents> {
 
@@ -209,35 +282,15 @@ public class Ram extends Mem {
 		}
 	}
 
-	public static int ByteEnableIndex(AttributeSet Attrs) {
-		Object trigger = Attrs.getValue(StdAttr.TRIGGER);
-		boolean asynch = trigger.equals(StdAttr.TRIG_HIGH)
-				|| trigger.equals(StdAttr.TRIG_LOW);
-		Object bus = Attrs.getValue(RamAttributes.ATTR_DBUS);
-		boolean separate = bus == null ? false : bus
-				.equals(RamAttributes.BUS_SEP);
-		Object be = Attrs.getValue(RamAttributes.ATTR_ByteEnables);
-		boolean byteEnables = be == null ? false : be
-				.equals(RamAttributes.BUS_WITH_BYTEENABLES);
-		if (byteEnables) {
-			int ByteEnableIndex = (asynch) ? (separate) ? AByEnSep : AByEnBiDir
-					: (separate) ? SByEnSep : SByEnBiDir;
-			return ByteEnableIndex;
-		}
-		return -1;
-	}
-
 	public static int GetNrOfByteEnables(AttributeSet Attrs) {
+		Object be = Attrs.getValue(RamAttributes.ATTR_ByteEnables);
+		if (be == null || !be.equals(RamAttributes.BUS_WITH_BYTEENABLES))
+			return 0;
 		int NrOfBits = Attrs.getValue(Mem.DATA_ATTR).getWidth();
 		return (NrOfBits + 7) / 8;
 	}
 
 	public static Attribute<MemContents> CONTENTS_ATTR = new ContentsAttribute();
-	static final int OE = MEM_INPUTS + 0;
-	static final int WE = MEM_INPUTS + 1;
-	static final int CLK = MEM_INPUTS + 2;
-	static final int SDIN = MEM_INPUTS + 3;
-	static final int ADIN = MEM_INPUTS + 2;
 
 	static final int AByEnBiDir = MEM_INPUTS + 2;
 
@@ -263,70 +316,34 @@ public class Ram extends Mem {
 
 	@Override
 	void configurePorts(Instance instance) {
-		Object trigger = instance.getAttributeValue(StdAttr.TRIGGER);
-		boolean asynch = trigger.equals(StdAttr.TRIG_HIGH)
-				|| trigger.equals(StdAttr.TRIG_LOW);
-		Object bus = instance.getAttributeValue(RamAttributes.ATTR_DBUS);
-		boolean separate = bus == null ? false : bus
-				.equals(RamAttributes.BUS_SEP);
-		Object be = instance.getAttributeValue(RamAttributes.ATTR_ByteEnables);
-		boolean byteEnables = be == null ? false : be
-				.equals(RamAttributes.BUS_WITH_BYTEENABLES);
+		boolean separate = isSeparate(instance.getAttributeSet());
 		int NrOfByteEnables = GetNrOfByteEnables(instance.getAttributeSet());
-		int portCount = MEM_INPUTS;
-		if (asynch) {
-			portCount += 2;
-		} else {
-			portCount += 3;
-		}
-		if (separate) {
-			portCount++;
-		}
-		if (byteEnables) {
-			portCount += NrOfByteEnables;
-		}
+		int portCount = MEM_INPUTS + 3 + NrOfByteEnables;
 		Port[] ps = new Port[portCount];
 		ps[ADDR] = new Port(0, 10, Port.INPUT, ADDR_ATTR);
 		ps[ADDR].setToolTip(Strings.getter("memAddrTip"));
-		ps[OE] = new Port(0, 60, Port.INPUT, 1);
-		ps[OE].setToolTip(Strings.getter("ramOETip"));
+		ps[CLK] = new Port(0, 70 + NrOfByteEnables * 10, Port.INPUT, 1);
+		ps[CLK].setToolTip(Strings.getter("ramClkTip"));
 		ps[WE] = new Port(0, 50, Port.INPUT, 1);
 		ps[WE].setToolTip(Strings.getter("ramWETip"));
-		if (!asynch) {
-			int ClockOffset = 70;
-			if (byteEnables) {
-				ClockOffset += NrOfByteEnables * 10;
-			}
-			ps[CLK] = new Port(0, ClockOffset, Port.INPUT, 1);
-			ps[CLK].setToolTip(Strings.getter("ramClkTip"));
-		}
-		int ypos = (instance.getAttributeValue(Mem.DATA_ATTR).getWidth() == 1) ? getControlHeight(instance
-				.getAttributeSet()) + 10 : getControlHeight(instance
-				.getAttributeSet());
-
+		int ypos = getControlHeight(instance.getAttributeSet());
+		if (instance.getAttributeValue(Mem.DATA_ATTR).getWidth() == 1)
+			ypos += 10;
 		if (separate) {
-			if (asynch) {
-				ps[ADIN] = new Port(0, ypos, Port.INPUT, DATA_ATTR);
-				ps[ADIN].setToolTip(Strings.getter("ramInTip"));
-			} else {
-				ps[SDIN] = new Port(0, ypos, Port.INPUT, DATA_ATTR);
-				ps[SDIN].setToolTip(Strings.getter("ramInTip"));
-			}
+			ps[DIN] = new Port(0, ypos, Port.INPUT, DATA_ATTR);
+			ps[DIN].setToolTip(Strings.getter("ramInTip"));
 			ps[DATA] = new Port(SymbolWidth + 40, ypos, Port.OUTPUT, DATA_ATTR);
 			ps[DATA].setToolTip(Strings.getter("memDataTip"));
 		} else {
+			ps[OE] = new Port(0, 60, Port.INPUT, 1);
+			ps[OE].setToolTip(Strings.getter("ramOETip"));
 			ps[DATA] = new Port(SymbolWidth + 50, ypos, Port.INOUT, DATA_ATTR);
 			ps[DATA].setToolTip(Strings.getter("ramBusTip"));
 		}
-		if (byteEnables) {
-			int ByteEnableIndex = ByteEnableIndex(instance.getAttributeSet());
-			for (int i = 0; i < NrOfByteEnables; i++) {
-				ps[ByteEnableIndex + i] = new Port(0, 70 + i * 10, Port.INPUT,
-						1);
-				String Label = "ramByteEnableTip"
-						+ Integer.toString(NrOfByteEnables - i - 1);
-				ps[ByteEnableIndex + i].setToolTip(Strings.getter(Label));
-			}
+		for (int i = 0; i < NrOfByteEnables; i++) {
+			ps[BE + i] = new Port(0, 70 + i * 10, Port.INPUT, 1);
+			String Label = "ramByteEnableTip" + Integer.toString(NrOfByteEnables - i - 1);
+			ps[BE + i].setToolTip(Strings.getter(Label));
 		}
 		instance.setPorts(ps);
 	}
@@ -337,7 +354,7 @@ public class Ram extends Mem {
 	}
 
 	private void DrawConnections(Graphics g, int xpos, int ypos,
-			boolean singleBit, boolean separate, boolean sync,
+			boolean singleBit, boolean separate, 
 			boolean ByteEnabled, int bit) {
 		Font font = g.getFont();
 		GraphicsUtil.switchToWidth(g, 2);
@@ -368,9 +385,8 @@ public class Ram extends Mem {
 				int Index = bit / 8;
 				ByteIndex = "," + Integer.toString(Index + 4);
 			}
-			String DLabel = (sync) ? "A,1,3" + ByteIndex + "D" : "A,1"
-					+ ByteIndex + "D";
-			String QLabel = (sync) ? "A,2,3" + ByteIndex : "A,2" + ByteIndex;
+			String DLabel = "A,1,3" + ByteIndex + "D";
+			String QLabel = "A";
 			g.setFont(font.deriveFont(9.0f));
 			GraphicsUtil.drawText(g, DLabel, xpos + 23, ypos + 10,
 					GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
@@ -410,9 +426,8 @@ public class Ram extends Mem {
 				int Index = bit / 8;
 				ByteIndex = "," + Integer.toString(Index + 4);
 			}
-			String DLabel = (sync) ? "A,1,3" + ByteIndex + "D" : "A,1"
-					+ ByteIndex + "D";
-			String QLabel = "A,2" + ByteIndex + "  ";
+			String DLabel = "A,1,3" + ByteIndex + "D";
+			String QLabel = "A,2" + "  ";
 			g.setFont(font.deriveFont(9.0f));
 			GraphicsUtil.drawText(g, DLabel, xpos + 17 + SymbolWidth,
 					ypos + 13, GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER);
@@ -431,6 +446,7 @@ public class Ram extends Mem {
 	}
 
 	private void DrawControlBlock(InstancePainter painter, int xpos, int ypos) {
+		boolean separate = isSeparate(painter.getAttributeSet());
 		Object trigger = painter.getAttributeValue(StdAttr.TRIGGER);
 		boolean asynch = trigger.equals(StdAttr.TRIG_HIGH)
 				|| trigger.equals(StdAttr.TRIG_LOW);
@@ -467,90 +483,67 @@ public class Ram extends Mem {
 						+ Integer.toString(painter.getAttributeValue(
 								Mem.DATA_ATTR).getWidth()), xpos
 						+ (SymbolWidth / 2) + 20, ypos + 5);
-		if (asynch && inverted) {
-			g.drawLine(xpos, ypos + 50, xpos + 12, ypos + 50);
-			g.drawOval(xpos + 12, ypos + 46, 8, 8);
-		} else {
-			g.drawLine(xpos, ypos + 50, xpos + 20, ypos + 50);
-		}
+		g.drawLine(xpos, ypos + 50, xpos + 20, ypos + 50);
 		GraphicsUtil.drawText(g, "M1 [Write Enable]", xpos + 33, ypos + 50,
 				GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
 		painter.drawPort(WE);
-		if (asynch && inverted) {
-			g.drawLine(xpos, ypos + 60, xpos + 12, ypos + 60);
-			g.drawOval(xpos + 12, ypos + 56, 8, 8);
-		} else {
-			g.drawLine(xpos, ypos + 60, xpos + 20, ypos + 60);
+		g.drawLine(xpos, ypos + 60, xpos + 20, ypos + 60);
+		if (separate) {
+			GraphicsUtil.drawText(g, "M2 [Output Enable]", xpos + 33, ypos + 60,
+					GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+			painter.drawPort(OE);
 		}
-		GraphicsUtil.drawText(g, "M2 [Output Enable]", xpos + 33, ypos + 60,
-				GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
-		painter.drawPort(OE);
-		if (!asynch) {
-			int yoffset = 70;
-			if (byteEnables) {
-				yoffset += NrOfByteEnables * 10;
-			}
-			if (inverted) {
-				g.drawLine(xpos, ypos + yoffset, xpos + 12, ypos + yoffset);
-				g.drawOval(xpos + 12, ypos + yoffset - 4, 8, 8);
-			} else {
-				g.drawLine(xpos, ypos + yoffset, xpos + 20, ypos + yoffset);
-			}
+		int yoffset = 70 + NrOfByteEnables * 10;
+		if (inverted) {
+			g.drawLine(xpos, ypos + yoffset, xpos + 12, ypos + yoffset);
+			g.drawOval(xpos + 12, ypos + yoffset - 4, 8, 8);
+		} else {
+			g.drawLine(xpos, ypos + yoffset, xpos + 20, ypos + yoffset);
+		}
+		if (asynch) {
+			GraphicsUtil.drawText(g, "E3", xpos + 33, ypos + yoffset,
+					GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+		} else {
 			GraphicsUtil.drawText(g, "C3", xpos + 33, ypos + yoffset,
 					GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
 			painter.drawClockSymbol(xpos + 20, ypos + yoffset);
-			painter.drawPort(CLK);
 		}
-		if (byteEnables) {
-			int ByteEnableIndex = ByteEnableIndex(painter.getAttributeSet());
-			GraphicsUtil.switchToWidth(g, 2);
-			for (int i = 0; i < NrOfByteEnables; i++) {
-				g.drawLine(xpos, ypos + 70 + i * 10, xpos + 20, ypos + 70 + i
-						* 10);
-				painter.drawPort(ByteEnableIndex + i);
-				String Label = "M"
-						+ Integer.toString((NrOfByteEnables - i) + 3)
-						+ " [ByteEnable "
-						+ Integer.toString((NrOfByteEnables - i) - 1) + "]";
-				GraphicsUtil.drawText(g, Label, xpos + 33, ypos + 70 + i * 10,
-						GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
-			}
+		painter.drawPort(CLK);
+
+		GraphicsUtil.switchToWidth(g, 2);
+		for (int i = 0; i < NrOfByteEnables; i++) {
+			g.drawLine(xpos, ypos + 70 + i * 10, xpos + 20, ypos + 70 + i
+					* 10);
+			painter.drawPort(BE + i);
+			String Label = "M"
+				+ Integer.toString((NrOfByteEnables - i) + 3)
+				+ " [ByteEnable "
+				+ Integer.toString((NrOfByteEnables - i) - 1) + "]";
+			GraphicsUtil.drawText(g, Label, xpos + 33, ypos + 70 + i * 10,
+					GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
 		}
+
 		GraphicsUtil.switchToWidth(g, 1);
 		DrawAddress(painter, xpos, ypos + 10,
 				painter.getAttributeValue(Mem.ADDR_ATTR).getWidth());
 	}
 
-	private void DrawDataBlock(InstancePainter painter, int xpos, int ypos,
-			int bit, int NrOfBits) {
-		Object busVal = painter.getAttributeValue(RamAttributes.ATTR_DBUS);
-		int realypos = ypos + getControlHeight(painter.getAttributeSet()) + bit
-				* 20;
+	private void DrawDataBlock(InstancePainter painter, int xpos, int ypos, int bit, int NrOfBits) {
+		int realypos = ypos + getControlHeight(painter.getAttributeSet()) + bit * 20;
 		int realxpos = xpos + 20;
 		boolean FirstBlock = bit == 0;
 		boolean LastBlock = bit == (NrOfBits - 1);
 		Graphics g = painter.getGraphics();
-		boolean separate = busVal == null ? false : busVal
-				.equals(RamAttributes.BUS_SEP);
-		Object trigger = painter.getAttributeValue(StdAttr.TRIGGER);
-		boolean asynch = trigger.equals(StdAttr.TRIG_HIGH)
-				|| trigger.equals(StdAttr.TRIG_LOW);
+		boolean separate = isSeparate(painter.getAttributeSet());
 		Object be = painter.getAttributeValue(RamAttributes.ATTR_ByteEnables);
-		boolean byteEnables = be == null ? false : be
-				.equals(RamAttributes.BUS_WITH_BYTEENABLES);
+		boolean byteEnables = be == null ? false : be.equals(RamAttributes.BUS_WITH_BYTEENABLES);
 		GraphicsUtil.switchToWidth(g, 2);
 		g.drawRect(realxpos, realypos, SymbolWidth, 20);
-		DrawConnections(g, xpos, realypos, FirstBlock & LastBlock, separate,
-				!asynch, byteEnables, bit);
+		DrawConnections(g, xpos, realypos, FirstBlock & LastBlock, separate, byteEnables, bit);
 		if (FirstBlock) {
 			painter.drawPort(DATA);
-			if (separate) {
-				if (asynch) {
-					painter.drawPort(ADIN);
-				} else {
-					painter.drawPort(SDIN);
-				}
-			}
+			if (separate)
+				painter.drawPort(DIN);
 			if (!LastBlock) {
 				GraphicsUtil.switchToWidth(g, 5);
 				if (separate) {
@@ -593,21 +586,8 @@ public class Ram extends Mem {
 	}
 
 	public int getControlHeight(AttributeSet attrs) {
-		Object trigger = attrs.getValue(StdAttr.TRIGGER);
-		boolean asynch = trigger.equals(StdAttr.TRIG_HIGH)
-				|| trigger.equals(StdAttr.TRIG_LOW);
-		Object be = attrs.getValue(RamAttributes.ATTR_ByteEnables);
-		boolean byteEnables = be == null ? false : be
-				.equals(RamAttributes.BUS_WITH_BYTEENABLES);
-		int result = 80;
-		if (!asynch) {
-			result += 10;
-		}
-		if (byteEnables) {
-			int NrByteEnables = GetNrOfByteEnables(attrs);
-			result += NrByteEnables * 10;
-		}
-		return result;
+		int NrByteEnables = GetNrOfByteEnables(attrs);
+		return 90 + NrByteEnables * 10;
 	}
 
 	@Override
@@ -627,9 +607,7 @@ public class Ram extends Mem {
 
 	@Override
 	public Bounds getOffsetBounds(AttributeSet attrs) {
-		Object bus = attrs.getValue(RamAttributes.ATTR_DBUS);
-		boolean separate = bus == null ? false : bus
-				.equals(RamAttributes.BUS_SEP);
+		boolean separate = isSeparate(attrs);
 		int xoffset = (separate) ? 40 : 50;
 		if (attrs.getValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
 			return Bounds.create(0, 0, SymbolWidth + xoffset, 140);
@@ -681,44 +659,27 @@ public class Ram extends Mem {
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
 		super.instanceAttributeChanged(instance, attr);
-		if ((attr == Mem.DATA_ATTR) || (attr == RamAttributes.ATTR_DBUS)
-				|| (attr == StdAttr.TRIGGER)
-				|| (attr == RamAttributes.ATTR_ByteEnables)) {
-			if ((attr == Mem.DATA_ATTR) || (attr == StdAttr.TRIGGER)) {
-				boolean disable_due_to_bits = instance.getAttributeValue(
-						Mem.DATA_ATTR).getWidth() < 9;
-				boolean disable_due_to_async = instance.getAttributeValue(
-						StdAttr.TRIGGER).equals(StdAttr.TRIG_HIGH)
-						|| instance.getAttributeValue(StdAttr.TRIGGER).equals(
-								StdAttr.TRIG_LOW);
-				if (disable_due_to_bits || disable_due_to_async) {
-					if (!instance.getAttributeValue(
-							RamAttributes.ATTR_ByteEnables).equals(
-							RamAttributes.BUS_WITHOUT_BYTEENABLES)) {
-						instance.getAttributeSet().setValue(
-								RamAttributes.ATTR_ByteEnables,
-								RamAttributes.BUS_WITHOUT_BYTEENABLES);
-						super.instanceAttributeChanged(instance,
-								RamAttributes.ATTR_ByteEnables);
-					}
-					instance.setAttributeReadOnly(
-							RamAttributes.ATTR_ByteEnables, true);
-					super.instanceAttributeChanged(instance,
-							RamAttributes.ATTR_ByteEnables);
-					instance.setAttributeReadOnly(
-							RamAttributes.ATTR_ByteEnables, true);
-					super.instanceAttributeChanged(instance,
-							RamAttributes.ATTR_ByteEnables);
-				} else {
-					if (instance.getAttributeSet().isReadOnly(
-							RamAttributes.ATTR_ByteEnables)) {
-						instance.setAttributeReadOnly(
-								RamAttributes.ATTR_ByteEnables, false);
-						super.instanceAttributeChanged(instance,
-								RamAttributes.ATTR_ByteEnables);
-					}
+		Attribute<AttributeOption> be = RamAttributes.ATTR_ByteEnables;
+		if ((attr == Mem.DATA_ATTR)) {
+			boolean narrow = instance.getAttributeValue(Mem.DATA_ATTR).getWidth() < 9;
+			if (narrow) {
+				if (!instance.getAttributeValue(be).equals(RamAttributes.BUS_WITHOUT_BYTEENABLES)) {
+					instance.getAttributeSet().setValue(be, RamAttributes.BUS_WITHOUT_BYTEENABLES);
+					super.instanceAttributeChanged(instance, be);
+				}
+				instance.setAttributeReadOnly(be, true);
+				super.instanceAttributeChanged(instance, be);
+				instance.setAttributeReadOnly(be, true);
+				super.instanceAttributeChanged(instance, be);
+			} else {
+				if (instance.getAttributeSet().isReadOnly(be)) {
+					instance.setAttributeReadOnly(be, false);
+					super.instanceAttributeChanged(instance,be);
 				}
 			}
+			instance.recomputeBounds();
+			configurePorts(instance);
+		} else if ((attr == RamAttributes.ATTR_DBUS) || (attr == RamAttributes.ATTR_ByteEnables)) {
 			instance.recomputeBounds();
 			configurePorts(instance);
 		}
@@ -727,30 +688,17 @@ public class Ram extends Mem {
 	public void DrawRamClassic(InstancePainter painter) {
 		DrawMemClassic(painter);
 		painter.drawPort(WE, Strings.get("ramWELabel"), Direction.EAST);
-		painter.drawPort(OE, Strings.get("ramOELabel"), Direction.EAST);
-		Object trigger = painter.getAttributeValue(StdAttr.TRIGGER);
-		boolean asynch = trigger.equals(StdAttr.TRIG_HIGH)
-				|| trigger.equals(StdAttr.TRIG_LOW);
-		if (!asynch)
-			painter.drawClock(CLK, Direction.EAST);
-		Object busVal = painter.getAttributeValue(RamAttributes.ATTR_DBUS);
-		boolean separate = busVal == null ? false : busVal.equals(RamAttributes.BUS_SEP);
-		if (separate) {
-			if (asynch) {
-				painter.drawPort(ADIN, Strings.get("ramDataLabel"), Direction.EAST);
-			} else {
-				painter.drawPort(SDIN, Strings.get("ramDataLabel"), Direction.EAST);
-			}
-		}
-		Object be = painter.getAttributeValue(RamAttributes.ATTR_ByteEnables);
-		boolean byteEnables = be == null ? false : be
-				.equals(RamAttributes.BUS_WITH_BYTEENABLES);
-		if (byteEnables) {
-			int NrOfByteEnables = GetNrOfByteEnables(painter.getAttributeSet());
-			int ByteEnableIndex = ByteEnableIndex(painter.getAttributeSet());
-			for (int i = 0; i < NrOfByteEnables; i++) {
-				painter.drawPort(ByteEnableIndex + i, Strings.get("ramWELabel")+(NrOfByteEnables-i-1), Direction.EAST);
-			}
+		painter.drawClock(CLK, Direction.EAST);
+
+		boolean separate = isSeparate(painter.getAttributeSet());
+		if (separate)
+			painter.drawPort(DIN, Strings.get("ramDataLabel"), Direction.EAST);
+		else
+			painter.drawPort(OE, Strings.get("ramOELabel"), Direction.EAST);
+
+		int NrOfByteEnables = GetNrOfByteEnables(painter.getAttributeSet());
+		for (int i = 0; i < NrOfByteEnables; i++) {
+			painter.drawPort(BE + i, Strings.get("ramWELabel")+(NrOfByteEnables-i-1), Direction.EAST);
 		}
 	}
 
@@ -759,124 +707,88 @@ public class Ram extends Mem {
 		if (painter.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
 			DrawRamClassic(painter);
 		} else {
-		Graphics g = painter.getGraphics();
-		Bounds bds = painter.getBounds();
-		int NrOfBits = painter.getAttributeValue(Mem.DATA_ATTR).getWidth();
+			Graphics g = painter.getGraphics();
+			Bounds bds = painter.getBounds();
+			int NrOfBits = painter.getAttributeValue(Mem.DATA_ATTR).getWidth();
 
-		// int addrb = painter.getAttributeValue(Mem.ADDR_ATTR).getWidth();
+			String Label = painter.getAttributeValue(StdAttr.LABEL);
+			if (Label != null) {
+				Font font = g.getFont();
+				g.setFont(painter.getAttributeValue(StdAttr.LABEL_FONT));
+				GraphicsUtil.drawCenteredText(g, Label, bds.getX() + bds.getWidth()
+						/ 2, bds.getY() - g.getFont().getSize());
+				g.setFont(font);
+			}
+			int xpos = bds.getX();
+			int ypos = bds.getY();
 
-		String Label = painter.getAttributeValue(StdAttr.LABEL);
-		if (Label != null) {
-			Font font = g.getFont();
-			g.setFont(painter.getAttributeValue(StdAttr.LABEL_FONT));
-			GraphicsUtil.drawCenteredText(g, Label, bds.getX() + bds.getWidth()
-					/ 2, bds.getY() - g.getFont().getSize());
-			g.setFont(font);
-		}
-		int xpos = bds.getX();
-		int ypos = bds.getY();
-
-		DrawControlBlock(painter, xpos, ypos);
-		for (int i = 0; i < NrOfBits; i++) {
-			DrawDataBlock(painter, xpos, ypos, i, NrOfBits);
-		}
-		/* Draw contents */
-		if (painter.getShowState()) {
-			RamState state = (RamState) getState(painter);
-			state.paint(painter.getGraphics(), bds.getX(), bds.getY(),
-					60, getControlHeight(painter.getAttributeSet()) + 5,
-					Mem.SymbolWidth - 75, 20 * NrOfBits - 10, false);
-		}
+			DrawControlBlock(painter, xpos, ypos);
+			for (int i = 0; i < NrOfBits; i++) {
+				DrawDataBlock(painter, xpos, ypos, i, NrOfBits);
+			}
+			/* Draw contents */
+			if (painter.getShowState()) {
+				RamState state = (RamState) getState(painter);
+				state.paint(painter.getGraphics(), bds.getX(), bds.getY(),
+						60, getControlHeight(painter.getAttributeSet()) + 5,
+						Mem.SymbolWidth - 75, 20 * NrOfBits - 10, false);
+			}
 		}
 	}
 
 	@Override
 	public void propagate(InstanceState state) {
+		AttributeSet attrs = state.getAttributeSet();
 		RamState myState = (RamState) getState(state);
-		Object trigger = state.getAttributeValue(StdAttr.TRIGGER);
-		Object bus = state.getAttributeValue(RamAttributes.ATTR_DBUS);
-		boolean asynch = trigger.equals(StdAttr.TRIG_HIGH)
-				| trigger.equals(StdAttr.TRIG_LOW);
-		boolean edge = false;
-		if (!asynch) {
-			edge = myState.setClock(state.getPortValue(CLK), trigger);
-		}
-		boolean triggered = asynch || edge;
-		boolean separate = bus == null ? false : bus
-				.equals(RamAttributes.BUS_SEP);
-		boolean outputEnabled = (!asynch || trigger.equals(StdAttr.TRIG_HIGH)) ? state
-				.getPortValue(OE) != Value.FALSE
-				: state.getPortValue(OE) != Value.FALSE;
-		BitWidth dataBits = state.getAttributeValue(DATA_ATTR);
-		/* Set the outputs in tri-state in case of combined bus */
-		if ((!separate && !outputEnabled)
-				|| (separate && asynch && !outputEnabled)) {
-			state.setPort(DATA, Value.createUnknown(dataBits), DELAY);
-		}
-		if (!triggered && !asynch && outputEnabled) {
-			state.setPort(DATA,
-					Value.createKnown(dataBits, myState.GetCurrentData()),
-					DELAY);
-		}
-		if (triggered) {
-			Object be = state.getAttributeValue(RamAttributes.ATTR_ByteEnables);
-			boolean byteEnables = be == null ? false : be
-					.equals(RamAttributes.BUS_WITH_BYTEENABLES);
-			int NrOfByteEnables = GetNrOfByteEnables(state.getAttributeSet());
-			int ByteEnableIndex = ByteEnableIndex(state.getAttributeSet());
-			boolean shouldStore = (!asynch || trigger.equals(StdAttr.TRIG_HIGH)) ? state
-					.getPortValue(WE) != Value.FALSE
-					: state.getPortValue(WE) != Value.FALSE;
-			Value addrValue = state.getPortValue(ADDR);
-			int addr = addrValue.toIntValue();
-			if (!addrValue.isFullyDefined() || addr < 0) {
-				return;
-			}
-			if (addr != myState.getCurrent()) {
-				myState.setCurrent(addr);
-				myState.scrollToShow(addr);
-			}
+		boolean separate = isSeparate(attrs);
 
-			if (shouldStore) {
-				int dataValue = state.getPortValue(
-						!separate ? DATA : (asynch) ? ADIN : SDIN).toIntValue();
-				int memValue = myState.getContents().get(addr);
-				if (byteEnables) {
-					int mask = 0xFF << (NrOfByteEnables - 1) * 8;
-					for (int i = 0; i < NrOfByteEnables; i++) {
-						Value bitvalue = state
-								.getPortValue(ByteEnableIndex + i);
-						boolean disabled = bitvalue == null ? false : bitvalue
-								.equals(Value.FALSE);
-						if (disabled) {
-							dataValue &= ~mask;
-							dataValue |= (memValue & mask);
-						}
-						mask >>= 8;
-					}
-				}
-				myState.getContents().set(addr, dataValue);
-			}
-			int val = myState.getContents().get(addr);
-			int currentValue = myState.GetCurrentData();
-			if (byteEnables) {
+		// get address
+		Value addrValue = state.getPortValue(ADDR);
+		int addr = addrValue.toIntValue();
+		boolean goodAddr = (addrValue.isFullyDefined() && addr >= 0);
+		if (goodAddr && addr != myState.getCurrent()) {
+			myState.setCurrent(addr);
+			myState.scrollToShow(addr);
+		}
+
+		// perform writes
+		Object trigger = state.getAttributeValue(StdAttr.TRIGGER);
+		boolean triggered = myState.setClock(state.getPortValue(CLK), trigger);
+		boolean writeEnabled = triggered && (state.getPortValue(WE) == Value.TRUE);
+		if (writeEnabled && goodAddr) {
+			int NrOfByteEnables = GetNrOfByteEnables(attrs);
+
+			int dataValue = state.getPortValue(separate ? DIN : DATA).toIntValue();
+			int memValue = myState.getContents().get(addr);
+			if (NrOfByteEnables > 0) {
 				int mask = 0xFF << (NrOfByteEnables - 1) * 8;
 				for (int i = 0; i < NrOfByteEnables; i++) {
-					Value bitvalue = state.getPortValue(ByteEnableIndex + i);
-					boolean disabled = bitvalue == null ? false : bitvalue
-							.equals(Value.FALSE);
+					Value bitvalue = state.getPortValue(BE + i);
+					boolean disabled = bitvalue == null ? false : bitvalue.equals(Value.FALSE);
 					if (disabled) {
-						val &= ~mask;
-						val |= (currentValue & mask);
+						dataValue &= ~mask;
+						dataValue |= (memValue & mask);
 					}
 					mask >>= 8;
 				}
 			}
-			myState.SetCurrentData(val);
-			if (outputEnabled) {
-				state.setPort(DATA, Value.createKnown(dataBits, val), DELAY);
-			}
+			myState.getContents().set(addr, dataValue);
 		}
+
+		// perform reads
+		BitWidth width = state.getAttributeValue(DATA_ATTR);
+		boolean outputEnabled = separate || (state.getPortValue(OE) != Value.FALSE);
+		if (outputEnabled && goodAddr) {
+			int val = myState.getContents().get(addr);
+			state.setPort(DATA, Value.createKnown(width, val), DELAY);
+		} else {
+			state.setPort(DATA, Value.createUnknown(width), DELAY);
+		}
+	}
+
+	private boolean isSeparate(AttributeSet attrs) {
+		Object bus = attrs.getValue(RamAttributes.ATTR_DBUS);
+		return bus == null || bus.equals(RamAttributes.BUS_SEP);
 	}
 
 	@Override
