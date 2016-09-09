@@ -270,7 +270,7 @@ class TableTab extends JPanel implements TruthTablePanel, TabInterface {
 			@Override
 			public Dimension getPreferredSize() {
 				Dimension d = super.getPreferredSize();
-				int s = (int)(d.getWidth()<d.getHeight() ? d.getHeight() : d.getWidth());
+				int s = (int)d.getHeight(); // (int)(d.getWidth()<d.getHeight() ? d.getHeight() : d.getWidth());
 				return new Dimension (s,s);
 			}
 	}
