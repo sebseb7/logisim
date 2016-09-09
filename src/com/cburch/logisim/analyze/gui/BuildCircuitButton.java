@@ -45,6 +45,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import com.cburch.logisim.proj.ProjectActions;
 import com.cburch.logisim.analyze.model.AnalyzerModel;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.VariableList;
@@ -68,10 +69,11 @@ class BuildCircuitButton extends JButton {
 
 		DialogPanel() {
 			List<Project> projects = Projects.getOpenProjects();
-			Object[] options = new Object[projects.size()];
+			Object[] options = new Object[projects.size() + 1];
 			Object initialSelection = null;
-			for (int i = 0; i < options.length; i++) {
-				Project proj = projects.get(i);
+			options[0] = new ProjectItem(null);
+			for (int i = 1; i < options.length; i++) {
+				Project proj = projects.get(i-1);
 				options[i] = new ProjectItem(proj);
 				if (proj == model.getCurrentProject()) {
 					initialSelection = options[i];
@@ -83,6 +85,8 @@ class BuildCircuitButton extends JButton {
 				project.setEnabled(false);
 			} else if (initialSelection != null) {
 				project.setSelectedItem(initialSelection);
+			} else {
+				project.setSelectedItem(options[options.length - 1]);
 			}
 
 			Circuit defaultCircuit = model.getCurrentCircuit();
@@ -175,7 +179,7 @@ class BuildCircuitButton extends JButton {
 					continue;
 				}
 
-				if (dest.getLogisimFile().getCircuit(name) != null) {
+				if (dest != null && dest.getLogisimFile().getCircuit(name) != null) {
 					int choice = JOptionPane.showConfirmDialog(parent,
 							StringUtil.format(
 									Strings.get("buildConfirmReplaceMessage"),
@@ -206,7 +210,10 @@ class BuildCircuitButton extends JButton {
 
 		@Override
 		public String toString() {
-			return project.getLogisimFile().getDisplayName();
+			if (project == null)
+				return "< Create New Project >";
+			else
+				return project.getLogisimFile().getDisplayName();
 		}
 	}
 
@@ -241,6 +248,10 @@ class BuildCircuitButton extends JButton {
 					twoInputs, useNands);
 			dest.doAction(xn.toAction(Strings.getter("replaceCircuitAction")));
 		} else {
+			// create new project if necessary
+			if (dest == null) {
+				dest = ProjectActions.doNew(dest);
+			}
 			// add the circuit
 			Circuit circuit = new Circuit(name, dest.getLogisimFile());
 			CircuitMutation xn = CircuitBuilder.build(circuit, model,
