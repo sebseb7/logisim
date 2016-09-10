@@ -76,7 +76,7 @@ public class LogisimVersion {
 	 * @return LogisimVersion built from the string passed as parameter
 	 */
 	public static LogisimVersion parse(String versionString) {
-		String[] parts = versionString.split("\\.");
+		String[] parts = versionString.split("[-\\.]");
 		int major = 0;
 		int minor = 0;
 		int release = 0;
@@ -213,7 +213,7 @@ public class LogisimVersion {
 			if (revision != FINAL_REVISION)
 				ret += "." + revision;
 			if (variant != "")
-				ret += "." + variant;
+				ret += "-" + variant;
 			repr = ret;
 		}
 		return (ret);
