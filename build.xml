@@ -48,4 +48,22 @@
         <java jar="logisim-evolution.jar" fork="true"/>
     </target>
 
+    <property environment="env" />
+    <taskdef name="bundleapp"
+        classname="com.oracle.appbundler.AppBundlerTask"   
+        classpath="libs/appbundler-1.0.jar" />
+    <target name="mac-bundle">
+        <bundleapp outputdirectory="."
+            name="Logisim-Evolution 2.13.16 HC"
+            displayname="Logisim Evolution 2.13.16 HC"
+            identifier="com.cburch.logisim.Main"
+            signature="LGSM"
+            shortversion="2.13.16-hc"
+            icon="logisim.icns"
+            mainclassname="com.cburch.logisim.Main">
+            <runtime dir="${env.JAVA_HOME}" />
+            <classpath file="./logisim-evolution.jar" />
+        </bundleapp>
+    </target>
+
 </project>
