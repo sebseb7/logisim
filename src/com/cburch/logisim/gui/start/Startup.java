@@ -84,18 +84,19 @@ public class Startup {
 
 	public static Startup parseArgs(String[] args) {
 		// see whether we'll be using any graphics
-		boolean isTty = false;
 		boolean isClearPreferences = false;
 		for (int i = 0; i < args.length; i++) {
-			if (args[i].equals("-tty")) {
-				isTty = true;
+			if (args[i].equals("-tty")
+				|| args[i].equals("-list")
+				|| args[i].equals("-png")) {
+				Main.headless = true;
 			} else if (args[i].equals("-clearprefs")
 					|| args[i].equals("-clearprops")) {
 				isClearPreferences = true;
 			}
 		}
 
-		if (!isTty) {
+		if (!Main.headless) {
 			// we're using the GUI: Set up the Look&Feel to match the platform
 			System.setProperty(
 					"com.apple.mrj.application.apple.menu.about.name",
@@ -111,9 +112,9 @@ public class Startup {
 			AppPreferences.handleGraphicsAcceleration();
 		}
 
-		Startup ret = new Startup(isTty);
+		Startup ret = new Startup();
 		startupTemp = ret;
-		if (!isTty) {
+		if (!Main.headless) {
 			registerHandler();
 		}
 
@@ -125,6 +126,7 @@ public class Startup {
 		for (int i = 0; i < args.length; i++) {
 			String arg = args[i];
 			if (arg.equals("-tty")) {
+				ret.headlessTty = true;
 				if (i + 1 < args.length) {
 					i++;
 					String[] fmts = args[i].split(",");
@@ -151,6 +153,21 @@ public class Startup {
 					logger.error("{}", Strings.get("ttyFormatError"));
 					return null;
 				}
+			} else if (arg.equals("-png")) {
+				ret.headlessPng = true;
+				if (i + 1 < args.length) {
+					i++;
+					String[] circuits = args[i].split(",");
+					if (circuits.length == 0) {
+						logger.error("{}", Strings.get("pngArgError"));
+					}
+					ret.headlessPngCircuits = circuits;
+				} else {
+					logger.error("{}", Strings.get("pngArgError"));
+					return null;
+				}
+			} else if (arg.equals("-list")) {
+				ret.headlessList = true;
 			} else if (arg.equals("-sub")) {
 				if (i + 2 < args.length) {
 					File a = new File(args[i + 1]);
@@ -290,11 +307,11 @@ public class Startup {
 		if (ret.exitAfterStartup && ret.filesToOpen.isEmpty()) {
 			printUsage();
 		}
-		if (ret.isTty && ret.filesToOpen.isEmpty()) {
+		if (Main.headless && ret.filesToOpen.isEmpty()) {
 			logger.error("{}", Strings.get("ttyNeedsFileError"));
 			return null;
 		}
-		if (ret.loadFile != null && !ret.isTty) {
+		if (ret.loadFile != null && !Main.headless) {
 			logger.error("{}", Strings.get("loadNeedsTtyError"));
 			return null;
 		}
@@ -320,6 +337,9 @@ public class Startup {
 		System.err.println("   " + Strings.get("argSubOption")); // OK
 		System.err.println("   " + Strings.get("argTemplateOption")); // OK
 		System.err.println("   " + Strings.get("argTtyOption")); // OK
+		System.err.println("   " + Strings.get("argListOption")); // OK
+		System.err.println("   " + Strings.get("argPngOption")); // OK
+		System.err.println("   " + Strings.get("argPngsOption")); // OK
 		System.err.println("   " + Strings.get("argQuestaOption")); // OK
 		System.err.println("   " + Strings.get("argVersionOption")); // OK
 		System.exit(-1);
@@ -374,7 +394,8 @@ public class Startup {
 
 	private static Startup startupTemp = null;
 	// based on command line
-	boolean isTty;
+	boolean headlessTty, headlessPng, headlessList;
+	String headlessPngCircuits[];
 	private File templFile = null;
 	private boolean templEmpty = false;
 	private boolean templPlain = false;
@@ -392,9 +413,8 @@ public class Startup {
 
 	private ArrayList<File> filesToPrint = new ArrayList<File>();
 
-	private Startup(boolean isTty) {
-		this.isTty = isTty;
-		this.showSplash = !isTty;
+	private Startup() {
+		this.showSplash = !Main.headless;
 	}
 
 	/**
@@ -692,14 +712,12 @@ public class Startup {
 	}
 
 	public void run() {
-		if (isTty) {
+		if (Main.headless) {
 			try {
 				TtyInterface.run(this);
-				return;
 			} catch (Exception t) {
 				t.printStackTrace();
 				System.exit(-1);
-				return;
 			}
 		}
 

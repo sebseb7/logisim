@@ -74,7 +74,7 @@ import com.cburch.logisim.util.GifEncoder;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.UniquelyNamedThread;
 
-class ExportImage {
+public class ExportImage {
 
 	private static class ExportThread extends UniquelyNamedThread {
 		Frame frame;
@@ -101,61 +101,20 @@ class ExportImage {
 		}
 
 		private void export(Circuit circuit) {
-			Bounds bds = circuit.getBounds(canvas.getGraphics()).expand(
-					BORDER_SIZE);
-			int width = (int) Math.round(bds.getWidth() * scale);
-			int height = (int) Math.round(bds.getHeight() * scale);
-			BufferedImage img = new BufferedImage(width, height,
-					BufferedImage.TYPE_INT_RGB);
-			Graphics base = img.getGraphics();
-			Graphics g = base.create();
-			g.setColor(Color.white);
-			g.fillRect(0, 0, width, height);
-			g.setColor(Color.black);
-			if (g instanceof Graphics2D) {
-				((Graphics2D) g).scale(scale, scale);
-				((Graphics2D) g).translate(-bds.getX(), -bds.getY());
-			} else {
-				JOptionPane.showMessageDialog(frame,
-						Strings.get("couldNotCreateImage"));
-				monitor.close();
-			}
-
-			CircuitState circuitState = canvas.getProject().getCircuitState(
-					circuit);
-			ComponentDrawContext context = new ComponentDrawContext(canvas,
-					circuit, circuitState, base, g, printerView);
-			circuit.draw(context, null);
-
-			File where;
+			File filename;
 			if (dest.isDirectory()) {
-				where = new File(dest, circuit.getName() + filter.extensions[0]);
+				filename = new File(dest, circuit.getName() + filter.extensions[0]);
 			} else if (filter.accept(dest)) {
-				where = dest;
+				filename = dest;
 			} else {
 				String newName = dest.getName() + filter.extensions[0];
-				where = new File(dest.getParentFile(), newName);
+				filename = new File(dest.getParentFile(), newName);
 			}
-			try {
-				switch (filter.type) {
-				case FORMAT_GIF:
-					GifEncoder.toFile(img, where, monitor);
-					break;
-				case FORMAT_PNG:
-					ImageIO.write(img, "PNG", where);
-					break;
-				case FORMAT_JPG:
-					ImageIO.write(img, "JPEG", where);
-					break;
-				}
-			} catch (Exception e) {
-				JOptionPane.showMessageDialog(frame,
-						Strings.get("couldNotCreateFile"));
-				monitor.close();
-				return;
+			String msg = exportImage(canvas, circuit,
+					scale, printerView, filename, filter.type, monitor);
+			if (msg != null) {
+				JOptionPane.showMessageDialog(frame, msg);
 			}
-			g.dispose();
-			monitor.close();
 		}
 
 		@Override
@@ -164,6 +123,59 @@ class ExportImage {
 				export(circ);
 			}
 		}
+	}
+
+	public static String exportImage(Canvas canvas, Circuit circuit, double scale, boolean printerView, File dest, int format, ProgressMonitor monitor) {
+		Bounds bds;
+		if (!printerView) {
+			bds = circuit.getBounds(canvas.getGraphics()).expand(BORDER_SIZE);
+		} else {
+			bds = circuit.getBounds().expand(BORDER_SIZE);
+		}
+		int width = (int) Math.round(bds.getWidth() * scale);
+		int height = (int) Math.round(bds.getHeight() * scale);
+		if (width == 0)
+			width = 100;
+		if (height == 0)
+			height = 100;
+		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		Graphics base = img.getGraphics();
+		Graphics g = base.create();
+		g.setColor(Color.white);
+		g.fillRect(0, 0, width, height);
+		g.setColor(Color.black);
+		if (g instanceof Graphics2D) {
+			((Graphics2D) g).scale(scale, scale);
+			((Graphics2D) g).translate(-bds.getX(), -bds.getY());
+		} else {
+			return Strings.get("couldNotCreateImage");
+		}
+
+		CircuitState circuitState = canvas.getProject().getCircuitState(circuit);
+		ComponentDrawContext context = new ComponentDrawContext(canvas,
+				circuit, circuitState, base, g, printerView);
+		circuit.draw(context, null);
+
+		try {
+			switch (format) {
+				case FORMAT_GIF:
+					GifEncoder.toFile(img, dest, monitor);
+					break;
+				case FORMAT_PNG:
+					ImageIO.write(img, "PNG", dest);
+					break;
+				case FORMAT_JPG:
+					ImageIO.write(img, "JPEG", dest);
+					break;
+			}
+		} catch (Exception e) {
+			return Strings.get("couldNotCreateFile");
+		} finally {
+			g.dispose();
+			if (monitor != null)
+				monitor.close();
+		}
+		return null;
 	}
 
 	private static class ImageFileFilter extends FileFilter {
@@ -323,7 +335,7 @@ class ExportImage {
 
 		ImageFileFilter filter;
 		int fmt = options.getImageFormat();
-		switch (options.getImageFormat()) {
+		switch (fmt) {
 		case FORMAT_GIF:
 			filter = new ImageFileFilter(fmt,
 					Strings.getter("exportGifFilter"), new String[] { "gif" });
@@ -402,11 +414,11 @@ class ExportImage {
 
 	private static final int SLIDER_DIVISIONS = 6;
 
-	private static final int FORMAT_GIF = 0;
+	public static final int FORMAT_GIF = 0;
 
-	private static final int FORMAT_PNG = 1;
+	public static final int FORMAT_PNG = 1;
 
-	private static final int FORMAT_JPG = 2;
+	public static final int FORMAT_JPG = 2;
 
 	private static final int BORDER_SIZE = 5;
 

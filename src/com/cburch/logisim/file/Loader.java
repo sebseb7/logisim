@@ -48,6 +48,7 @@ import javax.swing.JTextArea;
 import javax.swing.filechooser.FileFilter;
 import java.awt.Component;
 
+import com.cburch.logisim.Main;
 import com.cburch.logisim.std.Builtin;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.util.JFileChoosers;
@@ -459,6 +460,10 @@ public class Loader implements LibraryLoader {
 			}
 		}
 
+		if (Main.headless) {
+			System.err.println(Strings.get("fileErrorTitle") + ": " + description);
+			return;
+		}
 		if (description.contains("\n") || description.length() > 60) {
 			int lines = 1;
 			for (int pos = description.indexOf('\n'); pos >= 0; pos = description
@@ -487,9 +492,13 @@ public class Loader implements LibraryLoader {
 			return;
 		String message = source.getMessage();
 		while (message != null) {
-			JOptionPane.showMessageDialog(parent, message,
-					Strings.get("fileMessageTitle"),
-					JOptionPane.INFORMATION_MESSAGE);
+			if (Main.headless) {
+				System.err.println(Strings.get("fileMessageTitle") + ": " + message);
+			} else {
+				JOptionPane.showMessageDialog(parent, message,
+						Strings.get("fileMessageTitle"),
+						JOptionPane.INFORMATION_MESSAGE);
+			}
 			message = source.getMessage();
 		}
 	}

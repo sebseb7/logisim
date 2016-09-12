@@ -63,6 +63,8 @@ public class Main {
 		}
 	}
 
+	public static boolean headless = false;
+
 	final static Logger logger = LoggerFactory.getLogger(Main.class);
 
 	public static final LogisimVersion VERSION = LogisimVersion.get(2, 13, 17, "HC");

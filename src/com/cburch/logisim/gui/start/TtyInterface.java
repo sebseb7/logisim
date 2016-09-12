@@ -60,6 +60,8 @@ import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.util.UniquelyNamedThread;
+import com.cburch.logisim.gui.main.ExportImage;
+import com.cburch.logisim.gui.main.Canvas;
 
 public class TtyInterface {
 
@@ -258,7 +260,49 @@ public class TtyInterface {
 			return;
 		}
 
-		int format = args.getTtyFormat();
+		int ret = 0;
+		if (args.headlessList) {
+			ret = doList(file);
+		}
+		if (ret == 0 && args.headlessPng) {
+			ret = doPng(args.headlessPngCircuits, file);
+		}
+		if (ret == 0 && args.headlessTty) {
+			ret = doTty(args.getTtyFormat(), args.getLoadFile(), file);
+		}
+		System.exit(ret);
+	}
+
+	static int doList(LogisimFile file) {
+		for (Circuit c : file.getCircuits()) {
+			System.out.println(c);
+		}
+		return 0;
+	}
+
+	static int doPng(String names[], LogisimFile file) {
+		double scale = 1.0;
+		int format = ExportImage.FORMAT_PNG;
+		Project proj = new Project(file);
+		Canvas canvas = new Canvas(proj);
+		int err = 0;
+		for (Circuit c : file.getCircuits()) {
+			for (String n : names) {
+				if (!n.trim().equals("*") && !n.trim().equals(c.toString()))
+					continue;
+				File dest = new File(c.toString() + ".png"); 
+				System.out.println("Exporting " + c + " as " + dest);
+				String msg = ExportImage.exportImage(canvas, c, scale, true, dest, format, null);
+				if (msg != null) {
+					System.err.println(msg);
+					err = 1;
+				}
+			}
+		}
+		return err;
+	}
+
+	static int doTty(int format, File loadfile, LogisimFile file) {
 		if ((format & FORMAT_STATISTICS) != 0) {
 			format &= ~FORMAT_STATISTICS;
 			displayStatistics(file);
@@ -287,9 +331,9 @@ public class TtyInterface {
 		// we have to do our initial propagation before the simulation starts -
 		// it's necessary to populate the circuit with substates.
 		circState.getPropagator().propagate();
-		if (args.getLoadFile() != null) {
+		if (loadfile != null) {
 			try {
-				boolean loaded = loadRam(circState, args.getLoadFile());
+				boolean loaded = loadRam(circState, loadfile);
 				if (!loaded) {
 					logger.error("{}", Strings.get("loadNoRamError"));
 					System.exit(-1);
@@ -299,9 +343,8 @@ public class TtyInterface {
 				System.exit(-1);
 			}
 		}
-		int ttyFormat = args.getTtyFormat();
-		int simCode = runSimulation(circState, outputPins, haltPin, ttyFormat);
-		System.exit(simCode);
+		int simCode = runSimulation(circState, outputPins, haltPin, format);
+		return simCode;
 	}
 
 	private static int runSimulation(CircuitState circState,
