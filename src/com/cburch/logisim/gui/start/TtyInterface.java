@@ -171,8 +171,8 @@ public class TtyInterface {
 				Strings.get("statsTotalWith"));
 	}
 
-	private static void displayTableRow(ArrayList<Value> prevOutputs,
-			ArrayList<Value> curOutputs) {
+	private static boolean displayTableRow(boolean showHeader, ArrayList<Value> prevOutputs,
+			ArrayList<Value> curOutputs, ArrayList<String> headers, ArrayList<String> formats, int format) {
 		boolean shouldPrint = false;
 		if (prevOutputs == null) {
 			shouldPrint = true;
@@ -187,12 +187,56 @@ public class TtyInterface {
 			}
 		}
 		if (shouldPrint) {
+			String sep;
+			if ((format & FORMAT_TABLE_TABBED) != 0)
+				sep = "\t";
+			else if ((format & FORMAT_TABLE_CSV) != 0)
+				sep = ",";
+			else // if ((format & FORMAT_TABLE_PRETTY) != 0)
+				sep = " ";
+			if (showHeader) {
+				for (int i = 0; i < headers.size(); i++) {
+					if ((format & FORMAT_TABLE_TABBED) != 0)
+						formats.add("%s");
+					else if ((format & FORMAT_TABLE_CSV) != 0)
+						formats.add("%s");
+					else { // if ((format & FORMAT_TABLE_PRETTY) != 0)
+						int w = headers.get(i).length();
+						w = Math.max(w, valueFormat(curOutputs.get(i), format).length());
+						formats.add("%" + w + "s");
+					}
+				}
+				for (int i = 0; i < headers.size(); i++) {
+					if (i != 0)
+						System.out.print(sep); // OK
+					System.out.printf(formats.get(i), headers.get(i)); // OK
+				}
+				System.out.println(); // OK
+			}
 			for (int i = 0; i < curOutputs.size(); i++) {
 				if (i != 0)
-					System.out.print("\t"); // OK
-				System.out.print(curOutputs.get(i)); // OK
+					System.out.print(sep); // OK
+				System.out.printf(formats.get(i), valueFormat(curOutputs.get(i), format)); // OK
 			}
 			System.out.println(); // OK
+		}
+		return shouldPrint;
+	}
+
+	private static String valueFormat(Value v, int format) {
+		if ((format & FORMAT_TABLE_BIN) != 0) {
+			// everything in binary
+			return v.toString();
+		} else if ((format & FORMAT_TABLE_HEX) != 0) {
+			// everything thing in hex, no prefixes
+			return v.toHexString();
+		} else {
+			// under 6 bits or less in binary, no spaces
+			// otherwise in hex, with prefix
+			if (v.getWidth() <= 6)
+				return v.toBinaryString();
+			else
+				return "0x" + v.toHexString();
 		}
 	}
 
@@ -343,12 +387,13 @@ public class TtyInterface {
 				System.exit(-1);
 			}
 		}
-		int simCode = runSimulation(circState, outputPins, haltPin, format);
+		int simCode = runSimulation(circState, outputPins, pinNames, haltPin, format);
 		return simCode;
 	}
 
 	private static int runSimulation(CircuitState circState,
-			ArrayList<Instance> outputPins, Instance haltPin, int format) {
+			ArrayList<Instance> outputPins, Map<Instance, String> pinNames,
+			Instance haltPin, int format) {
 		boolean showTable = (format & FORMAT_TABLE) != 0;
 		boolean showSpeed = (format & FORMAT_SPEED) != 0;
 		boolean showTty = (format & FORMAT_TTY) != 0;
@@ -376,7 +421,15 @@ public class TtyInterface {
 		long start = System.currentTimeMillis();
 		boolean halted = false;
 		ArrayList<Value> prevOutputs = null;
+		ArrayList<String> headers = new ArrayList<String>();
+		ArrayList<String> formats = new ArrayList<String>();
 		Propagator prop = circState.getPropagator();
+		boolean needTableHeader = true;
+		for (Instance pin : outputPins) {
+			if (pin == haltPin)
+				continue;
+			headers.add(pinNames.get(pin));
+		}
 		while (true) {
 			ArrayList<Value> curOutputs = new ArrayList<Value>();
 			for (Instance pin : outputPins) {
@@ -389,7 +442,8 @@ public class TtyInterface {
 				}
 			}
 			if (showTable) {
-				displayTableRow(prevOutputs, curOutputs);
+				if (displayTableRow(needTableHeader, prevOutputs, curOutputs, headers, formats, format))
+					needTableHeader = false;
 			}
 
 			if (halted) {
@@ -445,6 +499,14 @@ public class TtyInterface {
 	public static final int FORMAT_HALT = 8;
 
 	public static final int FORMAT_STATISTICS = 16;
+
+	public static final int FORMAT_TABLE_TABBED = 32;
+
+	public static final int FORMAT_TABLE_CSV = 64;
+
+	public static final int FORMAT_TABLE_BIN = 128;
+
+	public static final int FORMAT_TABLE_HEX = 256;
 
 	private static boolean lastIsNewline = true;
 }

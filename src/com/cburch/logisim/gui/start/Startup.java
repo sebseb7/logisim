@@ -145,6 +145,14 @@ public class Startup {
 							ret.ttyFormat |= TtyInterface.FORMAT_HALT;
 						} else if (fmt.equals("stats")) {
 							ret.ttyFormat |= TtyInterface.FORMAT_STATISTICS;
+						} else if (fmt.equals("binary")) {
+							ret.ttyFormat |= TtyInterface.FORMAT_TABLE_BIN;
+						} else if (fmt.equals("hex")) {
+							ret.ttyFormat |= TtyInterface.FORMAT_TABLE_HEX;
+						} else if (fmt.equals("csv")) {
+							ret.ttyFormat |= TtyInterface.FORMAT_TABLE_CSV;
+						} else if (fmt.equals("tabs")) {
+							ret.ttyFormat |= TtyInterface.FORMAT_TABLE_TABBED;
 						} else {
 							logger.error("{}", Strings.get("ttyFormatError"));
 						}
