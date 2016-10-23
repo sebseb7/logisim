@@ -130,7 +130,9 @@ public class ExportImage {
 		if (!printerView) {
 			bds = circuit.getBounds(canvas.getGraphics()).expand(BORDER_SIZE);
 		} else {
-			bds = circuit.getBounds().expand(BORDER_SIZE);
+			BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+			Graphics base = img.getGraphics();
+			bds = circuit.getBounds(base).expand(BORDER_SIZE);
 		}
 		int width = (int) Math.round(bds.getWidth() * scale);
 		int height = (int) Math.round(bds.getHeight() * scale);
