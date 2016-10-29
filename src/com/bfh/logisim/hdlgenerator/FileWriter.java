@@ -88,7 +88,7 @@ public class FileWriter {
 	}
 
 	public static File GetFilePointer(String TargetDirectory,
-			String ComponentName, boolean IsEntity, FPGAReport MyReporter,
+			String ComponentName, boolean IsMif, boolean IsEntity, FPGAReport MyReporter,
 			String HDLType) {
 		try {
 			File OutDir = new File(TargetDirectory);
@@ -102,16 +102,18 @@ public class FileWriter {
 				FileName += File.separator;
 			}
 			FileName += ComponentName;
-			if (IsEntity) {
+			if (IsEntity && !IsMif) {
 				if (HDLType.equals(Settings.VHDL)) {
 					FileName += EntityExtension;
 				}
-			} else {
+			} else if (!IsMif) {
 				if (HDLType.equals(Settings.VHDL)) {
 					FileName += ArchitectureExtension;
 				}
 			}
-			if (HDLType.equals(Settings.VHDL)) {
+			if (IsMif) {
+				FileName += ".mif";
+			} else if (HDLType.equals(Settings.VHDL)) {
 				FileName += ".vhd";
 			} else {
 				FileName += ".v";

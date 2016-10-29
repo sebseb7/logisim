@@ -111,10 +111,27 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 							ComponentName, Reporter, HDLType)) {
 						return false;
 					}
+					Map<String, ArrayList<String>> memInitData =
+						Worker.GetMemInitData(ThisComponent.GetComponent().getAttributeSet());
+					Map<String, File> memInitFiles = null;
+					if (memInitData != null) {
+						memInitFiles = new HashMap<String, File>();
+						for (String Mem : memInitData.keySet()) {
+							ArrayList<String> initData = memInitData.get(Mem);
+							File mif = WriteMemInitFile(
+									WorkPath + Worker.GetRelativeDirectory(HDLType),
+									initData,
+									ComponentName, Mem, Reporter, HDLType);
+							if (mif == null)
+								return false;
+							memInitFiles.put(Mem, mif);
+						}
+					}
 					if (!WriteArchitecture(
 							WorkPath + Worker.GetRelativeDirectory(HDLType),
 							Worker.GetArchitecture(MyNetList, ThisComponent
 									.GetComponent().getAttributeSet(),
+									memInitFiles,
 									ComponentName, Reporter, HDLType),
 							ComponentName, Reporter, HDLType)) {
 						return false;
@@ -169,7 +186,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			} else {
 				if (!WriteArchitecture(
 						WorkPath + GetRelativeDirectory(HDLType),
-						GetArchitecture(MyNetList, null, ComponentName,
+						GetArchitecture(MyNetList, null, null, ComponentName,
 								Reporter, HDLType), ComponentName, Reporter,
 						HDLType)) {
 					return false;

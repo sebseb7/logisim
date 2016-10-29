@@ -32,6 +32,8 @@ package com.cburch.logisim.std.memory;
 import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.Map;
+import java.io.File;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
@@ -57,7 +59,7 @@ public class ShiftRegisterHDLGeneratorFactory extends
 
 	@Override
 	public ArrayList<String> GetArchitecture(Netlist TheNetlist,
-			AttributeSet attrs, String ComponentName, FPGAReport Reporter,
+			AttributeSet attrs, Map<String, File> MemInitFiles, String ComponentName, FPGAReport Reporter,
 			String HDLType) {
 		ArrayList<String> Contents = new ArrayList<String>();
 		Contents.addAll(FileWriter.getGenerateRemark(ComponentName, HDLType,
@@ -149,7 +151,7 @@ public class ShiftRegisterHDLGeneratorFactory extends
 			Contents.add("");
 			Contents.add("");
 		}
-		Contents.addAll(super.GetArchitecture(TheNetlist, attrs, ComponentName,
+		Contents.addAll(super.GetArchitecture(TheNetlist, attrs, null, ComponentName,
 				Reporter, HDLType));
 		return Contents;
 	}

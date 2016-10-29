@@ -32,6 +32,8 @@ package com.bfh.logisim.hdlgenerator;
 
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.Map;
+import java.io.File;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
@@ -64,7 +66,8 @@ public interface HDLGeneratorFactory {
 			FPGAReport Reporter, String HDLType);
 
 	public ArrayList<String> GetArchitecture(Netlist TheNetlist,
-			AttributeSet attrs, String ComponentName, FPGAReport Reporter,
+			AttributeSet attrs, Map<String, File> MemInitFiles,
+			String ComponentName, FPGAReport Reporter,
 			String HDLType);
 
 	public ArrayList<String> GetComponentInstantiation(Netlist TheNetlist,
@@ -78,6 +81,8 @@ public interface HDLGeneratorFactory {
 			String CircuitName, String HDLType);
 
 	public String getComponentStringIdentifier();
+	
+	public Map<String, ArrayList<String>> GetMemInitData(AttributeSet attrs);
 
 	public ArrayList<String> GetEntity(Netlist TheNetlist, AttributeSet attrs,
 			String ComponentName, FPGAReport Reporter, String HDLType);

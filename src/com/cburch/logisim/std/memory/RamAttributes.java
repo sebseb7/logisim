@@ -57,6 +57,13 @@ public class RamAttributes extends AbstractAttributeSet {
 	}
 
 	/* here the rest is defined */
+	static final AttributeOption VOLATILE = new AttributeOption("volatile",
+			Strings.getter("ramTypeVolatile"));
+	static final AttributeOption NONVOLATILE = new AttributeOption("nonvolatile",
+			Strings.getter("ramTypeNonVolatile"));
+	static final Attribute<AttributeOption> ATTR_TYPE = Attributes.forOption(
+			"type", Strings.getter("ramTypeAttr"), new AttributeOption[] {
+					VOLATILE, NONVOLATILE });
 	static final AttributeOption BUS_BIDIR = new AttributeOption("bidir",
 			Strings.getter("ramBidirDataBus"));
 	static final AttributeOption BUS_SEP = new AttributeOption("bibus",
@@ -75,7 +82,7 @@ public class RamAttributes extends AbstractAttributeSet {
 							BUS_WITHOUT_BYTEENABLES });
 	private static List<Attribute<?>> ATTRIBUTES = Arrays
 			.asList(new Attribute<?>[] { Mem.ADDR_ATTR, Mem.DATA_ATTR,
-					StdAttr.TRIGGER, ATTR_DBUS, ATTR_ByteEnables,
+					StdAttr.TRIGGER, ATTR_TYPE, ATTR_DBUS, ATTR_ByteEnables,
 			 		Ram.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,
 					StdAttr.APPEARANCE});
 
@@ -85,6 +92,7 @@ public class RamAttributes extends AbstractAttributeSet {
 	private MemContents contents;
 	private String Label = "";
 	private AttributeOption Trigger = StdAttr.TRIG_RISING;
+	private AttributeOption Type = VOLATILE; // NONVOLATILE;
 	private AttributeOption BusStyle = BUS_SEP; // BUS_BIDIR;
 	private Font LabelFont = StdAttr.DEFAULT_LABEL_FONT;
 	private AttributeOption Appearance = StdAttr.APPEAR_CLASSIC;
@@ -132,6 +140,9 @@ public class RamAttributes extends AbstractAttributeSet {
 		if (attr == StdAttr.TRIGGER) {
 			return (V) Trigger;
 		}
+		if (attr == ATTR_TYPE) {
+			return (V) Type;
+		}
 		if (attr == ATTR_DBUS) {
 			return (V) BusStyle;
 		}
@@ -157,7 +168,7 @@ public class RamAttributes extends AbstractAttributeSet {
 
 	@Override
 	public boolean isToSave(Attribute<?> attr) {
-		return !attr.equals(Ram.CONTENTS_ATTR);
+		return !(Type.equals(VOLATILE) && attr.equals(Ram.CONTENTS_ATTR));
 	}
 
 	@Override
@@ -212,6 +223,13 @@ public class RamAttributes extends AbstractAttributeSet {
 				return;
 			}
 			Trigger = newTrigger;
+			fireAttributeValueChanged(attr, value);
+		} else if (attr == ATTR_TYPE) {
+			AttributeOption NewType = (AttributeOption) value;
+			if (Type.equals(NewType)) {
+				return;
+			}
+			Type = NewType;
 			fireAttributeValueChanged(attr, value);
 		} else if (attr == ATTR_DBUS) {
 			AttributeOption NewStyle = (AttributeOption) value;

@@ -33,6 +33,8 @@ package com.cburch.logisim.std.hdl;
 import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.Map;
+import java.io.File;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
@@ -48,7 +50,7 @@ public class VhdlHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
 	@Override
 	public ArrayList<String> GetArchitecture(Netlist TheNetlist,
-			AttributeSet attrs, String ComponentName, FPGAReport Reporter,
+			AttributeSet attrs, Map<String, File> MemInitFiles, String ComponentName, FPGAReport Reporter,
 			String HDLType) {
 		ArrayList<String> contents = new ArrayList<String>();
 		contents.addAll(FileWriter.getGenerateRemark(ComponentName, HDLType,

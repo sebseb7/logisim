@@ -82,6 +82,26 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		return result.toString();
 	}
 
+	public static File WriteMemInitFile(String TargetDirectory,
+			ArrayList<String> Contents, String ComponentName,
+			String MemName,
+			FPGAReport Reporter, String HDLType) {
+		if (Contents.isEmpty()) {
+			Reporter.AddFatalError("INTERNAL ERROR: Empty memory initialization file for memory '"
+					+ ComponentName + ":"+MemName+"' received!");
+			return null;
+		}
+		File OutFile = FileWriter.GetFilePointer(TargetDirectory,
+				ComponentName+"_"+MemName, true, false, Reporter, HDLType);
+		if (OutFile == null) {
+			return null;
+		}
+		if (!FileWriter.WriteContents(OutFile, Contents, Reporter)) {
+			return null;
+		}
+		return OutFile;
+	}
+
 	public static boolean WriteArchitecture(String TargetDirectory,
 			ArrayList<String> Contents, String ComponentName,
 			FPGAReport Reporter, String HDLType) {
@@ -91,7 +111,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 			return false;
 		}
 		File OutFile = FileWriter.GetFilePointer(TargetDirectory,
-				ComponentName, false, Reporter, HDLType);
+				ComponentName, false, false, Reporter, HDLType);
 		if (OutFile == null) {
 			return false;
 		}
@@ -109,7 +129,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 			return false;
 		}
 		File OutFile = FileWriter.GetFilePointer(TargetDirectory,
-				ComponentName, true, Reporter, HDLType);
+				ComponentName, false, true, Reporter, HDLType);
 		if (OutFile == null) {
 			return false;
 		}
@@ -126,7 +146,8 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 	}
 
 	public ArrayList<String> GetArchitecture(Netlist TheNetlist,
-			AttributeSet attrs, String ComponentName, FPGAReport Reporter,
+			AttributeSet attrs, Map<String, File> memInitFiles,
+			String ComponentName, FPGAReport Reporter,
 			String HDLType) {
 		ArrayList<String> Contents = new ArrayList<String>();
 		Map<String, Integer> InputsList = GetInputList(TheNetlist, attrs); // For
@@ -231,6 +252,9 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 				Contents.add("   SIGNAL " + OneLine.toString());
 				OneLine.setLength(0);
 			}
+			if (memInitFiles != null && memInitFiles.size() > 0) {
+				Contents.add("    ATTRIBUTE ram_init_file : string;");
+			}
 			for (String Mem : MemList.keySet()) {
 				OneLine.append(Mem);
 				while (OneLine.length() < SallignmentSize) {
@@ -239,8 +263,13 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 				OneLine.append(": ");
 				OneLine.append(GetType(MemList.get(Mem)));
 				OneLine.append(";");
-				Contents.add("   SIGNAL " + OneLine.toString());
+				Contents.add("    SIGNAL " + OneLine.toString());
 				OneLine.setLength(0);
+				if (memInitFiles != null) {
+					String mif = memInitFiles.get(Mem).getPath();
+					Contents.add("    ATTRIBUTE ram_init_file of " + Mem + " :");
+					Contents.add("      SIGNAL is \"" + mif + "\";");
+				}
 			}
 			Contents.add("");
 			Contents.add("BEGIN");
@@ -880,6 +909,10 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		 */
 		SortedMap<String, Integer> Regs = new TreeMap<String, Integer>();
 		return Regs;
+	}
+
+	public Map<String, ArrayList<String>> GetMemInitData(AttributeSet attrs) {
+		return null;
 	}
 
 	public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,

@@ -32,6 +32,8 @@ package com.cburch.logisim.std.io;
 import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.Map;
+import java.io.File;
 
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.designrulecheck.Netlist;
@@ -72,7 +74,8 @@ public class ReptarLocalBusHDLGeneratorFactory extends
 	// }
 	@Override
 	public ArrayList<String> GetArchitecture(Netlist TheNetlist,
-			AttributeSet attrs, String ComponentName, FPGAReport Reporter,
+			AttributeSet attrs, Map<String, File> MemInitFiles,
+			String ComponentName, FPGAReport Reporter,
 			String HDLType) {
 		ArrayList<String> Contents = new ArrayList<String>();
 		if (HDLType.equals(Settings.VHDL)) {

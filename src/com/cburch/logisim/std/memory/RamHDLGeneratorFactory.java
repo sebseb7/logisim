@@ -30,10 +30,12 @@
 package com.cburch.logisim.std.memory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.Map;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
@@ -73,6 +75,54 @@ public class RamHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			Inputs.put("ByteEnable" + Integer.toString(i), 1);
 		}
 		return Inputs;
+	}
+	
+	@Override
+	public Map<String, ArrayList<String>> GetMemInitData(AttributeSet attrs) {
+		if (!attrs.getValue(RamAttributes.ATTR_TYPE).equals(RamAttributes.NONVOLATILE)) {
+			return null;
+		}
+		Map<String, ArrayList<String>> m = new HashMap<String, ArrayList<String>>();
+		int NrOfBits = attrs.getValue(Mem.DATA_ATTR).getWidth();
+		int NrOfByteEnables = Ram.GetNrOfByteEnables(attrs);
+		if (NrOfByteEnables > 0) {
+			boolean truncated = (NrOfBits % 8) != 0;
+			for (int i = 0; i < NrOfByteEnables; i++) {
+				int start = i * 8;
+				int end = (i == NrOfByteEnables - 1 && truncated) ? NrOfBits - 1 : (i + 1) * 8 - 1;
+				ArrayList<String> contents = MemInitData(attrs, end, start);
+				if (i == NrOfByteEnables - 1 && truncated)
+					m.put("s_trunc_mem_contents", contents);
+				else
+					m.put("s_byte_mem_" + i + "_contents", contents);
+			}
+		} else {
+			ArrayList<String> contents = MemInitData(attrs, NrOfBits - 1, 0);
+			m.put("s_mem_contents", contents);
+		}
+		return m;
+	}
+
+	private ArrayList<String> MemInitData(AttributeSet attrs, int end, int start) {
+		MemContents c = attrs.getValue(Ram.CONTENTS_ATTR);
+		ArrayList<String> out = new ArrayList<String>();
+		out.add("-- Memory initialization file for bits " + end + " downto " + start);
+		int depth = (int)(c.getLastOffset() - c.getFirstOffset() + 1);
+		int width = (end - start) + 1;
+		out.add("DEPTH = " + depth + ";");
+		out.add("WIDTH = " + width + ";");
+		out.add("ADDRESS_RADIX = HEX;");
+		out.add("DATA_RADIX = HEX;");
+		out.add("CONTENT");
+		out.add("BEGIN");
+		for (int a = 0; a < depth; a++) {
+			int d = (c.get(a) >>> start);
+			if (width != 32)
+				d &= ((1 << width) - 1);
+			out.add(String.format("%8x : %8x;", a, d));
+		}
+		out.add("END;");
+		return out;
 	}
 
 	@Override
