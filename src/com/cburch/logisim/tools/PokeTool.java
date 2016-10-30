@@ -295,4 +295,8 @@ public class PokeTool extends Tool {
 			circ.addCircuitListener(listener);
 		}
 	}
+
+	public boolean isScrollable() {
+		return pokeCaret != null && !(pokeCaret instanceof WireCaret);
+	}
 }

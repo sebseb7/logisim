@@ -42,8 +42,8 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
-// import java.awt.event.MouseWheelEvent;
-// import java.awt.event.MouseWheelListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
@@ -90,6 +90,7 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.tools.AddTool;
+import com.cburch.logisim.tools.PokeTool;
 import com.cburch.logisim.tools.EditTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
@@ -103,7 +104,7 @@ public class Canvas extends JPanel implements LocaleListener,
 		CanvasPaneContents {
 
 	private class MyListener implements MouseInputListener, KeyListener,
-			PopupMenuListener, PropertyChangeListener /*, MouseWheelListener */ {
+			PopupMenuListener, PropertyChangeListener, MouseWheelListener {
 
 		boolean menu_on = false;
 
@@ -230,9 +231,9 @@ public class Canvas extends JPanel implements LocaleListener,
 			completeAction();
 		}
 
-		/*
 		@Override
 		public void mouseWheelMoved(MouseWheelEvent mwe) {
+			Tool tool = proj.getTool();
 			if (mwe.isControlDown()) {
 				ZoomModel zoomModel = proj.getFrame().getZoomModel();
 				double zoom = zoomModel.getZoomFactor();
@@ -243,17 +244,23 @@ public class Canvas extends JPanel implements LocaleListener,
 					zoom -= 0.1;
 					zoomModel.setZoomFactor(zoom <= 0.2 ? 0.2 : zoom);
 				}
-			} else if (mwe.isShiftDown()) {
-				canvasPane.getHorizontalScrollBar().setValue(
-						scrollValue(canvasPane.getHorizontalScrollBar(),
-								mwe.getWheelRotation()));
+			} else if (tool != null && tool instanceof PokeTool && ((PokeTool)tool).isScrollable()) {
+				int id = (mwe.getWheelRotation() < 0) ? KeyEvent.VK_UP : KeyEvent.VK_DOWN;
+				KeyEvent e = new KeyEvent(mwe.getComponent(), KeyEvent.KEY_PRESSED,
+						mwe.getWhen(), 0, id, '\0');
+				tool.keyPressed(Canvas.this, e);
 			} else {
-				canvasPane.getVerticalScrollBar().setValue(
-						scrollValue(canvasPane.getVerticalScrollBar(),
-								mwe.getWheelRotation()));
+				if (mwe.isShiftDown()) {
+					canvasPane.getHorizontalScrollBar().setValue(
+							scrollValue(canvasPane.getHorizontalScrollBar(),
+									mwe.getWheelRotation()));
+				} else {
+					canvasPane.getVerticalScrollBar().setValue(
+							scrollValue(canvasPane.getVerticalScrollBar(),
+									mwe.getWheelRotation()));
+				}
 			}
 		}
-		*/
 
 		//
 		// PopupMenuListener mtehods
@@ -283,7 +290,6 @@ public class Canvas extends JPanel implements LocaleListener,
 			}
 		}
 
-		/*
 		private int scrollValue(JScrollBar bar, int val) {
 			if (val > 0) {
 				if (bar.getValue() < bar.getMaximum() + val * 2
@@ -298,7 +304,6 @@ public class Canvas extends JPanel implements LocaleListener,
 			}
 			return 0;
 		}
-		*/
 	}
 
 	private class MyProjectListener implements ProjectListener,
@@ -736,7 +741,7 @@ public class Canvas extends JPanel implements LocaleListener,
 		addMouseMotionListener(myListener);
                 setFocusTraversalKeysEnabled(false);
 		addKeyListener(myListener);
-		// addMouseWheelListener(myListener);
+		addMouseWheelListener(myListener);
 
 		// YSY
 		// try {
