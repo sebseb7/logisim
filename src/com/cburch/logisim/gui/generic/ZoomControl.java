@@ -36,13 +36,26 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
-import javax.swing.AbstractSpinnerModel;
+import javax.swing.DefaultBoundedRangeModel;
+import javax.swing.SwingConstants;
+import javax.swing.BorderFactory;
+import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.swing.JSpinner;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JSlider;
+
+import java.awt.event.MouseAdapter;
+import java.awt.Insets;
+
+import com.cburch.logisim.util.Icons;
 
 public class ZoomControl extends JPanel {
 	private class GridIcon extends JComponent implements MouseListener,
@@ -52,7 +65,7 @@ public class ZoomControl extends JPanel {
 
 		public GridIcon() {
 			addMouseListener(this);
-			setPreferredSize(new Dimension(15, 15));
+			setPreferredSize(new Dimension(20, 40));
 			setToolTipText("");
 			setFocusable(true);
 		}
@@ -82,15 +95,25 @@ public class ZoomControl extends JPanel {
 		protected void paintComponent(Graphics g) {
 			int width = getWidth();
 			int height = getHeight();
-			g.setColor(state ? Color.black : getBackground().darker());
-			int dim = (Math.min(width, height) - 4) / 3 * 3 + 1;
-			int xoff = (width - dim) / 2;
-			int yoff = (height - dim) / 2;
-			for (int x = 0; x < dim; x += 3) {
-				for (int y = 0; y < dim; y += 3) {
+			g.setColor(state ? Color.BLACK : Color.GRAY);
+			int xdim = (Math.min(width, 18) - 4) / 3 * 3 + 1;
+			int ydim = (Math.min(height, 32) - 4) / 3 * 3 + 1;
+			int xoff = (width - xdim) / 2;
+			int yoff = (height - ydim) / 2;
+			for (int x = 0; x < xdim; x += 3) {
+				for (int y = 0; y < ydim; y += 3) {
 					g.drawLine(x + xoff, y + yoff, x + xoff, y + yoff);
 				}
 			}
+			g.setColor(Color.BLACK);
+			g.drawLine(xoff, yoff, xoff+3, yoff);
+			g.drawLine(xoff, yoff, xoff, yoff+3);
+			g.drawLine(xoff, yoff+ydim, xoff, yoff+ydim-3);
+			g.drawLine(xoff, yoff+ydim, xoff+3, yoff+ydim);
+			g.drawLine(xoff+xdim, yoff, xoff+xdim-3, yoff);
+			g.drawLine(xoff+xdim, yoff, xoff+xdim, yoff+3);
+			g.drawLine(xoff+xdim, yoff+ydim, xoff+xdim-3, yoff+ydim);
+			g.drawLine(xoff+xdim, yoff+ydim, xoff+xdim, yoff+ydim-3);
 		}
 
 		public void propertyChange(PropertyChangeEvent evt) {
@@ -106,88 +129,144 @@ public class ZoomControl extends JPanel {
 		}
 	}
 
-	private class SpinnerModel extends AbstractSpinnerModel implements
-			PropertyChangeListener {
+	private class SliderModel extends DefaultBoundedRangeModel implements PropertyChangeListener {
 		private static final long serialVersionUID = 1L;
 
-		public Object getNextValue() {
-			double zoom = model.getZoomFactor();
-			double[] choices = model.getZoomOptions();
-			double factor = zoom * 100.0 * 1.001;
-			for (int i = 0; i < choices.length; i++) {
-				if (choices[i] > factor)
-					return toString(choices[i]);
-			}
-			return null;
-		}
-
-		public Object getPreviousValue() {
-			double zoom = model.getZoomFactor();
-			double[] choices = model.getZoomOptions();
-			double factor = zoom * 100.0 * 0.999;
-			for (int i = choices.length - 1; i >= 0; i--) {
-				if (choices[i] < factor)
-					return toString(choices[i]);
-			}
-			return null;
-		}
-
-		public Object getValue() {
-			double zoom = model.getZoomFactor();
-			return toString(zoom * 100.0);
+		public SliderModel(ZoomModel model) {
+			super(nearestZoomOption(), 0, 0, model.getZoomOptions().length-1);
 		}
 
 		public void propertyChange(PropertyChangeEvent evt) {
 			fireStateChanged();
 		}
 
-		public void setValue(Object value) {
-			if (value instanceof String) {
-				String s = (String) value;
-				if (s.endsWith("%"))
-					s = s.substring(0, s.length() - 1);
-				s = s.trim();
-				try {
-					double zoom = Double.parseDouble(s) / 100.0;
-					model.setZoomFactor(zoom);
-				} catch (NumberFormatException e) {
-				}
-			}
+		public void setValue(int i) {
+			zoomTo(i);
 		}
 
-		private String toString(double factor) {
-			if (factor > 10) {
-				return (int) (factor + 0.5) + "%";
-			} else if (factor > 0.1) {
-				return (int) (factor * 100 + 0.5) / 100.0 + "%";
-			} else {
-				return factor + "%";
-			}
+		public int getValue() {
+			return nearestZoomOption();
 		}
 	}
 
 	private static final long serialVersionUID = 1L;
 
 	private ZoomModel model;
-	private JSpinner spinner;
-	private SpinnerModel spinnerModel;
+	private ZoomLabel label;
+	private SliderModel sliderModel;
+	private JSlider slider;
 	private GridIcon grid;
+
+	private int nearestZoomOption() {
+		double[] choices = model.getZoomOptions();
+		double factor = model.getZoomFactor() * 100.0;
+		int closest = 0;
+		for (int i = 1; i < choices.length; i++) {
+			if (Math.abs(choices[i] - factor) < Math.abs(choices[closest] - factor))
+				closest = i;
+		}
+		return closest;
+	}
+
+	private class ZoomButton extends JButton {
+		boolean out;
+		public ZoomButton(String icon, boolean left) {
+			super(Icons.getIcon(icon));
+			out = left;
+			setOpaque(false);
+			setBackground(new java.awt.Color(0, 0, 0, 0));
+			setBorderPainted(false);
+			if (left)
+				setMargin(new Insets(2, 1, 2, 0));
+			else
+				setMargin(new Insets(2, 0, 2, 1));
+			addMouseListener(new ZoomMouseListener());
+			addActionListener(new ZoomActionListener());
+			setFocusable(false);
+		}
+		protected class ZoomMouseListener extends MouseAdapter {
+			public void mouseEntered(MouseEvent ev) {
+				setBorderPainted(true);
+			}
+			public void mouseExited(MouseEvent ev) { setBorderPainted(false); }
+		}
+		protected class ZoomActionListener implements ActionListener {
+			public void actionPerformed(ActionEvent e) {
+				if (out) zoomOut();
+				else zoomIn();
+			}
+		}
+	}
 
 	public ZoomControl(ZoomModel model) {
 		super(new BorderLayout());
 		this.model = model;
 
-		spinnerModel = new SpinnerModel();
-		spinner = new JSpinner();
-		spinner.setModel(spinnerModel);
-		this.add(spinner, BorderLayout.CENTER);
+		label = new ZoomLabel();
+		sliderModel = new SliderModel(model);
+
+		JButton plus = new ZoomButton("zoomin.gif", false);
+		JButton minus = new ZoomButton("zoomout.gif", true);
+		slider = new JSlider(sliderModel);
+
+		JPanel zoom = new JPanel(new BorderLayout());
+		zoom.add(minus, BorderLayout.WEST);
+		zoom.add(label, BorderLayout.CENTER);
+		zoom.add(plus, BorderLayout.EAST);
+		zoom.add(slider, BorderLayout.NORTH);
+		zoom.add(new JLabel("Zoom", SwingConstants.CENTER), BorderLayout.SOUTH);
+
+		this.add(zoom, BorderLayout.CENTER);
 
 		grid = new GridIcon();
 		this.add(grid, BorderLayout.EAST);
 		grid.update();
 
 		model.addPropertyChangeListener(ZoomModel.SHOW_GRID, grid);
-		model.addPropertyChangeListener(ZoomModel.ZOOM, spinnerModel);
+		model.addPropertyChangeListener(ZoomModel.ZOOM, sliderModel);
+		model.addPropertyChangeListener(ZoomModel.ZOOM, label);
+	}
+
+	public String zoomString() {
+		double factor = model.getZoomFactor();
+		return String.format("%.0f%%", factor * 100.0);
+	}
+
+
+	public void zoomIn() {
+		double zoom = model.getZoomFactor();
+		double[] choices = model.getZoomOptions();
+		double factor = zoom * 100.0 * 1.001;
+		for (int i = 0; i < choices.length; i++) {
+			if (choices[i] > factor) {
+				model.setZoomFactor(choices[i] / 100.0);
+				return;
+			}
+		}
+	}
+
+	public void zoomOut() {
+		double zoom = model.getZoomFactor();
+		double[] choices = model.getZoomOptions();
+		double factor = zoom * 100.0 * 0.999;
+		for (int i = choices.length - 1; i >= 0; i--) {
+			if (choices[i] < factor) {
+				model.setZoomFactor(choices[i] / 100.0);
+				return;
+			}
+		}
+	}
+
+	public void zoomTo(int i) {
+		double[] choices = model.getZoomOptions();
+		i = Math.max(Math.min(i, choices.length - 1), 0);
+		model.setZoomFactor(choices[i] / 100.0);
+	}
+
+	private class ZoomLabel extends JLabel implements PropertyChangeListener {
+		public ZoomLabel() { super(zoomString(), SwingConstants.CENTER); }
+		public void propertyChange(PropertyChangeEvent evt) { update(); }
+		public void update() { setText(zoomString()); }
 	}
 
 	public void setZoomModel(ZoomModel value) {
@@ -195,16 +274,18 @@ public class ZoomControl extends JPanel {
 		if (oldModel != value) {
 			if (oldModel != null) {
 				oldModel.removePropertyChangeListener(ZoomModel.SHOW_GRID, grid);
-				oldModel.removePropertyChangeListener(ZoomModel.ZOOM,
-						spinnerModel);
+				oldModel.removePropertyChangeListener(ZoomModel.ZOOM, sliderModel);
+				oldModel.removePropertyChangeListener(ZoomModel.ZOOM, label);
 			}
 			model = value;
-			spinnerModel = new SpinnerModel();
-			spinner.setModel(spinnerModel);
+			sliderModel = new SliderModel(model);
+			slider.setModel(sliderModel);
 			grid.update();
+			label.update();
 			if (value != null) {
 				value.addPropertyChangeListener(ZoomModel.SHOW_GRID, grid);
-				value.addPropertyChangeListener(ZoomModel.ZOOM, spinnerModel);
+				value.addPropertyChangeListener(ZoomModel.ZOOM, sliderModel);
+				value.addPropertyChangeListener(ZoomModel.ZOOM, label);
 			}
 		}
 	}

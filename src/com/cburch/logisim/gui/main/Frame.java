@@ -327,8 +327,7 @@ public class Frame extends LFrame implements LocaleListener {
 	public static final String VIEW_TOOLBOX = "toolbox";
 	public static final String VIEW_SIMULATION = "simulation";
 	public static final String VIEW_TRACKER = "tracker";
-	private static final double[] ZOOM_OPTIONS = { 20, 50, 75, 100, 133, 150,
-			200, 250, 300, 400 };
+	private static final double[] ZOOM_OPTIONS = { 20, 40, 60, 80, 100, 120, 150, 200, 250, 300, 400 };
 	private Project proj;
 	private MyProjectListener myProjectListener = new MyProjectListener();
 	// GUI elements shared between views
@@ -437,7 +436,7 @@ public class Frame extends LFrame implements LocaleListener {
 
 		JPanel attrFooter = new JPanel(new BorderLayout());
 
-		attrFooter.add(zoom, BorderLayout.LINE_END);
+		attrFooter.add(zoom);
 
 		attrPanel.add(attrFooter, BorderLayout.SOUTH);
 
