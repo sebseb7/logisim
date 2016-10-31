@@ -89,17 +89,38 @@ public class CanvasPane extends JScrollPane {
 		@Override
 		public void mouseWheelMoved(MouseWheelEvent mwe) {
 			if (mwe.isControlDown()) {
+				// Attempt to maintain mouse position during zoom, using
+				// [m]ax, [v]alue, [e]xtent, and [r]elative position within it,
+				// to calculate target [n]ew[m]ax, [p]ercent and [n]ew[v]alue.
+				double mx = getHorizontalScrollBar().getMaximum();
+				int vx = getHorizontalScrollBar().getValue();
+				double ex = getHorizontalScrollBar().getVisibleAmount();
+				int rx = mwe.getX() - vx;
+				double my = getVerticalScrollBar().getMaximum();
+				int vy = getVerticalScrollBar().getValue();
+				double ey = getVerticalScrollBar().getVisibleAmount();
+				int ry = mwe.getY() - vy;
 				double zoom = zoomModel.getZoomFactor();
 				double opts[] = zoomModel.getZoomOptions();
+				double newZoom = zoom;
 				if (mwe.getWheelRotation() < 0) { // ZOOM IN
-					zoom += 0.1;
+					newZoom += 0.1;
 					double max = opts[opts.length-1] / 100.0;
-					zoomModel.setZoomFactor(zoom >= max ? max : zoom);
+					zoomModel.setZoomFactor(newZoom >= max ? max : newZoom);
 				} else { // ZOOM OUT
-					zoom -= 0.1;
+					newZoom -= 0.1;
 					double min = opts[0] / 100.0;
-					zoomModel.setZoomFactor(zoom <= min ? min : zoom);
+					zoomModel.setZoomFactor(newZoom <= min ? min : newZoom);
 				}
+				newZoom = zoomModel.getZoomFactor();
+				double nmx = mx * newZoom / zoom;
+				double px = (vx / mx) + (ex/mx - ex/nmx) * (rx / ex);
+				int nvx = (int)(nmx * px);
+				double nmy = my * newZoom / zoom;
+				double py = (vy / my) + (ey/my - ey/nmy) * (ry / ey);
+				int nvy = (int)(nmy * py);
+				getHorizontalScrollBar().setValue(nvx);
+				getVerticalScrollBar().setValue(nvy);
 			} else if (mwe.isShiftDown()) {
 				getHorizontalScrollBar().setValue(
 						scrollValue(getHorizontalScrollBar(), mwe.getWheelRotation()));
