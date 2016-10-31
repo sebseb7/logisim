@@ -293,16 +293,16 @@ abstract class AbstractFlipFlop extends InstanceFactory {
 				g.setColor(myState.curValue.getColor());
 				g.fillOval(x - 26, y + 4, 13, 13);
 				g.setColor(Color.WHITE);
-				GraphicsUtil.drawCenteredText(g,
-					myState.curValue.toDisplayString(), x - 19, y + 9);
+				GraphicsUtil.drawCenteredText(g, MemState.FONT,
+					myState.curValue.toDisplayString(), x - 20, y + 9);
 				g.setColor(Color.BLACK);
 			}
 		}
 		
-                int enable = 0;
-                if (painter.getAttributeValue(ATTR_ENABLE) == Boolean.TRUE) {
-                    enable = 1;
-                }
+		int enable = 0;
+		if (painter.getAttributeValue(ATTR_ENABLE) == Boolean.TRUE) {
+				enable = 1;
+		}
 		int n = numInputs;
 		g.setColor(Color.GRAY);
 		painter.drawPort(n + 3, "0", Direction.SOUTH);
@@ -333,16 +333,15 @@ abstract class AbstractFlipFlop extends InstanceFactory {
 				g.setColor(myState.curValue.getColor());
 				g.fillOval(x + 13, y + 23, 14, 14);
 				g.setColor(Color.WHITE);
-				GraphicsUtil.drawCenteredText(g,
-						myState.curValue.toDisplayString(), x + 21, y + 29);
-				g.setColor(Color.BLACK);
+				GraphicsUtil.drawCenteredText(g, MemState.FONT,
+						myState.curValue.toDisplayString(), x + 19, y + 29);
 			}
 		}
 
-                int enable = 0;
-                if (painter.getAttributeValue(ATTR_ENABLE) == Boolean.TRUE) {
-                    enable = 1;
-                }
+		int enable = 0;
+		if (painter.getAttributeValue(ATTR_ENABLE) == Boolean.TRUE) {
+			enable = 1;
+		}
 		int n = numInputs;
 		g.setColor(Color.GRAY);
 		painter.drawPort(n + 3, "R", Direction.SOUTH);
@@ -354,15 +353,14 @@ abstract class AbstractFlipFlop extends InstanceFactory {
 		for (int i = 0; i < n; i++) {
 			g.fillRect(x - 10, y + 9 + i * 20, 10, 3);
 			painter.drawPort(i);
-			GraphicsUtil.drawCenteredText(g, getInputName(i), x + 8, y + 10 + i
-					* 20);
+			GraphicsUtil.drawCenteredText(g, MemState.FONT, getInputName(i), x + 8, y + 10 + i * 20);
 		}
 		Object Trigger = painter.getAttributeValue(triggerAttribute);
 		if (Trigger.equals(StdAttr.TRIG_RISING)
 				|| Trigger.equals(StdAttr.TRIG_FALLING)) {
 			painter.drawClockSymbol(x, y + 50);
 		} else {
-			GraphicsUtil.drawCenteredText(g, "E", x + 8, y + 50);
+			GraphicsUtil.drawCenteredText(g, StdAttr.DEFAULT_LABEL_FONT, "E", x + 8, y + 50);
 		}
 		if (Trigger.equals(StdAttr.TRIG_RISING)
 				|| Trigger.equals(StdAttr.TRIG_HIGH)) {
@@ -375,7 +373,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
 		painter.drawPort(n);
 
 		g.fillRect(x + 40, y + 9, 10, 3);
-		GraphicsUtil.drawCenteredText(g, "Q", x + 31, y + 10);
+		GraphicsUtil.drawCenteredText(g, StdAttr.DEFAULT_LABEL_FONT, "Q", x + 31, y + 10);
 		painter.drawPort(n + 1);
 		GraphicsUtil.switchToWidth(g, 2);
 		g.drawOval(x + 40, y + 45, 10, 10);

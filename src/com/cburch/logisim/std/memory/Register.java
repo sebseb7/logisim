@@ -69,8 +69,7 @@ public class Register extends InstanceFactory {
 			g.setColor(Color.LIGHT_GRAY);
 			g.fillRect(x + xoff, y + 1, wid, 16);
 			g.setColor(Color.black);
-			GraphicsUtil.drawCenteredText(g, value, x + 30, y + 8);
-			g.setColor(Color.black);
+			GraphicsUtil.drawCenteredText(g, MemState.FONT, value, x + 30, y + 8);
 		}
 		GraphicsUtil.switchToWidth(g, 2);
 		g.drawRect(x + 10, y + 20, 40, 60);
@@ -261,12 +260,12 @@ public class Register extends InstanceFactory {
 
 		// draw contents
 		if (b == null) {
-			GraphicsUtil.drawText(g, a, bds.getX() + 15, bds.getY() + 4,
+			GraphicsUtil.drawText(g, MemState.FONT, a, bds.getX() + 15, bds.getY() + 4,
 					GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
 		} else {
-			GraphicsUtil.drawText(g, a, bds.getX() + 15, bds.getY() + 3,
+			GraphicsUtil.drawText(g, MemState.FONT, a, bds.getX() + 15, bds.getY() + 3,
 					GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
-			GraphicsUtil.drawText(g, b, bds.getX() + 15, bds.getY() + 15,
+			GraphicsUtil.drawText(g, MemState.FONT, b, bds.getX() + 15, bds.getY() + 15,
 					GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
 		}
 	}

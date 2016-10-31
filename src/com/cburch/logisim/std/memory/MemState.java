@@ -58,6 +58,9 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
 	private int yOffset = 0;
 	private int CharHeight = 0;
 
+	public static final Font FONT = new Font("monospaced", Font.PLAIN, 12);
+	public static final int MIN_CHAR_WIDTH = 7;
+
 	MemState(MemContents contents) {
 		this.contents = contents;
 		setBits(contents.getLogLength(), contents.getWidth());
@@ -84,11 +87,11 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
 		RecalculateParameters = false;
 		int addrBits = getAddrBits();
 		int dataBits = contents.getWidth();
-		Font font = g.getFont();
-		FontMetrics fm = g.getFontMetrics(font);
+		FontMetrics fm = g.getFontMetrics(FONT);
 		AddrBlockSize = ((fm.stringWidth(StringUtil.toHexString(addrBits, 0)) + 9) / 10) * 10;
-		DataSize = fm.stringWidth(StringUtil.toHexString(dataBits, 0) + " ");
-		SpaceSize = fm.stringWidth(" ");
+		DataSize = Math.max(fm.stringWidth(StringUtil.toHexString(dataBits, 0)), (dataBits+3)/4 * MIN_CHAR_WIDTH);
+		SpaceSize = Math.max(fm.stringWidth(" "), MIN_CHAR_WIDTH);
+		DataSize += SpaceSize;
 		NrDataSymbolsEachLine = (DisplayWidth - AddrBlockSize) / DataSize;
 		if (NrDataSymbolsEachLine > 3 && NrDataSymbolsEachLine % 2 != 0)
 			NrDataSymbolsEachLine--;
@@ -250,6 +253,8 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
 		int yinc = CharHeight + 2;
 		int firstx = leftX + xOffset + AddrBlockSize + (SpaceSize / 2)
 				+ ((DataSize - SpaceSize) / 2);
+		Font oldFont = g.getFont();
+		g.setFont(FONT);
 		for (int i = 0; i < NrOfLines; i++) {
 			/* Draw address */
 			GraphicsUtil.drawText(g,
@@ -282,6 +287,7 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
 			}
 			addr += NrDataSymbolsEachLine;
 		}
+		g.setFont(oldFont);
 	}
 
 	void scrollToShow(long addr) {

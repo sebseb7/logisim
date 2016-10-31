@@ -306,7 +306,7 @@ public class ShiftRegister extends InstanceFactory {
 			if (data_value != null) {
 				g.setColor(Color.DARK_GRAY);
 				String Value = StringUtil.toHexString(nr_of_bits, data_value.intValue());
-				GraphicsUtil.drawText(g, Value, real_xpos + boxXpos + 1, real_ypos
+				GraphicsUtil.drawText(g, MemState.FONT, Value, real_xpos + boxXpos + 1, real_ypos
 						+ yoff + 10, GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
 				g.setColor(Color.BLACK);
 			}
@@ -452,7 +452,7 @@ public class ShiftRegister extends InstanceFactory {
 					for (int i = 0; i < len; i++) {
 						if (data != null && data.get(len - 1 - i) != null) {
 							String s = data.get(len - 1 - i).toHexString();
-							GraphicsUtil.drawCenteredText(g, s, x, y);
+							GraphicsUtil.drawCenteredText(g, MemState.FONT, s, x, y);
 						}
 						x += 10;
 					}

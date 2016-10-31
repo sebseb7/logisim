@@ -638,8 +638,7 @@ public class Pin extends InstanceFactory {
 				if (attrs.width.getWidth() == 1) {
 					g.setColor(Color.WHITE);
 					GraphicsUtil.drawCenteredText(g,
-							state.intendedValue.toDisplayString(), x + 11,
-							y + 9);
+							state.intendedValue.toDisplayString(), x + 10, y + 9);
 				}
 			} else {
 				Probe.paintValue(painter, state.intendedValue);

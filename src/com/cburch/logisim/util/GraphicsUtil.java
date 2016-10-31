@@ -62,6 +62,10 @@ public class GraphicsUtil {
 		drawText(g, text, x, y, H_CENTER, V_CENTER);
 	}
 
+	static public void drawCenteredText(Graphics g, Font font, String text, int x, int y) {
+		drawText(g, font, text, x, y, H_CENTER, V_CENTER);
+	}
+
 	// Returns a cursor box at specified character position.
 	static public Rectangle getTextCursor(Graphics g, String text,
 			int x, int y, int pos, int halign, int valign) {

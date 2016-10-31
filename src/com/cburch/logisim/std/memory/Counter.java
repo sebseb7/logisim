@@ -263,7 +263,7 @@ public class Counter extends InstanceFactory {
 			g.setColor(Color.LIGHT_GRAY);
 			g.fillRect(xpos + xcenter - len * 4, ypos + 22, len * 8, 16);
 			g.setColor(Color.BLACK);
-			GraphicsUtil.drawText(g, Value, xpos + xcenter - len * 4 + 1,
+			GraphicsUtil.drawText(g, MemState.FONT, Value, xpos + xcenter - len * 4 + 1,
 					ypos + 30, GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
 		}
 	}
@@ -340,7 +340,7 @@ public class Counter extends InstanceFactory {
 			g.setColor(Color.LIGHT_GRAY);
 			g.fillRect(xpos + xcenter + 16, RealYpos + 4, 8, 16);
 			g.setColor(Color.BLACK);
-			GraphicsUtil.drawText(g, Integer.toString(value), xpos + xcenter
+			GraphicsUtil.drawText(g, MemState.FONT, Integer.toString(value), xpos + xcenter
 					+ 20, RealYpos + 10, GraphicsUtil.H_CENTER,
 					GraphicsUtil.V_CENTER);
 		}
@@ -425,12 +425,12 @@ public class Counter extends InstanceFactory {
 
         // draw contents
         if (b == null) {
-            GraphicsUtil.drawText(g, a, bds.getX() + 15, bds.getY() + 4,
+            GraphicsUtil.drawText(g, MemState.FONT, a, bds.getX() + 15, bds.getY() + 4,
                     GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
         } else {
-            GraphicsUtil.drawText(g, a, bds.getX() + 15, bds.getY() + 3,
+            GraphicsUtil.drawText(g, MemState.FONT, a, bds.getX() + 15, bds.getY() + 3,
                     GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
-            GraphicsUtil.drawText(g, b, bds.getX() + 15, bds.getY() + 15,
+            GraphicsUtil.drawText(g, MemState.FONT, b, bds.getX() + 15, bds.getY() + 15,
                     GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
         }
 	}
