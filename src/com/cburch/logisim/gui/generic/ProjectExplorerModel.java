@@ -68,7 +68,7 @@ class ProjectExplorerModel extends DefaultTreeModel implements ProjectListener {
 			Node<?> parent = (Node<?>) this.getParent();
 
 			if (parent == null) {
-				model.fireTreeStructureChanged(this, this.getPath(), null, null);
+				model.fireTreeNodesChanged(this, null, null, null);
 			} else {
 				int[] indices = new int[] { parent.getIndex(this) };
 				Object[] items = new Object[] { this.getUserObject() };
