@@ -41,6 +41,7 @@ import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.gui.generic.ComboBox;
 
 public class SplitterAttributes extends AbstractAttributeSet {
 	static class BitOutAttribute extends Attribute<Integer> {
@@ -61,8 +62,9 @@ public class SplitterAttributes extends AbstractAttributeSet {
 		@Override
 		public java.awt.Component getCellEditor(Integer value) {
 			int index = value.intValue();
-			javax.swing.JComboBox combo = new javax.swing.JComboBox(options);
+			ComboBox combo = new ComboBox<>(options);
 			combo.setSelectedIndex(index);
+			combo.setMaximumRowCount(options.length);
 			return combo;
 		}
 

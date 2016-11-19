@@ -85,7 +85,7 @@ public class AttrTable extends JPanel implements LocaleListener {
 		//
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			stopCellEditing();
+			// stopCellEditing();
 		}
 
 		//
