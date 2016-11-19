@@ -682,6 +682,9 @@ public class Ram extends Mem {
 		} else if ((attr == RamAttributes.ATTR_DBUS) || (attr == RamAttributes.ATTR_ByteEnables)) {
 			instance.recomputeBounds();
 			configurePorts(instance);
+		} else if ((attr == StdAttr.APPEARANCE)) {
+			instance.recomputeBounds();
+			configurePorts(instance);
 		}
 	}
 

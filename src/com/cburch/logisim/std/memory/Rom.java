@@ -342,7 +342,7 @@ public class Rom extends Mem {
 
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-		if (attr == Mem.DATA_ATTR) {
+		if (attr == Mem.DATA_ATTR || attr == StdAttr.APPEARANCE) {
 			instance.recomputeBounds();
 			configurePorts(instance);
 		}
