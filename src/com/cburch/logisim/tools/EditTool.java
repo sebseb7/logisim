@@ -340,7 +340,6 @@ public class EditTool extends Tool {
 	public void mouseEntered(Canvas canvas, Graphics g, MouseEvent e) {
 		pressX = -1;
 		current.mouseEntered(canvas, g, e);
-		canvas.requestFocusInWindow();
 	}
 
 	@Override
@@ -357,6 +356,7 @@ public class EditTool extends Tool {
 
 	@Override
 	public void mousePressed(Canvas canvas, Graphics g, MouseEvent e) {
+		canvas.requestFocusInWindow();
 		boolean wire = updateLocation(canvas, e);
 		Location oldWireLoc = wireLoc;
 		wireLoc = NULL_LOCATION;
