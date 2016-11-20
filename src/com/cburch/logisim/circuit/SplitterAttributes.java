@@ -44,7 +44,7 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.gui.generic.ComboBox;
 
 public class SplitterAttributes extends AbstractAttributeSet {
-	static class BitOutAttribute extends Attribute<Integer> {
+	public static class BitOutAttribute extends Attribute<Integer> {
 		int which;
 		BitOutOption[] options;
 
@@ -56,6 +56,23 @@ public class SplitterAttributes extends AbstractAttributeSet {
 
 		private BitOutAttribute createCopy() {
 			return new BitOutAttribute(which, options);
+		}
+
+		public boolean sameOptions(BitOutAttribute other) {
+			if (options.length != other.options.length)
+				return false;
+			for (BitOutOption a : options) {
+				boolean found = false;
+				for (BitOutOption b : other.options) {
+					if (a.toString().equals(b.toString())) {
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+					return false;
+			}
+			return true;
 		}
 
 		@SuppressWarnings({ "rawtypes", "unchecked" })
