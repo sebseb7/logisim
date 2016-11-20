@@ -31,12 +31,16 @@
 package com.cburch.logisim.util;
 
 import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Point;
 import java.awt.font.FontRenderContext;
+import java.awt.font.GlyphVector;
+import java.awt.geom.AffineTransform;
+import java.awt.Shape;
 
 import com.cburch.draw.util.TextMetrics;
 
@@ -128,6 +132,26 @@ public class GraphicsUtil {
 			int x, int y, int halign, int valign) {
 		TextMetrics tm = new TextMetrics(g, font, text);
 		return transform(x, y, tm.width, tm.height, tm.ascent, tm.descent, halign, valign);
+	}
+
+	static public void outlineText(Graphics g, String text, int x, int y, Color fg, Color bg) {
+		/* g.setColor(bg);
+		for (int dx = -1; dx <= 1; dx++)
+			for (int dy = -1; dy <= 1; dy++)
+				g.drawString(text, x+dx, y+dy);
+		g.setColor(fg);
+		g.drawString(text, x, y);
+		*/
+		Graphics2D g2 = (Graphics2D)g;
+        GlyphVector glyphVector = g2.getFont().createGlyphVector(g2.getFontRenderContext(), text);
+        Shape textShape = glyphVector.getOutline();
+		AffineTransform transform = g2.getTransform();
+		g2.translate(x, y);
+        g2.setColor(bg);
+        g2.draw(textShape);
+        g2.setColor(fg);
+        g2.fill(textShape);
+		g2.setTransform(transform);
 	}
 
 	private static Rectangle transform(int x, int y, int width, int height,

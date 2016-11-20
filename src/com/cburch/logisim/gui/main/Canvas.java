@@ -846,7 +846,6 @@ public class Canvas extends JPanel implements LocaleListener,
 		viewport.setWidthMessage(Strings.get("canvasWidthError")
 				+ (exceptions.size() == 1 ? "" : " (" + exceptions.size() + ")"));
 		for (WidthIncompatibilityData ex : exceptions) {
-			// See whether any of the points are on the canvas.
 			boolean isWithin = false;
 			for (int i = 0; i < ex.size(); i++) {
 				Location p = ex.getPoint(i);
