@@ -42,15 +42,22 @@ import com.cburch.draw.util.TextMetrics;
 
 public class GraphicsUtil {
 	static public void drawArrow(Graphics g, int x0, int y0, int x1, int y1,
-			int headLength, int headAngle) {
+			int stemWidth, int headLength, int headAngle) {
 		double offs = headAngle * Math.PI / 180.0;
 		double angle = Math.atan2(y0 - y1, x0 - x1);
-		int[] xs = { x1 + (int) (headLength * Math.cos(angle + offs)), x1,
-				x1 + (int) (headLength * Math.cos(angle - offs)) };
-		int[] ys = { y1 + (int) (headLength * Math.sin(angle + offs)), y1,
-				y1 + (int) (headLength * Math.sin(angle - offs)) };
-		g.drawLine(x0, y0, x1, y1);
-		g.drawPolyline(xs, ys, 3);
+		double xh0 = x1 + headLength * Math.cos(angle + offs);
+		double xh1 = x1 + headLength * Math.cos(angle - offs);
+		double yh0 = y1 + headLength * Math.sin(angle + offs);
+		double yh1 = y1 + headLength * Math.sin(angle - offs);
+		double xh = (xh0 + xh1) / 2;
+		double yh = (yh0 + yh1) / 2;
+		double dx = stemWidth * Math.cos(angle+Math.PI/2) / 2;
+		double dy = stemWidth * Math.sin(angle+Math.PI/2) / 2;
+		int[] xs = { (int)(x0-dx), (int)(xh-dx), (int)xh0,
+				x1, (int)xh1,  (int)(xh+dx), (int)(x0+dx) };
+		int[] ys = { (int)(y0-dy), (int)(yh-dy), (int)yh0,
+				y1, (int)yh1,  (int)(yh+dy), (int)(y0+dy) };
+		g.fillPolygon(xs, ys, 7);
 	}
 
 	static public void drawCenteredArc(Graphics g, int x, int y, int r,

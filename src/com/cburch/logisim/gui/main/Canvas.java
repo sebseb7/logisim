@@ -570,38 +570,27 @@ public class Canvas extends JPanel implements LocaleListener,
 				paintString(g, widthMessage);
 			}
 
-			GraphicsUtil.switchToWidth(g, 3);
-			if (isNorth) {
-				GraphicsUtil.drawArrow(g, sz.width / 2, 20, sz.width / 2, 2,
-						10, 30);
-			}
-			if (isSouth) {
-				GraphicsUtil.drawArrow(g, sz.width / 2, sz.height - 20,
-						sz.width / 2, sz.height - 2, 10, 30);
-			}
-			if (isEast) {
-				GraphicsUtil.drawArrow(g, sz.width - 20, sz.height / 2,
-						sz.width - 2, sz.height / 2, 10, 30);
-			}
-			if (isWest) {
-				GraphicsUtil.drawArrow(g, 20, sz.height / 2, 2, sz.height / 2,
-						10, 30);
-			}
-			if (isNortheast) {
-				GraphicsUtil.drawArrow(g, sz.width - 14, 14, sz.width - 2, 2,
-						10, 30);
-			}
-			if (isNorthwest) {
-				GraphicsUtil.drawArrow(g, 14, 14, 2, 2, 10, 30);
-			}
-			if (isSoutheast) {
-				GraphicsUtil.drawArrow(g, sz.width - 14, sz.height - 14,
-						sz.width - 2, sz.height - 2, 10, 30);
-			}
-			if (isSouthwest) {
-				GraphicsUtil.drawArrow(g, 14, sz.height - 14, 2, sz.height - 2,
-						10, 30);
-			}
+			int w = sz.width;
+			int h = sz.height;
+			int s = 25; // stem width
+			int l = 35; // head length
+			int a = 60; // head angle
+			if (isNorth)
+				GraphicsUtil.drawArrow(g, w/2, 24, w/2, 2, s, l, a);
+			if (isSouth)
+				GraphicsUtil.drawArrow(g, w/2, h - 24, w/2, h - 2, s, l, a);
+			if (isEast)
+				GraphicsUtil.drawArrow(g, w - 24, h/2, w - 2, h/2, s, l, a);
+			if (isWest)
+				GraphicsUtil.drawArrow(g, 24, h/2, 2, h/2, s, l, a);
+			if (isNortheast)
+				GraphicsUtil.drawArrow(g, w - 28, 28, w - 12, 12, s, l, a);
+			if (isNorthwest)
+				GraphicsUtil.drawArrow(g, 28, 28, 12, 12, s, l, a);
+			if (isSoutheast)
+				GraphicsUtil.drawArrow(g, w - 28, h - 28, w - 12, h - 12, s, l, a);
+			if (isSouthwest)
+				GraphicsUtil.drawArrow(g, 28, h - 28, 12, h - 12, s, l, a);
 
 			if (AppPreferences.SHOW_TICK_RATE.getBoolean()) {
 				String hz = tickCounter.getTickRate();
