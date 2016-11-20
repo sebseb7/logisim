@@ -65,7 +65,7 @@ class SplitterPainter {
 					if (old == null) {
 						ends[curEnd] = toAdd;
 					} else {
-						ends[curEnd] = old + "," + toAdd;
+						ends[curEnd] = toAdd + "," + old;
 					}
 				}
 				curEnd = bit;
