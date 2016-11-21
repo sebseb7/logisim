@@ -1,0 +1,9 @@
+{
+    "title": "Logisim-Evolution 2.13.18HC",
+        "background": "macinstallbackground.png",
+        "icon-size": 80,
+        "contents": [
+        { "x": 135, "y": 275, "type": "file", "path": "Logisim-Evolution 2.13.18 HC.app" },
+        { "x": 550, "y": 275, "type": "link", "path": "/Applications" }
+    ]
+}
