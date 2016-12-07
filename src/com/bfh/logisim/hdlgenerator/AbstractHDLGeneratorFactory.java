@@ -54,32 +54,22 @@ import com.bfh.logisim.library.DynamicClock;
 import com.cburch.logisim.data.AttributeSet;
 
 public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
+	
+	private static String IntToBin(long value, int nr_of_bits) {
+		StringBuffer out = new StringBuffer();
+		for (int i = nr_of_bits - 1; i >= 0; i--)
+			out.append(((value >>> i) & 1) == 0 ? '0' : '1');
+		return out.toString();
+	}
 
-	protected static String IntToBin(int value, int nr_of_bits, String HDLType) {
-		int mask = 1 << (nr_of_bits - 1);
-		StringBuffer result = new StringBuffer();
-		int align = (7 - nr_of_bits) >> 1;
-		while ((result.length() < align) && HDLType.equals(Settings.VHDL)) {
-			result.append(" ");
-		}
-		String VhdlQuotes = (nr_of_bits == 1) ? "'" : "\"";
-		result.append((HDLType.equals(Settings.VHDL)) ? VhdlQuotes : Integer
-				.toString(nr_of_bits) + "'b");
-		while (mask != 0) {
-			if ((value & mask) != 0) {
-				result.append("1");
-			} else {
-				result.append("0");
-			}
-			mask >>= 1;
-		}
-		if (HDLType.equals(Settings.VHDL)) {
-			result.append(VhdlQuotes);
-		}
-		while ((result.length() < 7) && HDLType.equals(Settings.VHDL)) {
-			result.append(" ");
-		}
-		return result.toString();
+	protected static String IntToBin(long value, int nr_of_bits, String HDLType) {
+		String s = IntToBin(value, nr_of_bits);
+		if (HDLType.equals(Settings.VHDL) && nr_of_bits == 1)
+			return "'" + s + "'";
+		else if (HDLType.equals(Settings.VHDL))
+			return "\"" + s + "\"";
+		else
+			return nr_of_bits + "'b" + s;
 	}
 
 	public static File WriteMemInitFile(String TargetDirectory,

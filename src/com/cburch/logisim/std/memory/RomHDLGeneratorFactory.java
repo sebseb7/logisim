@@ -42,50 +42,6 @@ import com.cburch.logisim.data.AttributeSet;
 
 public class RomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-	private String GetBin(int value, int nr_of_bits) {
-		StringBuffer Bits = new StringBuffer();
-		int mask = (1 << (nr_of_bits - 1));
-		int count;
-		if (nr_of_bits == 1)
-			Bits.append("'");
-		else
-			Bits.append("\"");
-		for (count = 0; count < nr_of_bits; count++) {
-			if ((value & mask) != 0)
-				Bits.append("1");
-			else
-				Bits.append("0");
-			mask >>= 1;
-		}
-		if (nr_of_bits == 1)
-			Bits.append("'");
-		else
-			Bits.append("\"");
-		return Bits.toString();
-	}
-
-	private String GetBin(long value, int nr_of_bits) {
-		StringBuffer Bits = new StringBuffer();
-		long mask = (1 << (nr_of_bits - 1));
-		int count;
-		if (nr_of_bits == 1)
-			Bits.append("'");
-		else
-			Bits.append("\"");
-		for (count = 0; count < nr_of_bits; count++) {
-			if ((value & mask) != 0)
-				Bits.append("1");
-			else
-				Bits.append("0");
-			mask >>= 1;
-		}
-		if (nr_of_bits == 1)
-			Bits.append("'");
-		else
-			Bits.append("\"");
-		return Bits.toString();
-	}
-
 	@Override
 	public String getComponentStringIdentifier() {
 		return "ROM";
@@ -113,11 +69,9 @@ public class RomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					.getWidth()); addr++) {
 				if (rom.get(addr) != 0) {
 					Contents.add("            WHEN "
-							+ GetBin(addr, attrs.getValue(Mem.ADDR_ATTR)
-									.getWidth())
+							+ IntToBin(addr, attrs.getValue(Mem.ADDR_ATTR).getWidth(), Settings.VHDL)
 							+ " => Data <= "
-							+ GetBin(rom.get(addr),
-									attrs.getValue(Mem.DATA_ATTR).getWidth())
+							+ IntToBin(rom.get(addr), attrs.getValue(Mem.DATA_ATTR).getWidth(), Settings.VHDL)
 							+ ";");
 				}
 			}
