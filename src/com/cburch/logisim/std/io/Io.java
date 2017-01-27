@@ -40,6 +40,10 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.tools.FactoryDescription;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.data.Bounds;
 
 public class Io extends Library {
 	static final AttributeOption LABEL_CENTER = new AttributeOption("center",
@@ -119,4 +123,39 @@ public class Io extends Library {
 		}
 		return tools;
 	}
+
+	static void computeLabelTextField(Instance instance) {
+		Direction facing = instance.getAttributeValue(StdAttr.FACING);
+		Object labelLoc = instance.getAttributeValue(Io.ATTR_LABEL_LOC);
+
+		Bounds bds = instance.getBounds();
+		int x = bds.getX() + bds.getWidth() / 2;
+		int y = bds.getY() + bds.getHeight() / 2;
+		int halign = GraphicsUtil.H_CENTER;
+		int valign = GraphicsUtil.V_CENTER;
+		if (labelLoc == Direction.NORTH) {
+			y = bds.getY() - 2;
+			valign = GraphicsUtil.V_BOTTOM;
+		} else if (labelLoc == Direction.SOUTH) {
+			y = bds.getY() + bds.getHeight() + 2;
+			valign = GraphicsUtil.V_TOP;
+		} else if (labelLoc == Direction.EAST) {
+			x = bds.getX() + bds.getWidth() + 2;
+			halign = GraphicsUtil.H_LEFT;
+		} else if (labelLoc == Direction.WEST) {
+			x = bds.getX() - 2;
+			halign = GraphicsUtil.H_RIGHT;
+		}
+		if (labelLoc == facing) {
+			if (labelLoc == Direction.NORTH || labelLoc == Direction.SOUTH) {
+				x += 2;
+				halign = GraphicsUtil.H_LEFT;
+			} else {
+				y -= 2;
+				valign = GraphicsUtil.V_BOTTOM;
+			}
+		}
+		instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, x, y, halign, valign);
+	}
+
 }

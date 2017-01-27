@@ -94,12 +94,14 @@ public class Tty extends InstanceFactory {
 
 	public Tty() {
 		super("TTY", Strings.getter("ttyComponent"));
-		setAttributes(new Attribute[] { StdAttr.LABEL, StdAttr.LABEL_FONT, 
+		setAttributes(new Attribute[] {
 				ATTR_ROWS, ATTR_COLUMNS, ATTR_WIDTH,
-				StdAttr.EDGE_TRIGGER, Io.ATTR_COLOR, Io.ATTR_BACKGROUND },
-				new Object[] { "", StdAttr.DEFAULT_LABEL_FONT,
+				StdAttr.EDGE_TRIGGER, Io.ATTR_COLOR, Io.ATTR_BACKGROUND,
+				StdAttr.LABEL, Io.ATTR_LABEL_LOC, StdAttr.LABEL_FONT},
+				new Object[] {
 						Integer.valueOf(8), Integer.valueOf(32), Integer.valueOf(7),
-						StdAttr.TRIG_RISING, Color.BLACK, DEFAULT_BACKGROUND });
+						StdAttr.TRIG_RISING, Color.BLACK, DEFAULT_BACKGROUND,
+						"", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT});
 		setIconName("tty.gif");
 		setPorts(makePorts(7));
 
@@ -119,6 +121,7 @@ public class Tty extends InstanceFactory {
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
 		instance.setPorts(makePorts(getWidth(instance.getAttributeValue(ATTR_WIDTH))));
+		Io.computeLabelTextField(instance);
 	}
 
 	private Port[] makePorts(int asciiWidth) {
@@ -166,6 +169,8 @@ public class Tty extends InstanceFactory {
 			instance.recomputeBounds();
 		} else if (attr == ATTR_WIDTH) {
 			instance.setPorts(makePorts(getWidth(instance.getAttributeValue(ATTR_WIDTH))));
+		} else if (attr == Io.ATTR_LABEL_LOC) {
+			Io.computeLabelTextField(instance);
 		}
 	}
 
@@ -183,14 +188,6 @@ public class Tty extends InstanceFactory {
 		boolean showState = painter.getShowState();
 		Graphics g = painter.getGraphics();
 		Bounds bds = painter.getBounds();
-		String Label = painter.getAttributeValue(StdAttr.LABEL);
-		if (Label != null) {
-			Font font = g.getFont();
-			g.setFont(painter.getAttributeValue(StdAttr.LABEL_FONT));
-			GraphicsUtil.drawCenteredText(g, Label, bds.getX() + bds.getWidth()
-					/ 2, bds.getY() - g.getFont().getSize());
-			g.setFont(font);
-		}
 		painter.drawClock(CK, Direction.EAST);
 		if (painter.shouldDrawColor()) {
 			g.setColor(painter.getAttributeValue(Io.ATTR_BACKGROUND));
@@ -205,6 +202,7 @@ public class Tty extends InstanceFactory {
 		painter.drawPort(CLR);
 		painter.drawPort(WE);
 		painter.drawPort(IN);
+		painter.drawLabel();
 
 		int rows = getRowCount(painter.getAttributeValue(ATTR_ROWS));
 		int cols = getColumnCount(painter.getAttributeValue(ATTR_COLUMNS));

@@ -62,16 +62,13 @@ public class HexDigit extends InstanceFactory {
 	@Override
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
-		SevenSegment.computeTextField(instance);
+		Io.computeLabelTextField(instance);
 	}
 
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-		if (attr == StdAttr.FACING) {
-			instance.recomputeBounds();
-			SevenSegment.computeTextField(instance);
-		} else if (attr == Io.ATTR_LABEL_LOC) {
-			SevenSegment.computeTextField(instance);
+		if (attr == Io.ATTR_LABEL_LOC) {
+			Io.computeLabelTextField(instance);
 		}
 	}
 

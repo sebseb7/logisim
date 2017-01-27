@@ -48,7 +48,6 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.util.GraphicsUtil;
 
 public class SevenSegment extends InstanceFactory {
 	static void drawBase(InstancePainter painter, boolean DrawPoint) {
@@ -170,46 +169,10 @@ public class SevenSegment extends InstanceFactory {
 		return attrs.getValue(Io.ATTR_ACTIVE);
 	}
 
-	static void computeTextField(Instance instance) {
-		Direction facing = instance.getAttributeValue(StdAttr.FACING);
-		Object labelLoc = instance.getAttributeValue(Io.ATTR_LABEL_LOC);
-
-		Bounds bds = instance.getBounds();
-		int x = bds.getX() + bds.getWidth() / 2;
-		int y = bds.getY() + bds.getHeight() / 2;
-		int halign = GraphicsUtil.H_CENTER;
-		int valign = GraphicsUtil.V_CENTER;
-		if (labelLoc == Direction.NORTH) {
-			y = bds.getY() - 2;
-			valign = GraphicsUtil.V_BOTTOM;
-		} else if (labelLoc == Direction.SOUTH) {
-			y = bds.getY() + bds.getHeight() + 2;
-			valign = GraphicsUtil.V_TOP;
-		} else if (labelLoc == Direction.EAST) {
-			x = bds.getX() + bds.getWidth() + 2;
-			halign = GraphicsUtil.H_LEFT;
-		} else if (labelLoc == Direction.WEST) {
-			x = bds.getX() - 2;
-			halign = GraphicsUtil.H_RIGHT;
-		}
-		if (labelLoc == facing) {
-			if (labelLoc == Direction.NORTH || labelLoc == Direction.SOUTH) {
-				x += 2;
-				halign = GraphicsUtil.H_LEFT;
-			} else {
-				y -= 2;
-				valign = GraphicsUtil.V_BOTTOM;
-			}
-		}
-
-		instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, x, y, halign,
-				valign);
-	}
-
 	@Override
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
-		computeTextField(instance);
+		Io.computeLabelTextField(instance);
 	}
 
 	@Override
@@ -222,11 +185,8 @@ public class SevenSegment extends InstanceFactory {
 
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-		if (attr == StdAttr.FACING) {
-			instance.recomputeBounds();
-			computeTextField(instance);
-		} else if (attr == Io.ATTR_LABEL_LOC) {
-			computeTextField(instance);
+		if (attr == Io.ATTR_LABEL_LOC) {
+			Io.computeLabelTextField(instance);
 		}
 	}
 

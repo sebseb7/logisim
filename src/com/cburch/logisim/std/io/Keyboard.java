@@ -203,8 +203,8 @@ public class Keyboard extends InstanceFactory {
 
 	public Keyboard() {
 		super("Keyboard", Strings.getter("keyboardComponent"));
-		setAttributes(new Attribute[] { StdAttr.LABEL, StdAttr.LABEL_FONT, ATTR_BUFFER, ATTR_WIDTH, StdAttr.EDGE_TRIGGER },
-				new Object[] { "", StdAttr.DEFAULT_LABEL_FONT, Integer.valueOf(32), Integer.valueOf(7), StdAttr.TRIG_RISING });
+		setAttributes(new Attribute[] { ATTR_BUFFER, ATTR_WIDTH, StdAttr.EDGE_TRIGGER, StdAttr.LABEL, Io.ATTR_LABEL_LOC, StdAttr.LABEL_FONT},
+				new Object[] { Integer.valueOf(32), Integer.valueOf(7), StdAttr.TRIG_RISING, "", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT});
 		setOffsetBounds(Bounds.create(0, -15, WIDTH, HEIGHT));
 		setIconName("keyboard.gif");
 		setInstancePoker(Poker.class);
@@ -219,6 +219,7 @@ public class Keyboard extends InstanceFactory {
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
 		instance.setPorts(makePorts(getWidth(instance.getAttributeValue(ATTR_WIDTH))));
+		Io.computeLabelTextField(instance);
 	}
 
 	private Port[] makePorts(int asciiWidth) {
@@ -240,6 +241,8 @@ public class Keyboard extends InstanceFactory {
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
 		if (attr == ATTR_WIDTH) {
 			instance.setPorts(makePorts(getWidth(instance.getAttributeValue(ATTR_WIDTH))));
+		} else if (attr == Io.ATTR_LABEL_LOC) {
+			Io.computeLabelTextField(instance);
 		}
 	}
 
@@ -360,15 +363,7 @@ public class Keyboard extends InstanceFactory {
 		painter.drawPort(RE);
 		painter.drawPort(AVL);
 		painter.drawPort(OUT);
-
-		String Label = painter.getAttributeValue(StdAttr.LABEL);
-		if (Label != null) {
-			Font font = g.getFont();
-			g.setFont(painter.getAttributeValue(StdAttr.LABEL_FONT));
-			GraphicsUtil.drawCenteredText(g, Label, bds.getX() + bds.getWidth()
-					/ 2, bds.getY() - g.getFont().getSize());
-			g.setFont(font);
-		}
+		painter.drawLabel();
 
 		if (showState) {
 			String str;
