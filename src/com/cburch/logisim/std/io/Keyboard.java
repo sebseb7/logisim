@@ -47,6 +47,7 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
+import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstancePoker;
@@ -146,11 +147,18 @@ public class Keyboard extends InstanceFactory {
 		}
 	}
 
-	private static int getBufferLength(Object bufferAttr) {
+	public static int getBufferLength(Object bufferAttr) {
 		if (bufferAttr instanceof Integer)
 			return ((Integer) bufferAttr).intValue();
 		else
 			return 32;
+	}
+
+	public static int getWidth(Object widthAttr) {
+		if (widthAttr instanceof Integer)
+			return ((Integer) widthAttr).intValue();
+		else
+			return 7;
 	}
 
 	private static KeyboardData getKeyboardState(InstanceState state) {
@@ -189,30 +197,50 @@ public class Keyboard extends InstanceFactory {
 			.forIntegerRange("buflen", Strings.getter("keybBufferLengthAttr"),
 					1, 256);
 
+	public static final Attribute<Integer> ATTR_WIDTH = Attributes
+			.forIntegerRange("asciiwidth", Strings.getter("asciiWidthAttr"),
+					7, 8);
+
 	public Keyboard() {
 		super("Keyboard", Strings.getter("keyboardComponent"));
-		setAttributes(new Attribute[] { StdAttr.LABEL, StdAttr.LABEL_FONT, ATTR_BUFFER, StdAttr.EDGE_TRIGGER },
-				new Object[] { "", StdAttr.DEFAULT_LABEL_FONT, Integer.valueOf(32), StdAttr.TRIG_RISING });
+		setAttributes(new Attribute[] { StdAttr.LABEL, StdAttr.LABEL_FONT, ATTR_BUFFER, ATTR_WIDTH, StdAttr.EDGE_TRIGGER },
+				new Object[] { "", StdAttr.DEFAULT_LABEL_FONT, Integer.valueOf(32), Integer.valueOf(7), StdAttr.TRIG_RISING });
 		setOffsetBounds(Bounds.create(0, -15, WIDTH, HEIGHT));
 		setIconName("keyboard.gif");
 		setInstancePoker(Poker.class);
+		setPorts(makePorts(7));
 
+		MyIOInformation = new IOComponentInformationContainer(0, 0, 4,
+				null, null, null, FPGAIOInformationContainer.IOComponentTypes.PortIO);
+		MyIOInformation.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
+	}
+
+	@Override
+	protected void configureNewInstance(Instance instance) {
+		instance.addAttributeListener();
+		instance.setPorts(makePorts(getWidth(instance.getAttributeValue(ATTR_WIDTH))));
+	}
+
+	private Port[] makePorts(int asciiWidth) {
 		Port[] ps = new Port[5];
 		ps[CLR] = new Port(20, 10, Port.INPUT, 1);
 		ps[CK] = new Port(0, 0, Port.INPUT, 1);
 		ps[RE] = new Port(10, 10, Port.INPUT, 1);
 		ps[AVL] = new Port(130, 10, Port.OUTPUT, 1);
-		ps[OUT] = new Port(140, 10, Port.OUTPUT, 7);
+		ps[OUT] = new Port(140, 10, Port.OUTPUT, asciiWidth);
 		ps[CLR].setToolTip(Strings.getter("keybClearTip"));
 		ps[CK].setToolTip(Strings.getter("keybClockTip"));
 		ps[RE].setToolTip(Strings.getter("keybEnableTip"));
 		ps[AVL].setToolTip(Strings.getter("keybAvailTip"));
 		ps[OUT].setToolTip(Strings.getter("keybOutputTip"));
-		setPorts(ps);
+		return ps;
+	}
 
-		MyIOInformation = new IOComponentInformationContainer(0, 0, 4,
-				null, null, null, FPGAIOInformationContainer.IOComponentTypes.PortIO);
-		MyIOInformation.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
+	@Override
+	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
+		if (attr == ATTR_WIDTH) {
+			instance.setPorts(makePorts(getWidth(instance.getAttributeValue(ATTR_WIDTH))));
+		}
 	}
 
 	private void drawBuffer(Graphics g, FontMetrics fm, String str,
@@ -403,7 +431,8 @@ public class Keyboard extends InstanceFactory {
 
 			c = state.getChar(0);
 		}
-		Value out = Value.createKnown(BitWidth.create(7), c & 0x7F);
+		int w = getWidth(circState.getAttributeValue(ATTR_WIDTH));
+		Value out = Value.createKnown(BitWidth.create(w), c & (w == 7 ? 0x7F : 0xFF)); // always 7 bit clean instead?
 		circState.setPort(OUT, out, DELAY0);
 		circState.setPort(AVL, c != '\0' ? Value.TRUE : Value.FALSE, DELAY1);
 	}

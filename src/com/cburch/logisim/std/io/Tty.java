@@ -88,34 +88,50 @@ public class Tty extends InstanceFactory {
 	private static final Attribute<Integer> ATTR_ROWS = Attributes
 			.forIntegerRange("rows", Strings.getter("ttyRowsAttr"), 1, 48);
 
+	public static final Attribute<Integer> ATTR_WIDTH = Attributes
+			.forIntegerRange("asciiwidth", Strings.getter("asciiWidthAttr"),
+					7, 8);
+
 	public Tty() {
 		super("TTY", Strings.getter("ttyComponent"));
-		setAttributes(new Attribute[] { ATTR_ROWS, ATTR_COLUMNS,
-				StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.EDGE_TRIGGER, Io.ATTR_COLOR, Io.ATTR_BACKGROUND },
-				new Object[] { Integer.valueOf(8), Integer.valueOf(32),
-						"", StdAttr.DEFAULT_LABEL_FONT,
+		setAttributes(new Attribute[] { StdAttr.LABEL, StdAttr.LABEL_FONT, 
+				ATTR_ROWS, ATTR_COLUMNS, ATTR_WIDTH,
+				StdAttr.EDGE_TRIGGER, Io.ATTR_COLOR, Io.ATTR_BACKGROUND },
+				new Object[] { "", StdAttr.DEFAULT_LABEL_FONT,
+						Integer.valueOf(8), Integer.valueOf(32), Integer.valueOf(7),
 						StdAttr.TRIG_RISING, Color.BLACK, DEFAULT_BACKGROUND });
 		setIconName("tty.gif");
-
-		Port[] ps = new Port[4];
-		ps[CLR] = new Port(20, 10, Port.INPUT, 1);
-		ps[CK] = new Port(0, 0, Port.INPUT, 1);
-		ps[WE] = new Port(10, 10, Port.INPUT, 1);
-		ps[IN] = new Port(0, -10, Port.INPUT, 7);
-		ps[CLR].setToolTip(Strings.getter("ttyClearTip"));
-		ps[CK].setToolTip(Strings.getter("ttyClockTip"));
-		ps[WE].setToolTip(Strings.getter("ttyEnableTip"));
-		ps[IN].setToolTip(Strings.getter("ttyInputTip"));
-		setPorts(ps);
+		setPorts(makePorts(7));
 
 		MyIOInformation = new IOComponentInformationContainer(0, 0, 12,
 				null, null, null, FPGAIOInformationContainer.IOComponentTypes.PortIO);
 		MyIOInformation.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
 	}
 
+	public static int getWidth(Object widthAttr) {
+		if (widthAttr instanceof Integer)
+			return ((Integer) widthAttr).intValue();
+		else
+			return 7;
+	}
+
 	@Override
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
+		instance.setPorts(makePorts(getWidth(instance.getAttributeValue(ATTR_WIDTH))));
+	}
+
+	private Port[] makePorts(int asciiWidth) {
+		Port[] ps = new Port[4];
+		ps[CLR] = new Port(20, 10, Port.INPUT, 1);
+		ps[CK] = new Port(0, 0, Port.INPUT, 1);
+		ps[WE] = new Port(10, 10, Port.INPUT, 1);
+		ps[IN] = new Port(0, -10, Port.INPUT, asciiWidth);
+		ps[CLR].setToolTip(Strings.getter("ttyClearTip"));
+		ps[CK].setToolTip(Strings.getter("ttyClockTip"));
+		ps[WE].setToolTip(Strings.getter("ttyEnableTip"));
+		ps[IN].setToolTip(Strings.getter("ttyInputTip"));
+		return ps;
 	}
 
 	@Override
@@ -148,6 +164,8 @@ public class Tty extends InstanceFactory {
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
 		if (attr == ATTR_ROWS || attr == ATTR_COLUMNS) {
 			instance.recomputeBounds();
+		} else if (attr == ATTR_WIDTH) {
+			instance.setPorts(makePorts(getWidth(instance.getAttributeValue(ATTR_WIDTH))));
 		}
 	}
 

@@ -69,7 +69,8 @@ public class TtyHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	@Override
 	public SortedMap<String, Integer> GetInputList(Netlist TheNetlist, AttributeSet attrs) {
 		SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
-		Inputs.put("Data", 7);
+		int asciiWidth = Tty.getWidth(attrs.getValue(Tty.ATTR_WIDTH));
+		Inputs.put("Data", asciiWidth);
 		Inputs.put("Enable", 1);
 		Inputs.put("GlobalClock", 1);
 		Inputs.put("ClockEnable", 1);
@@ -168,14 +169,14 @@ public class TtyHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	@Override
 	public ArrayList<String> GetEntity(Netlist TheNetlist, AttributeSet attrs,
 			String ComponentName, FPGAReport Reporter, String HDLType) {
-
+		int asciiWidth = Tty.getWidth(attrs.getValue(Tty.ATTR_WIDTH));
 		ArrayList<String> Contents = new ArrayList<String>();
 		Contents.addAll(FileWriter.getGenerateRemark(ComponentName,
 					Settings.VHDL, TheNetlist.projName()));
 		Contents.addAll(FileWriter.getExtendedLibrary());
 		Contents.add("ENTITY " + ComponentName + " IS");
 		Contents.add("   PORT ( ");
-		Contents.add("      Data        : IN std_logic_vector (6 downto 0);");
+		Contents.add("      Data        : IN std_logic_vector ("+(asciiWidth-1)+" downto 0);");
 		Contents.add("      Clear       : IN std_logic;");
 		Contents.add("      Enable      : IN std_logic;");
 		Contents.add("      GlobalClock : IN std_logic;");
@@ -312,7 +313,11 @@ public class TtyHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			Contents.add("  lcd_bl <= '1';");
 			Contents.add("  lcd_rs_rw_en_db_bl <= lcd_rs & lcd_rw & lcd_en & lcd_db & lcd_bl;");
 			Contents.add("  push <= ClockEnable and Enable;");
-			Contents.add("  ascii <= '0' & Data;"); // fixme, allow 8-bit values
+			int asciiWidth = Tty.getWidth(attrs.getValue(Tty.ATTR_WIDTH));
+			if (asciiWidth == 7)
+				Contents.add("  ascii <= '0' & Data;"); // 7-bit ascii
+			else
+				Contents.add("  ascii <= Data;"); // 8-bit extended char set
 			Contents.add("");
 			Contents.add("  -- tty emulation");
 			Contents.add("  process (clk50) is");
