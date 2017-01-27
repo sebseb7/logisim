@@ -47,6 +47,7 @@ import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.io.PortIO;
+import com.cburch.logisim.std.io.Tty;
 import com.cburch.logisim.std.io.ReptarLocalBus;
 import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 import com.cburch.logisim.std.wiring.Pin;
@@ -249,6 +250,8 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					&& !(MyIOComponents.GetComponent(CompId).GetComponent()
 							.getFactory() instanceof PortIO)
 					&& !(MyIOComponents.GetComponent(CompId).GetComponent()
+							.getFactory() instanceof Tty)
+					&& !(MyIOComponents.GetComponent(CompId).GetComponent()
 							.getFactory() instanceof ReptarLocalBus)) {
 				HDLGeneratorFactory Generator = MyIOComponents
 						.GetComponent(CompId)
@@ -274,6 +277,10 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			} else if (MyIOComponents.GetComponent(CompId).GetComponent()
 					.getFactory() instanceof PortIO) {
 				((PortIO) MyIOComponents.GetComponent(CompId).GetComponent()
+						.getFactory()).setMapInfo(MyIOComponents);
+			} else if (MyIOComponents.GetComponent(CompId).GetComponent()
+					.getFactory() instanceof Tty) {
+				((Tty) MyIOComponents.GetComponent(CompId).GetComponent()
 						.getFactory()).setMapInfo(MyIOComponents);
 			}
 		}

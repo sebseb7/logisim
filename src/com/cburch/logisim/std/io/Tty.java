@@ -34,7 +34,12 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.util.ArrayList;
 
+import com.bfh.logisim.designrulecheck.CorrectLabel;
+import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
+import com.bfh.logisim.fpgagui.MappableResourcesContainer;
+import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -64,11 +69,11 @@ public class Tty extends InstanceFactory {
 			return 4;
 	}
 
-	private static final int CLR = 0;
-	private static final int CK = 1;
+	protected static final int CLR = 0;
+	protected static final int CK = 1;
 
-	private static final int WE = 2;
-	private static final int IN = 3;
+	protected static final int WE = 2;
+	protected static final int IN = 3;
 	private static final int BORDER = 5;
 	private static final int ROW_HEIGHT = 15;
 
@@ -86,8 +91,9 @@ public class Tty extends InstanceFactory {
 	public Tty() {
 		super("TTY", Strings.getter("ttyComponent"));
 		setAttributes(new Attribute[] { ATTR_ROWS, ATTR_COLUMNS,
-				StdAttr.EDGE_TRIGGER, Io.ATTR_COLOR, Io.ATTR_BACKGROUND },
+				StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.EDGE_TRIGGER, Io.ATTR_COLOR, Io.ATTR_BACKGROUND },
 				new Object[] { Integer.valueOf(8), Integer.valueOf(32),
+						"", StdAttr.DEFAULT_LABEL_FONT,
 						StdAttr.TRIG_RISING, Color.BLACK, DEFAULT_BACKGROUND });
 		setIconName("tty.gif");
 
@@ -101,6 +107,10 @@ public class Tty extends InstanceFactory {
 		ps[WE].setToolTip(Strings.getter("ttyEnableTip"));
 		ps[IN].setToolTip(Strings.getter("ttyInputTip"));
 		setPorts(ps);
+
+		MyIOInformation = new IOComponentInformationContainer(0, 0, 12,
+				null, null, null, FPGAIOInformationContainer.IOComponentTypes.PortIO);
+		MyIOInformation.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
 	}
 
 	@Override
@@ -155,6 +165,14 @@ public class Tty extends InstanceFactory {
 		boolean showState = painter.getShowState();
 		Graphics g = painter.getGraphics();
 		Bounds bds = painter.getBounds();
+		String Label = painter.getAttributeValue(StdAttr.LABEL);
+		if (Label != null) {
+			Font font = g.getFont();
+			g.setFont(painter.getAttributeValue(StdAttr.LABEL_FONT));
+			GraphicsUtil.drawCenteredText(g, Label, bds.getX() + bds.getWidth()
+					/ 2, bds.getY() - g.getFont().getSize());
+			g.setFont(font);
+		}
 		painter.drawClock(CK, Direction.EAST);
 		if (painter.shouldDrawColor()) {
 			g.setColor(painter.getAttributeValue(Io.ATTR_BACKGROUND));
@@ -245,4 +263,35 @@ public class Tty extends InstanceFactory {
 		TtyState tty = getTtyState(state);
 		tty.setSendStdout(true);
 	}
+
+	@Override
+	public String getHDLName(AttributeSet attrs) {
+		String Name = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
+		if (Name.length() == 0)
+			return "TTY";
+		else
+			return "TTY_" + Name;
+	}
+
+	@Override
+	public boolean HDLSupportedComponent(String HDLIdentifier,
+			AttributeSet attrs, char Vendor) {
+		if (MyHDLGenerator == null)
+			MyHDLGenerator = new TtyHDLGeneratorFactory();
+		return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+	}
+
+	private MappableResourcesContainer mapInfo;
+	public MappableResourcesContainer getMapInfo() {
+		return mapInfo;
+	}
+	public void setMapInfo(MappableResourcesContainer mapInfo) {
+		this.mapInfo = mapInfo;
+	}
+
+	@Override
+	public boolean RequiresNonZeroLabel() {
+		return true;
+	}
+
 }

@@ -1,0 +1,35 @@
+FPGA Clock Generation
+---------------------
+
+
+
+       o  FPGA_GlobalClock (raw clock signal, e.g. 50mhz, from offchip)
+       |
+       |_______
+       |       |
+       |   +---o--------------------+
+       |   | FPGAClock              |  Counts down from T=ReloadValue
+       |   |                        |  using an N=NrOfBits register,
+       |   | (LogisimTickGenerator) |  generates FPGATick=1 for one
+       |   |                        |  cycle when the counter hits zero.
+       |   |        FPGATick        |
+       |   +----------o-------------+
+       |              |
+       |              |
+    +--o--------------o------------------+
+    |  GlobalClock    ClockTick          | s_derived_clock_reg toggles at each FPGATick
+    |                                    |
+    | (LogisimClockComponent             |
+    |                                    |
+    |  ClockBus (4 downto 0)             |
+    +--o---------------------------------+
+       |
+       |
+       |
+       o s_LOGISIM_CLOCK_TREE_0 (4 downto 0) | \ \ \ \ \ . \ \ ....\ \ \ \ \ \
+          TREE(4) = FPGA_GlobalClock         |~_~_~_~_~_~_~_~_~...._~_~_~_~_~_
+                    ClockTick                |______~~______~~_...._~~______~~
+          TREE(0) = derived clock, e.g. 1Hz  |________~~~~~~~~~....~~~________
+          TREE(1) = derived clock, inverted  |~~~~~~~~_________....___~~~~~~~~
+          TREE(2) = rising edge tick         |________~~_______....___________
+          TREE(3) = falling edge tick        |_________________....___~~______

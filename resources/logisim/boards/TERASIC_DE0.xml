@@ -9,8 +9,10 @@
 <IOComponents>
 <!--This section describes all Components present on the boards-->
 <!-- LCD -->
+<!--
 <LED Label="LCD_BL" ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinIOStandard="Default" FPGAPinName="PIN_F21" Height="9" LocationX="299" LocationY="170" Width="7"/>
 <PortIO Label="LCD_DB" ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinIOStandard="Default" FPGAPin_7="PIN_C20" FPGAPin_6="PIN_D20" FPGAPin_5="PIN_B21" FPGAPin_4="PIN_B22" FPGAPin_3="PIN_C21" FPGAPin_2="PIN_C22" FPGAPin_1="PIN_D21" FPGAPin_0="PIN_D22" Height="9" LocationX="224" LocationY="170" NrOfPins="8" Width="74"/> 
+-->
 <!--
 <LED Label="LCD_D7" ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinIOStandard="Default" FPGAPinName="PIN_C20" Height="9" LocationX="289" LocationY="170" Width="7"/>
 <LED Label="LCD_D6" ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinIOStandard="Default" FPGAPinName="PIN_D20" Height="9" LocationX="280" LocationY="170" Width="7"/>
@@ -21,9 +23,12 @@
 <LED Label="LCD_D1" ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinIOStandard="Default" FPGAPinName="PIN_D21" Height="9" LocationX="234" LocationY="170" Width="7"/>
 <LED Label="LCD_D0" ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinIOStandard="Default" FPGAPinName="PIN_D22" Height="9" LocationX="224" LocationY="170" Width="7"/>
 -->
+<!--
 <LED Label="LCD_EN" ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinIOStandard="Default" FPGAPinName="PIN_E21" Height="9" LocationX="215" LocationY="170" Width="7"/>
 <LED Label="LCD_RW" ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinIOStandard="Default" FPGAPinName="PIN_E22" Height="9" LocationX="206" LocationY="170" Width="7"/>
 <LED Label="LCD_RS" ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinIOStandard="Default" FPGAPinName="PIN_F22" Height="9" LocationX="196" LocationY="170" Width="7"/>
+-->
+<PortIO Label="LCD" ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinIOStandard="Default" FPGAPin_11="PIN_F22" FPGAPin_10="PIN_E22" FPGAPin_9="PIN_E21" FPGAPin_8="PIN_C20" FPGAPin_7="PIN_D20" FPGAPin_6="PIN_B21" FPGAPin_5="PIN_B22" FPGAPin_4="PIN_C21" FPGAPin_3="PIN_C22" FPGAPin_2="PIN_D21" FPGAPin_1="PIN_D22" FPGAPin_0="PIN_F21" Height="9" LocationX="196" LocationY="170" NrOfPins="12" Width="110"/> 
 
 <!-- Keyboard/Mouse -->
 <PortIO Label="PS2_KB" ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinIOStandard="Default" FPGAPin_0="PIN_P22" FPGAPin_1="PIN_P21" FPGAPin_2="PIN_R21" FPGAPin_3="PIN_R22" Height="54" LocationX="404" LocationY="26" NrOfPins="4" Width="49"/> 

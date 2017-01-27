@@ -62,6 +62,7 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.std.io.DipSwitch;
 import com.cburch.logisim.std.io.PortIO;
+import com.cburch.logisim.std.io.Tty;
 import com.cburch.logisim.std.io.ReptarLocalBus;
 import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.std.wiring.Pin;
@@ -1776,6 +1777,9 @@ public class Netlist {
                 } else if (comp.getFactory() instanceof DynamicClock) {
                         DynClock = NormalComponent;
 		} else if (comp.getFactory() instanceof PortIO) {
+			MyInOutPorts.add(NormalComponent);
+			MyComponents.add(NormalComponent);
+		} else if (comp.getFactory() instanceof Tty) {
 			MyInOutPorts.add(NormalComponent);
 			MyComponents.add(NormalComponent);
 		} else if (comp.getFactory() instanceof ReptarLocalBus) {
