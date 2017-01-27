@@ -37,20 +37,42 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.InstanceDataSingleton;
+import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
+import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.data.Direction;
 
 public class HexDigit extends InstanceFactory {
 	public HexDigit() {
 		super("Hex Digit Display", Strings.getter("hexDigitComponent"));
-		setAttributes(new Attribute[] { Io.ATTR_ON_COLOR, Io.ATTR_OFF_COLOR,
-				Io.ATTR_BACKGROUND }, new Object[] { new Color(240, 0, 0),
-				SevenSegment.DEFAULT_OFF, Io.DEFAULT_BACKGROUND });
+		setAttributes(new Attribute[] { 
+				Io.ATTR_ON_COLOR, Io.ATTR_OFF_COLOR, Io.ATTR_BACKGROUND,
+				StdAttr.LABEL, Io.ATTR_LABEL_LOC, StdAttr.LABEL_FONT},
+				new Object[] {
+				new Color(240, 0, 0), SevenSegment.DEFAULT_OFF, Io.DEFAULT_BACKGROUND,
+				"", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT});
 		setPorts(new Port[] { new Port(0, 0, Port.INPUT, 4) });
 		setOffsetBounds(Bounds.create(-15, -60, 40, 60));
 		setIconName("hexdig.gif");
+	}
+
+	@Override
+	protected void configureNewInstance(Instance instance) {
+		instance.addAttributeListener();
+		SevenSegment.computeTextField(instance);
+	}
+
+	@Override
+	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
+		if (attr == StdAttr.FACING) {
+			instance.recomputeBounds();
+			SevenSegment.computeTextField(instance);
+		} else if (attr == Io.ATTR_LABEL_LOC) {
+			SevenSegment.computeTextField(instance);
+		}
 	}
 
 	@Override

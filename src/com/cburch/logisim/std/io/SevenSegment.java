@@ -170,7 +170,7 @@ public class SevenSegment extends InstanceFactory {
 		return attrs.getValue(Io.ATTR_ACTIVE);
 	}
 
-	private void computeTextField(Instance instance) {
+	static void computeTextField(Instance instance) {
 		Direction facing = instance.getAttributeValue(StdAttr.FACING);
 		Object labelLoc = instance.getAttributeValue(Io.ATTR_LABEL_LOC);
 
