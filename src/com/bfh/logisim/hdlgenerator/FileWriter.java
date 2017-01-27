@@ -87,6 +87,17 @@ public class FileWriter {
 		return Lines;
 	}
 
+	public static ArrayList<String> getExtendedLibrary2() {
+		ArrayList<String> Lines = new ArrayList<String>();
+		Lines.add("");
+		Lines.add("LIBRARY ieee;");
+		Lines.add("USE ieee.std_logic_1164.all;");
+		Lines.add("USE ieee.std_logic_unsigned.all;");
+		Lines.add("USE ieee.numeric_std.all;");
+		Lines.add("");
+		return Lines;
+	}
+
 	public static File GetFilePointer(String TargetDirectory,
 			String ComponentName, boolean IsMif, boolean IsEntity, FPGAReport MyReporter,
 			String HDLType) {

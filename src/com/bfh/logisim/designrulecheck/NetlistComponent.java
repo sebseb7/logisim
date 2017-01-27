@@ -42,6 +42,7 @@ import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.std.io.Tty;
+import com.cburch.logisim.std.io.Keyboard;
 import com.cburch.logisim.std.wiring.Pin;
 
 public class NetlistComponent {
@@ -86,6 +87,13 @@ public class NetlistComponent {
 				names.add("lcd_db0");
 				names.add("lcd_bl");
 				MyIOInformation.setNrOfInOutports(12, names);
+			} else if (Ref.getFactory() instanceof Keyboard) {
+				ArrayList<String> names = new ArrayList<String>();
+				names.add("ps2_mdat");
+				names.add("ps2_mclk");
+				names.add("ps2_kdat");
+				names.add("ps2_kclk");
+				MyIOInformation.setNrOfInOutports(4, names);
 			}
 		} else {
 			if (Ref.getFactory() instanceof Pin) {

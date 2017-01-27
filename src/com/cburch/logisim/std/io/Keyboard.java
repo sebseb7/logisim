@@ -36,7 +36,12 @@ import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
+import com.bfh.logisim.designrulecheck.CorrectLabel;
+import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
+import com.bfh.logisim.fpgagui.MappableResourcesContainer;
+import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -48,6 +53,7 @@ import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.util.GraphicsUtil;
 
 public class Keyboard extends InstanceFactory {
 	public static class Poker extends InstancePoker {
@@ -159,13 +165,13 @@ public class Keyboard extends InstanceFactory {
 		return ret;
 	}
 
-	private static final int CLR = 0;
+	protected static final int CLR = 0;
 
-	private static final int CK = 1;
-	private static final int RE = 2;
+	protected static final int CK = 1;
+	protected static final int RE = 2;
 
-	private static final int AVL = 3;
-	private static final int OUT = 4;
+	protected static final int AVL = 3;
+	protected static final int OUT = 4;
 
 	private static final int DELAY0 = 9;
 	private static final int DELAY1 = 11;
@@ -179,14 +185,14 @@ public class Keyboard extends InstanceFactory {
 
 	private static final char FORM_FEED = '\u000c'; // control-L
 
-	private static final Attribute<Integer> ATTR_BUFFER = Attributes
+	public static final Attribute<Integer> ATTR_BUFFER = Attributes
 			.forIntegerRange("buflen", Strings.getter("keybBufferLengthAttr"),
 					1, 256);
 
 	public Keyboard() {
 		super("Keyboard", Strings.getter("keyboardComponent"));
-		setAttributes(new Attribute[] { ATTR_BUFFER, StdAttr.EDGE_TRIGGER },
-				new Object[] { Integer.valueOf(32), StdAttr.TRIG_RISING });
+		setAttributes(new Attribute[] { StdAttr.LABEL, StdAttr.LABEL_FONT, ATTR_BUFFER, StdAttr.EDGE_TRIGGER },
+				new Object[] { "", StdAttr.DEFAULT_LABEL_FONT, Integer.valueOf(32), StdAttr.TRIG_RISING });
 		setOffsetBounds(Bounds.create(0, -15, WIDTH, HEIGHT));
 		setIconName("keyboard.gif");
 		setInstancePoker(Poker.class);
@@ -203,6 +209,10 @@ public class Keyboard extends InstanceFactory {
 		ps[AVL].setToolTip(Strings.getter("keybAvailTip"));
 		ps[OUT].setToolTip(Strings.getter("keybOutputTip"));
 		setPorts(ps);
+
+		MyIOInformation = new IOComponentInformationContainer(0, 0, 4,
+				null, null, null, FPGAIOInformationContainer.IOComponentTypes.PortIO);
+		MyIOInformation.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
 	}
 
 	private void drawBuffer(Graphics g, FontMetrics fm, String str,
@@ -315,12 +325,22 @@ public class Keyboard extends InstanceFactory {
 	public void paintInstance(InstancePainter painter) {
 		boolean showState = painter.getShowState();
 		Graphics g = painter.getGraphics();
+		Bounds bds = painter.getBounds();
 		painter.drawClock(CK, Direction.EAST);
 		painter.drawBounds();
 		painter.drawPort(CLR);
 		painter.drawPort(RE);
 		painter.drawPort(AVL);
 		painter.drawPort(OUT);
+
+		String Label = painter.getAttributeValue(StdAttr.LABEL);
+		if (Label != null) {
+			Font font = g.getFont();
+			g.setFont(painter.getAttributeValue(StdAttr.LABEL_FONT));
+			GraphicsUtil.drawCenteredText(g, Label, bds.getX() + bds.getWidth()
+					/ 2, bds.getY() - g.getFont().getSize());
+			g.setFont(font);
+		}
 
 		if (showState) {
 			String str;
@@ -345,11 +365,9 @@ public class Keyboard extends InstanceFactory {
 			}
 
 			if (str.length() > 0) {
-				Bounds bds = painter.getBounds();
 				drawBuffer(g, fm, str, dispStart, dispEnd, specials, bds);
 			}
 		} else {
-			Bounds bds = painter.getBounds();
 			int len = getBufferLength(painter.getAttributeValue(ATTR_BUFFER));
 			String str = Strings.get("keybDesc", "" + len);
 			FontMetrics fm = g.getFontMetrics();
@@ -388,5 +406,35 @@ public class Keyboard extends InstanceFactory {
 		Value out = Value.createKnown(BitWidth.create(7), c & 0x7F);
 		circState.setPort(OUT, out, DELAY0);
 		circState.setPort(AVL, c != '\0' ? Value.TRUE : Value.FALSE, DELAY1);
+	}
+
+	@Override
+	public String getHDLName(AttributeSet attrs) {
+		String Name = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
+		if (Name.length() == 0)
+			return "KBD";
+		else
+			return "KBD_" + Name;
+	}
+
+	@Override
+	public boolean HDLSupportedComponent(String HDLIdentifier,
+			AttributeSet attrs, char Vendor) {
+		if (MyHDLGenerator == null)
+			MyHDLGenerator = new KeyboardHDLGeneratorFactory();
+		return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+	}
+
+	private MappableResourcesContainer mapInfo;
+	public MappableResourcesContainer getMapInfo() {
+		return mapInfo;
+	}
+	public void setMapInfo(MappableResourcesContainer mapInfo) {
+		this.mapInfo = mapInfo;
+	}
+
+	@Override
+	public boolean RequiresNonZeroLabel() {
+		return true;
 	}
 }

@@ -220,7 +220,7 @@ public class TtyHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			Contents.add("");
 			Contents.add("ARCHITECTURE PlatformIndependent OF " + ComponentName.toString() + " IS ");
 			Contents.add("");
-			Contents.add("  constant CLK_PERIOD_NS : positive := 20; -- 50MHz"); // fixem: TERASIC_DE0 is 50MHz, but not others
+			Contents.add("  constant CLK_PERIOD_NS : positive := 20; -- 50MHz"); // fixme: TERASIC_DE0 is 50MHz, but not others
 			Contents.add("  constant DELAY_15_MS   : positive := 15 * 10**6 / CLK_PERIOD_NS + 1;");
 			Contents.add("  constant DELAY_1640_US : positive := 1640 * 10**3 / CLK_PERIOD_NS + 1;");
 			Contents.add("  constant DELAY_4100_US : positive := 4100 * 10**3 / CLK_PERIOD_NS + 1;");

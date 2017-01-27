@@ -57,6 +57,7 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.std.io.Tty;
+import com.cburch.logisim.std.io.Keyboard;
 import com.cburch.logisim.std.io.ReptarLocalBus;
 import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
@@ -707,6 +708,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			NetlistComponent selected = MyNetList.GetOutputPin(i);
 			if (selected != null) {
 				if (selected.GetComponent().getFactory() instanceof Tty) {
+					// nothing to do
+				} else if (selected.GetComponent().getFactory() instanceof Keyboard) {
+					// nothing to do
 				} else if (!(selected.GetComponent().getFactory() instanceof ReptarLocalBus)) {
 					Outputs.put(
 							CorrectLabel.getCorrectLabel(selected
@@ -905,6 +909,27 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 						} else if (selected.GetComponent().getFactory() instanceof Tty) {
 							ArrayList<String> name = new ArrayList<String>();
 							MappableResourcesContainer mapInfo = ((Tty) selected
+									.GetComponent().getFactory()).getMapInfo();
+							int start = mapInfo
+									.GetFPGAInOutPinId(mapInfo.currentBoardName
+											+ ":/"
+											+ selected.GetComponent()
+													.getAttributeSet()
+													.getValue(StdAttr.LABEL));
+							int k = 0;
+							name.add(selected.GetComponent().getAttributeSet()
+									.getValue(StdAttr.LABEL));
+							for (int j = selected.GetGlobalBubbleId(name)
+									.GetInOutStartIndex(); j <= selected
+									.GetGlobalBubbleId(name).GetInOutEndIndex(); j++) {
+								PortMap.put(LocalInOutBubbleBusname + "(" + j
+										+ ")", FPGAInOutPinName + "_"
+										+ (start + k));
+								k++;
+							}
+						} else if (selected.GetComponent().getFactory() instanceof Keyboard) {
+							ArrayList<String> name = new ArrayList<String>();
+							MappableResourcesContainer mapInfo = ((Keyboard) selected
 									.GetComponent().getFactory()).getMapInfo();
 							int start = mapInfo
 									.GetFPGAInOutPinId(mapInfo.currentBoardName
