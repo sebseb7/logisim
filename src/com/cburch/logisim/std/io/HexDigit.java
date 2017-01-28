@@ -33,6 +33,7 @@ package com.cburch.logisim.std.io;
 import java.awt.Color;
 
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
@@ -44,6 +45,8 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.data.Direction;
+import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
+import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 
 public class HexDigit extends InstanceFactory {
 	public HexDigit() {
@@ -57,6 +60,13 @@ public class HexDigit extends InstanceFactory {
 		setPorts(new Port[] { new Port(0, 0, Port.INPUT, 4) });
 		setOffsetBounds(Bounds.create(-15, -60, 40, 60));
 		setIconName("hexdig.gif");
+		MyIOInformation = new IOComponentInformationContainer(0, 8, 0, null,
+				SevenSegment.GetLabels(), null,
+				FPGAIOInformationContainer.IOComponentTypes.SevenSegment);
+		MyIOInformation
+				.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.LED);
+		MyIOInformation
+				.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
 	}
 
 	@Override
@@ -161,4 +171,18 @@ public class HexDigit extends InstanceFactory {
 			data.setValue(value);
 		}
 	}
+
+	@Override
+	public boolean HDLSupportedComponent(String HDLIdentifier,
+			AttributeSet attrs, char Vendor) {
+		if (MyHDLGenerator == null)
+			MyHDLGenerator = new HexDigitHDLGeneratorFactory();
+		return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+	}
+
+	@Override
+	public boolean RequiresNonZeroLabel() {
+		return true;
+	}
+
 }
