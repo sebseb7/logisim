@@ -125,7 +125,15 @@ public class Io extends Library {
 	}
 
 	static void computeLabelTextField(Instance instance) {
+		computeLabelTextField(instance, 0);
+	}
+
+	static void computeLabelTextField(Instance instance, int centerOffset) {
 		Direction facing = instance.getAttributeValue(StdAttr.FACING);
+		computeLabelTextField(instance, facing, centerOffset);
+	}
+
+	static void computeLabelTextField(Instance instance, Direction facing, int centerOffset) {
 		Object labelLoc = instance.getAttributeValue(Io.ATTR_LABEL_LOC);
 
 		Bounds bds = instance.getBounds();
@@ -133,7 +141,10 @@ public class Io extends Library {
 		int y = bds.getY() + bds.getHeight() / 2;
 		int halign = GraphicsUtil.H_CENTER;
 		int valign = GraphicsUtil.V_CENTER;
-		if (labelLoc == Direction.NORTH) {
+		if (labelLoc == Io.LABEL_CENTER) {
+			x = bds.getX() + (bds.getWidth() - centerOffset) / 2;
+			y = bds.getY() + (bds.getHeight() - centerOffset) / 2;
+		} else if (labelLoc == Direction.NORTH) {
 			y = bds.getY() - 2;
 			valign = GraphicsUtil.V_BOTTOM;
 		} else if (labelLoc == Direction.SOUTH) {

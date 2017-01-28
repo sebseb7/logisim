@@ -113,47 +113,11 @@ public class PortIO extends InstanceFactory {
 				.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
 	}
 
-	private void computeTextField(Instance instance) {
-		Direction facing = Direction.NORTH;
-		Object labelLoc = instance.getAttributeValue(Io.ATTR_LABEL_LOC);
-
-		Bounds bds = instance.getBounds();
-		int x = bds.getX() + bds.getWidth() / 2;
-		int y = bds.getY() + bds.getHeight() / 2;
-		int halign = GraphicsUtil.H_CENTER;
-		int valign = GraphicsUtil.V_CENTER;
-		if (labelLoc == Direction.NORTH) {
-			y = bds.getY() - 2;
-			valign = GraphicsUtil.V_BOTTOM;
-		} else if (labelLoc == Direction.SOUTH) {
-			y = bds.getY() + bds.getHeight() + 2;
-			valign = GraphicsUtil.V_TOP;
-		} else if (labelLoc == Direction.EAST) {
-			x = bds.getX() + bds.getWidth() + 2;
-			halign = GraphicsUtil.H_LEFT;
-		} else if (labelLoc == Direction.WEST) {
-			x = bds.getX() - 2;
-			halign = GraphicsUtil.H_RIGHT;
-		}
-		if (labelLoc == facing) {
-			if (labelLoc == Direction.NORTH || labelLoc == Direction.SOUTH) {
-				x += 2;
-				halign = GraphicsUtil.H_LEFT;
-			} else {
-				y -= 2;
-				valign = GraphicsUtil.V_BOTTOM;
-			}
-		}
-
-		instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, x, y, halign,
-				valign);
-	}
-
 	@Override
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
 		updatePorts(instance);
-		computeTextField(instance);
+		Io.computeLabelTextField(instance, instance.getAttributeValue(StdAttr.FACING).getLeft(), 0);
 		MyIOInformation.setNrOfInOutports(
 				instance.getAttributeValue(ATTR_SIZE),
 				GetLabels(instance.getAttributeValue(ATTR_SIZE)));
@@ -343,11 +307,11 @@ public class PortIO extends InstanceFactory {
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
 		if (attr == Io.ATTR_LABEL_LOC) {
-			computeTextField(instance);
+			Io.computeLabelTextField(instance, instance.getAttributeValue(StdAttr.FACING).getLeft(), 0);
 		} else if (attr == ATTR_SIZE || attr == ATTR_DIR || attr == StdAttr.FACING) {
 			instance.recomputeBounds();
 			updatePorts(instance);
-			computeTextField(instance);
+			Io.computeLabelTextField(instance, instance.getAttributeValue(StdAttr.FACING).getLeft(), 0);
 			MyIOInformation.setNrOfInOutports(
 					instance.getAttributeValue(ATTR_SIZE),
 					GetLabels(instance.getAttributeValue(ATTR_SIZE)));
