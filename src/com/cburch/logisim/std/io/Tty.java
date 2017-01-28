@@ -103,7 +103,6 @@ public class Tty extends InstanceFactory {
 						StdAttr.TRIG_RISING, Color.BLACK, DEFAULT_BACKGROUND,
 						"", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT});
 		setIconName("tty.gif");
-		setPorts(makePorts(7));
 
 		MyIOInformation = new IOComponentInformationContainer(0, 0, 12,
 				null, null, null, FPGAIOInformationContainer.IOComponentTypes.PortIO);
@@ -120,11 +119,12 @@ public class Tty extends InstanceFactory {
 	@Override
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
-		instance.setPorts(makePorts(getWidth(instance.getAttributeValue(ATTR_WIDTH))));
+		updatePorts(instance);
 		Io.computeLabelTextField(instance);
 	}
 
-	private Port[] makePorts(int asciiWidth) {
+	private void updatePorts(Instance instance) {
+		int asciiWidth = getWidth(instance.getAttributeValue(ATTR_WIDTH));
 		Port[] ps = new Port[4];
 		ps[CLR] = new Port(20, 10, Port.INPUT, 1);
 		ps[CK] = new Port(0, 0, Port.INPUT, 1);
@@ -134,7 +134,7 @@ public class Tty extends InstanceFactory {
 		ps[CK].setToolTip(Strings.getter("ttyClockTip"));
 		ps[WE].setToolTip(Strings.getter("ttyEnableTip"));
 		ps[IN].setToolTip(Strings.getter("ttyInputTip"));
-		return ps;
+		instance.setPorts(ps);
 	}
 
 	@Override
@@ -168,7 +168,7 @@ public class Tty extends InstanceFactory {
 		if (attr == ATTR_ROWS || attr == ATTR_COLUMNS) {
 			instance.recomputeBounds();
 		} else if (attr == ATTR_WIDTH) {
-			instance.setPorts(makePorts(getWidth(instance.getAttributeValue(ATTR_WIDTH))));
+			updatePorts(instance);
 		} else if (attr == Io.ATTR_LABEL_LOC) {
 			Io.computeLabelTextField(instance);
 		}

@@ -178,13 +178,13 @@ public class DipSwitch extends InstanceFactory {
 	@Override
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
-		configurePorts(instance);
+		updatePorts(instance);
 		computeTextField(instance);
 		MyIOInformation.setNrOfInports(instance.getAttributeValue(ATTR_SIZE),
 				GetLabels(instance.getAttributeValue(ATTR_SIZE)));
 	}
 
-	private void configurePorts(Instance instance) {
+	private void updatePorts(Instance instance) {
 		Port[] ps = new Port[instance.getAttributeValue(ATTR_SIZE)];
 		for (int i = 0; i < instance.getAttributeValue(ATTR_SIZE); i++) {
 			ps[i] = new Port((i + 1) * 10, 0, Port.OUTPUT, 1);
@@ -214,7 +214,7 @@ public class DipSwitch extends InstanceFactory {
 			computeTextField(instance);
 		} else if (attr == ATTR_SIZE) {
 			instance.recomputeBounds();
-			configurePorts(instance);
+			updatePorts(instance);
 			computeTextField(instance);
 			MyIOInformation.setNrOfInports(
 					instance.getAttributeValue(ATTR_SIZE),

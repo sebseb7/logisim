@@ -208,7 +208,6 @@ public class Keyboard extends InstanceFactory {
 		setOffsetBounds(Bounds.create(0, -15, WIDTH, HEIGHT));
 		setIconName("keyboard.gif");
 		setInstancePoker(Poker.class);
-		setPorts(makePorts(7));
 
 		MyIOInformation = new IOComponentInformationContainer(0, 0, 4,
 				null, null, null, FPGAIOInformationContainer.IOComponentTypes.PortIO);
@@ -218,11 +217,12 @@ public class Keyboard extends InstanceFactory {
 	@Override
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
-		instance.setPorts(makePorts(getWidth(instance.getAttributeValue(ATTR_WIDTH))));
+		updatePorts(instance);
 		Io.computeLabelTextField(instance);
 	}
 
-	private Port[] makePorts(int asciiWidth) {
+	private void updatePorts(Instance instance) {
+		int asciiWidth = getWidth(instance.getAttributeValue(ATTR_WIDTH));
 		Port[] ps = new Port[5];
 		ps[CLR] = new Port(20, 10, Port.INPUT, 1);
 		ps[CK] = new Port(0, 0, Port.INPUT, 1);
@@ -234,13 +234,13 @@ public class Keyboard extends InstanceFactory {
 		ps[RE].setToolTip(Strings.getter("keybEnableTip"));
 		ps[AVL].setToolTip(Strings.getter("keybAvailTip"));
 		ps[OUT].setToolTip(Strings.getter("keybOutputTip"));
-		return ps;
+		instance.setPorts(ps);
 	}
 
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
 		if (attr == ATTR_WIDTH) {
-			instance.setPorts(makePorts(getWidth(instance.getAttributeValue(ATTR_WIDTH))));
+			updatePorts(instance);
 		} else if (attr == Io.ATTR_LABEL_LOC) {
 			Io.computeLabelTextField(instance);
 		}

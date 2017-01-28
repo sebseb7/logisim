@@ -152,84 +152,84 @@ public class PortIO extends InstanceFactory {
 	@Override
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
-		configurePorts(instance);
+		updatePorts(instance);
 		computeTextField(instance);
 		MyIOInformation.setNrOfInOutports(
 				instance.getAttributeValue(ATTR_SIZE),
 				GetLabels(instance.getAttributeValue(ATTR_SIZE)));
 	}
 
-        private void configurePorts(Instance instance) {
-            Direction facing = instance.getAttributeValue(StdAttr.FACING);
-            String dir = instance.getAttributeValue(ATTR_DIR);
-            int size = instance.getAttributeValue(ATTR_SIZE);
-            // logisim max bus size is 32, so use multiple buses if needed
-            int nBus = (((size - 1) / 32) + 1);
-            int nPorts = -1;
-            if (dir == INPUT || dir == OUTPUT)
-                nPorts = nBus;
-            else if (dir == INOUT_N)
-                nPorts = 3*nBus;
-            else if (dir == INOUT_1)
-                nPorts = 2*nBus + 1;
-            Port[] ps = new Port[nPorts];
-            int p = 0;
+	private void updatePorts(Instance instance) {
+		Direction facing = instance.getAttributeValue(StdAttr.FACING);
+		String dir = instance.getAttributeValue(ATTR_DIR);
+		int size = instance.getAttributeValue(ATTR_SIZE);
+		// logisim max bus size is 32, so use multiple buses if needed
+		int nBus = (((size - 1) / 32) + 1);
+		int nPorts = -1;
+		if (dir == INPUT || dir == OUTPUT)
+			nPorts = nBus;
+		else if (dir == INOUT_N)
+			nPorts = 3*nBus;
+		else if (dir == INOUT_1)
+			nPorts = 2*nBus + 1;
+		Port[] ps = new Port[nPorts];
+		int p = 0;
 
-            int x = 0, y = 0, dx = 0, dy = 0;
-            if (facing == Direction.NORTH)
-                dy = -10;
-            else if (facing == Direction.SOUTH)
-                dy = 10;
-            else if (facing == Direction.WEST)
-                dx = -10;
-            else 
-                dx = 10;
-            if (dir == INPUT || dir == OUTPUT) {
-                x += dx; y += dy;
-            }
-            if (dir == INOUT_1) {
-                ps[p] = new Port(x-dy, y+dx, Port.INPUT, 1);
-                ps[p].setToolTip(StringUtil.constantGetter("OutEnable"));
-                p++;
-                x += dx; y += dy;
-            }
-            int n = size;
-            int i = 0;
-            while (n > 0) {
-                int e = (n > 32 ? 32 : n);
-                String range = "[" + i + " to " + (i + e - 1) +"]";
-                if (dir == INOUT_N) {
-                    ps[p] = new Port(x-dy, y+dx, Port.INPUT, e);
-                    ps[p].setToolTip(StringUtil.constantGetter("OutEnable"+range));
-                    p++;
-                    x += dx; y += dy;
-                }
-                if (dir == OUTPUT || dir == INOUT_1 || dir == INOUT_N) {
-                    ps[p] = new Port(x, y, Port.INPUT, e);
-                    ps[p].setToolTip(StringUtil.constantGetter("Out"+range));
-                    p++;
-                    x += dx; y += dy;
-                }
-                i += 32;
-                n -= e;
-            }
-            n = size;
-            i = 0;
-            while (n > 0) {
-                int e = (n > 32 ? 32 : n);
-                String range = "[" + i + " to " + (i + e - 1) +"]";
-                if (dir == INPUT || dir == INOUT_1 || dir == INOUT_N) {
-                    ps[p] = new Port(x, y, Port.OUTPUT, e);
-                    ps[p].setToolTip(StringUtil.constantGetter("In"+range));
-                    p++;
-                    x += dx; y += dy;
-                }
-                i += 32;
-                n -= e;
-            }
-            instance.setPorts(ps);
+		int x = 0, y = 0, dx = 0, dy = 0;
+		if (facing == Direction.NORTH)
+			dy = -10;
+		else if (facing == Direction.SOUTH)
+			dy = 10;
+		else if (facing == Direction.WEST)
+			dx = -10;
+		else 
+			dx = 10;
+		if (dir == INPUT || dir == OUTPUT) {
+			x += dx; y += dy;
+		}
+		if (dir == INOUT_1) {
+			ps[p] = new Port(x-dy, y+dx, Port.INPUT, 1);
+			ps[p].setToolTip(StringUtil.constantGetter("OutEnable"));
+			p++;
+			x += dx; y += dy;
+		}
+		int n = size;
+		int i = 0;
+		while (n > 0) {
+			int e = (n > 32 ? 32 : n);
+			String range = "[" + i + " to " + (i + e - 1) +"]";
+			if (dir == INOUT_N) {
+				ps[p] = new Port(x-dy, y+dx, Port.INPUT, e);
+				ps[p].setToolTip(StringUtil.constantGetter("OutEnable"+range));
+				p++;
+				x += dx; y += dy;
+			}
+			if (dir == OUTPUT || dir == INOUT_1 || dir == INOUT_N) {
+				ps[p] = new Port(x, y, Port.INPUT, e);
+				ps[p].setToolTip(StringUtil.constantGetter("Out"+range));
+				p++;
+				x += dx; y += dy;
+			}
+			i += 32;
+			n -= e;
+		}
+		n = size;
+		i = 0;
+		while (n > 0) {
+			int e = (n > 32 ? 32 : n);
+			String range = "[" + i + " to " + (i + e - 1) +"]";
+			if (dir == INPUT || dir == INOUT_1 || dir == INOUT_N) {
+				ps[p] = new Port(x, y, Port.OUTPUT, e);
+				ps[p].setToolTip(StringUtil.constantGetter("In"+range));
+				p++;
+				x += dx; y += dy;
+			}
+			i += 32;
+			n -= e;
+		}
+		instance.setPorts(ps);
 
-        }
+	}
 
 	@Override
 	public String getHDLName(AttributeSet attrs) {
@@ -346,7 +346,7 @@ public class PortIO extends InstanceFactory {
 			computeTextField(instance);
 		} else if (attr == ATTR_SIZE || attr == ATTR_DIR || attr == StdAttr.FACING) {
 			instance.recomputeBounds();
-			configurePorts(instance);
+			updatePorts(instance);
 			computeTextField(instance);
 			MyIOInformation.setNrOfInOutports(
 					instance.getAttributeValue(ATTR_SIZE),
