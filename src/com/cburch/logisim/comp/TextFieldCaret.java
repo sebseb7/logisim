@@ -230,7 +230,7 @@ class TextFieldCaret implements Caret, TextFieldListener {
 
 	protected void moveCaret(int x, int y) {
 		x -= field.getX();
-		x -= field.getY();
+		y -= field.getY();
 		int halign = field.getHAlign();
 		int valign = field.getVAlign();
 		pos = GraphicsUtil.getTextPosition(g, curText, x, y, halign, valign);
