@@ -70,6 +70,7 @@ public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	public SortedMap<String, Integer> GetInputList(Netlist TheNetlist, AttributeSet attrs) {
 		SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
 		Inputs.put("Hex", 4);
+		Inputs.put("DecimalPoint", 1);
 		return Inputs;
 	}
 
@@ -83,7 +84,7 @@ public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		Outputs.put("Segment_E", 1);
 		Outputs.put("Segment_F", 1);
 		Outputs.put("Segment_G", 1);
-		Outputs.put("DecimalPoint", 1);
+		Outputs.put("Segment_DP", 1);
 		return Outputs;
 	}
 
@@ -98,7 +99,8 @@ public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
 		SortedMap<String, String> PortMap = new TreeMap<String, String>();
 
-		PortMap.putAll(GetNetMap("Hex", true, ComponentInfo, 0, Reporter, HDLType, Nets));
+		PortMap.putAll(GetNetMap("Hex", true, ComponentInfo, HexDigit.HEX, Reporter, HDLType, Nets));
+		PortMap.putAll(GetNetMap("DecimalPoint", true, ComponentInfo, HexDigit.DP, Reporter, HDLType, Nets));
 
 		String pin = LocalOutputBubbleBusname;
 		int offset = ComponentInfo.GetLocalBubbleOutputStartId();
@@ -109,7 +111,7 @@ public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		PortMap.put("Segment_E", pin + "(" + (offset+4) + ")");
 		PortMap.put("Segment_F", pin + "(" + (offset+5) + ")");
 		PortMap.put("Segment_G", pin + "(" + (offset+6) + ")");
-		PortMap.put("DecimalPoint", pin + "(" + (offset+7) + ")");
+		PortMap.put("Segment_DP", pin + "(" + (offset+7) + ")");
 		return PortMap;
 	}
 
@@ -136,6 +138,7 @@ public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		Contents.add("ENTITY " + ComponentName + " IS");
 		Contents.add("   PORT ( ");
 		Contents.add("      Hex          : IN std_logic_vector (3 downto 0);");
+		Contents.add("      DecimalPoint : IN std_logic;");
 		Contents.add("      Segment_A    : OUT std_logic;");
 		Contents.add("      Segment_B    : OUT std_logic;");
 		Contents.add("      Segment_C    : OUT std_logic;");
@@ -143,7 +146,7 @@ public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		Contents.add("      Segment_E    : OUT std_logic;");
 		Contents.add("      Segment_F    : OUT std_logic;");
 		Contents.add("      Segment_G    : OUT std_logic;");
-		Contents.add("      DecimalPoint : OUT std_logic");
+		Contents.add("      Segment_DP   : OUT std_logic");
 		Contents.add("   );");
 		Contents.add("END " + ComponentName + ";");
 		Contents.add("");
@@ -169,7 +172,7 @@ public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			Contents.add("   Segment_E <= s_output_value(4);");
 			Contents.add("   Segment_F <= s_output_value(5);");
 			Contents.add("   Segment_G <= s_output_value(6);");
-			Contents.add("   DecimalPoint <= '0';");
+			Contents.add("   Segment_DP <= DecimalPoint;");
 			Contents.add("");
 			Contents.add("   MakeSegs : PROCESS( Hex )");
 			Contents.add("   BEGIN");

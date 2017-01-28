@@ -110,7 +110,7 @@ public class SevenSegment extends InstanceFactory {
 		LabelNames.set(Segment_E, "Segment_E");
 		LabelNames.set(Segment_F, "Segment_F");
 		LabelNames.set(Segment_G, "Segment_G");
-		LabelNames.set(DP, "DecimalPoint");
+		LabelNames.set(DP, "Segment_DP");
 		return LabelNames;
 	}
 
