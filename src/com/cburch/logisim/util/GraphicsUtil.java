@@ -221,10 +221,10 @@ public class GraphicsUtil {
 			}
 			int linewidth = tabStringWidth(g, line);
 			switch (halign) {
-				case GraphicsUtil.H_CENTER:
+				case H_CENTER:
 					x += (width - linewidth)/2;
 					break;
-				case GraphicsUtil.H_RIGHT:
+				case H_RIGHT:
 					x += (width - linewidth);
 					break;
 			}
@@ -247,6 +247,15 @@ public class GraphicsUtil {
 				y -= tm.height;
 				pos += line.length() + 1;
 				continue;
+			}
+			int linewidth = tabStringWidth(g, line);
+			switch (halign) {
+				case H_CENTER:
+					x -= (r.getWidth() - linewidth)/2;
+					break;
+				case H_RIGHT:
+					x -= (r.getWidth() - linewidth);
+					break;
 			}
 			int last = 0;
 			for (int i = 0; i < line.length(); i++) {
