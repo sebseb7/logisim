@@ -354,37 +354,31 @@ public class Rom extends Mem {
 
 	@Override
 	public void paintInstance(InstancePainter painter) {
-            if (painter.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
-                DrawRomClassic(painter);
-            } else {
-		Graphics g = painter.getGraphics();
-		Bounds bds = painter.getBounds();
+		if (painter.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
+			DrawRomClassic(painter);
+		} else {
+			Graphics g = painter.getGraphics();
+			Bounds bds = painter.getBounds();
 
-		String Label = painter.getAttributeValue(StdAttr.LABEL);
-		if (Label != null) {
-			Font font = g.getFont();
-			g.setFont(painter.getAttributeValue(StdAttr.LABEL_FONT));
-			GraphicsUtil.drawCenteredText(g, Label, bds.getX() + bds.getWidth()
-					/ 2, bds.getY() - g.getFont().getSize());
-			g.setFont(font);
-		}
-		int xpos = bds.getX();
-		int ypos = bds.getY();
-		int NrOfBits = painter.getAttributeValue(Mem.DATA_ATTR).getWidth();
-		/* draw control */
-		DrawControlBlock(painter, xpos, ypos);
-		/* draw body */
-		for (int i = 0; i < NrOfBits; i++) {
-			DrawDataBlock(painter, xpos, ypos, i, NrOfBits);
-		}
-		/* Draw contents */
-		if (painter.getShowState()) {
-			MemState state = getState(painter);
-			state.paint(painter.getGraphics(), bds.getX(), bds.getY(),
-					25, getControlHeight(painter.getAttributeSet()) + 5, 
-					Mem.SymbolWidth - 20, 20 * NrOfBits - 10, false);
-		}
+			painter.drawLabel();
+
+			int xpos = bds.getX();
+			int ypos = bds.getY();
+			int NrOfBits = painter.getAttributeValue(Mem.DATA_ATTR).getWidth();
+			/* draw control */
+			DrawControlBlock(painter, xpos, ypos);
+			/* draw body */
+			for (int i = 0; i < NrOfBits; i++) {
+				DrawDataBlock(painter, xpos, ypos, i, NrOfBits);
 			}
+			/* Draw contents */
+			if (painter.getShowState()) {
+				MemState state = getState(painter);
+				state.paint(painter.getGraphics(), bds.getX(), bds.getY(),
+						25, getControlHeight(painter.getAttributeSet()) + 5, 
+						Mem.SymbolWidth - 20, 20 * NrOfBits - 10, false);
+			}
+		}
 	}
 
 	@Override

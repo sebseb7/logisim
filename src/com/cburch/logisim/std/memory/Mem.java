@@ -119,6 +119,12 @@ abstract class Mem extends InstanceFactory {
 	@Override
 	protected void configureNewInstance(Instance instance) {
 		configurePorts(instance);
+		Bounds bds = instance.getBounds();
+		int x = bds.getX() + bds.getWidth() / 2;
+		int y = bds.getY() - 2;
+		int halign = GraphicsUtil.H_CENTER;
+		int valign = GraphicsUtil.V_BOTTOM;
+		instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, x, y, halign, valign);
 	}
 
 	abstract void configurePorts(Instance instance);
@@ -220,17 +226,9 @@ abstract class Mem extends InstanceFactory {
 		Graphics g = painter.getGraphics();
 		Bounds bds = painter.getBounds();
 
-		String Label = painter.getAttributeValue(StdAttr.LABEL);
-		if (Label != null) {
-			Font font = g.getFont();
-			g.setFont(painter.getAttributeValue(StdAttr.LABEL_FONT));
-			GraphicsUtil.drawCenteredText(g, Label, bds.getX() + bds.getWidth()
-					/ 2, bds.getY() - g.getFont().getSize());
-			g.setFont(font);
-		}
-
-		// draw boundary
+		// draw boundary and label
 		painter.drawBounds();
+		painter.drawLabel();
 
 		String mem = "ram", MEM = "RAM";
 		if (this instanceof Rom) {
