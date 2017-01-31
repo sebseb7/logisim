@@ -121,17 +121,19 @@ public class CircuitAttributes extends AbstractAttributeSet {
 
 	private static final Attribute<?>[] STATIC_ATTRS = { NAME_ATTR,
 			CIRCUIT_LABEL_ATTR, CIRCUIT_LABEL_FACING_ATTR,
-			CIRCUIT_LABEL_FONT_ATTR, CIRCUIT_IS_VHDL_BOX, CIRCUIT_VHDL_PATH, CIRCUIT_APPEARANCE_ATTR};
+			CIRCUIT_LABEL_FONT_ATTR, CIRCUIT_IS_VHDL_BOX, CIRCUIT_VHDL_PATH,
+			ShowStateOption.ATTR, CIRCUIT_APPEARANCE_ATTR};
 
 	private static final Object[] STATIC_DEFAULTS = { "", "", Direction.EAST,
-			StdAttr.DEFAULT_LABEL_FONT, false, "", StdAttr.APPEAR_FPGA};
+			StdAttr.DEFAULT_LABEL_FONT, false, "", ShowStateOption.NONE, StdAttr.APPEAR_FPGA};
 
 	private static final List<Attribute<?>> INSTANCE_ATTRS = Arrays
 			.asList(new Attribute<?>[] { StdAttr.FACING, StdAttr.LABEL,
 					LABEL_LOCATION_ATTR, StdAttr.LABEL_FONT,
-					CircuitAttributes.NAME_ATTR, CIRCUIT_LABEL_ATTR,
+					NAME_ATTR, CIRCUIT_LABEL_ATTR,
 					CIRCUIT_LABEL_FACING_ATTR, CIRCUIT_LABEL_FONT_ATTR,
-					CIRCUIT_IS_VHDL_BOX, CIRCUIT_VHDL_PATH, CIRCUIT_APPEARANCE_ATTR });
+					CIRCUIT_IS_VHDL_BOX, CIRCUIT_VHDL_PATH,
+					ShowStateOption.ATTR, CIRCUIT_APPEARANCE_ATTR });
 
 	private Circuit source;
 	private Instance subcircInstance;

@@ -34,6 +34,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
+import java.util.ArrayList;
 
 import org.w3c.dom.Element;
 
@@ -42,7 +44,10 @@ import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitMutator;
 import com.cburch.logisim.circuit.CircuitTransaction;
+import com.cburch.logisim.circuit.appear.AppearanceSvgReader;
 import com.cburch.logisim.circuit.Wire;
+import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.AttributeSet;
@@ -66,7 +71,7 @@ public class XmlCircuitReader extends CircuitTransaction {
 	 * @throws XmlReaderException
 	 */
 	static Component getComponent(Element elt, XmlReader.ReadContext reader)
-			throws XmlReaderException {
+		throws XmlReaderException {
 		if (elt.getAttribute("trackercomp") != "" && !Main.VERSION.hasTracker()) {
 			return (null);
 		}
@@ -81,17 +86,17 @@ public class XmlCircuitReader extends CircuitTransaction {
 		Library lib = reader.findLibrary(libName);
 		if (lib == null) {
 			throw new XmlReaderException(Strings.get("compUnknownError",
-					"no-lib"));
+						"no-lib"));
 		}
 
 		Tool tool = lib.getTool(name);
 		if (tool == null || !(tool instanceof AddTool)) {
 			if (libName == null || libName.equals("")) {
 				throw new XmlReaderException(Strings.get("compUnknownError",
-						name));
+							name));
 			} else {
 				throw new XmlReaderException(Strings.get("compAbsentError",
-						name, libName));
+							name, libName));
 			}
 		}
 		ComponentFactory source = ((AddTool) tool).getFactory();
@@ -104,14 +109,14 @@ public class XmlCircuitReader extends CircuitTransaction {
 		// Create component if location known
 		if (loc_str == null || loc_str.equals("")) {
 			throw new XmlReaderException(Strings.get("compLocMissingError",
-					source.getName()));
+						source.getName()));
 		} else {
 			try {
 				Location loc = Location.parse(loc_str);
 				return source.createComponent(loc, attrs);
 			} catch (NumberFormatException e) {
 				throw new XmlReaderException(Strings.get("compLocInvalidError",
-						source.getName(), loc_str));
+							source.getName(), loc_str));
 			}
 		}
 	}
@@ -127,7 +132,7 @@ public class XmlCircuitReader extends CircuitTransaction {
 	}
 
 	void addWire(Circuit dest, CircuitMutator mutator, Element elt)
-			throws XmlReaderException {
+		throws XmlReaderException {
 		Location pt0;
 		try {
 			String str = elt.getAttribute("from");
@@ -154,8 +159,7 @@ public class XmlCircuitReader extends CircuitTransaction {
 		mutator.add(dest, Wire.create(pt0, pt1));
 	}
 
-	private void buildCircuit(XmlReader.CircuitData circData,
-			CircuitMutator mutator) {
+	private void buildCircuit(XmlReader.CircuitData circData, CircuitMutator mutator) {
 		Element elt = circData.circuitElement;
 		Circuit dest = circData.circuit;
 		Map<Element, Component> knownComponents = circData.knownComponents;
@@ -192,10 +196,40 @@ public class XmlCircuitReader extends CircuitTransaction {
 				}
 			}
 		}
+	}
 
-		List<AbstractCanvasObject> appearance = circData.appearance;
-		if (appearance != null && !appearance.isEmpty()) {
-			dest.getAppearance().setObjectsForce(appearance);
+	private void buildDynamicAppearance(XmlReader.CircuitData circData, CircuitMutator mutator) {
+		Circuit dest = circData.circuit;
+		Collection<Component> components = circData.knownComponents.values();
+		List<AbstractCanvasObject> shapes = new ArrayList<AbstractCanvasObject>();
+		for (Element appearElt : XmlIterator.forChildElements(circData.circuitElement, "appear")) {
+			for (Element sub : XmlIterator.forChildElements(appearElt)) {
+				// Dynamic shapes are handled here. Static shapes are already done.
+				if (!sub.getTagName().startsWith("visible-"))
+					continue;
+				try {
+					AbstractCanvasObject m = AppearanceSvgReader.createShape(sub, null, dest);
+					if (m == null) {
+						reader.addError( Strings.get("fileAppearanceNotFound", sub.getTagName()),
+							circData.circuit.getName() + "." + sub.getTagName());
+					} else {
+						shapes.add(m);
+					}
+				} catch (RuntimeException e) {
+					reader.addError(Strings.get("fileAppearanceError", sub.getTagName()),
+							circData.circuit.getName() + "." + sub.getTagName());
+				}
+			}
+		}
+		if (!shapes.isEmpty()) {
+			if (circData.appearance == null) {
+				circData.appearance = shapes;
+			} else {
+				circData.appearance.addAll(shapes);
+			}
+		}
+		if (circData.appearance != null && !circData.appearance.isEmpty()) {
+			dest.getAppearance().setObjectsForce(circData.appearance);
 			dest.getAppearance().setDefaultAppearance(false);
 		}
 	}
@@ -213,6 +247,9 @@ public class XmlCircuitReader extends CircuitTransaction {
 	protected void run(CircuitMutator mutator) {
 		for (XmlReader.CircuitData circuitData : circuitsData) {
 			buildCircuit(circuitData, mutator);
+		}
+		for (XmlReader.CircuitData circuitData : circuitsData) {
+			buildDynamicAppearance(circuitData, mutator);
 		}
 	}
 

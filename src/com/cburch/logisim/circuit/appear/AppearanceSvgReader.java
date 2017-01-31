@@ -36,13 +36,15 @@ import org.w3c.dom.Element;
 
 import com.cburch.draw.model.AbstractCanvasObject;
 import com.cburch.draw.shapes.SvgReader;
+import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.std.io.LedShape;
 
 public class AppearanceSvgReader {
 	public static AbstractCanvasObject createShape(Element elt,
-			Map<Location, Instance> pins) {
+			Map<Location, Instance> pins, Circuit circuit) {
 		String name = elt.getTagName();
 		if (name.equals("circ-anchor") || name.equals("circ-origin")) {
 			Location loc = getLocation(elt);
@@ -64,6 +66,8 @@ public class AppearanceSvgReader {
 			} else {
 				return new AppearancePort(loc, pin);
 			}
+		} else if (name.startsWith("visible-")) {
+			return LedShape.fromSvgElement(elt, circuit);
 		} else {
 			return SvgReader.createShape(elt);
 		}

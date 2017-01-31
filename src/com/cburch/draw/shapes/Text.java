@@ -160,6 +160,13 @@ public class Text extends AbstractCanvasObject {
 
 	@Override
 	public void paint(Graphics g, HandleGesture gesture) {
+		g.setColor(Color.YELLOW);
+		Bounds bds = label.getBounds();
+		int x = bds.getX();
+		int y = bds.getY();
+		int w = bds.getWidth();
+		int h = bds.getHeight();
+		g.fillRect(x, y, w, h);
 		label.paint(g);
 	}
 

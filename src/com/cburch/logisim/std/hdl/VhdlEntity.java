@@ -212,12 +212,12 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
 		Location loc = painter.getLocation();
 		g.translate(loc.getX(), loc.getY());
-                appearance.paintSubcircuit(g, facing);
+		appearance.paintSubcircuit(painter, g, facing);
 		g.translate(-loc.getX(), -loc.getY());
 
 		String label = painter.getAttributeValue(StdAttr.LABEL);
 		if (label != null) {
-                        Bounds bds = painter.getBounds();
+			Bounds bds = painter.getBounds();
 			Font oldFont = g.getFont();
 			g.setFont(painter.getAttributeValue(StdAttr.LABEL_FONT));
 			GraphicsUtil.drawCenteredText(g, label, bds.getX() + bds.getWidth() / 2, bds.getY() - g.getFont().getSize());

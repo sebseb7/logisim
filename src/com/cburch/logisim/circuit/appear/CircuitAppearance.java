@@ -44,12 +44,14 @@ import com.cburch.draw.model.CanvasModelListener;
 import com.cburch.draw.model.CanvasObject;
 import com.cburch.draw.model.Drawing;
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
@@ -262,7 +264,7 @@ public class CircuitAppearance extends Drawing {
 		return isDefault;
 	}
 
-	public void paintSubcircuit(Graphics g, Direction facing) {
+	public void paintSubcircuit(InstancePainter painter, Graphics g, Direction facing) {
 		Direction defaultFacing = getFacing();
 		double rotate = 0.0;
 		if (facing != defaultFacing && g instanceof Graphics2D) {
@@ -274,7 +276,11 @@ public class CircuitAppearance extends Drawing {
 		for (CanvasObject shape : getObjectsFromBottom()) {
 			if (!(shape instanceof AppearanceElement)) {
 				Graphics dup = g.create();
-				shape.paint(dup, null);
+				if (shape instanceof DynamicElement)
+					((DynamicElement)shape).paintDynamic(dup,
+						(painter.getShowState() ? (CircuitState)painter.getData() : null));
+				else
+					shape.paint(dup, null);
 				dup.dispose();
 			}
 		}
