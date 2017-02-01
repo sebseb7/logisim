@@ -84,7 +84,9 @@ public class Text extends AbstractCanvasObject {
 
 	@Override
 	public Bounds getBounds() {
-		return label.getBounds();
+		Bounds b = label.getBounds();
+		// return Bounds.create(b.getX()-3, b.getY(), b.getWidth() + 6, b.getHeight());
+		return b;
 	}
 
 	@Override
@@ -93,7 +95,7 @@ public class Text extends AbstractCanvasObject {
 	}
 
 	public List<Handle> getHandles() {
-		Bounds bds = label.getBounds();
+		Bounds bds = getBounds();
 		int x = bds.getX();
 		int y = bds.getY();
 		int w = bds.getWidth();
@@ -160,13 +162,6 @@ public class Text extends AbstractCanvasObject {
 
 	@Override
 	public void paint(Graphics g, HandleGesture gesture) {
-		g.setColor(Color.YELLOW);
-		Bounds bds = label.getBounds();
-		int x = bds.getX();
-		int y = bds.getY();
-		int w = bds.getWidth();
-		int h = bds.getHeight();
-		g.fillRect(x, y, w, h);
 		label.paint(g);
 	}
 

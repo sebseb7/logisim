@@ -51,6 +51,10 @@ import com.cburch.logisim.instance.StdAttr;
 public class CircuitAttributes extends AbstractAttributeSet {
 	private class MyListener implements AttributeListener,
 			CircuitAppearanceListener {
+		private Circuit source;
+		private MyListener(Circuit s) {
+			source = s;
+		}
 		public void attributeListChanged(AttributeEvent e) {
 		}
 
@@ -70,6 +74,8 @@ public class CircuitAttributes extends AbstractAttributeSet {
 				subcircInstance.recomputeBounds();
 			}
 			subcircInstance.fireInvalidated();
+			if (source != null & !source.getAppearance().isDefaultAppearance())
+				source.getStaticAttributes().setValue(APPEARANCE_ATTR, APPEAR_CUSTOM);
 		}
 	}
 
@@ -86,6 +92,11 @@ public class CircuitAttributes extends AbstractAttributeSet {
 		public void attributeValueChanged(AttributeEvent e) {
 			if (e.getAttribute() == NAME_ATTR) {
 				source.fireEvent(CircuitEvent.ACTION_SET_NAME, e.getValue());
+			} else if (e.getAttribute() == APPEARANCE_ATTR) {
+				if (e.getValue() == APPEAR_CLASSIC || e.getValue() == APPEAR_FPGA) {
+					source.getAppearance().setDefaultAppearance(true);
+					source.RecalcDefaultShape();
+				}
 			}
 		}
 	}
@@ -117,15 +128,21 @@ public class CircuitAttributes extends AbstractAttributeSet {
 	public static final Attribute<String> CIRCUIT_VHDL_PATH = Attributes
 			.forString("circuitvhdlpath", Strings.getter("circuitVhdlPath"));
 
-	public static final Attribute<AttributeOption> CIRCUIT_APPEARANCE_ATTR = StdAttr.APPEARANCE;
+	public static final AttributeOption APPEAR_CLASSIC = StdAttr.APPEAR_CLASSIC;
+	public static final AttributeOption APPEAR_FPGA = StdAttr.APPEAR_FPGA;
+	public static final AttributeOption APPEAR_CUSTOM = new AttributeOption(
+			"custom", Strings.getter("circuitCustomAppearance"));
+	public static final Attribute<AttributeOption> APPEARANCE_ATTR = Attributes
+			.forOption("appearance", Strings.getter("circuitAppearanceAttr"),
+					new AttributeOption[] { APPEAR_CLASSIC, APPEAR_FPGA, APPEAR_CUSTOM });
 
 	private static final Attribute<?>[] STATIC_ATTRS = { NAME_ATTR,
 			CIRCUIT_LABEL_ATTR, CIRCUIT_LABEL_FACING_ATTR,
 			CIRCUIT_LABEL_FONT_ATTR, CIRCUIT_IS_VHDL_BOX, CIRCUIT_VHDL_PATH,
-			ShowStateOption.ATTR, CIRCUIT_APPEARANCE_ATTR};
+			ShowStateOption.ATTR, APPEARANCE_ATTR};
 
 	private static final Object[] STATIC_DEFAULTS = { "", "", Direction.EAST,
-			StdAttr.DEFAULT_LABEL_FONT, false, "", ShowStateOption.NONE, StdAttr.APPEAR_FPGA};
+			StdAttr.DEFAULT_LABEL_FONT, false, "", ShowStateOption.NONE, APPEAR_FPGA};
 
 	private static final List<Attribute<?>> INSTANCE_ATTRS = Arrays
 			.asList(new Attribute<?>[] { StdAttr.FACING, StdAttr.LABEL,
@@ -133,7 +150,7 @@ public class CircuitAttributes extends AbstractAttributeSet {
 					NAME_ATTR, CIRCUIT_LABEL_ATTR,
 					CIRCUIT_LABEL_FACING_ATTR, CIRCUIT_LABEL_FONT_ATTR,
 					CIRCUIT_IS_VHDL_BOX, CIRCUIT_VHDL_PATH,
-					ShowStateOption.ATTR, CIRCUIT_APPEARANCE_ATTR });
+					ShowStateOption.ATTR, APPEARANCE_ATTR });
 
 	private Circuit source;
 	private Instance subcircInstance;
@@ -206,7 +223,7 @@ public class CircuitAttributes extends AbstractAttributeSet {
 	void setSubcircuit(Instance value) {
 		subcircInstance = value;
 		if (subcircInstance != null && listener == null) {
-			listener = new MyListener();
+			listener = new MyListener(source);
 			source.getStaticAttributes().addAttributeListener(listener);
 			source.getAppearance().addCircuitAppearanceListener(listener);
 		}

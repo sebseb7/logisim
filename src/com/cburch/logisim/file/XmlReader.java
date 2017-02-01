@@ -1045,7 +1045,7 @@ class XmlReader {
 			addBuiltinLibrariesIfMissing(doc, root);
 			// pre logisim-evolution, we didn't have "Appearance" labels
 			// on many components. Add StdAttr.APPEAR_CLASSIC on each subcircuit
-			// and instances of FlipFlops, Registers, Counters, and
+			// and instances of FlipFlops, Registers, Counters, RAM, ROM, and
 			// Shift Registers.
 			String memLibName = null;
 			for (Element libElt : XmlIterator.forChildElements(root, "lib")) {
@@ -1066,6 +1066,7 @@ class XmlReader {
 							continue;
 						if (name.equals("J-K Flip-Flop") || name.equals("S-R Flip-Flop") ||
 								name.equals("T Flip-Flop") || name.equals("D Flip-Flop") ||
+								name.equals("RAM") || name.equals("ROM") ||
 								name.equals("Register") || name.equals("Shift Register")) {
 							setDefaultAttribute(doc, compElt, "appearance", "classic");
 								}

@@ -51,60 +51,18 @@ import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.std.io.Io;
 import com.cburch.logisim.instance.InstanceDataSingleton;
 
-public class LedShape extends DynamicElement {
-	static final int DEFAULT_STROKE_WIDTH = 1;
-	static final int DEFAULT_RADIUS = 5;
+public class RGBLedShape extends LedShape {
+	private static final int DEFAULT_STROKE_WIDTH = 1;
+	private static final int DEFAULT_RADIUS = 5;
 
-	protected int radius;
-
-	public LedShape(int x, int y, DynamicElement.Path p) {
-		super(p, Bounds.create(x, y, 2*DEFAULT_RADIUS, 2*DEFAULT_RADIUS));
-		radius = DEFAULT_RADIUS;
-		strokeWidth = DEFAULT_STROKE_WIDTH;
-	}
-
-	@Override
-	public boolean contains(Location loc, boolean assumeFilled) {
-		int x = bounds.getX();
-		int y = bounds.getY();
-		int w = bounds.getWidth();
-		int h = bounds.getHeight();
-		int qx = loc.getX();
-		int qy = loc.getY();
-		double dx = qx - (x + 0.5 * w);
-		double dy = qy - (y + 0.5 * h);
-		double sum = (dx * dx) / (w * w) + (dy * dy) / (h * h);
-		return sum <= 0.25;
-	}
-
-	@Override
-	public List<Attribute<?>> getAttributes() {
-		return UnmodifiableList.create(new Attribute<?>[] { DrawAttr.STROKE_WIDTH});
-	}
-
-	@Override
-	@SuppressWarnings("unchecked")
-	public <V> V getValue(Attribute<V> attr) {
-		if (attr == DrawAttr.STROKE_WIDTH) {
-			return (V) Integer.valueOf(strokeWidth);
-		} else {
-			// todo: radius
-			return null;
-		}
-	}
-
-	@Override
-	public void updateValue(Attribute<?> attr, Object value) {
-		if (attr == DrawAttr.STROKE_WIDTH) {
-			strokeWidth = ((Integer) value).intValue();
-		}
-		// todo: radius
+	public RGBLedShape(int x, int y, DynamicElement.Path p) {
+		super(x, y, p);
 	}
 
 	@Override
 	public boolean matches(CanvasObject other) {
-		if (other.getClass().equals(LedShape.class)) {
-			LedShape that = (LedShape) other;
+		if (other instanceof RGBLedShape) {
+			RGBLedShape that = (RGBLedShape) other;
 			return this.bounds.equals(that.bounds);
 		} else {
 			return false;
@@ -113,15 +71,13 @@ public class LedShape extends DynamicElement {
 
 	@Override
 	public void paintDynamic(Graphics g, CircuitState state) {
-		Color offColor = path.leaf().getAttributeSet().getValue(Io.ATTR_OFF_COLOR);
-		Color onColor = path.leaf().getAttributeSet().getValue(Io.ATTR_ON_COLOR);
 		int x = bounds.getX();
 		int y = bounds.getY();
 		int w = bounds.getWidth();
 		int h = bounds.getHeight();
 		GraphicsUtil.switchToWidth(g, strokeWidth);
 		if (state == null) {
-			g.setColor(offColor);
+			g.setColor(Color.lightGray);
 			g.fillOval(x, y, w, h);
 			g.setColor(DynamicElement.COLOR);
 			g.drawOval(x, y, w, h);
@@ -129,8 +85,13 @@ public class LedShape extends DynamicElement {
 			Boolean activ = path.leaf().getAttributeSet().getValue(Io.ATTR_ACTIVE);
 			Object desired = activ.booleanValue() ? Value.TRUE : Value.FALSE;
 			InstanceDataSingleton data = (InstanceDataSingleton)getData(state);
-			Value val = data == null ? Value.FALSE : (Value) data.getValue();
-			g.setColor(val == desired ? onColor : offColor);
+			int summ = (data == null ? 0 : ((Integer) data.getValue()).intValue());
+			int mask = activ.booleanValue() ? 0 : 7;
+			summ ^= mask;
+			int red = ((summ >> RGBLed.RED) & 1) * 0xFF;
+			int green = ((summ >> RGBLed.GREEN) & 1) * 0xFF;
+			int blue = ((summ >> RGBLed.BLUE) & 1) * 0xFF;
+			g.setColor(new Color(red, green, blue));
 			g.fillOval(x, y, w, h);
 			g.setColor(Color.darkGray);
 			g.drawOval(x, y, w, h);
@@ -139,7 +100,7 @@ public class LedShape extends DynamicElement {
 
 	@Override
 	public Element toSvgElement(Document doc) {
-		Element ret = doc.createElement("visible-led");
+		Element ret = doc.createElement("visible-rgbled");
 		ret.setAttribute("x", "" + bounds.getX());
 		ret.setAttribute("y", "" + bounds.getY());
 		ret.setAttribute("width", "" + bounds.getWidth());
@@ -150,7 +111,7 @@ public class LedShape extends DynamicElement {
 		return ret;
 	}
 
-	public static LedShape fromSvgElement(Element elt, Circuit circuit) {
+	public static RGBLedShape fromSvgElement(Element elt, Circuit circuit) {
 		try {
 			String pathstr = elt.getAttribute("path");
 			DynamicElement.Path path = DynamicElement.Path.fromSvgString(pathstr, circuit);
@@ -160,8 +121,11 @@ public class LedShape extends DynamicElement {
 			double y = Double.parseDouble(elt.getAttribute("y"));
 			double w = Double.parseDouble(elt.getAttribute("width"));
 			double h = Double.parseDouble(elt.getAttribute("height"));
-			LedShape shape = new LedShape((int)x, (int)y, path);
-			shape.radius = (int) Math.round((w + h)/4);
+			int px = (int) Math.round(x + w / 2);
+			int py = (int) Math.round(y + h / 2);
+			int r = (int) Math.round((w + h)/4);
+			RGBLedShape shape = new RGBLedShape(px, py, path);
+			shape.radius = r;
 			if (elt.hasAttribute("stroke-width"))
 				shape.strokeWidth = Integer.parseInt(elt.getAttribute("stroke-width").trim());
 			return shape;
@@ -173,11 +137,11 @@ public class LedShape extends DynamicElement {
 
 	@Override
 	public String getDisplayName() {
-		return Strings.get("ledComponent");
+		return Strings.get("RGBledComponent");
 	}
 
 	@Override
 	public String toString() {
-		return "Led:" + getBounds();
+		return "RGBLed:" + getBounds();
 	}
 }

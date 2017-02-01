@@ -40,7 +40,7 @@ import com.cburch.draw.model.AbstractCanvasObject;
 import com.cburch.draw.model.Handle;
 import com.cburch.logisim.data.Location;
 
-class SvgCreator {
+public class SvgCreator {
 	private static boolean colorMatches(Color a, Color b) {
 		return a.getRed() == b.getRed() && a.getGreen() == b.getGreen()
 				&& a.getBlue() == b.getBlue();
@@ -144,15 +144,7 @@ class SvgCreator {
 		if (showOpacity(fill)) {
 			elt.setAttribute("fill-opacity", getOpacityString(fill));
 		}
-		elt.setAttribute("font-family", font.getFamily());
-		elt.setAttribute("font-size", "" + font.getSize());
-		int style = font.getStyle();
-		if ((style & Font.ITALIC) != 0) {
-			elt.setAttribute("font-style", "italic");
-		}
-		if ((style & Font.BOLD) != 0) {
-			elt.setAttribute("font-weight", "bold");
-		}
+		setFontAttribute(elt, font);
 		if (halign == DrawAttr.ALIGN_LEFT) {
 			elt.setAttribute("text-anchor", "start");
 		} else if (halign == DrawAttr.ALIGN_RIGHT) {
@@ -162,6 +154,18 @@ class SvgCreator {
 		}
 		elt.appendChild(doc.createTextNode(text.getText()));
 		return elt;
+	}
+
+	public static void setFontAttribute(Element elt, Font font) {
+		elt.setAttribute("font-family", font.getFamily());
+		elt.setAttribute("font-size", "" + font.getSize());
+		int style = font.getStyle();
+		if ((style & Font.ITALIC) != 0) {
+			elt.setAttribute("font-style", "italic");
+		}
+		if ((style & Font.BOLD) != 0) {
+			elt.setAttribute("font-weight", "bold");
+		}
 	}
 
 	private static String getColorString(Color color) {

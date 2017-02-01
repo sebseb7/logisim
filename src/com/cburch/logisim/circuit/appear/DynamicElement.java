@@ -32,6 +32,7 @@ package com.cburch.logisim.circuit.appear;
 
 import java.util.List;
 import java.awt.Graphics;
+import java.awt.Color;
 
 import com.cburch.draw.model.Handle;
 import com.cburch.draw.model.HandleGesture;
@@ -43,9 +44,12 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.instance.InstanceComponent;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.UnmodifiableList;
 
 public abstract class DynamicElement extends AbstractCanvasObject {
+
+	public static final Color COLOR = new Color(66, 244, 152);
 
 	public static class Path {
 		public InstanceComponent[] elt;
@@ -126,12 +130,21 @@ public abstract class DynamicElement extends AbstractCanvasObject {
 		return path;
 	}
 
+	public InstanceComponent getFirstInstance() {
+		return path.elt[0];
+	}
+
 	@Override
 	public Bounds getBounds() {
 		if (strokeWidth < 2)
 			return bounds;
 		else
 			return bounds.expand(strokeWidth / 2);
+	}
+
+	@Override
+	public boolean contains(Location loc, boolean assumeFilled) {
+		return bounds.contains(loc);
 	}
 
 	public Location getLocation() {
@@ -172,6 +185,20 @@ public abstract class DynamicElement extends AbstractCanvasObject {
 		return o;
 	}
 
+
+	@Override
+	public String getDisplayNameAndLabel() {
+		String label = path.leaf().getInstance().getAttributeValue(StdAttr.LABEL);
+		if (label != null && label.length() > 0)
+			return getDisplayName() + " \"" + label + "\"";
+		else
+			return getDisplayName();
+	}
+
+	@Override
+	public void paint(Graphics g, HandleGesture gesture) {
+			paintDynamic(g, null);
+	}
 
 	public abstract void paintDynamic(Graphics g, CircuitState state);
 

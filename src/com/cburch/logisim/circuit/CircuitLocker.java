@@ -116,10 +116,14 @@ class CircuitLocker {
 		mutatingMutator = null;
 	}
 
-	void checkForWritePermission(String operationName) {
+	int getSerialNumber() {
+		return serialNumber;
+	}
+
+	void checkForWritePermission(String operationName, Circuit circuit) {
 		if (mutatingThread != Thread.currentThread()) {
-			throw new IllegalStateException(operationName
-					+ " outside transaction");
+			throw new LockException(operationName + " outside transaction",
+					circuit, serialNumber, mutatingThread, mutatingMutator);
 		}
 	}
 
@@ -138,4 +142,27 @@ class CircuitLocker {
 	public boolean hasWriteLock() {
 		return mutatingThread == Thread.currentThread();
 	}
+
+	public static class LockException extends IllegalStateException {
+		private Circuit circuit;
+		private int serialNumber;
+		private transient Thread mutatingThread;
+		private CircuitMutatorImpl mutatingMutator;
+		public LockException(String msg,
+				Circuit circ,
+				int serial,
+				Thread thread,
+				CircuitMutatorImpl mutator) {
+			super(msg);
+			circuit = circ;
+			serialNumber = serial;
+			mutatingThread = thread;
+			mutatingMutator = mutator;
+		}
+		public Circuit getCircuit() { return circuit; }
+		public int getSerialNumber() { return serialNumber; }
+		public Thread getMutatingThread() { return mutatingThread; }
+		public CircuitMutatorImpl getCircuitMutator() { return mutatingMutator; }
+	}
+
 }

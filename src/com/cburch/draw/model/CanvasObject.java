@@ -59,6 +59,8 @@ public interface CanvasObject {
 
 	public abstract String getDisplayName();
 
+	public abstract String getDisplayNameAndLabel();
+
 	public abstract List<Handle> getHandles(HandleGesture gesture);
 
 	public abstract <V> V getValue(Attribute<V> attr);

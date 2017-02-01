@@ -72,36 +72,36 @@ import com.cburch.logisim.util.StringUtil;
 public class SubcircuitFactory extends InstanceFactory {
 	private class CircuitFeature implements StringGetter, MenuExtender,
 			ActionListener {
-		private Instance instance;
-		private Project proj;
+				private Instance instance;
+				private Project proj;
 
-		public CircuitFeature(Instance instance) {
-			this.instance = instance;
-		}
+				public CircuitFeature(Instance instance) {
+					this.instance = instance;
+				}
 
-		public void actionPerformed(ActionEvent e) {
-			CircuitState superState = proj.getCircuitState();
-			if (superState == null)
-				return;
+				public void actionPerformed(ActionEvent e) {
+					CircuitState superState = proj.getCircuitState();
+					if (superState == null)
+						return;
 
-			CircuitState subState = getSubstate(superState, instance);
-			if (subState == null)
-				return;
-			proj.setCircuitState(subState);
-		}
+					CircuitState subState = getSubstate(superState, instance);
+					if (subState == null)
+						return;
+					proj.setCircuitState(subState);
+				}
 
-		public void configureMenu(JPopupMenu menu, Project proj) {
-			this.proj = proj;
-			String name = instance.getFactory().getDisplayName();
-			String text = Strings.get("subcircuitViewItem", name);
-			JMenuItem item = new JMenuItem(text);
-			item.addActionListener(this);
-			menu.add(item);
-		}
+				public void configureMenu(JPopupMenu menu, Project proj) {
+					this.proj = proj;
+					String name = instance.getFactory().getDisplayName();
+					String text = Strings.get("subcircuitViewItem", name);
+					JMenuItem item = new JMenuItem(text);
+					item.addActionListener(this);
+					menu.add(item);
+				}
 
-		public String toString() {
-			return source.getName();
-		}
+				public String toString() {
+					return source.getName();
+				}
 	}
 
 	private Circuit source;
@@ -117,7 +117,7 @@ public class SubcircuitFactory extends InstanceFactory {
 	void computePorts(Instance instance) {
 		Direction facing = instance.getAttributeValue(StdAttr.FACING);
 		Map<Location, Instance> portLocs = source.getAppearance()
-				.getPortOffsets(facing);
+			.getPortOffsets(facing);
 		Port[] ports = new Port[portLocs.size()];
 		Instance[] pins = new Instance[portLocs.size()];
 		int i = -1;
@@ -126,7 +126,7 @@ public class SubcircuitFactory extends InstanceFactory {
 			Location loc = portLoc.getKey();
 			Instance pin = portLoc.getValue();
 			String type = Pin.FACTORY.isInputPin(pin) ? Port.INPUT
-					: Port.OUTPUT;
+				: Port.OUTPUT;
 			BitWidth width = pin.getAttributeValue(StdAttr.WIDTH);
 			ports[i] = new Port(loc.getX(), loc.getY(), type, width);
 			pins[i] = pin;
@@ -138,7 +138,7 @@ public class SubcircuitFactory extends InstanceFactory {
 		}
 
 		CircuitAttributes attrs = (CircuitAttributes) instance
-				.getAttributeSet();
+			.getAttributeSet();
 		attrs.setPinInstances(pins);
 		instance.setPorts(ports);
 		instance.recomputeBounds();
@@ -148,7 +148,7 @@ public class SubcircuitFactory extends InstanceFactory {
 	private void configureLabel(Instance instance) {
 		Bounds bds = instance.getBounds();
 		Direction loc = instance
-				.getAttributeValue(CircuitAttributes.LABEL_LOCATION_ATTR);
+			.getAttributeValue(CircuitAttributes.LABEL_LOCATION_ATTR);
 
 		int x = bds.getX() + bds.getWidth() / 2;
 		int y = bds.getY() + bds.getHeight() / 2;
@@ -176,7 +176,7 @@ public class SubcircuitFactory extends InstanceFactory {
 	@Override
 	public void configureNewInstance(Instance instance) {
 		CircuitAttributes attrs = (CircuitAttributes) instance
-				.getAttributeSet();
+			.getAttributeSet();
 		attrs.setSubcircuit(instance);
 
 		instance.addAttributeListener();
@@ -216,12 +216,12 @@ public class SubcircuitFactory extends InstanceFactory {
 			Direction facing, Direction defaultFacing) {
 		AttributeSet staticAttrs = source.getStaticAttributes();
 		String label = staticAttrs
-				.getValue(CircuitAttributes.CIRCUIT_LABEL_ATTR);
+			.getValue(CircuitAttributes.CIRCUIT_LABEL_ATTR);
 		if (label != null && !label.equals("")) {
 			Direction up = staticAttrs
-					.getValue(CircuitAttributes.CIRCUIT_LABEL_FACING_ATTR);
+				.getValue(CircuitAttributes.CIRCUIT_LABEL_FACING_ATTR);
 			Font font = staticAttrs
-					.getValue(CircuitAttributes.CIRCUIT_LABEL_FONT_ATTR);
+				.getValue(CircuitAttributes.CIRCUIT_LABEL_FONT_ATTR);
 
 			int back = label.indexOf('\\');
 			int lines = 1;
@@ -239,8 +239,8 @@ public class SubcircuitFactory extends InstanceFactory {
 			int y = bds.getY() + bds.getHeight() / 2;
 			Graphics g = painter.getGraphics().create();
 			double angle = Math.PI / 2
-					- (up.toRadians() - defaultFacing.toRadians())
-					- facing.toRadians();
+				- (up.toRadians() - defaultFacing.toRadians())
+				- facing.toRadians();
 			if (g instanceof Graphics2D && Math.abs(angle) > 0.01) {
 				Graphics2D g2 = (Graphics2D) g;
 				g2.rotate(angle, x, y);
@@ -264,7 +264,7 @@ public class SubcircuitFactory extends InstanceFactory {
 						back = label.indexOf('\\');
 					} else if (c == '\\') {
 						label = label.substring(0, back)
-								+ label.substring(back + 1);
+							+ label.substring(back + 1);
 						back = label.indexOf('\\', back + 1);
 					} else {
 						back = label.indexOf('\\', back + 2);
@@ -341,28 +341,28 @@ public class SubcircuitFactory extends InstanceFactory {
 			computePorts(instance);
 		} else if (attr == CircuitAttributes.LABEL_LOCATION_ATTR) {
 			configureLabel(instance);
-		} else if (attr == CircuitAttributes.CIRCUIT_APPEARANCE_ATTR) {
-                        final Circuit src = source;
-                        CircuitTransaction xn = new ChangeAppearanceTransaction();
-                        source.getLocker().execute(xn);
-                }
+		} else if (attr == CircuitAttributes.APPEARANCE_ATTR) {
+			final Circuit src = source;
+			CircuitTransaction xn = new ChangeAppearanceTransaction();
+			source.getLocker().execute(xn);
+		}
 	}
 
-        private class ChangeAppearanceTransaction extends CircuitTransaction {
-                ChangeAppearanceTransaction() { }
-                @Override
-                protected Map<Circuit, Integer> getAccessedCircuits() {
-                        Map<Circuit, Integer> accessMap = new HashMap<Circuit, Integer>();
-                        for (Circuit supercirc : source.getCircuitsUsingThis()) {
-                                accessMap.put(supercirc, READ_WRITE);
-                        }
-                        return accessMap;
-                }
-                @Override
-                protected void run(CircuitMutator mutator) {
-                    source.getAppearance().recomputeDefaultAppearance();
-                }
-        }
+	private class ChangeAppearanceTransaction extends CircuitTransaction {
+		ChangeAppearanceTransaction() { }
+		@Override
+		protected Map<Circuit, Integer> getAccessedCircuits() {
+			Map<Circuit, Integer> accessMap = new HashMap<Circuit, Integer>();
+			for (Circuit supercirc : source.getCircuitsUsingThis()) {
+				accessMap.put(supercirc, READ_WRITE);
+			}
+			return accessMap;
+		}
+		@Override
+		protected void run(CircuitMutator mutator) {
+			source.getAppearance().recomputeDefaultAppearance();
+		}
+	}
 
 	private void paintBase(InstancePainter painter, Graphics g) {
 		CircuitAttributes attrs = (CircuitAttributes) painter.getAttributeSet();
@@ -408,7 +408,7 @@ public class SubcircuitFactory extends InstanceFactory {
 		CircuitState subState = getSubstate(superState);
 
 		CircuitAttributes attrs = (CircuitAttributes) superState
-				.getAttributeSet();
+			.getAttributeSet();
 		Instance[] pins = attrs.getPinInstances();
 		for (int i = 0; i < pins.length; i++) {
 			Instance pin = pins[i];

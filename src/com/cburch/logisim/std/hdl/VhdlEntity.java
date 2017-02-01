@@ -31,23 +31,27 @@
 package com.cburch.logisim.std.hdl;
 
 import java.util.Map;
-import javax.swing.SwingUtilities;
+import java.util.WeakHashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Window;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
+import javax.swing.SwingUtilities;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
+import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Attributes;
@@ -120,9 +124,9 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 	}
         
 
-        public VhdlContent getContent() {
-            return content;
-        }
+	public VhdlContent getContent() {
+		return content;
+	}
 
 	@Override
 	protected void configureNewInstance(Instance instance) {
@@ -177,32 +181,31 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-            if (attr == StdAttr.FACING) {
-                    updatePorts(instance);
-            } else if (attr == StdAttr.APPEARANCE) {
-                    updatePorts(instance);
-            } else {
-            }
+		if (attr == StdAttr.FACING) {
+			updatePorts(instance);
+		} else if (attr == StdAttr.APPEARANCE) {
+			updatePorts(instance);
+		}
 	}
 
-        private static class VhdlAppearance extends CircuitAppearance {
-            String style;
-            VhdlAppearance(List <CanvasObject> shapes) {
-                super(null);
-                setObjectsForce(shapes);
-            }
-            static VhdlAppearance create(List<Instance> pins, String name, AttributeOption style) {
-                if (style == StdAttr.APPEAR_CLASSIC) {
-                    VhdlAppearance a = new VhdlAppearance(DefaultClassicAppearance.build(pins));
-                    a.style = "classic";
-                    return a;
-                } else {
-                    VhdlAppearance a = new VhdlAppearance(DefaultEvolutionAppearance.build(pins, name));
-                    a.style = "evolution";
-                    return a;
-                }
-            }
-        }
+	private static class VhdlAppearance extends CircuitAppearance {
+		String style;
+		VhdlAppearance(List <CanvasObject> shapes) {
+			super(null);
+			setObjectsForce(shapes);
+		}
+		static VhdlAppearance create(List<Instance> pins, String name, AttributeOption style) {
+			if (style == StdAttr.APPEAR_CLASSIC) {
+				VhdlAppearance a = new VhdlAppearance(DefaultClassicAppearance.build(pins));
+				a.style = "classic";
+				return a;
+			} else {
+				VhdlAppearance a = new VhdlAppearance(DefaultEvolutionAppearance.build(pins, name));
+				a.style = "evolution";
+				return a;
+			}
+		}
+	}
 
 	@Override
 	public void paintInstance(InstancePainter painter) {
@@ -354,62 +357,73 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 		}
 	}
 
-        private VhdlAppearance appearance;
+	private VhdlAppearance appearance;
 
-        void updatePorts(Instance instance) {
-            ArrayList<Instance> pins = new ArrayList<Instance>();
-            int y = 0;
-            for (VhdlParser.PortDescription p: content.getPorts()) {
-                AttributeSet a = Pin.FACTORY.createAttributeSet();
-                a.setValue(StdAttr.LABEL, p.getName());
-                a.setValue(Pin.ATTR_TYPE, p.getType() != Port.INPUT);
-                a.setValue(StdAttr.FACING, p.getType() != Port.INPUT ? Direction.WEST : Direction.EAST);
-                a.setValue(StdAttr.WIDTH, p.getWidth());
-                InstanceComponent ic = (InstanceComponent)Pin.FACTORY.createComponent(Location.create(100, y), a);
-                pins.add(ic.getInstance());
-                y += 10;
-            }
-            AttributeOption style = instance.getAttributeValue(StdAttr.APPEARANCE);
-            appearance = VhdlAppearance.create(pins, getName(), style);
+	void updatePorts(Instance instance) {
+		ArrayList<Instance> pins = new ArrayList<Instance>();
+		int y = 0;
+		for (VhdlParser.PortDescription p: content.getPorts()) {
+			AttributeSet a = Pin.FACTORY.createAttributeSet();
+			a.setValue(StdAttr.LABEL, p.getName());
+			a.setValue(Pin.ATTR_TYPE, p.getType() != Port.INPUT);
+			a.setValue(StdAttr.FACING, p.getType() != Port.INPUT ? Direction.WEST : Direction.EAST);
+			a.setValue(StdAttr.WIDTH, p.getWidth());
+			InstanceComponent ic = (InstanceComponent)Pin.FACTORY.createComponent(Location.create(100, y), a);
+			pins.add(ic.getInstance());
+			y += 10;
+		}
+		AttributeOption style = instance.getAttributeValue(StdAttr.APPEARANCE);
+		appearance = VhdlAppearance.create(pins, getName(), style);
 
-            Direction facing = instance.getAttributeValue(StdAttr.FACING);
-            Map<Location, Instance> portLocs = appearance.getPortOffsets(facing);
+		Direction facing = instance.getAttributeValue(StdAttr.FACING);
+		Map<Location, Instance> portLocs = appearance.getPortOffsets(facing);
 
-            Port[] ports = new Port[portLocs.size()];
-            int i = -1;
-            for (Map.Entry<Location, Instance> portLoc : portLocs.entrySet()) {
-                i++;
-                Location loc = portLoc.getKey();
-                Instance pin = portLoc.getValue();
-                String type = Pin.FACTORY.isInputPin(pin) ? Port.INPUT
-                    : Port.OUTPUT;
-                BitWidth width = pin.getAttributeValue(StdAttr.WIDTH);
-                ports[i] = new Port(loc.getX(), loc.getY(), type, width);
+		Port[] ports = new Port[portLocs.size()];
+		int i = -1;
+		for (Map.Entry<Location, Instance> portLoc : portLocs.entrySet()) {
+			i++;
+			Location loc = portLoc.getKey();
+			Instance pin = portLoc.getValue();
+			String type = Pin.FACTORY.isInputPin(pin) ? Port.INPUT
+				: Port.OUTPUT;
+			BitWidth width = pin.getAttributeValue(StdAttr.WIDTH);
+			ports[i] = new Port(loc.getX(), loc.getY(), type, width);
 
-                String label = pin.getAttributeValue(StdAttr.LABEL);
-                if (label != null && label.length() > 0) {
-                    ports[i].setToolTip(StringUtil.constantGetter(label));
-                }
-            }
-            instance.setPorts(ports);
-            instance.recomputeBounds();
-        }
+			String label = pin.getAttributeValue(StdAttr.LABEL);
+			if (label != null && label.length() > 0) {
+				ports[i].setToolTip(StringUtil.constantGetter(label));
+			}
+		}
+		instance.setPorts(ports);
+		instance.recomputeBounds();
+	}
 
-        @Override
+	@Override
 	public void contentSet(HdlModel source) {
-            if (content.isValid()) 
-                this.setIconName("vhdl.gif");
-            else
-                this.setIconName("vhdl-invalid.gif");
-        }
+		if (content.isValid()) 
+			this.setIconName("vhdl.gif");
+		else
+			this.setIconName("vhdl-invalid.gif");
+	}
 
-        @Override
-        public void aboutToSave(HdlModel source) { }
+	@Override
+	public void aboutToSave(HdlModel source) { }
 
-        @Override
-        public void displayChanged(HdlModel source) { }
+	@Override
+	public void displayChanged(HdlModel source) { }
 
-        @Override
-        public void appearanceChanged(HdlModel source) { }
+	@Override
+	public void appearanceChanged(HdlModel source) { }
+
+	private WeakHashMap<Component, Circuit> circuitsUsingThis = new WeakHashMap<>();
+	public Collection<Circuit> getCircuitsUsingThis() {
+		return circuitsUsingThis.values();
+	}
+	public void addCircuitUsing(Component comp, Circuit circ) {
+		circuitsUsingThis.put(comp, circ);
+	}
+	public void removeCircuitUsing(Component comp) {
+		circuitsUsingThis.remove(comp);
+	}
 
 }

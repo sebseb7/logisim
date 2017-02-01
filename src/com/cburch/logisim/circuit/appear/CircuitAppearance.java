@@ -205,19 +205,19 @@ public class CircuitAppearance extends Drawing {
 		return circuitPins;
 	}
 
-        public AttributeOption getCircuitAppearance() {
-                if (circuit == null || circuit.getStaticAttributes() == null)
-                    return null;
-                else 
-                    return circuit.getStaticAttributes().getValue(CircuitAttributes.CIRCUIT_APPEARANCE_ATTR);
-        }
+	public AttributeOption getCircuitAppearance() {
+		if (circuit == null || circuit.getStaticAttributes() == null)
+			return null;
+		else 
+			return circuit.getStaticAttributes().getValue(CircuitAttributes.APPEARANCE_ATTR);
+	}
 
-        public String getCircuitName() {
-                if (circuit == null || circuit.getStaticAttributes() == null)
-                    return null;
-                else 
-                    return circuit.getStaticAttributes().getValue(CircuitAttributes.NAME_ATTR);
-        }
+	public String getCircuitName() {
+		if (circuit == null || circuit.getStaticAttributes() == null)
+			return null;
+		else 
+			return circuit.getStaticAttributes().getValue(CircuitAttributes.NAME_ATTR);
+	}
 
 	public Direction getFacing() {
 		AppearanceAnchor anchor = findAnchor();

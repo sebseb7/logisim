@@ -244,6 +244,20 @@ public class SvgReader {
 		return ret;
 	}
 
+	public static Font getFontAttribute(Element elt) {
+		String fontFamily = elt.getAttribute("font-family");
+		String fontStyle = elt.getAttribute("font-style");
+		String fontWeight = elt.getAttribute("font-weight");
+		String fontSize = elt.getAttribute("font-size");
+		int styleFlags = 0;
+		if (fontStyle.equals("italic"))
+			styleFlags |= Font.ITALIC;
+		if (fontWeight.equals("bold"))
+			styleFlags |= Font.BOLD;
+		int size = Integer.parseInt(fontSize);
+		return new Font(fontFamily, styleFlags, size);
+	}
+
 	private static Color getColor(String hue, String opacity) {
 		int r;
 		int g;

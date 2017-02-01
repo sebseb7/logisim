@@ -43,6 +43,7 @@ import com.cburch.draw.model.HandleGesture;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.util.UnmodifiableList;
 
@@ -77,6 +78,15 @@ public class AppearancePort extends AppearanceElement {
 	@Override
 	public String getDisplayName() {
 		return Strings.get("circuitPort");
+	}
+
+	@Override
+	public String getDisplayNameAndLabel() {
+		String label = pin.getAttributeValue(StdAttr.LABEL);
+		if (label != null && label.length() > 0)
+			return getDisplayName() + " \"" + label + "\"";
+		else
+			return getDisplayName();
 	}
 
 	@Override

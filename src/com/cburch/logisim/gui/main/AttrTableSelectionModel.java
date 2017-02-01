@@ -35,6 +35,8 @@ import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.gui.generic.AttrTableSetException;
 import com.cburch.logisim.gui.generic.AttributeSetTableModel;
 import com.cburch.logisim.gui.main.Selection.Event;
@@ -57,6 +59,7 @@ class AttrTableSelectionModel extends AttributeSetTableModel implements
 	public String getTitle() {
 		ComponentFactory wireFactory = null;
 		ComponentFactory factory = null;
+		String label = null;
 		int factoryCount = 0;
 		int totalCount = 0;
 		boolean variousFound = false;
@@ -74,6 +77,7 @@ class AttrTableSelectionModel extends AttributeSetTableModel implements
 			} else if (factory == null) {
 				factory = fact;
 				factoryCount = 1;
+				label = comp.getAttributeSet().getValue(StdAttr.LABEL);
 			} else {
 				variousFound = true;
 			}
@@ -91,6 +95,8 @@ class AttrTableSelectionModel extends AttributeSetTableModel implements
 		} else if (factoryCount == 0) {
 			String circName = frame.getCanvas().getCircuit().getName();
 			return Strings.get("circuitAttrTitle", circName);
+		} else if (factoryCount == 1 && label != null && label.length() > 0) {
+			return Strings.get("selectionOne", factory.getDisplayName()) + " \"" + label + "\"";
 		} else if (factoryCount == 1) {
 			return Strings.get("selectionOne", factory.getDisplayName());
 		} else {

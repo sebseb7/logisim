@@ -118,7 +118,7 @@ public class Circuit {
 		}
 
 		public void endChanged(ComponentEvent e) {
-			locker.checkForWritePermission("ends changed");
+			locker.checkForWritePermission("ends changed", Circuit.this);
 			Annotated = false;
 			MyNetList.clear();
 			Component comp = e.getSource();
@@ -677,7 +677,7 @@ public class Circuit {
 	void mutatorAdd(Component c) {
 		// logger.debug("mutatorAdd: {}", c);
 
-		locker.checkForWritePermission("add");
+		locker.checkForWritePermission("add", this);
 
 		Annotated = false;
 		MyNetList.clear();
@@ -701,10 +701,11 @@ public class Circuit {
 			} else if (factory instanceof SubcircuitFactory) {
 				SubcircuitFactory subcirc = (SubcircuitFactory) factory;
 				subcirc.getSubcircuit().circuitsUsingThis.put(c, this);
-			/* } else if (factory instanceof VhdlEntity) {
-                                VhdlEntity vhdl = (VhdlEntity)factory;
-                                logiFile.addVhdlContent(vhdl.getContent()); */
-                        }
+			} else if (factory instanceof VhdlEntity) {
+				VhdlEntity vhdl = (VhdlEntity)factory;
+				// logiFile.addVhdlContent(vhdl.getContent());
+				vhdl.addCircuitUsing(c, this);
+			}
 			c.addComponentListener(myComponentListener);
 			// c.addComponentListener(this.);
 		}
@@ -712,7 +713,7 @@ public class Circuit {
 	}
 
 	public void mutatorClear() {
-		locker.checkForWritePermission("clear");
+		locker.checkForWritePermission("clear", this);
 
 		Set<Component> oldComps = comps;
 		comps = new HashSet<Component>();
@@ -724,6 +725,9 @@ public class Circuit {
 			if (comp.getFactory() instanceof SubcircuitFactory) {
 				SubcircuitFactory sub = (SubcircuitFactory) comp.getFactory();
 				sub.getSubcircuit().circuitsUsingThis.remove(comp);
+			} else if (comp.getFactory() instanceof VhdlEntity) {
+				VhdlEntity vhdl = (VhdlEntity)comp.getFactory();
+				vhdl.removeCircuitUsing(comp);
 			}
 		}
 		fireEvent(CircuitEvent.ACTION_CLEAR, oldComps);
@@ -732,7 +736,7 @@ public class Circuit {
 	void mutatorRemove(Component c) {
 		//logger.debug("mutatorRemove: {}", c);
 
-		locker.checkForWritePermission("remove");
+		locker.checkForWritePermission("remove", this);
 
 		Annotated = false;
 		MyNetList.clear();
@@ -747,6 +751,9 @@ public class Circuit {
 			} else if (factory instanceof SubcircuitFactory) {
 				SubcircuitFactory subcirc = (SubcircuitFactory) factory;
 				subcirc.getSubcircuit().circuitsUsingThis.remove(c);
+			} else if (factory instanceof VhdlEntity) {
+				VhdlEntity vhdl = (VhdlEntity)factory;
+				vhdl.removeCircuitUsing(c);
 			}
 			c.removeComponentListener(myComponentListener);
 		}

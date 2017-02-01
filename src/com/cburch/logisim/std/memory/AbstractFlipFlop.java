@@ -160,7 +160,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
 		setAttributes(new Attribute[] { triggerAttribute, StdAttr.LABEL,
 				StdAttr.LABEL_FONT, ATTR_ENABLE, StdAttr.APPEARANCE },
                                 new Object[] { StdAttr.TRIG_RISING, "",
-				StdAttr.DEFAULT_LABEL_FONT, Boolean.FALSE, StdAttr.APPEAR_FPGA });
+				StdAttr.DEFAULT_LABEL_FONT, Boolean.FALSE, StdAttr.APPEAR_CLASSIC });
 		setInstancePoker(Poker.class);
 		setInstanceLogger(Logger.class);
 	}
@@ -428,10 +428,10 @@ abstract class AbstractFlipFlop extends InstanceFactory {
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
 		if (attr == StdAttr.APPEARANCE) {
-                    instance.recomputeBounds();
-                    updatePorts(instance);
+			instance.recomputeBounds();
+			updatePorts(instance);
 		} else if (attr == ATTR_ENABLE) {
-                    updatePorts(instance);
-                }
+			updatePorts(instance);
+		}
 	}
 }

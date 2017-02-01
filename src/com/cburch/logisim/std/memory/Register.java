@@ -143,7 +143,7 @@ public class Register extends InstanceFactory {
                                 StdAttr.APPEARANCE},
 				new Object[] { BitWidth.create(8), StdAttr.TRIG_RISING, "",
 						StdAttr.DEFAULT_LABEL_FONT, false,
-                                                StdAttr.APPEAR_FPGA});
+                                                StdAttr.APPEAR_CLASSIC});
 		setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
 		setIconName("register.gif");
 		setInstancePoker(RegisterPoker.class);

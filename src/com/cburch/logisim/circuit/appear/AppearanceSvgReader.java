@@ -41,6 +41,8 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.std.io.LedShape;
+import com.cburch.logisim.std.io.RGBLedShape;
+import com.cburch.logisim.std.memory.RegisterShape;
 
 public class AppearanceSvgReader {
 	public static AbstractCanvasObject createShape(Element elt,
@@ -66,8 +68,12 @@ public class AppearanceSvgReader {
 			} else {
 				return new AppearancePort(loc, pin);
 			}
-		} else if (name.startsWith("visible-")) {
+		} else if (name.equals("visible-led")) {
 			return LedShape.fromSvgElement(elt, circuit);
+		} else if (name.equals("visible-rgbled")) {
+			return RGBLedShape.fromSvgElement(elt, circuit);
+		} else if (name.equals("visible-register")) {
+			return RegisterShape.fromSvgElement(elt, circuit);
 		} else {
 			return SvgReader.createShape(elt);
 		}

@@ -124,19 +124,19 @@ public class VhdlContent extends HdlContent {
 
 	private static final String TEMPLATE = loadTemplate();
 
-        private static final Port EMPTY[] = new Port[0];
+	private static final Port EMPTY[] = new Port[0];
 
-        protected AttributeSet staticAttrs;
+	protected AttributeSet staticAttrs;
 	protected StringBuffer content;
-        protected boolean valid;
+	protected boolean valid;
 	protected List<VhdlParser.PortDescription> ports;
-        protected Generic[] generics;
-        protected List<Attribute<Integer>> genericAttrs;
+	protected Generic[] generics;
+	protected List<Attribute<Integer>> genericAttrs;
 	protected String name;
 	protected AttributeOption appearance = StdAttr.APPEAR_FPGA;
 	protected String libraries;
 	protected String architecture;
-        private LogisimFile logiFile;
+	private LogisimFile logiFile;
 
 	protected VhdlContent(String name, LogisimFile file) {
             logiFile = file;
@@ -190,15 +190,15 @@ public class VhdlContent extends HdlContent {
 		return generics;
 	}
 
-        public List<Attribute<Integer>> getGenericAttributes() {
+	public List<Attribute<Integer>> getGenericAttributes() {
 		if (genericAttrs == null) {
 			genericAttrs = new ArrayList<Attribute<Integer>>();
-                        for (Generic g : getGenerics()) {
-                            genericAttrs.add(VhdlEntityAttributes.forGeneric(g));
-                        }
-                }
-                return genericAttrs;
-        }
+			for (Generic g : getGenerics()) {
+				genericAttrs.add(VhdlEntityAttributes.forGeneric(g));
+			}
+		}
+		return genericAttrs;
+	}
 
 	public String getLibraries() {
 		if (libraries == null)
@@ -220,22 +220,22 @@ public class VhdlContent extends HdlContent {
 
 	public void setAppearance(AttributeOption a) {
 		appearance = a;
-                fireAppearanceChanged();
+		fireAppearanceChanged();
 	}
 
 	public List<VhdlParser.PortDescription> getPorts() {
 		return ports;
 	}
 
-        public AttributeSet getStaticAttributes() {
-            return staticAttrs;
-        }
+	public AttributeSet getStaticAttributes() {
+		return staticAttrs;
+	}
 
-        public void aboutToSave() {
-            fireAboutToSave();
-        }
+	public void aboutToSave() {
+		fireAboutToSave();
+	}
 
-        static final String ENTITY_PATTERN = "(\\s*\\bentity\\s+)%entityname%(\\s+is)\\b";
+	static final String ENTITY_PATTERN = "(\\s*\\bentity\\s+)%entityname%(\\s+is)\\b";
 	static final String ARCH_PATTERN = "(\\s*\\barchitecture\\s+\\w+\\s+of\\s+)%entityname%\\b";
 	static final String END_PATTERN = "(\\s*\\bend\\s+)%entityname%(\\s*;)";    
 

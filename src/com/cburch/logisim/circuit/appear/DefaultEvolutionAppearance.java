@@ -244,14 +244,17 @@ public class DefaultEvolutionAppearance {
 			}
                         Font pinFont = null;
 			if (pin.getAttributeSet().containsAttribute(StdAttr.LABEL)) {
-				Text label = new Text(x+ldx,y,pin.getAttributeValue(StdAttr.LABEL));
-				label.getLabel().setHorizontalAlignment(halign);
-				label.getLabel().setVerticalAlignment(EditableLabel.MIDDLE);
-				label.getLabel().setColor(color);
-                                if (pinFont == null)
-                                    pinFont = label.getLabel().getFont().deriveFont((float) 10);
-                                label.getLabel().setFont(pinFont);
-				dest.add(label);
+				String text = pin.getAttributeValue(StdAttr.LABEL);
+				if (text != null && text.length() > 0) {
+					Text label = new Text(x+ldx,y,text);
+					label.getLabel().setHorizontalAlignment(halign);
+					label.getLabel().setVerticalAlignment(EditableLabel.MIDDLE);
+					label.getLabel().setColor(color);
+									if (pinFont == null)
+										pinFont = label.getLabel().getFont().deriveFont((float) 10);
+									label.getLabel().setFont(pinFont);
+					dest.add(label);
+				}
 			}
 			x += dx;
 			y += dy;

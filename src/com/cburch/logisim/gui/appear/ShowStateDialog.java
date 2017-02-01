@@ -53,6 +53,7 @@ import javax.swing.table.TableColumn;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.DefaultMutableTreeNode;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
+import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingModel;
 
 import com.cburch.logisim.file.FileStatistics;
 import com.cburch.logisim.file.LogisimFile;
@@ -63,6 +64,7 @@ import com.cburch.draw.tools.DrawingAttributeSet;
 import com.cburch.draw.toolbar.ToolbarItem;
 import com.cburch.draw.toolbar.ToolbarClickableItem;
 import com.cburch.draw.actions.ModelAddAction;
+import com.cburch.draw.actions.ModelRemoveAction;
 import com.cburch.draw.canvas.Canvas;
 import com.cburch.draw.model.CanvasModel;
 import com.cburch.draw.model.CanvasObject;
@@ -83,7 +85,10 @@ import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.std.io.Led;
 import com.cburch.logisim.std.io.LedShape;
-import com.cburch.logisim.std.io.SevenSegment;
+import com.cburch.logisim.std.io.RGBLed;
+import com.cburch.logisim.std.io.RGBLedShape;
+import com.cburch.logisim.std.memory.Register;
+import com.cburch.logisim.std.memory.RegisterShape;
 
 
 public class ShowStateDialog extends JDialog implements ActionListener {
@@ -106,6 +111,7 @@ public class ShowStateDialog extends JDialog implements ActionListener {
 			root = new DefaultMutableTreeNode(Strings.get("showStateDialogEmptyNode", circuit.getName()));
 		}
 		tree = new CheckboxTree(root);
+		tree.getCheckingModel().setCheckingMode(TreeCheckingModel.CheckingMode.PROPAGATE_PRESERVING_CHECK);
 		tree.setCheckingPaths(getPaths());
 		JScrollPane infoPane = new JScrollPane(tree);
 
@@ -155,10 +161,9 @@ public class ShowStateDialog extends JDialog implements ActionListener {
 
 		Bounds bbox = Bounds.EMPTY_BOUNDS;
 		for (CanvasObject shape : model.getObjectsFromBottom()) {
-			System.out.println(shape + " @ " + shape.getBounds());
 			bbox = bbox.add(shape.getBounds());
 		}
-		Location loc = Location.create((bbox.getX()/10 * 10), (bbox.getY()/10 * 10));
+		Location loc = Location.create(((bbox.getX()+9)/10*10), ((bbox.getY()+9)/10*10));
 		
 		//TreePath[] roots = tree.getCheckingRoots();
 		TreePath[] checked = tree.getCheckingPaths();
@@ -179,15 +184,14 @@ public class ShowStateDialog extends JDialog implements ActionListener {
 
 		boolean dirty = true;
 		if (toRemove.size() > 0) {
-			model.removeObjects(toRemove);
+			canvas.doAction(new ModelRemoveAction(model, toRemove));
 			dirty = true;
 		}
 
 		// sort the remaining shapes
 		Collections.sort(toAdd, new CompareByLocations());
 
-		ArrayList<CanvasObject> avoid = new ArrayList<>();
-		model.getObjectsFromBottom();
+		ArrayList<CanvasObject> avoid = new ArrayList<>(model.getObjectsFromBottom());
 		ArrayList<CanvasObject> newShapes = new ArrayList<>();
 
 		for (TreePath path : toAdd) {
@@ -195,15 +199,22 @@ public class ShowStateDialog extends JDialog implements ActionListener {
 			Ref r = (Ref)node.getUserObject();
 			if (r instanceof CircuitRef)
 				continue;
+			DynamicElement shape = null;
 			if (r.ic.getFactory() instanceof Led) {
-				LedShape shape = new LedShape(loc.getX(), loc.getY(), toComponentPath(path));
+				shape = new LedShape(loc.getX(), loc.getY(), toComponentPath(path));
+			} else if (r.ic.getFactory() instanceof RGBLed) {
+				shape = new RGBLedShape(loc.getX(), loc.getY(), toComponentPath(path));
+			} else if (r.ic.getFactory() instanceof Register) {
+				shape = new RegisterShape(loc.getX(), loc.getY(), toComponentPath(path));
+			}
+			if (shape != null) {
 				pickPlacement(avoid, shape, bbox);
 				loc = shape.getLocation();
 				avoid.add(shape);
 				newShapes.add(shape);
 			}
 		}
-		if (add.size() > 0) {
+		if (newShapes.size() > 0) {
 			canvas.doAction(new ModelAddAction(model, newShapes));
 			dirty = true;
 		}
@@ -237,7 +248,7 @@ public class ShowStateDialog extends JDialog implements ActionListener {
 			if (loc.getX() < bbox.getX() + bbox.getWidth() &&
 					loc.getY() + shape.getBounds().getHeight() >= bbox.getY() + bbox.getHeight())
 				// if we are below the bounding box, move right and up
-				shape.translate(10, bbox.getY()/10*10 - loc.getY());
+				shape.translate(10, (bbox.getY()+9)/10*10 - loc.getY());
 		}
 	}
 
@@ -322,9 +333,11 @@ public class ShowStateDialog extends JDialog implements ActionListener {
 			if (c instanceof InstanceComponent) {
 				InstanceComponent child = (InstanceComponent)c;
 				ComponentFactory f = child.getFactory();
-				if (f instanceof SevenSegment) {
+				if (f instanceof Led) {
 					root.add(new DefaultMutableTreeNode(new Ref(child)));
-				} else if (f instanceof Led) {
+				} else if (f instanceof RGBLed) {
+					root.add(new DefaultMutableTreeNode(new Ref(child)));
+				} else if (f instanceof Register) {
 					root.add(new DefaultMutableTreeNode(new Ref(child)));
 				} else if (f instanceof SubcircuitFactory) {
 					DefaultMutableTreeNode node = enumerate(((SubcircuitFactory)f).getSubcircuit(), child);

@@ -47,7 +47,7 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.std.wiring.Pin;
 
 class DefaultAppearance {
@@ -90,7 +90,7 @@ class DefaultAppearance {
 	}
 
 	public static List<CanvasObject> build(Collection<Instance> pins, String name, AttributeOption style) {
-            if (style == StdAttr.APPEAR_CLASSIC) {
+            if (style == CircuitAttributes.APPEAR_CLASSIC) {
                 return DefaultClassicAppearance.build(pins);
             } else {
                 return DefaultEvolutionAppearance.build(pins, name);

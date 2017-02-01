@@ -36,6 +36,7 @@ import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.Pin;
+import com.cburch.logisim.std.hdl.VhdlEntity;
 
 class CircuitChange {
 	public static CircuitChange add(Circuit circuit, Component comp) {
@@ -158,6 +159,18 @@ class CircuitChange {
 		case SET:
 			return comp.getFactory() instanceof Pin
 					&& (attr == StdAttr.WIDTH || attr == Pin.ATTR_TYPE);
+		case SET_FOR_CIRCUIT:
+			return (attr == CircuitAttributes.APPEARANCE_ATTR);
+		default:
+			return false;
+		}
+	}
+
+	boolean concernsSiblingComponents() {
+		switch (type) {
+		case SET:
+			return (comp.getFactory() instanceof SubcircuitFactory && attr == CircuitAttributes.APPEARANCE_ATTR)
+					|| (comp.getFactory() instanceof VhdlEntity && attr == StdAttr.APPEARANCE);
 		default:
 			return false;
 		}

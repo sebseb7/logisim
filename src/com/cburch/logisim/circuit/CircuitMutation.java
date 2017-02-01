@@ -38,9 +38,11 @@ import java.util.List;
 import java.util.Map;
 
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.util.StringGetter;
+import com.cburch.logisim.std.hdl.VhdlEntity;
 
 public final class CircuitMutation extends CircuitTransaction {
 	private Circuit primary;
@@ -74,8 +76,10 @@ public final class CircuitMutation extends CircuitTransaction {
 
 	@Override
 	protected Map<Circuit, Integer> getAccessedCircuits() {
-		HashMap<Circuit, Integer> accessMap = new HashMap<Circuit, Integer>();
+		HashMap<Circuit, Integer> accessMap = new HashMap<>();
 		HashSet<Circuit> supercircsDone = new HashSet<Circuit>();
+		HashSet<VhdlEntity> vhdlDone = new HashSet<>();
+		HashSet<ComponentFactory> siblingsDone = new HashSet<>();
 		for (CircuitChange change : changes) {
 			Circuit circ = change.getCircuit();
 			accessMap.put(circ, READ_WRITE);
@@ -85,6 +89,30 @@ public final class CircuitMutation extends CircuitTransaction {
 				if (isFirstForCirc) {
 					for (Circuit supercirc : circ.getCircuitsUsingThis()) {
 						accessMap.put(supercirc, READ_WRITE);
+					}
+				}
+			}
+
+			if (change.concernsSiblingComponents()) {
+				ComponentFactory factory = change.getComponent().getFactory();
+				boolean isFirstForSibling = siblingsDone.add(factory);
+				if (isFirstForSibling) {
+					if (factory instanceof SubcircuitFactory) {
+						Circuit sibling = ((SubcircuitFactory)factory).getSubcircuit();
+						boolean isFirstForCirc = supercircsDone.add(sibling);
+						if (isFirstForCirc) {
+							for (Circuit supercirc : sibling.getCircuitsUsingThis()) {
+								accessMap.put(supercirc, READ_WRITE);
+							}
+						}
+					} else if (factory instanceof VhdlEntity) {
+						VhdlEntity sibling = (VhdlEntity)factory;
+						boolean isFirstForVhdl = vhdlDone.add(sibling);
+						if (isFirstForVhdl) {
+							for (Circuit supercirc : sibling.getCircuitsUsingThis()) {
+								accessMap.put(supercirc, READ_WRITE);
+							}
+						}
 					}
 				}
 			}
