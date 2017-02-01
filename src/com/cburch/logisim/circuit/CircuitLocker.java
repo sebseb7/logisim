@@ -39,7 +39,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-class CircuitLocker {
+public class CircuitLocker {
 	private static class CircuitComparator implements Comparator<Circuit> {
 		public int compare(Circuit a, Circuit b) {
 			int an = a.getLocker().serialNumber;
@@ -116,7 +116,7 @@ class CircuitLocker {
 		mutatingMutator = null;
 	}
 
-	int getSerialNumber() {
+	public int getSerialNumber() {
 		return serialNumber;
 	}
 

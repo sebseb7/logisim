@@ -76,7 +76,6 @@ public class RevertAppearanceAction extends Action {
 				appear.setDefaultAppearance(wasDefault);
 			}
 		}
-
 	}
 
 	public RevertAppearanceAction(Circuit circuit) {

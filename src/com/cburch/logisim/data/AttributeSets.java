@@ -40,7 +40,7 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.SyntaxChecker;
 
 public class AttributeSets {
-	private static class FixedSet extends AbstractAttributeSet {
+	static class FixedSet extends AbstractAttributeSet {
 		private List<Attribute<?>> attrs;
 		private Object[] values;
 		private int readOnly = 0;

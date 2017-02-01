@@ -594,7 +594,7 @@ public class Circuit {
 		return wires.points.getExclusive(loc);
 	}
 
-	CircuitLocker getLocker() {
+	public CircuitLocker getLocker() {
 		return locker;
 	}
 
@@ -754,6 +754,10 @@ public class Circuit {
 			} else if (factory instanceof VhdlEntity) {
 				VhdlEntity vhdl = (VhdlEntity)factory;
 				vhdl.removeCircuitUsing(c);
+			} else if (factory instanceof Led) {
+				// TODO: remove stale appearance dynamic elements in
+				// CircuitTransaction.execute() instead?
+				appearance.removeDynamicElement(c);
 			}
 			c.removeComponentListener(myComponentListener);
 		}

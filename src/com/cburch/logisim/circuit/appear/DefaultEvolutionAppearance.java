@@ -242,7 +242,7 @@ public class DefaultEvolutionAppearance {
 				ldx=-LABEL_OUTSIDE;
 				halign=EditableLabel.RIGHT;
 			}
-                        Font pinFont = null;
+			Font pinFont = null;
 			if (pin.getAttributeSet().containsAttribute(StdAttr.LABEL)) {
 				String text = pin.getAttributeValue(StdAttr.LABEL);
 				if (text != null && text.length() > 0) {
@@ -250,9 +250,9 @@ public class DefaultEvolutionAppearance {
 					label.getLabel().setHorizontalAlignment(halign);
 					label.getLabel().setVerticalAlignment(EditableLabel.MIDDLE);
 					label.getLabel().setColor(color);
-									if (pinFont == null)
-										pinFont = label.getLabel().getFont().deriveFont((float) 10);
-									label.getLabel().setFont(pinFont);
+					if (pinFont == null)
+						pinFont = label.getLabel().getFont().deriveFont((float) 10);
+					label.getLabel().setFont(pinFont);
 					dest.add(label);
 				}
 			}

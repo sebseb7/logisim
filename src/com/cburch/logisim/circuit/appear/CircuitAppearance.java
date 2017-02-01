@@ -273,12 +273,16 @@ public class CircuitAppearance extends Drawing {
 		}
 		Location offset = findAnchorLocation();
 		g.translate(-offset.getX(), -offset.getY());
+		CircuitState state = null;
+		if (painter.getShowState()) {
+			try { state = (CircuitState)painter.getData(); }
+			catch (UnsupportedOperationException e) { }
+		}
 		for (CanvasObject shape : getObjectsFromBottom()) {
 			if (!(shape instanceof AppearanceElement)) {
 				Graphics dup = g.create();
 				if (shape instanceof DynamicElement)
-					((DynamicElement)shape).paintDynamic(dup,
-						(painter.getShowState() ? (CircuitState)painter.getData() : null));
+					((DynamicElement)shape).paintDynamic(dup, state);
 				else
 					shape.paint(dup, null);
 				dup.dispose();

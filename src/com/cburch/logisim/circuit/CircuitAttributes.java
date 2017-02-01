@@ -102,8 +102,7 @@ public class CircuitAttributes extends AbstractAttributeSet {
 	}
 
 	static AttributeSet createBaseAttrs(Circuit source, String name) {
-		AttributeSet ret = AttributeSets
-				.fixedSet(STATIC_ATTRS, STATIC_DEFAULTS);
+		AttributeSet ret = AttributeSets.fixedSet(STATIC_ATTRS, STATIC_DEFAULTS);
 		ret.setValue(CircuitAttributes.NAME_ATTR, name);
 		ret.addAttributeListener(new StaticListener(source));
 		return ret;

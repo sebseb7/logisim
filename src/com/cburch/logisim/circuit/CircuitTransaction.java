@@ -66,6 +66,9 @@ public abstract class CircuitTransaction {
 				throw e;
 			}
 
+			// TODO: remove stale appearance dynamic elements here instead
+			// of in Circuit.mutatorRemove() ?
+
 			// Let the port locations of each subcircuit's appearance be
 			// updated to reflect the changes - this needs to happen before
 			// wires are repaired because it could lead to some wires being

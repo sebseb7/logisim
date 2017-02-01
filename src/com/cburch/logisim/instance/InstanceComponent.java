@@ -391,4 +391,8 @@ public class InstanceComponent implements Component, AttributeListener,
 			field.update(labelAttr, fontAttr, x, y, halign, valign, multiline);
 		}
 	}
+
+	public String toString() {
+		return "InstanceComponent{factory="+factory.getName()+",loc=("+loc+"),instance="+instance;
+	}
 }

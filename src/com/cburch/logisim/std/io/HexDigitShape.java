@@ -32,66 +32,39 @@ package com.cburch.logisim.std.io;
 
 import java.awt.Graphics;
 import java.awt.Color;
+import java.awt.Font;
+import java.util.List;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import com.cburch.logisim.instance.InstanceDataSingleton;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.appear.DynamicElement;
-import com.cburch.logisim.data.Value;
+import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.util.UnmodifiableList;
 import com.cburch.logisim.util.GraphicsUtil;
-import com.cburch.logisim.std.io.Io;
-import com.cburch.logisim.instance.InstanceDataSingleton;
+import com.cburch.draw.util.EditableLabel;
 
-public class RGBLedShape extends LedShape {
-	private static final int DEFAULT_STROKE_WIDTH = 1;
-	private static final int DEFAULT_RADIUS = 5;
+public class HexDigitShape extends SevenSegmentShape {
 
-	public RGBLedShape(int x, int y, DynamicElement.Path p) {
+	public HexDigitShape(int x, int y, DynamicElement.Path p) {
 		super(x, y, p);
 	}
 
 	@Override
-	public void paintDynamic(Graphics g, CircuitState state) {
-		int x = bounds.getX();
-		int y = bounds.getY();
-		int w = bounds.getWidth();
-		int h = bounds.getHeight();
-		GraphicsUtil.switchToWidth(g, strokeWidth);
-		if (state == null) {
-			g.setColor(Color.lightGray);
-			g.fillOval(x, y, w, h);
-			g.setColor(DynamicElement.COLOR);
-			g.drawOval(x, y, w, h);
-		} else {
-			Boolean activ = path.leaf().getAttributeSet().getValue(Io.ATTR_ACTIVE);
-			Object desired = activ.booleanValue() ? Value.TRUE : Value.FALSE;
-			InstanceDataSingleton data = (InstanceDataSingleton)getData(state);
-			int summ = (data == null ? 0 : ((Integer) data.getValue()).intValue());
-			int mask = activ.booleanValue() ? 0 : 7;
-			summ ^= mask;
-			int red = ((summ >> RGBLed.RED) & 1) * 0xFF;
-			int green = ((summ >> RGBLed.GREEN) & 1) * 0xFF;
-			int blue = ((summ >> RGBLed.BLUE) & 1) * 0xFF;
-			g.setColor(new Color(red, green, blue));
-			g.fillOval(x, y, w, h);
-			g.setColor(Color.darkGray);
-			g.drawOval(x, y, w, h);
-		}
-	}
-
-	@Override
 	public Element toSvgElement(Document doc) {
-		return toSvgElement(doc.createElement("visible-rgbled"));
+		return toSvgElement(doc.createElement("visible-hexdigit"));
 	}
 
 	@Override
 	public String getDisplayName() {
-		return Strings.get("RGBledComponent");
+		return Strings.get("hexDigitComponent");
 	}
 
 	@Override
 	public String toString() {
-		return "RGBLed:" + getBounds();
+		return "Hex Digit:" + getBounds();
 	}
 }

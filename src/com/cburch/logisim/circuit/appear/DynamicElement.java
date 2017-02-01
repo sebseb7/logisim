@@ -34,9 +34,12 @@ import java.util.List;
 import java.awt.Graphics;
 import java.awt.Color;
 
+import org.w3c.dom.Element;
+
 import com.cburch.draw.model.Handle;
 import com.cburch.draw.model.HandleGesture;
 import com.cburch.draw.model.AbstractCanvasObject;
+import com.cburch.draw.model.CanvasObject;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Bounds;
@@ -60,6 +63,10 @@ public abstract class DynamicElement extends AbstractCanvasObject {
 			return elt[elt.length-1];
 		}
 
+		public String toString() {
+			return toSvgString();
+		}
+
 		public String toSvgString() {
 			String s = "";
 			for (int i = 0; i < elt.length; i++) {
@@ -70,9 +77,9 @@ public abstract class DynamicElement extends AbstractCanvasObject {
 		}
 
 		public static Path fromSvgString(String s, Circuit circuit)
-			throws Exception {
+			throws IllegalArgumentException {
 			if (!s.startsWith("/"))
-				throw new Exception("Bad path: " + s);
+				throw new IllegalArgumentException("Bad path: " + s);
 			String parts[] = s.substring(1).split("(?<!\\\\)/");
 			InstanceComponent[] elt = new InstanceComponent[parts.length];
 			for (int i = 0; i < parts.length; i++) {
@@ -81,7 +88,7 @@ public abstract class DynamicElement extends AbstractCanvasObject {
 				int c = ss.lastIndexOf(",");
 				int e = ss.lastIndexOf(")");
 				if (e != ss.length()-1 || p <= 0 || c <= p)
-					throw new Exception("Bad path element: " + ss);
+					throw new IllegalArgumentException("Bad path element: " + ss);
 				int x = Integer.parseInt(ss.substring(p+1, c).trim());
 				int y = Integer.parseInt(ss.substring(c+1, e).trim());
 				Location loc = Location.create(x, y);
@@ -91,7 +98,7 @@ public abstract class DynamicElement extends AbstractCanvasObject {
 					circ = ((SubcircuitFactory)elt[i-1].getFactory()).getSubcircuit();
 				InstanceComponent ic = find(circ, loc, name);
 				if (ic == null)
-					throw new Exception("Missing component: " + ss);
+					throw new IllegalArgumentException("Missing component: " + ss);
 				elt[i] = ic;
 			}
 			return new Path(elt);
@@ -162,6 +169,12 @@ public abstract class DynamicElement extends AbstractCanvasObject {
 	}
 
 	@Override
+	public boolean matches(CanvasObject other) {
+		return (other instanceof DynamicElement) &&
+			this.bounds.equals(((DynamicElement)other).bounds);
+	}
+
+	@Override
 	public List<Handle> getHandles(HandleGesture gesture) {
 		int x0 = bounds.getX();
 		int y0 = bounds.getY();
@@ -174,14 +187,15 @@ public abstract class DynamicElement extends AbstractCanvasObject {
 
 	protected Object getData(CircuitState state) {
 		Object o = state.getData(path.elt[0]);
-		for (int i = 1; i < path.elt.length; i++) {
-			if (!(o instanceof CircuitState))
-				System.out.println("Expecting CircuitState for " + (i-1) + " " + path.elt[i-1] + "  but got: " + o);
+		for (int i = 1; i < path.elt.length && o != null; i++) {
+			if (!(o instanceof CircuitState)) {
+				throw new IllegalStateException(
+						"Expecting CircuitState for path[" + (i-1) + "] " + path.elt[i-1]
+						+ "  but got: " + o);
+			}
 			state = (CircuitState)o;
 			o = state.getData(path.elt[i]);
 		}
-		if (o == null)
-			System.out.println("Found null data for " + path.elt);
 		return o;
 	}
 
@@ -199,6 +213,8 @@ public abstract class DynamicElement extends AbstractCanvasObject {
 	public void paint(Graphics g, HandleGesture gesture) {
 			paintDynamic(g, null);
 	}
+
+	public abstract void parseSvgElement(Element elt);
 
 	public abstract void paintDynamic(Graphics g, CircuitState state);
 

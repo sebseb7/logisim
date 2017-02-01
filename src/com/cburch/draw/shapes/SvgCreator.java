@@ -135,7 +135,8 @@ public class SvgCreator {
 		Location loc = text.getLocation();
 		Font font = text.getValue(DrawAttr.FONT);
 		Color fill = text.getValue(DrawAttr.FILL_COLOR);
-		Object halign = text.getValue(DrawAttr.ALIGNMENT);
+		Object halign = text.getValue(DrawAttr.HALIGNMENT);
+		Object valign = text.getValue(DrawAttr.VALIGNMENT);
 		elt.setAttribute("x", "" + loc.getX());
 		elt.setAttribute("y", "" + loc.getY());
 		if (!colorMatches(fill, Color.BLACK)) {
@@ -145,12 +146,21 @@ public class SvgCreator {
 			elt.setAttribute("fill-opacity", getOpacityString(fill));
 		}
 		setFontAttribute(elt, font);
-		if (halign == DrawAttr.ALIGN_LEFT) {
+		if (halign == DrawAttr.HALIGN_LEFT) {
 			elt.setAttribute("text-anchor", "start");
-		} else if (halign == DrawAttr.ALIGN_RIGHT) {
+		} else if (halign == DrawAttr.HALIGN_RIGHT) {
 			elt.setAttribute("text-anchor", "end");
 		} else {
 			elt.setAttribute("text-anchor", "middle");
+		}
+		if (valign == DrawAttr.VALIGN_TOP) {
+			elt.setAttribute("dominant-baseline", "top");
+		} else if (valign == DrawAttr.VALIGN_BOTTOM) {
+			elt.setAttribute("dominant-baseline", "bottom");
+		} else if (valign == DrawAttr.VALIGN_BASELINE) {
+			elt.setAttribute("dominant-baseline", "alphabetic");
+		} else {
+			elt.setAttribute("dominant-baseline", "central");
 		}
 		elt.appendChild(doc.createTextNode(text.getText()));
 		return elt;

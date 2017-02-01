@@ -37,9 +37,7 @@ import java.util.List;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import com.cburch.draw.model.CanvasObject;
 import com.cburch.draw.shapes.DrawAttr;
-import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.data.Value;
@@ -102,23 +100,13 @@ public class LedShape extends DynamicElement {
 	}
 
 	@Override
-	public boolean matches(CanvasObject other) {
-		if (other.getClass().equals(LedShape.class)) {
-			LedShape that = (LedShape) other;
-			return this.bounds.equals(that.bounds);
-		} else {
-			return false;
-		}
-	}
-
-	@Override
 	public void paintDynamic(Graphics g, CircuitState state) {
 		Color offColor = path.leaf().getAttributeSet().getValue(Io.ATTR_OFF_COLOR);
 		Color onColor = path.leaf().getAttributeSet().getValue(Io.ATTR_ON_COLOR);
-		int x = bounds.getX();
-		int y = bounds.getY();
-		int w = bounds.getWidth();
-		int h = bounds.getHeight();
+		int x = bounds.getX() + 1;
+		int y = bounds.getY() + 1;
+		int w = bounds.getWidth() - 2;
+		int h = bounds.getHeight() - 2;
 		GraphicsUtil.switchToWidth(g, strokeWidth);
 		if (state == null) {
 			g.setColor(offColor);
@@ -139,7 +127,10 @@ public class LedShape extends DynamicElement {
 
 	@Override
 	public Element toSvgElement(Document doc) {
-		Element ret = doc.createElement("visible-led");
+		return toSvgElement(doc.createElement("visible-led"));
+	}
+
+	public Element toSvgElement(Element ret) {
 		ret.setAttribute("x", "" + bounds.getX());
 		ret.setAttribute("y", "" + bounds.getY());
 		ret.setAttribute("width", "" + bounds.getWidth());
@@ -150,25 +141,10 @@ public class LedShape extends DynamicElement {
 		return ret;
 	}
 
-	public static LedShape fromSvgElement(Element elt, Circuit circuit) {
-		try {
-			String pathstr = elt.getAttribute("path");
-			DynamicElement.Path path = DynamicElement.Path.fromSvgString(pathstr, circuit);
-			if (path == null)
-				return null;
-			double x = Double.parseDouble(elt.getAttribute("x"));
-			double y = Double.parseDouble(elt.getAttribute("y"));
-			double w = Double.parseDouble(elt.getAttribute("width"));
-			double h = Double.parseDouble(elt.getAttribute("height"));
-			LedShape shape = new LedShape((int)x, (int)y, path);
-			shape.radius = (int) Math.round((w + h)/4);
-			if (elt.hasAttribute("stroke-width"))
-				shape.strokeWidth = Integer.parseInt(elt.getAttribute("stroke-width").trim());
-			return shape;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
+	@Override
+	public void parseSvgElement(Element elt) {
+		if (elt.hasAttribute("stroke-width"))
+			strokeWidth = Integer.parseInt(elt.getAttribute("stroke-width").trim());
 	}
 
 	@Override

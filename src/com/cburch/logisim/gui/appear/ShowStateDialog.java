@@ -87,8 +87,14 @@ import com.cburch.logisim.std.io.Led;
 import com.cburch.logisim.std.io.LedShape;
 import com.cburch.logisim.std.io.RGBLed;
 import com.cburch.logisim.std.io.RGBLedShape;
+import com.cburch.logisim.std.io.SevenSegment;;
+import com.cburch.logisim.std.io.SevenSegmentShape;
+import com.cburch.logisim.std.io.HexDigit;
+import com.cburch.logisim.std.io.HexDigitShape;
 import com.cburch.logisim.std.memory.Register;
 import com.cburch.logisim.std.memory.RegisterShape;
+import com.cburch.logisim.std.memory.Counter;
+import com.cburch.logisim.std.memory.CounterShape;
 
 
 public class ShowStateDialog extends JDialog implements ActionListener {
@@ -200,12 +206,18 @@ public class ShowStateDialog extends JDialog implements ActionListener {
 			if (r instanceof CircuitRef)
 				continue;
 			DynamicElement shape = null;
-			if (r.ic.getFactory() instanceof Led) {
-				shape = new LedShape(loc.getX(), loc.getY(), toComponentPath(path));
-			} else if (r.ic.getFactory() instanceof RGBLed) {
+			if (r.ic.getFactory() instanceof RGBLed) {
 				shape = new RGBLedShape(loc.getX(), loc.getY(), toComponentPath(path));
+			} else if (r.ic.getFactory() instanceof Led) {
+				shape = new LedShape(loc.getX(), loc.getY(), toComponentPath(path));
+			} else if (r.ic.getFactory() instanceof HexDigit) {
+				shape = new HexDigitShape(loc.getX(), loc.getY(), toComponentPath(path));
+			} else if (r.ic.getFactory() instanceof SevenSegment) {
+				shape = new SevenSegmentShape(loc.getX(), loc.getY(), toComponentPath(path));
 			} else if (r.ic.getFactory() instanceof Register) {
 				shape = new RegisterShape(loc.getX(), loc.getY(), toComponentPath(path));
+			} else if (r.ic.getFactory() instanceof Counter) {
+				shape = new CounterShape(loc.getX(), loc.getY(), toComponentPath(path));
 			}
 			if (shape != null) {
 				pickPlacement(avoid, shape, bbox);
@@ -333,11 +345,12 @@ public class ShowStateDialog extends JDialog implements ActionListener {
 			if (c instanceof InstanceComponent) {
 				InstanceComponent child = (InstanceComponent)c;
 				ComponentFactory f = child.getFactory();
-				if (f instanceof Led) {
-					root.add(new DefaultMutableTreeNode(new Ref(child)));
-				} else if (f instanceof RGBLed) {
-					root.add(new DefaultMutableTreeNode(new Ref(child)));
-				} else if (f instanceof Register) {
+				if (f instanceof Led
+						|| f instanceof RGBLed
+						|| f instanceof HexDigit
+						|| f instanceof SevenSegment
+						|| f instanceof Register
+						|| f instanceof Counter) {
 					root.add(new DefaultMutableTreeNode(new Ref(child)));
 				} else if (f instanceof SubcircuitFactory) {
 					DefaultMutableTreeNode node = enumerate(((SubcircuitFactory)f).getSubcircuit(), child);
