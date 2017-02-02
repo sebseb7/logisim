@@ -79,13 +79,15 @@ public class RegisterShape extends DynamicElement {
 
 	@Override
 	public void translate(int dx, int dy) {
-		bounds = bounds.translate(dx, dy);
+		super.translate(dx, dy);
 		label.setLocation(bounds.getX(), bounds.getY());
 	}
 
 	@Override
 	public List<Attribute<?>> getAttributes() {
-		return UnmodifiableList.create(new Attribute<?>[] { Text.ATTR_FONT });
+		return UnmodifiableList.create(new Attribute<?>[] {
+			Text.ATTR_FONT,
+			ATTR_LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR });
 	}
 
 	@Override
@@ -93,9 +95,8 @@ public class RegisterShape extends DynamicElement {
 	public <V> V getValue(Attribute<V> attr) {
 		if (attr == Text.ATTR_FONT) {
 			return (V) label.getFont();
-		} else {
-			return null;
 		}
+		return super.getValue(attr);
 	}
 
 	@Override
@@ -103,6 +104,8 @@ public class RegisterShape extends DynamicElement {
 		if (attr == Text.ATTR_FONT) {
 			label.setFont((Font)value);
 			calculateBounds();
+		} else {
+			super.updateValue(attr, value);
 		}
 	}
 
@@ -128,6 +131,7 @@ public class RegisterShape extends DynamicElement {
 			label.setText(StringUtil.toHexString(width, val));
 		}
 		label.paint(g);
+		drawLabel(g);
 	}
 
 	@Override
@@ -136,20 +140,16 @@ public class RegisterShape extends DynamicElement {
 	}
 
 	public Element toSvgElement(Element ret) {
-		ret.setAttribute("x", "" + bounds.getX());
-		ret.setAttribute("y", "" + bounds.getY());
-		ret.setAttribute("width", "" + bounds.getWidth());
-		ret.setAttribute("height", "" + bounds.getHeight());
+		ret = super.toSvgElement(ret);
 		Font font = label.getFont();
 		if (!font.equals(DEFAULT_FONT))
-			SvgCreator.setFontAttribute(ret, font);
-		ret.setAttribute("path", path.toSvgString());
+			SvgCreator.setFontAttribute(ret, font, "value-");
 		return ret;
 	}
 
 	public void parseSvgElement(Element elt) {
-		if (elt.hasAttribute("font-family"))
-			setValue(Text.ATTR_FONT, SvgReader.getFontAttribute(elt));
+		super.parseSvgElement(elt);
+		setValue(Text.ATTR_FONT, SvgReader.getFontAttribute(elt, "value-", "monospaced", 10));
 	}
 
 	@Override

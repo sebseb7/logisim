@@ -31,7 +31,6 @@
 package com.cburch.logisim.comp;
 
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -77,8 +76,8 @@ public class TextField {
 	}
 
 	public void draw(Graphics g) {
-                GraphicsUtil.drawText(g, font, text, x, y, halign, valign);
-        }
+		GraphicsUtil.drawText(g, font, text, x, y, halign, valign);
+	}
 
 	public void fireTextChanged(TextFieldEvent e) {
 		for (TextFieldListener l : new ArrayList<TextFieldListener>(listeners)) {

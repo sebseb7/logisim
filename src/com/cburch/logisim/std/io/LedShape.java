@@ -38,6 +38,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import com.cburch.draw.shapes.DrawAttr;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.data.Value;
@@ -50,7 +51,6 @@ import com.cburch.logisim.std.io.Io;
 import com.cburch.logisim.instance.InstanceDataSingleton;
 
 public class LedShape extends DynamicElement {
-	static final int DEFAULT_STROKE_WIDTH = 1;
 	static final int DEFAULT_RADIUS = 5;
 
 	protected int radius;
@@ -58,7 +58,6 @@ public class LedShape extends DynamicElement {
 	public LedShape(int x, int y, DynamicElement.Path p) {
 		super(p, Bounds.create(x, y, 2*DEFAULT_RADIUS, 2*DEFAULT_RADIUS));
 		radius = DEFAULT_RADIUS;
-		strokeWidth = DEFAULT_STROKE_WIDTH;
 	}
 
 	@Override
@@ -77,26 +76,8 @@ public class LedShape extends DynamicElement {
 
 	@Override
 	public List<Attribute<?>> getAttributes() {
-		return UnmodifiableList.create(new Attribute<?>[] { DrawAttr.STROKE_WIDTH});
-	}
-
-	@Override
-	@SuppressWarnings("unchecked")
-	public <V> V getValue(Attribute<V> attr) {
-		if (attr == DrawAttr.STROKE_WIDTH) {
-			return (V) Integer.valueOf(strokeWidth);
-		} else {
-			// todo: radius
-			return null;
-		}
-	}
-
-	@Override
-	public void updateValue(Attribute<?> attr, Object value) {
-		if (attr == DrawAttr.STROKE_WIDTH) {
-			strokeWidth = ((Integer) value).intValue();
-		}
-		// todo: radius
+		return UnmodifiableList.create(new Attribute<?>[] {
+			DrawAttr.STROKE_WIDTH, ATTR_LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR });
 	}
 
 	@Override
@@ -123,28 +104,12 @@ public class LedShape extends DynamicElement {
 			g.setColor(Color.darkGray);
 			g.drawOval(x, y, w, h);
 		}
+		drawLabel(g);
 	}
 
 	@Override
 	public Element toSvgElement(Document doc) {
 		return toSvgElement(doc.createElement("visible-led"));
-	}
-
-	public Element toSvgElement(Element ret) {
-		ret.setAttribute("x", "" + bounds.getX());
-		ret.setAttribute("y", "" + bounds.getY());
-		ret.setAttribute("width", "" + bounds.getWidth());
-		ret.setAttribute("height", "" + bounds.getHeight());
-		if (strokeWidth != DEFAULT_STROKE_WIDTH)
-			ret.setAttribute("stroke-width", "" + strokeWidth);
-		ret.setAttribute("path", path.toSvgString());
-		return ret;
-	}
-
-	@Override
-	public void parseSvgElement(Element elt) {
-		if (elt.hasAttribute("stroke-width"))
-			strokeWidth = Integer.parseInt(elt.getAttribute("stroke-width").trim());
 	}
 
 	@Override

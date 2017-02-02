@@ -222,7 +222,7 @@ public class Netlist {
 						.GetNrOfInports();
 				if (comp.GetComponent().getFactory() instanceof DipSwitch) {
 					subInputBubbles = comp.GetComponent().getAttributeSet()
-							.getValue(DipSwitch.ATTR_SIZE);
+							.getValue(DipSwitch.ATTR_SIZE).getWidth();
 				}
 				int subInOutBubbles = comp.GetIOInformationContainer()
 						.GetNrOfInOutports();

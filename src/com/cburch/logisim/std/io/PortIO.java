@@ -109,7 +109,7 @@ public class PortIO extends InstanceFactory {
 		setFacingAttribute(StdAttr.FACING);
 		setIconName("pio.gif");
 		setKeyConfigurator(JoinedConfigurator.create(
-					new IntegerConfigurator(ATTR_SIZE, MIN_IO, MAX_IO, 0),
+					new IntegerConfigurator(ATTR_SIZE, MIN_IO, MAX_IO, KeyEvent.ALT_DOWN_MASK),
 					new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK)));
 		setInstancePoker(PortPoker.class);
 		MyIOInformation = new IOComponentInformationContainer(0, 0, portSize,
