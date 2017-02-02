@@ -35,6 +35,7 @@ import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
@@ -58,6 +59,9 @@ import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringUtil;
+import com.cburch.logisim.tools.key.IntegerConfigurator;
+import com.cburch.logisim.tools.key.DirectionConfigurator;
+import com.cburch.logisim.tools.key.JoinedConfigurator;
 
 public class PortIO extends InstanceFactory {
 
@@ -98,12 +102,15 @@ public class PortIO extends InstanceFactory {
 	public PortIO() {
 		super("PortIO", Strings.getter("pioComponent"));
 		int portSize = 8;
-		setAttributes(new Attribute[] { StdAttr.FACING, StdAttr.LABEL, Io.ATTR_LABEL_LOC,
-				StdAttr.LABEL_FONT, Io.ATTR_LABEL_COLOR, ATTR_SIZE, ATTR_DIR},
+		setAttributes(new Attribute[] { StdAttr.FACING, StdAttr.LABEL, StdAttr.LABEL_LOC,
+				StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR, ATTR_SIZE, ATTR_DIR},
 				new Object[] { Direction.EAST, "", Direction.EAST, StdAttr.DEFAULT_LABEL_FONT,
 						Color.BLACK, portSize, INOUT_1 });
 		setFacingAttribute(StdAttr.FACING);
 		setIconName("pio.gif");
+		setKeyConfigurator(JoinedConfigurator.create(
+					new IntegerConfigurator(ATTR_SIZE, MIN_IO, MAX_IO, 0),
+					new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK)));
 		setInstancePoker(PortPoker.class);
 		MyIOInformation = new IOComponentInformationContainer(0, 0, portSize,
 				null, null, GetLabels(portSize),
@@ -117,7 +124,7 @@ public class PortIO extends InstanceFactory {
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
 		updatePorts(instance);
-		Io.computeLabelTextField(instance, instance.getAttributeValue(StdAttr.FACING).getLeft(), 0);
+		instance.computeLabelTextField(Instance.AVOID_BOTTOM);
 		MyIOInformation.setNrOfInOutports(
 				instance.getAttributeValue(ATTR_SIZE),
 				GetLabels(instance.getAttributeValue(ATTR_SIZE)));
@@ -306,12 +313,12 @@ public class PortIO extends InstanceFactory {
 
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-		if (attr == Io.ATTR_LABEL_LOC) {
-			Io.computeLabelTextField(instance, instance.getAttributeValue(StdAttr.FACING).getLeft(), 0);
+		if (attr == StdAttr.LABEL_LOC) {
+			instance.computeLabelTextField(Instance.AVOID_BOTTOM);
 		} else if (attr == ATTR_SIZE || attr == ATTR_DIR || attr == StdAttr.FACING) {
 			instance.recomputeBounds();
 			updatePorts(instance);
-			Io.computeLabelTextField(instance, instance.getAttributeValue(StdAttr.FACING).getLeft(), 0);
+			instance.computeLabelTextField(Instance.AVOID_BOTTOM);
 			MyIOInformation.setNrOfInOutports(
 					instance.getAttributeValue(ATTR_SIZE),
 					GetLabels(instance.getAttributeValue(ATTR_SIZE)));
@@ -406,7 +413,7 @@ public class PortIO extends InstanceFactory {
                 g.translate(-x, -y);
 
 		painter.drawPorts();
-		g.setColor(painter.getAttributeValue(Io.ATTR_LABEL_COLOR));
+		g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
 		painter.drawLabel();
 	}
 

@@ -47,7 +47,7 @@ class ProbeAttributes extends AbstractAttributeSet {
 
 	private static final List<Attribute<?>> ATTRIBUTES = Arrays
 			.asList(new Attribute<?>[] { StdAttr.FACING, RadixOption.ATTRIBUTE,
-					StdAttr.LABEL, Pin.ATTR_LABEL_LOC, StdAttr.LABEL_FONT, });
+					StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, });
 
 	Direction facing = Direction.EAST;
 	String label = "";
@@ -76,7 +76,7 @@ class ProbeAttributes extends AbstractAttributeSet {
 			return (E) facing;
 		if (attr == StdAttr.LABEL)
 			return (E) label;
-		if (attr == Pin.ATTR_LABEL_LOC)
+		if (attr == StdAttr.LABEL_LOC)
 			return (E) labelloc;
 		if (attr == StdAttr.LABEL_FONT)
 			return (E) labelfont;
@@ -101,7 +101,7 @@ class ProbeAttributes extends AbstractAttributeSet {
 			if (label.equals(val))
 				return;
 			label = val;
-		} else if (attr == Pin.ATTR_LABEL_LOC) {
+		} else if (attr == StdAttr.LABEL_LOC) {
 			Direction newValue = (Direction) value;
 			if (labelloc.equals(newValue))
 				return;

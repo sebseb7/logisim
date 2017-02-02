@@ -32,6 +32,7 @@ package com.cburch.logisim.std.io;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
@@ -51,6 +52,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.tools.key.DirectionConfigurator;
 
 public class Led extends InstanceFactory implements DynamicElementProvider {
 
@@ -74,12 +76,13 @@ public class Led extends InstanceFactory implements DynamicElementProvider {
 		super("LED", Strings.getter("ledComponent"));
 		setAttributes(new Attribute[] { StdAttr.FACING, Io.ATTR_ON_COLOR,
 				Io.ATTR_OFF_COLOR, Io.ATTR_ACTIVE, StdAttr.LABEL,
-				Io.ATTR_LABEL_LOC, StdAttr.LABEL_FONT, Io.ATTR_LABEL_COLOR },
+				StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR },
 				new Object[] { Direction.WEST, new Color(240, 0, 0),
-						Color.LIGHT_GRAY, Boolean.TRUE, "", Io.LABEL_CENTER,
+						Color.LIGHT_GRAY, Boolean.TRUE, "", StdAttr.LABEL_CENTER,
 						StdAttr.DEFAULT_LABEL_FONT, Color.BLACK });
 		setFacingAttribute(StdAttr.FACING);
 		setIconName("led.gif");
+		setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK));
 		setPorts(new Port[] { new Port(0, 0, Port.INPUT, 1) });
 		setInstanceLogger(Logger.class);
 		MyIOInformation = new IOComponentInformationContainer(0, 1, 0,
@@ -96,7 +99,7 @@ public class Led extends InstanceFactory implements DynamicElementProvider {
 	@Override
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
-		Io.computeLabelTextField(instance);
+		instance.computeLabelTextField(Instance.AVOID_LEFT);
 	}
 
 	@Override
@@ -117,9 +120,9 @@ public class Led extends InstanceFactory implements DynamicElementProvider {
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
 		if (attr == StdAttr.FACING) {
 			instance.recomputeBounds();
-			Io.computeLabelTextField(instance);
-		} else if (attr == Io.ATTR_LABEL_LOC) {
-			Io.computeLabelTextField(instance);
+			instance.computeLabelTextField(Instance.AVOID_LEFT);
+		} else if (attr == StdAttr.LABEL_LOC) {
+			instance.computeLabelTextField(Instance.AVOID_LEFT);
 		}
 	}
 
@@ -151,7 +154,7 @@ public class Led extends InstanceFactory implements DynamicElementProvider {
 		GraphicsUtil.switchToWidth(g, 2);
 		g.drawOval(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
 		GraphicsUtil.switchToWidth(g, 1);
-		g.setColor(painter.getAttributeValue(Io.ATTR_LABEL_COLOR));
+		g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
 		painter.drawLabel();
 		painter.drawPorts();
 	}

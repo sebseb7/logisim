@@ -32,9 +32,9 @@ package com.cburch.logisim.std.wiring;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.event.KeyEvent;
 
 import com.cburch.logisim.circuit.RadixOption;
-import com.cburch.logisim.comp.TextField;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
@@ -50,6 +50,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.tools.key.DirectionConfigurator;
 
 public class Probe extends InstanceFactory {
 	public static class ProbeLogger extends InstanceLogger {
@@ -81,60 +82,7 @@ public class Probe extends InstanceFactory {
 		}
 	}
 
-	static void configureLabel(Instance instance, Direction labelLoc,
-			Direction facing) {
-		Bounds bds = instance.getBounds();
-		int x;
-		int y;
-		int halign;
-		int valign;
-		if (labelLoc == Direction.NORTH) {
-			halign = TextField.H_CENTER;
-			valign = TextField.V_BOTTOM;
-			x = bds.getX() + bds.getWidth() / 2;
-			y = bds.getY() - 2;
-			if (facing == labelLoc) {
-				halign = TextField.H_LEFT;
-				x += 2;
-			}
-		} else if (labelLoc == Direction.SOUTH) {
-			halign = TextField.H_CENTER;
-			valign = TextField.V_TOP;
-			x = bds.getX() + bds.getWidth() / 2;
-			y = bds.getY() + bds.getHeight() + 2;
-			if (facing == labelLoc) {
-				halign = TextField.H_LEFT;
-				x += 2;
-			}
-		} else if (labelLoc == Direction.EAST) {
-			halign = TextField.H_LEFT;
-			valign = TextField.V_CENTER;
-			x = bds.getX() + bds.getWidth() + 2;
-			y = bds.getY() + bds.getHeight() / 2;
-			if (facing == labelLoc) {
-				valign = TextField.V_BOTTOM;
-				y -= 2;
-			}
-		} else { // WEST
-			halign = TextField.H_RIGHT;
-			valign = TextField.V_CENTER;
-			x = bds.getX() - 2;
-			y = bds.getY() + bds.getHeight() / 2;
-			if (facing == labelLoc) {
-				valign = TextField.V_BOTTOM;
-				y -= 2;
-			}
-		}
-
-		instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, x, y, halign,
-				valign);
-	}
-
-	//
-	// static methods
-	//
-	static Bounds getOffsetBounds(Direction dir, BitWidth width,
-			RadixOption radix) {
+	static Bounds getOffsetBounds(Direction dir, BitWidth width, RadixOption radix) {
 		Bounds ret = null;
 		int len = radix == null || radix == RadixOption.RADIX_2 ? width
 				.getWidth() : radix.getMaxLength(width);
@@ -432,13 +380,9 @@ public class Probe extends InstanceFactory {
 	public Probe() {
 		super("Probe", Strings.getter("probeComponent"));
 		setIconName("probe.gif");
+		setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK));
 		setFacingAttribute(StdAttr.FACING);
 		setInstanceLogger(ProbeLogger.class);
-	}
-
-	void configureLabel(Instance instance) {
-		ProbeAttributes attrs = (ProbeAttributes) instance.getAttributeSet();
-		Probe.configureLabel(instance, attrs.labelloc, attrs.facing);
 	}
 
 	//
@@ -449,7 +393,7 @@ public class Probe extends InstanceFactory {
 		instance.setPorts(new Port[] { new Port(0, 0, Port.INPUT,
 				BitWidth.UNKNOWN) });
 		instance.addAttributeListener();
-		configureLabel(instance);
+		instance.computeLabelTextField(Instance.AVOID_LEFT);
 	}
 
 	@Override
@@ -471,11 +415,11 @@ public class Probe extends InstanceFactory {
 
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-		if (attr == Pin.ATTR_LABEL_LOC) {
-			configureLabel(instance);
+		if (attr == StdAttr.LABEL_LOC) {
+			instance.computeLabelTextField(Instance.AVOID_LEFT);
 		} else if (attr == StdAttr.FACING || attr == RadixOption.ATTRIBUTE) {
 			instance.recomputeBounds();
-			configureLabel(instance);
+			instance.computeLabelTextField(Instance.AVOID_LEFT);
 		}
 	}
 
@@ -555,7 +499,7 @@ public class Probe extends InstanceFactory {
 						.getAttributeSet();
 				attrs.width = newValue.getBitWidth();
 				state.getInstance().recomputeBounds();
-				configureLabel(state.getInstance());
+				state.getInstance().computeLabelTextField(Instance.AVOID_LEFT);
 			}
 		}
 	}

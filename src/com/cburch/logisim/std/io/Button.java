@@ -33,6 +33,7 @@ package com.cburch.logisim.std.io;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
+import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
@@ -53,6 +54,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.tools.key.DirectionConfigurator;
 
 public class Button extends InstanceFactory {
 	public static class Logger extends InstanceLogger {
@@ -97,12 +99,13 @@ public class Button extends InstanceFactory {
 	public Button() {
 		super("Button", Strings.getter("buttonComponent"));
 		setAttributes(new Attribute[] { StdAttr.FACING, Io.ATTR_COLOR,
-				StdAttr.LABEL, Io.ATTR_LABEL_LOC, StdAttr.LABEL_FONT,
-				Io.ATTR_LABEL_COLOR }, new Object[] { Direction.EAST,
-				Color.WHITE, "", Io.LABEL_CENTER, StdAttr.DEFAULT_LABEL_FONT,
+				StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT,
+				StdAttr.LABEL_COLOR }, new Object[] { Direction.EAST,
+				Color.WHITE, "", StdAttr.LABEL_CENTER, StdAttr.DEFAULT_LABEL_FONT,
 				Color.BLACK });
 		setFacingAttribute(StdAttr.FACING);
 		setIconName("button.gif");
+		setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK));
 		setPorts(new Port[] { new Port(0, 0, Port.OUTPUT, 1) });
 		setInstancePoker(Poker.class);
 		setInstanceLogger(Logger.class);
@@ -115,7 +118,7 @@ public class Button extends InstanceFactory {
 	@Override
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
-		Io.computeLabelTextField(instance, DEPTH);
+		instance.computeLabelTextField(Instance.AVOID_CENTER | Instance.AVOID_LEFT);
 	}
 
 	@Override
@@ -137,9 +140,9 @@ public class Button extends InstanceFactory {
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
 		if (attr == StdAttr.FACING) {
 			instance.recomputeBounds();
-			Io.computeLabelTextField(instance, DEPTH);
-		} else if (attr == Io.ATTR_LABEL_LOC) {
-			Io.computeLabelTextField(instance, DEPTH);
+			instance.computeLabelTextField(Instance.AVOID_CENTER | Instance.AVOID_LEFT);
+		} else if (attr == StdAttr.LABEL_LOC) {
+			instance.computeLabelTextField(Instance.AVOID_CENTER | Instance.AVOID_LEFT);
 		}
 	}
 
@@ -171,8 +174,8 @@ public class Button extends InstanceFactory {
 		if (val == Value.TRUE) {
 			x += DEPTH;
 			y += DEPTH;
-			Object labelLoc = painter.getAttributeValue(Io.ATTR_LABEL_LOC);
-			if (labelLoc == Io.LABEL_CENTER || labelLoc == Direction.NORTH
+			Object labelLoc = painter.getAttributeValue(StdAttr.LABEL_LOC);
+			if (labelLoc == StdAttr.LABEL_CENTER || labelLoc == Direction.NORTH
 					|| labelLoc == Direction.WEST) {
 				depress = DEPTH;
 			} else {
@@ -212,7 +215,7 @@ public class Button extends InstanceFactory {
 		}
 
 		g.translate(depress, depress);
-		g.setColor(painter.getAttributeValue(Io.ATTR_LABEL_COLOR));
+		g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
 		painter.drawLabel();
 		g.translate(-depress, -depress);
 		painter.drawPorts();

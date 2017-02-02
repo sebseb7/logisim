@@ -35,6 +35,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.util.ArrayList;
+import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
@@ -53,6 +54,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.tools.key.DirectionConfigurator;
 
 public class Tty extends InstanceFactory {
 	private static int getColumnCount(Object val) {
@@ -97,12 +99,13 @@ public class Tty extends InstanceFactory {
 		setAttributes(new Attribute[] {
 				ATTR_ROWS, ATTR_COLUMNS, ATTR_WIDTH,
 				StdAttr.EDGE_TRIGGER, Io.ATTR_COLOR, Io.ATTR_BACKGROUND,
-				StdAttr.LABEL, Io.ATTR_LABEL_LOC, StdAttr.LABEL_FONT},
+				StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT},
 				new Object[] {
 						Integer.valueOf(8), Integer.valueOf(32), Integer.valueOf(7),
 						StdAttr.TRIG_RISING, Color.BLACK, DEFAULT_BACKGROUND,
 						"", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT});
 		setIconName("tty.gif");
+		setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK));
 
 		MyIOInformation = new IOComponentInformationContainer(0, 0, 12,
 				null, null, null, FPGAIOInformationContainer.IOComponentTypes.PortIO);
@@ -120,7 +123,7 @@ public class Tty extends InstanceFactory {
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
 		updatePorts(instance);
-		Io.computeLabelTextField(instance);
+		instance.computeLabelTextField(0);
 	}
 
 	private void updatePorts(Instance instance) {
@@ -169,8 +172,8 @@ public class Tty extends InstanceFactory {
 			instance.recomputeBounds();
 		} else if (attr == ATTR_WIDTH) {
 			updatePorts(instance);
-		} else if (attr == Io.ATTR_LABEL_LOC) {
-			Io.computeLabelTextField(instance);
+		} else if (attr == StdAttr.LABEL_LOC) {
+			instance.computeLabelTextField(0);
 		}
 	}
 

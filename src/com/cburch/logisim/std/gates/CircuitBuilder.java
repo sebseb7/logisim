@@ -627,7 +627,7 @@ public class CircuitBuilder {
 		attrs.setValue(Pin.ATTR_TYPE, isOutput);
 		attrs.setValue(Pin.ATTR_TRISTATE, Boolean.FALSE);
 		attrs.setValue(StdAttr.LABEL, name);
-		attrs.setValue(Pin.ATTR_LABEL_LOC, Direction.NORTH);
+		attrs.setValue(StdAttr.LABEL_LOC, Direction.NORTH);
 		attrs.setValue(StdAttr.WIDTH, BitWidth.create(width));
 		result.add(factory.createComponent(loc, attrs));
 	}

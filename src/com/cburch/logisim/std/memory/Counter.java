@@ -33,6 +33,7 @@ package com.cburch.logisim.std.memory;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.event.KeyEvent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +55,8 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
+import com.cburch.logisim.tools.key.DirectionConfigurator;
+import com.cburch.logisim.tools.key.JoinedConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringUtil;
 
@@ -98,14 +101,16 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
 		setIconName("counter.gif");
 		setInstancePoker(CounterPoker.class);
 		setInstanceLogger(RegisterLogger.class);
-		setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
-
+		setKeyConfigurator(JoinedConfigurator.create(
+					new BitWidthConfigurator(StdAttr.WIDTH),
+					new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK)));
 	}
 
 	@Override
 	protected void configureNewInstance(Instance instance) {
 		configurePorts(instance);
 		instance.addAttributeListener();
+		instance.computeLabelTextField(Instance.AVOID_SIDES);
 	}
 
 	private void configurePorts(Instance instance) {
@@ -148,9 +153,6 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
 		ps[EN].setToolTip(Strings.getter("counterEnableTip"));
 		ps[CARRY].setToolTip(Strings.getter("counterCarryTip"));
 		instance.setPorts(ps);
-		instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, bds.getX()
-				+ bds.getWidth() / 2, bds.getY() - 3, GraphicsUtil.H_CENTER,
-				GraphicsUtil.V_BASELINE);
 	}
 
 	@Override
@@ -376,6 +378,9 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
 		if (attr == StdAttr.WIDTH || attr == StdAttr.APPEARANCE) {
 			instance.recomputeBounds();
 			configurePorts(instance);
+			instance.computeLabelTextField(Instance.AVOID_SIDES);
+		} else if (attr == StdAttr.LABEL_LOC) {
+			instance.computeLabelTextField(Instance.AVOID_SIDES);
 		}
 	}
 
@@ -406,6 +411,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
 
         // draw boundary, label
         painter.drawBounds();
+		g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
         painter.drawLabel();
 
         // draw input and output ports
@@ -445,6 +451,8 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
 		}
 		int Xpos = painter.getLocation().getX();
 		int Ypos = painter.getLocation().getY();
+		Graphics g = painter.getGraphics();
+		g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
 		painter.drawLabel();
 
 		DrawControl(painter, Xpos, Ypos);

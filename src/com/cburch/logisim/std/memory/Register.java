@@ -32,6 +32,7 @@ package com.cburch.logisim.std.memory;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.circuit.appear.DynamicElement;
@@ -53,12 +54,15 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringUtil;
+import com.cburch.logisim.tools.key.JoinedConfigurator;
+import com.cburch.logisim.tools.key.DirectionConfigurator;
+import com.cburch.logisim.tools.key.BitWidthConfigurator;
 
 public class Register extends InstanceFactory implements DynamicElementProvider {
 	public static void DrawRegisterClassic(InstancePainter painter, int x, int y,
 			int nr_of_bits, boolean isLatch, boolean neg_active,
 			boolean has_we, String value) {
-        }
+	}
 	public static void DrawRegisterEvolution(InstancePainter painter, int x, int y,
 			int nr_of_bits, boolean isLatch, boolean neg_active,
 			boolean has_we, String value) {
@@ -136,17 +140,19 @@ public class Register extends InstanceFactory implements DynamicElementProvider 
 	static final int Ysize = 90;
 
 	public static final Attribute<Boolean> ATTR_SHOW_IN_TAB = Attributes
-			.forBoolean("showInTab", Strings.getter("registerShowInTab"));
+		.forBoolean("showInTab", Strings.getter("registerShowInTab"));
 
 	public Register() {
 		super("Register", Strings.getter("registerComponent"));
 		setAttributes(new Attribute[] { StdAttr.WIDTH, StdAttr.TRIGGER,
-				StdAttr.LABEL, StdAttr.LABEL_FONT, ATTR_SHOW_IN_TAB,
-                                StdAttr.APPEARANCE},
-				new Object[] { BitWidth.create(8), StdAttr.TRIG_RISING, "",
-						StdAttr.DEFAULT_LABEL_FONT, false,
-                                                StdAttr.APPEAR_CLASSIC});
-		setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
+			StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR,
+			ATTR_SHOW_IN_TAB, StdAttr.APPEARANCE},
+			new Object[] { BitWidth.create(8), StdAttr.TRIG_RISING, "",
+				Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK, false,
+			StdAttr.APPEAR_CLASSIC});
+		setKeyConfigurator(JoinedConfigurator.create(
+					new BitWidthConfigurator(StdAttr.WIDTH),
+					new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK)));
 		setIconName("register.gif");
 		setInstancePoker(RegisterPoker.class);
 		setInstanceLogger(RegisterLogger.class);
@@ -154,45 +160,42 @@ public class Register extends InstanceFactory implements DynamicElementProvider 
 
 	@Override
 	public Bounds getOffsetBounds(AttributeSet attrs) {
-            if (attrs.getValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
-		return Bounds.create(-30, -20, 30, 40);
-            } else {
-		return Bounds.create(0, 0, Xsize, Ysize);
-            }
+		if (attrs.getValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
+			return Bounds.create(-30, -20, 30, 40);
+		} else {
+			return Bounds.create(0, 0, Xsize, Ysize);
+		}
 	}
 
 	@Override
 	protected void configureNewInstance(Instance instance) {
-                instance.addAttributeListener();
-                updatePorts(instance);
-		Bounds bds = instance.getBounds();
-		instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT,
-                                bds.getX() + bds.getWidth() / 2, bds.getY() - 3,
-                                GraphicsUtil.H_CENTER, GraphicsUtil.V_BASELINE);
+		instance.addAttributeListener();
+		updatePorts(instance);
+		instance.computeLabelTextField(Instance.AVOID_SIDES);
 	}
 
-        private void updatePorts(Instance instance) {
-            Port[] ps = new Port[5];
-            if (instance.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
-                ps[OUT] = new Port(  0,  0, Port.OUTPUT, StdAttr.WIDTH);
-                ps[IN]  = new Port(-30,  0, Port.INPUT, StdAttr.WIDTH);
-                ps[CK]  = new Port(-20, 20, Port.INPUT, 1);
-                ps[CLR] = new Port(-10, 20, Port.INPUT, 1);
-                ps[EN]  = new Port(-30, 10, Port.INPUT, 1);
-            } else {
-                ps[OUT] = new Port(60, 30, Port.OUTPUT, StdAttr.WIDTH);
-                ps[IN] = new Port(0, 30, Port.INPUT, StdAttr.WIDTH);
-                ps[CK] = new Port(0, 70, Port.INPUT, 1);
-                ps[CLR] = new Port(30, 90, Port.INPUT, 1);
-                ps[EN] = new Port(0, 50, Port.INPUT, 1);
-            }
-            ps[OUT].setToolTip(Strings.getter("registerQTip"));
-            ps[IN].setToolTip(Strings.getter("registerDTip"));
-            ps[CK].setToolTip(Strings.getter("registerClkTip"));
-            ps[CLR].setToolTip(Strings.getter("registerClrTip"));
-            ps[EN].setToolTip(Strings.getter("registerEnableTip"));
-            instance.setPorts(ps);
-        }
+	private void updatePorts(Instance instance) {
+		Port[] ps = new Port[5];
+		if (instance.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
+			ps[OUT] = new Port(  0,  0, Port.OUTPUT, StdAttr.WIDTH);
+			ps[IN]  = new Port(-30,  0, Port.INPUT, StdAttr.WIDTH);
+			ps[CK]  = new Port(-20, 20, Port.INPUT, 1);
+			ps[CLR] = new Port(-10, 20, Port.INPUT, 1);
+			ps[EN]  = new Port(-30, 10, Port.INPUT, 1);
+		} else {
+			ps[OUT] = new Port(60, 30, Port.OUTPUT, StdAttr.WIDTH);
+			ps[IN] = new Port(0, 30, Port.INPUT, StdAttr.WIDTH);
+			ps[CK] = new Port(0, 70, Port.INPUT, 1);
+			ps[CLR] = new Port(30, 90, Port.INPUT, 1);
+			ps[EN] = new Port(0, 50, Port.INPUT, 1);
+		}
+		ps[OUT].setToolTip(Strings.getter("registerQTip"));
+		ps[IN].setToolTip(Strings.getter("registerDTip"));
+		ps[CK].setToolTip(Strings.getter("registerClkTip"));
+		ps[CLR].setToolTip(Strings.getter("registerClrTip"));
+		ps[EN].setToolTip(Strings.getter("registerEnableTip"));
+		instance.setPorts(ps);
+	}
 
 	@Override
 	public String getHDLName(AttributeSet attrs) {
@@ -244,6 +247,7 @@ public class Register extends InstanceFactory implements DynamicElementProvider 
 
 		// draw boundary, label
 		painter.drawBounds();
+		g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
 		painter.drawLabel();
 
 		// draw input and output ports
@@ -274,36 +278,38 @@ public class Register extends InstanceFactory implements DynamicElementProvider 
 
 	@Override
 	public void paintInstance(InstancePainter painter) {
-            if (painter.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
-                DrawRegisterClassic(painter);
-            } else {
-		RegisterData state = (RegisterData) painter.getData();
-		BitWidth widthVal = painter.getAttributeValue(StdAttr.WIDTH);
-		int width = widthVal == null ? 8 : widthVal.getWidth();
-		Location loc = painter.getLocation();
-		int x = loc.getX();
-		int y = loc.getY();
+		if (painter.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
+			DrawRegisterClassic(painter);
+		} else {
+			RegisterData state = (RegisterData) painter.getData();
+			BitWidth widthVal = painter.getAttributeValue(StdAttr.WIDTH);
+			int width = widthVal == null ? 8 : widthVal.getWidth();
+			Location loc = painter.getLocation();
+			int x = loc.getX();
+			int y = loc.getY();
 
-		// determine text to draw in label
-		String a;
-		int val = state == null ? 0 : state.value;
-		a = StringUtil.toHexString(width, val);
-		Object Trigger = painter.getAttributeValue(StdAttr.TRIGGER);
-		boolean IsLatch = Trigger.equals(StdAttr.TRIG_HIGH)
+			// determine text to draw in label
+			String a;
+			int val = state == null ? 0 : state.value;
+			a = StringUtil.toHexString(width, val);
+			Object Trigger = painter.getAttributeValue(StdAttr.TRIGGER);
+			boolean IsLatch = Trigger.equals(StdAttr.TRIG_HIGH)
 				|| Trigger.equals(StdAttr.TRIG_LOW);
-		boolean NegActive = Trigger.equals(StdAttr.TRIG_FALLING)
+			boolean NegActive = Trigger.equals(StdAttr.TRIG_FALLING)
 				|| Trigger.equals(StdAttr.TRIG_LOW);
 
-		DrawRegisterEvolution(painter, x, y, width, IsLatch, NegActive, true, a);
-		painter.drawLabel();
+			DrawRegisterEvolution(painter, x, y, width, IsLatch, NegActive, true, a);
+			Graphics g = painter.getGraphics();
+			g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
+			painter.drawLabel();
 
-		// draw input and output ports
-		painter.drawPort(IN);
-		painter.drawPort(OUT);
-		painter.drawPort(CLR);
-		painter.drawPort(EN);
-		painter.drawPort(CK);
-            }
+			// draw input and output ports
+			painter.drawPort(IN);
+			painter.drawPort(OUT);
+			painter.drawPort(CLR);
+			painter.drawPort(EN);
+			painter.drawPort(CK);
+		}
 	}
 
 	@Override
@@ -333,9 +339,12 @@ public class Register extends InstanceFactory implements DynamicElementProvider 
 
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-		if (attr == StdAttr.APPEARANCE) {
-                    instance.recomputeBounds();
-                    updatePorts(instance);
+		if (attr == StdAttr.WIDTH || attr == StdAttr.APPEARANCE) {
+			instance.recomputeBounds();
+			updatePorts(instance);
+			instance.computeLabelTextField(Instance.AVOID_SIDES);
+		} else if (attr == StdAttr.LABEL_LOC) {
+			instance.computeLabelTextField(Instance.AVOID_SIDES);
 		}
 	}
 

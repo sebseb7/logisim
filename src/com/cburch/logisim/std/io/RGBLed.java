@@ -32,6 +32,7 @@ package com.cburch.logisim.std.io;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
+import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
@@ -51,6 +52,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.tools.key.DirectionConfigurator;
 
 public class RGBLed extends InstanceFactory implements DynamicElementProvider {
 
@@ -87,11 +89,12 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
 	public RGBLed() {
 		super("RGBLED", Strings.getter("RGBledComponent"));
 		setAttributes(new Attribute[] { StdAttr.FACING, Io.ATTR_ACTIVE, StdAttr.LABEL,
-				Io.ATTR_LABEL_LOC, StdAttr.LABEL_FONT, Io.ATTR_LABEL_COLOR },
-				new Object[] { Direction.WEST, Boolean.TRUE, "", Io.LABEL_CENTER,
+				StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR },
+				new Object[] { Direction.WEST, Boolean.TRUE, "", StdAttr.LABEL_CENTER,
 						StdAttr.DEFAULT_LABEL_FONT, Color.BLACK });
 		setFacingAttribute(StdAttr.FACING);
 		setIconName("rgbled.gif");
+		setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK));
 		setInstanceLogger(Logger.class);
 		MyIOInformation = new IOComponentInformationContainer(0, 3, 0, null,
 				GetLabels(), null,
@@ -133,7 +136,7 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
 		updatePorts(instance);
-		Io.computeLabelTextField(instance);
+		instance.computeLabelTextField(Instance.AVOID_LEFT);
 	}
 
 	@Override
@@ -155,9 +158,9 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
 		if (attr == StdAttr.FACING) {
 			instance.recomputeBounds();
 			updatePorts(instance);
-			Io.computeLabelTextField(instance);
-		} else if (attr == Io.ATTR_LABEL_LOC) {
-			Io.computeLabelTextField(instance);
+			instance.computeLabelTextField(Instance.AVOID_LEFT);
+		} else if (attr == StdAttr.LABEL_LOC) {
+			instance.computeLabelTextField(Instance.AVOID_LEFT);
 		}
 	}
 
@@ -192,7 +195,7 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
 		GraphicsUtil.switchToWidth(g, 2);
 		g.drawOval(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
 		GraphicsUtil.switchToWidth(g, 1);
-		g.setColor(painter.getAttributeValue(Io.ATTR_LABEL_COLOR));
+		g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
 		painter.drawLabel();
 		painter.drawPorts();
 	}

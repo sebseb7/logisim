@@ -31,6 +31,7 @@
 package com.cburch.logisim.std.io;
 
 import java.awt.Color;
+import java.awt.event.KeyEvent;
 
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
@@ -47,6 +48,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.data.Direction;
+import com.cburch.logisim.tools.key.DirectionConfigurator;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 
@@ -59,7 +61,7 @@ public class HexDigit extends InstanceFactory implements DynamicElementProvider 
 		super("Hex Digit Display", Strings.getter("hexDigitComponent"));
 		setAttributes(new Attribute[] { 
 				Io.ATTR_ON_COLOR, Io.ATTR_OFF_COLOR, Io.ATTR_BACKGROUND,
-				StdAttr.LABEL, Io.ATTR_LABEL_LOC, StdAttr.LABEL_FONT},
+				StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT},
 				new Object[] {
 				new Color(240, 0, 0), SevenSegment.DEFAULT_OFF, Io.DEFAULT_BACKGROUND,
 				"", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT});
@@ -71,6 +73,7 @@ public class HexDigit extends InstanceFactory implements DynamicElementProvider 
 		setPorts(ps);
 		setOffsetBounds(Bounds.create(-15, -60, 40, 60));
 		setIconName("hexdig.gif");
+		setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK));
 		MyIOInformation = new IOComponentInformationContainer(0, 8, 0, null,
 				SevenSegment.GetLabels(), null,
 				FPGAIOInformationContainer.IOComponentTypes.SevenSegment);
@@ -83,13 +86,13 @@ public class HexDigit extends InstanceFactory implements DynamicElementProvider 
 	@Override
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
-		Io.computeLabelTextField(instance);
+		instance.computeLabelTextField(0);
 	}
 
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-		if (attr == Io.ATTR_LABEL_LOC) {
-			Io.computeLabelTextField(instance);
+		if (attr == StdAttr.LABEL_LOC) {
+			instance.computeLabelTextField(0);
 		}
 	}
 

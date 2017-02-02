@@ -33,6 +33,7 @@ package com.cburch.logisim.std.io;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
+import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
@@ -50,6 +51,7 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.tools.key.DirectionConfigurator;
 
 public class SevenSegment extends InstanceFactory implements DynamicElementProvider {
 	static void drawBase(InstancePainter painter, boolean DrawPoint) {
@@ -134,11 +136,12 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
 		super("7-Segment Display", Strings.getter("sevenSegmentComponent"));
 		setAttributes(new Attribute[] { Io.ATTR_ON_COLOR, Io.ATTR_OFF_COLOR,
 				Io.ATTR_BACKGROUND, Io.ATTR_ACTIVE, StdAttr.LABEL,
-				Io.ATTR_LABEL_LOC, StdAttr.LABEL_FONT }, new Object[] {
+				StdAttr.LABEL_LOC, StdAttr.LABEL_FONT }, new Object[] {
 				new Color(240, 0, 0), DEFAULT_OFF, Io.DEFAULT_BACKGROUND,
 				Boolean.TRUE, "", Direction.EAST, StdAttr.DEFAULT_LABEL_FONT });
 		setOffsetBounds(Bounds.create(-5, 0, 40, 60));
 		setIconName("7seg.gif");
+		setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK));
 		Port[] ps = new Port[8];
 		ps[Segment_A] = new Port(20, 0, Port.INPUT, 1);
 		ps[Segment_B] = new Port(30, 0, Port.INPUT, 1);
@@ -174,7 +177,7 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
 	@Override
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
-		Io.computeLabelTextField(instance);
+		instance.computeLabelTextField(0);
 	}
 
 	@Override
@@ -187,8 +190,8 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
 
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-		if (attr == Io.ATTR_LABEL_LOC) {
-			Io.computeLabelTextField(instance);
+		if (attr == StdAttr.LABEL_LOC) {
+			instance.computeLabelTextField(0);
 		}
 	}
 

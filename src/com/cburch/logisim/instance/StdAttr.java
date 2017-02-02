@@ -31,6 +31,7 @@
 package com.cburch.logisim.instance;
 
 import java.awt.Font;
+import java.awt.Color;
 
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
@@ -68,6 +69,14 @@ public interface StdAttr {
 			"labelfont", Strings.getter("stdLabelFontAttr"));
 	public static final Font DEFAULT_LABEL_FONT = new Font("SansSerif",
 			Font.PLAIN, 12);
+	public static final Attribute<Color> LABEL_COLOR = Attributes.forColor(
+			"labelcolor", Strings.getter("stdLabelColorAttr"));
+	public static final AttributeOption LABEL_CENTER = new AttributeOption("center",
+			"center", Strings.getter("stdLabelCenter"));
+	public static final Attribute<Object> LABEL_LOC = Attributes.forOption(
+			"labelloc", Strings.getter("stdLabelLocAttr"), new Object[] {
+					LABEL_CENTER, Direction.NORTH, Direction.SOUTH,
+					Direction.EAST, Direction.WEST });
 
 	public static final AttributeOption APPEAR_CLASSIC = new AttributeOption(
 			"classic", Strings.getter("stdClassicAppearance"));

@@ -40,15 +40,8 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.tools.FactoryDescription;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
-import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.util.GraphicsUtil;
-import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.data.Bounds;
 
 public class Io extends Library {
-	static final AttributeOption LABEL_CENTER = new AttributeOption("center",
-			"center", Strings.getter("ioLabelCenter"));
-
 	static final Attribute<Color> ATTR_COLOR = Attributes.forColor("color",
 			Strings.getter("ioColorAttr"));
 	static final Attribute<Color> ATTR_ON_COLOR = Attributes.forColor("color",
@@ -57,12 +50,6 @@ public class Io extends Library {
 			"offcolor", Strings.getter("ioOffColor"));
 	static final Attribute<Color> ATTR_BACKGROUND = Attributes.forColor("bg",
 			Strings.getter("ioBackgroundColor"));
-	static final Attribute<Object> ATTR_LABEL_LOC = Attributes.forOption(
-			"labelloc", Strings.getter("ioLabelLocAttr"), new Object[] {
-					LABEL_CENTER, Direction.NORTH, Direction.SOUTH,
-					Direction.EAST, Direction.WEST });
-	static final Attribute<Color> ATTR_LABEL_COLOR = Attributes.forColor(
-			"labelcolor", Strings.getter("ioLabelColorAttr"));
 	static final Attribute<Boolean> ATTR_ACTIVE = Attributes.forBoolean(
 			"active", Strings.getter("ioActiveAttr"));
 
@@ -122,51 +109,6 @@ public class Io extends Library {
 			tools = FactoryDescription.getTools(Io.class, DESCRIPTIONS);
 		}
 		return tools;
-	}
-
-	static void computeLabelTextField(Instance instance) {
-		computeLabelTextField(instance, 0);
-	}
-
-	static void computeLabelTextField(Instance instance, int centerOffset) {
-		Direction facing = instance.getAttributeValue(StdAttr.FACING);
-		computeLabelTextField(instance, facing, centerOffset);
-	}
-
-	static void computeLabelTextField(Instance instance, Direction facing, int centerOffset) {
-		Object labelLoc = instance.getAttributeValue(Io.ATTR_LABEL_LOC);
-
-		Bounds bds = instance.getBounds();
-		int x = bds.getX() + bds.getWidth() / 2;
-		int y = bds.getY() + bds.getHeight() / 2;
-		int halign = GraphicsUtil.H_CENTER;
-		int valign = GraphicsUtil.V_CENTER;
-		if (labelLoc == Io.LABEL_CENTER) {
-			x = bds.getX() + (bds.getWidth() - centerOffset) / 2;
-			y = bds.getY() + (bds.getHeight() - centerOffset) / 2;
-		} else if (labelLoc == Direction.NORTH) {
-			y = bds.getY() - 2;
-			valign = GraphicsUtil.V_BOTTOM;
-		} else if (labelLoc == Direction.SOUTH) {
-			y = bds.getY() + bds.getHeight() + 2;
-			valign = GraphicsUtil.V_TOP;
-		} else if (labelLoc == Direction.EAST) {
-			x = bds.getX() + bds.getWidth() + 2;
-			halign = GraphicsUtil.H_LEFT;
-		} else if (labelLoc == Direction.WEST) {
-			x = bds.getX() - 2;
-			halign = GraphicsUtil.H_RIGHT;
-		}
-		if (labelLoc == facing) {
-			if (labelLoc == Direction.NORTH || labelLoc == Direction.SOUTH) {
-				x += 2;
-				halign = GraphicsUtil.H_LEFT;
-			} else {
-				y -= 2;
-				valign = GraphicsUtil.V_BOTTOM;
-			}
-		}
-		instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, x, y, halign, valign);
 	}
 
 }

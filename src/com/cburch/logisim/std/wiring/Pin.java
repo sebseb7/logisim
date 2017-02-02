@@ -387,8 +387,6 @@ public class Pin extends InstanceFactory {
 			.forBoolean("tristate", Strings.getter("pinThreeStateAttr"));
 	public static final Attribute<Boolean> ATTR_TYPE = Attributes.forBoolean(
 			"output", Strings.getter("pinOutputAttr"));
-	public static final Attribute<Direction> ATTR_LABEL_LOC = Attributes
-			.forDirection("labelloc", Strings.getter("pinLabelLocAttr"));
 	public static final AttributeOption PULL_NONE = new AttributeOption("none",
 			Strings.getter("pinPullNoneOption"));
 	public static final AttributeOption PULL_UP = new AttributeOption("up",
@@ -415,9 +413,9 @@ public class Pin extends InstanceFactory {
 	public Pin() {
 		super("Pin", Strings.getter("pinComponent"));
 		setFacingAttribute(StdAttr.FACING);
-		setKeyConfigurator(JoinedConfigurator.create(new BitWidthConfigurator(
-				StdAttr.WIDTH), new DirectionConfigurator(ATTR_LABEL_LOC,
-				KeyEvent.ALT_DOWN_MASK)));
+		setKeyConfigurator(JoinedConfigurator.create(
+					new BitWidthConfigurator(StdAttr.WIDTH),
+					new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK)));
 		setInstanceLogger(PinLogger.class);
 		setInstancePoker(PinPoker.class);
 	}
@@ -427,10 +425,9 @@ public class Pin extends InstanceFactory {
 	//
 	@Override
 	protected void configureNewInstance(Instance instance) {
-		PinAttributes attrs = (PinAttributes) instance.getAttributeSet();
 		instance.addAttributeListener();
 		configurePorts(instance);
-		Probe.configureLabel(instance, attrs.labelloc, attrs.facing);
+		instance.computeLabelTextField(Instance.AVOID_LEFT);
 	}
 
 	private void configurePorts(Instance instance) {
@@ -500,10 +497,9 @@ public class Pin extends InstanceFactory {
 		if (attr == ATTR_TYPE) {
 			configurePorts(instance);
 		} else if (attr == StdAttr.WIDTH || attr == StdAttr.FACING
-				|| attr == Pin.ATTR_LABEL_LOC || attr == RadixOption.ATTRIBUTE) {
+				|| attr == StdAttr.LABEL_LOC || attr == RadixOption.ATTRIBUTE) {
 			instance.recomputeBounds();
-			PinAttributes attrs = (PinAttributes) instance.getAttributeSet();
-			Probe.configureLabel(instance, attrs.labelloc, attrs.facing);
+			instance.computeLabelTextField(Instance.AVOID_LEFT);
 		} else if (attr == Pin.ATTR_TRISTATE || attr == Pin.ATTR_PULL) {
 			instance.fireInvalidated();
 		}

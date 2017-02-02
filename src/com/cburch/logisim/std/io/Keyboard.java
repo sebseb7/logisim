@@ -55,6 +55,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.tools.key.DirectionConfigurator;
 
 public class Keyboard extends InstanceFactory {
 	public static class Poker extends InstancePoker {
@@ -203,10 +204,11 @@ public class Keyboard extends InstanceFactory {
 
 	public Keyboard() {
 		super("Keyboard", Strings.getter("keyboardComponent"));
-		setAttributes(new Attribute[] { ATTR_BUFFER, ATTR_WIDTH, StdAttr.EDGE_TRIGGER, StdAttr.LABEL, Io.ATTR_LABEL_LOC, StdAttr.LABEL_FONT},
+		setAttributes(new Attribute[] { ATTR_BUFFER, ATTR_WIDTH, StdAttr.EDGE_TRIGGER, StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT},
 				new Object[] { Integer.valueOf(32), Integer.valueOf(7), StdAttr.TRIG_RISING, "", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT});
 		setOffsetBounds(Bounds.create(0, -15, WIDTH, HEIGHT));
 		setIconName("keyboard.gif");
+		setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK));
 		setInstancePoker(Poker.class);
 
 		MyIOInformation = new IOComponentInformationContainer(0, 0, 4,
@@ -218,7 +220,7 @@ public class Keyboard extends InstanceFactory {
 	protected void configureNewInstance(Instance instance) {
 		instance.addAttributeListener();
 		updatePorts(instance);
-		Io.computeLabelTextField(instance);
+		instance.computeLabelTextField(Instance.AVOID_LEFT);
 	}
 
 	private void updatePorts(Instance instance) {
@@ -241,8 +243,8 @@ public class Keyboard extends InstanceFactory {
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
 		if (attr == ATTR_WIDTH) {
 			updatePorts(instance);
-		} else if (attr == Io.ATTR_LABEL_LOC) {
-			Io.computeLabelTextField(instance);
+		} else if (attr == StdAttr.LABEL_LOC) {
+			instance.computeLabelTextField(Instance.AVOID_LEFT);
 		}
 	}
 
