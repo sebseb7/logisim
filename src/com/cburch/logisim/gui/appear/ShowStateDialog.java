@@ -55,6 +55,7 @@ import com.cburch.draw.actions.ModelAddAction;
 import com.cburch.draw.actions.ModelRemoveAction;
 import com.cburch.draw.model.CanvasModel;
 import com.cburch.draw.model.CanvasObject;
+import com.cburch.logisim.circuit.appear.AppearanceAnchor;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.InstanceComponent;
@@ -168,6 +169,10 @@ public class ShowStateDialog extends JDialog implements ActionListener {
 		Collections.sort(toAdd, new CompareByLocations());
 
 		ArrayList<CanvasObject> avoid = new ArrayList<>(model.getObjectsFromBottom());
+		for (int i = avoid.size()-1; i >= 0; i--) {
+			if (avoid.get(i) instanceof AppearanceAnchor)
+				avoid.remove(i);
+		}
 		ArrayList<CanvasObject> newShapes = new ArrayList<>();
 
 		for (TreePath path : toAdd) {
