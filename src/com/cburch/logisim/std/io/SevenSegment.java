@@ -36,6 +36,8 @@ import java.util.ArrayList;
 
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
+import com.cburch.logisim.circuit.appear.DynamicElement;
+import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
@@ -49,7 +51,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 
-public class SevenSegment extends InstanceFactory {
+public class SevenSegment extends InstanceFactory implements DynamicElementProvider {
 	static void drawBase(InstancePainter painter, boolean DrawPoint) {
 		ensureSegments();
 		InstanceDataSingleton data = (InstanceDataSingleton) painter.getData();
@@ -215,5 +217,9 @@ public class SevenSegment extends InstanceFactory {
 	@Override
 	public boolean RequiresNonZeroLabel() {
 		return true;
+	}
+
+	public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {
+		return new SevenSegmentShape(x, y, path);
 	}
 }

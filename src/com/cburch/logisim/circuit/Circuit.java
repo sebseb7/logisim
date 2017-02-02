@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -52,6 +53,7 @@ import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.cburch.logisim.circuit.appear.CircuitAppearance;
+import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentEvent;
@@ -67,6 +69,7 @@ import com.cburch.logisim.data.TestException;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
@@ -754,10 +757,24 @@ public class Circuit {
 			} else if (factory instanceof VhdlEntity) {
 				VhdlEntity vhdl = (VhdlEntity)factory;
 				vhdl.removeCircuitUsing(c);
-			} else if (factory instanceof Led) {
+			} else if (factory instanceof DynamicElementProvider &&
+					c instanceof InstanceComponent) {
 				// TODO: remove stale appearance dynamic elements in
 				// CircuitTransaction.execute() instead?
-				appearance.removeDynamicElement(c);
+				HashSet<Circuit> allAffected = new HashSet<>();
+				LinkedList<Circuit> todo = new LinkedList<>();
+				todo.add(this);
+				while (!todo.isEmpty()) {
+					Circuit circ = todo.remove();
+					if (allAffected.contains(circ))
+						continue;
+					allAffected.add(circ);
+					for (Circuit other : circ.circuitsUsingThis.values())
+						if (!allAffected.contains(other))
+							todo.add(other);
+				}
+				for (Circuit circ : allAffected)
+					circ.appearance.removeDynamicElement((InstanceComponent)c);
 			}
 			c.removeComponentListener(myComponentListener);
 		}

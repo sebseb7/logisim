@@ -59,6 +59,13 @@ public abstract class DynamicElement extends AbstractCanvasObject {
 		public Path(InstanceComponent[] elt) {
 			this.elt = elt;
 		}
+		public boolean contains(Component c) {
+			for (InstanceComponent ic : elt) {
+				if (ic == c)
+					return true;
+			}
+			return false;
+		}
 		public InstanceComponent leaf() {
 			return elt[elt.length-1];
 		}

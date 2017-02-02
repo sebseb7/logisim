@@ -52,6 +52,7 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstancePainter;
+import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
@@ -319,6 +320,27 @@ public class CircuitAppearance extends Drawing {
 	public void removeObjects(Collection<? extends CanvasObject> shapes) {
 		super.removeObjects(shapes);
 		checkToFirePortsChanged(shapes);
+	}
+
+	public void removeDynamicElement(InstanceComponent c) {
+		ArrayList<CanvasObject> toRemove = new ArrayList<>();
+		for (CanvasObject o : getObjectsFromBottom()) {
+			if (o instanceof DynamicElement) {
+				if (((DynamicElement)o).getPath().contains(c))
+					toRemove.add(o);
+			}
+		}
+		if (toRemove.isEmpty())
+			return;
+		boolean oldSuppress = suppressRecompute;
+		try {
+			suppressRecompute = true;
+			removeObjects(toRemove);
+			recomputeDefaultAppearance();
+		} finally {
+			suppressRecompute = oldSuppress;
+		}
+		fireCircuitAppearanceChanged(CircuitAppearanceEvent.ALL_TYPES);
 	}
 
 	void replaceAutomatically(List<AppearancePort> removes,

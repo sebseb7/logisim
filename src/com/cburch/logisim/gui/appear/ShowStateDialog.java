@@ -42,59 +42,29 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import javax.swing.JButton;
-import javax.swing.JTextArea;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableColumn;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.DefaultMutableTreeNode;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingModel;
 
-import com.cburch.logisim.file.FileStatistics;
-import com.cburch.logisim.file.LogisimFile;
-import com.cburch.logisim.tools.Library;
-import com.cburch.logisim.util.TableSorter;
-
-import com.cburch.draw.tools.DrawingAttributeSet;
-import com.cburch.draw.toolbar.ToolbarItem;
-import com.cburch.draw.toolbar.ToolbarClickableItem;
 import com.cburch.draw.actions.ModelAddAction;
 import com.cburch.draw.actions.ModelRemoveAction;
-import com.cburch.draw.canvas.Canvas;
 import com.cburch.draw.model.CanvasModel;
 import com.cburch.draw.model.CanvasObject;
-import com.cburch.draw.shapes.DrawAttr;
-import com.cburch.draw.shapes.LineUtil;
-import com.cburch.draw.shapes.Poly;
 import com.cburch.logisim.data.Bounds;
-import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.instance.InstanceComponent;
-import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.circuit.appear.DynamicElement;
+import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
-import com.cburch.logisim.std.io.Led;
-import com.cburch.logisim.std.io.LedShape;
-import com.cburch.logisim.std.io.RGBLed;
-import com.cburch.logisim.std.io.RGBLedShape;
-import com.cburch.logisim.std.io.SevenSegment;;
-import com.cburch.logisim.std.io.SevenSegmentShape;
-import com.cburch.logisim.std.io.HexDigit;
-import com.cburch.logisim.std.io.HexDigitShape;
-import com.cburch.logisim.std.memory.Register;
-import com.cburch.logisim.std.memory.RegisterShape;
-import com.cburch.logisim.std.memory.Counter;
-import com.cburch.logisim.std.memory.CounterShape;
 
 
 public class ShowStateDialog extends JDialog implements ActionListener {
@@ -205,21 +175,12 @@ public class ShowStateDialog extends JDialog implements ActionListener {
 			Ref r = (Ref)node.getUserObject();
 			if (r instanceof CircuitRef)
 				continue;
-			DynamicElement shape = null;
-			if (r.ic.getFactory() instanceof RGBLed) {
-				shape = new RGBLedShape(loc.getX(), loc.getY(), toComponentPath(path));
-			} else if (r.ic.getFactory() instanceof Led) {
-				shape = new LedShape(loc.getX(), loc.getY(), toComponentPath(path));
-			} else if (r.ic.getFactory() instanceof HexDigit) {
-				shape = new HexDigitShape(loc.getX(), loc.getY(), toComponentPath(path));
-			} else if (r.ic.getFactory() instanceof SevenSegment) {
-				shape = new SevenSegmentShape(loc.getX(), loc.getY(), toComponentPath(path));
-			} else if (r.ic.getFactory() instanceof Register) {
-				shape = new RegisterShape(loc.getX(), loc.getY(), toComponentPath(path));
-			} else if (r.ic.getFactory() instanceof Counter) {
-				shape = new CounterShape(loc.getX(), loc.getY(), toComponentPath(path));
-			}
-			if (shape != null) {
+			ComponentFactory factory = r.ic.getFactory();
+			if (factory instanceof DynamicElementProvider) {
+				int x = loc.getX();
+				int y = loc.getY();
+				DynamicElement.Path p = toComponentPath(path);
+				DynamicElement shape = ((DynamicElementProvider)factory).createDynamicElement(x, y, p);
 				pickPlacement(avoid, shape, bbox);
 				loc = shape.getLocation();
 				avoid.add(shape);
@@ -345,12 +306,7 @@ public class ShowStateDialog extends JDialog implements ActionListener {
 			if (c instanceof InstanceComponent) {
 				InstanceComponent child = (InstanceComponent)c;
 				ComponentFactory f = child.getFactory();
-				if (f instanceof Led
-						|| f instanceof RGBLed
-						|| f instanceof HexDigit
-						|| f instanceof SevenSegment
-						|| f instanceof Register
-						|| f instanceof Counter) {
+				if (f instanceof DynamicElementProvider) {
 					root.add(new DefaultMutableTreeNode(new Ref(child)));
 				} else if (f instanceof SubcircuitFactory) {
 					DefaultMutableTreeNode node = enumerate(((SubcircuitFactory)f).getSubcircuit(), child);

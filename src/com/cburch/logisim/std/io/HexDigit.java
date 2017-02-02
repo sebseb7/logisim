@@ -32,6 +32,8 @@ package com.cburch.logisim.std.io;
 
 import java.awt.Color;
 
+import com.cburch.logisim.circuit.appear.DynamicElement;
+import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
@@ -48,7 +50,7 @@ import com.cburch.logisim.data.Direction;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 
-public class HexDigit extends InstanceFactory {
+public class HexDigit extends InstanceFactory implements DynamicElementProvider {
 
 	protected static final int HEX = 0;
 	protected static final int DP = 1;
@@ -197,4 +199,7 @@ public class HexDigit extends InstanceFactory {
 		return true;
 	}
 
+	public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {
+		return new HexDigitShape(x, y, path);
+	}
 }

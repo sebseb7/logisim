@@ -35,6 +35,8 @@ import java.awt.Graphics;
 
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
+import com.cburch.logisim.circuit.appear.DynamicElement;
+import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
@@ -50,7 +52,7 @@ import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
 
-public class Led extends InstanceFactory {
+public class Led extends InstanceFactory implements DynamicElementProvider {
 
 	public static class Logger extends InstanceLogger {
 		@Override
@@ -168,5 +170,9 @@ public class Led extends InstanceFactory {
 	@Override
 	public boolean RequiresNonZeroLabel() {
 		return true;
+	}
+
+	public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {
+		return new LedShape(x, y, path);
 	}
 }
