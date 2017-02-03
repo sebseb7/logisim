@@ -24,6 +24,8 @@ gray-bin/
 
 # Mac files
 .DS_Store
+*.app
+*.dmg
 
 # Simulation files and folders
 resources/logisim/sim/comp.tcl
