@@ -131,6 +131,7 @@ public class AttributeSets {
 		}
 	}
 
+	// Note: this class could be removed, just use FixedSet above instead.
 	private static class SingletonSet extends AbstractAttributeSet {
 		private List<Attribute<?>> attrs;
 		private Object value;
@@ -220,10 +221,6 @@ public class AttributeSets {
 		} else {
 			return EMPTY;
 		}
-	}
-
-	public static <V> AttributeSet fixedSet(Attribute<V> attr, V initValue) {
-		return new SingletonSet(attr, initValue);
 	}
 
 	private static <V> boolean isAttrLabel(Attribute<V> attr) {

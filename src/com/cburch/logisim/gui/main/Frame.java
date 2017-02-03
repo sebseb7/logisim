@@ -30,8 +30,6 @@
 
 package com.cburch.logisim.gui.main;
 
-import java.util.List;
-import java.util.ArrayList;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
@@ -59,9 +57,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import com.cburch.draw.toolbar.Toolbar;
-import com.cburch.draw.toolbar.ToolbarItem;
 import com.cburch.draw.toolbar.ToolbarModel;
-import com.cburch.draw.toolbar.AbstractToolbarModel;
 import com.cburch.logisim.Main; //for version name
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
