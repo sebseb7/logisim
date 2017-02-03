@@ -22,6 +22,8 @@ gray-bin/
 .project
 .classpath
 
+# Mac files
+.DS_Store
 
 # Simulation files and folders
 resources/logisim/sim/comp.tcl
