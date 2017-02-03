@@ -20,7 +20,7 @@
 
     <target name="compile" depends="clean">
         <mkdir dir="bin"/>
-        <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" source="1.7" target="1.7" classpath="libs/lablib-checkboxtree-3.3.jar:libs/colorpicker.jar:libs/fontchooser.jar:libs/jh.jar:libs/MRJAdapter.jar:libs/rsyntaxtextarea.jar:libs/slf4j-api-1.7.8.jar" />
+        <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" source="1.7" target="1.7" classpath="libs/lablib-checkboxtree-3.3.jar:libs/colorpicker.jar:libs/fontchooser.jar:libs/jh.jar:libs/MRJAdapter.jar:libs/rsyntaxtextarea-stripped.jar:libs/slf4j-api-1.7.8.jar" />
     </target>
 	
     <target name="jar" depends="compile">
