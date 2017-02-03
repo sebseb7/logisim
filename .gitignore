@@ -11,7 +11,8 @@ test/com/cburch/logisim/gui
 bin/
 
 # additional libraries
-# !libs/*.jar
+!libs/*.jar
+!build-libs/*.jar
 
 # IDE files
 .metadata/
