@@ -13,6 +13,7 @@ bin/
 # additional libraries
 !libs/*.jar
 !build-libs/*.jar
+!dead-libs/*.jar
 
 # IDE files
 .metadata/
