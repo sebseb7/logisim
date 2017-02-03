@@ -55,11 +55,11 @@
         classpath="build-libs/appbundler-1.0.jar" />
     <target name="mac-bundle">
         <bundleapp outputdirectory="."
-            name="Logisim-Evolution 2.13.18 HC"
-            displayname="Logisim Evolution 2.13.18 HC"
+            name="Logisim-Evolution 3.0.0 HC"
+            displayname="Logisim Evolution 3.0.0 HC"
             identifier="com.cburch.logisim.Main"
             signature="LGSM"
-            shortversion="2.13.18-hc"
+            shortversion="3.0.0-hc"
             icon="logisim.icns"
             mainclassname="com.cburch.logisim.Main">
             <runtime dir="${env.JAVA_HOME}" />
