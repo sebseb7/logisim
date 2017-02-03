@@ -6,15 +6,16 @@
 
 <project name="logisim-evolution">
 
-    <target name="cleanall" depends="clean">
+    <target name="cleanall" depends="clean,gray-clean">
         <delete dir="bin/com/bfh/"/>
         <delete dir="bin/com/cburch/"/>
         <delete dir="bin/com/hepia/"/>
+        <delete dir="gray-bin/com/cburch/"/>
     </target>
 
     <target name="clean">
         <delete file="logisim-evolution.jar"/>
-        <delete file="logisim-evolution_src.jar"/>
+        <delete file="logisim-evolution-src.jar"/>
     </target>
 
     <target name="compile" depends="clean">
@@ -34,9 +35,9 @@
     </target>
 
     <target name="jarsrc" depends="jar">
-        <jar destfile="Logisim_src.jar">
+        <jar destfile="logisim-evolution-src.jar">
             <fileset dir="bin" />
-            <fileset dir="." includes="doc/ src/ build.xml publi/" />
+            <fileset dir="." includes="doc/ src/ gray-src/ build.xml" />
 			<zipgroupfileset dir="libs" includes="*.jar"/>
             <manifest>
                 <attribute name="Main-Class" value="com.cburch.logisim.Main"/>
@@ -65,5 +66,35 @@
             <classpath file="./logisim-evolution.jar" />
         </bundleapp>
     </target>
+
+    <target name="gray-clean">
+        <delete file="logisim-gray.jar"/>
+    </target>
+
+
+    <target name="gray-compile" depends="gray-clean,jar">
+        <mkdir dir="gray-bin"/>
+        <javac srcdir="gray-src" includeantruntime="false" destdir="gray-bin" debug="true" source="1.7" target="1.7" classpath="logisim-evolution.jar" />
+    </target>
+	
+    <target name="gray-jar" depends="gray-compile">
+        <jar destfile="logisim-gray.jar">
+            <fileset dir="gray-bin" />
+            <manifest>
+                <attribute name="Library-Class" value="com.cburch.gray.Components"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="gray-jarsrc" depends="gray-jar">
+        <jar destfile="logisim-gray-src.jar">
+            <fileset dir="gray-bin" />
+            <fileset dir="." includes="gray-src/ build.xml" />
+            <manifest>
+                <attribute name="Library-Class" value="com.cburch.gray.Components"/>
+            </manifest>
+        </jar>
+    </target>
+
 
 </project>
