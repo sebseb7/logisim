@@ -36,6 +36,7 @@ package com.cburch.logisim.gui.generic;
  */
 import java.util.Enumeration;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.SwingUtilities;
@@ -68,7 +69,24 @@ class ProjectExplorerModel extends DefaultTreeModel implements ProjectListener {
 			Node<?> parent = (Node<?>) this.getParent();
 
 			if (parent == null) {
-				model.fireTreeNodesChanged(this, null, null, null);
+				try {
+					model.fireTreeNodesChanged(this, null, null, null);
+				} catch (IllegalArgumentException e) {
+					// On mac, using null to specify root, as per the
+					// official docs, causes a crash. Seen on:
+					//   java version "1.7.0_79"
+					//   Java(TM) SE Runtime Environment (build 1.7.0_79-b15)
+					//   Java HotSpot(TM) 64-Bit Server VM (build 24.79-b02, mixed mode)
+					// Let's fire it for each child instead, I suppose.
+					int n = getChildCount();
+					int[] indices = new int[n];
+					Node<?>[] children = new Node<?>[n];
+					for (int i = 0; i < n; i++) {
+						indices[i] = i;
+						children[i] = (Node<?>)getChildAt(i);
+					}
+					model.fireTreeNodesChanged(model, this.getPath(), indices, children);
+				}
 			} else {
 				int[] indices = new int[] { parent.getIndex(this) };
 				Object[] items = new Object[] { this.getUserObject() };
