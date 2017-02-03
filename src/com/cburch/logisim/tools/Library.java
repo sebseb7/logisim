@@ -34,7 +34,6 @@ import java.util.Collections;
 import java.util.List;
 
 import com.cburch.logisim.comp.ComponentFactory;
-import com.cburch.logisim.util.ListUtil;
 
 public abstract class Library {
 	public boolean contains(ComponentFactory query) {
@@ -52,10 +51,6 @@ public abstract class Library {
 
 	public String getDisplayName() {
 		return getName();
-	}
-
-	public List<?> getElements() {
-		return ListUtil.joinImmutableLists(getTools(), getLibraries());
 	}
 
 	public List<Library> getLibraries() {

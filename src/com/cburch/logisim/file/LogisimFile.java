@@ -54,13 +54,11 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
-import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.EventSourceWeakSupport;
-import com.cburch.logisim.util.ListUtil;
 import com.cburch.logisim.util.UniquelyNamedThread;
 import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.std.hdl.VhdlContent;
@@ -441,23 +439,17 @@ public class LogisimFile extends Library implements LibraryEventSource {
 		return ret;
 	}
 
-        public int indexOfVhdl(VhdlContent vhdl) {
+	public int indexOfVhdl(VhdlContent vhdl) {
 		for (int i = 0; i < tools.size(); i++) {
-                        AddTool tool = tools.get(i);
-                        if (tool.getFactory() instanceof VhdlEntity) {
-                            VhdlEntity factory = (VhdlEntity) tool.getFactory();
-                            if (factory.getContent() == vhdl) {
-                                    return i;
-                            }
-                        }
+			AddTool tool = tools.get(i);
+			if (tool.getFactory() instanceof VhdlEntity) {
+				VhdlEntity factory = (VhdlEntity) tool.getFactory();
+				if (factory.getContent() == vhdl) {
+					return i;
+				}
+			}
 		}
 		return -1;
-        }
-
-
-	@Override
-	public List<?> getElements() {
-		return ListUtil.joinImmutableLists(tools, libraries);
 	}
 
 	@Override
