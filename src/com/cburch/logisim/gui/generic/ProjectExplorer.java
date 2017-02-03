@@ -416,19 +416,6 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 		proj.addProjectListener(myListener);
 		AppPreferences.GATE_SHAPE.addPropertyChangeListener(myListener);
 		LocaleManager.addLocaleListener(this);
-		com.cburch.logisim.util.JTreeUtil.configureDragAndDrop(this, new com.cburch.logisim.util.JTreeUtil.DragController() {
-			public boolean canPerformAction(JTree target, Object draggedNode,
-				int action, java.awt.Point location) {
-				System.out.println("can perform at " + location);
-				return true;
-			}
-
-			public boolean executeDrop(JTree tree, Object draggedNode,
-				Object newParentNode, int action) {
-				System.out.println("drop");
-				return true;
-			}
-		});
 	}
 
 	public Tool getSelectedTool() {
