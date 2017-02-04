@@ -67,6 +67,13 @@
         </bundleapp>
     </target>
 
+    <target name="mac-dmg">
+        <exec executable="appdmg">
+            <arg value="mac-appdmg-spec.json"/>
+            <arg value="Logisim-Evolution 3.0.0 HC.dmg"/>
+        </exec>
+    </target>
+
     <target name="gray-clean">
         <delete file="logisim-gray.jar"/>
     </target>
