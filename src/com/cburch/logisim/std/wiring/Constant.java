@@ -178,19 +178,16 @@ public class Constant extends InstanceFactory {
 		BitWidth width = attrs.getValue(StdAttr.WIDTH);
 		int chars = (width.getWidth() + 3) / 4;
 		int w = 7 + 7*chars;
-		Bounds ret;
-		if (facing == Direction.EAST) {
-			ret = Bounds.create(-w, -8, w, 16);
-		} else if (facing == Direction.WEST) {
-			ret = Bounds.create(0, -8, w, 16);
-		} else if (facing == Direction.SOUTH) {
-			ret = Bounds.create(-w/2, -16, w, 16);
-		} else if (facing == Direction.NORTH) {
-			ret = Bounds.create(-w/2, 0, w, 16);
-		} else {
+		if (facing == Direction.EAST)
+			return Bounds.create(-w, -8, w, 16);
+		else if (facing == Direction.WEST)
+			return Bounds.create(0, -8, w, 16);
+		else if (facing == Direction.SOUTH)
+			return Bounds.create(-w/2, -16, w, 16);
+		else if (facing == Direction.NORTH)
+			return Bounds.create(-w/2, 0, w, 16);
+		else
 			throw new IllegalArgumentException("unrecognized direction " + facing);
-		}
-		return ret;
 	}
 
 	@Override
