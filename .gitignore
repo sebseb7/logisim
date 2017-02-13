@@ -27,6 +27,9 @@ gray-bin/
 *.app
 *.dmg
 
+# Windows files
+*.exe
+
 # Simulation files and folders
 resources/logisim/sim/comp.tcl
 resources/logisim/sim/transcript
