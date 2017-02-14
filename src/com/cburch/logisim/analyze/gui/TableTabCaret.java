@@ -204,6 +204,7 @@ class TableTabCaret {
 							newEntry = Entry.ONE;
 							break;
 						case 'x':
+						case 'X':
 							newEntry = Entry.DONT_CARE;
 							break;
 						case '\n':
