@@ -175,7 +175,7 @@ public class Pin extends InstanceFactory {
 			String s = text.getText();
 			if (isEditValid(s)) {
 				Value newVal;
-				if (s.equals("x") || s.equals("???")) {
+				if (s.equals("x") || s.equals("X") || s.equals("???")) {
 					newVal = Value.createUnknown(BitWidth.create(bitWidth));
 				} else {
 					try {
@@ -197,7 +197,7 @@ public class Pin extends InstanceFactory {
 			s = s.trim();
 			if (s.equals(""))
 				return false;
-			if (tristate && (s.equals("x") || s.equals("???")))
+			if (tristate && (s.equals("x") || s.equals("X") || s.equals("???")))
 				return true;
 			try {
 				long n = Long.parseLong(s);
@@ -343,7 +343,7 @@ public class Pin extends InstanceFactory {
 						carry = s / 2;
 					}
 				}
-			} else if (tristate && ch == 'x') {
+			} else if (tristate && (ch == 'x' || ch == 'X')) {
 				for (int b = bit; b < bit + r; b++)
 					val[b] = Value.UNKNOWN;
 			} else {
