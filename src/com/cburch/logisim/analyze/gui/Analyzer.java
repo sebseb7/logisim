@@ -39,6 +39,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -136,12 +137,14 @@ public class Analyzer extends LFrame {
 			tabbedPane.setToolTipTextAt(MINIMIZED_TAB,
 					Strings.get("minimizedTabTip"));
 			buildCircuit.setText(Strings.get("buildCircuitButton"));
+			exportTable.setText(Strings.get("exportTableButton"));
 			inputsPanel.localeChanged();
 			outputsPanel.localeChanged();
 			truthTablePanel.localeChanged();
 			expressionPanel.localeChanged();
 			minimizedPanel.localeChanged();
 			buildCircuit.localeChanged();
+			exportTable.localeChanged();
 		}
 	}
 
@@ -174,6 +177,7 @@ public class Analyzer extends LFrame {
 	private MinimizedTab minimizedPanel;
 
 	private BuildCircuitButton buildCircuit;
+	private ExportTableButton exportTable;
 
 	Analyzer() {
 		inputsPanel = new VariableTab(model.getInputs(), AnalyzerModel.MAX_INPUTS);
@@ -182,6 +186,8 @@ public class Analyzer extends LFrame {
 		expressionPanel = new ExpressionTab(model);
 		minimizedPanel = new MinimizedTab(model);
 		buildCircuit = new BuildCircuitButton(this, model);
+		// importTable = new ImportTableButton(this, model);
+		exportTable = new ExportTableButton(this, model);
 
 		truthTablePanel.addMouseListener(new TruthTableMouseListener());
 
@@ -199,6 +205,8 @@ public class Analyzer extends LFrame {
 		horzStrut.setPreferredSize(new Dimension(450, 0));
 		JPanel buttonPanel = new JPanel();
 		buttonPanel.add(buildCircuit);
+		buttonPanel.add(exportTable);
+		buttonPanel.add(exportTable);
 		contents.add(vertStrut, BorderLayout.WEST);
 		contents.add(horzStrut, BorderLayout.NORTH);
 		contents.add(tabbedPane, BorderLayout.CENTER);

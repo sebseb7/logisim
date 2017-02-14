@@ -35,9 +35,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class TruthTable {
 
@@ -420,6 +418,59 @@ public class TruthTable {
 				return i;
 		}
 		throw new IllegalStateException("missing row");
+	}
+
+	public int setVisibleRows(ArrayList<Entry[]> rows) {
+		for (Entry values[] : rows) {
+			if (values.length != ni + no)
+				throw new IllegalArgumentException("wrong column count");
+		}
+		expandVisibleRows();
+		initColumns();
+		int ni = getInputColumnCount();
+		int no = getOutputColumnCount();
+		boolean changed[] = new boolean[columns.size()];
+		for (Entry values[] : rows) {
+			int base = 0;
+			int dc = 0;
+			for (int i = 0; i < ni; i++) {
+				base *= 2;
+				dc *= 2;
+				if (values[i] == Entry.ONE)
+					base++;
+				if (values[i] == Entry.DONT_CARE)
+					dc++;
+			}
+			Row r = findRow(base);
+			if (dc != 0) {
+				setDontCare(r, dc, true, changed);
+			}
+			for (int col = 0; col < ni; col++) {
+			if (values[col] == Entry.ONE || values[col] == Entry.ZERO) {
+				if (r.inputs[col] != Entry.DONT_CARE)
+					throw new IllegalStateException("bad row value");
+				splitRow(r, r.baseIndex() | dc);
+				r = findRow(base);
+			}
+			for (int col = 0; col < no; col++) {
+				Entry[] column = columns.get(col);
+				if (column == null && value == DEFAULT_ENTRY)
+					continue;
+				else if (column == null)
+					column = getOutputColumn(col);
+				for (Integer idx : r) {
+					if (column[idx] == value)
+						continue;
+					changed[col] = true;
+					column[idx] = value;
+				}
+			}
+		}
+		fireRowsChanged();
+		for (int col = 0; col < no; col++) {
+			if (changed[col])
+				fireCellsChanged(col);
+		}
 	}
 
 	public void setOutputEntry(int idx, int col, Entry value) {

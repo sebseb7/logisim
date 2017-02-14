@@ -61,7 +61,6 @@ import com.cburch.logisim.analyze.model.Entry;
 import com.cburch.logisim.analyze.model.TruthTable;
 import com.cburch.logisim.analyze.model.TruthTableEvent;
 import com.cburch.logisim.analyze.model.TruthTableListener;
-import com.cburch.logisim.util.GraphicsUtil;
 
 class TableTab extends JPanel implements TruthTablePanel, TabInterface {
 	private class MyListener implements TruthTableListener {
