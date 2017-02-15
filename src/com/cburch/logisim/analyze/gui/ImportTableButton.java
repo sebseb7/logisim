@@ -199,7 +199,6 @@ class ImportTableButton extends JButton {
 			try {
 				model.setVariables(inputs, outputs);
 				TruthTable table = model.getTruthTable();
-				table.expandVisibleRows();
 				table.setVisibleRows(rows);
 		} finally {
 			sc.close();
