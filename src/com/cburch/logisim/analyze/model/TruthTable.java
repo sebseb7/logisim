@@ -30,6 +30,8 @@
 
 package com.cburch.logisim.analyze.model;
 
+import java.util.Map;
+import java.util.SortedMap;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -201,8 +203,33 @@ public class TruthTable {
 	}
 
 	public void compactVisibleRows() {
-		// find an
+		SortedMap<Implicant, String> partition = Implicant.computePartition(model);
+		rows.clear();
+		initColumns();
+		int ni = getInputColumnCount();
+		int no = getOutputColumnCount();
+		for (Map.Entry<Implicant, String> it : partition.entrySet()) {
+			Implicant imp = it.getKey();
+			String val = it.getValue();
+			Row r = new Row(imp.values, ni, imp.unknowns);
+			rows.add(r);
+			for (int col = 0; col < no; col++) {
+				Entry value = Entry.parse(""+val.charAt(col));
+				Entry[] column = columns.get(col);
+				if (column == null && value == DEFAULT_ENTRY)
+					continue;
+				else if (column == null)
+					column = getOutputColumn(col);
+				for (Integer idx : r) {
+					column[idx] = value;
+				}
+			}
+		}
 		fireRowsChanged();
+		for (int col = 0; col < no; col++) {
+			if (columns.get(col) != null)
+				fireCellsChanged(col);
+		}
 	}
 
 	public void setOutputColumn(int col, Entry[] values) {
@@ -271,6 +298,15 @@ public class TruthTable {
 		return (column == null ? DEFAULT_ENTRY : column[idx]);
 	}
 
+	public String getVisibleOutputs(int row) {
+		Row r = rows.get(row);
+		int idx = r.baseIndex();
+		String s = "";
+		for (Entry[] column : columns)
+			s += (column == null ? DEFAULT_ENTRY : column[idx]).getDescription();
+		return s;
+	}
+
 	public Entry getVisibleInputEntry(int row, int col) {
 		Row r = rows.get(row);
 		return r.inputs[col];
@@ -279,6 +315,11 @@ public class TruthTable {
 	public int getVisibleRowIndex(int row) {
 		Row r = rows.get(row);
 		return r.baseIndex();
+	}
+
+	public int getVisibleRowDcMask(int row) {
+		Row r = rows.get(row);
+		return r.dcMask();
 	}
 
 	public Iterable<Integer> getVisibleRowIndexes(int row) {

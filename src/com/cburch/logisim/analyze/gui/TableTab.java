@@ -49,6 +49,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.ComponentEvent;
 
+import javax.swing.SwingConstants;
 import javax.swing.JPanel;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -253,9 +254,9 @@ class TableTab extends JPanel implements TruthTablePanel, TabInterface {
 	private JButton one = new SquareButton("1");
 	private JButton zero = new SquareButton("0");
 	private JButton dontcare = new SquareButton("x");
-	// private JButton compact = new TightButton("Eliminate Duplicate Rows");
+	private JButton compact = new TightButton("Collapse Duplicate Rows");
 	private JButton expand = new TightButton("Show All Rows");
-	private JLabel count = new JLabel("0 of 0 rows shown");
+	private JLabel count = new JLabel("0 of 0 rows shown", SwingConstants.CENTER);
 
 	private class TightButton extends JButton {
 		    TightButton(String s) {
@@ -316,13 +317,12 @@ class TableTab extends JPanel implements TruthTablePanel, TabInterface {
 		toolbar.add(dontcare);
 		toolbar.add(one);
 		toolbar.add(zero);
-		// toolbar.add(compact);
+		toolbar.add(compact);
 		toolbar.add(expand);
-		toolbar.add(count);
 		one.setActionCommand("1");
 		zero.setActionCommand("0");
 		dontcare.setActionCommand("x");
-		// compact.setActionCommand("compact");
+		compact.setActionCommand("compact");
 		expand.setActionCommand("expand");
 
 		expand.setEnabled(getRowCount() < table.getRowCount());
@@ -337,6 +337,9 @@ class TableTab extends JPanel implements TruthTablePanel, TabInterface {
 		gc.weightx = 1;
 		layout.setConstraints(toolbar, gc);
 		add(toolbar);
+		gc.gridy++;
+		layout.setConstraints(count, gc);
+		add(count);
 		gc.gridy++;
 		layout.setConstraints(headerPane, gc);
 		add(headerPane);
@@ -353,7 +356,7 @@ class TableTab extends JPanel implements TruthTablePanel, TabInterface {
 		one.addActionListener(caret.getListener());
 		zero.addActionListener(caret.getListener());
 		dontcare.addActionListener(caret.getListener());
-		// compact.addActionListener(caret.getListener());
+		compact.addActionListener(caret.getListener());
 		expand.addActionListener(caret.getListener());
 		clip = new TableTabClip(this);
 		computePreferredSize();

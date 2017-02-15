@@ -30,11 +30,14 @@
 
 package com.cburch.logisim.analyze.model;
 
+import java.util.Comparator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -258,9 +261,7 @@ public class Implicant implements Comparable<Implicant> {
 	static List<Implicant> MINIMAL_LIST = Arrays
 			.asList(new Implicant[] { MINIMAL_IMPLICANT });
 
-	private int unknowns;
-
-	private int values;
+	final int unknowns, values;
 
 	private Implicant(int unknowns, int values) {
 		this.unknowns = unknowns;
@@ -340,5 +341,101 @@ public class Implicant implements Comparable<Implicant> {
 			}
 		}
 		return term == null ? Expressions.constant(1) : term;
+	}
+
+	static SortedMap<Implicant, String> computePartition(AnalyzerModel model) {
+		// The goal is to find a minimal partitioning of each of the regions (of
+		// the {0,1}^n hypercube) defined by the truth table output entries
+		// (string of zero, one, dont_care, error, etc.). Similar to K-maps, we
+		// can fairly easily find all the prime implicants, but unlike K-maps,
+		// we can't have overlap, so a different algorithm is called for. Maybe
+		// something from set-covering or binary-partition-trees? It's not even
+		// obvious what the complexity of this problem is. We'll just go with a
+		// simple greedy algorithm and hope for the best: sort the prime
+		// implicants, keep accepting non-overlapping ones until we have covered
+		// the region.
+		TruthTable table = model.getTruthTable();
+		int maxval = (1 << table.getInputColumnCount()) - 1;
+		// Determine the set of regions and the first-cut implicants for each
+		// region.
+		HashMap<String, HashSet<Implicant>> regions = new HashMap<>();
+		for (int i = 0; i < table.getVisibleRowCount(); i++) {
+			String val = table.getVisibleOutputs(i);
+			int idx = table.getVisibleRowIndex(i);
+			int dc = table.getVisibleRowDcMask(i);
+			Implicant imp = new Implicant(dc, idx);
+			HashSet<Implicant> region = regions.get(val);
+			if (region == null) {
+				region = new HashSet<>();
+				regions.put(val, region);
+			}
+			region.add(imp);
+		}
+		// For each region...
+		TreeMap<Implicant, String> ret = new TreeMap<>();
+		for (Map.Entry<String, HashSet<Implicant>> it : regions.entrySet()) {
+			String val = it.getKey();
+			HashSet<Implicant> base = it.getValue();
+			// System.out.printf("Computing rowset for output '%s' from %d cells\n", val, base.size());
+
+			// Work up to more general implicants.
+			HashSet<Implicant> all = new HashSet<>();
+			HashSet<Implicant> current = base;
+			while (current.size() > 0) {
+				// System.out.println("  ... starting round with " + current.size());
+				HashSet<Implicant> next = new HashSet<>();
+				for (Implicant imp : current) {
+					all.add(imp);
+					// System.out.printf("  row: %x/%x\n", imp.values, imp.unknowns);
+					for (int j = 1; j <= maxval; j *= 2) {
+						if ((imp.unknowns & j) != 0)
+							continue;
+						Implicant opp = new Implicant(imp.unknowns, imp.values ^ j);
+						if (!all.contains(opp))
+							continue;
+						// System.out.printf("  opp: %x/%x\n", opp.values, opp.unknowns);
+						Implicant i = new Implicant(opp.unknowns | j, opp.values);
+						next.add(i);
+						// System.out.printf("  add: %x/%x\n", i.values, i.unknowns);
+					}
+				}
+				current = next;
+			}
+			// System.out.printf("Found %d possible rows\n", all.size());
+
+			ArrayList<Implicant> sorted = new ArrayList<>(all);
+			Collections.sort(sorted, sortByGenerality);
+			ArrayList<Implicant> chosen = new ArrayList<>();
+			for (Implicant imp : sorted) {
+				// System.out.printf("  row: %x/%x\n", imp.values, imp.unknowns);
+				if (disjoint(imp, chosen)) {
+					// System.out.println("    keeping");
+					chosen.add(imp);
+					ret.put(imp, val);
+				}
+			}
+		}
+
+		// todo in caller: convert implicant to Row and val back to Entry[]
+		return ret;
+	}
+
+	private static boolean disjoint(Implicant imp, ArrayList<Implicant> chosen) {
+		for (Implicant other : chosen) {
+			int dc = imp.unknowns | other.unknowns;
+			if ((imp.values & ~dc) == (other.values & ~dc))
+				return false;
+		}
+		return true;
+	}
+
+	private static final CompareGenerality sortByGenerality = new CompareGenerality();
+	private static class CompareGenerality implements Comparator<Implicant> {
+		public int compare(Implicant i1, Implicant i2) {
+			int diff = (i2.getUnknownCount() - i1.getUnknownCount());
+			if (diff != 0)
+				return diff;
+			return (i1.values & ~i1.unknowns) - (i2.values & ~i2.unknowns);
+		}
 	}
 }
