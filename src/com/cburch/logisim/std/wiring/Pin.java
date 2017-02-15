@@ -433,14 +433,13 @@ public class Pin extends InstanceFactory {
 			int y = bds.getY() + bds.getHeight();
 			int x = bds.getX() + bds.getWidth();
 			if (radix == RadixOption.RADIX_2) {
-				x -= 2 + 10 * (bitCaret % 8);
+				x -= 5 + 10 * (bitCaret % 8);
 				y -= 2 + 14 * (bitCaret / 8);
-				g.drawLine(x - 6, y, x, y);
 			} else {
 				x -= 4 + 7 * (bitCaret / r);
 				y -= 4;
-				g.drawLine(x - 6, y, x, y);
 			}
+			g.drawLine(x - 6, y, x, y);
 			g.setColor(Color.BLACK);
 		}
 	}

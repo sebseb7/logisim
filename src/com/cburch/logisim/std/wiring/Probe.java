@@ -87,12 +87,12 @@ public class Probe extends InstanceFactory {
 		if (radix == null)
 			radix = RadixOption.RADIX_2;
 		int len = (radix == RadixOption.RADIX_2) ? width.getWidth() : radix.getMaxLength(width);
-		int w = 80, h = 20;
+		int w = 90, h = 20;
 		if (len <= 1)
 			w = 20;
 		else if (len <= 8 && radix == RadixOption.RADIX_2)
 			w = 10 + 10*len;
-		else if (len <= 8 || radix != RadixOption.RADIX_2)
+		else if (radix != RadixOption.RADIX_2)
 			w = 8 + 7*len;
 		else
 			h = 4 + 14*((len+7)/8);
@@ -133,9 +133,9 @@ public class Probe extends InstanceFactory {
 				return;
 			}
 			int x0 = bds.getX() + bds.getWidth() - 5;
-			int compWidth = wid * 10;
-			if (compWidth < bds.getWidth() - 3) {
-				x0 = bds.getX() + (bds.getWidth() + compWidth) / 2 - 5;
+			int lineWidth = (wid < 8 ? wid : 8) * 10;
+			if (lineWidth < bds.getWidth() - 3) {
+				x0 = bds.getX() + (bds.getWidth() + lineWidth) / 2 - 5;
 			}
 			int cx = x0;
 			int cy = bds.getY() + bds.getHeight() - 10;
