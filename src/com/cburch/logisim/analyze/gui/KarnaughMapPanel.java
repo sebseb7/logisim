@@ -39,7 +39,6 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
 import java.util.List;
-import java.util.Iterator;
 
 import javax.swing.JPanel;
 

@@ -158,11 +158,11 @@ class MinimizedTab extends AnalyzerTab {
 	private JButton setAsExpr = new JButton();
 
 	private MyListener myListener = new MyListener();
-	// private AnalyzerModel model;
+	private AnalyzerModel model;
 	private OutputExpressions outputExprs;
 
 	public MinimizedTab(AnalyzerModel model) {
-		// this.model = model;
+		this.model = model;
 		this.outputExprs = model.getOutputExpressions();
 		outputExprs.addOutputExpressionsListener(myListener);
 
@@ -244,7 +244,16 @@ class MinimizedTab extends AnalyzerTab {
 
 	@Override
 	void updateTab() {
-		String output = getCurrentVariable();
+		final String output = getCurrentVariable();
+		if (model.getTruthTable().getRowCount() > 4096) {
+			(new Analyzer.PleaseWait<Void>("Calculating Expression", this) {
+				@Override
+				public Void doInBackground() throws Exception {
+					model.getOutputExpressions().getExpression(output);
+					return null;
+				}
+			}).get();
+		}
 		karnaughMap.setOutput(output);
 		int format = outputExprs.getMinimizedFormat(output);
 		formatChoice.setSelectedIndex(FormatModel.getFormatIndex(format));

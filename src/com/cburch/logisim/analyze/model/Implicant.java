@@ -234,6 +234,8 @@ public class Implicant implements Comparable<Implicant> {
 		// from the remaining terms
 		ArrayList<Implicant> ret = new ArrayList<Implicant>(retSet);
 		Collections.sort(ret);
+		// try { throw new Exception(); }
+		// catch (Exception e) { e.printStackTrace(); }
 		return ret;
 	}
 

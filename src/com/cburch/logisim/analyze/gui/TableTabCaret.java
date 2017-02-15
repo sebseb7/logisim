@@ -76,8 +76,18 @@ class TableTabCaret {
 					}  else if (action.equals("x")) {
 						doKey('x');
 					} else if (action.equals("compact")) {
-						TruthTable model = table.getTruthTable();
-						model.compactVisibleRows();
+						final TruthTable tt = table.getTruthTable();
+						if (tt.getRowCount() > 4096) {
+							(new Analyzer.PleaseWait<Void>("Compacting Rows", table) {
+								@Override
+								public Void doInBackground() throws Exception {
+									tt.compactVisibleRows();
+									return null;
+								}
+							}).get();
+						} else {
+							tt.compactVisibleRows();
+						}
 					} else if (action.equals("expand")) {
 						TruthTable model = table.getTruthTable();
 						model.expandVisibleRows();

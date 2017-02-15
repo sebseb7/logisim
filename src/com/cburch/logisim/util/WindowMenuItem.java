@@ -54,6 +54,6 @@ class WindowMenuItem extends JRadioButtonMenuItem {
 	}
 
 	public JFrame getJFrame() {
-		return manager.getJFrame(true);
+		return manager.getJFrame(true, null);
 	}
 }

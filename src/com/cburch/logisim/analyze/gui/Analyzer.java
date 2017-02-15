@@ -39,6 +39,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 
+import javax.swing.SwingWorker;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -47,6 +48,13 @@ import javax.swing.JTabbedPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import java.awt.BorderLayout;
+import java.awt.Dialog.ModalityType;
+import javax.swing.JDialog;
+import javax.swing.JProgressBar;
+import javax.swing.JLabel;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import com.cburch.logisim.analyze.model.AnalyzerModel;
 import com.cburch.logisim.gui.generic.LFrame;
@@ -109,11 +117,14 @@ public class Analyzer extends LFrame {
 			if (selected instanceof JScrollPane) {
 				selected = ((JScrollPane) selected).getViewport().getView();
 			}
-                        if (selected instanceof JPanel) {
-                                ((JPanel) selected).requestFocus();
-                        }
+			if (selected instanceof JPanel) {
+				((JPanel) selected).requestFocus();
+			}
 			if (selected instanceof AnalyzerTab) {
+				model.getOutputExpressions().enableUpdates();
 				((AnalyzerTab) selected).updateTab();
+			} else {
+				model.getOutputExpressions().disableUpdates();
 			}
 		}
 	}
@@ -254,8 +265,69 @@ public class Analyzer extends LFrame {
 	public void setSelectedTab(int index) {
 		Object found = tabbedPane.getComponentAt(index);
 		if (found instanceof AnalyzerTab) {
+			model.getOutputExpressions().enableUpdates();
 			((AnalyzerTab) found).updateTab();
+		} else {
+			model.getOutputExpressions().disableUpdates();
 		}
 		tabbedPane.setSelectedIndex(index);
 	}
+
+	public abstract static class PleaseWait<T> extends JDialog {
+		private SwingWorker<T, Void> worker;
+		private java.awt.Component parent;
+		public abstract T doInBackground() throws Exception;
+		private boolean alreadyFinished = false;
+
+		public PleaseWait(String title, java.awt.Component parent) {
+			super(null, title, ModalityType.APPLICATION_MODAL);
+			this.parent = parent;
+			worker = new SwingWorker<T, Void>() {
+				@Override
+				protected T doInBackground() throws Exception {
+					return PleaseWait.this.doInBackground();
+				}
+				@Override
+				protected void done() {
+					if (PleaseWait.this.isVisible())
+						PleaseWait.this.dispose();
+					else
+						PleaseWait.this.alreadyFinished = true;
+				}
+			};
+		}
+
+		public T get() {
+			worker.execute();
+			JProgressBar progressBar = new JProgressBar();
+			progressBar.setIndeterminate(true);
+			JPanel panel = new JPanel(new BorderLayout());
+			panel.add(progressBar, BorderLayout.CENTER);
+			panel.add(new JLabel("Please wait......."), BorderLayout.PAGE_START);
+			/* JButton cancel = new JButton(new AbstractAction("Cancel") {
+				@Override
+				public void actionPerformed(ActionEvent evt) {
+
+				}
+			}); 
+			panel.add(cancel, BorderLayout.PAGE_END);
+			*/
+			add(panel);
+			setPreferredSize(new Dimension(300, 70));
+			setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+			// setUndecorated(true);
+			pack();
+			setLocationRelativeTo(parent);
+			try {
+				try { return worker.get(300, TimeUnit.MILLISECONDS); }
+				catch (TimeoutException e) { }
+				if (!alreadyFinished)
+					setVisible(true);
+				return worker.get();
+			} catch (Exception e) {
+				return null;
+			}
+		}
+	}
 }
+

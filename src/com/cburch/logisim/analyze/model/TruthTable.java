@@ -453,12 +453,14 @@ public class TruthTable {
 		else if (column == null)
 			column = getOutputColumn(col);
 		boolean changed = false;
+		// System.out.println("setting w/ duplicity " + r.duplicity());
 		for (Integer idx : r) {
 			if (column[idx] == value)
 				continue;
 			changed = true;
 			column[idx] = value;
 		}
+		// System.out.println("done setting w/ duplicity " + r.duplicity());
 		if (changed)
 			fireCellsChanged(col);
 	}

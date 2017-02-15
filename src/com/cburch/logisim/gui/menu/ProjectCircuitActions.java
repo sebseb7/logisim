@@ -37,18 +37,14 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.util.ArrayList;
 import java.util.Map;
-import java.io.File;
-import java.io.IOException;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.analyze.gui.Analyzer;
 import com.cburch.logisim.analyze.gui.AnalyzerManager;
 import com.cburch.logisim.analyze.model.Var;
@@ -176,14 +172,11 @@ public class ProjectCircuitActions {
 			return;
 		}
 
-		Analyzer analyzer = AnalyzerManager.getAnalyzer();
+		Analyzer analyzer = AnalyzerManager.getAnalyzer(proj.getFrame());
 		analyzer.getModel().setCurrentCircuit(proj, circuit);
-		configureAnalyzer(proj, circuit, analyzer, pinNames, inputVars,
-				outputVars);
-                if (!analyzer.isVisible()) {
-                        analyzer.setVisible(true);
-                        analyzer.setLocationRelativeTo(proj.getFrame());
-                }
+		configureAnalyzer(proj, circuit, analyzer, pinNames, inputVars, outputVars);
+		if (!analyzer.isVisible())
+			analyzer.setVisible(true);
 		analyzer.toFront();
 	}
 

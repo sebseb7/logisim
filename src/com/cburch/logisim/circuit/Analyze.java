@@ -201,13 +201,13 @@ public class Analyze {
                         Var var = new Var(entry.getValue(), width);
 			if (Pin.FACTORY.isInputPin(pin)) {
 				inputPins.add(pin);
-                                for (String name : var)
-                                        inputNames.add(name);
+				for (String name : var)
+					inputNames.add(name);
 				inputVars.add(var);
 			} else {
 				outputPins.add(pin);
-                                for (String name : var)
-                                        outputNames.add(name);
+				for (String name : var)
+					outputNames.add(name);
 				outputVars.add(var);
 			}
 		}
@@ -223,7 +223,7 @@ public class Analyze {
 				Instance pin = inputPins.get(j);
 				int width = pin.getAttributeValue(StdAttr.WIDTH).getWidth();
 				Value v[] = new Value[width];
-				for (int b = 0; b < width; b++) {
+				for (int b = width-1; b >= 0; b--) {
 					boolean value = TruthTable.isInputSet(i, incol++, inputCount);
 					v[b] = value ?  Value.TRUE : Value.FALSE;
 				}
@@ -250,7 +250,7 @@ public class Analyze {
 					int width = pin.getAttributeValue(StdAttr.WIDTH).getWidth();
 					InstanceState pinState = circuitState.getInstanceState(pin);
 					Entry out;
-					for (int b = 0; b < width; b++) {
+					for (int b = width-1; b >= 0; b--) {
 						Value outValue = Pin.FACTORY.getValue(pinState).get(b);
 						if (outValue == Value.TRUE)
 							out = Entry.ONE;

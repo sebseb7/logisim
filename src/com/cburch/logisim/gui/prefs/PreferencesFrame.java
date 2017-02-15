@@ -80,10 +80,11 @@ public class PreferencesFrame extends LFrame {
 		}
 
 		@Override
-		public JFrame getJFrame(boolean create) {
+		public JFrame getJFrame(boolean create, java.awt.Component parent) {
 			if (create) {
 				if (window == null) {
 					window = new PreferencesFrame();
+					window.setLocationRelativeTo(parent);
 					frameOpened(window);
 				}
 			}
@@ -100,7 +101,7 @@ public class PreferencesFrame extends LFrame {
 	}
 
 	public static void showPreferences() {
-		JFrame frame = MENU_MANAGER.getJFrame(true);
+		JFrame frame = MENU_MANAGER.getJFrame(true, null);
 		frame.setVisible(true);
 	}
 
