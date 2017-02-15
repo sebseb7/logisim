@@ -47,7 +47,7 @@ public class TruthTable {
 	private AnalyzerModel model;
 	private ArrayList<Row> rows = new ArrayList<>();         // visible input rows
 	private ArrayList<Entry[]> columns = new ArrayList<>();  // output columns
-	private CompareInputs sortByInputs = new CompareInputs();
+	private static final CompareInputs sortByInputs = new CompareInputs();
 
 	private class Row implements Iterable<Integer> {
 		// todo: probably more efficient to store this in baseIdx/dcMask format.
@@ -60,6 +60,12 @@ public class TruthTable {
 				idx = idx >> 1;
 				mask = mask >> 1;
 			}
+		}
+
+		Row(Entry entries[], int numInputs) {
+			inputs = new Entry[numInputs];
+			for (int i = 0; i < numInputs; i++)
+				inputs[i] = entries[i];
 		}
 
 		public int baseIndex() {
@@ -94,6 +100,20 @@ public class TruthTable {
 			s += "]";
 			s += " dup=" + duplicity();
 			s += String.format(" base=%x dcmask=%x", baseIndex(), dcMask());
+			return s;
+		}
+
+		public String toBitString(List<Var> vars) {
+			String s = null;
+			int i = 0;
+			for (Var v : vars) {
+				if (s == null)
+					s = "";
+				else
+					s += " ";
+				for (int j = 0; j < v.width; j++)
+					s += inputs[i++].toBitString();
+			}
 			return s;
 		}
 
@@ -420,55 +440,69 @@ public class TruthTable {
 		throw new IllegalStateException("missing row");
 	}
 
-	public int setVisibleRows(ArrayList<Entry[]> rows) {
-		for (Entry values[] : rows) {
-			if (values.length != ni + no)
-				throw new IllegalArgumentException("wrong column count");
-		}
-		expandVisibleRows();
-		initColumns();
+	public void setVisibleRows(ArrayList<Entry[]> newEntries, boolean force) {
 		int ni = getInputColumnCount();
 		int no = getOutputColumnCount();
-		boolean changed[] = new boolean[columns.size()];
-		for (Entry values[] : rows) {
-			int base = 0;
-			int dc = 0;
-			for (int i = 0; i < ni; i++) {
-				base *= 2;
-				dc *= 2;
-				if (values[i] == Entry.ONE)
-					base++;
-				if (values[i] == Entry.DONT_CARE)
-					dc++;
+		ArrayList<Row> newRows = new ArrayList<>(newEntries.size());
+		for (Entry values[] : newEntries) {
+			if (values.length != ni + no)
+				throw new IllegalArgumentException("wrong column count");
+			newRows.add(new Row(values, ni));
+		}
+		// check that newRows has no intersections
+		List<Var> ivars = getInputVariables();
+		int taken[] = new int[getRowCount()];
+		for (int i = 0; i < newRows.size(); i++) {
+			Row r = newRows.get(i);
+			for (Integer idx : r) {
+				if (taken[idx] != 0 && !force) {
+					throw new IllegalArgumentException(String.format(
+							"Some inputs are repeated." +
+							" For example, rows %d and %d have overlapping input values %s and %s.",
+							taken[idx], i+1, newRows.get(taken[idx]-1).toBitString(ivars), r.toBitString(ivars)));
+				} else if (taken[idx] != 0) {
+					// todo: split row
+					throw new IllegalArgumentException("Sorry, this error can't yet be fixed. Eliminate duplicate rows then try again.");
+				} else {
+					taken[idx] = i+1;
+				}
 			}
-			Row r = findRow(base);
-			if (dc != 0) {
-				setDontCare(r, dc, true, changed);
+		}
+		// check that newRows covers all possible cases
+		for (int i = 0; i < getRowCount(); i++) {
+			if (taken[i] == 0 && !force) {
+					throw new IllegalArgumentException(String.format(
+							"Some inputs are missing." +
+							" For example, there is no row for input %s.",
+							new Row(i, ni, 0).toBitString(ivars)));
+			} else if (taken[i] == 0) {
+				newRows.add(new Row(i, ni, 0));
 			}
-			for (int col = 0; col < ni; col++) {
-			if (values[col] == Entry.ONE || values[col] == Entry.ZERO) {
-				if (r.inputs[col] != Entry.DONT_CARE)
-					throw new IllegalStateException("bad row value");
-				splitRow(r, r.baseIndex() | dc);
-				r = findRow(base);
-			}
+		}
+
+		Collections.sort(newRows, sortByInputs);
+		rows.clear();
+		rows = newRows;
+		initColumns();
+
+		for (Entry values[] : newEntries) {
+			Row r = new Row(values, ni);
 			for (int col = 0; col < no; col++) {
+				Entry value = values[ni + col];
 				Entry[] column = columns.get(col);
 				if (column == null && value == DEFAULT_ENTRY)
 					continue;
 				else if (column == null)
 					column = getOutputColumn(col);
 				for (Integer idx : r) {
-					if (column[idx] == value)
-						continue;
-					changed[col] = true;
 					column[idx] = value;
 				}
 			}
 		}
+
 		fireRowsChanged();
 		for (int col = 0; col < no; col++) {
-			if (changed[col])
+			if (columns.get(col) != null)
 				fireCellsChanged(col);
 		}
 	}

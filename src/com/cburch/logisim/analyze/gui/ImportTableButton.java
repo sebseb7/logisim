@@ -74,7 +74,7 @@ class ImportTableButton extends JButton {
 		setText(Strings.get("importTableButton"));
 	}
 
-	static final Pattern NAME_FORMAT = Pattern.compile("([a-zA-Z][a-zA-Z_0-9])\\[([1-9][0-9]*)\\.\\.([0-9][0-9]*)\\]");
+	static final Pattern NAME_FORMAT = Pattern.compile("([a-zA-Z][a-zA-Z_0-9]*)\\[(-?[0-9]+)\\.\\.(-?[0-9]+)\\]");
 
 	int lineno = 0;
 
@@ -90,10 +90,10 @@ class ImportTableButton extends JButton {
 				continue;
 			}
 			String name = s[i];
-			if (name.matches("[a-zA-Z][a-zA-Z_0-9]")) {
+			if (name.matches("[a-zA-Z][a-zA-Z_0-9]*")) {
 				cur.add(new Var(name, 1));
 			} else {
-				Matcher m = NAME_FORMAT.matcher(line);
+				Matcher m = NAME_FORMAT.matcher(name);
 				if (!m.matches())
 					throw new IOException(String.format("Line %d: Invalid variable name '%s'.", lineno, name));
 				String n = m.group(1);
@@ -107,9 +107,11 @@ class ImportTableButton extends JButton {
 				if (a < 1 || b != 0)
 					throw new IOException(String.format("Line %d: Invalid bit range in '%s'.", lineno, name));
 				try {
-					cur.add(new Var(n, b-a+1));
+					cur.add(new Var(n, a-b+1));
 				} catch (IllegalArgumentException e) {
-					throw new IOException(String.format("Line %d: Too many bits in %s for truth table.", lineno, (cur == inputs ? "input" : "output")));
+					throw new IOException(String.format("Line %d: Too many bits in %s for truth table (max = %d bits).",
+								lineno, (cur == inputs ? "input" : "output"),
+								(cur == inputs ? AnalyzerModel.MAX_INPUTS : AnalyzerModel.MAX_OUTPUTS)));
 				}
 			}
 		}
@@ -119,12 +121,7 @@ class ImportTableButton extends JButton {
 			throw new IOException(String.format("Line %d: Truth table has no outputs.", lineno));
 	}
 
-	void validateBreak(String line) throws IOException {
-		if (!line.matches("\\s*[~_=-][ ~_=-|]*"))
-			throw new IOException(String.format("Line %d: Expecting separator line after header, instead found '%s'.", lineno, line));
-	}
-
-	Entry parseBit(char c, Var var) throws IOException {
+	Entry parseBit(char c, String sval, Var var) throws IOException {
 		if (c == 'x' || c == 'X')
 			return Entry.DONT_CARE;
 		else if (c == '0')
@@ -132,7 +129,40 @@ class ImportTableButton extends JButton {
 		else if (c == '1')
 			return Entry.ONE;
 		else
-			throw new IOException(String.format("Line %d: Bit value '%c' must be one of '0', '1', or 'x'.", lineno, c));
+			throw new IOException(String.format("Line %d: Bit value '%c' in \"%s\" must be one of '0', '1', or 'x'.", lineno, c, sval));
+	}
+
+	Entry parseHex(char c, int bit, int nbits, String sval, Var var) throws IOException {
+		if (c == 'x' || c == 'X')
+			return Entry.DONT_CARE;
+		int d = 0;
+		if ('0' <= c && c <= '9')
+			d = c - '0';
+		else if ('a' <= c && c <= 'f')
+			d = 0xa + (c - 'a');
+		else if ('A' <= c && c <= 'F')
+			d = 0xA + (c - 'A');
+		else 
+			throw new IOException(String.format("Line %d: Hex digit '%c' in \"%s\" must be one of '0'-'9', 'a'-'f' or 'x'.", lineno, c, sval));
+		if (nbits < 4 && (d >= (1<<nbits)))
+			throw new IOException(String.format("Line %d: Hex value \"%s\" contains too many bits for %s.", lineno, sval, var.name));
+		return (((d & (1 << bit)) == 0) ? Entry.ZERO : Entry.ONE);
+	}
+
+	int parseVal(Entry[] row, int col, String sval, Var var) throws IOException {
+		if (sval.length() == var.width) {
+			// must be binary
+			for (int i = 0; i < var.width; i++)
+				row[col++] = parseBit(sval.charAt(i), sval, var);
+		} else if (sval.length() == (var.width + 3)/4) { 
+			// try hex
+			for (int i = 0; i < var.width; i++)
+				row[col++] = parseHex(sval.charAt(i/4), (var.width-i-1)%4, var.width - ((var.width-i-1)/4)*4, sval, var);
+		} else {
+			throw new IOException(String.format("Line %d: Expected %d bits (or %d hex digits) in column %s, but found \"%s\".",
+						lineno, var.width, (var.width+3)/4, var.name, sval));
+		}
+		return col;
 	}
 
 	void validateRow(String line, VariableList inputs, VariableList outputs, ArrayList<Entry[]> rows) throws IOException {
@@ -143,27 +173,19 @@ class ImportTableButton extends JButton {
 		for (Var var : inputs.vars) {
 			if (ix >= s.length || s[ix].equals("|"))
 				throw new IOException(String.format("Line %d: Not enough input columns.", lineno));
-			String sval = s[ix++];
-			if (sval.length() != var.width)
-				throw new IOException(String.format("Line %d: Column value \"%s\" for %s must have exactly %d bits.", lineno, sval, var.name, var.width));
-			for (int i = 0; i < var.width; i++)
-				row[col++] = parseBit(sval.charAt(var.width-i-1), var);
+			col = parseVal(row, col, s[ix++], var);
 		}
 		if (ix >= s.length)
 			throw new IOException(String.format("Line %d: Missing '|' column separator.", lineno));
 		else if (!s[ix].equals("|"))
 			throw new IOException(String.format("Line %d: Too many input columns.", lineno));
 		ix++;
-		for (Var var : inputs.vars) {
+		for (Var var : outputs.vars) {
 			if (ix >= s.length)
 				throw new IOException(String.format("Line %d: Not enough output columns.", lineno));
 			else if (s[ix].equals("|"))
 				throw new IOException(String.format("Line %d: Column separator '|' must appear only once.", lineno));
-			String sval = s[ix++];
-			if (sval.length() != var.width)
-				throw new IOException(String.format("Line %d: Column value \"%s\" for %s must have exactly %d bits.", lineno, sval, var.name, var.width));
-			for (int i = 0; i < var.width; i++)
-				row[col++] = parseBit(sval.charAt(var.width-i-1), var);
+			col = parseVal(row, col, s[ix++], var);
 		}
 		if (ix != s.length)
 			throw new IOException(String.format("Line %d: Too many output columns.", lineno));
@@ -177,6 +199,7 @@ class ImportTableButton extends JButton {
 		VariableList outputs = new VariableList(AnalyzerModel.MAX_OUTPUTS);
 		ArrayList<Entry[]> rows = new ArrayList<>();
 		try {
+			boolean seenBreak = false;
 			while (sc.hasNextLine()) {
 				lineno++;
 			    String line = sc.nextLine();
@@ -186,20 +209,36 @@ class ImportTableButton extends JButton {
 				line = line.trim();
 				if (line.equals(""))
 					continue;
-				if (rows.size() == 0) {
+				else if (line.matches("\\s*[~_=-][ ~_=-|]*"))
+					continue;
+				else if (inputs.vars.size() == 0)
 					validateHeader(line, inputs, outputs);
-				} else if (rows.size() == 1) {
-					validateBreak(line);
-				} else {
+				else
 					validateRow(line, inputs, outputs, rows);
-				}
 			}
 			if (rows.size() == 0)
 				throw new IOException("End of file: Truth table has no rows.");
 			try {
-				model.setVariables(inputs, outputs);
-				TruthTable table = model.getTruthTable();
-				table.setVisibleRows(rows);
+				model.setVariables(inputs.vars, outputs.vars);
+			} catch (IllegalArgumentException e) {
+				throw new IOException(e.getMessage());
+			}
+			TruthTable table = model.getTruthTable();
+			try {
+				table.setVisibleRows(rows, false);
+			} catch (IllegalArgumentException e) {
+				int confirm = JOptionPane.showConfirmDialog(parent,
+						new String[]{ e.getMessage(), Strings.get("tableParseErrorMessage") },
+						Strings.get("tableParseErrorTitle"),
+						JOptionPane.YES_NO_OPTION);
+				if (confirm != JOptionPane.YES_OPTION)
+					return;
+				try {
+					table.setVisibleRows(rows, true);
+				} catch (IllegalArgumentException ex) {
+					throw new IOException(ex.getMessage());
+				}
+			}
 		} finally {
 			sc.close();
 		}

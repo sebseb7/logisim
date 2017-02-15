@@ -92,6 +92,18 @@ class ExportTableButton extends JButton {
 				out.println("# Generated from circuit " + c.getName());
 			out.println("# Exported on " + new Date());
 			out.println();
+			out.println("# Hints and Notes on Formatting:");
+			out.println("# * You can edit this file then import it back into Logisim!");
+			out.println("# * Anything after a '#' is a comment and will be ignored.");
+			out.println("# * Blank lines and separator lines (e.g., ~~~~~~) are ignored.");
+			out.println("# * Keep column names simple (no spaces, punctuation, etc.)");
+			out.println("# * 'Name[N..0]' indicates an N+1 bit variable, whereas");
+			out.println("#   'Name' by itself indicates a 1-bit variable.");
+			out.println("# * You can use 'x' to indicate \"don't care\" for both");
+			out.println("#   input and output bits.");
+			out.println("# * You can use binary (e.g., '10100011xxxx') notation or");
+			out.println("#   or hex (e.g., 'C3x'). Logisim will figure out which is which.");
+			out.println();
 			VariableList inputs = model.getInputs();
 			VariableList outputs = model.getOutputs();
 			int colwidth[] = new int[inputs.vars.size() + outputs.vars.size()];
