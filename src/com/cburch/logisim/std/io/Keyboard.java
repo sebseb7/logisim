@@ -54,7 +54,6 @@ import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.tools.key.DirectionConfigurator;
 
 public class Keyboard extends InstanceFactory {
