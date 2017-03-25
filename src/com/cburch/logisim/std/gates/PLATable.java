@@ -53,16 +53,22 @@ import javax.swing.plaf.basic.BasicScrollBarUI;
 public class PLATable {
 	private ArrayList<Row> rows = new ArrayList<>();
 	private int inSize, outSize;
-	public int pendingInSize, pendingOutSize;
+	int pendingInSize, pendingOutSize;
+	private String label = "";
 
-	public PLATable(int inSz, int outSz) {
+	public PLATable(int inSz, int outSz, String l) {
 		inSize = pendingInSize = inSz;
 		outSize = pendingOutSize = outSz;
+		label = l;
 	}
 
 	public PLATable(PLATable other) {
-		this(other.inSize, other.outSize);
+		this(other.inSize, other.outSize, other.label);
 		this.copyFrom(other);
+	}
+
+	public void setLabel(String l) {
+		label = l;
 	}
 
 	public void pendingInputSize(int sz) { pendingInSize = sz; }
@@ -115,7 +121,7 @@ public class PLATable {
 			}
 		}
 		if (tt == null)
-			tt = new PLATable(2, 2);
+			tt = new PLATable(2, 2, "PLA");
 		return tt;
 	}
 
@@ -135,7 +141,7 @@ public class PLATable {
 		andBits = line.substring(0, ii).trim();
 		orBits = line.substring(ii+1).trim();
 		if (tt == null)
-			tt = new PLATable(andBits.length(), orBits.length());
+			tt = new PLATable(andBits.length(), orBits.length(), "PLA");
 		else if (andBits.length() != tt.inSize)
 			throw new IOException("PLA row '"+line+"' must have exactly " + tt.inSize + " input bits.");
 		else if (orBits.length() != tt.outSize)
@@ -145,13 +151,13 @@ public class PLATable {
 			char s = andBits.charAt(i);
 			if (s != ONE && s != ZERO && s != DONTCARE)
 				throw new IOException("PLA row '"+line+"' contains invalid input bit '"+s+"'.");
-			r.inBits[i] = s;
+			r.inBits[andBits.length() - i - 1] = s;
 		}
 		for (int i = 0; i < orBits.length(); i++) {
 			char s = orBits.charAt(i);
 			if (s != ONE && s != ZERO)
 				throw new IOException("PLA row '"+line+"' contains invalid output bit '"+s+"'.");
-			r.outBits[i] = s;
+			r.outBits[orBits.length() - i - 1] = s;
 		}
 		r.comment = comment;
 		return tt;
@@ -245,18 +251,20 @@ public class PLATable {
 		public String toString() { return toStandardString(); }
 
 		public String toStandardString() {
-			String ret = "";
+			String i = "";
 			for (char inBit: inBits)
-				ret += inBit;
-			ret += " ";
+				i = inBit + i;
+			String o = "";
 			for (char outBit: outBits)
-				ret += outBit;
+				o = outBit + o;
+			String ret = i + " " + o;
 			if (!comment.trim().equals(""))
 				ret += " # " + comment.trim();
 			return ret;
 		}
 
 		boolean matches(int input) {
+			int i = input;
 			for (char bit : inBits) {
 				int b = input & 1;
 				if ((bit == ONE && b != 1) || (bit == ZERO && b != 0))
@@ -369,8 +377,20 @@ public class PLATable {
 			setVisible(false);
 		}
 
+		static String normalizeName(String s) {
+			if (s == null)
+				return "pla.txt";
+			s = s.trim();
+			s = s.replace("[^a-zA-Z0-9().-]", " ");
+			s = s.replace("\\s+", "_");
+			if (s.equals("") || s.equals("_"))
+				return "pla.txt";
+			return s + ".txt";
+		}
+
 		void read() {
 			JFileChooser chooser = JFileChoosers.create();
+			chooser.setSelectedFile(new File(normalizeName(oldTable.label)));
 			chooser.setDialogTitle(Strings.get("plaLoadDialogTitle"));
 			chooser.setFileFilter(Loader.TXT_FILTER);
 			int choice = chooser.showOpenDialog(null);
@@ -390,6 +410,7 @@ public class PLATable {
 
 		void write() {
 			JFileChooser chooser = JFileChoosers.create();
+			chooser.setSelectedFile(new File(normalizeName(oldTable.label)));
 			chooser.setDialogTitle(Strings.get("plaSaveDialogTitle"));
 			chooser.setFileFilter(Loader.TXT_FILTER);
 			int choice = chooser.showSaveDialog(null);
@@ -500,9 +521,9 @@ public class PLATable {
 
 					bitPanel.add(new Box(BoxLayout.X_AXIS));
 
-					for (int i = 0; i < inSz; i++) {
+					for (int i = inSz-1; i >= 0; i--) {
 						final int ii = i;
-						bitPanel.add(new BitStateButton(row.inBits[i]) {
+						bitPanel.add(new BitStateButton(row.inBits[ii]) {
 							public char clicked() { return row.changeInBit(ii); }
 						});
 					}
@@ -511,9 +532,9 @@ public class PLATable {
 
 					for (int i = outSz; i < 2; i++)
 						bitPanel.add(new Box(BoxLayout.X_AXIS));
-					for (int i = 0; i < outSz; i++) {
+					for (int i = outSz-1; i >= 0; i--) {
 						final int ii = i;
-						bitPanel.add(new BitStateButton(row.outBits[i]) {
+						bitPanel.add(new BitStateButton(row.outBits[ii]) {
 							public char clicked() { return row.changeOutBit(ii); }
 						});
 					}

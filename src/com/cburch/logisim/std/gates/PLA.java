@@ -121,7 +121,7 @@ class PLA extends InstanceFactory {
 		private Font labelFont = StdAttr.DEFAULT_LABEL_FONT;
 		private BitWidth widthIn = BitWidth.create(2);
 		private BitWidth widthOut = BitWidth.create(2);
-		private PLATable tt = new PLATable(2, 2);
+		private PLATable tt = new PLATable(2, 2, "PLA");
 
 		@Override
 		protected void copyInto(AbstractAttributeSet destObj) {
@@ -130,7 +130,8 @@ class PLA extends InstanceFactory {
 			dest.labelFont = this.labelFont;
 			dest.widthIn = this.widthIn;
 			dest.widthOut = this.widthOut;
-			dest.tt = this.tt;
+			dest.tt = new PLATable(this.tt);
+			dest.tt.setLabel(dest.label);
 		}
 
 		@Override
@@ -157,8 +158,10 @@ class PLA extends InstanceFactory {
 				tt.pendingOutputSize(widthOut.getWidth());
 			} else if (attr == ATTR_TABLE) {
 				tt = (PLATable) value;
+				tt.setLabel(label);
 			} else if (attr == StdAttr.LABEL) {
 				label = (String) value;
+				tt.setLabel(label);
 			} else if (attr == StdAttr.LABEL_FONT) {
 				labelFont = (Font) value;
 			} else {
@@ -167,24 +170,7 @@ class PLA extends InstanceFactory {
 			fireAttributeValueChanged(attr, value);
 		}
 	}
-	
-	private static class PLAExpression implements ExpressionComputer {
-		private Instance instance;
-		
-		public PLAExpression(Instance instance) {
-			this.instance = instance;
-		}
-		
-		public void computeExpression(Map expressionMap) {
-			// fixme: compute expressions
-			AttributeSet attrs = instance.getAttributeSet();
-			int intValue = 5;
 
-			expressionMap.put(instance.getLocation(), 0,
-					Expressions.constant(intValue));
-		}
-	}
-	
 	public PLA() {
 		super("PLA", Strings.getter("PLA"));
 		setIconName("pla.gif");
@@ -200,6 +186,7 @@ class PLA extends InstanceFactory {
 		super.configureNewInstance(instance);
 		PLAAttributes attributes = (PLAAttributes)instance.getAttributeSet();
 		attributes.tt = new PLATable(instance.getAttributeValue(ATTR_TABLE));
+		attributes.tt.setLabel(instance.getAttributeValue(StdAttr.LABEL));
 		
 		instance.addAttributeListener();
 		updatePorts(instance);
@@ -222,13 +209,6 @@ class PLA extends InstanceFactory {
 		} else if (attr == ATTR_TABLE) {
 			instance.fireInvalidated();
 		}
-	}
-	
-	@Override
-	protected Object getInstanceFeature(Instance instance, Object key) {
-		if (key == ExpressionComputer.class)
-			return new PLAExpression(instance);
-		return super.getInstanceFeature(instance, key);
 	}
 
 	@Override
