@@ -46,13 +46,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import com.cburch.hdl.HdlModel;
-import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.util.Softwares;
-import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.instance.Port;
