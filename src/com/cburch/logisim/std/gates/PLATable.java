@@ -9,6 +9,7 @@ package com.cburch.logisim.std.gates;
 
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.util.JFileChoosers;
+import com.cburch.logisim.util.JInputDialog;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -53,12 +54,11 @@ import javax.swing.plaf.basic.BasicScrollBarUI;
 public class PLATable {
 	private ArrayList<Row> rows = new ArrayList<>();
 	private int inSize, outSize;
-	int pendingInSize, pendingOutSize;
 	private String label = "";
 
 	public PLATable(int inSz, int outSz, String l) {
-		inSize = pendingInSize = inSz;
-		outSize = pendingOutSize = outSz;
+		inSize = inSz;
+		outSize = outSz;
 		label = l;
 	}
 
@@ -74,9 +74,6 @@ public class PLATable {
 	public ArrayList<Row> rows() {
 		return rows;
 	}
-
-	public void pendingInputSize(int sz) { pendingInSize = sz; }
-	public void pendingOutputSize(int sz) { pendingOutSize = sz; }
 
 	public void copyFrom(PLATable other) {
 		rows.clear();
@@ -94,6 +91,11 @@ public class PLATable {
 		for (Row r: rows)
 			r.truncate(inSize, outSize);
 	}
+
+	public int inSize() { return inSize; }
+	public int outSize() { return outSize; }
+	public void setInSize(int sz) { resize(sz, outSize); }
+	public void setOutSize(int sz) { resize(inSize, sz); }
 
 	public Row addTableRow() {
 		Row r = new Row(inSize, outSize); 
@@ -304,7 +306,7 @@ public class PLATable {
 		return "n/a";
 	}
 
-	public static class EditorDialog extends JDialog {
+	public static class EditorDialog extends JDialog implements JInputDialog {
 		private final float smallFont = 9.5f;
 		private final float tinyFont = 8.8f;
 		private HeaderPanel hdrPanel;
@@ -348,29 +350,36 @@ public class PLATable {
 			setMinimumSize(new Dimension(300, 200));
 		}
 
-		public void showAndResize(PLATable t) {
-			oldTable = t;
+		public void setValue(Object o) {
+			if (!(o instanceof PLATable))
+				return;
+			oldTable = (PLATable)o;
 			newTable = new PLATable(oldTable);
-			newTable.resize(t.pendingInSize, t.pendingOutSize);
 			reset();
 			Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
 			setLocation(dim.width/2-getWidth()/2, dim.height/3-getHeight()/2);
-			setVisible(true);
+		}
+
+		public Object getValue() {
+			return oldTable;
 		}
 
 		void reset() {
 			hdrPanel.reset();
 			ttPanel.reset();
-			repack();
+			Dimension d = hdrPanel.getPreferredSize();
+			repack(new Dimension(
+						Math.max(Math.min((int)d.getWidth()+50, 800), 300),
+						Math.max(Math.min((int)d.getHeight()+30*newTable.rows.size()+100, 500), 200)));
 		}
 
-		void repack() {
-			Dimension d = getSize();
+		void repack(Dimension prefSize) {
+			Dimension d = (prefSize != null ? prefSize : getSize());
 			setMinimumSize(d);
 			setMaximumSize(d);
 			setPreferredSize(d);
 			pack();
-			setSize(d);
+			//setSize(d);
 			setMinimumSize(new Dimension(300, 200));
 			setMaximumSize(null);
 		}
@@ -471,6 +480,7 @@ public class PLATable {
 				removeAll();
 				add(new TopLabelPanel(newTable.inSize, newTable.outSize));
 				add(new TopNumberPanel(newTable.inSize, newTable.outSize));
+				pack();
 			}
 		}
 
@@ -489,14 +499,13 @@ public class PLATable {
 
 			void addRow() {
 				add(new RowPanel(newTable.addTableRow()), getComponentCount()-2);
-				Dimension d = getSize();
-				repack();
+				repack(null);
 			}
 
 			void deleteRow(RowPanel rp) {
 				newTable.deleteTableRow(rp.row);
 				this.remove(rp);
-				repack();
+				repack(null);
 			}
 
 			class RowPanel extends JPanel {
@@ -557,6 +566,7 @@ public class PLATable {
 					add(txt);
 					pack();
 					setMaximumSize(getPreferredSize());
+					add(Box.createRigidArea(new Dimension(4, 20))); // prevents txt from disappearing when window is narrow
 				}
 			}
 
@@ -636,9 +646,9 @@ public class PLATable {
 			}
 		}
 
-		private static final int bs = 20;
+		private static final int bs = 18;
 		private static final int buttonHgap = 2;
-		private static final int edgeThickness = 3;
+		private static final int edgeThickness = 2;
 		private static final Border stdBorder = BorderFactory.createEtchedBorder(); 
 		private static final Border clickBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 		private static Dimension buttonSize = new Dimension(bs - 2*edgeThickness - buttonHgap, bs - 2*edgeThickness);

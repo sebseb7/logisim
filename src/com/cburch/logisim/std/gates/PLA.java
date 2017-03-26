@@ -66,7 +66,9 @@ class PLA extends InstanceFactory {
 		
 		@Override
 		public java.awt.Component getCellEditor(Window source, PLATable tt) {
-			return ContentsCell.getEditor((Frame)source, tt);
+			PLATable.EditorDialog dialog = new PLATable.EditorDialog((Frame)source);
+			dialog.setValue(tt);
+			return dialog;
 		}
 
 		@Override
@@ -84,38 +86,6 @@ class PLA extends InstanceFactory {
 			return PLATable.parse(str);
 		}
 	}
-
-	private static class ContentsCell extends JLabel implements MouseListener {
-		PLATable tt;
-		Frame parent;
-
-		private ContentsCell(Frame parent, PLATable tt) {
-			super(Strings.get("(click to edit)"));
-			this.tt = tt;
-			this.parent = parent;
-			addMouseListener(this);
-			//mouseClicked(null);
-		}
-
-		static ContentsCell getEditor(Frame parent, PLATable tt) {
-			ContentsCell editor = new ContentsCell(parent, tt);
-			editor.mouseClicked(null); // this cannot be called in constructor
-			return editor;
-		}
-
-		public void mouseClicked(MouseEvent e) {
-			if (tt == null) return;
-			PLATable.EditorDialog dialog = new PLATable.EditorDialog(this.parent);
-			dialog.showAndResize(tt);
-			dialog.toFront();
-		}
-
-		public void mousePressed(MouseEvent e) { }
-		public void mouseReleased(MouseEvent e) { }
-		public void mouseEntered(MouseEvent e) { }
-		public void mouseExited(MouseEvent e) { }
-	}
-	
 
 	private class PLAAttributes extends AbstractAttributeSet {
 		private String label = "PLA";
@@ -153,13 +123,17 @@ class PLA extends InstanceFactory {
 		public <V> void setValue(Attribute<V> attr, V value) {
 			if (attr == ATTR_IN_WIDTH) {
 				widthIn = (BitWidth) value;
-				tt.pendingInputSize(widthIn.getWidth());
+				tt.setInSize(widthIn.getWidth());
 			} else if (attr == ATTR_OUT_WIDTH) {
 				widthOut = (BitWidth) value;
-				tt.pendingOutputSize(widthOut.getWidth());
+				tt.setOutSize(widthOut.getWidth());
 			} else if (attr == ATTR_TABLE) {
 				tt = (PLATable) value;
 				tt.setLabel(label);
+				if (tt.inSize() != widthIn.getWidth())
+					setValue(ATTR_IN_WIDTH, BitWidth.create(tt.inSize()));
+				if (tt.outSize() != widthOut.getWidth())
+					setValue(ATTR_OUT_WIDTH, BitWidth.create(tt.outSize()));
 			} else if (attr == StdAttr.LABEL) {
 				label = (String) value;
 				tt.setLabel(label);
@@ -188,7 +162,6 @@ class PLA extends InstanceFactory {
 		PLAAttributes attributes = (PLAAttributes)instance.getAttributeSet();
 		attributes.tt = new PLATable(instance.getAttributeValue(ATTR_TABLE));
 		attributes.tt.setLabel(instance.getAttributeValue(StdAttr.LABEL));
-		
 		instance.addAttributeListener();
 		updatePorts(instance);
 	}
