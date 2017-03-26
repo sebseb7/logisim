@@ -29,6 +29,7 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.gui.main.Frame;
@@ -55,7 +56,7 @@ class PLA extends InstanceFactory {
 	private static final Color BACKGROUND_COLOR = new Color(230, 230, 230);
 	
 	private static final List<Attribute<?>> ATTRIBUTES = Arrays.asList(new Attribute<?>[] {
-				ATTR_IN_WIDTH, ATTR_OUT_WIDTH, ATTR_TABLE,
+				StdAttr.FACING, ATTR_IN_WIDTH, ATTR_OUT_WIDTH, ATTR_TABLE,
 				StdAttr.LABEL, StdAttr.LABEL_FONT
 		});
 
@@ -89,6 +90,7 @@ class PLA extends InstanceFactory {
 
 	private class PLAAttributes extends AbstractAttributeSet {
 		private String label = "PLA";
+		private Direction facing = Direction.EAST;
 		private Font labelFont = StdAttr.DEFAULT_LABEL_FONT;
 		private BitWidth widthIn = BitWidth.create(2);
 		private BitWidth widthOut = BitWidth.create(2);
@@ -98,6 +100,7 @@ class PLA extends InstanceFactory {
 		protected void copyInto(AbstractAttributeSet destObj) {
 			PLAAttributes dest = (PLAAttributes) destObj;
 			dest.label = this.label;
+			dest.facing = this.facing;
 			dest.labelFont = this.labelFont;
 			dest.widthIn = this.widthIn;
 			dest.widthOut = this.widthOut;
@@ -111,6 +114,7 @@ class PLA extends InstanceFactory {
 		@Override
 		@SuppressWarnings("unchecked")
 		public <V> V getValue(Attribute<V> attr) {
+			if (attr == StdAttr.FACING)  return (V) facing;
 			if (attr == ATTR_IN_WIDTH)  return (V) widthIn;
 			if (attr == ATTR_OUT_WIDTH) return (V) widthOut;
 			if (attr == ATTR_TABLE) return (V) tt;
@@ -121,7 +125,9 @@ class PLA extends InstanceFactory {
 
 		@Override
 		public <V> void setValue(Attribute<V> attr, V value) {
-			if (attr == ATTR_IN_WIDTH) {
+			if (attr == StdAttr.FACING) {
+				facing = (Direction) value;
+			} else if (attr == ATTR_IN_WIDTH) {
 				widthIn = (BitWidth) value;
 				tt.setInSize(widthIn.getWidth());
 			} else if (attr == ATTR_OUT_WIDTH) {
@@ -149,6 +155,7 @@ class PLA extends InstanceFactory {
 	public PLA() {
 		super("PLA", Strings.getter("PLA"));
 		setIconName("pla.gif");
+		setFacingAttribute(StdAttr.FACING);
 	}
 
 	@Override
@@ -167,17 +174,22 @@ class PLA extends InstanceFactory {
 	}
 	
 	private void updatePorts(Instance instance) {
+		Direction dir = instance.getAttributeValue(StdAttr.FACING);
+		int dx = 0, dy = 0;
+		if (dir == Direction.WEST) dx = -50;
+		else if (dir == Direction.NORTH) dy = -50;
+		else if (dir == Direction.SOUTH) dy = 50;
+		else dx = 50;
 		Port[] ps = { new Port(0, 0, Port.INPUT, ATTR_IN_WIDTH),
-		              new Port(50, 0, Port.OUTPUT, ATTR_OUT_WIDTH) };
+		              new Port(dx, dy, Port.OUTPUT, ATTR_OUT_WIDTH) };
+		ps[IN_PORT].setToolTip(Strings.getter("input"));
+		ps[OUT_PORT].setToolTip(Strings.getter("output"));
 		instance.setPorts(ps);
 	}
 
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-		if (attr == ATTR_OUT_WIDTH) {
-			instance.recomputeBounds();
-			updatePorts(instance);
-		} else if (attr == ATTR_IN_WIDTH) {
+		if (attr == StdAttr.FACING || attr == ATTR_IN_WIDTH || attr == ATTR_OUT_WIDTH) {
 			instance.recomputeBounds();
 			updatePorts(instance);
 		} else if (attr == ATTR_TABLE) {
@@ -196,7 +208,8 @@ class PLA extends InstanceFactory {
 
 	@Override
 	public Bounds getOffsetBounds(AttributeSet attrs) {
-		Bounds ret = Bounds.create(0, -25, 50, 50);
+		Direction dir = attrs.getValue(StdAttr.FACING);
+		Bounds ret = Bounds.create(0, -25, 50, 50).rotate(Direction.EAST, dir, 0, 0);
 		return ret;
 	}
 
