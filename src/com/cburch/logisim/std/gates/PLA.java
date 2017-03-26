@@ -249,6 +249,9 @@ class PLA extends InstanceFactory {
 				PLATable tt = painter.getAttributeValue(ATTR_TABLE);
 				Value input = painter.getPortValue(IN_PORT);
 				String comment = tt.commentFor(input.toIntValue());
+				int jj = comment.indexOf("#"); // don't display secondary comment
+				if (jj >= 0)
+					comment = comment.substring(0, jj).trim();
 				GraphicsUtil.drawCenteredText(g, comment, x+w/2, y+2*h/3);
 			}
 			painter.drawPorts();
