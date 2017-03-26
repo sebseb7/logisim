@@ -474,15 +474,11 @@ public class Ram extends Mem {
 		g.drawLine(xpos + 20 + SymbolWidth - 10, ypos + getControlHeight(attrs)
 				- 10, xpos + 20 + SymbolWidth - 10, ypos
 				+ getControlHeight(attrs));
-		GraphicsUtil.drawCenteredText(
-				g,
-				"RAM "
-						+ GetSizeLabel(painter.getAttributeValue(Mem.ADDR_ATTR)
-								.getWidth())
+		GraphicsUtil.drawCenteredText(g,
+				"RAM " + GetSizeLabel(painter.getAttributeValue(Mem.ADDR_ATTR).getWidth())
 						+ " x "
-						+ Integer.toString(painter.getAttributeValue(
-								Mem.DATA_ATTR).getWidth()), xpos
-						+ (SymbolWidth / 2) + 20, ypos + 5);
+						+ painter.getAttributeValue(Mem.DATA_ATTR).getWidth(),
+						xpos + (SymbolWidth / 2) + 20, ypos + 5);
 		g.drawLine(xpos, ypos + 50, xpos + 20, ypos + 50);
 		GraphicsUtil.drawText(g, "M1 [Write Enable]", xpos + 33, ypos + 50,
 				GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
@@ -778,6 +774,8 @@ public class Ram extends Mem {
 		if (outputEnabled && goodAddr) {
 			int val = myState.getContents().get(addr);
 			state.setPort(DATA, Value.createKnown(width, val), DELAY);
+		} else if (addrValue.isErrorValue()) {
+			state.setPort(DATA, Value.createError(width), DELAY);
 		} else {
 			state.setPort(DATA, Value.createUnknown(width), DELAY);
 		}

@@ -41,6 +41,7 @@ import com.cburch.hex.HexModelListener;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -90,6 +91,16 @@ abstract class Mem extends InstanceFactory {
 		public void metainfoChanged(HexModel source) {
 		}
 	}
+
+	static final AttributeOption SINGLE = new AttributeOption("single",
+			Strings.getter("memSingle"));
+	static final AttributeOption DUAL = new AttributeOption("dual",
+			Strings.getter("memDual"));
+	static final AttributeOption QUAD = new AttributeOption("quad",
+			Strings.getter("memQuad"));
+	static final Attribute<AttributeOption> LINE_ATTR = Attributes.forOption(
+			"line", Strings.getter("memLineSize"), new AttributeOption[] {
+					SINGLE, DUAL, QUAD });
 
 	public static final int SymbolWidth = 200;
 	public static final Attribute<BitWidth> ADDR_ATTR = Attributes.forBitWidth(
@@ -242,15 +253,15 @@ abstract class Mem extends InstanceFactory {
 			state.paint(painter.getGraphics(), bds.getX(), bds.getY(), 
 					15, 15, bds.getWidth() - 30, bds.getHeight() - 20, true);
 		} else {
-			BitWidth addr = painter.getAttributeValue(ADDR_ATTR);
-			int addrBits = addr.getWidth();
-			int bytes = 1 << addrBits;
+			int addrBits = painter.getAttributeValue(ADDR_ATTR).getWidth();
+			int dataBits = painter.getAttributeValue(DATA_ATTR).getWidth();
+			int bytes = ((1 << addrBits)*dataBits + 7)/8;
 			String label;
-			if (addrBits >= 30) {
+			if (bytes >= 1<<30) {
 				label = StringUtil.format(Strings.get(mem+"GigabyteLabel"), "" + (bytes >>> 30));
-			} else if (addrBits >= 20) {
+			} else if (bytes >= 1<<20) {
 				label = StringUtil.format(Strings.get(mem+"MegabyteLabel"), "" + (bytes >> 20));
-			} else if (addrBits >= 10) {
+			} else if (bytes >= 1<<10) {
 				label = StringUtil.format(Strings.get(mem+"KilobyteLabel"), "" + (bytes >> 10));
 			} else {
 				label = StringUtil.format(Strings.get(mem+"ByteLabel"), "" + bytes);

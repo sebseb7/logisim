@@ -217,15 +217,11 @@ public class Rom extends Mem {
 		g.drawLine(xpos + 20 + SymbolWidth - 10, ypos + getControlHeight(attrs)
 				- 10, xpos + 20 + SymbolWidth - 10, ypos
 				+ getControlHeight(attrs));
-		GraphicsUtil.drawCenteredText(
-				g,
-				"ROM "
-						+ GetSizeLabel(painter.getAttributeValue(Mem.ADDR_ATTR)
-								.getWidth())
+		GraphicsUtil.drawCenteredText( g,
+				"ROM " + GetSizeLabel(painter.getAttributeValue(Mem.ADDR_ATTR) .getWidth())
 						+ " x "
-						+ Integer.toString(painter.getAttributeValue(
-								Mem.DATA_ATTR).getWidth()), xpos
-						+ (SymbolWidth / 2) + 20, ypos + 6);
+						+ painter.getAttributeValue(Mem.DATA_ATTR).getWidth(),
+						xpos + (SymbolWidth / 2) + 20, ypos + 6);
 		GraphicsUtil.switchToWidth(g, 1);
 		DrawAddress(painter, xpos, ypos + 10,
 				painter.getAttributeValue(Mem.ADDR_ATTR).getWidth());
@@ -389,8 +385,14 @@ public class Rom extends Mem {
 		Value addrValue = state.getPortValue(ADDR);
 
 		int addr = addrValue.toIntValue();
-		if (!addrValue.isFullyDefined() || addr < 0)
+		if (addrValue.isErrorValue() || (addrValue.isFullyDefined() && addr < 0)) {
+			state.setPort(DATA, Value.createError(dataBits), DELAY);
 			return;
+		}
+		if (!addrValue.isFullyDefined()) {
+			state.setPort(DATA, Value.createUnknown(dataBits), DELAY);
+			return;
+		}
 		if (addr != myState.getCurrent()) {
 			myState.setCurrent(addr);
 			myState.scrollToShow(addr);
