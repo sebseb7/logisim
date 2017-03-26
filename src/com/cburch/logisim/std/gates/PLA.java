@@ -19,8 +19,10 @@ import javax.swing.JLabel;
 import java.util.Arrays;
 import java.util.List;
 
+import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.circuit.ExpressionComputer;
+import com.cburch.logisim.comp.ComponentEvent;
 import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -29,7 +31,7 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.comp.ComponentEvent;
+import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
@@ -37,17 +39,16 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
-import com.cburch.logisim.gui.main.Frame;
 
 class PLA extends InstanceFactory {
-	private static final int IN_PORT = 0;
-	private static final int OUT_PORT = 1;
+	static final int IN_PORT = 0;
+	static final int OUT_PORT = 1;
 
-	private static final Attribute<BitWidth> ATTR_IN_WIDTH
+	static final Attribute<BitWidth> ATTR_IN_WIDTH
 		= Attributes.forBitWidth("in_width", Strings.getter("Bit Width In"));
-	private static final Attribute<BitWidth> ATTR_OUT_WIDTH
+	static final Attribute<BitWidth> ATTR_OUT_WIDTH
 		= Attributes.forBitWidth("out_width", Strings.getter("Bit Width Out"));
-	private static Attribute<PLATable> ATTR_TABLE = new TruthTableAttribute();
+	static Attribute<PLATable> ATTR_TABLE = new TruthTableAttribute();
 
 	public static InstanceFactory FACTORY = new PLA();
 
@@ -267,4 +268,21 @@ class PLA extends InstanceFactory {
 			painter.drawPorts();
 		}
 	}
+
+	@Override
+	public String getHDLName(AttributeSet attrs) {
+		String Name = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
+		if (Name.length() == 0)
+			return "PLA";
+		else
+			return "PLA_" + Name;
+	}
+
+	@Override
+	public boolean HDLSupportedComponent(String HDLIdentifier, AttributeSet attrs, char Vendor) {
+		if (MyHDLGenerator == null)
+			MyHDLGenerator = new PLAHDLGeneratorFactory();
+		return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+	}
+
 }

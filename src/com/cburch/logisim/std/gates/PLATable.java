@@ -71,6 +71,10 @@ public class PLATable {
 		label = l;
 	}
 
+	public ArrayList<Row> rows() {
+		return rows;
+	}
+
 	public void pendingInputSize(int sz) { pendingInSize = sz; }
 	public void pendingOutputSize(int sz) { pendingOutSize = sz; }
 
@@ -206,7 +210,7 @@ public class PLATable {
 	private static final char DONTCARE = 'x';
 
 	public static class Row {
-		private char[] inBits, outBits;
+		public char[] inBits, outBits;
 		private String comment = "";
 
 		public Row(int inSize, int outSize) {
