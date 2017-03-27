@@ -71,18 +71,10 @@ public class RamAttributes extends AbstractAttributeSet {
 	static final Attribute<AttributeOption> ATTR_DBUS = Attributes.forOption(
 			"databus", Strings.getter("ramDataAttr"), new AttributeOption[] {
 					BUS_BIDIR, BUS_SEP });
-	static final AttributeOption BUS_WITH_BYTEENABLES = new AttributeOption(
-			"byteEnables", Strings.getter("ramWithByteEnables"));
-	static final AttributeOption BUS_WITHOUT_BYTEENABLES = new AttributeOption(
-			"NobyteEnables", Strings.getter("ramNoByteEnables"));
 
-	static final Attribute<AttributeOption> ATTR_ByteEnables = Attributes
-			.forOption("byteenables", Strings.getter("ramByteEnables"),
-					new AttributeOption[] { BUS_WITH_BYTEENABLES,
-							BUS_WITHOUT_BYTEENABLES });
 	private static List<Attribute<?>> ATTRIBUTES = Arrays
-			.asList(new Attribute<?>[] { Mem.ADDR_ATTR, Mem.DATA_ATTR,
-					StdAttr.TRIGGER, ATTR_TYPE, ATTR_DBUS, ATTR_ByteEnables,
+			.asList(new Attribute<?>[] { Mem.ADDR_ATTR, Mem.DATA_ATTR, Mem.LINE_ATTR,
+					StdAttr.TRIGGER, ATTR_TYPE, ATTR_DBUS, 
 			 		Ram.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,
 					StdAttr.APPEARANCE});
 
@@ -97,8 +89,6 @@ public class RamAttributes extends AbstractAttributeSet {
 	private AttributeOption BusStyle = BUS_SEP; // BUS_BIDIR;
 	private Font LabelFont = StdAttr.DEFAULT_LABEL_FONT;
 	private AttributeOption Appearance = StdAttr.APPEAR_CLASSIC;
-	private AttributeOption ByteEnables = BUS_WITHOUT_BYTEENABLES;
-	private boolean SupportsByteEnables = false;
 
 	RamAttributes() {
 		contents = MemContents.create(addrBits.getWidth(), dataBits.getWidth());
@@ -113,10 +103,8 @@ public class RamAttributes extends AbstractAttributeSet {
 		d.BusStyle = BusStyle;
 		d.LabelFont = LabelFont;
 		d.Appearance = Appearance;
-		d.ByteEnables = ByteEnables;
 		d.contents = contents.clone();
 		d.lineSize = lineSize;
-		d.SupportsByteEnables = SupportsByteEnables;
 	}
 
 	@Override
@@ -157,32 +145,12 @@ public class RamAttributes extends AbstractAttributeSet {
 		if (attr == StdAttr.APPEARANCE) {
 			return (V) Appearance;
 		}
-		if (attr == ATTR_ByteEnables) {
-			return (V) ByteEnables;
-		}
 		return null;
-	}
-
-	@Override
-	public boolean isReadOnly(Attribute<?> attr) {
-		if (attr.equals(ATTR_ByteEnables)) {
-			return !SupportsByteEnables;
-		}
-		return false;
 	}
 
 	@Override
 	public boolean isToSave(Attribute<?> attr) {
 		return !(Type.equals(VOLATILE) && attr.equals(Ram.CONTENTS_ATTR));
-	}
-
-	@Override
-	public void setReadOnly(Attribute<?> attr, boolean value) {
-		if (attr.equals(ATTR_ByteEnables)) {
-			SupportsByteEnables = !value;
-		} else {
-			throw new UnsupportedOperationException();
-		}
 	}
 
 	@Override
@@ -261,16 +229,6 @@ public class RamAttributes extends AbstractAttributeSet {
 			if (Appearance.equals(NewAppearance))
 				return;
 			Appearance = NewAppearance;
-			fireAttributeValueChanged(attr, value);
-		} else if (attr == ATTR_ByteEnables) {
-			AttributeOption NewBE = (AttributeOption) value;
-			if (ByteEnables.equals(NewBE)) {
-				return;
-			}
-			if (dataBits.getWidth() < 9) {
-				NewBE = BUS_WITHOUT_BYTEENABLES;
-			}
-			ByteEnables = NewBE;
 			fireAttributeValueChanged(attr, value);
 		}
 	}

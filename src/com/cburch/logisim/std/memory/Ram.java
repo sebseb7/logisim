@@ -132,11 +132,11 @@ public class Ram extends Mem {
 	// other FPGAs, support fully unclocked, asynchronous reads. But we'll try
 	// it anyway.
 
-	static final int DIN = MEM_INPUTS + 0; // only if separate
-	static final int OE = MEM_INPUTS + 0;  // only if not separate
-	static final int WE = MEM_INPUTS + 1;  // always
-	static final int CLK = MEM_INPUTS + 2; // always
-	static final int BE = MEM_INPUTS + 3;  // as many as needed
+	// static final int DIN = MEM_INPUTS + 0; // only if separate
+	// static final int OE = MEM_INPUTS + 0;  // only if not separate
+	// static final int WE = MEM_INPUTS + 1;  // always
+	// static final int CLK = MEM_INPUTS + 2; // always
+	// static final int BE = MEM_INPUTS + 3;  // as many as needed
 
 	static class ContentsAttribute extends Attribute<MemContents> {
 
@@ -282,12 +282,10 @@ public class Ram extends Mem {
 		}
 	}
 
-	public static int GetNrOfByteEnables(AttributeSet Attrs) {
-		Object be = Attrs.getValue(RamAttributes.ATTR_ByteEnables);
-		if (be == null || !be.equals(RamAttributes.BUS_WITH_BYTEENABLES))
-			return 0;
-		int NrOfBits = Attrs.getValue(Mem.DATA_ATTR).getWidth();
-		return (NrOfBits + 7) / 8;
+	public static int numWriteEnables(AttributeSet attrs) {
+		int dataLines = lineSize(attrs);
+		if (dataLines == 1) return 0;
+		else return dataLines;
 	}
 
 	public static Attribute<MemContents> CONTENTS_ATTR = new ContentsAttribute();
@@ -316,34 +314,52 @@ public class Ram extends Mem {
 
 	@Override
 	void configurePorts(Instance instance) {
+		boolean classic = instance.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC;
 		boolean separate = isSeparate(instance.getAttributeSet());
-		int NrOfByteEnables = GetNrOfByteEnables(instance.getAttributeSet());
-		int portCount = MEM_INPUTS + 3 + NrOfByteEnables;
+		int enables = numWriteEnables(instance.getAttributeSet());
+		int dataLines = lineSize(instance.getAttributeSet());
+		// (addr, data0) + (clk+we)
+		//    + (dataout0, if separate) + (oe, if not separate)
+		//    + (write enables, if multiple data lines)
+		//    + (extra dataout lines) + (extra datain lines, if separate)
+		int portCount = MEM_INPUTS + 2 + 1 + enables + (separate?2:1)*(dataLines-1);
 		Port[] ps = new Port[portCount];
+		int DATA1 = MEM_INPUTS; // (dataLines-1) of them
+		int DIN0 = DATA1 + (dataLines-1); // (dataLines) of them, only if separate
+		int OE = DIN0; // 1, only if not separate
+		int CLK = separate ? (DIN0 + dataLines) : (OE + 1); // 1 always
+		int WE = CLK+1; // 1, always
+		int LE = WE+1; // (datalines) of them, only if multiple data lines
 		ps[ADDR] = new Port(0, 10, Port.INPUT, ADDR_ATTR);
 		ps[ADDR].setToolTip(Strings.getter("memAddrTip"));
-		ps[CLK] = new Port(0, 70 + NrOfByteEnables * 10, Port.INPUT, 1);
+		ps[CLK] = new Port(0, (classic ? 40 : 70) + enables * 10, Port.INPUT, 1);
 		ps[CLK].setToolTip(Strings.getter("ramClkTip"));
-		ps[WE] = new Port(0, 50, Port.INPUT, 1);
+		ps[WE] = new Port(0, (classic ? 30 : 50), Port.INPUT, 1);
 		ps[WE].setToolTip(Strings.getter("ramWETip"));
 		int ypos = getControlHeight(instance.getAttributeSet());
-		if (instance.getAttributeValue(Mem.DATA_ATTR).getWidth() == 1)
+		if (!classic && instance.getAttributeValue(Mem.DATA_ATTR).getWidth() == 1)
 			ypos += 10;
 		if (separate) {
-			ps[DIN] = new Port(0, ypos, Port.INPUT, DATA_ATTR);
-			ps[DIN].setToolTip(Strings.getter("ramInTip"));
-			ps[DATA] = new Port(SymbolWidth + 40, ypos, Port.OUTPUT, DATA_ATTR);
-			ps[DATA].setToolTip(Strings.getter("memDataTip"));
+			for (int i = 0; i < dataLines; i++) {
+				ps[DIN0+i] = new Port(0, ypos, Port.INPUT, DATA_ATTR);
+				ps[DIN0+i].setToolTip(Strings.getter("ramInTip"+i));
+				ps[i==0?DATA:(DATA1+i-1)] = new Port(SymbolWidth + 40, ypos, Port.OUTPUT, DATA_ATTR);
+				ps[i==0?DATA:(DATA1+i-1)].setToolTip(Strings.getter("memDataTip"+i));
+				ypos += 10;
+			}
 		} else {
-			ps[OE] = new Port(0, 60, Port.INPUT, 1);
+			ps[OE] = new Port(0, (classic ? 20 : 60), Port.INPUT, 1);
 			ps[OE].setToolTip(Strings.getter("ramOETip"));
-			ps[DATA] = new Port(SymbolWidth + 50, ypos, Port.INOUT, DATA_ATTR);
-			ps[DATA].setToolTip(Strings.getter("ramBusTip"));
+			for (int i = 0; i < dataLines; i++) {
+				ps[i==0?DATA:(DATA1+i-1)] = new Port(SymbolWidth + 50, ypos, Port.OUTPUT, DATA_ATTR);
+				ps[i==0?DATA:(DATA1+i-1)].setToolTip(Strings.getter("memDataTip"+i));
+				ypos += 10;
+			}
 		}
-		for (int i = 0; i < NrOfByteEnables; i++) {
-			ps[BE + i] = new Port(0, 70 + i * 10, Port.INPUT, 1);
-			String Label = "ramByteEnableTip" + Integer.toString(NrOfByteEnables - i - 1);
-			ps[BE + i].setToolTip(Strings.getter(Label));
+		for (int i = 0; i < enables; i++) {
+			ypos = (classic ? 40 : 70);
+			ps[LE + i] = new Port(0, ypos + i * 10, Port.INPUT, 1);
+			ps[LE + i].setToolTip(Strings.getter("ramLETip"+i));
 		}
 		instance.setPorts(ps);
 	}
@@ -447,15 +463,22 @@ public class Ram extends Mem {
 
 	private void DrawControlBlock(InstancePainter painter, int xpos, int ypos) {
 		boolean separate = isSeparate(painter.getAttributeSet());
+		int dataLines = Mem.lineSize(painter.getAttributeSet());
+		int DATA1 = MEM_INPUTS; // (dataLines-1) of them
+		int DATAOUT[] = { DATA, DATA1, DATA1+1, DATA1+2 };
+		int DIN0 = DATA1+(dataLines-1); // (dataLines) of them, only if separate
+		int DATAIN[] = { (separate?DIN0:DATA), (separate?DIN0+1:DATA1), (separate?DIN0+2:DATA1+1), (separate?DIN0+3:DATA1+2) };
+		int OE = DIN0; // 1, only if not separate
+		int CLK = separate ? (DIN0 + dataLines) : (OE + 1); // 1 always
+		int WE = CLK+1; // 1, always
+		int LE = WE+1; // (datalines) of them, only if multiple data lines
+
 		Object trigger = painter.getAttributeValue(StdAttr.TRIGGER);
 		boolean asynch = trigger.equals(StdAttr.TRIG_HIGH)
 				|| trigger.equals(StdAttr.TRIG_LOW);
 		boolean inverted = trigger.equals(StdAttr.TRIG_FALLING)
 				|| trigger.equals(StdAttr.TRIG_LOW);
-		Object be = painter.getAttributeValue(RamAttributes.ATTR_ByteEnables);
-		boolean byteEnables = be == null ? false : be
-				.equals(RamAttributes.BUS_WITH_BYTEENABLES);
-		int NrOfByteEnables = GetNrOfByteEnables(painter.getAttributeSet());
+		int enables = numWriteEnables(painter.getAttributeSet());
 		Graphics g = painter.getGraphics();
 		GraphicsUtil.switchToWidth(g, 2);
 		AttributeSet attrs = painter.getAttributeSet();
@@ -484,12 +507,12 @@ public class Ram extends Mem {
 				GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
 		painter.drawPort(WE);
 		g.drawLine(xpos, ypos + 60, xpos + 20, ypos + 60);
-		if (separate) {
+		if (!separate) {
 			GraphicsUtil.drawText(g, "M2 [Output Enable]", xpos + 33, ypos + 60,
 					GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
 			painter.drawPort(OE);
 		}
-		int yoffset = 70 + NrOfByteEnables * 10;
+		int yoffset = 70 + enables * 10;
 		if (inverted) {
 			g.drawLine(xpos, ypos + yoffset, xpos + 12, ypos + yoffset);
 			g.drawOval(xpos + 12, ypos + yoffset - 4, 8, 8);
@@ -507,14 +530,10 @@ public class Ram extends Mem {
 		painter.drawPort(CLK);
 
 		GraphicsUtil.switchToWidth(g, 2);
-		for (int i = 0; i < NrOfByteEnables; i++) {
-			g.drawLine(xpos, ypos + 70 + i * 10, xpos + 20, ypos + 70 + i
-					* 10);
-			painter.drawPort(BE + i);
-			String Label = "M"
-				+ Integer.toString((NrOfByteEnables - i) + 3)
-				+ " [ByteEnable "
-				+ Integer.toString((NrOfByteEnables - i) - 1) + "]";
+		for (int i = 0; i < enables; i++) {
+			g.drawLine(xpos, ypos + 70 + i * 10, xpos + 20, ypos + 70 + i * 10);
+			painter.drawPort(LE + i);
+			String Label = "M" + (4+i) + " [LineEnable " + i + "]";
 			GraphicsUtil.drawText(g, Label, xpos + 33, ypos + 70 + i * 10,
 					GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
 		}
@@ -525,21 +544,32 @@ public class Ram extends Mem {
 	}
 
 	private void DrawDataBlock(InstancePainter painter, int xpos, int ypos, int bit, int NrOfBits) {
+		boolean separate = isSeparate(painter.getAttributeSet());
+		int dataLines = Mem.lineSize(painter.getAttributeSet());
+		int DATA1 = MEM_INPUTS; // (dataLines-1) of them
+		int DATAOUT[] = { DATA, DATA1, DATA1+1, DATA1+2 };
+		int DIN0 = DATA1+(dataLines-1); // (dataLines) of them, only if separate
+		int DATAIN[] = { (separate?DIN0:DATA), (separate?DIN0+1:DATA1), (separate?DIN0+2:DATA1+1), (separate?DIN0+3:DATA1+2) };
+		int OE = DIN0; // 1, only if not separate
+		int CLK = separate ? (DIN0 + dataLines) : (OE + 1); // 1 always
+		int WE = CLK+1; // 1, always
+		int LE = WE+1; // (datalines) of them, only if multiple data lines
+
 		int realypos = ypos + getControlHeight(painter.getAttributeSet()) + bit * 20;
 		int realxpos = xpos + 20;
 		boolean FirstBlock = bit == 0;
 		boolean LastBlock = bit == (NrOfBits - 1);
 		Graphics g = painter.getGraphics();
-		boolean separate = isSeparate(painter.getAttributeSet());
-		Object be = painter.getAttributeValue(RamAttributes.ATTR_ByteEnables);
-		boolean byteEnables = be == null ? false : be.equals(RamAttributes.BUS_WITH_BYTEENABLES);
+		boolean byteEnables = numWriteEnables(painter.getAttributeSet()) > 0;
 		GraphicsUtil.switchToWidth(g, 2);
 		g.drawRect(realxpos, realypos, SymbolWidth, 20);
 		DrawConnections(g, xpos, realypos, FirstBlock & LastBlock, separate, byteEnables, bit);
 		if (FirstBlock) {
-			painter.drawPort(DATA);
+			for (int i = 0; i < dataLines; i++)
+				painter.drawPort(DATAOUT[i]);
 			if (separate)
-				painter.drawPort(DIN);
+				for (int i = 0; i < dataLines; i++)
+					painter.drawPort(DATAIN[i]);
 			if (!LastBlock) {
 				GraphicsUtil.switchToWidth(g, 5);
 				if (separate) {
@@ -582,8 +612,11 @@ public class Ram extends Mem {
 	}
 
 	public int getControlHeight(AttributeSet attrs) {
-		int NrByteEnables = GetNrOfByteEnables(attrs);
-		return 90 + NrByteEnables * 10;
+		int enables = numWriteEnables(attrs);
+		if (attrs.getValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC)
+			return 60 + enables * 10;
+		else
+			return 90 + enables * 10;
 	}
 
 	@Override
@@ -655,28 +688,7 @@ public class Ram extends Mem {
 	@Override
 	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
 		super.instanceAttributeChanged(instance, attr);
-		Attribute<AttributeOption> be = RamAttributes.ATTR_ByteEnables;
-		if ((attr == Mem.DATA_ATTR)) {
-			boolean narrow = instance.getAttributeValue(Mem.DATA_ATTR).getWidth() < 9;
-			if (narrow) {
-				if (!instance.getAttributeValue(be).equals(RamAttributes.BUS_WITHOUT_BYTEENABLES)) {
-					instance.getAttributeSet().setValue(be, RamAttributes.BUS_WITHOUT_BYTEENABLES);
-					super.instanceAttributeChanged(instance, be);
-				}
-				instance.setAttributeReadOnly(be, true);
-				super.instanceAttributeChanged(instance, be);
-			} else {
-				if (instance.getAttributeSet().isReadOnly(be)) {
-					instance.setAttributeReadOnly(be, false);
-					super.instanceAttributeChanged(instance,be);
-				}
-			}
-			instance.recomputeBounds();
-			configurePorts(instance);
-		} else if ((attr == RamAttributes.ATTR_DBUS) || (attr == RamAttributes.ATTR_ByteEnables)) {
-			instance.recomputeBounds();
-			configurePorts(instance);
-		} else if ((attr == StdAttr.APPEARANCE)) {
+		if (attr == Mem.DATA_ATTR || attr == Mem.LINE_ATTR || attr == StdAttr.APPEARANCE || attr == RamAttributes.ATTR_DBUS) {
 			instance.recomputeBounds();
 			configurePorts(instance);
 		}
@@ -684,18 +696,31 @@ public class Ram extends Mem {
 
 	public void DrawRamClassic(InstancePainter painter) {
 		DrawMemClassic(painter);
+
+		boolean separate = isSeparate(painter.getAttributeSet());
+		int dataLines = Mem.lineSize(painter.getAttributeSet());
+		int DATA1 = MEM_INPUTS; // (dataLines-1) of them
+		int DATAOUT[] = { DATA, DATA1, DATA1+1, DATA1+2 };
+		int DIN0 = DATA1+(dataLines-1); // (dataLines) of them, only if separate
+		int DATAIN[] = { (separate?DIN0:DATA), (separate?DIN0+1:DATA1), (separate?DIN0+2:DATA1+1), (separate?DIN0+3:DATA1+2) };
+		int OE = DIN0; // 1, only if not separate
+		int CLK = separate ? (DIN0 + dataLines) : (OE + 1); // 1 always
+		int WE = CLK+1; // 1, always
+		int LE = WE+1; // (datalines) of them, only if multiple data lines
+
 		painter.drawPort(WE, Strings.get("ramWELabel"), Direction.EAST);
 		painter.drawClock(CLK, Direction.EAST);
 
-		boolean separate = isSeparate(painter.getAttributeSet());
 		if (separate)
-			painter.drawPort(DIN, Strings.get("ramDataLabel"), Direction.EAST);
+			painter.drawPort(DATAIN[0], Strings.get("ramDataLabel"), Direction.EAST);
 		else
 			painter.drawPort(OE, Strings.get("ramOELabel"), Direction.EAST);
+		for (int i = 1; i < dataLines; i++)
+			painter.drawPort(DATAIN[i], ""+i, Direction.EAST);
 
-		int NrOfByteEnables = GetNrOfByteEnables(painter.getAttributeSet());
-		for (int i = 0; i < NrOfByteEnables; i++) {
-			painter.drawPort(BE + i, Strings.get("ramWELabel")+(NrOfByteEnables-i-1), Direction.EAST);
+		int enables = numWriteEnables(painter.getAttributeSet());
+		for (int i = 0; i < enables; i++) {
+			painter.drawPort(LE + i, Strings.get("ramWELabel")+i, Direction.EAST);
 		}
 	}
 
@@ -719,10 +744,11 @@ public class Ram extends Mem {
 			}
 			/* Draw contents */
 			if (painter.getShowState()) {
+				int dataLines = Mem.lineSize(painter.getAttributeSet());
 				RamState state = (RamState) getState(painter);
 				state.paint(painter.getGraphics(), bds.getX(), bds.getY(),
 						60, getControlHeight(painter.getAttributeSet()) + 5,
-						Mem.SymbolWidth - 75, 20 * NrOfBits - 10, false);
+						Mem.SymbolWidth - 75, 20 * NrOfBits - 10, false, dataLines);
 			}
 		}
 	}
@@ -742,40 +768,46 @@ public class Ram extends Mem {
 			myState.scrollToShow(addr);
 		}
 
+		int dataLines = Mem.lineSize(attrs);
+		int DATA1 = MEM_INPUTS; // (dataLines-1) of them
+		int DATAOUT[] = { DATA, DATA1, DATA1+1, DATA1+2 };
+		int DIN = DATA1+(dataLines-1); // (dataLines) of them, only if separate
+		int DATAIN[] = { (separate?DIN:DATA), (separate?DIN+1:DATA1), (separate?DIN+2:DATA1+1), (separate?DIN+3:DATA1+2) };
+		int OE = DIN; // 1, only if not separate
+		int CLK = separate ? (DIN + dataLines) : (OE + 1); // 1 always
+		int WE = CLK+1; // 1, always
+		int LE = WE+1; // (datalines) of them, only if multiple data lines
+
 		// perform writes
 		Object trigger = state.getAttributeValue(StdAttr.TRIGGER);
 		boolean triggered = myState.setClock(state.getPortValue(CLK), trigger);
 		boolean writeEnabled = triggered && (state.getPortValue(WE) == Value.TRUE);
-		if (writeEnabled && goodAddr) {
-			int NrOfByteEnables = GetNrOfByteEnables(attrs);
-
-			int dataValue = state.getPortValue(separate ? DIN : DATA).toIntValue();
-			int memValue = myState.getContents().get(addr);
-			if (NrOfByteEnables > 0) {
-				int mask = 0xFF << (NrOfByteEnables - 1) * 8;
-				for (int i = 0; i < NrOfByteEnables; i++) {
-					Value bitvalue = state.getPortValue(BE + i);
-					boolean disabled = bitvalue == null ? false : bitvalue.equals(Value.FALSE);
-					if (disabled) {
-						dataValue &= ~mask;
-						dataValue |= (memValue & mask);
-					}
-					mask >>= 8;
+		if (writeEnabled && goodAddr && (addr % dataLines == 0)) {
+			for (int i = 0; i < dataLines; i++) {
+				if (dataLines > 1) {
+					Value le = state.getPortValue(LE+i);
+					if (le != null && le.equals(Value.FALSE))
+						continue;
 				}
+				int dataValue = state.getPortValue(DATAIN[i]).toIntValue();
+				myState.getContents().set(addr+i, dataValue);
 			}
-			myState.getContents().set(addr, dataValue);
 		}
 
 		// perform reads
 		BitWidth width = state.getAttributeValue(DATA_ATTR);
-		boolean outputEnabled = separate || (state.getPortValue(OE) != Value.FALSE);
-		if (outputEnabled && goodAddr) {
-			int val = myState.getContents().get(addr);
-			state.setPort(DATA, Value.createKnown(width, val), DELAY);
-		} else if (addrValue.isErrorValue()) {
-			state.setPort(DATA, Value.createError(width), DELAY);
+		boolean outputEnabled = separate || !state.getPortValue(OE).equals(Value.FALSE);
+		if (outputEnabled && goodAddr && (addr % dataLines == 0)) {
+			for (int i = 0; i < dataLines; i++) {
+				int val = myState.getContents().get(addr+i);
+				state.setPort(DATAOUT[i], Value.createKnown(width, val), DELAY);
+			}
+		} else if (outputEnabled && (addrValue.isErrorValue() || (goodAddr && (addr % dataLines != 0)))) {
+			for (int i = 0; i < dataLines; i++)
+				state.setPort(DATAOUT[i], Value.createError(width), DELAY);
 		} else {
-			state.setPort(DATA, Value.createUnknown(width), DELAY);
+			for (int i = 0; i < dataLines; i++)
+				state.setPort(DATAOUT[i], Value.createUnknown(width), DELAY);
 		}
 	}
 
