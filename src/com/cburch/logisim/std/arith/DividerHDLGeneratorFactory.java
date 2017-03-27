@@ -67,12 +67,21 @@ public class DividerHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			AttributeSet attrs, FPGAReport Reporter, String HDLType) {
 		ArrayList<String> Contents = new ArrayList<String>();
 		if (HDLType.equals(Settings.VHDL)) {
-			Contents.add("   s_extended_dividend(" + CalcBitsStr + "-1 DOWNTO " + NrOfBitsStr + ") <= Upper;");
-			Contents.add("   s_extended_dividend(" + NrOfBitsStr + "-1 DOWNTO 0) <= INP_A;");
-			Contents.add("   s_div_result <= std_logic_vector(unsigned(s_extended_dividend) / unsigned(INP_B));");
-			Contents.add("   s_mod_result <= std_logic_vector(unsigned(s_extended_dividend) mod unsigned(INP_B));");
-			Contents.add("   Quotient  <= s_div_result(" + NrOfBitsStr + "-1 DOWNTO 0);");
-			Contents.add("   Remainder <= s_mod_result(" + NrOfBitsStr + "-1 DOWNTO 0);");
+			if (attrs.getValue(Multiplier.MODE_ATTR).equals(Multiplier.UNSIGNED_OPTION)) {
+				Contents.add("   s_extended_dividend(" + CalcBitsStr + "-1 DOWNTO " + NrOfBitsStr + ") <= Upper;");
+				Contents.add("   s_extended_dividend(" + NrOfBitsStr + "-1 DOWNTO 0) <= INP_A;");
+				Contents.add("   s_div_result <= std_logic_vector(unsigned(s_extended_dividend) / unsigned(INP_B));");
+				Contents.add("   s_mod_result <= std_logic_vector(unsigned(s_extended_dividend) mod unsigned(INP_B));");
+				Contents.add("   Quotient  <= s_div_result(" + NrOfBitsStr + "-1 DOWNTO 0);");
+				Contents.add("   Remainder <= s_mod_result(" + NrOfBitsStr + "-1 DOWNTO 0);");
+			} else {
+				Contents.add("   s_extended_dividend(" + CalcBitsStr + "-1 DOWNTO " + NrOfBitsStr + ") <= Upper;");
+				Contents.add("   s_extended_dividend(" + NrOfBitsStr + "-1 DOWNTO 0) <= INP_A;");
+				Contents.add("   s_div_result <= std_logic_vector(signed(s_extended_dividend) / signed(INP_B));");
+				Contents.add("   s_mod_result <= std_logic_vector(signed(s_extended_dividend) mod signed(INP_B));");
+				Contents.add("   Quotient  <= s_div_result(" + NrOfBitsStr + "-1 DOWNTO 0);");
+				Contents.add("   Remainder <= s_mod_result(" + NrOfBitsStr + "-1 DOWNTO 0);");
+			}
 		}
 		return Contents;
 	}
