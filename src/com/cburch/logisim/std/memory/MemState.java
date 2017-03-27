@@ -225,7 +225,7 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
 	private boolean classicAppearance = true;
 	public void paint(Graphics g, int leftX, int topY, 
 			int offsetX, int offsetY,
-			int DisplayWidth, int DisplayHeight, boolean classic) {
+			int DisplayWidth, int DisplayHeight, boolean classic, int dataLines) {
 		if (RecalculateParameters || classicAppearance != classic) {
 			classicAppearance = classic;
 			CalculateDisplayParameters(g, offsetX, offsetY, DisplayWidth, DisplayHeight);
@@ -265,7 +265,8 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
 			for (int j = 0; j < NrDataSymbolsEachLine; j++) {
 				int value = contents.get(addr + j);
 				if (isValidAddr(addr + j)) {
-					if ((addr + j) == curAddr) {
+					int blockEnd = (int)((curAddr/dataLines)*dataLines + dataLines - 1);
+					if ((addr + j) >= curAddr && (addr + j) <= blockEnd) {
 						g.setColor(Color.DARK_GRAY);
 						g.fillRect(firstx + j * DataSize - (DataSize / 2) - 1,
 								firsty + i * yinc - (CharHeight / 2) - 1,

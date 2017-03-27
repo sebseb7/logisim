@@ -248,10 +248,11 @@ abstract class Mem extends InstanceFactory {
 		}
 
 		// draw contents
+		int dataLines = lineSize(painter.getAttributeSet());
 		if (painter.getShowState()) {
 			MemState state = getState(painter);
 			state.paint(painter.getGraphics(), bds.getX(), bds.getY(), 
-					15, 15, bds.getWidth() - 30, bds.getHeight() - 20, true);
+					15, 15, bds.getWidth() - 30, bds.getHeight() - 20, true, dataLines);
 		} else {
 			int addrBits = painter.getAttributeValue(ADDR_ATTR).getWidth();
 			int dataBits = painter.getAttributeValue(DATA_ATTR).getWidth();
@@ -269,6 +270,10 @@ abstract class Mem extends InstanceFactory {
 			GraphicsUtil.drawCenteredText(g, label,
 					bds.getX() + bds.getWidth() / 2,
 					bds.getY() + bds.getHeight() / 2);
+			if (dataLines > 1)
+				GraphicsUtil.drawCenteredText(g, "(" + dataLines + " per line)",
+						bds.getX() + bds.getWidth() / 2,
+						bds.getY() + bds.getHeight() / 2 + 20);
 		}
 
 		GraphicsUtil.drawCenteredText( g,
@@ -280,7 +285,6 @@ abstract class Mem extends InstanceFactory {
 		// draw input and output ports
 		painter.drawPort(DATA, Strings.get("ramDataLabel"), Direction.WEST);
 		painter.drawPort(ADDR, Strings.get("ramAddrLabel"), Direction.EAST);
-		int dataLines = lineSize(painter.getAttributeSet());
 		for (int i = 1; i < dataLines; i++)
 			painter.drawPort(MEM_INPUTS+i-1, ""+i, Direction.WEST);
 		// g.setColor(Color.GRAY);
