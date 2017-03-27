@@ -280,7 +280,18 @@ abstract class Mem extends InstanceFactory {
 		// draw input and output ports
 		painter.drawPort(DATA, Strings.get("ramDataLabel"), Direction.WEST);
 		painter.drawPort(ADDR, Strings.get("ramAddrLabel"), Direction.EAST);
+		int dataLines = lineSize(painter.getAttributeSet());
+		for (int i = 1; i < dataLines; i++)
+			painter.drawPort(MEM_INPUTS+i-1, ""+i, Direction.WEST);
 		// g.setColor(Color.GRAY);
 		// painter.drawPort(CS, Strings.get("ramCSLabel"), Direction.SOUTH);
 	}
+
+	public static int lineSize(AttributeSet attrs) {
+		AttributeOption v = attrs.getValue(LINE_ATTR);
+		if (QUAD.equals(v)) return 4;
+		else if (DUAL.equals(v)) return 2;
+		else return 1;
+	}
+
 }

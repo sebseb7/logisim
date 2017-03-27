@@ -378,6 +378,8 @@ public class RamHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		int NrOfByteEnables = Ram.GetNrOfByteEnables(attrs);
 		if (NrOfByteEnables != 0)
 			return false;
+		if (Mem.lineSize(attrs) != 1)
+			return false; // todo: hdl support for lineSize > 1
 		return HDLType.equals(Settings.VHDL) && separate && !asynch;
 	}
 }

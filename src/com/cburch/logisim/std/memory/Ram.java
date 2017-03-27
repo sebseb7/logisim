@@ -665,8 +665,6 @@ public class Ram extends Mem {
 				}
 				instance.setAttributeReadOnly(be, true);
 				super.instanceAttributeChanged(instance, be);
-				instance.setAttributeReadOnly(be, true);
-				super.instanceAttributeChanged(instance, be);
 			} else {
 				if (instance.getAttributeSet().isReadOnly(be)) {
 					instance.setAttributeReadOnly(be, false);

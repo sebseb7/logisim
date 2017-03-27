@@ -129,8 +129,9 @@ public class RomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	}
 
 	@Override
-	public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-			char Vendor) {
+	public boolean HDLTargetSupported(String HDLType, AttributeSet attrs, char Vendor) {
+		if (Mem.lineSize(attrs) != 1)
+			return false; // todo: hdl support for lineSize > 1
 		return true;
 	}
 }

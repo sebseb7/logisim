@@ -90,6 +90,7 @@ public class RamAttributes extends AbstractAttributeSet {
 	private BitWidth addrBits = BitWidth.create(8);
 	private BitWidth dataBits = BitWidth.create(8);
 	private MemContents contents;
+	private AttributeOption lineSize = Mem.SINGLE;
 	private String Label = "";
 	private AttributeOption Trigger = StdAttr.TRIG_RISING;
 	private AttributeOption Type = VOLATILE; // NONVOLATILE;
@@ -114,6 +115,7 @@ public class RamAttributes extends AbstractAttributeSet {
 		d.Appearance = Appearance;
 		d.ByteEnables = ByteEnables;
 		d.contents = contents.clone();
+		d.lineSize = lineSize;
 		d.SupportsByteEnables = SupportsByteEnables;
 	}
 
@@ -133,6 +135,9 @@ public class RamAttributes extends AbstractAttributeSet {
 		}
 		if (attr == Ram.CONTENTS_ATTR) {
 			return (V) contents;
+		}
+		if (attr == Mem.LINE_ATTR) {
+			return (V) lineSize;
 		}
 		if (attr == StdAttr.LABEL) {
 			return (V) Label;
@@ -197,6 +202,12 @@ public class RamAttributes extends AbstractAttributeSet {
 			}
 			dataBits = newData;
 			contents.setDimensions(addrBits.getWidth(), dataBits.getWidth());
+			fireAttributeValueChanged(attr, value);
+		} else if (attr == Mem.LINE_ATTR) {
+			AttributeOption newLine = (AttributeOption) value;
+			if (newLine == lineSize)
+				return;
+			lineSize = newLine;
 			fireAttributeValueChanged(attr, value);
 		} else if (attr == Ram.CONTENTS_ATTR) {
 			MemContents newContents = (MemContents) value;
