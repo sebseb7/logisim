@@ -58,14 +58,20 @@ public class PLAHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		String s = "";
 		for (char c : b)
 			s = ((c == '0' || c == '1') ? c : '-') + s;
-		return "\"" + s + "\"";
+		if (b.length == 1)
+			return "'" + s + "'";
+		else
+			return "\"" + s + "\"";
 	}
 
 	private static String zeros(int sz) {
-		String s = "\"";
+		String s = "";
 		for (int i = 0; i < sz; i++)
 			s += '0';
-		return s + "\"";
+		if (sz == 1)
+			return "'" + s + "'";
+		else
+			return "\"" + s + "\"";
 	}
 
 	@Override

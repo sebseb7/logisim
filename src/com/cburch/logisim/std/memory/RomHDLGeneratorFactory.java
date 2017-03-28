@@ -55,43 +55,60 @@ public class RomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		return Inputs;
 	}
 
+	static boolean filled(MemContents rom, long addr, int n) {
+		for (int i = 0; i < n; i++)
+			if (rom.get(addr+i) != 0)
+				return true;
+		return false;
+	}
+
 	@Override
 	public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
 			AttributeSet attrs, FPGAReport Reporter, String HDLType) {
 		ArrayList<String> Contents = new ArrayList<String>();
-		long addr;
 		MemContents rom = attrs.getValue(Rom.CONTENTS_ATTR);
+		int n = Mem.lineSize(attrs);
+		// int shift = (n == 4 ? 2 : n == 2 ? 1 : 0);
 		if (HDLType.equals(Settings.VHDL)) {
 			Contents.add("   MakeRom : PROCESS( Address )");
 			Contents.add("      BEGIN");
 			Contents.add("         CASE (Address) IS");
-			for (addr = 0; addr < (1 << attrs.getValue(Mem.ADDR_ATTR)
-					.getWidth()); addr++) {
-				if (rom.get(addr) != 0) {
+			for (long addr = 0; addr < (1 << attrs.getValue(Mem.ADDR_ATTR).getWidth()); addr += n) {
+				if (filled(rom, addr, n)) {
 					Contents.add("            WHEN "
 							+ IntToBin(addr, attrs.getValue(Mem.ADDR_ATTR).getWidth(), Settings.VHDL)
 							+ " => Data <= "
 							+ IntToBin(rom.get(addr), attrs.getValue(Mem.DATA_ATTR).getWidth(), Settings.VHDL)
 							+ ";");
+					for (int i = 1; i < n; i++) {
+						Contents.add("                         "
+								+ " Data"+i+" <= "
+								+ IntToBin(rom.get(addr+i), attrs.getValue(Mem.DATA_ATTR).getWidth(), Settings.VHDL)
+								+ ";");
+					}
 				}
 			}
-			if (attrs.getValue(Mem.DATA_ATTR).getWidth() == 1)
+			if (attrs.getValue(Mem.DATA_ATTR).getWidth() == 1) {
 				Contents.add("            WHEN OTHERS => Data <= '0';");
-			else
+				for (int i = 1; i < n; i++) {
+					Contents.add("                           Data"+i+" <= '0';");
+				}
+			} else {
 				Contents.add("            WHEN OTHERS => Data <= (OTHERS => '0');");
+				for (int i = 1; i < n; i++) {
+					Contents.add("                           Data"+i+" <= (OTHERS => '0');");
+				}
+			}
 			Contents.add("         END CASE;");
 			Contents.add("      END PROCESS MakeRom;");
 		} else {
-			Contents.add("   reg["
-					+ Integer
-							.toString(attrs.getValue(Mem.DATA_ATTR).getWidth() - 1)
-					+ ":0] Data;");
+			// todo: support lineSize > 1
+			Contents.add("   reg[" + Integer.toString(attrs.getValue(Mem.DATA_ATTR).getWidth() - 1) + ":0] Data;");
 			Contents.add("");
 			Contents.add("   always @ (Address)");
 			Contents.add("   begin");
 			Contents.add("      case(Address)");
-			for (addr = 0; addr < (1 << attrs.getValue(Mem.ADDR_ATTR)
-					.getWidth()); addr++) {
+			for (long addr = 0; addr < (1 << attrs.getValue(Mem.ADDR_ATTR).getWidth()); addr++) {
 				if (rom.get(addr) != 0) {
 					Contents.add("         " + addr + " : Data = "
 							+ rom.get(addr) + ";");
@@ -109,6 +126,10 @@ public class RomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			AttributeSet attrs) {
 		SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
 		Outputs.put("Data", attrs.getValue(Mem.DATA_ATTR).getWidth());
+		int n = Mem.lineSize(attrs);
+		for (int i = 1; i < n; i++) {
+			Outputs.put("Data"+i, attrs.getValue(Mem.DATA_ATTR).getWidth());
+		}
 		return Outputs;
 	}
 
@@ -116,10 +137,12 @@ public class RomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	public SortedMap<String, String> GetPortMap(Netlist Nets,
 			NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
 		SortedMap<String, String> PortMap = new TreeMap<String, String>();
-		PortMap.putAll(GetNetMap("Address", true, ComponentInfo, Mem.ADDR,
-				Reporter, HDLType, Nets));
-		PortMap.putAll(GetNetMap("Data", true, ComponentInfo, Mem.DATA,
-				Reporter, HDLType, Nets));
+		PortMap.putAll(GetNetMap("Address", true, ComponentInfo, Mem.ADDR, Reporter, HDLType, Nets));
+		PortMap.putAll(GetNetMap("Data", true, ComponentInfo, Mem.DATA, Reporter, HDLType, Nets));
+		int n = Mem.lineSize(ComponentInfo.GetComponent().getAttributeSet());
+		for (int i = 1; i < n; i++) {
+			PortMap.putAll(GetNetMap("Data"+i, true, ComponentInfo, Mem.MEM_INPUTS+i-1, Reporter, HDLType, Nets));
+		}
 		return PortMap;
 	}
 
@@ -130,8 +153,6 @@ public class RomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
 	@Override
 	public boolean HDLTargetSupported(String HDLType, AttributeSet attrs, char Vendor) {
-		if (Mem.lineSize(attrs) != 1)
-			return false; // todo: hdl support for lineSize > 1
-		return true;
+		return HDLType.equals(Settings.VHDL) || (Mem.lineSize(attrs) == 1);
 	}
 }
