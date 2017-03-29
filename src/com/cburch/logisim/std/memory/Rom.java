@@ -397,10 +397,11 @@ public class Rom extends Mem {
 			}
 			/* Draw contents */
 			if (painter.getShowState()) {
+				int dataLines = Mem.lineSize(painter.getAttributeSet());
 				MemState state = getState(painter);
 				state.paint(painter.getGraphics(), bds.getX(), bds.getY(),
 						25, getControlHeight(painter.getAttributeSet()) + 5, 
-						Mem.SymbolWidth - 20, 20 * NrOfBits - 10, false);
+						Mem.SymbolWidth - 20, 20 * NrOfBits - 10, false, dataLines);
 			}
 		}
 	}
