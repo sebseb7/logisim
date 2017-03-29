@@ -14,12 +14,12 @@ revolve around:
 
 You can download a compiled copy here:
 
-* [Java JAR file](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.0.0hc.jar) (platform independent)
-* [Windows EXE file](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.0.0hc.exe) (windows only)
-* [Mac Disk Image](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.0.0hc.dmg) (mac only)
+* [Java JAR file](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.0hc.jar) (platform independent)
+* [Windows EXE file](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.0hc.exe) (windows only)
+* [Mac Disk Image](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.0hc.dmg) (mac only)
 
 To run the JAR file, open a command line (or Mac Terminal or Windows CMD.exe
-prompt) and type `java -jar logisim-evolution-3.0.0.jar` from within the
+prompt) and type `java -jar logisim-evolution-3.1.0.jar` from within the
 directory where you have downloaded the JAR file.
 
 On a historical note: I am also the author of all the scattered code mentioning
