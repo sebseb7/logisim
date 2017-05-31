@@ -1,6 +1,56 @@
 logisim-evolution (Holy Cross Edition)
 ======================================
 
+You can get the latest version of Logisim-evolution (Holy Cross Edition) here:
+
+<style>
+.button a {
+    color: #fff;
+    text-shadow: 0 -1px 0 rgba(0,0,0,0.15);
+    background-color: #6cc644;
+    background-image: linear-gradient(#91dd70, #55ae2e);
+    border: 1px solid #5aad35;
+    position: relative;
+    display: inline-block;
+    padding: 12px 24px;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 20px;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 3px;
+    text-decoration: none;
+    font-family: "Helvetica Neue", helvetica, arial, sans-serif;
+    text-align: center;
+}
+.button a:hover {
+    background-color: #55a532;
+    background-image: linear-gradient(#85d063, #4f992f);
+    border-color: #519d30;
+}
+.button {
+    display: inline-block;
+    margin: 12px 24px;
+    text-align: center;
+    color: #909090;
+    font-size: 14px;
+    line-height: 22px;
+}
+</style>
+
+<div class=button><a href="http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.0hc.exe">Download for Windows</a><br>Windows Standalone EXE</div>
+<div class=button><a href="http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.0hc.dmg">Download for Mac</a><br>Mac DMG Disk Image</div>
+<div class=button><a href="http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.0hc.jar">Download for Linux</a><br>Platform Independent Java JAR</div>
+
+Windows and Mac versions will work only on Windows or Mac. The
+platform-independent JAR file should work on any platform. To run the JAR file,
+open a command line (or Mac Terminal or Windows CMD.exe
+prompt) and type `java -jar logisim-evolution-3.1.0hc.jar` from within the
+directory where you have downloaded the JAR file.
+
+
 This is a fork of
 [reds-heig logisim-evolution](https://github.com/reds-heig/logisim-evolution), which in
 turn is a fork of the original
@@ -12,15 +62,6 @@ revolve around:
 * support for VHDL _generics_;
 * UI changes to aid in HDL editing and FPGA downloading.
 
-You can download a compiled copy here:
-
-* [Java JAR file](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.0hc.jar) (platform independent)
-* [Windows EXE file](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.0hc.exe) (windows only)
-* [Mac Disk Image](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.0hc.dmg) (mac only)
-
-To run the JAR file, open a command line (or Mac Terminal or Windows CMD.exe
-prompt) and type `java -jar logisim-evolution-3.1.0.jar` from within the
-directory where you have downloaded the JAR file.
 
 On a historical note: I am also the author of all the scattered code mentioning
 "Cornell's version of Logisim", both in the reds-heig fork and Carl Burch's
