@@ -156,8 +156,9 @@ class ImportTableButton extends JButton {
 				row[col++] = parseBit(sval.charAt(i), sval, var);
 		} else if (sval.length() == (var.width + 3)/4) { 
 			// try hex
-			for (int i = 0; i < var.width; i++)
-				row[col++] = parseHex(sval.charAt(i/4), (var.width-i-1)%4, var.width - ((var.width-i-1)/4)*4, sval, var);
+			for (int i = 0; i < var.width; i++) {
+				row[col++] = parseHex(sval.charAt((i+((4-(var.width%4))%4))/4), (var.width-i-1)%4, var.width - ((var.width-i-1)/4)*4, sval, var);
+			}
 		} else {
 			throw new IOException(String.format("Line %d: Expected %d bits (or %d hex digits) in column %s, but found \"%s\".",
 						lineno, var.width, (var.width+3)/4, var.name, sval));
