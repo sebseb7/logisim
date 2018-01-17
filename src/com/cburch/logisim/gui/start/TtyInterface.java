@@ -36,16 +36,21 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.HashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.cburch.logisim.analyze.model.Var;
+import com.cburch.logisim.analyze.model.TruthTable;
+import com.cburch.logisim.analyze.model.AnalyzerModel;
 import com.cburch.logisim.circuit.Analyze;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.Propagator;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Value;
+import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.file.FileStatistics;
 import com.cburch.logisim.file.LoadFailedException;
 import com.cburch.logisim.file.Loader;
@@ -62,6 +67,7 @@ import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.util.UniquelyNamedThread;
 import com.cburch.logisim.gui.main.ExportImage;
 import com.cburch.logisim.gui.main.Canvas;
+import com.cburch.logisim.instance.StdAttr;
 
 public class TtyInterface {
 
@@ -312,7 +318,7 @@ public class TtyInterface {
 			ret = doPng(args.headlessPngCircuits, file);
 		}
 		if (ret == 0 && args.headlessTty) {
-			ret = doTty(args.getTtyFormat(), args.getLoadFile(), file);
+			ret = doTty(args.getTtyFormat(), args.getLoadFile(), file, args.getCircuitToTest());
 		}
 		System.exit(ret);
 	}
@@ -346,7 +352,7 @@ public class TtyInterface {
 		return err;
 	}
 
-	static int doTty(int format, File loadfile, LogisimFile file) {
+	static int doTty(int format, File loadfile, LogisimFile file, String circuitToTest) {
 		if ((format & FORMAT_STATISTICS) != 0) {
 			format &= ~FORMAT_STATISTICS;
 			displayStatistics(file);
@@ -356,19 +362,31 @@ public class TtyInterface {
 		}
 
 		Project proj = new Project(file);
-		Circuit circuit = file.getMainCircuit();
+		Circuit circuit;
+		if (circuitToTest == null || circuitToTest.length() == 0) {
+			circuit = file.getMainCircuit();
+		} else {
+			circuit = file.getCircuit(circuitToTest);
+		}
 		Map<Instance, String> pinNames = Analyze.getPinLabels(circuit);
 		ArrayList<Instance> outputPins = new ArrayList<Instance>();
+		ArrayList<Instance> inputPins = new ArrayList<Instance>();
 		Instance haltPin = null;
 		for (Map.Entry<Instance, String> entry : pinNames.entrySet()) {
 			Instance pin = entry.getKey();
 			String pinName = entry.getValue();
-			if (!Pin.FACTORY.isInputPin(pin)) {
+			if (Pin.FACTORY.isInputPin(pin)) {
+				inputPins.add(pin);
+			} else {
 				outputPins.add(pin);
 				if (pinName.equals("halt")) {
 					haltPin = pin;
 				}
 			}
+		}
+		if (haltPin == null && (format & FORMAT_TABLE) != 0) {
+			doTableAnalysis(proj, circuit, pinNames, format);
+			return 0;
 		}
 
 		CircuitState circState = new CircuitState(proj, circuit);
@@ -481,6 +499,148 @@ public class TtyInterface {
 			displaySpeed(tickCount, elapse);
 		}
 		return retCode;
+	}
+
+	private static int doTableAnalysis(Project proj, Circuit circuit,
+			Map<Instance, String> pinLabels,
+			int format) {
+
+		/*
+		args(ArrayList<Instance> inputPins, ArrayList<Instance> outputPins,
+			Map<Instance, String> pinNames, int format)
+
+		Model model = new AnalyzerModel();
+		Analyze.computeTable(model, proj, circuit, pinNames);
+		TruthTable table = model.getTruthTable();
+
+		ArrayList<String> formats = new ArrayList<>();
+		ArrayList<String> headers = new ArrayList<>();
+		for (Var v : model.getInputs().vars) {
+			String name = v.name;
+			headers.add(name);
+		}
+		for (Var v : model.getOutputs().vars) {
+			String name = v.name;
+			headers.add(name);
+		}
+
+		boolean needTableHeader = true;
+		ArrayList<Value> prevValues = null;
+		for (int i = 0; i < table.getRowCount() {
+			int col = 0;
+			for (Var v : model.getInputs().vars) {
+				for (int vi = 0; vi < v.width; vi++) {
+					if (TruthTable.isInputSet(i, col, inputs);
+				}
+			}
+
+			ArrayList<Value> currValue = new ArrayList<>();
+			if (displayTableRow(needTableHeader, prevValues, curValues, headers, formats, format))
+				needTableHeader = false;
+		}
+
+		model.getTruthTable().getOutputColumn(i);
+		model.setVariables(inputVars, outputVars);
+		for (int i = 0; i < columns.length; i++) {
+			model.getTruthTable().setOutputColumn(i, columns[i]);
+		}
+		*/
+		ArrayList<Instance> inputPins = new ArrayList<Instance>();
+		ArrayList<Var> inputVars = new ArrayList<Var>();
+		ArrayList<String> inputNames = new ArrayList<String>();
+		ArrayList<Instance> outputPins = new ArrayList<Instance>();
+		ArrayList<Var> outputVars = new ArrayList<Var>();
+		ArrayList<String> outputNames = new ArrayList<String>();
+		ArrayList<String> formats = new ArrayList<String>();
+		for (Map.Entry<Instance, String> entry : pinLabels.entrySet()) {
+			Instance pin = entry.getKey();
+                        int width = pin.getAttributeValue(StdAttr.WIDTH).getWidth();
+                        Var var = new Var(entry.getValue(), width);
+			if (Pin.FACTORY.isInputPin(pin)) {
+				inputPins.add(pin);
+				for (String name : var)
+					inputNames.add(name);
+				inputVars.add(var);
+			} else {
+				outputPins.add(pin);
+				for (String name : var)
+					outputNames.add(name);
+				outputVars.add(var);
+			}
+		}
+
+		ArrayList<String> headers = new ArrayList<>();
+		ArrayList<Instance> pinList = new ArrayList<>();
+		/* input pins first */
+		for (Map.Entry<Instance, String> entry : pinLabels.entrySet()) {
+			Instance pin = entry.getKey();
+			String pinName = entry.getValue();
+			if (Pin.FACTORY.isInputPin(pin)) {
+				headers.add(pinName);
+				pinList.add(pin);
+			}
+		}
+		/* output pins last */
+		for (Map.Entry<Instance, String> entry : pinLabels.entrySet()) {
+			Instance pin = entry.getKey();
+			String pinName = entry.getValue();
+			if (!Pin.FACTORY.isInputPin(pin)) {
+				headers.add(pinName);
+				pinList.add(pin);
+			}
+		}
+
+		int inputCount = inputNames.size();
+		int rowCount = 1 << inputCount;
+
+		boolean needTableHeader = true;
+		HashMap<Instance, Value> valueMap = new HashMap<>();
+		for (int i = 0; i < rowCount; i++) {
+			valueMap.clear();
+			CircuitState circuitState = new CircuitState(proj, circuit);
+			int incol = 0;
+			for (int j = 0; j < inputPins.size(); j++) {
+				Instance pin = inputPins.get(j);
+				int width = pin.getAttributeValue(StdAttr.WIDTH).getWidth();
+				Value v[] = new Value[width];
+				for (int b = width-1; b >= 0; b--) {
+					boolean value = TruthTable.isInputSet(i, incol++, inputCount);
+					v[b] = value ?  Value.TRUE : Value.FALSE;
+				}
+				InstanceState pinState = circuitState.getInstanceState(pin);
+				Pin.FACTORY.setValue(pinState, Value.create(v));
+				valueMap.put(pin, Value.create(v));
+			}
+
+			Propagator prop = circuitState.getPropagator();
+			prop.propagate();
+			/*
+			 * TODO for the SimulatorPrototype class do { prop.step(); } while
+			 * (prop.isPending());
+			 */
+			// TODO: Search for circuit state
+
+			for (int j = 0; j < outputPins.size(); j++) {
+				Instance pin = outputPins.get(j);
+				if (prop.isOscillating()) {
+					BitWidth width = pin.getAttributeValue(StdAttr.WIDTH);
+					valueMap.put(pin, Value.createError(width));
+				} else {
+					int width = pin.getAttributeValue(StdAttr.WIDTH).getWidth();
+					InstanceState pinState = circuitState.getInstanceState(pin);
+					Value outValue = Pin.FACTORY.getValue(pinState);
+					valueMap.put(pin, outValue);
+				}
+			}
+			ArrayList<Value> currValues = new ArrayList<>();
+			for (Instance pin : pinList) {
+				currValues.add(valueMap.get(pin));
+			}
+			displayTableRow(needTableHeader, null, currValues, headers, formats, format);
+			needTableHeader = false;
+		}
+
+		return 0;
 	}
 
 	public static void sendFromTty(char c) {

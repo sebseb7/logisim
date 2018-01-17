@@ -284,6 +284,11 @@ public class Startup {
 				ret.testVector = args[i];
 				ret.showSplash = false;
 				ret.exitAfterStartup = true;
+			} else if (arg.equals("-circuit")) {
+				i++;
+				if (i >= args.length)
+					printUsage();
+				ret.circuitToTest = args[i];
 			} else if (arg.equals("-clearprefs")) {
 				// already handled above
 			} else if (arg.equals("-analyze")) {
@@ -345,6 +350,7 @@ public class Startup {
 		System.err.println("   " + Strings.get("argSubOption")); // OK
 		System.err.println("   " + Strings.get("argTemplateOption")); // OK
 		System.err.println("   " + Strings.get("argTtyOption")); // OK
+		System.err.println("   " + Strings.get("argCircuitOption")); // OK
 		System.err.println("   " + Strings.get("argListOption")); // OK
 		System.err.println("   " + Strings.get("argPngOption")); // OK
 		System.err.println("   " + Strings.get("argPngsOption")); // OK
@@ -668,6 +674,10 @@ public class Startup {
 
 	File getLoadFile() {
 		return loadFile;
+	}
+
+	String getCircuitToTest() {
+		return circuitToTest;
 	}
 
 	Map<File, File> getSubstitutions() {
