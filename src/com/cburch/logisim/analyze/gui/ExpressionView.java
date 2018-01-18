@@ -392,12 +392,23 @@ class ExpressionView extends JPanel {
 		}
 
 		private int getWidth(FontRenderContext ctx, String s, int end, ArrayList<Range> subs) {
+			// TextLayout seems to exclude trailing whitespace, so we need to
+			// account for it here.
 			if (end == 0)
 				return 0;
-			AttributedString as = style(s, end, subs);
+			AttributedString as = new AttributedString(s.substring(0, end) + ".");
+			for (Range r : subs) {
+				if (r.stopIndex <= end)
+					as.addAttribute(TextAttribute.SUPERSCRIPT, TextAttribute.SUPERSCRIPT_SUB, r.startIndex, r.stopIndex);
+			}
 			LineBreakMeasurer m = new LineBreakMeasurer(as.getIterator(), ctx);
 			TextLayout layout = m.nextLayout(Integer.MAX_VALUE);
-			return (int)layout.getBounds().getWidth();
+			int w = (int)layout.getBounds().getWidth();
+			as = new AttributedString(".");
+			m = new LineBreakMeasurer(as.getIterator(), ctx);
+			layout = m.nextLayout(Integer.MAX_VALUE);
+			int periodWidth = (int)layout.getBounds().getWidth();
+			return w - periodWidth;
 		}
 
 		public void paint(Graphics g, int x, int y) {
