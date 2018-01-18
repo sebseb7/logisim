@@ -73,7 +73,7 @@ public class Loader implements LibraryLoader {
 	private static class LogisimFileFilter extends FileFilter {
 		@Override
 		public boolean accept(File f) {
-			return f.isDirectory() || f.getName().endsWith(LOGISIM_EXTENSION);
+			return f.isDirectory() || f.getName().endsWith(LOGISIM_EXTENSION) || f.getName().endsWith(LOGISIM_EXTENSION_ALT);
 		}
 
 		@Override
@@ -122,8 +122,9 @@ public class Loader implements LibraryLoader {
 		File dir = base.getParentFile();
 		String name = base.getName();
 		if (name.endsWith(LOGISIM_EXTENSION)) {
-			name = name
-					.substring(0, name.length() - LOGISIM_EXTENSION.length());
+			name = name.substring(0, name.length() - LOGISIM_EXTENSION.length());
+		} else if (name.endsWith(LOGISIM_EXTENSION_ALT)) {
+			name = name.substring(0, name.length() - LOGISIM_EXTENSION_ALT.length());
 		}
 		for (int i = 1; i <= 20; i++) {
 			String ext = i == 1 ? ".bak" : (".bak" + i);
@@ -143,6 +144,7 @@ public class Loader implements LibraryLoader {
 	}
 
 	public static final String LOGISIM_EXTENSION = ".circ";
+	public static final String LOGISIM_EXTENSION_ALT = ".circ.xml";
 
 	public static final FileFilter LOGISIM_FILTER = new LogisimFileFilter();
 
@@ -520,6 +522,8 @@ public class Loader implements LibraryLoader {
 		String ret = file.getName();
 		if (ret.endsWith(LOGISIM_EXTENSION)) {
 			return ret.substring(0, ret.length() - LOGISIM_EXTENSION.length());
+		} else if (ret.endsWith(LOGISIM_EXTENSION_ALT)) {
+			return ret.substring(0, ret.length() - LOGISIM_EXTENSION_ALT.length());
 		} else {
 			return ret;
 		}

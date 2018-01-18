@@ -336,7 +336,7 @@ public class Settings {
 		if (projectFile != null) {
 			String dir = projectFile.getAbsoluteFile().getParentFile().getAbsolutePath();
 			String name = projectFile.getName();
-			name = name.replaceAll(".circ$", "") + "_fpga_workspace";
+			name = name.replaceAll(".circ.xml$", "").replaceAll(".circ$", "") + "_fpga_workspace";
 			return Join(dir, name);
 		}
 		return Join(HomePath, WorkPathName);
