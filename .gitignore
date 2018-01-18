@@ -10,6 +10,7 @@ javadoc/
 test/com/cburch/logisim/gui
 bin/
 gray-bin/
+src/com/cburch/logisim/gui/start/MacOsAdapter.java
 
 # additional libraries
 !libs/*.jar

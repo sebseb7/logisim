@@ -32,17 +32,14 @@ package com.cburch.logisim.gui.start;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-//MAC import java.io.File;
 
 import net.roydesign.event.ApplicationEvent;
 import net.roydesign.mac.MRJAdapter;
 
-//MAC import com.apple.eawt.Application;
-//MAC import com.apple.eawt.ApplicationAdapter;
 import com.cburch.logisim.gui.prefs.PreferencesFrame;
 import com.cburch.logisim.proj.ProjectActions;
 
-class MacOsAdapter { // MAC extends ApplicationAdapter {
+class MacOsAdapter {
 
 	private static class MyListener implements ActionListener {
 		public void actionPerformed(ActionEvent event) {
@@ -79,19 +76,5 @@ class MacOsAdapter { // MAC extends ApplicationAdapter {
 		MRJAdapter.addAboutListener(myListener);
 	}
 
-	/*
-	 * MAC public void handleOpenFile(com.apple.eawt.ApplicationEvent event) {
-	 * Startup.doOpen(new File(event.getFilename())); }
-	 * 
-	 * public void handlePrintFile(com.apple.eawt.ApplicationEvent event) {
-	 * Startup.doPrint(new File(event.getFilename())); }
-	 * 
-	 * public void handlePreferences(com.apple.eawt.ApplicationEvent event) {
-	 * PreferencesFrame.showPreferences(); }
-	 */
-
-	public static void register() {
-		// MAC Application.getApplication().addApplicationListener(new
-		// MacOsAdapter());
-	}
+	public static void register() { }
 }

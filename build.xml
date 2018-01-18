@@ -20,6 +20,12 @@
 
     <target name="compile" depends="clean">
         <mkdir dir="bin"/>
+        <condition property="platform" value="mac" else="nonmac">
+            <os family="Mac"/>
+        </condition>
+        <copy file="src/com/cburch/logisim/gui/start/MacOsAdapter.java_${platform}"
+            toFile="src/com/cburch/logisim/gui/start/MacOsAdapter.java">
+        </copy>
         <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" source="1.7" target="1.7" classpath="libs/lablib-checkboxtree-3.3.jar:libs/colorpicker.jar:libs/fontchooser.jar:libs/jh.jar:libs/MRJAdapter.jar:libs/rsyntaxtextarea-stripped.jar:libs/slf4j-api-1.7.8.jar" />
     </target>
 	
@@ -52,7 +58,7 @@
     <property environment="env" />
     <taskdef name="bundleapp"
         classname="com.oracle.appbundler.AppBundlerTask"   
-        classpath="build-libs/appbundler-1.0.jar" />
+        classpath="build-libs/appbundler-1.0ome.jar" />
     <target name="mac-bundle">
         <bundleapp outputdirectory="."
             name="Logisim-Evolution 3.1.0 HC"
@@ -64,6 +70,19 @@
             mainclassname="com.cburch.logisim.Main">
             <runtime dir="${env.JAVA_HOME}" />
             <classpath file="./logisim-evolution.jar" />
+            <bundledocument extensions="circ,circ.xml"
+                icon="circfile.icns"
+                name="Logisim Circuit"
+                role="editor">
+                <!-- handlerRank="owner" -->
+            </bundledocument>
+            <bundledocument extensions="xml"
+                name="Maybe Logisim Circuit"
+                role="editor">
+                <!-- handlerRank="alternative" -->
+            </bundledocument>
+            <option value="-Xdock:name=Logisim-Evolution"/>
+            <option value="-Dcom.apple.mrj.application.apple.menu.about.name=Logisim-Evolution"/>
         </bundleapp>
     </target>
 
