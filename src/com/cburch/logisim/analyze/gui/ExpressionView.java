@@ -234,9 +234,9 @@ class ExpressionView extends JPanel {
 		ArrayList<ArrayList<Range>> lineSubscripts;
 		int[] lineY;
 
-                AttributedString[] lineStyled;
-                int[][] notStarts;
-                int[][] notStops;
+		AttributedString[] lineStyled;
+		int[][] notStarts;
+		int[][] notStops;
 
 		RenderData(ExpressionData exprData, int width, FontMetrics fm) {
 			this.exprData = exprData;
@@ -244,17 +244,17 @@ class ExpressionView extends JPanel {
 			height = MINIMUM_HEIGHT;
 
 			if (fm == null) {
-                                lineStyled = null;
+				lineStyled = null;
 				lineText = new String[] { exprData.text };
-                                lineSubscripts = new ArrayList<ArrayList<Range>>();
-                                lineSubscripts.add(exprData.subscripts);
+				lineSubscripts = new ArrayList<ArrayList<Range>>();
+				lineSubscripts.add(exprData.subscripts);
 				lineNots = new ArrayList<ArrayList<Range>>();
 				lineNots.add(exprData.nots);
 				computeNotDepths();
 				lineY = new int[] { MINIMUM_HEIGHT };
 			} else {
 				if (exprData.text.length() == 0) {
-                                        lineStyled = null;
+					lineStyled = null;
 					lineText = new String[] { Strings.get("expressionEmpty") };
 					lineSubscripts = new ArrayList<ArrayList<Range>>();
 					lineSubscripts.add(new ArrayList<Range>());
@@ -290,7 +290,7 @@ class ExpressionView extends JPanel {
 					pos = nextPos;
 				}
 			}
-                        return attrs;
+			return attrs;
 		}
 
 		private void computeLineText(FontMetrics fm) {
@@ -298,7 +298,7 @@ class ExpressionView extends JPanel {
 			int[] badness = exprData.badness;
 
 			if (fm.stringWidth(text) <= width) {
-                                lineStyled = null;
+				lineStyled = null;
 				lineText = new String[] { text };
 				return;
 			}
@@ -314,8 +314,7 @@ class ExpressionView extends JPanel {
 				}
 				int bestStopPos = stopPos;
 				int lineWidth = fm.stringWidth(bestLine);
-				int bestBadness = badness[stopPos] + (width - lineWidth)
-						* BADNESS_PER_PIXEL;
+				int bestBadness = badness[stopPos] + (width - lineWidth) * BADNESS_PER_PIXEL;
 				while (stopPos < text.length()) {
 					++stopPos;
 					String line = text.substring(startPos, stopPos);
@@ -323,8 +322,7 @@ class ExpressionView extends JPanel {
 					if (lineWidth > width)
 						break;
 
-					int lineBadness = badness[stopPos] + (width - lineWidth)
-							* BADNESS_PER_PIXEL;
+					int lineBadness = badness[stopPos] + (width - lineWidth) * BADNESS_PER_PIXEL;
 					if (lineBadness < bestBadness) {
 						bestBadness = lineBadness;
 						bestStopPos = stopPos;
@@ -334,7 +332,7 @@ class ExpressionView extends JPanel {
 				lines.add(bestLine);
 				startPos = bestStopPos;
 			}
-                        lineStyled = null;
+			lineStyled = null;
 			lineText = lines.toArray(new String[lines.size()]);
 		}
 
@@ -384,47 +382,47 @@ class ExpressionView extends JPanel {
 			return new Dimension(10, height);
 		}
 
-                private AttributedString style(String s, int end, ArrayList<Range>subs) {
-                        AttributedString as = new AttributedString(s.substring(0, end));
-                        for (Range r : subs) {
-                                if (r.stopIndex <= end)
-                                        as.addAttribute(TextAttribute.SUPERSCRIPT, TextAttribute.SUPERSCRIPT_SUB, r.startIndex, r.stopIndex);
-                        }
-                        return as;
-                }
+		private AttributedString style(String s, int end, ArrayList<Range>subs) {
+			AttributedString as = new AttributedString(s.substring(0, end));
+			for (Range r : subs) {
+				if (r.stopIndex <= end)
+					as.addAttribute(TextAttribute.SUPERSCRIPT, TextAttribute.SUPERSCRIPT_SUB, r.startIndex, r.stopIndex);
+			}
+			return as;
+		}
 
-                private int getWidth(FontRenderContext ctx, String s, int end, ArrayList<Range> subs) {
-                        if (end == 0)
-                                return 0;
-                        AttributedString as = style(s, end, subs);
-                        LineBreakMeasurer m = new LineBreakMeasurer(as.getIterator(), ctx);
-                        TextLayout layout = m.nextLayout(Integer.MAX_VALUE);
-                        return (int)layout.getBounds().getWidth();
-                }
+		private int getWidth(FontRenderContext ctx, String s, int end, ArrayList<Range> subs) {
+			if (end == 0)
+				return 0;
+			AttributedString as = style(s, end, subs);
+			LineBreakMeasurer m = new LineBreakMeasurer(as.getIterator(), ctx);
+			TextLayout layout = m.nextLayout(Integer.MAX_VALUE);
+			return (int)layout.getBounds().getWidth();
+		}
 
 		public void paint(Graphics g, int x, int y) {
 			FontMetrics fm = g.getFontMetrics();
-                        if (lineStyled == null) {
-                                FontRenderContext ctx = ((Graphics2D)g).getFontRenderContext();
-                                lineStyled = new AttributedString[lineText.length];
-                                notStarts = new int[lineText.length][];
-                                notStops = new int[lineText.length][];
-                                for (int i = 0; i < lineText.length; i++) {
-                                        String line = lineText[i];
-                                        ArrayList<Range> nots = lineNots.get(i);
-                                        ArrayList<Range> subs = lineSubscripts.get(i);
-                                        notStarts[i] = new int[nots.size()];
-                                        notStops[i] = new int[nots.size()];
-                                        for (int j = 0; j < nots.size(); j++) {
-                                                Range not = nots.get(j);
-                                                notStarts[i][j] = getWidth(ctx, line, not.startIndex, subs);
-                                                notStops[i][j] = getWidth(ctx, line, not.stopIndex, subs);
-                                        }
-                                        lineStyled[i] = style(line, line.length(), subs);
-                                }
-                        }
+			if (lineStyled == null) {
+				FontRenderContext ctx = ((Graphics2D)g).getFontRenderContext();
+				lineStyled = new AttributedString[lineText.length];
+				notStarts = new int[lineText.length][];
+				notStops = new int[lineText.length][];
+				for (int i = 0; i < lineText.length; i++) {
+					String line = lineText[i];
+					ArrayList<Range> nots = lineNots.get(i);
+					ArrayList<Range> subs = lineSubscripts.get(i);
+					notStarts[i] = new int[nots.size()];
+					notStops[i] = new int[nots.size()];
+					for (int j = 0; j < nots.size(); j++) {
+						Range not = nots.get(j);
+						notStarts[i][j] = getWidth(ctx, line, not.startIndex, subs);
+						notStops[i][j] = getWidth(ctx, line, not.stopIndex, subs);
+					}
+					lineStyled[i] = style(line, line.length(), subs);
+				}
+			}
 			for (int i = 0; i < lineStyled.length; i++) {
-                                AttributedString as = lineStyled[i];
+				AttributedString as = lineStyled[i];
 				g.drawString(as.getIterator(), x, y + lineY[i] + fm.getAscent());
 
 				ArrayList<Range> nots = lineNots.get(i);
