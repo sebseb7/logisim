@@ -13,14 +13,19 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.Font;
 import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 
 import java.util.Arrays;
 import java.util.List;
 
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.analyze.model.Expressions;
+import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.ExpressionComputer;
 import com.cburch.logisim.comp.ComponentEvent;
 import com.cburch.logisim.data.AbstractAttributeSet;
@@ -40,6 +45,8 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.tools.MenuExtender;
+import com.cburch.logisim.proj.Project;
 
 class PLA extends InstanceFactory {
 	static final int IN_PORT = 0;
@@ -272,6 +279,50 @@ class PLA extends InstanceFactory {
 		if (MyHDLGenerator == null)
 			MyHDLGenerator = new PLAHDLGeneratorFactory();
 		return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+	}
+
+	@Override
+	protected Object getInstanceFeature(Instance instance, Object key) {
+		if (key == MenuExtender.class) {
+			return new PLAMenu(this, instance);
+		}
+		return super.getInstanceFeature(instance, key);
+	}
+
+	class PLAMenu implements ActionListener, MenuExtender {
+		private Instance instance;
+		private Frame frame;
+		private JMenuItem edit;
+
+		PLAMenu(PLA factory, Instance instance) {
+			this.instance = instance;
+		}
+
+		public void actionPerformed(ActionEvent evt) {
+			Object src = evt.getSource();
+			if (src == edit)
+				doEdit();
+		}
+
+		public void configureMenu(JPopupMenu menu, Project proj) {
+			this.frame = proj.getFrame();
+
+			edit = new JMenuItem(Strings.get("plaEditMenuItem"));
+			edit.setEnabled(true);
+			edit.addActionListener(this);
+
+			menu.addSeparator();
+			menu.add(edit);
+		}
+
+		private void doEdit() {
+			PLATable tt = instance.getAttributeValue(ATTR_TABLE);
+			PLATable.EditorDialog dialog = new PLATable.EditorDialog(frame);
+			dialog.setValue(tt);
+			dialog.setVisible(true);
+			dialog.toFront();
+		}
+
 	}
 
 }
