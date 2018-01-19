@@ -31,7 +31,6 @@ package com.cburch.logisim.std.memory;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 
 import com.cburch.hex.HexModel;
@@ -59,7 +58,6 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
 	private int CharHeight = 0;
 
 	public static final Font FONT = new Font("monospaced", Font.PLAIN, 12);
-	public static final int MIN_CHAR_WIDTH = 7;
 
 	MemState(MemContents contents) {
 		this.contents = contents;
@@ -71,33 +69,26 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
 			int[] oldValues) {
 	}
 
-	/*
-	 * public Bounds getBounds(long addr, Bounds bds) { int addrBits =
-	 * getAddrBits(); int boxX = bds.getX() + (addrBits <= 12 ? ENTRY_XOFFS12 :
-	 * ENTRY_XOFFS32); int boxW = addrBits <= 12 ? TABLE_WIDTH12 :
-	 * TABLE_WIDTH32; if (addr < 0) { int addrLen = (contents.getWidth() + 3) /
-	 * 4; int width = ADDR_WIDTH_PER_CHAR * addrLen; return Bounds.create(boxX -
-	 * width, bds.getY() + ENTRY_YOFFS, width, ENTRY_HEIGHT); } else { int bdsX
-	 * = addrToX(bds, addr); int bdsY = addrToY(bds, addr); return
-	 * Bounds.create(bdsX, bdsY, boxW / columns, ENTRY_HEIGHT); } }
-	 */
 	private void CalculateDisplayParameters(Graphics g,
 			int offsetX, int offsetY,
 			int DisplayWidth, int DisplayHeight) {
 		RecalculateParameters = false;
 		int addrBits = getAddrBits();
 		int dataBits = contents.getWidth();
-		FontMetrics fm = g.getFontMetrics(FONT);
-		AddrBlockSize = ((fm.stringWidth(StringUtil.toHexString(addrBits, 0)) + 9) / 10) * 10;
-		DataSize = Math.max(fm.stringWidth(StringUtil.toHexString(dataBits, 0)), (dataBits+3)/4 * MIN_CHAR_WIDTH);
-		SpaceSize = Math.max(fm.stringWidth(" "), MIN_CHAR_WIDTH);
+
+		CharHeight = StringUtil.estimateBounds("0", FONT).getHeight();
+		SpaceSize = StringUtil.estimateBounds(" ", FONT).getWidth();
+
+		int estAddrWidth = StringUtil.estimateBounds(StringUtil.toHexString(addrBits, 0), FONT).getWidth();
+		AddrBlockSize = ((estAddrWidth + 9) / 10) * 10;
+
+		DataSize = StringUtil.estimateBounds(StringUtil.toHexString(dataBits, 0), FONT).getWidth();
 		DataSize += SpaceSize;
+
 		NrDataSymbolsEachLine = (DisplayWidth - AddrBlockSize) / DataSize;
 		if (NrDataSymbolsEachLine > 3 && NrDataSymbolsEachLine % 2 != 0)
 			NrDataSymbolsEachLine--;
-		NrOfLines = DisplayHeight / (fm.getHeight() + 2); // (dataBits == 1) ? 1 : TotalHeight / (fm.getHeight() + 2);
-		if (NrOfLines == 0)
-			NrOfLines = 1;
+		NrOfLines = Math.max(1, DisplayHeight / (CharHeight + 2));
 		int TotalShowableEntries = NrDataSymbolsEachLine * NrOfLines;
 		int TotalNrOfEntries = (1 << addrBits);
 		while (TotalShowableEntries > (TotalNrOfEntries + NrDataSymbolsEachLine - 1)) {
@@ -113,7 +104,6 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
 		int TotalWidth = AddrBlockSize + DataBlockSize;
 		xOffset = offsetX + (DisplayWidth / 2) - (TotalWidth / 2);
 		/* Same calculations for the height */
-		CharHeight = fm.getHeight();
 		yOffset = offsetY;
 	}
 
