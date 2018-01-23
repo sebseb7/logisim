@@ -3,14 +3,14 @@ logisim-evolution (Holy Cross Edition)
 
 You can get the latest version of Logisim-evolution (Holy Cross Edition) here:
 
-[![Download for Windows](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-windows.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.0hc.exe) 
-[![Download for Mac](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-mac.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.0hc.dmg)
-[![Download for Linux](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-linux.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.0hc.jar)
+[![Download for Windows](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-windows.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.1hc.exe) 
+[![Download for Mac](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-mac.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.1hc.dmg)
+[![Download for Linux](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-linux.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.1hc.jar)
 
 Windows and Mac versions will work only on Windows or Mac. The
 platform-independent JAR file should work on any platform. To run the JAR file,
 open a command line (or Mac Terminal or Windows CMD.exe
-prompt) and type `java -jar logisim-evolution-3.1.0hc.jar` from within the
+prompt) and type `java -jar logisim-evolution-3.1.1hc.jar` from within the
 directory where you have downloaded the JAR file.
 
 
