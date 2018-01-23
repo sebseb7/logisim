@@ -151,7 +151,7 @@ public class MenuSimulate extends Menu {
 				if (proj.getVhdlSimulator() != null) {
 					proj.getVhdlSimulator().restart();
 				}
-			} else if (src == tickOnce || src == LogisimMenuBar.TICK_STEP_MAIN) {
+			} else if (src == tickOnceMain || src == LogisimMenuBar.TICK_STEP_MAIN) {
 				int ticks = 0;
 				for (com.cburch.logisim.comp.Component clock : proj
 						.getLogisimFile().getMainCircuit().getClocks()) {
