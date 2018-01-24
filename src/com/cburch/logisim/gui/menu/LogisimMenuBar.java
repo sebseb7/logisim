@@ -113,6 +113,8 @@ public class LogisimMenuBar extends JMenuBar {
 
 	public static final LogisimMenuItem CIRCUIT_STATS = new LogisimMenuItem(
 			"GetCircuitStatistics");
+	public static final LogisimMenuItem CHECK_WIRES = new LogisimMenuItem(
+			"Check Wires");
 	public static final LogisimMenuItem SIMULATE_ENABLE = new LogisimMenuItem(
 			"SimulateEnable");
 	public static final LogisimMenuItem SIMULATE_STEP = new LogisimMenuItem(

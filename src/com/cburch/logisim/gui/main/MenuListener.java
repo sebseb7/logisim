@@ -189,6 +189,8 @@ class MenuListener {
 				ProjectCircuitActions.doAnalyze(proj, cur);
 			} else if (src == LogisimMenuBar.CIRCUIT_STATS) {
 				StatisticsDialog.show(frame, proj.getLogisimFile(), cur);
+			} else if (src == LogisimMenuBar.CHECK_WIRES) {
+				proj.checkWires();
 			}
 		}
 
@@ -234,6 +236,7 @@ class MenuListener {
 			menubar.setEnabled(LogisimMenuBar.REVERT_APPEARANCE, canRevert);
 			menubar.setEnabled(LogisimMenuBar.ANALYZE_CIRCUIT, true);
 			menubar.setEnabled(LogisimMenuBar.CIRCUIT_STATS, true);
+			menubar.setEnabled(LogisimMenuBar.CHECK_WIRES, true);
 			fireEnableChanged();
 		}
 
@@ -313,6 +316,7 @@ class MenuListener {
 			menubar.addActionListener(LogisimMenuBar.REVERT_APPEARANCE, this);
 			menubar.addActionListener(LogisimMenuBar.ANALYZE_CIRCUIT, this);
 			menubar.addActionListener(LogisimMenuBar.CIRCUIT_STATS, this);
+			menubar.addActionListener(LogisimMenuBar.CHECK_WIRES, this);
 
 			computeEnabled();
 		}

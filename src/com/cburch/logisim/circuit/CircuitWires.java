@@ -467,6 +467,10 @@ class CircuitWires {
 			for (Wire w : wires) {
 				Location s = w.e0;
 				Location t = w.e1;
+				if (s.getX() == t.getX() && s.getY() == t.getY()) {
+					System.out.printf("drawing null wire (%d, %d) to (%d, %d)\n",
+							s.getX(), s.getY(), t.getX(), t.getY());
+				}
 				WireBundle wb = bmap.getBundleAt(s);
 				if (!wb.isValid()) {
 					g.setColor(Value.WIDTH_ERROR_COLOR);

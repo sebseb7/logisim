@@ -656,6 +656,17 @@ public class Circuit {
 		return wires.getWires();
 	}
 
+	public void checkWires() {
+		for (Wire w : wires.getWires()) {
+			if (w.getLength() == 0) {
+				Location e0 = w.getEnd0();
+				Location e1 = w.getEnd1();
+				System.out.printf("null wire @ (%d, %d) to (%d, %d)\n", 
+						e0.getX(), e0.getY(), e1.getX(), e1.getY());
+			}
+		}
+	}
+
 	public Collection<Wire> getWires(Location loc) {
 		return wires.points.getWires(loc);
 	}

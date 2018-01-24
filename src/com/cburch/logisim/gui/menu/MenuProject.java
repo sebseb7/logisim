@@ -32,7 +32,9 @@ package com.cburch.logisim.gui.menu;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 
+import javax.swing.KeyStroke;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -98,6 +100,8 @@ class MenuProject extends Menu {
 			LogisimMenuBar.ANALYZE_CIRCUIT);
 	private MenuItemImpl stats = new MenuItemImpl(this,
 			LogisimMenuBar.CIRCUIT_STATS);
+	private MenuItemImpl checkWires = new MenuItemImpl(this,
+			LogisimMenuBar.CHECK_WIRES);
 	private JMenuItem options = new JMenuItem();
 
 	MenuProject(LogisimMenuBar menubar) {
@@ -123,7 +127,10 @@ class MenuProject extends Menu {
 			menubar.registerItem(LogisimMenuBar.ANALYZE_CIRCUIT, analyze);
 		}
 		menubar.registerItem(LogisimMenuBar.CIRCUIT_STATS, stats);
+		menubar.registerItem(LogisimMenuBar.CHECK_WIRES, checkWires);
 		options.addActionListener(myListener);
+
+		checkWires.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
 
 		loadLibrary.add(loadBuiltin);
 		loadLibrary.add(loadLogisim);
@@ -150,6 +157,7 @@ class MenuProject extends Menu {
 			add(analyze);
 		}
 		add(stats);
+		add(checkWires);
 		addSeparator();
 		add(options);
 
@@ -172,7 +180,7 @@ class MenuProject extends Menu {
 				|| layout.hasListeners() || revertAppearance.hasListeners()
 				|| appearance.hasListeners() || viewToolbox.hasListeners()
 				|| viewSimulation.hasListeners() || analyze.hasListeners()
-				|| stats.hasListeners());
+				|| stats.hasListeners() || checkWires.hasListeners());
 		menubar.fireEnableChanged();
 	}
 
@@ -197,6 +205,7 @@ class MenuProject extends Menu {
 		viewSimulation.setText(Strings.get("projectViewSimulationItem"));
 		analyze.setText(Strings.get("projectAnalyzeCircuitItem"));
 		stats.setText(Strings.get("projectGetCircuitStatisticsItem"));
+		checkWires.setText("Check Wires");
 		options.setText(Strings.get("projectOptionsItem"));
 	}
 }

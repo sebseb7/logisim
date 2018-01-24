@@ -675,4 +675,14 @@ public class Project {
 			fireEvent(new ProjectEvent(ProjectEvent.UNDO_COMPLETE, this, action));
 		}
 	}
+
+	static int checkCount = 0;
+	public void checkWires() {
+		System.out.printf("---- Checking all wires (trial %d) ----\n", checkCount++);
+		for (Circuit circ : file.getCircuits()) {
+			System.out.println("==== " + circ.getName() +  "====");
+			circ.checkWires();
+		}
+		System.out.println("---- Done checking all wires ----");
+	}
 }
