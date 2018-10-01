@@ -240,9 +240,28 @@ public class Startup {
 					printUsage();
 				}
 				String wxh[] = args[i].split("[xX]");
-				if (wxh.length != 2) {
+				if (wxh.length != 2 || wxh[0].length() < 1 || wxh[1].length() < 1) {
 					logger.error("{}", Strings.get("argGeometryError"));
 					System.exit(1);
+				}
+				int p = wxh[1].indexOf('+', 1);
+				String loc = null;
+				int x = 0, y = 0;
+				if (p >= 0) {
+					loc = wxh[1].substring(p+1);
+					wxh[1] = wxh[1].substring(0, p);
+					String xy[] = loc.split("\\+");
+					if (xy.length != 2 || xy[0].length() < 1 || xy[0].length() < 1) {
+						logger.error("{}", Strings.get("argGeometryError"));
+						System.exit(1);
+					}
+					try {
+						x = Integer.parseInt(xy[0]);
+						y = Integer.parseInt(xy[1]);
+					} catch (NumberFormatException e) {
+						logger.error("{}", Strings.get("argGeometryError"));
+						System.exit(1);
+					}
 				}
 				int w = 0, h = 0;
 				try {
@@ -258,6 +277,8 @@ public class Startup {
 				}
 				AppPreferences.WINDOW_WIDTH.set(w);
 				AppPreferences.WINDOW_HEIGHT.set(h);
+				if (loc != null)
+					AppPreferences.WINDOW_LOCATION.set(x+","+y);
 			} else if (arg.equals("-locale")) {
 				i++;
 				if (i >= args.length) {
