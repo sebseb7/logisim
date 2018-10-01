@@ -234,6 +234,30 @@ public class Startup {
 					logger.error("{}", Strings.get("argGatesOptionError"));
 					System.exit(-1);
 				}
+			} else if (arg.equals("-geom")) {
+				i++;
+				if (i >= args.length) {
+					printUsage();
+				}
+				String wxh[] = args[i].split("[xX]");
+				if (wxh.length != 2) {
+					logger.error("{}", Strings.get("argGeometryError"));
+					System.exit(1);
+				}
+				int w = 0, h = 0;
+				try {
+					w = Integer.parseInt(wxh[0]);
+					h = Integer.parseInt(wxh[1]);
+				} catch (NumberFormatException e) {
+					logger.error("{}", Strings.get("argGeometryError"));
+					System.exit(1);
+				}
+				if (w <= 0 || h <= 0) {
+					logger.error("{}", Strings.get("argGeometryError"));
+					System.exit(1);
+				}
+				AppPreferences.WINDOW_WIDTH.set(w);
+				AppPreferences.WINDOW_HEIGHT.set(h);
 			} else if (arg.equals("-locale")) {
 				i++;
 				if (i >= args.length) {
@@ -289,7 +313,7 @@ public class Startup {
 				if (i >= args.length)
 					printUsage();
 				ret.circuitToTest = args[i];
-			} else if (arg.equals("-clearprefs")) {
+			} else if (arg.equals("-clearprefs") || arg.equals("-clearprops")) {
 				// already handled above
 			} else if (arg.equals("-analyze")) {
 				Main.ANALYZE = true;
@@ -337,9 +361,12 @@ public class Startup {
 				Startup.class.getName())); // OK
 		System.err.println(); // OK
 		System.err.println(Strings.get("argOptionHeader")); // OK
+		System.err.println("   " + Strings.get("argNoUpdatesOption")); // OK
+		System.err.println("   " + Strings.get("argGeometryOption")); // OK
 		System.err.println("   " + Strings.get("argAccentsOption")); // OK
 		System.err.println("   " + Strings.get("argClearOption")); // OK
 		System.err.println("   " + Strings.get("argEmptyOption")); // OK
+		System.err.println("   " + Strings.get("argAnalyzeOption")); // OK
 		System.err.println("   " + Strings.get("argTestOption")); // OK
 		System.err.println("   " + Strings.get("argGatesOption")); // OK
 		System.err.println("   " + Strings.get("argHelpOption")); // OK
