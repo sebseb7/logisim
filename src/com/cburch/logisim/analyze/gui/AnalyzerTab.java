@@ -33,9 +33,9 @@ package com.cburch.logisim.analyze.gui;
 import javax.swing.JPanel;
 
 abstract class AnalyzerTab extends JPanel {
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	abstract void localeChanged();
+  abstract void localeChanged();
 
-	abstract void updateTab();
+  abstract void updateTab();
 }

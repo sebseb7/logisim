@@ -48,134 +48,134 @@ import com.cburch.logisim.tools.CaretListener;
 import com.cburch.draw.util.TextMetrics;
 
 class TextFieldMultilineCaret extends TextFieldCaret {
-	private TextFieldMultiline field;
+  private TextFieldMultiline field;
 
-	public TextFieldMultilineCaret(TextFieldMultiline field, Graphics g, int pos) {
-                super(field, g, pos);
-                this.field = field;
-	}
+  public TextFieldMultilineCaret(TextFieldMultiline field, Graphics g, int pos) {
+    super(field, g, pos);
+    this.field = field;
+  }
 
-	public TextFieldMultilineCaret(TextFieldMultiline field, Graphics g, int x, int y) {
-		this(field, g, 0);
-		pos = end = findCaret(x, y);
-	}
+  public TextFieldMultilineCaret(TextFieldMultiline field, Graphics g, int x, int y) {
+    this(field, g, 0);
+    pos = end = findCaret(x, y);
+  }
 
-	public void draw(Graphics g) {
-		String lines[] = curText.split("\n", -1); // keep blank lines at end
-		int x = field.getX();
-		int y = field.getY();
-		int halign = field.getHAlign();
-		int valign = field.getVAlign();
-		Font font = field.getFont();
-		if (font != null)
-			g.setFont(font);
+  public void draw(Graphics g) {
+    String lines[] = curText.split("\n", -1); // keep blank lines at end
+    int x = field.getX();
+    int y = field.getY();
+    int halign = field.getHAlign();
+    int valign = field.getVAlign();
+    Font font = field.getFont();
+    if (font != null)
+      g.setFont(font);
 
-		// draw boundary
-		Bounds box = getBounds(g);
-		g.setColor(EDIT_BACKGROUND);
-		g.fillRect(box.getX(), box.getY(), box.getWidth(), box.getHeight());
-		g.setColor(EDIT_BORDER);
-		g.drawRect(box.getX(), box.getY(), box.getWidth(), box.getHeight());
+    // draw boundary
+    Bounds box = getBounds(g);
+    g.setColor(EDIT_BACKGROUND);
+    g.fillRect(box.getX(), box.getY(), box.getWidth(), box.getHeight());
+    g.setColor(EDIT_BORDER);
+    g.drawRect(box.getX(), box.getY(), box.getWidth(), box.getHeight());
 
-		// draw selection
-		if (pos != end) {
-			g.setColor(SELECTION_BACKGROUND);
-			Rectangle p = GraphicsUtil.getTextCursor(g, lines, x, y, pos < end ? pos : end, halign, valign);
-			Rectangle e = GraphicsUtil.getTextCursor(g, lines, x, y, pos < end ? end : pos, halign, valign);
-			if (p.y == e.y) {
-				g.fillRect(p.x, p.y - 1, e.x - p.x + 1, e.height + 2);
-			} else {
-				int lx = box.getX()+3;
-				int rx = box.getX()+box.getWidth()-3;
-				g.fillRect(p.x, p.y - 1, rx - p.x + 1, (e.y - p.y) + 1);
-				g.fillRect(lx, p.y + e.height, rx - lx + 1, (e.y - p.y) - e.height);
-				g.fillRect(lx, p.y + e.height, e.x - lx + 1, (e.y - p.y) + 1);
-			}
-		}
+    // draw selection
+    if (pos != end) {
+      g.setColor(SELECTION_BACKGROUND);
+      Rectangle p = GraphicsUtil.getTextCursor(g, lines, x, y, pos < end ? pos : end, halign, valign);
+      Rectangle e = GraphicsUtil.getTextCursor(g, lines, x, y, pos < end ? end : pos, halign, valign);
+      if (p.y == e.y) {
+        g.fillRect(p.x, p.y - 1, e.x - p.x + 1, e.height + 2);
+      } else {
+        int lx = box.getX()+3;
+        int rx = box.getX()+box.getWidth()-3;
+        g.fillRect(p.x, p.y - 1, rx - p.x + 1, (e.y - p.y) + 1);
+        g.fillRect(lx, p.y + e.height, rx - lx + 1, (e.y - p.y) - e.height);
+        g.fillRect(lx, p.y + e.height, e.x - lx + 1, (e.y - p.y) + 1);
+      }
+    }
 
-		// draw text
-		g.setColor(Color.BLACK);
-		GraphicsUtil.drawText(g, lines, x, y, halign, valign);
+    // draw text
+    g.setColor(Color.BLACK);
+    GraphicsUtil.drawText(g, lines, x, y, halign, valign);
 
-		// draw cursor
-		if (pos == end) {
-			Rectangle p = GraphicsUtil.getTextCursor(g, lines, x, y, pos, halign, valign);
-			if (p != null)
-				g.drawLine(p.x, p.y, p.x, p.y + p.height);
-		}
-	}
+    // draw cursor
+    if (pos == end) {
+      Rectangle p = GraphicsUtil.getTextCursor(g, lines, x, y, pos, halign, valign);
+      if (p != null)
+        g.drawLine(p.x, p.y, p.x, p.y + p.height);
+    }
+  }
 
-	public Bounds getBounds(Graphics g) {
-		String lines[] = curText.split("\n", -1); // keep blank lines at end
-		int x = field.getX();
-		int y = field.getY();
-		int halign = field.getHAlign();
-		int valign = field.getVAlign();
-		Font font = field.getFont();
-		Bounds bds = Bounds.create(GraphicsUtil.getTextBounds(g, font, lines, x, y, halign, valign));
-		Bounds box = bds.add(field.getBounds(g)).expand(3);
-		return box;
-	}
+  public Bounds getBounds(Graphics g) {
+    String lines[] = curText.split("\n", -1); // keep blank lines at end
+    int x = field.getX();
+    int y = field.getY();
+    int halign = field.getHAlign();
+    int valign = field.getVAlign();
+    Font font = field.getFont();
+    Bounds bds = Bounds.create(GraphicsUtil.getTextBounds(g, font, lines, x, y, halign, valign));
+    Bounds box = bds.add(field.getBounds(g)).expand(3);
+    return box;
+  }
 
-	protected void moveCaret(int dx, int dy, boolean shift, boolean ctrl) {
-		if (!shift)
-			normalizeSelection();
+  protected void moveCaret(int dx, int dy, boolean shift, boolean ctrl) {
+    if (!shift)
+      normalizeSelection();
 
-		if (dy != 0) {
-			if (!shift && pos != end) {
-				if (dx < 0) end = pos;
-				else pos = end;
-			}
-			String lines[] = curText.split("\n", -1); // keep blank lines at end
-			TextMetrics tm = new TextMetrics(g);
-			int halign = field.getHAlign();
-			int valign = field.getVAlign();
-			Rectangle r = GraphicsUtil.getTextCursor(g, lines, 0, 0, pos, halign, valign);
-			if (r != null) {
-				pos = GraphicsUtil.getTextPosition(g, lines,
-						r.x, r.y + tm.ascent + dy * tm.height, halign, valign);
-			} else if (dy < 0) {
-				pos = 0;
-			} else {
-				pos = curText.length();
-			}
-			// control up/down moves to start/end of previous/next line
-			while (ctrl && dy < 0 && pos > 0 && curText.charAt(pos-1) != '\n')
-				pos--;
-			while (ctrl && dy > 0 && pos < curText.length()-1 && curText.charAt(pos) != '\n')
-				pos++;
-		} else if (pos+dx >= 0 && pos+dx <= curText.length()) {
-			if (!shift && pos != end) {
-				if (dx < 0) end = pos;
-				else pos = end;
-			} else {
-				pos += dx;
-			}
-			while (ctrl && !wordBoundary(pos))
-				pos += dx;
-		}
+    if (dy != 0) {
+      if (!shift && pos != end) {
+        if (dx < 0) end = pos;
+        else pos = end;
+      }
+      String lines[] = curText.split("\n", -1); // keep blank lines at end
+      TextMetrics tm = new TextMetrics(g);
+      int halign = field.getHAlign();
+      int valign = field.getVAlign();
+      Rectangle r = GraphicsUtil.getTextCursor(g, lines, 0, 0, pos, halign, valign);
+      if (r != null) {
+        pos = GraphicsUtil.getTextPosition(g, lines,
+            r.x, r.y + tm.ascent + dy * tm.height, halign, valign);
+      } else if (dy < 0) {
+        pos = 0;
+      } else {
+        pos = curText.length();
+      }
+      // control up/down moves to start/end of previous/next line
+      while (ctrl && dy < 0 && pos > 0 && curText.charAt(pos-1) != '\n')
+        pos--;
+      while (ctrl && dy > 0 && pos < curText.length()-1 && curText.charAt(pos) != '\n')
+        pos++;
+    } else if (pos+dx >= 0 && pos+dx <= curText.length()) {
+      if (!shift && pos != end) {
+        if (dx < 0) end = pos;
+        else pos = end;
+      } else {
+        pos += dx;
+      }
+      while (ctrl && !wordBoundary(pos))
+        pos += dx;
+    }
 
-		if (!shift)
-			end = pos;
-	}
+    if (!shift)
+      end = pos;
+  }
 
-	protected void normalKeyPressed(KeyEvent e, boolean shift) {
-		if (e.getKeyCode() != KeyEvent.VK_ENTER)
-			super.normalKeyPressed(e, shift);
-	}
+  protected void normalKeyPressed(KeyEvent e, boolean shift) {
+    if (e.getKeyCode() != KeyEvent.VK_ENTER)
+      super.normalKeyPressed(e, shift);
+  }
 
-	protected boolean allowedCharacter(char c) {
-		return (c != KeyEvent.CHAR_UNDEFINED) &&
-			(c == '\n' || c == '\t' || !Character.isISOControl(c));
-	}
+  protected boolean allowedCharacter(char c) {
+    return (c != KeyEvent.CHAR_UNDEFINED) &&
+        (c == '\n' || c == '\t' || !Character.isISOControl(c));
+  }
 
-	protected int findCaret(int x, int y) {
-		x -= field.getX();
-		y -= field.getY();
-		int halign = field.getHAlign();
-		int valign = field.getVAlign();
-		String lines[] = curText.split("\n", -1); // keep blank lines at end
-		return GraphicsUtil.getTextPosition(g, lines, x, y, halign, valign);
-	}
+  protected int findCaret(int x, int y) {
+    x -= field.getX();
+    y -= field.getY();
+    int halign = field.getHAlign();
+    int valign = field.getVAlign();
+    String lines[] = curText.split("\n", -1); // keep blank lines at end
+    return GraphicsUtil.getTextPosition(g, lines, x, y, halign, valign);
+  }
 
 }

@@ -44,52 +44,52 @@ import com.cburch.logisim.std.io.Io;
 import com.cburch.logisim.instance.InstanceDataSingleton;
 
 public class RGBLedShape extends LedShape {
-	public RGBLedShape(int x, int y, DynamicElement.Path p) {
-		super(x, y, p);
-	}
+  public RGBLedShape(int x, int y, DynamicElement.Path p) {
+    super(x, y, p);
+  }
 
-	@Override
-	public void paintDynamic(Graphics g, CircuitState state) {
-		int x = bounds.getX() + 1;
-		int y = bounds.getY() + 1;
-		int w = bounds.getWidth() - 2;
-		int h = bounds.getHeight() - 2;
-		GraphicsUtil.switchToWidth(g, strokeWidth);
-		if (state == null) {
-			g.setColor(Color.lightGray);
-			g.fillOval(x, y, w, h);
-			g.setColor(DynamicElement.COLOR);
-			g.drawOval(x, y, w, h);
-		} else {
-			Boolean activ = path.leaf().getAttributeSet().getValue(Io.ATTR_ACTIVE);
-			Object desired = activ.booleanValue() ? Value.TRUE : Value.FALSE;
-			InstanceDataSingleton data = (InstanceDataSingleton)getData(state);
-			int summ = (data == null ? 0 : ((Integer) data.getValue()).intValue());
-			int mask = activ.booleanValue() ? 0 : 7;
-			summ ^= mask;
-			int red = ((summ >> RGBLed.RED) & 1) * 0xFF;
-			int green = ((summ >> RGBLed.GREEN) & 1) * 0xFF;
-			int blue = ((summ >> RGBLed.BLUE) & 1) * 0xFF;
-			g.setColor(new Color(red, green, blue));
-			g.fillOval(x, y, w, h);
-			g.setColor(Color.darkGray);
-			g.drawOval(x, y, w, h);
-		}
-		drawLabel(g);
-	}
+  @Override
+  public void paintDynamic(Graphics g, CircuitState state) {
+    int x = bounds.getX() + 1;
+    int y = bounds.getY() + 1;
+    int w = bounds.getWidth() - 2;
+    int h = bounds.getHeight() - 2;
+    GraphicsUtil.switchToWidth(g, strokeWidth);
+    if (state == null) {
+      g.setColor(Color.lightGray);
+      g.fillOval(x, y, w, h);
+      g.setColor(DynamicElement.COLOR);
+      g.drawOval(x, y, w, h);
+    } else {
+      Boolean activ = path.leaf().getAttributeSet().getValue(Io.ATTR_ACTIVE);
+      Object desired = activ.booleanValue() ? Value.TRUE : Value.FALSE;
+      InstanceDataSingleton data = (InstanceDataSingleton)getData(state);
+      int summ = (data == null ? 0 : ((Integer) data.getValue()).intValue());
+      int mask = activ.booleanValue() ? 0 : 7;
+      summ ^= mask;
+      int red = ((summ >> RGBLed.RED) & 1) * 0xFF;
+      int green = ((summ >> RGBLed.GREEN) & 1) * 0xFF;
+      int blue = ((summ >> RGBLed.BLUE) & 1) * 0xFF;
+      g.setColor(new Color(red, green, blue));
+      g.fillOval(x, y, w, h);
+      g.setColor(Color.darkGray);
+      g.drawOval(x, y, w, h);
+    }
+    drawLabel(g);
+  }
 
-	@Override
-	public Element toSvgElement(Document doc) {
-		return toSvgElement(doc.createElement("visible-rgbled"));
-	}
+  @Override
+  public Element toSvgElement(Document doc) {
+    return toSvgElement(doc.createElement("visible-rgbled"));
+  }
 
-	@Override
-	public String getDisplayName() {
-		return Strings.get("RGBledComponent");
-	}
+  @Override
+  public String getDisplayName() {
+    return Strings.get("RGBledComponent");
+  }
 
-	@Override
-	public String toString() {
-		return "RGBLed:" + getBounds();
-	}
+  @Override
+  public String toString() {
+    return "RGBLed:" + getBounds();
+  }
 }

@@ -37,23 +37,23 @@ import javax.swing.tree.TreeNode;
 import com.cburch.logisim.comp.ComponentFactory;
 
 public abstract class SimulationTreeNode implements TreeNode {
-	public abstract Enumeration<?> children();
+  public abstract Enumeration<?> children();
 
-	public abstract boolean getAllowsChildren();
+  public abstract boolean getAllowsChildren();
 
-	public abstract TreeNode getChildAt(int childIndex);
+  public abstract TreeNode getChildAt(int childIndex);
 
-	public abstract int getChildCount();
+  public abstract int getChildCount();
 
-	public abstract ComponentFactory getComponentFactory();
+  public abstract ComponentFactory getComponentFactory();
 
-	public abstract int getIndex(TreeNode node);
+  public abstract int getIndex(TreeNode node);
 
-	public abstract TreeNode getParent();
+  public abstract TreeNode getParent();
 
-	public boolean isCurrentView(SimulationTreeModel model) {
-		return false;
-	}
+  public boolean isCurrentView(SimulationTreeModel model) {
+    return false;
+  }
 
-	public abstract boolean isLeaf();
+  public abstract boolean isLeaf();
 }

@@ -41,26 +41,26 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.Tool;
 
 class Toolbox extends JPanel {
-	private static final long serialVersionUID = 1L;
-	private ProjectExplorer toolbox;
+  private static final long serialVersionUID = 1L;
+  private ProjectExplorer toolbox;
 
-	Toolbox(Project proj, MenuListener menu) {
-		super(new BorderLayout());
+  Toolbox(Project proj, MenuListener menu) {
+    super(new BorderLayout());
 
-		ToolboxToolbarModel toolbarModel = new ToolboxToolbarModel(menu);
-		Toolbar toolbar = new Toolbar(toolbarModel);
-		add(toolbar, BorderLayout.NORTH);
+    ToolboxToolbarModel toolbarModel = new ToolboxToolbarModel(menu);
+    Toolbar toolbar = new Toolbar(toolbarModel);
+    add(toolbar, BorderLayout.NORTH);
 
-		toolbox = new ProjectExplorer(proj);
-		toolbox.setListener(new ToolboxManip(proj, toolbox));
-		add(new JScrollPane(toolbox), BorderLayout.CENTER);
-	}
+    toolbox = new ProjectExplorer(proj);
+    toolbox.setListener(new ToolboxManip(proj, toolbox));
+    add(new JScrollPane(toolbox), BorderLayout.CENTER);
+  }
 
-	void setHaloedTool(Tool value) {
-		toolbox.setHaloedTool(value);
-	}
+  void setHaloedTool(Tool value) {
+    toolbox.setHaloedTool(value);
+  }
 
-        public void updateStructure() {
-                toolbox.updateStructure();
-        }
+  public void updateStructure() {
+    toolbox.updateStructure();
+  }
 }

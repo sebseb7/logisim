@@ -37,72 +37,72 @@ import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceData;
 
-class VhdlEntityState implements InstanceData, Cloneable, HdlModelListener,
-		AttributeListener {
+class VhdlEntityState
+  implements InstanceData, Cloneable, HdlModelListener, AttributeListener {
 
-	private Instance parent;
-	private VhdlContent content;
+  private Instance parent;
+  private VhdlContent content;
 
-	public VhdlEntityState(Instance parent, VhdlContent content) {
-		this.content = content;
-		this.content.addHdlModelListener(this);
-		this.parent = parent;
+  public VhdlEntityState(Instance parent, VhdlContent content) {
+    this.content = content;
+    this.content.addHdlModelListener(this);
+    this.parent = parent;
 
-		if (this.parent != null)
-			parent.getAttributeSet().addAttributeListener(this);
-	}
+    if (this.parent != null)
+      parent.getAttributeSet().addAttributeListener(this);
+  }
 
-	@Override
-	public void attributeListChanged(AttributeEvent e) {
+  @Override
+  public void attributeListChanged(AttributeEvent e) {
 
-	}
+  }
 
-	@Override
-	public void attributeValueChanged(AttributeEvent e) {
+  @Override
+  public void attributeValueChanged(AttributeEvent e) {
 
-	}
+  }
 
-	@Override
-	public VhdlEntityState clone() {
-		try {
-			VhdlEntityState ret = (VhdlEntityState) super.clone();
-			ret.parent = null;
-			ret.content = content.clone();
-			ret.content.addHdlModelListener(ret);
-			return ret;
-		} catch (CloneNotSupportedException e) {
-			return null;
-		}
-	}
+  @Override
+  public VhdlEntityState clone() {
+    try {
+      VhdlEntityState ret = (VhdlEntityState) super.clone();
+      ret.parent = null;
+      ret.content = content.clone();
+      ret.content.addHdlModelListener(ret);
+      return ret;
+    } catch (CloneNotSupportedException e) {
+      return null;
+    }
+  }
 
-	@Override
-	public void contentSet(HdlModel source) {
+  @Override
+  public void contentSet(HdlModel source) {
 
-	}
+  }
 
-        @Override
-        public void aboutToSave(HdlModel source) { }
+  @Override
+  public void aboutToSave(HdlModel source) { }
 
-        @Override
-        public void displayChanged(HdlModel source) { }
+  @Override
+  public void displayChanged(HdlModel source) { }
 
-        @Override
-        public void appearanceChanged(HdlModel source) { }
+  @Override
+  public void appearanceChanged(HdlModel source) { }
 
-	public VhdlContent getContent() {
-		return this.content;
-	}
+  public VhdlContent getContent() {
+    return this.content;
+  }
 
-	void setVhdlEntity(Instance value) {
-		if (parent == value)
-			return;
+  void setVhdlEntity(Instance value) {
+    if (parent == value)
+      return;
 
-		if (parent != null)
-			parent.getAttributeSet().removeAttributeListener(this);
+    if (parent != null)
+      parent.getAttributeSet().removeAttributeListener(this);
 
-		parent = value;
-		if (value != null)
-			value.getAttributeSet().addAttributeListener(this);
-	}
+    parent = value;
+    if (value != null)
+      value.getAttributeSet().addAttributeListener(this);
+  }
 
 }

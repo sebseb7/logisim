@@ -52,50 +52,50 @@ import com.cburch.logisim.std.wiring.Pin;
 
 class DefaultAppearance {
 
-	private static class CompareLocations implements Comparator<Instance> {
-		private boolean byX;
-		
-		CompareLocations(boolean byX) {
-			this.byX = byX;
-		}
-		
-		public int compare(Instance a, Instance b) {
-			Location aloc = a.getLocation();
-			Location bloc = b.getLocation();
-			if (byX) {
-				int ax = aloc.getX();
-				int bx = bloc.getX();
-				if (ax != bx) {
-					return ax < bx ? -1 : 1;
-				}
-			} else {
-				int ay = aloc.getY();
-				int by = bloc.getY();
-				if (ay != by) {
-					return ay < by ? -1 : 1;
-				}
-			}
-			return aloc.compareTo(bloc);
-		}
-	}
+  private static class CompareLocations implements Comparator<Instance> {
+    private boolean byX;
 
-	static void sortPinList(List<Instance> pins, Direction facing) {
-		if (facing == Direction.NORTH || facing == Direction.SOUTH) {
-			Comparator<Instance> sortHorizontal = new CompareLocations(true);
-			Collections.sort(pins, sortHorizontal);
-		} else {
-			Comparator<Instance> sortVertical = new CompareLocations(false);
-			Collections.sort(pins, sortVertical);
-		}
-	}
+    CompareLocations(boolean byX) {
+      this.byX = byX;
+    }
 
-	public static List<CanvasObject> build(Collection<Instance> pins, String name, AttributeOption style) {
-            if (style == CircuitAttributes.APPEAR_CLASSIC) {
-                return DefaultClassicAppearance.build(pins);
-            } else {
-                return DefaultEvolutionAppearance.build(pins, name);
-            }
+    public int compare(Instance a, Instance b) {
+      Location aloc = a.getLocation();
+      Location bloc = b.getLocation();
+      if (byX) {
+        int ax = aloc.getX();
+        int bx = bloc.getX();
+        if (ax != bx) {
+          return ax < bx ? -1 : 1;
         }
+      } else {
+        int ay = aloc.getY();
+        int by = bloc.getY();
+        if (ay != by) {
+          return ay < by ? -1 : 1;
+        }
+      }
+      return aloc.compareTo(bloc);
+    }
+  }
 
-	private DefaultAppearance() { }
+  static void sortPinList(List<Instance> pins, Direction facing) {
+    if (facing == Direction.NORTH || facing == Direction.SOUTH) {
+      Comparator<Instance> sortHorizontal = new CompareLocations(true);
+      Collections.sort(pins, sortHorizontal);
+    } else {
+      Comparator<Instance> sortVertical = new CompareLocations(false);
+      Collections.sort(pins, sortVertical);
+    }
+  }
+
+  public static List<CanvasObject> build(Collection<Instance> pins, String name, AttributeOption style) {
+    if (style == CircuitAttributes.APPEAR_CLASSIC) {
+      return DefaultClassicAppearance.build(pins);
+    } else {
+      return DefaultEvolutionAppearance.build(pins, name);
+    }
+  }
+
+  private DefaultAppearance() { }
 }

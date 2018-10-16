@@ -44,141 +44,141 @@ import com.cburch.logisim.proj.Project;
 
 class RomAttributes extends AbstractAttributeSet {
 
-	static HexFrame getHexFrame(MemContents value, Project proj) {
-		synchronized (windowRegistry) {
-			HexFrame ret = windowRegistry.get(value);
-			if (ret == null) {
-				ret = new HexFrame(proj, value);
-				windowRegistry.put(value, ret);
-			}
-			return ret;
-		}
-	}
+  static HexFrame getHexFrame(MemContents value, Project proj) {
+    synchronized (windowRegistry) {
+      HexFrame ret = windowRegistry.get(value);
+      if (ret == null) {
+        ret = new HexFrame(proj, value);
+        windowRegistry.put(value, ret);
+      }
+      return ret;
+    }
+  }
 
-	static void register(MemContents value, Project proj) {
-		if (proj == null || listenerRegistry.containsKey(value)) {
-			return;
-		}
-		RomContentsListener l = new RomContentsListener(proj);
-		value.addHexModelListener(l);
-		listenerRegistry.put(value, l);
-	}
+  static void register(MemContents value, Project proj) {
+    if (proj == null || listenerRegistry.containsKey(value)) {
+      return;
+    }
+    RomContentsListener l = new RomContentsListener(proj);
+    value.addHexModelListener(l);
+    listenerRegistry.put(value, l);
+  }
 
-	private static List<Attribute<?>> ATTRIBUTES = Arrays
-			.asList(new Attribute<?>[] { Mem.ADDR_ATTR, Mem.DATA_ATTR, Mem.LINE_ATTR,
-					Rom.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,
-					StdAttr.APPEARANCE});
+  private static List<Attribute<?>> ATTRIBUTES = Arrays
+      .asList(new Attribute<?>[] { Mem.ADDR_ATTR, Mem.DATA_ATTR, Mem.LINE_ATTR,
+        Rom.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,
+        StdAttr.APPEARANCE});
 
-	private static WeakHashMap<MemContents, RomContentsListener> listenerRegistry = new WeakHashMap<MemContents, RomContentsListener>();
+  private static WeakHashMap<MemContents, RomContentsListener> listenerRegistry = new WeakHashMap<MemContents, RomContentsListener>();
 
-	private static WeakHashMap<MemContents, HexFrame> windowRegistry = new WeakHashMap<MemContents, HexFrame>();
-	private BitWidth addrBits = BitWidth.create(8);
-	private BitWidth dataBits = BitWidth.create(8);
-	private MemContents contents;
-	private AttributeOption lineSize = Mem.SINGLE;
-	private String Label = "";
-	private Font LabelFont = StdAttr.DEFAULT_LABEL_FONT;
-	private AttributeOption Appearance = StdAttr.APPEAR_CLASSIC;
+  private static WeakHashMap<MemContents, HexFrame> windowRegistry = new WeakHashMap<MemContents, HexFrame>();
+  private BitWidth addrBits = BitWidth.create(8);
+  private BitWidth dataBits = BitWidth.create(8);
+  private MemContents contents;
+  private AttributeOption lineSize = Mem.SINGLE;
+  private String Label = "";
+  private Font LabelFont = StdAttr.DEFAULT_LABEL_FONT;
+  private AttributeOption Appearance = StdAttr.APPEAR_CLASSIC;
 
-	RomAttributes() {
-		contents = MemContents.create(addrBits.getWidth(), dataBits.getWidth());
-	}
+  RomAttributes() {
+    contents = MemContents.create(addrBits.getWidth(), dataBits.getWidth());
+  }
 
-	@Override
-	protected void copyInto(AbstractAttributeSet dest) {
-		RomAttributes d = (RomAttributes) dest;
-		d.addrBits = addrBits;
-		d.dataBits = dataBits;
-		d.contents = contents.clone();
-		d.lineSize = lineSize;
-		d.LabelFont = LabelFont;
-		d.Appearance = Appearance;
-	}
+  @Override
+  protected void copyInto(AbstractAttributeSet dest) {
+    RomAttributes d = (RomAttributes) dest;
+    d.addrBits = addrBits;
+    d.dataBits = dataBits;
+    d.contents = contents.clone();
+    d.lineSize = lineSize;
+    d.LabelFont = LabelFont;
+    d.Appearance = Appearance;
+  }
 
-	@Override
-	public List<Attribute<?>> getAttributes() {
-		return ATTRIBUTES;
-	}
+  @Override
+  public List<Attribute<?>> getAttributes() {
+    return ATTRIBUTES;
+  }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public <V> V getValue(Attribute<V> attr) {
-		if (attr == Mem.ADDR_ATTR) {
-			return (V) addrBits;
-		}
-		if (attr == Mem.DATA_ATTR) {
-			return (V) dataBits;
-		}
-		if (attr == Rom.CONTENTS_ATTR) {
-			return (V) contents;
-		}
-		if (attr == Mem.LINE_ATTR) {
-			return (V) lineSize;
-		}
-		if (attr == StdAttr.LABEL) {
-			return (V) Label;
-		}
-		if (attr == StdAttr.LABEL_FONT) {
-			return (V) LabelFont;
-		}
-		if (attr == StdAttr.APPEARANCE) {
-			return (V) Appearance;
-		}
-		return null;
-	}
+  @SuppressWarnings("unchecked")
+  @Override
+  public <V> V getValue(Attribute<V> attr) {
+    if (attr == Mem.ADDR_ATTR) {
+      return (V) addrBits;
+    }
+    if (attr == Mem.DATA_ATTR) {
+      return (V) dataBits;
+    }
+    if (attr == Rom.CONTENTS_ATTR) {
+      return (V) contents;
+    }
+    if (attr == Mem.LINE_ATTR) {
+      return (V) lineSize;
+    }
+    if (attr == StdAttr.LABEL) {
+      return (V) Label;
+    }
+    if (attr == StdAttr.LABEL_FONT) {
+      return (V) LabelFont;
+    }
+    if (attr == StdAttr.APPEARANCE) {
+      return (V) Appearance;
+    }
+    return null;
+  }
 
-	void setProject(Project proj) {
-		register(contents, proj);
-	}
+  void setProject(Project proj) {
+    register(contents, proj);
+  }
 
-	@Override
-	public <V> void setValue(Attribute<V> attr, V value) {
-		if (attr == Mem.ADDR_ATTR) {
-			BitWidth newAddr = (BitWidth) value;
-			if (newAddr == addrBits)
-				return;
-			addrBits = newAddr;
-			contents.setDimensions(addrBits.getWidth(), dataBits.getWidth());
-			fireAttributeValueChanged(attr, value);
-		} else if (attr == Mem.DATA_ATTR) {
-			BitWidth newData = (BitWidth) value;
-			if (newData == dataBits)
-				return;
-			dataBits = newData;
-			contents.setDimensions(addrBits.getWidth(), dataBits.getWidth());
-			fireAttributeValueChanged(attr, value);
-		} else if (attr == Mem.LINE_ATTR) {
-			AttributeOption newLine = (AttributeOption) value;
-			if (newLine == lineSize)
-				return;
-			// if (!Appearance.equals(StdAttr.APPEAR_CLASSIC))
-			// 	newLine = Mem.SINGLE;
-			lineSize = newLine;
-			fireAttributeValueChanged(attr, value);
-		} else if (attr == Rom.CONTENTS_ATTR) {
-			MemContents newContents = (MemContents) value;
-			if (contents.equals(newContents))
-				return;
-			contents = newContents;
-			fireAttributeValueChanged(attr, value);
-		} else if (attr == StdAttr.LABEL) {
-			String NewLabel = (String) value;
-			if (Label.equals(NewLabel))
-				return;
-			Label = NewLabel;
-			fireAttributeValueChanged(attr, value);
-		} else if (attr == StdAttr.LABEL_FONT) {
-			Font NewFont = (Font) value;
-			if (LabelFont.equals(NewFont))
-				return;
-			LabelFont = NewFont;
-			fireAttributeValueChanged(attr, value);
-		} else if (attr == StdAttr.APPEARANCE) {
-			AttributeOption NewAppearance = (AttributeOption) value;
-			if (Appearance.equals(NewAppearance))
-				return;
-			Appearance = NewAppearance;
-			fireAttributeValueChanged(attr, value);
-		}
-	}
+  @Override
+  public <V> void setValue(Attribute<V> attr, V value) {
+    if (attr == Mem.ADDR_ATTR) {
+      BitWidth newAddr = (BitWidth) value;
+      if (newAddr == addrBits)
+        return;
+      addrBits = newAddr;
+      contents.setDimensions(addrBits.getWidth(), dataBits.getWidth());
+      fireAttributeValueChanged(attr, value);
+    } else if (attr == Mem.DATA_ATTR) {
+      BitWidth newData = (BitWidth) value;
+      if (newData == dataBits)
+        return;
+      dataBits = newData;
+      contents.setDimensions(addrBits.getWidth(), dataBits.getWidth());
+      fireAttributeValueChanged(attr, value);
+    } else if (attr == Mem.LINE_ATTR) {
+      AttributeOption newLine = (AttributeOption) value;
+      if (newLine == lineSize)
+        return;
+      // if (!Appearance.equals(StdAttr.APPEAR_CLASSIC))
+      //   newLine = Mem.SINGLE;
+      lineSize = newLine;
+      fireAttributeValueChanged(attr, value);
+    } else if (attr == Rom.CONTENTS_ATTR) {
+      MemContents newContents = (MemContents) value;
+      if (contents.equals(newContents))
+        return;
+      contents = newContents;
+      fireAttributeValueChanged(attr, value);
+    } else if (attr == StdAttr.LABEL) {
+      String NewLabel = (String) value;
+      if (Label.equals(NewLabel))
+        return;
+      Label = NewLabel;
+      fireAttributeValueChanged(attr, value);
+    } else if (attr == StdAttr.LABEL_FONT) {
+      Font NewFont = (Font) value;
+      if (LabelFont.equals(NewFont))
+        return;
+      LabelFont = NewFont;
+      fireAttributeValueChanged(attr, value);
+    } else if (attr == StdAttr.APPEARANCE) {
+      AttributeOption NewAppearance = (AttributeOption) value;
+      if (Appearance.equals(NewAppearance))
+        return;
+      Appearance = NewAppearance;
+      fireAttributeValueChanged(attr, value);
+    }
+  }
 }

@@ -36,22 +36,22 @@ import org.w3c.dom.Element;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 
 public class CounterShape extends RegisterShape {
-	public CounterShape(int x, int y, DynamicElement.Path p) {
-		super(x, y, p);
-	}
+  public CounterShape(int x, int y, DynamicElement.Path p) {
+    super(x, y, p);
+  }
 
-	@Override
-	public Element toSvgElement(Document doc) {
-		return toSvgElement(doc.createElement("visible-counter"));
-	}
+  @Override
+  public Element toSvgElement(Document doc) {
+    return toSvgElement(doc.createElement("visible-counter"));
+  }
 
-	@Override
-	public String getDisplayName() {
-		return Strings.get("counterComponent");
-	}
+  @Override
+  public String getDisplayName() {
+    return Strings.get("counterComponent");
+  }
 
-	@Override
-	public String toString() {
-		return "Counter:" + getBounds();
-	}
+  @Override
+  public String toString() {
+    return "Counter:" + getBounds();
+  }
 }

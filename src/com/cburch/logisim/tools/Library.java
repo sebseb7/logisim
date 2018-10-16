@@ -36,71 +36,71 @@ import java.util.List;
 import com.cburch.logisim.comp.ComponentFactory;
 
 public abstract class Library {
-	public boolean contains(ComponentFactory query) {
-		return indexOf(query) >= 0;
-	}
+  public boolean contains(ComponentFactory query) {
+    return indexOf(query) >= 0;
+  }
 
-	public boolean containsFromSource(Tool query) {
-		for (Tool tool : getTools()) {
-			if (tool.sharesSource(query)) {
-				return true;
-			}
-		}
-		return false;
-	}
+  public boolean containsFromSource(Tool query) {
+    for (Tool tool : getTools()) {
+      if (tool.sharesSource(query)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
-	public String getDisplayName() {
-		return getName();
-	}
+  public String getDisplayName() {
+    return getName();
+  }
 
-	public List<Library> getLibraries() {
-		return Collections.emptyList();
-	}
+  public List<Library> getLibraries() {
+    return Collections.emptyList();
+  }
 
-	public Library getLibrary(String name) {
-		for (Library lib : getLibraries()) {
-			if (lib.getName().equals(name)) {
-				return lib;
-			}
-		}
-		return null;
-	}
+  public Library getLibrary(String name) {
+    for (Library lib : getLibraries()) {
+      if (lib.getName().equals(name)) {
+        return lib;
+      }
+    }
+    return null;
+  }
 
-	public String getName() {
-		return getClass().getName();
-	}
+  public String getName() {
+    return getClass().getName();
+  }
 
-	public Tool getTool(String name) {
-		for (Tool tool : getTools()) {
-			if (tool.getName().equals(name)) {
-				return tool;
-			}
-		}
-		return null;
-	}
+  public Tool getTool(String name) {
+    for (Tool tool : getTools()) {
+      if (tool.getName().equals(name)) {
+        return tool;
+      }
+    }
+    return null;
+  }
 
-	public abstract List<? extends Tool> getTools();
+  public abstract List<? extends Tool> getTools();
 
-	public int indexOf(ComponentFactory query) {
-		int index = -1;
-		for (Tool obj : getTools()) {
-			index++;
-			if (obj instanceof AddTool) {
-				AddTool tool = (AddTool) obj;
-				if (tool.getFactory() == query)
-					return index;
-			}
-		}
-		return -1;
-	}
+  public int indexOf(ComponentFactory query) {
+    int index = -1;
+    for (Tool obj : getTools()) {
+      index++;
+      if (obj instanceof AddTool) {
+        AddTool tool = (AddTool) obj;
+        if (tool.getFactory() == query)
+          return index;
+      }
+    }
+    return -1;
+  }
 
-	public boolean isDirty() {
-		return false;
-	}
+  public boolean isDirty() {
+    return false;
+  }
 
-	@Override
-	public String toString() {
-		return getName();
-	}
+  @Override
+  public String toString() {
+    return getName();
+  }
 
 }

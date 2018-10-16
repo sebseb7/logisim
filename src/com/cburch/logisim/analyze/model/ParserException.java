@@ -33,32 +33,32 @@ package com.cburch.logisim.analyze.model;
 import com.cburch.logisim.util.StringGetter;
 
 public class ParserException extends Exception {
-	private static final long serialVersionUID = 1L;
-	private StringGetter message;
-	private int start;
-	private int length;
+  private static final long serialVersionUID = 1L;
+  private StringGetter message;
+  private int start;
+  private int length;
 
-	public ParserException(StringGetter message, int start, int length) {
-		super(message.toString());
-		this.message = message;
-		this.start = start;
-		this.length = length;
-	}
+  public ParserException(StringGetter message, int start, int length) {
+    super(message.toString());
+    this.message = message;
+    this.start = start;
+    this.length = length;
+  }
 
-	public int getEndOffset() {
-		return start + length;
-	}
+  public int getEndOffset() {
+    return start + length;
+  }
 
-	@Override
-	public String getMessage() {
-		return message.toString();
-	}
+  @Override
+  public String getMessage() {
+    return message.toString();
+  }
 
-	public StringGetter getMessageGetter() {
-		return message;
-	}
+  public StringGetter getMessageGetter() {
+    return message;
+  }
 
-	public int getOffset() {
-		return start;
-	}
+  public int getOffset() {
+    return start;
+  }
 }

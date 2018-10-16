@@ -35,41 +35,41 @@ package com.cburch.logisim.util;
  * creation of duplicate objects.
  */
 public class Cache {
-	private int mask;
-	private Object[] data;
+  private int mask;
+  private Object[] data;
 
-	public Cache() {
-		this(8);
-	}
+  public Cache() {
+    this(8);
+  }
 
-	public Cache(int logSize) {
-		if (logSize > 12)
-			logSize = 12;
+  public Cache(int logSize) {
+    if (logSize > 12)
+      logSize = 12;
 
-		data = new Object[1 << logSize];
-		mask = data.length - 1;
-	}
+    data = new Object[1 << logSize];
+    mask = data.length - 1;
+  }
 
-	public Object get(int hashCode) {
-		return data[hashCode & mask];
-	}
+  public Object get(int hashCode) {
+    return data[hashCode & mask];
+  }
 
-	public Object get(Object value) {
-		if (value == null)
-			return null;
-		int code = value.hashCode() & mask;
-		Object ret = data[code];
-		if (ret != null && ret.equals(value)) {
-			return ret;
-		} else {
-			data[code] = value;
-			return value;
-		}
-	}
+  public Object get(Object value) {
+    if (value == null)
+      return null;
+    int code = value.hashCode() & mask;
+    Object ret = data[code];
+    if (ret != null && ret.equals(value)) {
+      return ret;
+    } else {
+      data[code] = value;
+      return value;
+    }
+  }
 
-	public void put(int hashCode, Object value) {
-		if (value != null) {
-			data[hashCode & mask] = value;
-		}
-	}
+  public void put(int hashCode, Object value) {
+    if (value != null) {
+      data[hashCode & mask] = value;
+    }
+  }
 }

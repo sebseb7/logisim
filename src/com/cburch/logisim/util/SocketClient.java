@@ -48,96 +48,96 @@ import org.slf4j.LoggerFactory;
  */
 public class SocketClient {
 
-	final static Logger logger = LoggerFactory.getLogger(SocketClient.class);
+  final static Logger logger = LoggerFactory.getLogger(SocketClient.class);
 
-	private static ServerSocket server = null;
+  private static ServerSocket server = null;
 
-	private boolean connected = false;
+  private boolean connected = false;
 
-	private Socket socket;
+  private Socket socket;
 
-	private BufferedReader socket_reader;
-	private PrintWriter socket_writer;
+  private BufferedReader socket_reader;
+  private PrintWriter socket_writer;
 
-	public SocketClient() {
+  public SocketClient() {
 
-		if (server == null) {
-			try {
-				server = new ServerSocket(0);
-			} catch (IOException e) {
-				logger.error("Cannot create server socket");
-				e.printStackTrace();
-				return;
-			}
-		}
-	}
+    if (server == null) {
+      try {
+        server = new ServerSocket(0);
+      } catch (IOException e) {
+        logger.error("Cannot create server socket");
+        e.printStackTrace();
+        return;
+      }
+    }
+  }
 
-	public int getServerPort() {
-		if (server != null) {
-			return server.getLocalPort();
-		}
+  public int getServerPort() {
+    if (server != null) {
+      return server.getLocalPort();
+    }
 
-		return 0;
-	}
+    return 0;
+  }
 
-	public Socket getSocket() {
-		return socket;
-	}
+  public Socket getSocket() {
+    return socket;
+  }
 
-	public Boolean isConnected() {
-		return connected;
-	}
+  public Boolean isConnected() {
+    return connected;
+  }
 
-	public String receive() {
+  public String receive() {
 
-		try {
-			return socket_reader.readLine();
-		} catch (Exception e) {
-			logger.error("Cannot read from socket : {}", e.getMessage());
-			return null;
-		}
-	}
+    try {
+      return socket_reader.readLine();
+    } catch (Exception e) {
+      logger.error("Cannot read from socket : {}", e.getMessage());
+      return null;
+    }
+  }
 
-	public void send(String message) {
+  public void send(String message) {
 
-		try {
-			socket_writer.println(message);
-		} catch (Exception e) {
-			logger.error("Cannot write {} to socket {}", message,
-					e.getMessage());
-		}
-	}
+    try {
+      socket_writer.println(message);
+    } catch (Exception e) {
+      logger.error("Cannot write {} to socket {}", message,
+          e.getMessage());
+    }
+  }
 
-	public void start() {
+  public void start() {
 
-		try {
-			socket = server.accept();
+    try {
+      socket = server.accept();
 
-			socket_reader = new BufferedReader(new InputStreamReader(
-					socket.getInputStream()));
+      socket_reader = new BufferedReader(new InputStreamReader(
+            socket.getInputStream()));
 
-			socket_writer = new PrintWriter(new BufferedWriter(
-					new OutputStreamWriter(socket.getOutputStream())), true);
+      socket_writer = new PrintWriter(new BufferedWriter(
+            new OutputStreamWriter(socket.getOutputStream())), true);
 
-			connected = true;
-			return;
+      connected = true;
+      return;
 
-		} catch (IOException e) {
-			logger.error("Error at accepting new client");
-		}
-		connected = false;
-	}
+    } catch (IOException e) {
+      logger.error("Error at accepting new client");
+    }
+    connected = false;
+  }
 
-	public void stop() {
-		if (!isConnected())
-			return;
+  public void stop() {
+    if (!isConnected())
+      return;
 
-		try {
-			socket.close();
-			connected = false;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+    try {
+      socket.close();
+      connected = false;
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
 
 }

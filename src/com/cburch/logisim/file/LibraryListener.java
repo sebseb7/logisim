@@ -31,5 +31,5 @@
 package com.cburch.logisim.file;
 
 public interface LibraryListener {
-	public void libraryChanged(LibraryEvent event);
+  public void libraryChanged(LibraryEvent event);
 }

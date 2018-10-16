@@ -57,169 +57,169 @@ import com.cburch.logisim.tools.MessageBox;
  */
 public class TclWrapper {
 
-	public enum TclWrapperState {
-		STOPPED, STARTING, RUNNING
-	}
+  public enum TclWrapperState {
+    STOPPED, STARTING, RUNNING
+  }
 
-	final static Logger logger = LoggerFactory.getLogger(TclWrapper.class);
+  final static Logger logger = LoggerFactory.getLogger(TclWrapper.class);
 
-	final private static String TCL_PATH = System.getProperty("java.io.tmpdir")
-			+ "/logisim/tcl/";
+  final private static String TCL_PATH = System.getProperty("java.io.tmpdir")
+      + "/logisim/tcl/";
 
-	final private static String TCL_RESOURCES_PATH = "/resources/logisim/tcl/";
+  final private static String TCL_RESOURCES_PATH = "/resources/logisim/tcl/";
 
-	private static boolean fileExists = false;
+  private static boolean fileExists = false;
 
-	private Process process;
-	private TclComponentData tclConsole;
-	private File tclContentFile;
+  private Process process;
+  private TclComponentData tclConsole;
+  private File tclContentFile;
 
-	private TclWrapperState state = TclWrapperState.STOPPED;
+  private TclWrapperState state = TclWrapperState.STOPPED;
 
-	public TclWrapper(TclComponentData tclComp) {
-		tclConsole = tclComp;
-	}
+  public TclWrapper(TclComponentData tclComp) {
+    tclConsole = tclComp;
+  }
 
-	public void restart() {
-		stop();
-		start();
-	}
+  public void restart() {
+    stop();
+    start();
+  }
 
-	public void setFile(File file) {
-		tclContentFile = file;
-	}
+  public void setFile(File file) {
+    tclContentFile = file;
+  }
 
-	public void start() {
+  public void start() {
 
-		/* Do not start if already running */
-		if (state != TclWrapperState.STOPPED)
-			return;
+    /* Do not start if already running */
+    if (state != TclWrapperState.STOPPED)
+      return;
 
-		tclContentFile = tclConsole.getState().getAttributeValue(
-				TclComponentAttributes.CONTENT_FILE_ATTR);
+    tclContentFile = tclConsole.getState().getAttributeValue(
+        TclComponentAttributes.CONTENT_FILE_ATTR);
 
-		/* Do not start if Tcl file doesn't exist */
-		if (!tclContentFile.isFile())
-			return;
+    /* Do not start if Tcl file doesn't exist */
+    if (!tclContentFile.isFile())
+      return;
 
-		/* We are ready to start */
-		state = TclWrapperState.STARTING;
+    /* We are ready to start */
+    state = TclWrapperState.STARTING;
 
-		/* Copy TCL wrapper file into system tmp folder */
-		if (!fileExists) {
-			new File(TCL_PATH).mkdirs();
+    /* Copy TCL wrapper file into system tmp folder */
+    if (!fileExists) {
+      new File(TCL_PATH).mkdirs();
 
-			try {
-				Files.copy(
-						this.getClass().getResourceAsStream(
-								TCL_RESOURCES_PATH + "tcl_wrapper.tcl"),
-								Paths.get(TCL_PATH + "tcl_wrapper.tcl"),
-								StandardCopyOption.REPLACE_EXISTING);
-			} catch (IOException e) {
-				logger.error("Cannot copy TCL wrapper file : {}",
-						e.getMessage());
-				e.printStackTrace();
-			}
-			fileExists = true;
-		}
+      try {
+        Files.copy(
+            this.getClass().getResourceAsStream(
+              TCL_RESOURCES_PATH + "tcl_wrapper.tcl"),
+            Paths.get(TCL_PATH + "tcl_wrapper.tcl"),
+            StandardCopyOption.REPLACE_EXISTING);
+      } catch (IOException e) {
+        logger.error("Cannot copy TCL wrapper file : {}",
+            e.getMessage());
+        e.printStackTrace();
+      }
+      fileExists = true;
+    }
 
-		/* Create the TCL process */
-		ProcessBuilder builder;
-		List<String> command = new ArrayList<String>();
+    /* Create the TCL process */
+    ProcessBuilder builder;
+    List<String> command = new ArrayList<String>();
 
-		command.add("tclsh");
-		command.add(TCL_PATH + "tcl_wrapper.tcl");
-		command.add("" + tclConsole.getTclClient().getServerPort());
-		command.add(tclContentFile.getAbsolutePath());
+    command.add("tclsh");
+    command.add(TCL_PATH + "tcl_wrapper.tcl");
+    command.add("" + tclConsole.getTclClient().getServerPort());
+    command.add(tclContentFile.getAbsolutePath());
 
-		builder = new ProcessBuilder(command);
+    builder = new ProcessBuilder(command);
 
-		/*
-		 * We want to run the process from the selected Tcl file, so if some
-		 * includes happens the path are correct
-		 */
-		builder.directory(tclContentFile.getParentFile());
+    /*
+     * We want to run the process from the selected Tcl file, so if some
+     * includes happens the path are correct
+     */
+    builder.directory(tclContentFile.getParentFile());
 
-		/* Redirect error on stdout */
-		builder.redirectErrorStream(true);
+    /* Redirect error on stdout */
+    builder.redirectErrorStream(true);
 
-		/* Run the process */
-		try {
-			process = builder.start();
-		} catch (IOException e) {
-			e.printStackTrace();
-			logger.error("Cannot run TCL wrapper for TCL console : {}",
-					e.getMessage());
+    /* Run the process */
+    try {
+      process = builder.start();
+    } catch (IOException e) {
+      e.printStackTrace();
+      logger.error("Cannot run TCL wrapper for TCL console : {}",
+          e.getMessage());
 
-			return;
-		}
+      return;
+    }
 
-		/* This thread checks the wrapper started well, it's run from now */
-		new Thread(new Runnable() {
+    /* This thread checks the wrapper started well, it's run from now */
+    new Thread(new Runnable() {
 
-			@Override
-			public void run() {
-				/* Through this we can get the process output */
-				BufferedReader reader = new BufferedReader(
-						new InputStreamReader(process.getInputStream()));
-				String line;
-				try {
-					String errorMessage = "";
+      @Override
+      public void run() {
+        /* Through this we can get the process output */
+        BufferedReader reader = new BufferedReader(
+            new InputStreamReader(process.getInputStream()));
+        String line;
+        try {
+          String errorMessage = "";
 
-					/* Here we check that the wrapper has correctly started */
-					while ((line = reader.readLine()) != null) {
+          /* Here we check that the wrapper has correctly started */
+          while ((line = reader.readLine()) != null) {
 
-						errorMessage += "\n" + line;
-						if (line.contains("TCL_WRAPPER_RUNNING")) {
+            errorMessage += "\n" + line;
+            if (line.contains("TCL_WRAPPER_RUNNING")) {
 
-							new Thread(new Runnable() {
-								public void run() {
-									Scanner sc = new Scanner(
-											new InputStreamReader(
-													process.getInputStream()));
-									// Commented out because it shouldn't be
-									// visible to the user
-									// Debug only??
-									String nextLine;
-									while (sc.hasNextLine()) {
-										nextLine = sc.nextLine();
-										if (nextLine.length() > 0)
-											System.out.println(nextLine);
-									}
+              new Thread(new Runnable() {
+                public void run() {
+                  Scanner sc = new Scanner(
+                      new InputStreamReader(
+                        process.getInputStream()));
+                  // Commented out because it shouldn't be
+                  // visible to the user
+                  // Debug only??
+                  String nextLine;
+                  while (sc.hasNextLine()) {
+                    nextLine = sc.nextLine();
+                    if (nextLine.length() > 0)
+                      System.out.println(nextLine);
+                  }
 
-									sc.close();
-									stop();
-								}
-							}).start();
+                  sc.close();
+                  stop();
+                }
+              }).start();
 
-							tclConsole.tclWrapperStartCallback();
+              tclConsole.tclWrapperStartCallback();
 
-							state = TclWrapperState.RUNNING;
+              state = TclWrapperState.RUNNING;
 
-							return;
-						}
-					}
+              return;
+            }
+          }
 
-					MessageBox userInfoBox = new MessageBox(
-							"Error starting TCL wrapper", errorMessage,
-							JOptionPane.ERROR_MESSAGE);
-					userInfoBox.show();
+          MessageBox userInfoBox = new MessageBox(
+              "Error starting TCL wrapper", errorMessage,
+              JOptionPane.ERROR_MESSAGE);
+          userInfoBox.show();
 
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}).start();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+    }).start();
 
-	}
+  }
 
-	public void stop() {
-		tclConsole.send("end");
-		try {
-			tclConsole.getTclClient().getSocket().close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		state = TclWrapperState.STOPPED;
-	}
+  public void stop() {
+    tclConsole.send("end");
+    try {
+      tclConsole.getTclClient().getSocket().close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    state = TclWrapperState.STOPPED;
+  }
 }

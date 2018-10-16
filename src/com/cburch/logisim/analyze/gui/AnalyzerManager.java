@@ -36,41 +36,41 @@ import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
 
-public class AnalyzerManager extends WindowMenuItemManager implements
-		LocaleListener {
-	public static Analyzer getAnalyzer(java.awt.Component parent) {
-		if (analysisWindow == null) {
-			analysisWindow = new Analyzer();
-			analysisWindow.pack();
-			analysisWindow.setLocationRelativeTo(parent);
-			if (analysisManager != null)
-				analysisManager.frameOpened(analysisWindow);
-		}
-		return analysisWindow;
-	}
+public class AnalyzerManager extends WindowMenuItemManager
+  implements LocaleListener {
+  public static Analyzer getAnalyzer(java.awt.Component parent) {
+    if (analysisWindow == null) {
+      analysisWindow = new Analyzer();
+      analysisWindow.pack();
+      analysisWindow.setLocationRelativeTo(parent);
+      if (analysisManager != null)
+        analysisManager.frameOpened(analysisWindow);
+    }
+    return analysisWindow;
+  }
 
-	public static void initialize() {
-		analysisManager = new AnalyzerManager();
-	}
+  public static void initialize() {
+    analysisManager = new AnalyzerManager();
+  }
 
-	private static Analyzer analysisWindow = null;
-	private static AnalyzerManager analysisManager = null;
+  private static Analyzer analysisWindow = null;
+  private static AnalyzerManager analysisManager = null;
 
-	private AnalyzerManager() {
-		super(Strings.get("analyzerWindowTitle"), true);
-		LocaleManager.addLocaleListener(this);
-	}
+  private AnalyzerManager() {
+    super(Strings.get("analyzerWindowTitle"), true);
+    LocaleManager.addLocaleListener(this);
+  }
 
-	@Override
-	public JFrame getJFrame(boolean create, java.awt.Component parent) {
-		if (create) {
-			return getAnalyzer(parent);
-		} else {
-			return analysisWindow;
-		}
-	}
+  @Override
+  public JFrame getJFrame(boolean create, java.awt.Component parent) {
+    if (create) {
+      return getAnalyzer(parent);
+    } else {
+      return analysisWindow;
+    }
+  }
 
-	public void localeChanged() {
-		setText(Strings.get("analyzerWindowTitle"));
-	}
+  public void localeChanged() {
+    setText(Strings.get("analyzerWindowTitle"));
+  }
 }

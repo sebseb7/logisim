@@ -36,10 +36,10 @@ package com.cburch.logisim.data;
  */
 public class TestException extends Exception {
 
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	public TestException(String s) {
-		super(s);
-	}
+  public TestException(String s) {
+    super(s);
+  }
 
 }

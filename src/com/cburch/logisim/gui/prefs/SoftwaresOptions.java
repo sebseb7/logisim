@@ -49,117 +49,117 @@ import com.cburch.logisim.util.Softwares;
 
 public class SoftwaresOptions extends OptionsPanel {
 
-	private class MyListener implements ActionListener,
-			PreferenceChangeListener {
+  private class MyListener
+    implements ActionListener, PreferenceChangeListener {
 
-		@Override
-		public void actionPerformed(ActionEvent ae) {
-			Object source = ae.getSource();
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+      Object source = ae.getSource();
 
-			if (source == questaPathButton) {
-				Softwares.setQuestaPath(getPreferencesFrame());
-			}
-			if (source == questaValidationCheckBox) {
-				AppPreferences.QUESTA_VALIDATION
-						.setBoolean(questaValidationCheckBox.isSelected());
-			}
-		}
+      if (source == questaPathButton) {
+        Softwares.setQuestaPath(getPreferencesFrame());
+      }
+      if (source == questaValidationCheckBox) {
+        AppPreferences.QUESTA_VALIDATION
+            .setBoolean(questaValidationCheckBox.isSelected());
+      }
+    }
 
-		@Override
-		public void preferenceChange(PreferenceChangeEvent pce) {
-			String property = pce.getKey();
+    @Override
+    public void preferenceChange(PreferenceChangeEvent pce) {
+      String property = pce.getKey();
 
-			if (property.equals(AppPreferences.QUESTA_PATH.getIdentifier())) {
-				questaPathField.setText(AppPreferences.QUESTA_PATH.get());
-			}
-			if (property.equals(AppPreferences.QUESTA_VALIDATION
-					.getIdentifier())) {
-				questaValidationCheckBox
-						.setSelected(AppPreferences.QUESTA_VALIDATION
-								.getBoolean());
-			}
-		}
+      if (property.equals(AppPreferences.QUESTA_PATH.getIdentifier())) {
+        questaPathField.setText(AppPreferences.QUESTA_PATH.get());
+      }
+      if (property.equals(AppPreferences.QUESTA_VALIDATION
+            .getIdentifier())) {
+        questaValidationCheckBox
+            .setSelected(AppPreferences.QUESTA_VALIDATION
+                .getBoolean());
+      }
+    }
 
-	}
+  }
 
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	private MyListener myListener = new MyListener();
+  private MyListener myListener = new MyListener();
 
-	private JCheckBox questaValidationCheckBox = new JCheckBox();
-	private JLabel questaPathLabel = new JLabel();
-	private JTextField questaPathField = new JTextField(40);
-	private JButton questaPathButton = new JButton();
+  private JCheckBox questaValidationCheckBox = new JCheckBox();
+  private JLabel questaPathLabel = new JLabel();
+  private JTextField questaPathField = new JTextField(40);
+  private JButton questaPathButton = new JButton();
 
-	public SoftwaresOptions(PreferencesFrame window) {
-		super(window);
+  public SoftwaresOptions(PreferencesFrame window) {
+    super(window);
 
-		questaValidationCheckBox.addActionListener(myListener);
-		questaPathButton.addActionListener(myListener);
-		AppPreferences.getPrefs().addPreferenceChangeListener(myListener);
+    questaValidationCheckBox.addActionListener(myListener);
+    questaPathButton.addActionListener(myListener);
+    AppPreferences.getPrefs().addPreferenceChangeListener(myListener);
 
-		JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
-		GridBagLayout layout = new GridBagLayout();
-		GridBagConstraints c = new GridBagConstraints();
-		setLayout(layout);
+    JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
+    GridBagLayout layout = new GridBagLayout();
+    GridBagConstraints c = new GridBagConstraints();
+    setLayout(layout);
 
-		c.insets = new Insets(2, 4, 4, 2);
-		c.anchor = GridBagConstraints.BASELINE_LEADING;
+    c.insets = new Insets(2, 4, 4, 2);
+    c.anchor = GridBagConstraints.BASELINE_LEADING;
 
-		c.gridx = 0;
-		c.gridy = 0;
-		c.gridwidth = 3;
-		c.fill = GridBagConstraints.NONE;
-		add(questaValidationCheckBox, c);
+    c.gridx = 0;
+    c.gridy = 0;
+    c.gridwidth = 3;
+    c.fill = GridBagConstraints.NONE;
+    add(questaValidationCheckBox, c);
 
-		c.gridx = 0;
-		c.gridy = 1;
-		c.gridwidth = 4;
-		c.weightx = 1.0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		add(sep, c);
+    c.gridx = 0;
+    c.gridy = 1;
+    c.gridwidth = 4;
+    c.weightx = 1.0;
+    c.fill = GridBagConstraints.HORIZONTAL;
+    add(sep, c);
 
-		c.gridx = 0;
-		c.gridy = 2;
-		c.gridwidth = 3;
-		c.fill = GridBagConstraints.NONE;
-		add(questaPathLabel, c);
+    c.gridx = 0;
+    c.gridy = 2;
+    c.gridwidth = 3;
+    c.fill = GridBagConstraints.NONE;
+    add(questaPathLabel, c);
 
-		c.gridx = 0;
-		c.gridy = 3;
-		c.gridwidth = 2;
-		c.weightx = 1.0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		add(questaPathField, c);
+    c.gridx = 0;
+    c.gridy = 3;
+    c.gridwidth = 2;
+    c.weightx = 1.0;
+    c.fill = GridBagConstraints.HORIZONTAL;
+    add(questaPathField, c);
 
-		c.gridx = 2;
-		c.gridy = 3;
-		c.fill = GridBagConstraints.NONE;
-		add(questaPathButton, c);
+    c.gridx = 2;
+    c.gridy = 3;
+    c.fill = GridBagConstraints.NONE;
+    add(questaPathButton, c);
 
-		questaValidationCheckBox.setSelected(AppPreferences.QUESTA_VALIDATION
-				.getBoolean());
+    questaValidationCheckBox.setSelected(AppPreferences.QUESTA_VALIDATION
+        .getBoolean());
 
-		questaPathField.setText(AppPreferences.QUESTA_PATH.get());
-		questaPathField.setEditable(false);
-	}
+    questaPathField.setText(AppPreferences.QUESTA_PATH.get());
+    questaPathField.setEditable(false);
+  }
 
-	@Override
-	public String getHelpText() {
-		return Strings.get("softwaresHelp");
-	}
+  @Override
+  public String getHelpText() {
+    return Strings.get("softwaresHelp");
+  }
 
-	@Override
-	public String getTitle() {
-		return Strings.get("softwaresTitle");
-	}
+  @Override
+  public String getTitle() {
+    return Strings.get("softwaresTitle");
+  }
 
-	@Override
-	public void localeChanged() {
-		questaValidationCheckBox.setText(Strings
-				.get("softwaresQuestaValidationLabel"));
-		questaPathButton.setText(Strings.get("softwaresQuestaPathButton"));
-		questaPathLabel.setText(Strings.get("softwaresQuestaPathLabel"));
-	}
+  @Override
+  public void localeChanged() {
+    questaValidationCheckBox.setText(Strings
+        .get("softwaresQuestaValidationLabel"));
+    questaPathButton.setText(Strings.get("softwaresQuestaPathButton"));
+    questaPathLabel.setText(Strings.get("softwaresQuestaPathLabel"));
+  }
 
 }

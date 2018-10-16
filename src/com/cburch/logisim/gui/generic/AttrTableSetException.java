@@ -31,9 +31,9 @@
 package com.cburch.logisim.gui.generic;
 
 public class AttrTableSetException extends Exception {
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	public AttrTableSetException(String msg) {
-		super(msg);
-	}
+  public AttrTableSetException(String msg) {
+    super(msg);
+  }
 }

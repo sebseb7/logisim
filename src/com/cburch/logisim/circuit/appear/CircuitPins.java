@@ -49,80 +49,80 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.Pin;
 
 public class CircuitPins {
-	private class MyComponentListener implements ComponentListener,
-			AttributeListener {
-		public void attributeListChanged(AttributeEvent e) {
-		}
+  private class MyComponentListener
+    implements ComponentListener, AttributeListener {
+    public void attributeListChanged(AttributeEvent e) {
+    }
 
-		public void attributeValueChanged(AttributeEvent e) {
-			Attribute<?> attr = e.getAttribute();
-			if (attr == StdAttr.FACING || attr == StdAttr.LABEL
-					|| attr == Pin.ATTR_TYPE) {
-				appearanceManager.updatePorts();
-			}
-		}
+    public void attributeValueChanged(AttributeEvent e) {
+      Attribute<?> attr = e.getAttribute();
+      if (attr == StdAttr.FACING || attr == StdAttr.LABEL
+          || attr == Pin.ATTR_TYPE) {
+        appearanceManager.updatePorts();
+      }
+    }
 
-		public void componentInvalidated(ComponentEvent e) {
-		}
+    public void componentInvalidated(ComponentEvent e) {
+    }
 
-		public void endChanged(ComponentEvent e) {
-			appearanceManager.updatePorts();
-		}
-	}
+    public void endChanged(ComponentEvent e) {
+      appearanceManager.updatePorts();
+    }
+  }
 
-	private PortManager appearanceManager;
-	private MyComponentListener myComponentListener;
-	private Set<Instance> pins;
+  private PortManager appearanceManager;
+  private MyComponentListener myComponentListener;
+  private Set<Instance> pins;
 
-	CircuitPins(PortManager appearanceManager) {
-		this.appearanceManager = appearanceManager;
-		myComponentListener = new MyComponentListener();
-		pins = new HashSet<Instance>();
-	}
+  CircuitPins(PortManager appearanceManager) {
+    this.appearanceManager = appearanceManager;
+    myComponentListener = new MyComponentListener();
+    pins = new HashSet<Instance>();
+  }
 
-	public Collection<Instance> getPins() {
-		return new ArrayList<Instance>(pins);
-	}
+  public Collection<Instance> getPins() {
+    return new ArrayList<Instance>(pins);
+  }
 
-	public void transactionCompleted(ReplacementMap repl) {
-		// determine the changes
-		Set<Instance> adds = new HashSet<Instance>();
-		Set<Instance> removes = new HashSet<Instance>();
-		Map<Instance, Instance> replaces = new HashMap<Instance, Instance>();
-		for (Component comp : repl.getAdditions()) {
-			if (comp.getFactory() instanceof Pin) {
-				Instance in = Instance.getInstanceFor(comp);
-				boolean added = pins.add(in);
-				if (added) {
-					comp.addComponentListener(myComponentListener);
-					in.getAttributeSet().addAttributeListener(
-							myComponentListener);
-					adds.add(in);
-				}
-			}
-		}
-		for (Component comp : repl.getRemovals()) {
-			if (comp.getFactory() instanceof Pin) {
-				Instance in = Instance.getInstanceFor(comp);
-				boolean removed = pins.remove(in);
-				if (removed) {
-					comp.removeComponentListener(myComponentListener);
-					in.getAttributeSet().removeAttributeListener(
-							myComponentListener);
-					Collection<Component> rs = repl
-							.getComponentsReplacing(comp);
-					if (rs.isEmpty()) {
-						removes.add(in);
-					} else {
-						Component r = rs.iterator().next();
-						Instance rin = Instance.getInstanceFor(r);
-						adds.remove(rin);
-						replaces.put(in, rin);
-					}
-				}
-			}
-		}
+  public void transactionCompleted(ReplacementMap repl) {
+    // determine the changes
+    Set<Instance> adds = new HashSet<Instance>();
+    Set<Instance> removes = new HashSet<Instance>();
+    Map<Instance, Instance> replaces = new HashMap<Instance, Instance>();
+    for (Component comp : repl.getAdditions()) {
+      if (comp.getFactory() instanceof Pin) {
+        Instance in = Instance.getInstanceFor(comp);
+        boolean added = pins.add(in);
+        if (added) {
+          comp.addComponentListener(myComponentListener);
+          in.getAttributeSet().addAttributeListener(
+              myComponentListener);
+          adds.add(in);
+        }
+      }
+    }
+    for (Component comp : repl.getRemovals()) {
+      if (comp.getFactory() instanceof Pin) {
+        Instance in = Instance.getInstanceFor(comp);
+        boolean removed = pins.remove(in);
+        if (removed) {
+          comp.removeComponentListener(myComponentListener);
+          in.getAttributeSet().removeAttributeListener(
+              myComponentListener);
+          Collection<Component> rs = repl
+              .getComponentsReplacing(comp);
+          if (rs.isEmpty()) {
+            removes.add(in);
+          } else {
+            Component r = rs.iterator().next();
+            Instance rin = Instance.getInstanceFor(r);
+            adds.remove(rin);
+            replaces.put(in, rin);
+          }
+        }
+      }
+    }
 
-		appearanceManager.updatePorts(adds, removes, replaces, getPins());
-	}
+    appearanceManager.updatePorts(adds, removes, replaces, getPins());
+  }
 }

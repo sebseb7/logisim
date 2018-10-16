@@ -34,15 +34,15 @@ import java.io.File;
 import com.cburch.logisim.instance.Instance;
 
 public class TclComponentListener {
-	Instance instance;
+  Instance instance;
 
-	TclComponentListener(Instance instance) {
-		this.instance = instance;
-	}
+  TclComponentListener(Instance instance) {
+    this.instance = instance;
+  }
 
-	public void changed(File source) {
-		instance.fireInvalidated();
-		instance.recomputeBounds();
-	}
+  public void changed(File source) {
+    instance.fireInvalidated();
+    instance.recomputeBounds();
+  }
 
 }

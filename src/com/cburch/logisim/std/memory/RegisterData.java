@@ -33,17 +33,17 @@ package com.cburch.logisim.std.memory;
 import com.cburch.logisim.instance.InstanceData;
 
 class RegisterData extends ClockState implements InstanceData {
-	int value;
+  int value;
 
-	public RegisterData() {
-		value = 0;
-	}
+  public RegisterData() {
+    value = 0;
+  }
 
-	public int getValue() {
-		return value;
-	}
+  public int getValue() {
+    return value;
+  }
 
-	public void setValue(int value) {
-		this.value = value;
-	}
+  public void setValue(int value) {
+    this.value = value;
+  }
 }

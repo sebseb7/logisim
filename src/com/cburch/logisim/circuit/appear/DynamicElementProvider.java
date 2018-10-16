@@ -32,6 +32,6 @@ package com.cburch.logisim.circuit.appear;
 
 public interface DynamicElementProvider {
 
-	public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path);
+  public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path);
 
 }

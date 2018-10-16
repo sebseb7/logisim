@@ -36,82 +36,82 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Location;
 
 public class WidthIncompatibilityData {
-	private ArrayList<Location> points;
-	private ArrayList<BitWidth> widths;
+  private ArrayList<Location> points;
+  private ArrayList<BitWidth> widths;
 
-	public WidthIncompatibilityData() {
-		points = new ArrayList<Location>();
-		widths = new ArrayList<BitWidth>();
-	}
+  public WidthIncompatibilityData() {
+    points = new ArrayList<Location>();
+    widths = new ArrayList<BitWidth>();
+  }
 
-	public void add(Location p, BitWidth w) {
-		for (int i = 0; i < points.size(); i++) {
-			if (p.equals(points.get(i)) && w.equals(widths.get(i)))
-				return;
-		}
-		points.add(p);
-		widths.add(w);
-	}
+  public void add(Location p, BitWidth w) {
+    for (int i = 0; i < points.size(); i++) {
+      if (p.equals(points.get(i)) && w.equals(widths.get(i)))
+        return;
+    }
+    points.add(p);
+    widths.add(w);
+  }
 
-	@Override
-	public boolean equals(Object other) {
-		if (!(other instanceof WidthIncompatibilityData))
-			return false;
-		if (this == other)
-			return true;
+  @Override
+  public boolean equals(Object other) {
+    if (!(other instanceof WidthIncompatibilityData))
+      return false;
+    if (this == other)
+      return true;
 
-		WidthIncompatibilityData o = (WidthIncompatibilityData) other;
-		if (this.size() != o.size())
-			return false;
-		for (int i = 0; i < this.size(); i++) {
-			Location p = this.getPoint(i);
-			BitWidth w = this.getBitWidth(i);
-			boolean matched = false;
-			for (int j = 0; j < o.size(); j++) {
-				Location q = o.getPoint(j);
-				BitWidth x = o.getBitWidth(j);
-				if (p.equals(q) && w.equals(x)) {
-					matched = true;
-					break;
-				}
-			}
-			if (!matched)
-				return false;
-		}
-		return true;
-	}
+    WidthIncompatibilityData o = (WidthIncompatibilityData) other;
+    if (this.size() != o.size())
+      return false;
+    for (int i = 0; i < this.size(); i++) {
+      Location p = this.getPoint(i);
+      BitWidth w = this.getBitWidth(i);
+      boolean matched = false;
+      for (int j = 0; j < o.size(); j++) {
+        Location q = o.getPoint(j);
+        BitWidth x = o.getBitWidth(j);
+        if (p.equals(q) && w.equals(x)) {
+          matched = true;
+          break;
+        }
+      }
+      if (!matched)
+        return false;
+    }
+    return true;
+  }
 
-	public BitWidth getBitWidth(int i) {
-		return widths.get(i);
-	}
+  public BitWidth getBitWidth(int i) {
+    return widths.get(i);
+  }
 
-	public Location getPoint(int i) {
-		return points.get(i);
-	}
+  public Location getPoint(int i) {
+    return points.get(i);
+  }
 
-	public BitWidth getCommonBitWidth() {
-		int hist[] = new int[33];
-		BitWidth maxwidth = null;
-		int maxcount = 0;
-		for (BitWidth bw : widths) {
-			int w = bw.getWidth();
-			int n = ++hist[w];
-			if (n > maxcount) {
-				maxcount = n;
-				maxwidth = bw;
-			} else if (n == maxcount) {
-				maxwidth = null;
-			}
-		}
-		return maxwidth;
-	}
+  public BitWidth getCommonBitWidth() {
+    int hist[] = new int[33];
+    BitWidth maxwidth = null;
+    int maxcount = 0;
+    for (BitWidth bw : widths) {
+      int w = bw.getWidth();
+      int n = ++hist[w];
+      if (n > maxcount) {
+        maxcount = n;
+        maxwidth = bw;
+      } else if (n == maxcount) {
+        maxwidth = null;
+      }
+    }
+    return maxwidth;
+  }
 
-	@Override
-	public int hashCode() {
-		return this.size();
-	}
+  @Override
+  public int hashCode() {
+    return this.size();
+  }
 
-	public int size() {
-		return points.size();
-	}
+  public int size() {
+    return points.size();
+  }
 }

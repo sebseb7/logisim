@@ -38,73 +38,73 @@ import javax.swing.JMenuBar;
 import net.roydesign.mac.MRJAdapter;
 
 public class MacCompatibility {
-	public static boolean isAboutAutomaticallyPresent() {
-		try {
-			return MRJAdapter.isAboutAutomaticallyPresent();
-		} catch (Exception t) {
-			return false;
-		}
-	}
+  public static boolean isAboutAutomaticallyPresent() {
+    try {
+      return MRJAdapter.isAboutAutomaticallyPresent();
+    } catch (Exception t) {
+      return false;
+    }
+  }
 
-	public static boolean isPreferencesAutomaticallyPresent() {
-		try {
-			return MRJAdapter.isPreferencesAutomaticallyPresent();
-		} catch (Exception t) {
-			return false;
-		}
-	}
+  public static boolean isPreferencesAutomaticallyPresent() {
+    try {
+      return MRJAdapter.isPreferencesAutomaticallyPresent();
+    } catch (Exception t) {
+      return false;
+    }
+  }
 
-	public static boolean isQuitAutomaticallyPresent() {
-		try {
-			return MRJAdapter.isQuitAutomaticallyPresent();
-		} catch (Exception t) {
-			return false;
-		}
-	}
+  public static boolean isQuitAutomaticallyPresent() {
+    try {
+      return MRJAdapter.isQuitAutomaticallyPresent();
+    } catch (Exception t) {
+      return false;
+    }
+  }
 
-	public static boolean isSwingUsingScreenMenuBar() {
-		try {
-			return MRJAdapter.isSwingUsingScreenMenuBar();
-		} catch (Exception t) {
-			return false;
-		}
-	}
+  public static boolean isSwingUsingScreenMenuBar() {
+    try {
+      return MRJAdapter.isSwingUsingScreenMenuBar();
+    } catch (Exception t) {
+      return false;
+    }
+  }
 
-	public static void setFileCreatorAndType(File dest, String app, String type)
-			throws IOException {
-		IOException ioExcept = null;
-		try {
-			try {
-				MRJAdapter.setFileCreatorAndType(dest, app, type);
-			} catch (IOException e) {
-				ioExcept = e;
-			}
-		} catch (Exception t) {
-		}
-		if (ioExcept != null)
-			throw ioExcept;
-	}
+  public static void setFileCreatorAndType(File dest, String app, String type)
+      throws IOException {
+    IOException ioExcept = null;
+    try {
+      try {
+        MRJAdapter.setFileCreatorAndType(dest, app, type);
+      } catch (IOException e) {
+        ioExcept = e;
+      }
+    } catch (Exception t) {
+    }
+    if (ioExcept != null)
+      throw ioExcept;
+  }
 
-	public static void setFramelessJMenuBar(JMenuBar menubar) {
-		try {
-			MRJAdapter.setFramelessJMenuBar(menubar);
-		} catch (Exception t) {
-		}
-	}
+  public static void setFramelessJMenuBar(JMenuBar menubar) {
+    try {
+      MRJAdapter.setFramelessJMenuBar(menubar);
+    } catch (Exception t) {
+    }
+  }
 
-	public static final double mrjVersion;
+  public static final double mrjVersion;
 
-	static {
-		double versionValue;
-		try {
-			versionValue = MRJAdapter.mrjVersion;
-		} catch (Exception t) {
-			versionValue = 0.0;
-		}
-		mrjVersion = versionValue;
-	}
+  static {
+    double versionValue;
+    try {
+      versionValue = MRJAdapter.mrjVersion;
+    } catch (Exception t) {
+      versionValue = 0.0;
+    }
+    mrjVersion = versionValue;
+  }
 
-	private MacCompatibility() {
-	}
+  private MacCompatibility() {
+  }
 
 }

@@ -35,26 +35,26 @@ import java.awt.LayoutManager;
 import javax.swing.JPanel;
 
 abstract class OptionsPanel extends JPanel {
-	private static final long serialVersionUID = 1L;
-	private PreferencesFrame optionsFrame;
+  private static final long serialVersionUID = 1L;
+  private PreferencesFrame optionsFrame;
 
-	public OptionsPanel(PreferencesFrame frame) {
-		super();
-		this.optionsFrame = frame;
-	}
+  public OptionsPanel(PreferencesFrame frame) {
+    super();
+    this.optionsFrame = frame;
+  }
 
-	public OptionsPanel(PreferencesFrame frame, LayoutManager manager) {
-		super(manager);
-		this.optionsFrame = frame;
-	}
+  public OptionsPanel(PreferencesFrame frame, LayoutManager manager) {
+    super(manager);
+    this.optionsFrame = frame;
+  }
 
-	public abstract String getHelpText();
+  public abstract String getHelpText();
 
-	PreferencesFrame getPreferencesFrame() {
-		return optionsFrame;
-	}
+  PreferencesFrame getPreferencesFrame() {
+    return optionsFrame;
+  }
 
-	public abstract String getTitle();
+  public abstract String getTitle();
 
-	public abstract void localeChanged();
+  public abstract void localeChanged();
 }

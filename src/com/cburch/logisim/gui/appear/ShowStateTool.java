@@ -43,45 +43,45 @@ import com.cburch.logisim.comp.Component;
 
 public class ShowStateTool implements ToolbarClickableItem {
 
-	private AppearanceView view;
-	private AppearanceCanvas canvas;
-	private DrawingAttributeSet attrs;
-	private Icon icon, pressed;
+  private AppearanceView view;
+  private AppearanceCanvas canvas;
+  private DrawingAttributeSet attrs;
+  private Icon icon, pressed;
 
-	public ShowStateTool(AppearanceView view, AppearanceCanvas canvas, DrawingAttributeSet attrs) {
-		this.view = view;
-		this.canvas = canvas;
-		this.attrs = attrs;
-		icon = Icons.getIcon("showstate.gif");
-		pressed = Icons.getIcon("showstate_pressed.gif");
-	}
+  public ShowStateTool(AppearanceView view, AppearanceCanvas canvas, DrawingAttributeSet attrs) {
+    this.view = view;
+    this.canvas = canvas;
+    this.attrs = attrs;
+    icon = Icons.getIcon("showstate.gif");
+    pressed = Icons.getIcon("showstate_pressed.gif");
+  }
 
-	public Dimension getDimension(Object orientation) {
-		return new Dimension(icon.getIconWidth() + 8, icon.getIconHeight() + 8);
-	}
+  public Dimension getDimension(Object orientation) {
+    return new Dimension(icon.getIconWidth() + 8, icon.getIconHeight() + 8);
+  }
 
-	public String getToolTip() {
-		return "Select state to be shown";
-	}
+  public String getToolTip() {
+    return "Select state to be shown";
+  }
 
-	public boolean isSelectable() {
-		return false;
-	}
+  public boolean isSelectable() {
+    return false;
+  }
 
-	public void clicked() {
-		ShowStateDialog w = new ShowStateDialog(view.getFrame(), canvas);
-		Point p = view.getFrame().getLocation();
-		p.translate(80, 50);
-		w.setLocation(p);
-		w.setVisible(true);
-	}
+  public void clicked() {
+    ShowStateDialog w = new ShowStateDialog(view.getFrame(), canvas);
+    Point p = view.getFrame().getLocation();
+    p.translate(80, 50);
+    w.setLocation(p);
+    w.setVisible(true);
+  }
 
-	public void paintIcon(java.awt.Component destination, Graphics g) {
-		icon.paintIcon(destination, g, 4, 4);
-	}
+  public void paintIcon(java.awt.Component destination, Graphics g) {
+    icon.paintIcon(destination, g, 4, 4);
+  }
 
-	public void paintPressedIcon(java.awt.Component destination, Graphics g) {
-		pressed.paintIcon(destination, g, 4, 4);
-	}
+  public void paintPressedIcon(java.awt.Component destination, Graphics g) {
+    pressed.paintIcon(destination, g, 4, 4);
+  }
 
 }

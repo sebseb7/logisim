@@ -68,291 +68,291 @@ import com.cburch.logisim.util.LocaleManager;
 
 public class HdlContentEditor extends JDialog implements JInputDialog {
 
-	private class EditorListener implements DocumentListener {
+  private class EditorListener implements DocumentListener {
 
-		@Override
-		public void changedUpdate(DocumentEvent de) {
+    @Override
+    public void changedUpdate(DocumentEvent de) {
 
-		}
+    }
 
-		@Override
-		public void insertUpdate(DocumentEvent de) {
-			validate.setEnabled(!editor.getText().equals(model.getContent()));
-		}
+    @Override
+    public void insertUpdate(DocumentEvent de) {
+      validate.setEnabled(!editor.getText().equals(model.getContent()));
+    }
 
-		@Override
-		public void removeUpdate(DocumentEvent de) {
-			validate.setEnabled(!editor.getText().equals(model.getContent()));
-		}
+    @Override
+    public void removeUpdate(DocumentEvent de) {
+      validate.setEnabled(!editor.getText().equals(model.getContent()));
+    }
 
-	}
+  }
 
-	private class FrameListener extends WindowAdapter implements
-			ActionListener, LocaleListener {
+  private class FrameListener extends WindowAdapter
+    implements ActionListener, LocaleListener {
 
-		@Override
-		public void actionPerformed(ActionEvent event) {
-			Object source = event.getSource();
+    @Override
+    public void actionPerformed(ActionEvent event) {
+      Object source = event.getSource();
 
-			if (source == open) {
-				if (!editor.getText().equals(model.getContent()))
-					if (!confirmImport(HdlContentEditor.this))
-						return;
-                                String vhdl = project.getLogisimFile().getLoader().vhdlImportChooser(HdlContentEditor.this);
-                                if (vhdl != null)
-                                    setText(vhdl);
-			}
-			if (source == save) {
-				JFileChooser chooser = JFileChoosers
-						.createSelected(getDefaultExportFile(null));
-				chooser.setDialogTitle(Strings.get("hdlSaveButton"));
-				int choice = chooser.showSaveDialog(HdlContentEditor.this);
-				if (choice == JFileChooser.APPROVE_OPTION) {
-					File f = chooser.getSelectedFile();
-					try {
-						HdlFile.save(f, getText());
-					} catch (IOException e) {
-						JOptionPane.showMessageDialog(HdlContentEditor.this,
-								e.getMessage(),
-								Strings.get("hexSaveErrorTitle"),
-								JOptionPane.ERROR_MESSAGE);
-					}
-				}
-			}
-			if (source == validate) {
-				model.setContent(editor.getText());
-			}
-			if (source == close) {
-				close();
-			}
-		}
+      if (source == open) {
+        if (!editor.getText().equals(model.getContent()))
+          if (!confirmImport(HdlContentEditor.this))
+            return;
+        String vhdl = project.getLogisimFile().getLoader().vhdlImportChooser(HdlContentEditor.this);
+        if (vhdl != null)
+          setText(vhdl);
+      }
+      if (source == save) {
+        JFileChooser chooser = JFileChoosers
+            .createSelected(getDefaultExportFile(null));
+        chooser.setDialogTitle(Strings.get("hdlSaveButton"));
+        int choice = chooser.showSaveDialog(HdlContentEditor.this);
+        if (choice == JFileChooser.APPROVE_OPTION) {
+          File f = chooser.getSelectedFile();
+          try {
+            HdlFile.save(f, getText());
+          } catch (IOException e) {
+            JOptionPane.showMessageDialog(HdlContentEditor.this,
+                e.getMessage(),
+                Strings.get("hexSaveErrorTitle"),
+                JOptionPane.ERROR_MESSAGE);
+          }
+        }
+      }
+      if (source == validate) {
+        model.setContent(editor.getText());
+      }
+      if (source == close) {
+        close();
+      }
+    }
 
-		@Override
-		public void localeChanged() {
-			setTitle(Strings.get("hdlFrameTitle"));
-			open.setText(Strings.get("hdlOpenButton"));
-			save.setText(Strings.get("hdlSaveButton"));
-			validate.setText(Strings.get("validateAndSaveButton"));
-			close.setText(Strings.get("closeButton"));
-		}
+    @Override
+    public void localeChanged() {
+      setTitle(Strings.get("hdlFrameTitle"));
+      open.setText(Strings.get("hdlOpenButton"));
+      save.setText(Strings.get("hdlSaveButton"));
+      validate.setText(Strings.get("validateAndSaveButton"));
+      close.setText(Strings.get("closeButton"));
+    }
 
-		@Override
-		public void windowClosing(WindowEvent e) {
-			close();
-		}
+    @Override
+    public void windowClosing(WindowEvent e) {
+      close();
+    }
 
-	}
+  }
 
-	private class ModelListener implements HdlModelListener {
-		@Override
-		public void contentSet(HdlModel source) {
-			validate.setEnabled(false);
-		}
-                @Override
-                public void aboutToSave(HdlModel source) { }
-                @Override
-                public void displayChanged(HdlModel source) { }
-                @Override
-                public void appearanceChanged(HdlModel source) { }
+  private class ModelListener implements HdlModelListener {
+    @Override
+    public void contentSet(HdlModel source) {
+      validate.setEnabled(false);
+    }
+    @Override
+    public void aboutToSave(HdlModel source) { }
+    @Override
+    public void displayChanged(HdlModel source) { }
+    @Override
+    public void appearanceChanged(HdlModel source) { }
 
-	}
+  }
 
-	public static boolean confirmImport(Component parent) {
-		String[] options = { Strings.get("importOption"),
-				Strings.get("cancelOption") };
-		return JOptionPane.showOptionDialog(parent,
-				Strings.get("importMessage"), Strings.get("importTitle"), 0,
-				JOptionPane.QUESTION_MESSAGE, null, options, options[0]) == 0;
-	}
+  public static boolean confirmImport(Component parent) {
+    String[] options = { Strings.get("importOption"),
+      Strings.get("cancelOption") };
+    return JOptionPane.showOptionDialog(parent,
+        Strings.get("importMessage"), Strings.get("importTitle"), 0,
+        JOptionPane.QUESTION_MESSAGE, null, options, options[0]) == 0;
+  }
 
-	private static final long serialVersionUID = 1L;
-	private static final int ROWS = 40;
+  private static final long serialVersionUID = 1L;
+  private static final int ROWS = 40;
 
-	private static final int COLUMNS = 100;
+  private static final int COLUMNS = 100;
 
-	private static final String EXPORT_DIR = "hdl_export";
+  private static final String EXPORT_DIR = "hdl_export";
 
-	private FrameListener frameListener = new FrameListener();
-	private ModelListener modelListener = new ModelListener();
-	private EditorListener editorListener = new EditorListener();
+  private FrameListener frameListener = new FrameListener();
+  private ModelListener modelListener = new ModelListener();
+  private EditorListener editorListener = new EditorListener();
 
-	private RSyntaxTextArea editor;
-	private HdlModel model;
-	private Project project;
+  private RSyntaxTextArea editor;
+  private HdlModel model;
+  private Project project;
 
-	private JButton open = new JButton();
-	private JButton save = new JButton();
-	private JButton validate = new JButton();
-	private JButton close = new JButton();
+  private JButton open = new JButton();
+  private JButton save = new JButton();
+  private JButton validate = new JButton();
+  private JButton close = new JButton();
 
-	public HdlContentEditor(Dialog parent, Project proj, HdlModel model) {
-		super(parent, Strings.get("hdlFrameTitle"), true);
-		configure(proj, model);
-                setLocationRelativeTo(parent);
-	}
+  public HdlContentEditor(Dialog parent, Project proj, HdlModel model) {
+    super(parent, Strings.get("hdlFrameTitle"), true);
+    configure(proj, model);
+    setLocationRelativeTo(parent);
+  }
 
-	public HdlContentEditor(Frame parent, Project proj, HdlModel model) {
-		super(parent, Strings.get("hdlFrameTitle"), true);
-		configure(proj, model);
-                setLocationRelativeTo(parent);
-	}
+  public HdlContentEditor(Frame parent, Project proj, HdlModel model) {
+    super(parent, Strings.get("hdlFrameTitle"), true);
+    configure(proj, model);
+    setLocationRelativeTo(parent);
+  }
 
-	private void close() {
-		if (editor.getText().equals(model.getContent())) {
-			dispose();
-			return;
-		}
+  private void close() {
+    if (editor.getText().equals(model.getContent())) {
+      dispose();
+      return;
+    }
 
-		if (model.setContent(editor.getText())) {
-			dispose();
-			return;
-		}
+    if (model.setContent(editor.getText())) {
+      dispose();
+      return;
+    }
 
-		Object[] options = { Strings.get("confirmCloseYes"),
-				Strings.get("confirmCloseNo"),
-				Strings.get("confirmCloseBackup") };
-		int n = JOptionPane.showOptionDialog(this,
-				Strings.get("confirmCloseMessage"),
-				Strings.get("confirmCloseTitle"),
-				JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
-				null, options, options[0]);
+    Object[] options = { Strings.get("confirmCloseYes"),
+      Strings.get("confirmCloseNo"),
+      Strings.get("confirmCloseBackup") };
+    int n = JOptionPane.showOptionDialog(this,
+        Strings.get("confirmCloseMessage"),
+        Strings.get("confirmCloseTitle"),
+        JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
+        null, options, options[0]);
 
-		switch (n) {
-		case JOptionPane.YES_OPTION:
-			dispose();
-			break;
-		case JOptionPane.CANCEL_OPTION:
-			save.doClick();
-			dispose();
-			break;
-		}
-	}
+    switch (n) {
+    case JOptionPane.YES_OPTION:
+      dispose();
+      break;
+    case JOptionPane.CANCEL_OPTION:
+      save.doClick();
+      dispose();
+      break;
+    }
+  }
 
-	private void configure(Project proj, HdlModel model) {
-		this.project = proj;
-		this.model = model;
-		this.model.addHdlModelListener(modelListener);
-		this.addWindowListener(frameListener);
+  private void configure(Project proj, HdlModel model) {
+    this.project = proj;
+    this.model = model;
+    this.model.addHdlModelListener(modelListener);
+    this.addWindowListener(frameListener);
 
-		JPanel buttonsPanel = new JPanel();
-		buttonsPanel.add(open);
-		buttonsPanel.add(save);
-		buttonsPanel.add(validate);
-		buttonsPanel.add(close);
-		open.addActionListener(frameListener);
-		save.addActionListener(frameListener);
-		close.addActionListener(frameListener);
-		validate.addActionListener(frameListener);
+    JPanel buttonsPanel = new JPanel();
+    buttonsPanel.add(open);
+    buttonsPanel.add(save);
+    buttonsPanel.add(validate);
+    buttonsPanel.add(close);
+    open.addActionListener(frameListener);
+    save.addActionListener(frameListener);
+    close.addActionListener(frameListener);
+    validate.addActionListener(frameListener);
 
-		editor = new RSyntaxTextArea(ROWS, COLUMNS);
-		editor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_DELPHI);
-		editor.setCodeFoldingEnabled(true);
-		editor.setAntiAliasingEnabled(true);
-		editor.getDocument().addDocumentListener(editorListener);
+    editor = new RSyntaxTextArea(ROWS, COLUMNS);
+    editor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_DELPHI);
+    editor.setCodeFoldingEnabled(true);
+    editor.setAntiAliasingEnabled(true);
+    editor.getDocument().addDocumentListener(editorListener);
 
-		RTextScrollPane sp = new RTextScrollPane(editor);
-		sp.setFoldIndicatorEnabled(true);
+    RTextScrollPane sp = new RTextScrollPane(editor);
+    sp.setFoldIndicatorEnabled(true);
 
-		add(sp, BorderLayout.CENTER);
-		add(buttonsPanel, BorderLayout.SOUTH);
+    add(sp, BorderLayout.CENTER);
+    add(buttonsPanel, BorderLayout.SOUTH);
 
-		LocaleManager.addLocaleListener(frameListener);
-		frameListener.localeChanged();
-		pack();
+    LocaleManager.addLocaleListener(frameListener);
+    frameListener.localeChanged();
+    pack();
 
-		Dimension size = getSize();
-		Dimension screen = getToolkit().getScreenSize();
-		if (size.width > screen.width || size.height > screen.height) {
-			size.width = Math.min(size.width, screen.width);
-			size.height = Math.min(size.height, screen.height);
-			setSize(size);
-		}
-	}
+    Dimension size = getSize();
+    Dimension screen = getToolkit().getScreenSize();
+    if (size.width > screen.width || size.height > screen.height) {
+      size.width = Math.min(size.width, screen.width);
+      size.height = Math.min(size.height, screen.height);
+      setSize(size);
+    }
+  }
 
-	private File getDefaultExportFile(File defaultFile) {
-		File projectFile = project.getLogisimFile().getLoader().getMainFile();
-		if (projectFile == null) {
-			if (defaultFile == null)
-				return new File(model.getName() + ".vhd");
-			return defaultFile;
-		}
+  private File getDefaultExportFile(File defaultFile) {
+    File projectFile = project.getLogisimFile().getLoader().getMainFile();
+    if (projectFile == null) {
+      if (defaultFile == null)
+        return new File(model.getName() + ".vhd");
+      return defaultFile;
+    }
 
-		File compFolder;
-		try {
-			compFolder = new File(FileUtil.correctPath(projectFile
-					.getParentFile().getCanonicalPath()) + EXPORT_DIR);
-			if (!compFolder.exists()
-					|| (compFolder.exists() && !compFolder.isDirectory()))
-				compFolder.mkdir();
-			return new File(FileUtil.correctPath(compFolder.getCanonicalPath())
-					+ model.getName() + ".vhd");
-		} catch (IOException ex) {
-			return defaultFile;
-		}
-	}
+    File compFolder;
+    try {
+      compFolder = new File(FileUtil.correctPath(projectFile
+            .getParentFile().getCanonicalPath()) + EXPORT_DIR);
+      if (!compFolder.exists()
+          || (compFolder.exists() && !compFolder.isDirectory()))
+        compFolder.mkdir();
+      return new File(FileUtil.correctPath(compFolder.getCanonicalPath())
+          + model.getName() + ".vhd");
+    } catch (IOException ex) {
+      return defaultFile;
+    }
+  }
 
-	private File getDefaultImportFile(File defaultFile) {
-		File projectFile = project.getLogisimFile().getLoader().getMainFile();
-		if (projectFile == null)
-			return defaultFile;
+  private File getDefaultImportFile(File defaultFile) {
+    File projectFile = project.getLogisimFile().getLoader().getMainFile();
+    if (projectFile == null)
+      return defaultFile;
 
-		File compFolder;
-		try {
-			compFolder = new File(FileUtil.correctPath(projectFile
-					.getParentFile().getCanonicalPath()) + EXPORT_DIR);
-			if (!compFolder.exists()
-					|| (compFolder.exists() && !compFolder.isDirectory()))
-				compFolder.mkdir();
-			return new File(FileUtil.correctPath(compFolder.getCanonicalPath()));
-		} catch (IOException ex) {
-			return defaultFile;
-		}
-	}
+    File compFolder;
+    try {
+      compFolder = new File(FileUtil.correctPath(projectFile
+            .getParentFile().getCanonicalPath()) + EXPORT_DIR);
+      if (!compFolder.exists()
+          || (compFolder.exists() && !compFolder.isDirectory()))
+        compFolder.mkdir();
+      return new File(FileUtil.correctPath(compFolder.getCanonicalPath()));
+    } catch (IOException ex) {
+      return defaultFile;
+    }
+  }
 
-	public String getText() {
-		return editor.getText();
-	}
+  public String getText() {
+    return editor.getText();
+  }
 
-	@Override
-	public Object getValue() {
-		return model;
-	}
+  @Override
+  public Object getValue() {
+    return model;
+  }
 
-	public void setText(String content) {
-		editor.setText(content);
-		editor.discardAllEdits();
-	}
+  public void setText(String content) {
+    editor.setText(content);
+    editor.discardAllEdits();
+  }
 
-	@Override
-	public void setValue(Object value) {
-		model = (HdlModel) value;
-	}
+  @Override
+  public void setValue(Object value) {
+    model = (HdlModel) value;
+  }
 
-	@Override
-	public void setVisible(boolean b) {
-		if (b) {
-			editor.setText(model.getContent());
-			editor.discardAllEdits();
-		}
+  @Override
+  public void setVisible(boolean b) {
+    if (b) {
+      editor.setText(model.getContent());
+      editor.discardAllEdits();
+    }
 
-		super.setVisible(b);
-	}
+    super.setVisible(b);
+  }
 
-	public static HdlContentEditor getContentEditor(Window source,
-			HdlContent value, Project proj) {
-		synchronized (windowRegistry) {
-			HdlContentEditor ret = windowRegistry.get(value);
-			if (ret == null) {
-				if (source instanceof Frame)
-					ret = new HdlContentEditor((Frame) source, proj, value);
-				else
-					ret = new HdlContentEditor((Dialog) source, proj, value);
-				windowRegistry.put(value, ret);
-			}
-			return ret;
-		}
-	}
+  public static HdlContentEditor getContentEditor(Window source,
+      HdlContent value, Project proj) {
+    synchronized (windowRegistry) {
+      HdlContentEditor ret = windowRegistry.get(value);
+      if (ret == null) {
+        if (source instanceof Frame)
+          ret = new HdlContentEditor((Frame) source, proj, value);
+        else
+          ret = new HdlContentEditor((Dialog) source, proj, value);
+        windowRegistry.put(value, ret);
+      }
+      return ret;
+    }
+  }
 
-	private final static WeakHashMap<HdlContent, HdlContentEditor> windowRegistry = new WeakHashMap<HdlContent, HdlContentEditor>();
+  private final static WeakHashMap<HdlContent, HdlContentEditor> windowRegistry = new WeakHashMap<HdlContent, HdlContentEditor>();
 
 }

@@ -31,7 +31,7 @@
 package com.cburch.logisim.comp;
 
 public interface ComponentListener {
-	public void componentInvalidated(ComponentEvent e);
+  public void componentInvalidated(ComponentEvent e);
 
-	public void endChanged(ComponentEvent e);
+  public void endChanged(ComponentEvent e);
 }

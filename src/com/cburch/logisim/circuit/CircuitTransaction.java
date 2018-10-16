@@ -37,81 +37,81 @@ import java.util.concurrent.locks.Lock;
 import com.cburch.logisim.circuit.appear.CircuitPins;
 
 public abstract class CircuitTransaction {
-	public static final Integer READ_ONLY = Integer.valueOf(1);
-	public static final Integer READ_WRITE = Integer.valueOf(2);
+  public static final Integer READ_ONLY = Integer.valueOf(1);
+  public static final Integer READ_WRITE = Integer.valueOf(2);
 
-	public final CircuitTransactionResult execute() {
-		CircuitMutatorImpl mutator = new CircuitMutatorImpl();
-		Map<Circuit, Lock> locks = CircuitLocker.acquireLocks(this, mutator);
-		CircuitTransactionResult result;
-		try {
-			try {
-				this.run(mutator);
-			} catch (CircuitLocker.LockException e) {
-				System.out.println("*** Circuit Lock Bug Diagnostics ***");
-				System.out.println("This thread: " + Thread.currentThread());
-				System.out.println("owns " + locks.size() + " locks, as follows:");
-				for (Map.Entry<Circuit, Lock> entry : locks.entrySet()) {
-					Circuit circuit = entry.getKey();
-					Lock lock = entry.getValue();
-					System.out.printf("  circuit \"%s\" [lock serial: %d] with lock %s\n",
-							circuit.getName(), circuit.getLocker().getSerialNumber(), lock);
-				}
-				System.out.println("attempted to access without a lock:");
-				System.out.printf("  circuit \"%s\" [lock serial: %d/%d]\n",
-						e.getCircuit().getName(), e.getSerialNumber(),
-						e.getCircuit().getLocker().getSerialNumber());
-				System.out.println("  owned by thread: " + e.getMutatingThread());
-				System.out.println("  with mutator: " + e.getCircuitMutator());
-				throw e;
-			}
+  public final CircuitTransactionResult execute() {
+    CircuitMutatorImpl mutator = new CircuitMutatorImpl();
+    Map<Circuit, Lock> locks = CircuitLocker.acquireLocks(this, mutator);
+    CircuitTransactionResult result;
+    try {
+      try {
+        this.run(mutator);
+      } catch (CircuitLocker.LockException e) {
+        System.out.println("*** Circuit Lock Bug Diagnostics ***");
+        System.out.println("This thread: " + Thread.currentThread());
+        System.out.println("owns " + locks.size() + " locks, as follows:");
+        for (Map.Entry<Circuit, Lock> entry : locks.entrySet()) {
+          Circuit circuit = entry.getKey();
+          Lock lock = entry.getValue();
+          System.out.printf("  circuit \"%s\" [lock serial: %d] with lock %s\n",
+              circuit.getName(), circuit.getLocker().getSerialNumber(), lock);
+        }
+        System.out.println("attempted to access without a lock:");
+        System.out.printf("  circuit \"%s\" [lock serial: %d/%d]\n",
+            e.getCircuit().getName(), e.getSerialNumber(),
+            e.getCircuit().getLocker().getSerialNumber());
+        System.out.println("  owned by thread: " + e.getMutatingThread());
+        System.out.println("  with mutator: " + e.getCircuitMutator());
+        throw e;
+      }
 
-			// TODO: remove stale appearance dynamic elements here instead
-			// of in Circuit.mutatorRemove() ?
+      // TODO: remove stale appearance dynamic elements here instead
+      // of in Circuit.mutatorRemove() ?
 
-			// Let the port locations of each subcircuit's appearance be
-			// updated to reflect the changes - this needs to happen before
-			// wires are repaired because it could lead to some wires being
-			// split
-			Collection<Circuit> modified = mutator.getModifiedCircuits();
-			for (Circuit circuit : modified) {
-				CircuitMutatorImpl circMutator = circuit.getLocker()
-						.getMutator();
-				if (circMutator == mutator) {
-					CircuitPins pins = circuit.getAppearance().getCircuitPins();
-					ReplacementMap repl = mutator.getReplacementMap(circuit);
-					if (repl != null) {
-						pins.transactionCompleted(repl);
-					}
-				}
-			}
+      // Let the port locations of each subcircuit's appearance be
+      // updated to reflect the changes - this needs to happen before
+      // wires are repaired because it could lead to some wires being
+      // split
+      Collection<Circuit> modified = mutator.getModifiedCircuits();
+      for (Circuit circuit : modified) {
+        CircuitMutatorImpl circMutator = circuit.getLocker()
+            .getMutator();
+        if (circMutator == mutator) {
+          CircuitPins pins = circuit.getAppearance().getCircuitPins();
+          ReplacementMap repl = mutator.getReplacementMap(circuit);
+          if (repl != null) {
+            pins.transactionCompleted(repl);
+          }
+        }
+      }
 
-			// Now go through each affected circuit and repair its wires
-			for (Circuit circuit : modified) {
-				CircuitMutatorImpl circMutator = circuit.getLocker()
-						.getMutator();
-				if (circMutator == mutator) {
-					WireRepair repair = new WireRepair(circuit);
-					repair.run(mutator);
-				} else {
-					// this is a transaction executed within a transaction -
-					// wait to repair wires until overall transaction is done
-					circMutator.markModified(circuit);
-				}
-			}
+      // Now go through each affected circuit and repair its wires
+      for (Circuit circuit : modified) {
+        CircuitMutatorImpl circMutator = circuit.getLocker()
+            .getMutator();
+        if (circMutator == mutator) {
+          WireRepair repair = new WireRepair(circuit);
+          repair.run(mutator);
+        } else {
+          // this is a transaction executed within a transaction -
+          // wait to repair wires until overall transaction is done
+          circMutator.markModified(circuit);
+        }
+      }
 
-			result = new CircuitTransactionResult(mutator);
-			for (Circuit circuit : result.getModifiedCircuits()) {
-				circuit.fireEvent(CircuitEvent.TRANSACTION_DONE, result);
-			}
-		} finally {
-			CircuitLocker.releaseLocks(locks);
-		}
-		return result;
-	}
+      result = new CircuitTransactionResult(mutator);
+      for (Circuit circuit : result.getModifiedCircuits()) {
+        circuit.fireEvent(CircuitEvent.TRANSACTION_DONE, result);
+      }
+    } finally {
+      CircuitLocker.releaseLocks(locks);
+    }
+    return result;
+  }
 
-	protected abstract Map<Circuit, Integer> getAccessedCircuits();
+  protected abstract Map<Circuit, Integer> getAccessedCircuits();
 
-	protected abstract void run(CircuitMutator mutator);
+  protected abstract void run(CircuitMutator mutator);
 
 }

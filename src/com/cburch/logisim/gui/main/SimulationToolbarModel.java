@@ -42,72 +42,72 @@ import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.UnmodifiableList;
 
-class SimulationToolbarModel extends AbstractToolbarModel implements
-		ChangeListener {
-	private Project project;
-	private LogisimToolbarItem simEnable;
-	private LogisimToolbarItem simStep;
-	private LogisimToolbarItem tickEnable;
-	private LogisimToolbarItem tickStep;
-	private LogisimToolbarItem tickStepMain;
-	private List<ToolbarItem> items;
+class SimulationToolbarModel extends AbstractToolbarModel
+  implements ChangeListener {
+  private Project project;
+  private LogisimToolbarItem simEnable;
+  private LogisimToolbarItem simStep;
+  private LogisimToolbarItem tickEnable;
+  private LogisimToolbarItem tickStep;
+  private LogisimToolbarItem tickStepMain;
+  private List<ToolbarItem> items;
 
-	public SimulationToolbarModel(Project project, MenuListener menu) {
-		this.project = project;
+  public SimulationToolbarModel(Project project, MenuListener menu) {
+    this.project = project;
 
-		simEnable = new LogisimToolbarItem(menu, "simplay.png",
-				LogisimMenuBar.SIMULATE_ENABLE,
-				Strings.getter("simulateEnableStepsTip"));
-		simStep = new LogisimToolbarItem(menu, "simstep.png",
-				LogisimMenuBar.SIMULATE_STEP, Strings.getter("simulateStepTip"));
-		tickEnable = new LogisimToolbarItem(menu, "simtplay.png",
-				LogisimMenuBar.TICK_ENABLE,
-				Strings.getter("simulateEnableTicksTip"));
-		tickStep = new LogisimToolbarItem(menu, "simtstep.png",
-				LogisimMenuBar.TICK_STEP, Strings.getter("simulateTickTip"));
-		tickStepMain = new LogisimToolbarItem(menu, "clock.gif",
-				LogisimMenuBar.TICK_STEP_MAIN,
-				Strings.getter("simulateTickMainTip"));
+    simEnable = new LogisimToolbarItem(menu, "simplay.png",
+        LogisimMenuBar.SIMULATE_ENABLE,
+        Strings.getter("simulateEnableStepsTip"));
+    simStep = new LogisimToolbarItem(menu, "simstep.png",
+        LogisimMenuBar.SIMULATE_STEP, Strings.getter("simulateStepTip"));
+    tickEnable = new LogisimToolbarItem(menu, "simtplay.png",
+        LogisimMenuBar.TICK_ENABLE,
+        Strings.getter("simulateEnableTicksTip"));
+    tickStep = new LogisimToolbarItem(menu, "simtstep.png",
+        LogisimMenuBar.TICK_STEP, Strings.getter("simulateTickTip"));
+    tickStepMain = new LogisimToolbarItem(menu, "clock.gif",
+        LogisimMenuBar.TICK_STEP_MAIN,
+        Strings.getter("simulateTickMainTip"));
 
-		items = UnmodifiableList.create(new ToolbarItem[] { simEnable, simStep,
-				tickEnable, tickStep, tickStepMain, });
+    items = UnmodifiableList.create(new ToolbarItem[] { simEnable, simStep,
+      tickEnable, tickStep, tickStepMain, });
 
-		menu.getMenuBar().addEnableListener(this);
-		stateChanged(null);
-	}
+    menu.getMenuBar().addEnableListener(this);
+    stateChanged(null);
+  }
 
-	@Override
-	public List<ToolbarItem> getItems() {
-		return items;
-	}
+  @Override
+  public List<ToolbarItem> getItems() {
+    return items;
+  }
 
-	@Override
-	public boolean isSelected(ToolbarItem item) {
-		return false;
-	}
+  @Override
+  public boolean isSelected(ToolbarItem item) {
+    return false;
+  }
 
-	@Override
-	public void itemSelected(ToolbarItem item) {
-		if (item instanceof LogisimToolbarItem) {
-			((LogisimToolbarItem) item).doAction();
-		}
-	}
+  @Override
+  public void itemSelected(ToolbarItem item) {
+    if (item instanceof LogisimToolbarItem) {
+      ((LogisimToolbarItem) item).doAction();
+    }
+  }
 
-	//
-	// ChangeListener methods
-	//
-	public void stateChanged(ChangeEvent e) {
-		Simulator sim = project.getSimulator();
-		boolean running = sim != null && sim.isRunning();
-		boolean ticking = sim != null && sim.isTicking();
-		simEnable.setIcon(running ? "simstop.png" : "simplay.png");
-		simEnable.setToolTip(running ? Strings
-				.getter("simulateDisableStepsTip") : Strings
-				.getter("simulateEnableStepsTip"));
-		tickEnable.setIcon(ticking ? "simtstop.png" : "simtplay.png");
-		tickEnable.setToolTip(ticking ? Strings
-				.getter("simulateDisableTicksTip") : Strings
-				.getter("simulateEnableTicksTip"));
-		fireToolbarAppearanceChanged();
-	}
+  //
+  // ChangeListener methods
+  //
+  public void stateChanged(ChangeEvent e) {
+    Simulator sim = project.getSimulator();
+    boolean running = sim != null && sim.isRunning();
+    boolean ticking = sim != null && sim.isTicking();
+    simEnable.setIcon(running ? "simstop.png" : "simplay.png");
+    simEnable.setToolTip(running ? Strings
+        .getter("simulateDisableStepsTip") : Strings
+        .getter("simulateEnableStepsTip"));
+    tickEnable.setIcon(ticking ? "simtstop.png" : "simtplay.png");
+    tickEnable.setToolTip(ticking ? Strings
+        .getter("simulateDisableTicksTip") : Strings
+        .getter("simulateEnableTicksTip"));
+    fireToolbarAppearanceChanged();
+  }
 }

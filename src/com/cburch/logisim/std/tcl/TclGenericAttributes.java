@@ -53,72 +53,72 @@ import com.cburch.logisim.std.hdl.VhdlContent;
  */
 public class TclGenericAttributes extends TclComponentAttributes {
 
-	public static HdlContentEditor getContentEditor(Window source,
-			HdlContent value, Project proj) {
-		synchronized (windowRegistry) {
-			HdlContentEditor ret = windowRegistry.get(value);
-			if (ret == null) {
-				if (source instanceof Frame)
-					ret = new HdlContentEditor((Frame) source, proj, value);
-				else
-					ret = new HdlContentEditor((Dialog) source, proj, value);
-				windowRegistry.put(value, ret);
-			}
-			return ret;
-		}
-	}
+  public static HdlContentEditor getContentEditor(Window source,
+      HdlContent value, Project proj) {
+    synchronized (windowRegistry) {
+      HdlContentEditor ret = windowRegistry.get(value);
+      if (ret == null) {
+        if (source instanceof Frame)
+          ret = new HdlContentEditor((Frame) source, proj, value);
+        else
+          ret = new HdlContentEditor((Dialog) source, proj, value);
+        windowRegistry.put(value, ret);
+      }
+      return ret;
+    }
+  }
 
-	private static List<Attribute<?>> attributes = Arrays
-			.asList(new Attribute<?>[] { CONTENT_FILE_ATTR,
-					TclGeneric.CONTENT_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT });
+  private static List<Attribute<?>> attributes = Arrays
+      .asList(new Attribute<?>[] { CONTENT_FILE_ATTR,
+        TclGeneric.CONTENT_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT });
 
-	private final static WeakHashMap<HdlContent, HdlContentEditor> windowRegistry = new WeakHashMap<HdlContent, HdlContentEditor>();
+  private final static WeakHashMap<HdlContent, HdlContentEditor> windowRegistry = new WeakHashMap<HdlContent, HdlContentEditor>();
 
-	private VhdlContent vhdlEntitiy;
+  private VhdlContent vhdlEntitiy;
 
-	TclGenericAttributes() {
-		super();
+  TclGenericAttributes() {
+    super();
 
-		/*
-		 * The editor is the same as for the VhdlContent, only the base template
-		 * changes
-		 */
-		vhdlEntitiy = TclVhdlEntityContent.create();
-	}
+    /*
+     * The editor is the same as for the VhdlContent, only the base template
+     * changes
+     */
+    vhdlEntitiy = TclVhdlEntityContent.create();
+  }
 
-	@Override
-	protected void copyInto(AbstractAttributeSet dest) {
-		TclGenericAttributes attr = (TclGenericAttributes) dest;
-		attr.vhdlEntitiy = vhdlEntitiy;
+  @Override
+  protected void copyInto(AbstractAttributeSet dest) {
+    TclGenericAttributes attr = (TclGenericAttributes) dest;
+    attr.vhdlEntitiy = vhdlEntitiy;
 
-		super.copyInto(dest);
-	}
+    super.copyInto(dest);
+  }
 
-	@Override
-	public List<Attribute<?>> getAttributes() {
-		return attributes;
-	}
+  @Override
+  public List<Attribute<?>> getAttributes() {
+    return attributes;
+  }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public <V> V getValue(Attribute<V> attr) {
+  @SuppressWarnings("unchecked")
+  @Override
+  public <V> V getValue(Attribute<V> attr) {
 
-		if (attr == TclGeneric.CONTENT_ATTR) {
-			return (V) vhdlEntitiy;
-		} else {
-			return super.getValue(attr);
-		}
-	}
+    if (attr == TclGeneric.CONTENT_ATTR) {
+      return (V) vhdlEntitiy;
+    } else {
+      return super.getValue(attr);
+    }
+  }
 
-	@Override
-	public <V> void setValue(Attribute<V> attr, V value) {
-		if (attr == TclGeneric.CONTENT_ATTR) {
-			VhdlContent newContent = (VhdlContent) value;
-			if (!vhdlEntitiy.equals(newContent))
-				vhdlEntitiy = newContent;
-			fireAttributeValueChanged(attr, value);
-		} else {
-			super.setValue(attr, value);
-		}
-	}
+  @Override
+  public <V> void setValue(Attribute<V> attr, V value) {
+    if (attr == TclGeneric.CONTENT_ATTR) {
+      VhdlContent newContent = (VhdlContent) value;
+      if (!vhdlEntitiy.equals(newContent))
+        vhdlEntitiy = newContent;
+      fireAttributeValueChanged(attr, value);
+    } else {
+      super.setValue(attr, value);
+    }
+  }
 }

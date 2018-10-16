@@ -31,9 +31,9 @@
 package com.cburch.logisim.circuit;
 
 public interface SimulatorListener {
-	public void propagationCompleted(SimulatorEvent e);
+  public void propagationCompleted(SimulatorEvent e);
 
-	public void simulatorStateChanged(SimulatorEvent e);
+  public void simulatorStateChanged(SimulatorEvent e);
 
-	public void tickCompleted(SimulatorEvent e);
+  public void tickCompleted(SimulatorEvent e);
 }

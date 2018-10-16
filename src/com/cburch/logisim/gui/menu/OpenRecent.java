@@ -48,100 +48,100 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;
 
 class OpenRecent extends JMenu implements PropertyChangeListener {
-	private class RecentItem extends JMenuItem implements ActionListener {
-		private static final long serialVersionUID = 1L;
-		private File file;
+  private class RecentItem extends JMenuItem implements ActionListener {
+    private static final long serialVersionUID = 1L;
+    private File file;
 
-		RecentItem(File file) {
-			super(getFileText(file));
-			this.file = file;
-			setEnabled(file != null);
-			addActionListener(this);
-		}
+    RecentItem(File file) {
+      super(getFileText(file));
+      this.file = file;
+      setEnabled(file != null);
+      addActionListener(this);
+    }
 
-		public void actionPerformed(ActionEvent event) {
-			Project proj = menubar.getProject();
-			Component par = proj == null ? null : proj.getFrame().getCanvas();
-			ProjectActions.doOpen(par, proj, file);
-			/* This trick allows to open a single window, if the current project hasn't been touched */
-			if (!proj.isFileDirty() &&
-                                          (proj == null || proj.getLogisimFile().getLoader().getMainFile() == null)) {
-				proj.getFrame().dispose();
-			}
-		}
-	}
+    public void actionPerformed(ActionEvent event) {
+      Project proj = menubar.getProject();
+      Component par = proj == null ? null : proj.getFrame().getCanvas();
+      ProjectActions.doOpen(par, proj, file);
+      /* This trick allows to open a single window, if the current project hasn't been touched */
+      if (!proj.isFileDirty() &&
+          (proj == null || proj.getLogisimFile().getLoader().getMainFile() == null)) {
+        proj.getFrame().dispose();
+      }
+    }
+  }
 
-	private static String getFileText(File file) {
-		if (file == null) {
-			return Strings.get("fileOpenRecentNoChoices");
-		} else {
-			String ret;
-			try {
-				ret = file.getCanonicalPath();
-			} catch (IOException e) {
-				ret = file.toString();
-			}
-			if (ret.length() <= MAX_ITEM_LENGTH) {
-				return ret;
-			} else {
-				ret = ret.substring(ret.length() - MAX_ITEM_LENGTH + 3);
-				int splitLoc = ret.indexOf(File.separatorChar);
-				if (splitLoc >= 0) {
-					ret = ret.substring(splitLoc);
-				}
-				return "..." + ret;
-			}
-		}
-	}
+  private static String getFileText(File file) {
+    if (file == null) {
+      return Strings.get("fileOpenRecentNoChoices");
+    } else {
+      String ret;
+      try {
+        ret = file.getCanonicalPath();
+      } catch (IOException e) {
+        ret = file.toString();
+      }
+      if (ret.length() <= MAX_ITEM_LENGTH) {
+        return ret;
+      } else {
+        ret = ret.substring(ret.length() - MAX_ITEM_LENGTH + 3);
+        int splitLoc = ret.indexOf(File.separatorChar);
+        if (splitLoc >= 0) {
+          ret = ret.substring(splitLoc);
+        }
+        return "..." + ret;
+      }
+    }
+  }
 
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	private static final int MAX_ITEM_LENGTH = 50;
-	private LogisimMenuBar menubar;
+  private static final int MAX_ITEM_LENGTH = 50;
+  private LogisimMenuBar menubar;
 
-	private List<RecentItem> recentItems;
+  private List<RecentItem> recentItems;
 
-	OpenRecent(LogisimMenuBar menubar) {
-		this.menubar = menubar;
-		this.recentItems = new ArrayList<RecentItem>();
-		AppPreferences.addPropertyChangeListener(
-				AppPreferences.RECENT_PROJECTS, this);
-		renewItems();
-	}
+  OpenRecent(LogisimMenuBar menubar) {
+    this.menubar = menubar;
+    this.recentItems = new ArrayList<RecentItem>();
+    AppPreferences.addPropertyChangeListener(
+        AppPreferences.RECENT_PROJECTS, this);
+    renewItems();
+  }
 
-	void localeChanged() {
-		setText(Strings.get("fileOpenRecentItem"));
-		for (RecentItem item : recentItems) {
-			if (item.file == null) {
-				item.setText(Strings.get("fileOpenRecentNoChoices"));
-			}
-		}
-	}
+  void localeChanged() {
+    setText(Strings.get("fileOpenRecentItem"));
+    for (RecentItem item : recentItems) {
+      if (item.file == null) {
+        item.setText(Strings.get("fileOpenRecentNoChoices"));
+      }
+    }
+  }
 
-	public void propertyChange(PropertyChangeEvent event) {
-		if (event.getPropertyName().equals(AppPreferences.RECENT_PROJECTS)) {
-			renewItems();
-		}
-	}
+  public void propertyChange(PropertyChangeEvent event) {
+    if (event.getPropertyName().equals(AppPreferences.RECENT_PROJECTS)) {
+      renewItems();
+    }
+  }
 
-	private void renewItems() {
-		for (int index = recentItems.size() - 1; index >= 0; index--) {
-			RecentItem item = recentItems.get(index);
-			remove(item);
-		}
-		recentItems.clear();
+  private void renewItems() {
+    for (int index = recentItems.size() - 1; index >= 0; index--) {
+      RecentItem item = recentItems.get(index);
+      remove(item);
+    }
+    recentItems.clear();
 
-		List<File> files = AppPreferences.getRecentFiles();
-		if (files.isEmpty()) {
-			recentItems.add(new RecentItem(null));
-		} else {
-			for (File file : files) {
-				recentItems.add(new RecentItem(file));
-			}
-		}
+    List<File> files = AppPreferences.getRecentFiles();
+    if (files.isEmpty()) {
+      recentItems.add(new RecentItem(null));
+    } else {
+      for (File file : files) {
+        recentItems.add(new RecentItem(file));
+      }
+    }
 
-		for (RecentItem item : recentItems) {
-			add(item);
-		}
-	}
+    for (RecentItem item : recentItems) {
+      add(item);
+    }
+  }
 }

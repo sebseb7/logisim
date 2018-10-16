@@ -37,13 +37,13 @@ import com.cburch.logisim.analyze.model.Entry;
 import com.cburch.logisim.analyze.model.TruthTable;
 
 interface TruthTablePanel {
-	public static final Color ERROR_COLOR = new Color(255, 128, 128);
+  public static final Color ERROR_COLOR = new Color(255, 128, 128);
 
-	public int getOutputColumn(MouseEvent event);
+  public int getOutputColumn(MouseEvent event);
 
-	public int getRow(MouseEvent event);
+  public int getRow(MouseEvent event);
 
-	public TruthTable getTruthTable();
+  public TruthTable getTruthTable();
 
-	public void setEntryProvisional(int row, int col, Entry value);
+  public void setEntryProvisional(int row, int col, Entry value);
 }

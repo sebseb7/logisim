@@ -45,137 +45,137 @@ import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.std.hdl.VhdlEntity;
 
 public final class CircuitMutation extends CircuitTransaction {
-	private Circuit primary;
-	private List<CircuitChange> changes;
+  private Circuit primary;
+  private List<CircuitChange> changes;
 
-	CircuitMutation() {
-		this(null);
-	}
+  CircuitMutation() {
+    this(null);
+  }
 
-	public CircuitMutation(Circuit circuit) {
-		this.primary = circuit;
-		this.changes = new ArrayList<CircuitChange>();
-	}
+  public CircuitMutation(Circuit circuit) {
+    this.primary = circuit;
+    this.changes = new ArrayList<CircuitChange>();
+  }
 
-	public void add(Component comp) {
-		changes.add(CircuitChange.add(primary, comp));
-	}
+  public void add(Component comp) {
+    changes.add(CircuitChange.add(primary, comp));
+  }
 
-	public void addAll(Collection<? extends Component> comps) {
-		changes.add(CircuitChange.addAll(primary, new ArrayList<Component>(
-				comps)));
-	}
+  public void addAll(Collection<? extends Component> comps) {
+    changes.add(CircuitChange.addAll(primary, new ArrayList<Component>(
+            comps)));
+  }
 
-	void change(CircuitChange change) {
-		changes.add(change);
-	}
+  void change(CircuitChange change) {
+    changes.add(change);
+  }
 
-	public void clear() {
-		changes.add(CircuitChange.clear(primary, null));
-	}
+  public void clear() {
+    changes.add(CircuitChange.clear(primary, null));
+  }
 
-	@Override
-	protected Map<Circuit, Integer> getAccessedCircuits() {
-		HashMap<Circuit, Integer> accessMap = new HashMap<>();
-		HashSet<Circuit> supercircsDone = new HashSet<Circuit>();
-		HashSet<VhdlEntity> vhdlDone = new HashSet<>();
-		HashSet<ComponentFactory> siblingsDone = new HashSet<>();
-		for (CircuitChange change : changes) {
-			Circuit circ = change.getCircuit();
-			accessMap.put(circ, READ_WRITE);
+  @Override
+  protected Map<Circuit, Integer> getAccessedCircuits() {
+    HashMap<Circuit, Integer> accessMap = new HashMap<>();
+    HashSet<Circuit> supercircsDone = new HashSet<Circuit>();
+    HashSet<VhdlEntity> vhdlDone = new HashSet<>();
+    HashSet<ComponentFactory> siblingsDone = new HashSet<>();
+    for (CircuitChange change : changes) {
+      Circuit circ = change.getCircuit();
+      accessMap.put(circ, READ_WRITE);
 
-			if (change.concernsSupercircuit()) {
-				boolean isFirstForCirc = supercircsDone.add(circ);
-				if (isFirstForCirc) {
-					for (Circuit supercirc : circ.getCircuitsUsingThis()) {
-						accessMap.put(supercirc, READ_WRITE);
-					}
-				}
-			}
+      if (change.concernsSupercircuit()) {
+        boolean isFirstForCirc = supercircsDone.add(circ);
+        if (isFirstForCirc) {
+          for (Circuit supercirc : circ.getCircuitsUsingThis()) {
+            accessMap.put(supercirc, READ_WRITE);
+          }
+        }
+      }
 
-			if (change.concernsSiblingComponents()) {
-				ComponentFactory factory = change.getComponent().getFactory();
-				boolean isFirstForSibling = siblingsDone.add(factory);
-				if (isFirstForSibling) {
-					if (factory instanceof SubcircuitFactory) {
-						Circuit sibling = ((SubcircuitFactory)factory).getSubcircuit();
-						boolean isFirstForCirc = supercircsDone.add(sibling);
-						if (isFirstForCirc) {
-							for (Circuit supercirc : sibling.getCircuitsUsingThis()) {
-								accessMap.put(supercirc, READ_WRITE);
-							}
-						}
-					} else if (factory instanceof VhdlEntity) {
-						VhdlEntity sibling = (VhdlEntity)factory;
-						boolean isFirstForVhdl = vhdlDone.add(sibling);
-						if (isFirstForVhdl) {
-							for (Circuit supercirc : sibling.getCircuitsUsingThis()) {
-								accessMap.put(supercirc, READ_WRITE);
-							}
-						}
-					}
-				}
-			}
-		}
-		return accessMap;
-	}
+      if (change.concernsSiblingComponents()) {
+        ComponentFactory factory = change.getComponent().getFactory();
+        boolean isFirstForSibling = siblingsDone.add(factory);
+        if (isFirstForSibling) {
+          if (factory instanceof SubcircuitFactory) {
+            Circuit sibling = ((SubcircuitFactory)factory).getSubcircuit();
+            boolean isFirstForCirc = supercircsDone.add(sibling);
+            if (isFirstForCirc) {
+              for (Circuit supercirc : sibling.getCircuitsUsingThis()) {
+                accessMap.put(supercirc, READ_WRITE);
+              }
+            }
+          } else if (factory instanceof VhdlEntity) {
+            VhdlEntity sibling = (VhdlEntity)factory;
+            boolean isFirstForVhdl = vhdlDone.add(sibling);
+            if (isFirstForVhdl) {
+              for (Circuit supercirc : sibling.getCircuitsUsingThis()) {
+                accessMap.put(supercirc, READ_WRITE);
+              }
+            }
+          }
+        }
+      }
+    }
+    return accessMap;
+  }
 
-	public boolean isEmpty() {
-		return changes.isEmpty();
-	}
+  public boolean isEmpty() {
+    return changes.isEmpty();
+  }
 
-	public void remove(Component comp) {
-		changes.add(CircuitChange.remove(primary, comp));
-	}
+  public void remove(Component comp) {
+    changes.add(CircuitChange.remove(primary, comp));
+  }
 
-	public void removeAll(Collection<? extends Component> comps) {
-		changes.add(CircuitChange.removeAll(primary, new ArrayList<Component>(
-				comps)));
-	}
+  public void removeAll(Collection<? extends Component> comps) {
+    changes.add(CircuitChange.removeAll(primary, new ArrayList<Component>(
+            comps)));
+  }
 
-	public void replace(Component oldComp, Component newComp) {
-		ReplacementMap repl = new ReplacementMap(oldComp, newComp);
-		changes.add(CircuitChange.replace(primary, repl));
-	}
+  public void replace(Component oldComp, Component newComp) {
+    ReplacementMap repl = new ReplacementMap(oldComp, newComp);
+    changes.add(CircuitChange.replace(primary, repl));
+  }
 
-	public void replace(ReplacementMap replacements) {
-		if (!replacements.isEmpty()) {
-			replacements.freeze();
-			changes.add(CircuitChange.replace(primary, replacements));
-		}
-	}
+  public void replace(ReplacementMap replacements) {
+    if (!replacements.isEmpty()) {
+      replacements.freeze();
+      changes.add(CircuitChange.replace(primary, replacements));
+    }
+  }
 
-	@Override
-	protected void run(CircuitMutator mutator) {
-		Circuit curCircuit = null;
-		ReplacementMap curReplacements = null;
-		for (CircuitChange change : changes) {
-			Circuit circ = change.getCircuit();
-			if (circ != curCircuit) {
-				if (curCircuit != null) {
-					mutator.replace(curCircuit, curReplacements);
-				}
-				curCircuit = circ;
-				curReplacements = new ReplacementMap();
-			}
-			change.execute(mutator, curReplacements);
-		}
-		if (curCircuit != null) {
-			mutator.replace(curCircuit, curReplacements);
-		}
-	}
+  @Override
+  protected void run(CircuitMutator mutator) {
+    Circuit curCircuit = null;
+    ReplacementMap curReplacements = null;
+    for (CircuitChange change : changes) {
+      Circuit circ = change.getCircuit();
+      if (circ != curCircuit) {
+        if (curCircuit != null) {
+          mutator.replace(curCircuit, curReplacements);
+        }
+        curCircuit = circ;
+        curReplacements = new ReplacementMap();
+      }
+      change.execute(mutator, curReplacements);
+    }
+    if (curCircuit != null) {
+      mutator.replace(curCircuit, curReplacements);
+    }
+  }
 
-	public void set(Component comp, Attribute<?> attr, Object value) {
-		changes.add(CircuitChange.set(primary, comp, attr, value));
-	}
+  public void set(Component comp, Attribute<?> attr, Object value) {
+    changes.add(CircuitChange.set(primary, comp, attr, value));
+  }
 
-	public void setForCircuit(Attribute<?> attr, Object value) {
-		changes.add(CircuitChange.setForCircuit(primary, attr, value));
-	}
+  public void setForCircuit(Attribute<?> attr, Object value) {
+    changes.add(CircuitChange.setForCircuit(primary, attr, value));
+  }
 
-	public Action toAction(StringGetter name) {
-		if (name == null)
-			name = Strings.getter("unknownChangeAction");
-		return new CircuitAction(name, this);
-	}
+  public Action toAction(StringGetter name) {
+    if (name == null)
+      name = Strings.getter("unknownChangeAction");
+    return new CircuitAction(name, this);
+  }
 }

@@ -52,178 +52,178 @@ import com.cburch.logisim.util.GraphicsUtil;
 
 public class Multiplier extends InstanceFactory {
 
-	public static final AttributeOption SIGNED_OPTION = Comparator.SIGNED_OPTION;
-	public static final AttributeOption UNSIGNED_OPTION = Comparator.UNSIGNED_OPTION;
-	public static final Attribute<AttributeOption> MODE_ATTR = Comparator.MODE_ATTRIBUTE;
+  public static final AttributeOption SIGNED_OPTION = Comparator.SIGNED_OPTION;
+  public static final AttributeOption UNSIGNED_OPTION = Comparator.UNSIGNED_OPTION;
+  public static final Attribute<AttributeOption> MODE_ATTR = Comparator.MODE_ATTRIBUTE;
 
-	static long extend(int w, int v, boolean unsigned) {
-		long mask = (1L << w) - 1;
-		if (unsigned) return v & mask;
-		else if ((v & (1<<(w-1))) != 0) return (long)v | ~mask;
-		else return (long)v;
-	}
+  static long extend(int w, int v, boolean unsigned) {
+    long mask = (1L << w) - 1;
+    if (unsigned) return v & mask;
+    else if ((v & (1<<(w-1))) != 0) return (long)v | ~mask;
+    else return (long)v;
+  }
 
-	static Value[] computeProduct(BitWidth width, Value a, Value b, Value c_in, boolean unsigned) {
-		int w = width.getWidth();
-		if (c_in == Value.NIL || c_in.isUnknown())
-			c_in = Value.createKnown(width, 0);
-		if (a.isFullyDefined() && b.isFullyDefined() && c_in.isFullyDefined()) {
-			BigInteger aa = BigInteger.valueOf(extend(w, a.toIntValue(), unsigned));
-			BigInteger bb = BigInteger.valueOf(extend(w, b.toIntValue(), unsigned));
-			BigInteger cc = BigInteger.valueOf(extend(w, c_in.toIntValue(), unsigned));
-			BigInteger rr = aa.multiply(bb).add(cc);
-			long mask = (1L << w) - 1;
-			int lo = rr.and(BigInteger.valueOf(mask)).intValue();
-			int hi = rr.shiftRight(w).and(BigInteger.valueOf(mask)).intValue();
-			return new Value[] { Value.createKnown(width, lo), Value.createKnown(width, hi) };
-		} else {
-			Value[] avals = a.getAll();
-			int aOk = findUnknown(avals);
-			int aErr = findError(avals);
-			int ax = getKnown(avals);
-			Value[] bvals = b.getAll();
-			int bOk = findUnknown(bvals);
-			int bErr = findError(bvals);
-			int bx = getKnown(bvals);
-			Value[] cvals = c_in.getAll();
-			int cOk = findUnknown(cvals);
-			int cErr = findError(cvals);
-			int cx = getKnown(cvals);
+  static Value[] computeProduct(BitWidth width, Value a, Value b, Value c_in, boolean unsigned) {
+    int w = width.getWidth();
+    if (c_in == Value.NIL || c_in.isUnknown())
+      c_in = Value.createKnown(width, 0);
+    if (a.isFullyDefined() && b.isFullyDefined() && c_in.isFullyDefined()) {
+      BigInteger aa = BigInteger.valueOf(extend(w, a.toIntValue(), unsigned));
+      BigInteger bb = BigInteger.valueOf(extend(w, b.toIntValue(), unsigned));
+      BigInteger cc = BigInteger.valueOf(extend(w, c_in.toIntValue(), unsigned));
+      BigInteger rr = aa.multiply(bb).add(cc);
+      long mask = (1L << w) - 1;
+      int lo = rr.and(BigInteger.valueOf(mask)).intValue();
+      int hi = rr.shiftRight(w).and(BigInteger.valueOf(mask)).intValue();
+      return new Value[] { Value.createKnown(width, lo), Value.createKnown(width, hi) };
+    } else {
+      Value[] avals = a.getAll();
+      int aOk = findUnknown(avals);
+      int aErr = findError(avals);
+      int ax = getKnown(avals);
+      Value[] bvals = b.getAll();
+      int bOk = findUnknown(bvals);
+      int bErr = findError(bvals);
+      int bx = getKnown(bvals);
+      Value[] cvals = c_in.getAll();
+      int cOk = findUnknown(cvals);
+      int cErr = findError(cvals);
+      int cx = getKnown(cvals);
 
-			int known = Math.min(Math.min(aOk, bOk), cOk);
-			int error = Math.min(Math.min(aErr, bErr), cErr);
+      int known = Math.min(Math.min(aOk, bOk), cOk);
+      int error = Math.min(Math.min(aErr, bErr), cErr);
 
-			// fixme: this is probably wrong, but the inputs were bad anyway
-			BigInteger aa = BigInteger.valueOf(extend(w, ax, unsigned));
-			BigInteger bb = BigInteger.valueOf(extend(w, bx, unsigned));
-			BigInteger cc = BigInteger.valueOf(extend(w, cx, unsigned));
-			BigInteger rr = aa.multiply(bb).add(cc);
-			long ret = rr.longValue();
+      // fixme: this is probably wrong, but the inputs were bad anyway
+      BigInteger aa = BigInteger.valueOf(extend(w, ax, unsigned));
+      BigInteger bb = BigInteger.valueOf(extend(w, bx, unsigned));
+      BigInteger cc = BigInteger.valueOf(extend(w, cx, unsigned));
+      BigInteger rr = aa.multiply(bb).add(cc);
+      long ret = rr.longValue();
 
-			Value[] bits = new Value[w];
-			for (int i = 0; i < w; i++) {
-				if (i < known) {
-					bits[i] = ((ret & (1 << i)) != 0 ? Value.TRUE : Value.FALSE);
-				} else if (i < error) {
-					bits[i] = Value.UNKNOWN;
-				} else {
-					bits[i] = Value.ERROR;
-				}
-			}
-			return new Value[] {
-					Value.create(bits),
-					error < w ? Value.createError(width) : Value.createUnknown(width) };
-		}
-	}
+      Value[] bits = new Value[w];
+      for (int i = 0; i < w; i++) {
+        if (i < known) {
+          bits[i] = ((ret & (1 << i)) != 0 ? Value.TRUE : Value.FALSE);
+        } else if (i < error) {
+          bits[i] = Value.UNKNOWN;
+        } else {
+          bits[i] = Value.ERROR;
+        }
+      }
+      return new Value[] {
+        Value.create(bits),
+            error < w ? Value.createError(width) : Value.createUnknown(width) };
+    }
+  }
 
-	private static int findError(Value[] vals) {
-		for (int i = 0; i < vals.length; i++) {
-			if (vals[i].isErrorValue())
-				return i;
-		}
-		return vals.length;
-	}
+  private static int findError(Value[] vals) {
+    for (int i = 0; i < vals.length; i++) {
+      if (vals[i].isErrorValue())
+        return i;
+    }
+    return vals.length;
+  }
 
-	private static int findUnknown(Value[] vals) {
-		for (int i = 0; i < vals.length; i++) {
-			if (!vals[i].isFullyDefined())
-				return i;
-		}
-		return vals.length;
-	}
+  private static int findUnknown(Value[] vals) {
+    for (int i = 0; i < vals.length; i++) {
+      if (!vals[i].isFullyDefined())
+        return i;
+    }
+    return vals.length;
+  }
 
-	private static int getKnown(Value[] vals) {
-		int ret = 0;
-		for (int i = 0; i < vals.length; i++) {
-			int val = vals[i].toIntValue();
-			if (val < 0)
-				return ret;
-			ret |= val << i;
-		}
-		return ret;
-	}
+  private static int getKnown(Value[] vals) {
+    int ret = 0;
+    for (int i = 0; i < vals.length; i++) {
+      int val = vals[i].toIntValue();
+      if (val < 0)
+        return ret;
+      ret |= val << i;
+    }
+    return ret;
+  }
 
-	static final int PER_DELAY = 1;
-	public static final int IN0 = 0;
+  static final int PER_DELAY = 1;
+  public static final int IN0 = 0;
 
-	public static final int IN1 = 1;
+  public static final int IN1 = 1;
 
-	public static final int OUT = 2;
+  public static final int OUT = 2;
 
-	public static final int C_IN = 3;
+  public static final int C_IN = 3;
 
-	public static final int C_OUT = 4;
+  public static final int C_OUT = 4;
 
-	public static final Attribute<BitWidth> WIDTH_ATTR = Attributes
-			.forBitWidth("width", Strings.getter("stdDataWidthAttr"), 2, 32);
+  public static final Attribute<BitWidth> WIDTH_ATTR = Attributes
+      .forBitWidth("width", Strings.getter("stdDataWidthAttr"), 2, 32);
 
-	public Multiplier() {
-		super("Multiplier", Strings.getter("multiplierComponent"));
-		setAttributes(new Attribute[] { WIDTH_ATTR, MODE_ATTR },
-				new Object[] { BitWidth.create(8), SIGNED_OPTION });
-		setKeyConfigurator(new BitWidthConfigurator(WIDTH_ATTR));
-		setOffsetBounds(Bounds.create(-40, -20, 40, 40));
-		setIconName("multiplier.gif");
+  public Multiplier() {
+    super("Multiplier", Strings.getter("multiplierComponent"));
+    setAttributes(new Attribute[] { WIDTH_ATTR, MODE_ATTR },
+        new Object[] { BitWidth.create(8), SIGNED_OPTION });
+    setKeyConfigurator(new BitWidthConfigurator(WIDTH_ATTR));
+    setOffsetBounds(Bounds.create(-40, -20, 40, 40));
+    setIconName("multiplier.gif");
 
-		Port[] ps = new Port[5];
-		ps[IN0] = new Port(-40, -10, Port.INPUT, WIDTH_ATTR);
-		ps[IN1] = new Port(-40, 10, Port.INPUT, WIDTH_ATTR);
-		ps[OUT] = new Port(0, 0, Port.OUTPUT, WIDTH_ATTR);
-		ps[C_IN] = new Port(-20, -20, Port.INPUT, WIDTH_ATTR);
-		ps[C_OUT] = new Port(-20, 20, Port.OUTPUT, WIDTH_ATTR);
-		ps[IN0].setToolTip(Strings.getter("multiplierInputTip"));
-		ps[IN1].setToolTip(Strings.getter("multiplierInputTip"));
-		ps[OUT].setToolTip(Strings.getter("multiplierOutputTip"));
-		ps[C_IN].setToolTip(Strings.getter("multiplierCarryInTip"));
-		ps[C_OUT].setToolTip(Strings.getter("multiplierCarryOutTip"));
-		setPorts(ps);
-	}
+    Port[] ps = new Port[5];
+    ps[IN0] = new Port(-40, -10, Port.INPUT, WIDTH_ATTR);
+    ps[IN1] = new Port(-40, 10, Port.INPUT, WIDTH_ATTR);
+    ps[OUT] = new Port(0, 0, Port.OUTPUT, WIDTH_ATTR);
+    ps[C_IN] = new Port(-20, -20, Port.INPUT, WIDTH_ATTR);
+    ps[C_OUT] = new Port(-20, 20, Port.OUTPUT, WIDTH_ATTR);
+    ps[IN0].setToolTip(Strings.getter("multiplierInputTip"));
+    ps[IN1].setToolTip(Strings.getter("multiplierInputTip"));
+    ps[OUT].setToolTip(Strings.getter("multiplierOutputTip"));
+    ps[C_IN].setToolTip(Strings.getter("multiplierCarryInTip"));
+    ps[C_OUT].setToolTip(Strings.getter("multiplierCarryOutTip"));
+    setPorts(ps);
+  }
 
-	@Override
-	public boolean HDLSupportedComponent(String HDLIdentifier,
-			AttributeSet attrs, char Vendor) {
-		if (MyHDLGenerator == null)
-			MyHDLGenerator = new MultiplierHDLGeneratorFactory();
-		return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
-	}
+  @Override
+  public boolean HDLSupportedComponent(String HDLIdentifier,
+      AttributeSet attrs, char Vendor) {
+    if (MyHDLGenerator == null)
+      MyHDLGenerator = new MultiplierHDLGeneratorFactory();
+    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  }
 
-	@Override
-	public void paintInstance(InstancePainter painter) {
-		Graphics g = painter.getGraphics();
-		painter.drawBounds();
+  @Override
+  public void paintInstance(InstancePainter painter) {
+    Graphics g = painter.getGraphics();
+    painter.drawBounds();
 
-		g.setColor(Color.GRAY);
-		painter.drawPort(IN0);
-		painter.drawPort(IN1);
-		painter.drawPort(OUT);
-		painter.drawPort(C_IN, "c in", Direction.NORTH);
-		painter.drawPort(C_OUT, "c out", Direction.SOUTH);
+    g.setColor(Color.GRAY);
+    painter.drawPort(IN0);
+    painter.drawPort(IN1);
+    painter.drawPort(OUT);
+    painter.drawPort(C_IN, "c in", Direction.NORTH);
+    painter.drawPort(C_OUT, "c out", Direction.SOUTH);
 
-		Location loc = painter.getLocation();
-		int x = loc.getX();
-		int y = loc.getY();
-		GraphicsUtil.switchToWidth(g, 2);
-		g.setColor(Color.BLACK);
-		g.drawLine(x - 15, y - 5, x - 5, y + 5);
-		g.drawLine(x - 15, y + 5, x - 5, y - 5);
-		GraphicsUtil.switchToWidth(g, 1);
-	}
+    Location loc = painter.getLocation();
+    int x = loc.getX();
+    int y = loc.getY();
+    GraphicsUtil.switchToWidth(g, 2);
+    g.setColor(Color.BLACK);
+    g.drawLine(x - 15, y - 5, x - 5, y + 5);
+    g.drawLine(x - 15, y + 5, x - 5, y - 5);
+    GraphicsUtil.switchToWidth(g, 1);
+  }
 
-	@Override
-	public void propagate(InstanceState state) {
-		// get attributes
-		BitWidth dataWidth = state.getAttributeValue(WIDTH_ATTR);
-		boolean unsigned = state.getAttributeValue(MODE_ATTR).equals(UNSIGNED_OPTION);
+  @Override
+  public void propagate(InstanceState state) {
+    // get attributes
+    BitWidth dataWidth = state.getAttributeValue(WIDTH_ATTR);
+    boolean unsigned = state.getAttributeValue(MODE_ATTR).equals(UNSIGNED_OPTION);
 
-		// compute outputs
-		Value a = state.getPortValue(IN0);
-		Value b = state.getPortValue(IN1);
-		Value c_in = state.getPortValue(C_IN);
-		Value[] outs = computeProduct(dataWidth, a, b, c_in, unsigned);
+    // compute outputs
+    Value a = state.getPortValue(IN0);
+    Value b = state.getPortValue(IN1);
+    Value c_in = state.getPortValue(C_IN);
+    Value[] outs = computeProduct(dataWidth, a, b, c_in, unsigned);
 
-		// propagate them
-		int delay = dataWidth.getWidth() * (dataWidth.getWidth() + 2) * PER_DELAY;
-		state.setPort(OUT, outs[0], delay);
-		state.setPort(C_OUT, outs[1], delay);
-	}
+    // propagate them
+    int delay = dataWidth.getWidth() * (dataWidth.getWidth() + 2) * PER_DELAY;
+    state.setPort(OUT, outs[0], delay);
+    state.setPort(C_OUT, outs[1], delay);
+  }
 }

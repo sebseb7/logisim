@@ -47,76 +47,76 @@ import com.cburch.logisim.instance.Port;
  */
 public class TclConsoleReds extends TclComponent {
 
-	public TclConsoleReds() {
-		super("TclConsoleReds", Strings.getter("tclConsoleReds"));
+  public TclConsoleReds() {
+    super("TclConsoleReds", Strings.getter("tclConsoleReds"));
 
-		List<PortDescription> inputsDesc = new ArrayList<PortDescription>();
-		List<PortDescription> outputsDesc = new ArrayList<PortDescription>();
+    List<PortDescription> inputsDesc = new ArrayList<PortDescription>();
+    List<PortDescription> outputsDesc = new ArrayList<PortDescription>();
 
-		outputsDesc.add(new PortDescription("S0_sti", "output", 1));
-		outputsDesc.add(new PortDescription("S1_sti", "output", 1));
-		outputsDesc.add(new PortDescription("S2_sti", "output", 1));
-		outputsDesc.add(new PortDescription("S3_sti", "output", 1));
-		outputsDesc.add(new PortDescription("S4_sti", "output", 1));
-		outputsDesc.add(new PortDescription("S5_sti", "output", 1));
-		outputsDesc.add(new PortDescription("S6_sti", "output", 1));
-		outputsDesc.add(new PortDescription("S7_sti", "output", 1));
-		outputsDesc.add(new PortDescription("S8_sti", "output", 1));
-		outputsDesc.add(new PortDescription("S9_sti", "output", 1));
-		outputsDesc.add(new PortDescription("S10_sti", "output", 1));
-		outputsDesc.add(new PortDescription("S11_sti", "output", 1));
-		outputsDesc.add(new PortDescription("S12_sti", "output", 1));
-		outputsDesc.add(new PortDescription("S13_sti", "output", 1));
-		outputsDesc.add(new PortDescription("S14_sti", "output", 1));
-		outputsDesc.add(new PortDescription("S15_sti", "output", 1));
-		outputsDesc.add(new PortDescription("Val_A_sti", "output", 16));
-		outputsDesc.add(new PortDescription("Val_B_sti", "output", 16));
+    outputsDesc.add(new PortDescription("S0_sti", "output", 1));
+    outputsDesc.add(new PortDescription("S1_sti", "output", 1));
+    outputsDesc.add(new PortDescription("S2_sti", "output", 1));
+    outputsDesc.add(new PortDescription("S3_sti", "output", 1));
+    outputsDesc.add(new PortDescription("S4_sti", "output", 1));
+    outputsDesc.add(new PortDescription("S5_sti", "output", 1));
+    outputsDesc.add(new PortDescription("S6_sti", "output", 1));
+    outputsDesc.add(new PortDescription("S7_sti", "output", 1));
+    outputsDesc.add(new PortDescription("S8_sti", "output", 1));
+    outputsDesc.add(new PortDescription("S9_sti", "output", 1));
+    outputsDesc.add(new PortDescription("S10_sti", "output", 1));
+    outputsDesc.add(new PortDescription("S11_sti", "output", 1));
+    outputsDesc.add(new PortDescription("S12_sti", "output", 1));
+    outputsDesc.add(new PortDescription("S13_sti", "output", 1));
+    outputsDesc.add(new PortDescription("S14_sti", "output", 1));
+    outputsDesc.add(new PortDescription("S15_sti", "output", 1));
+    outputsDesc.add(new PortDescription("Val_A_sti", "output", 16));
+    outputsDesc.add(new PortDescription("Val_B_sti", "output", 16));
 
-		inputsDesc.add(new PortDescription("Hex0_obs", "input", 4));
-		inputsDesc.add(new PortDescription("Hex1_obs", "input", 4));
-		inputsDesc.add(new PortDescription("L0_obs", "input", 1));
-		inputsDesc.add(new PortDescription("L1_obs", "input", 1));
-		inputsDesc.add(new PortDescription("L2_obs", "input", 1));
-		inputsDesc.add(new PortDescription("L3_obs", "input", 1));
-		inputsDesc.add(new PortDescription("L4_obs", "input", 1));
-		inputsDesc.add(new PortDescription("L5_obs", "input", 1));
-		inputsDesc.add(new PortDescription("L6_obs", "input", 1));
-		inputsDesc.add(new PortDescription("L7_obs", "input", 1));
-		inputsDesc.add(new PortDescription("L8_obs", "input", 1));
-		inputsDesc.add(new PortDescription("L9_obs", "input", 1));
-		inputsDesc.add(new PortDescription("L10_obs", "input", 1));
-		inputsDesc.add(new PortDescription("L11_obs", "input", 1));
-		inputsDesc.add(new PortDescription("L12_obs", "input", 1));
-		inputsDesc.add(new PortDescription("L13_obs", "input", 1));
-		inputsDesc.add(new PortDescription("L14_obs", "input", 1));
-		inputsDesc.add(new PortDescription("L15_obs", "input", 1));
-		inputsDesc.add(new PortDescription("Result_A_obs", "input", 16));
-		inputsDesc.add(new PortDescription("Result_B_obs", "input", 16));
-		inputsDesc.add(new PortDescription("seg7_obs", "input", 8));
-		inputsDesc.add(new PortDescription("sysclk_i", "input", 1));
+    inputsDesc.add(new PortDescription("Hex0_obs", "input", 4));
+    inputsDesc.add(new PortDescription("Hex1_obs", "input", 4));
+    inputsDesc.add(new PortDescription("L0_obs", "input", 1));
+    inputsDesc.add(new PortDescription("L1_obs", "input", 1));
+    inputsDesc.add(new PortDescription("L2_obs", "input", 1));
+    inputsDesc.add(new PortDescription("L3_obs", "input", 1));
+    inputsDesc.add(new PortDescription("L4_obs", "input", 1));
+    inputsDesc.add(new PortDescription("L5_obs", "input", 1));
+    inputsDesc.add(new PortDescription("L6_obs", "input", 1));
+    inputsDesc.add(new PortDescription("L7_obs", "input", 1));
+    inputsDesc.add(new PortDescription("L8_obs", "input", 1));
+    inputsDesc.add(new PortDescription("L9_obs", "input", 1));
+    inputsDesc.add(new PortDescription("L10_obs", "input", 1));
+    inputsDesc.add(new PortDescription("L11_obs", "input", 1));
+    inputsDesc.add(new PortDescription("L12_obs", "input", 1));
+    inputsDesc.add(new PortDescription("L13_obs", "input", 1));
+    inputsDesc.add(new PortDescription("L14_obs", "input", 1));
+    inputsDesc.add(new PortDescription("L15_obs", "input", 1));
+    inputsDesc.add(new PortDescription("Result_A_obs", "input", 16));
+    inputsDesc.add(new PortDescription("Result_B_obs", "input", 16));
+    inputsDesc.add(new PortDescription("seg7_obs", "input", 8));
+    inputsDesc.add(new PortDescription("sysclk_i", "input", 1));
 
-		Port[] inputs = new Port[inputsDesc.size()];
-		Port[] outputs = new Port[outputsDesc.size()];
+    Port[] inputs = new Port[inputsDesc.size()];
+    Port[] outputs = new Port[outputsDesc.size()];
 
-		for (int i = 0; i < inputsDesc.size(); i++) {
-			PortDescription desc = inputsDesc.get(i);
-			inputs[i] = new Port(0, (i * PORT_GAP) + HEIGHT, desc.getType(),
-					desc.getWidth());
-			inputs[i].setToolTip(Strings.getter(desc.getName()));
-		}
+    for (int i = 0; i < inputsDesc.size(); i++) {
+      PortDescription desc = inputsDesc.get(i);
+      inputs[i] = new Port(0, (i * PORT_GAP) + HEIGHT, desc.getType(),
+          desc.getWidth());
+      inputs[i].setToolTip(Strings.getter(desc.getName()));
+    }
 
-		for (int i = 0; i < outputsDesc.size(); i++) {
-			PortDescription desc = outputsDesc.get(i);
-			outputs[i] = new Port(WIDTH, (i * PORT_GAP) + HEIGHT,
-					desc.getType(), desc.getWidth());
-			outputs[i].setToolTip(Strings.getter(desc.getName()));
-		}
+    for (int i = 0; i < outputsDesc.size(); i++) {
+      PortDescription desc = outputsDesc.get(i);
+      outputs[i] = new Port(WIDTH, (i * PORT_GAP) + HEIGHT,
+          desc.getType(), desc.getWidth());
+      outputs[i].setToolTip(Strings.getter(desc.getName()));
+    }
 
-		setPorts(inputs, outputs);
-	}
+    setPorts(inputs, outputs);
+  }
 
-	@Override
-	public String getDisplayName() {
-		return Strings.get("tclConsoleReds");
-	}
+  @Override
+  public String getDisplayName() {
+    return Strings.get("tclConsoleReds");
+  }
 }

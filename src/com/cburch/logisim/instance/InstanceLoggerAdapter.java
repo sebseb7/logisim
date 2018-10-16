@@ -39,64 +39,64 @@ import com.cburch.logisim.gui.log.Loggable;
 
 class InstanceLoggerAdapter implements Loggable {
 
-	final static Logger loggerS = LoggerFactory
-			.getLogger(InstanceLoggerAdapter.class);
+  final static Logger loggerS = LoggerFactory
+      .getLogger(InstanceLoggerAdapter.class);
 
-	private InstanceComponent comp;
-	private InstanceLogger logger;
-	private InstanceStateImpl state;
+  private InstanceComponent comp;
+  private InstanceLogger logger;
+  private InstanceStateImpl state;
 
-	public InstanceLoggerAdapter(InstanceComponent comp,
-			Class<? extends InstanceLogger> loggerClass) {
-		try {
-			this.comp = comp;
-			this.logger = loggerClass.newInstance();
-			this.state = new InstanceStateImpl(null, comp);
-		} catch (Exception t) {
-			handleError(t, loggerClass);
-			logger = null;
-		}
-	}
+  public InstanceLoggerAdapter(InstanceComponent comp,
+      Class<? extends InstanceLogger> loggerClass) {
+    try {
+      this.comp = comp;
+      this.logger = loggerClass.newInstance();
+      this.state = new InstanceStateImpl(null, comp);
+    } catch (Exception t) {
+      handleError(t, loggerClass);
+      logger = null;
+    }
+  }
 
-	public String getLogName(Object option) {
-		if (logger != null) {
-			return logger.getLogName(state, option);
-		} else {
-			return null;
-		}
-	}
+  public String getLogName(Object option) {
+    if (logger != null) {
+      return logger.getLogName(state, option);
+    } else {
+      return null;
+    }
+  }
 
-	public Object[] getLogOptions(CircuitState circState) {
-		if (logger != null) {
-			updateState(circState);
-			return logger.getLogOptions(state);
-		} else {
-			return null;
-		}
-	}
+  public Object[] getLogOptions(CircuitState circState) {
+    if (logger != null) {
+      updateState(circState);
+      return logger.getLogOptions(state);
+    } else {
+      return null;
+    }
+  }
 
-	public Value getLogValue(CircuitState circuitState, Object option) {
-		if (logger != null) {
-			updateState(circuitState);
-			return logger.getLogValue(state, option);
-		} else {
-			return Value.UNKNOWN;
-		}
-	}
+  public Value getLogValue(CircuitState circuitState, Object option) {
+    if (logger != null) {
+      updateState(circuitState);
+      return logger.getLogValue(state, option);
+    } else {
+      return Value.UNKNOWN;
+    }
+  }
 
-	private void handleError(Throwable t,
-			Class<? extends InstanceLogger> loggerClass) {
-		String className = loggerClass.getName();
-		loggerS.error("Error while instantiating logger {}: {}", className, t
-				.getClass().getName());
-		String msg = t.getMessage();
-		if (msg != null)
-			loggerS.error("  ({})", msg); // OK
-	}
+  private void handleError(Throwable t,
+      Class<? extends InstanceLogger> loggerClass) {
+    String className = loggerClass.getName();
+    loggerS.error("Error while instantiating logger {}: {}", className, t
+        .getClass().getName());
+    String msg = t.getMessage();
+    if (msg != null)
+      loggerS.error("  ({})", msg); // OK
+  }
 
-	private void updateState(CircuitState circuitState) {
-		if (state.getCircuitState() != circuitState) {
-			state.repurpose(circuitState, comp);
-		}
-	}
+  private void updateState(CircuitState circuitState) {
+    if (state.getCircuitState() != circuitState) {
+      state.repurpose(circuitState, comp);
+    }
+  }
 }

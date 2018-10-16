@@ -42,61 +42,61 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Value;
 
 public class DFlipFlop extends AbstractFlipFlop {
-	private class DFFHDLGeneratorFactory extends
-			AbstractFlipFlopHDLGeneratorFactory {
-		@Override
-		public String ComponentName() {
-			return "D Flip-Flop";
-		}
+  private class DFFHDLGeneratorFactory
+    extends AbstractFlipFlopHDLGeneratorFactory {
+    @Override
+    public String ComponentName() {
+      return "D Flip-Flop";
+    }
 
-		@Override
-		public Map<String, String> GetInputMaps(NetlistComponent ComponentInfo,
-				Netlist Nets, FPGAReport Reporter, String HDLType) {
-			Map<String, String> PortMap = new HashMap<String, String>();
-			PortMap.putAll(GetNetMap("D", true, ComponentInfo, 0, Reporter,
-					HDLType, Nets));
-			return PortMap;
-		}
+    @Override
+    public Map<String, String> GetInputMaps(NetlistComponent ComponentInfo,
+        Netlist Nets, FPGAReport Reporter, String HDLType) {
+      Map<String, String> PortMap = new HashMap<String, String>();
+      PortMap.putAll(GetNetMap("D", true, ComponentInfo, 0, Reporter,
+            HDLType, Nets));
+      return PortMap;
+    }
 
-		@Override
-		public Map<String, Integer> GetInputPorts() {
-			Map<String, Integer> Inputs = new HashMap<String, Integer>();
-			Inputs.put("D", 1);
-			return Inputs;
-		}
+    @Override
+    public Map<String, Integer> GetInputPorts() {
+      Map<String, Integer> Inputs = new HashMap<String, Integer>();
+      Inputs.put("D", 1);
+      return Inputs;
+    }
 
-		@Override
-		public ArrayList<String> GetUpdateLogic(String HDLType) {
-			ArrayList<String> Contents = new ArrayList<String>();
-			if (HDLType.endsWith(Settings.VHDL))
-				Contents.add("   s_next_state <= D;");
-			else
-				Contents.add("   assign s_next_state = D;");
-			return Contents;
-		}
-	}
+    @Override
+    public ArrayList<String> GetUpdateLogic(String HDLType) {
+      ArrayList<String> Contents = new ArrayList<String>();
+      if (HDLType.endsWith(Settings.VHDL))
+        Contents.add("   s_next_state <= D;");
+      else
+        Contents.add("   assign s_next_state = D;");
+      return Contents;
+    }
+  }
 
-	public DFlipFlop() {
-		super("D Flip-Flop", "dFlipFlop.gif", Strings
-				.getter("dFlipFlopComponent"), 1, true);
-	}
+  public DFlipFlop() {
+    super("D Flip-Flop", "dFlipFlop.gif", Strings
+        .getter("dFlipFlopComponent"), 1, true);
+  }
 
-	@Override
-	protected Value computeValue(Value[] inputs, Value curValue) {
-		return inputs[0];
-	}
+  @Override
+  protected Value computeValue(Value[] inputs, Value curValue) {
+    return inputs[0];
+  }
 
-	@Override
-	protected String getInputName(int index) {
-		return "D";
-	}
+  @Override
+  protected String getInputName(int index) {
+    return "D";
+  }
 
-	@Override
-	public boolean HDLSupportedComponent(String HDLIdentifier,
-			AttributeSet attrs, char Vendor) {
-		if (MyHDLGenerator == null)
-			MyHDLGenerator = new DFFHDLGeneratorFactory();
-		return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
-	}
+  @Override
+  public boolean HDLSupportedComponent(String HDLIdentifier,
+      AttributeSet attrs, char Vendor) {
+    if (MyHDLGenerator == null)
+      MyHDLGenerator = new DFFHDLGeneratorFactory();
+    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  }
 
 }

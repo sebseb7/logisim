@@ -45,126 +45,126 @@ import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.util.Dag;
 
 public class Dependencies {
-	private class MyListener implements LibraryListener, CircuitListener {
-		public void circuitChanged(CircuitEvent e) {
-			Component comp;
-			switch (e.getAction()) {
-			case CircuitEvent.ACTION_ADD:
-				comp = (Component) e.getData();
-				if (comp.getFactory() instanceof SubcircuitFactory) {
-					SubcircuitFactory factory = (SubcircuitFactory) comp
-							.getFactory();
-					depends.addEdge(e.getCircuit(), factory.getSubcircuit());
-                                } else if (comp.getFactory() instanceof VhdlEntity) {
-                                        VhdlEntity factory = (VhdlEntity) comp .getFactory();
-                                        depends.addEdge(e.getCircuit(), factory.getContent());
-                                }
-				break;
-			case CircuitEvent.ACTION_REMOVE:
-				comp = (Component) e.getData();
-				if (comp.getFactory() instanceof SubcircuitFactory) {
-					SubcircuitFactory factory = (SubcircuitFactory) comp
-							.getFactory();
-					boolean found = false;
-					for (Component o : e.getCircuit().getNonWires()) {
-						if (o.getFactory() == factory) {
-							found = true;
-							break;
-						}
-					}
-					if (!found)
-						depends.removeEdge(e.getCircuit(),
-								factory.getSubcircuit());
-				} else if (comp.getFactory() instanceof VhdlEntity) {
-					VhdlEntity factory = (VhdlEntity)comp.getFactory();
-					boolean found = false;
-					for (Component o : e.getCircuit().getNonWires()) {
-						if (o.getFactory() == factory) {
-							found = true;
-							break;
-						}
-					}
-					if (!found)
-						depends.removeEdge(e.getCircuit(),
-								factory.getContent());
-				}
-				break;
-			case CircuitEvent.ACTION_CLEAR:
-				depends.removeNode(e.getCircuit());
-				break;
-			}
-		}
+  private class MyListener implements LibraryListener, CircuitListener {
+    public void circuitChanged(CircuitEvent e) {
+      Component comp;
+      switch (e.getAction()) {
+      case CircuitEvent.ACTION_ADD:
+        comp = (Component) e.getData();
+        if (comp.getFactory() instanceof SubcircuitFactory) {
+          SubcircuitFactory factory = (SubcircuitFactory) comp
+              .getFactory();
+          depends.addEdge(e.getCircuit(), factory.getSubcircuit());
+        } else if (comp.getFactory() instanceof VhdlEntity) {
+          VhdlEntity factory = (VhdlEntity) comp .getFactory();
+          depends.addEdge(e.getCircuit(), factory.getContent());
+        }
+        break;
+      case CircuitEvent.ACTION_REMOVE:
+        comp = (Component) e.getData();
+        if (comp.getFactory() instanceof SubcircuitFactory) {
+          SubcircuitFactory factory = (SubcircuitFactory) comp
+              .getFactory();
+          boolean found = false;
+          for (Component o : e.getCircuit().getNonWires()) {
+            if (o.getFactory() == factory) {
+              found = true;
+              break;
+            }
+          }
+          if (!found)
+            depends.removeEdge(e.getCircuit(),
+                factory.getSubcircuit());
+        } else if (comp.getFactory() instanceof VhdlEntity) {
+          VhdlEntity factory = (VhdlEntity)comp.getFactory();
+          boolean found = false;
+          for (Component o : e.getCircuit().getNonWires()) {
+            if (o.getFactory() == factory) {
+              found = true;
+              break;
+            }
+          }
+          if (!found)
+            depends.removeEdge(e.getCircuit(),
+                factory.getContent());
+        }
+        break;
+      case CircuitEvent.ACTION_CLEAR:
+        depends.removeNode(e.getCircuit());
+        break;
+      }
+    }
 
-		public void libraryChanged(LibraryEvent e) {
-			switch (e.getAction()) {
-			case LibraryEvent.ADD_TOOL:
-				if (e.getData() instanceof AddTool) {
-					ComponentFactory factory = ((AddTool) e.getData())
-							.getFactory();
-					if (factory instanceof SubcircuitFactory) {
-						SubcircuitFactory circFact = (SubcircuitFactory) factory;
-						processCircuit(circFact.getSubcircuit());
-					}
-                                        /* nothing to do for vhdl */
-				}
-				break;
-			case LibraryEvent.REMOVE_TOOL:
-				if (e.getData() instanceof AddTool) {
-					ComponentFactory factory = ((AddTool) e.getData())
-							.getFactory();
-					if (factory instanceof SubcircuitFactory) {
-						SubcircuitFactory circFact = (SubcircuitFactory) factory;
-						Circuit circ = circFact.getSubcircuit();
-						depends.removeNode(circ);
-						circ.removeCircuitListener(this);
-					} else if (factory instanceof VhdlEntity) {
-						VhdlEntity circFact = (VhdlEntity)factory;
-						depends.removeNode(circFact.getContent());
-					}
-				}
-				break;
-			}
-		}
-	}
+    public void libraryChanged(LibraryEvent e) {
+      switch (e.getAction()) {
+      case LibraryEvent.ADD_TOOL:
+        if (e.getData() instanceof AddTool) {
+          ComponentFactory factory = ((AddTool) e.getData())
+              .getFactory();
+          if (factory instanceof SubcircuitFactory) {
+            SubcircuitFactory circFact = (SubcircuitFactory) factory;
+            processCircuit(circFact.getSubcircuit());
+          }
+          /* nothing to do for vhdl */
+        }
+        break;
+      case LibraryEvent.REMOVE_TOOL:
+        if (e.getData() instanceof AddTool) {
+          ComponentFactory factory = ((AddTool) e.getData())
+              .getFactory();
+          if (factory instanceof SubcircuitFactory) {
+            SubcircuitFactory circFact = (SubcircuitFactory) factory;
+            Circuit circ = circFact.getSubcircuit();
+            depends.removeNode(circ);
+            circ.removeCircuitListener(this);
+          } else if (factory instanceof VhdlEntity) {
+            VhdlEntity circFact = (VhdlEntity)factory;
+            depends.removeNode(circFact.getContent());
+          }
+        }
+        break;
+      }
+    }
+  }
 
-	private MyListener myListener = new MyListener();
-	private Dag depends = new Dag();
+  private MyListener myListener = new MyListener();
+  private Dag depends = new Dag();
 
-	Dependencies(LogisimFile file) {
-		addDependencies(file);
-	}
+  Dependencies(LogisimFile file) {
+    addDependencies(file);
+  }
 
-	private void addDependencies(LogisimFile file) {
-		file.addLibraryListener(myListener);
-		for (Circuit circuit : file.getCircuits()) {
-			processCircuit(circuit);
-		}
-	}
+  private void addDependencies(LogisimFile file) {
+    file.addLibraryListener(myListener);
+    for (Circuit circuit : file.getCircuits()) {
+      processCircuit(circuit);
+    }
+  }
 
-	public boolean canAdd(Circuit circ, Circuit sub) {
-		return depends.canFollow(sub, circ);
-	}
+  public boolean canAdd(Circuit circ, Circuit sub) {
+    return depends.canFollow(sub, circ);
+  }
 
-	public boolean canRemove(Circuit circ) {
-		return !depends.hasPredecessors(circ);
-	}
+  public boolean canRemove(Circuit circ) {
+    return !depends.hasPredecessors(circ);
+  }
 
-	public boolean canRemove(VhdlContent vhdl) {
-		return !depends.hasPredecessors(vhdl);
-	}
+  public boolean canRemove(VhdlContent vhdl) {
+    return !depends.hasPredecessors(vhdl);
+  }
 
-	private void processCircuit(Circuit circ) {
-		circ.addCircuitListener(myListener);
-		for (Component comp : circ.getNonWires()) {
-			if (comp.getFactory() instanceof SubcircuitFactory) {
-				SubcircuitFactory factory = (SubcircuitFactory) comp
-						.getFactory();
-				depends.addEdge(circ, factory.getSubcircuit());
-			} else if (comp.getFactory() instanceof VhdlEntity) {
-				VhdlEntity factory = (VhdlEntity) comp .getFactory();
-				depends.addEdge(circ, factory.getContent());
-			}
-		}
-	}
+  private void processCircuit(Circuit circ) {
+    circ.addCircuitListener(myListener);
+    for (Component comp : circ.getNonWires()) {
+      if (comp.getFactory() instanceof SubcircuitFactory) {
+        SubcircuitFactory factory = (SubcircuitFactory) comp
+            .getFactory();
+        depends.addEdge(circ, factory.getSubcircuit());
+      } else if (comp.getFactory() instanceof VhdlEntity) {
+        VhdlEntity factory = (VhdlEntity) comp .getFactory();
+        depends.addEdge(circ, factory.getContent());
+      }
+    }
+  }
 
 }

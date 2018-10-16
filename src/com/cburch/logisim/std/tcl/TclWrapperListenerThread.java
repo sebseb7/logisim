@@ -37,57 +37,57 @@ import com.cburch.logisim.util.UniquelyNamedThread;
 
 public class TclWrapperListenerThread extends UniquelyNamedThread {
 
-	SocketClient socket;
-	LinkedList<String> messages;
-	Simulator sim;
+  SocketClient socket;
+  LinkedList<String> messages;
+  Simulator sim;
 
-	Boolean socket_open = true;
+  Boolean socket_open = true;
 
-	TclWrapperListenerThread(SocketClient socket, Simulator simulator) {
-		super("TclWrapperListenerThread");
-		this.socket = socket;
-		this.messages = new LinkedList<String>();
-		this.sim = simulator;
-	}
+  TclWrapperListenerThread(SocketClient socket, Simulator simulator) {
+    super("TclWrapperListenerThread");
+    this.socket = socket;
+    this.messages = new LinkedList<String>();
+    this.sim = simulator;
+  }
 
-	/**
-	 * Get message from TCL wrapper Messages ar in the lister buffer Read is
-	 * blocking, unblocks if socket closes
-	 *
-	 * @return The next message
-	 */
-	public String receive() {
+  /**
+   * Get message from TCL wrapper Messages ar in the lister buffer Read is
+   * blocking, unblocks if socket closes
+   *
+   * @return The next message
+   */
+  public String receive() {
 
-		while (socket_open && messages.size() < 1) {
-			try {
-				sleep(100, 0);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
+    while (socket_open && messages.size() < 1) {
+      try {
+        sleep(100, 0);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
 
-		if (messages.size() > 0)
-			return messages.pop();
-		else
-			return null;
-	}
+    if (messages.size() > 0)
+      return messages.pop();
+    else
+      return null;
+  }
 
-	@Override
-	public void run() {
-		String line;
+  @Override
+  public void run() {
+    String line;
 
-		/* Continuously receive TCL wrapper messages */
-		while ((line = socket.receive()) != null) {
+    /* Continuously receive TCL wrapper messages */
+    while ((line = socket.receive()) != null) {
 
-			/* Stock the messages in temp buffer or tick simulation if asked */
-			if (line.equals("run")) {
-				sim.tick();
-			} else {
-				messages.add(line);
-			}
-		}
+      /* Stock the messages in temp buffer or tick simulation if asked */
+      if (line.equals("run")) {
+        sim.tick();
+      } else {
+        messages.add(line);
+      }
+    }
 
-		socket_open = false;
-	}
+    socket_open = false;
+  }
 
 }

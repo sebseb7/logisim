@@ -36,57 +36,57 @@ import java.beans.PropertyChangeSupport;
 import com.cburch.logisim.prefs.PrefMonitor;
 
 public class BasicZoomModel implements ZoomModel {
-	private double[] zoomOptions;
+  private double[] zoomOptions;
 
-	private PropertyChangeSupport support;
-	private double zoomFactor;
-	private boolean showGrid;
+  private PropertyChangeSupport support;
+  private double zoomFactor;
+  private boolean showGrid;
 
-	public BasicZoomModel(PrefMonitor<Boolean> gridPref,
-			PrefMonitor<Double> zoomPref, double[] zoomOpts) {
-		zoomOptions = zoomOpts;
-		support = new PropertyChangeSupport(this);
-		zoomFactor = 1.0;
-		showGrid = true;
+  public BasicZoomModel(PrefMonitor<Boolean> gridPref,
+      PrefMonitor<Double> zoomPref, double[] zoomOpts) {
+    zoomOptions = zoomOpts;
+    support = new PropertyChangeSupport(this);
+    zoomFactor = 1.0;
+    showGrid = true;
 
-		setZoomFactor(zoomPref.get().doubleValue());
-		setShowGrid(gridPref.getBoolean());
-	}
+    setZoomFactor(zoomPref.get().doubleValue());
+    setShowGrid(gridPref.getBoolean());
+  }
 
-	public void addPropertyChangeListener(String prop, PropertyChangeListener l) {
-		support.addPropertyChangeListener(prop, l);
-	}
+  public void addPropertyChangeListener(String prop, PropertyChangeListener l) {
+    support.addPropertyChangeListener(prop, l);
+  }
 
-	public boolean getShowGrid() {
-		return showGrid;
-	}
+  public boolean getShowGrid() {
+    return showGrid;
+  }
 
-	public double getZoomFactor() {
-		return zoomFactor;
-	}
+  public double getZoomFactor() {
+    return zoomFactor;
+  }
 
-	public double[] getZoomOptions() {
-		return zoomOptions;
-	}
+  public double[] getZoomOptions() {
+    return zoomOptions;
+  }
 
-	public void removePropertyChangeListener(String prop,
-			PropertyChangeListener l) {
-		support.removePropertyChangeListener(prop, l);
-	}
+  public void removePropertyChangeListener(String prop,
+      PropertyChangeListener l) {
+    support.removePropertyChangeListener(prop, l);
+  }
 
-	public void setShowGrid(boolean value) {
-		if (value != showGrid) {
-			showGrid = value;
-			support.firePropertyChange(ZoomModel.SHOW_GRID, !value, value);
-		}
-	}
+  public void setShowGrid(boolean value) {
+    if (value != showGrid) {
+      showGrid = value;
+      support.firePropertyChange(ZoomModel.SHOW_GRID, !value, value);
+    }
+  }
 
-	public void setZoomFactor(double value) {
-		double oldValue = zoomFactor;
-		if (value != oldValue) {
-			zoomFactor = value;
-			support.firePropertyChange(ZoomModel.ZOOM,
-					Double.valueOf(oldValue), Double.valueOf(value));
-		}
-	}
+  public void setZoomFactor(double value) {
+    double oldValue = zoomFactor;
+    if (value != oldValue) {
+      zoomFactor = value;
+      support.firePropertyChange(ZoomModel.ZOOM,
+          Double.valueOf(oldValue), Double.valueOf(value));
+    }
+  }
 }

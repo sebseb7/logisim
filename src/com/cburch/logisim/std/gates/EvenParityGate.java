@@ -40,67 +40,67 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 
 class EvenParityGate extends AbstractGate {
-	private class XNorGateHDLGeneratorFactory extends AbstractGateHDLGenerator {
-		@Override
-		public ArrayList<String> GetLogicFunction(int nr_of_inputs,
-				int bitwidth, boolean is_one_hot, String HDLType) {
-			ArrayList<String> Contents = new ArrayList<String>();
-			Contents.addAll(GetParity(true, nr_of_inputs, bitwidth > 1, HDLType));
-			Contents.add("");
-			return Contents;
-		}
-	}
+  private class XNorGateHDLGeneratorFactory extends AbstractGateHDLGenerator {
+    @Override
+    public ArrayList<String> GetLogicFunction(int nr_of_inputs,
+        int bitwidth, boolean is_one_hot, String HDLType) {
+      ArrayList<String> Contents = new ArrayList<String>();
+      Contents.addAll(GetParity(true, nr_of_inputs, bitwidth > 1, HDLType));
+      Contents.add("");
+      return Contents;
+    }
+  }
 
-	public static EvenParityGate FACTORY = new EvenParityGate();
+  public static EvenParityGate FACTORY = new EvenParityGate();
 
-	private EvenParityGate() {
-		super("Even Parity", Strings.getter("evenParityComponent"));
-		setRectangularLabel("2k");
-		setIconNames("parityEvenGate.gif");
-	}
+  private EvenParityGate() {
+    super("Even Parity", Strings.getter("evenParityComponent"));
+    setRectangularLabel("2k");
+    setIconNames("parityEvenGate.gif");
+  }
 
-	@Override
-	protected Expression computeExpression(Expression[] inputs, int numInputs) {
-		Expression ret = inputs[0];
-		for (int i = 1; i < numInputs; i++) {
-			ret = Expressions.xor(ret, inputs[i]);
-		}
-		return Expressions.not(ret);
-	}
+  @Override
+  protected Expression computeExpression(Expression[] inputs, int numInputs) {
+    Expression ret = inputs[0];
+    for (int i = 1; i < numInputs; i++) {
+      ret = Expressions.xor(ret, inputs[i]);
+    }
+    return Expressions.not(ret);
+  }
 
-	@Override
-	protected Value computeOutput(Value[] inputs, int numInputs,
-			InstanceState state) {
-		return GateFunctions.computeOddParity(inputs, numInputs).not();
-	}
+  @Override
+  protected Value computeOutput(Value[] inputs, int numInputs,
+      InstanceState state) {
+    return GateFunctions.computeOddParity(inputs, numInputs).not();
+  }
 
-	@Override
-	protected Value getIdentity() {
-		return Value.FALSE;
-	}
+  @Override
+  protected Value getIdentity() {
+    return Value.FALSE;
+  }
 
-	@Override
-	public boolean HDLSupportedComponent(String HDLIdentifier,
-			AttributeSet attrs, char Vendor) {
-		if (MyHDLGenerator == null)
-			MyHDLGenerator = new XNorGateHDLGeneratorFactory();
-		return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
-	}
+  @Override
+  public boolean HDLSupportedComponent(String HDLIdentifier,
+      AttributeSet attrs, char Vendor) {
+    if (MyHDLGenerator == null)
+      MyHDLGenerator = new XNorGateHDLGeneratorFactory();
+    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  }
 
-	@Override
-	protected void paintDinShape(InstancePainter painter, int width,
-			int height, int inputs) {
-		paintRectangular(painter, width, height);
-	}
+  @Override
+  protected void paintDinShape(InstancePainter painter, int width,
+      int height, int inputs) {
+    paintRectangular(painter, width, height);
+  }
 
-	@Override
-	public void paintIconShaped(InstancePainter painter) {
-		paintIconRectangular(painter);
-	}
+  @Override
+  public void paintIconShaped(InstancePainter painter) {
+    paintIconRectangular(painter);
+  }
 
-	@Override
-	protected void paintShape(InstancePainter painter, int width, int height) {
-		paintRectangular(painter, width, height);
-	}
+  @Override
+  protected void paintShape(InstancePainter painter, int width, int height) {
+    paintRectangular(painter, width, height);
+  }
 
 }

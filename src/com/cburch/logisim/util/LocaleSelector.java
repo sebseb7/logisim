@@ -42,76 +42,76 @@ import javax.swing.event.ListSelectionListener;
 import com.cburch.logisim.prefs.AppPreferences;
 
 @SuppressWarnings("rawtypes")
-class LocaleSelector extends JList implements LocaleListener,
-		ListSelectionListener {
-	private static class LocaleOption implements Runnable {
-		private Locale locale;
-		private String text;
+class LocaleSelector extends JList
+  implements LocaleListener, ListSelectionListener {
+  private static class LocaleOption implements Runnable {
+    private Locale locale;
+    private String text;
 
-		LocaleOption(Locale locale) {
-			this.locale = locale;
-			update(locale);
-		}
+    LocaleOption(Locale locale) {
+      this.locale = locale;
+      update(locale);
+    }
 
-		public void run() {
-			if (!LocaleManager.getLocale().equals(locale)) {
-				LocaleManager.setLocale(locale);
-				AppPreferences.LOCALE.set(locale.getLanguage());
-			}
-		}
+    public void run() {
+      if (!LocaleManager.getLocale().equals(locale)) {
+        LocaleManager.setLocale(locale);
+        AppPreferences.LOCALE.set(locale.getLanguage());
+      }
+    }
 
-		@Override
-		public String toString() {
-			return text;
-		}
+    @Override
+    public String toString() {
+      return text;
+    }
 
-		void update(Locale current) {
-			if (current != null && current.equals(locale)) {
-				text = locale.getDisplayName(locale);
-			} else {
-				text = locale.getDisplayName(locale) + " / "
-						+ locale.getDisplayName(current);
-			}
-		}
-	}
+    void update(Locale current) {
+      if (current != null && current.equals(locale)) {
+        text = locale.getDisplayName(locale);
+      } else {
+        text = locale.getDisplayName(locale) + " / "
+            + locale.getDisplayName(current);
+      }
+    }
+  }
 
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	private LocaleOption[] items;
+  private LocaleOption[] items;
 
-	@SuppressWarnings("unchecked")
-	LocaleSelector(Locale[] locales) {
-		setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		DefaultListModel<LocaleOption> model = new DefaultListModel<>();
-		items = new LocaleOption[locales.length];
-		for (int i = 0; i < locales.length; i++) {
-			items[i] = new LocaleOption(locales[i]);
-			model.addElement(items[i]);
-		}
-		setModel(model);
-		setVisibleRowCount(Math.min(items.length, 8));
-		LocaleManager.addLocaleListener(this);
-		localeChanged();
-		addListSelectionListener(this);
-	}
+  @SuppressWarnings("unchecked")
+  LocaleSelector(Locale[] locales) {
+    setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    DefaultListModel<LocaleOption> model = new DefaultListModel<>();
+    items = new LocaleOption[locales.length];
+    for (int i = 0; i < locales.length; i++) {
+      items[i] = new LocaleOption(locales[i]);
+      model.addElement(items[i]);
+    }
+    setModel(model);
+    setVisibleRowCount(Math.min(items.length, 8));
+    LocaleManager.addLocaleListener(this);
+    localeChanged();
+    addListSelectionListener(this);
+  }
 
-	public void localeChanged() {
-		Locale current = LocaleManager.getLocale();
-		LocaleOption sel = null;
-		for (int i = 0; i < items.length; i++) {
-			items[i].update(current);
-			if (current.equals(items[i].locale))
-				sel = items[i];
-		}
-		if (sel != null) {
-			setSelectedValue(sel, true);
-		}
-	}
+  public void localeChanged() {
+    Locale current = LocaleManager.getLocale();
+    LocaleOption sel = null;
+    for (int i = 0; i < items.length; i++) {
+      items[i].update(current);
+      if (current.equals(items[i].locale))
+        sel = items[i];
+    }
+    if (sel != null) {
+      setSelectedValue(sel, true);
+    }
+  }
 
-	public void valueChanged(ListSelectionEvent e) {
-		LocaleOption opt = (LocaleOption) getSelectedValue();
-		if (opt != null) {
-			SwingUtilities.invokeLater(opt);
-		}
-	}
+  public void valueChanged(ListSelectionEvent e) {
+    LocaleOption opt = (LocaleOption) getSelectedValue();
+    if (opt != null) {
+      SwingUtilities.invokeLater(opt);
+    }
+  }
 }

@@ -46,94 +46,94 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
 
-class SimulationExplorer extends JPanel implements ProjectListener,
-		MouseListener {
-	private static final long serialVersionUID = 1L;
-	private Project project;
-	private SimulationTreeModel model;
-	private JTree tree;
+class SimulationExplorer extends JPanel
+  implements ProjectListener, MouseListener {
+  private static final long serialVersionUID = 1L;
+  private Project project;
+  private SimulationTreeModel model;
+  private JTree tree;
 
-	SimulationExplorer(Project proj, MenuListener menu) {
-		super(new BorderLayout());
-		this.project = proj;
+  SimulationExplorer(Project proj, MenuListener menu) {
+    super(new BorderLayout());
+    this.project = proj;
 
-		SimulationToolbarModel toolbarModel = new SimulationToolbarModel(proj,
-				menu);
-		Toolbar toolbar = new Toolbar(toolbarModel);
-		add(toolbar, BorderLayout.NORTH);
+    SimulationToolbarModel toolbarModel = new SimulationToolbarModel(proj,
+        menu);
+    Toolbar toolbar = new Toolbar(toolbarModel);
+    add(toolbar, BorderLayout.NORTH);
 
-		model = new SimulationTreeModel(proj.getSimulator().getCircuitState());
-		model.setCurrentView(project.getCircuitState());
-		tree = new JTree(model);
-		tree.setCellRenderer(new SimulationTreeRenderer());
-		tree.addMouseListener(this);
-		tree.setToggleClickCount(3);
-		add(new JScrollPane(tree), BorderLayout.CENTER);
-		proj.addProjectListener(this);
-	}
+    model = new SimulationTreeModel(proj.getSimulator().getCircuitState());
+    model.setCurrentView(project.getCircuitState());
+    tree = new JTree(model);
+    tree.setCellRenderer(new SimulationTreeRenderer());
+    tree.addMouseListener(this);
+    tree.setToggleClickCount(3);
+    add(new JScrollPane(tree), BorderLayout.CENTER);
+    proj.addProjectListener(this);
+  }
 
-	private void checkForPopup(MouseEvent e) {
-		if (e.isPopupTrigger()) {
-			; // do nothing
-		}
-	}
+  private void checkForPopup(MouseEvent e) {
+    if (e.isPopupTrigger()) {
+      ; // do nothing
+    }
+  }
 
-	public void mouseClicked(MouseEvent e) {
-		if (e.getClickCount() == 2) {
-			TreePath path = tree.getPathForLocation(e.getX(), e.getY());
-			if (path != null) {
-				Object last = path.getLastPathComponent();
-				if (last instanceof SimulationTreeCircuitNode) {
-					SimulationTreeCircuitNode node;
-					node = (SimulationTreeCircuitNode) last;
-					project.setCircuitState(node.getCircuitState());
-				}
-			}
-		}
-	}
+  public void mouseClicked(MouseEvent e) {
+    if (e.getClickCount() == 2) {
+      TreePath path = tree.getPathForLocation(e.getX(), e.getY());
+      if (path != null) {
+        Object last = path.getLastPathComponent();
+        if (last instanceof SimulationTreeCircuitNode) {
+          SimulationTreeCircuitNode node;
+          node = (SimulationTreeCircuitNode) last;
+          project.setCircuitState(node.getCircuitState());
+        }
+      }
+    }
+  }
 
-	//
-	// MouseListener methods
-	//
-	//
-	// MouseListener methods
-	//
-	public void mouseEntered(MouseEvent e) {
-	}
+  //
+  // MouseListener methods
+  //
+  //
+  // MouseListener methods
+  //
+  public void mouseEntered(MouseEvent e) {
+  }
 
-	public void mouseExited(MouseEvent e) {
-	}
+  public void mouseExited(MouseEvent e) {
+  }
 
-	public void mousePressed(MouseEvent e) {
-		requestFocus();
-		checkForPopup(e);
-	}
+  public void mousePressed(MouseEvent e) {
+    requestFocus();
+    checkForPopup(e);
+  }
 
-	public void mouseReleased(MouseEvent e) {
-		checkForPopup(e);
-	}
+  public void mouseReleased(MouseEvent e) {
+    checkForPopup(e);
+  }
 
-	//
-	// ProjectListener methods
-	//
-	public void projectChanged(ProjectEvent event) {
-		int action = event.getAction();
-		if (action == ProjectEvent.ACTION_SET_STATE) {
-			Simulator sim = project.getSimulator();
-			CircuitState root = sim.getCircuitState();
-                        if (root == null) {
-                            tree.setModel(null);
-                            return;
-                        }
-			if (model.getRootState() != root) {
-				model = new SimulationTreeModel(root);
-				tree.setModel(model);
-			}
-			model.setCurrentView(project.getCircuitState());
-			TreePath path = model.mapToPath(project.getCircuitState());
-			if (path != null) {
-				tree.scrollPathToVisible(path);
-			}
-		}
-	}
+  //
+  // ProjectListener methods
+  //
+  public void projectChanged(ProjectEvent event) {
+    int action = event.getAction();
+    if (action == ProjectEvent.ACTION_SET_STATE) {
+      Simulator sim = project.getSimulator();
+      CircuitState root = sim.getCircuitState();
+      if (root == null) {
+        tree.setModel(null);
+        return;
+      }
+      if (model.getRootState() != root) {
+        model = new SimulationTreeModel(root);
+        tree.setModel(model);
+      }
+      model.setCurrentView(project.getCircuitState());
+      TreePath path = model.mapToPath(project.getCircuitState());
+      if (path != null) {
+        tree.scrollPathToVisible(path);
+      }
+    }
+  }
 }

@@ -49,104 +49,104 @@ import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
 
 public class PreferencesFrame extends LFrame {
-	private class MyListener implements ActionListener, LocaleListener {
-		public void actionPerformed(ActionEvent event) {
-			Object src = event.getSource();
-			if (src == close) {
-				WindowEvent e = new WindowEvent(PreferencesFrame.this,
-						WindowEvent.WINDOW_CLOSING);
-				PreferencesFrame.this.processWindowEvent(e);
-			}
-		}
+  private class MyListener implements ActionListener, LocaleListener {
+    public void actionPerformed(ActionEvent event) {
+      Object src = event.getSource();
+      if (src == close) {
+        WindowEvent e = new WindowEvent(PreferencesFrame.this,
+            WindowEvent.WINDOW_CLOSING);
+        PreferencesFrame.this.processWindowEvent(e);
+      }
+    }
 
-		public void localeChanged() {
-			setTitle(Strings.get("preferencesFrameTitle"));
-			for (int i = 0; i < panels.length; i++) {
-				tabbedPane.setTitleAt(i, panels[i].getTitle());
-				tabbedPane.setToolTipTextAt(i, panels[i].getToolTipText());
-				panels[i].localeChanged();
-			}
-			close.setText(Strings.get("closeButton"));
-		}
-	}
+    public void localeChanged() {
+      setTitle(Strings.get("preferencesFrameTitle"));
+      for (int i = 0; i < panels.length; i++) {
+        tabbedPane.setTitleAt(i, panels[i].getTitle());
+        tabbedPane.setToolTipTextAt(i, panels[i].getToolTipText());
+        panels[i].localeChanged();
+      }
+      close.setText(Strings.get("closeButton"));
+    }
+  }
 
-	private static class WindowMenuManager extends WindowMenuItemManager
-			implements LocaleListener {
-		private PreferencesFrame window = null;
+  private static class WindowMenuManager extends WindowMenuItemManager
+    implements LocaleListener {
+    private PreferencesFrame window = null;
 
-		WindowMenuManager() {
-			super(Strings.get("preferencesFrameMenuItem"), true);
-			LocaleManager.addLocaleListener(this);
-		}
+    WindowMenuManager() {
+      super(Strings.get("preferencesFrameMenuItem"), true);
+      LocaleManager.addLocaleListener(this);
+    }
 
-		@Override
-		public JFrame getJFrame(boolean create, java.awt.Component parent) {
-			if (create) {
-				if (window == null) {
-					window = new PreferencesFrame();
-					window.setLocationRelativeTo(parent);
-					frameOpened(window);
-				}
-			}
-			return window;
-		}
+    @Override
+    public JFrame getJFrame(boolean create, java.awt.Component parent) {
+      if (create) {
+        if (window == null) {
+          window = new PreferencesFrame();
+          window.setLocationRelativeTo(parent);
+          frameOpened(window);
+        }
+      }
+      return window;
+    }
 
-		public void localeChanged() {
-			setText(Strings.get("preferencesFrameMenuItem"));
-		}
-	}
+    public void localeChanged() {
+      setText(Strings.get("preferencesFrameMenuItem"));
+    }
+  }
 
-	public static void initializeManager() {
-		MENU_MANAGER = new WindowMenuManager();
-	}
+  public static void initializeManager() {
+    MENU_MANAGER = new WindowMenuManager();
+  }
 
-	public static void showPreferences() {
-		JFrame frame = MENU_MANAGER.getJFrame(true, null);
-		frame.setVisible(true);
-	}
+  public static void showPreferences() {
+    JFrame frame = MENU_MANAGER.getJFrame(true, null);
+    frame.setVisible(true);
+  }
 
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	private static WindowMenuManager MENU_MANAGER = null;
+  private static WindowMenuManager MENU_MANAGER = null;
 
-	private MyListener myListener = new MyListener();
-	private OptionsPanel[] panels;
-	private JTabbedPane tabbedPane;
+  private MyListener myListener = new MyListener();
+  private OptionsPanel[] panels;
+  private JTabbedPane tabbedPane;
 
-	private JButton close = new JButton();
+  private JButton close = new JButton();
 
-	private PreferencesFrame() {
-		setDefaultCloseOperation(HIDE_ON_CLOSE);
-		setJMenuBar(new LogisimMenuBar(this, null));
+  private PreferencesFrame() {
+    setDefaultCloseOperation(HIDE_ON_CLOSE);
+    setJMenuBar(new LogisimMenuBar(this, null));
 
-		panels = new OptionsPanel[] { new TemplateOptions(this),
-				new IntlOptions(this), new WindowOptions(this),
-				new LayoutOptions(this), new ExperimentalOptions(this),
-				new SoftwaresOptions(this), };
-		tabbedPane = new JTabbedPane();
-		int intlIndex = -1;
-		for (int index = 0; index < panels.length; index++) {
-			OptionsPanel panel = panels[index];
-			tabbedPane.addTab(panel.getTitle(), null, panel,
-					panel.getToolTipText());
-			if (panel instanceof IntlOptions)
-				intlIndex = index;
-		}
+    panels = new OptionsPanel[] { new TemplateOptions(this),
+      new IntlOptions(this), new WindowOptions(this),
+      new LayoutOptions(this), new ExperimentalOptions(this),
+      new SoftwaresOptions(this), };
+    tabbedPane = new JTabbedPane();
+    int intlIndex = -1;
+    for (int index = 0; index < panels.length; index++) {
+      OptionsPanel panel = panels[index];
+      tabbedPane.addTab(panel.getTitle(), null, panel,
+          panel.getToolTipText());
+      if (panel instanceof IntlOptions)
+        intlIndex = index;
+    }
 
-		JPanel buttonPanel = new JPanel();
-		buttonPanel.add(close);
-		close.addActionListener(myListener);
+    JPanel buttonPanel = new JPanel();
+    buttonPanel.add(close);
+    close.addActionListener(myListener);
 
-		Container contents = getContentPane();
-		tabbedPane.setPreferredSize(new Dimension(450, 300));
-		contents.add(tabbedPane, BorderLayout.CENTER);
-		contents.add(buttonPanel, BorderLayout.SOUTH);
+    Container contents = getContentPane();
+    tabbedPane.setPreferredSize(new Dimension(450, 300));
+    contents.add(tabbedPane, BorderLayout.CENTER);
+    contents.add(buttonPanel, BorderLayout.SOUTH);
 
-		if (intlIndex >= 0)
-			tabbedPane.setSelectedIndex(intlIndex);
+    if (intlIndex >= 0)
+      tabbedPane.setSelectedIndex(intlIndex);
 
-		LocaleManager.addLocaleListener(myListener);
-		myListener.localeChanged();
-		pack();
-	}
+    LocaleManager.addLocaleListener(myListener);
+    myListener.localeChanged();
+    pack();
+  }
 }

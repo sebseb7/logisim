@@ -31,9 +31,9 @@
 package com.cburch.logisim.circuit;
 
 public class CircuitException extends RuntimeException {
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	public CircuitException(String msg) {
-		super(msg);
-	}
+  public CircuitException(String msg) {
+    super(msg);
+  }
 }

@@ -31,5 +31,5 @@
 package com.cburch.logisim.util;
 
 public interface WindowClosable {
-	public void requestClose();
+  public void requestClose();
 }

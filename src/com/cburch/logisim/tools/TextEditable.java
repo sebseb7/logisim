@@ -35,8 +35,8 @@ import com.cburch.logisim.comp.ComponentUserEvent;
 import com.cburch.logisim.proj.Action;
 
 public interface TextEditable {
-	public Action getCommitAction(Circuit circuit, String oldText,
-			String newText);
+  public Action getCommitAction(Circuit circuit, String oldText,
+      String newText);
 
-	public Caret getTextCaret(ComponentUserEvent event);
+  public Caret getTextCaret(ComponentUserEvent event);
 }

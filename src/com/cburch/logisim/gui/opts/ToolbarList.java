@@ -52,102 +52,102 @@ import com.cburch.logisim.tools.Tool;
 
 @SuppressWarnings({ "serial", "rawtypes" })
 class ToolbarList extends JList {
-	private static class ListRenderer extends DefaultListCellRenderer {
-		@Override
-		public Component getListCellRendererComponent(JList list, Object value,
-				int index, boolean isSelected, boolean cellHasFocus) {
-			Component ret;
-			Icon icon;
-			if (value instanceof Tool) {
-				Tool t = (Tool) value;
-				ret = super.getListCellRendererComponent(list,
-						t.getDisplayName(), index, isSelected, cellHasFocus);
-				icon = new ToolIcon(t);
-			} else if (value == null) {
-				ret = super.getListCellRendererComponent(list, "---", index,
-						isSelected, cellHasFocus);
-				icon = null;
-			} else {
-				ret = super.getListCellRendererComponent(list,
-						value.toString(), index, isSelected, cellHasFocus);
-				icon = null;
-			}
-			if (ret instanceof JLabel) {
-				((JLabel) ret).setIcon(icon);
-			}
-			return ret;
-		}
-	}
+  private static class ListRenderer extends DefaultListCellRenderer {
+    @Override
+    public Component getListCellRendererComponent(JList list, Object value,
+        int index, boolean isSelected, boolean cellHasFocus) {
+      Component ret;
+      Icon icon;
+      if (value instanceof Tool) {
+        Tool t = (Tool) value;
+        ret = super.getListCellRendererComponent(list,
+            t.getDisplayName(), index, isSelected, cellHasFocus);
+        icon = new ToolIcon(t);
+      } else if (value == null) {
+        ret = super.getListCellRendererComponent(list, "---", index,
+            isSelected, cellHasFocus);
+        icon = null;
+      } else {
+        ret = super.getListCellRendererComponent(list,
+            value.toString(), index, isSelected, cellHasFocus);
+        icon = null;
+      }
+      if (ret instanceof JLabel) {
+        ((JLabel) ret).setIcon(icon);
+      }
+      return ret;
+    }
+  }
 
-	private class Model extends AbstractListModel implements ToolbarListener,
-			AttributeListener, PropertyChangeListener {
-		public void attributeListChanged(AttributeEvent e) {
-		}
+  private class Model extends AbstractListModel
+    implements ToolbarListener, AttributeListener, PropertyChangeListener {
+    public void attributeListChanged(AttributeEvent e) {
+    }
 
-		public void attributeValueChanged(AttributeEvent e) {
-			repaint();
-		}
+    public void attributeValueChanged(AttributeEvent e) {
+      repaint();
+    }
 
-		public Object getElementAt(int index) {
-			return base.get(index);
-		}
+    public Object getElementAt(int index) {
+      return base.get(index);
+    }
 
-		public int getSize() {
-			return base.size();
-		}
+    public int getSize() {
+      return base.size();
+    }
 
-		public void propertyChange(PropertyChangeEvent event) {
-			if (AppPreferences.GATE_SHAPE.isSource(event)) {
-				repaint();
-			}
-		}
+    public void propertyChange(PropertyChangeEvent event) {
+      if (AppPreferences.GATE_SHAPE.isSource(event)) {
+        repaint();
+      }
+    }
 
-		public void toolbarChanged() {
-			fireContentsChanged(this, 0, getSize());
-		}
-	}
+    public void toolbarChanged() {
+      fireContentsChanged(this, 0, getSize());
+    }
+  }
 
-	private static class ToolIcon implements Icon {
-		private Tool tool;
+  private static class ToolIcon implements Icon {
+    private Tool tool;
 
-		ToolIcon(Tool tool) {
-			this.tool = tool;
-		}
+    ToolIcon(Tool tool) {
+      this.tool = tool;
+    }
 
-		public int getIconHeight() {
-			return 20;
-		}
+    public int getIconHeight() {
+      return 20;
+    }
 
-		public int getIconWidth() {
-			return 20;
-		}
+    public int getIconWidth() {
+      return 20;
+    }
 
-		public void paintIcon(Component comp, Graphics g, int x, int y) {
-			Graphics gNew = g.create();
-			tool.paintIcon(new ComponentDrawContext(comp, null, null, g, gNew),
-					x + 2, y + 2);
-			gNew.dispose();
-		}
-	}
+    public void paintIcon(Component comp, Graphics g, int x, int y) {
+      Graphics gNew = g.create();
+      tool.paintIcon(new ComponentDrawContext(comp, null, null, g, gNew),
+          x + 2, y + 2);
+      gNew.dispose();
+    }
+  }
 
-	private ToolbarData base;
-	private Model model;
+  private ToolbarData base;
+  private Model model;
 
-	@SuppressWarnings("unchecked")
-	public ToolbarList(ToolbarData base) {
-		this.base = base;
-		this.model = new Model();
+  @SuppressWarnings("unchecked")
+  public ToolbarList(ToolbarData base) {
+    this.base = base;
+    this.model = new Model();
 
-		setModel(model);
-		setCellRenderer(new ListRenderer());
-		setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    setModel(model);
+    setCellRenderer(new ListRenderer());
+    setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-		AppPreferences.GATE_SHAPE.addPropertyChangeListener(model);
-		base.addToolbarListener(model);
-		base.addToolAttributeListener(model);
-	}
+    AppPreferences.GATE_SHAPE.addPropertyChangeListener(model);
+    base.addToolbarListener(model);
+    base.addToolAttributeListener(model);
+  }
 
-	public void localeChanged() {
-		model.toolbarChanged();
-	}
+  public void localeChanged() {
+    model.toolbarChanged();
+  }
 }

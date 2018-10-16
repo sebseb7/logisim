@@ -58,210 +58,210 @@ import com.cburch.logisim.tools.Tool;
 
 public class XmlCircuitReader extends CircuitTransaction {
 
-	/**
-	 * Get a circuit's component from a read XML file. If the component has a
-	 * non-null "trackercomp" field, it means that it is tracked, therefore it
-	 * is skipped in the non-tracked version to avoid errors.
-	 * 
-	 * @param elt
-	 *            XML element to parse
-	 * @param reader
-	 *            XML file reader
-	 * @return the component built from its XML description
-	 * @throws XmlReaderException
-	 */
-	static Component getComponent(Element elt, XmlReader.ReadContext reader)
-		throws XmlReaderException {
-		if (elt.getAttribute("trackercomp") != "" && !Main.VERSION.hasTracker()) {
-			return (null);
-		}
+  /**
+   * Get a circuit's component from a read XML file. If the component has a
+   * non-null "trackercomp" field, it means that it is tracked, therefore it
+   * is skipped in the non-tracked version to avoid errors.
+   * 
+   * @param elt
+   *            XML element to parse
+   * @param reader
+   *            XML file reader
+   * @return the component built from its XML description
+   * @throws XmlReaderException
+   */
+  static Component getComponent(Element elt, XmlReader.ReadContext reader)
+      throws XmlReaderException {
+    if (elt.getAttribute("trackercomp") != "" && !Main.VERSION.hasTracker()) {
+      return (null);
+    }
 
-		// Determine the factory that creates this element
-		String name = elt.getAttribute("name");
-		if (name == null || name.equals("")) {
-			throw new XmlReaderException(Strings.get("compNameMissingError"));
-		}
+    // Determine the factory that creates this element
+    String name = elt.getAttribute("name");
+    if (name == null || name.equals("")) {
+      throw new XmlReaderException(Strings.get("compNameMissingError"));
+    }
 
-		String libName = elt.getAttribute("lib");
-		Library lib = reader.findLibrary(libName);
-		if (lib == null) {
-			throw new XmlReaderException(Strings.get("compUnknownError",
-						"no-lib"));
-		}
+    String libName = elt.getAttribute("lib");
+    Library lib = reader.findLibrary(libName);
+    if (lib == null) {
+      throw new XmlReaderException(Strings.get("compUnknownError",
+            "no-lib"));
+    }
 
-		Tool tool = lib.getTool(name);
-		if (tool == null || !(tool instanceof AddTool)) {
-			if (libName == null || libName.equals("")) {
-				throw new XmlReaderException(Strings.get("compUnknownError",
-							name));
-			} else {
-				throw new XmlReaderException(Strings.get("compAbsentError",
-							name, libName));
-			}
-		}
-		ComponentFactory source = ((AddTool) tool).getFactory();
+    Tool tool = lib.getTool(name);
+    if (tool == null || !(tool instanceof AddTool)) {
+      if (libName == null || libName.equals("")) {
+        throw new XmlReaderException(Strings.get("compUnknownError",
+              name));
+      } else {
+        throw new XmlReaderException(Strings.get("compAbsentError",
+              name, libName));
+      }
+    }
+    ComponentFactory source = ((AddTool) tool).getFactory();
 
-		// Determine attributes
-		String loc_str = elt.getAttribute("loc");
-		AttributeSet attrs = source.createAttributeSet();
-		reader.initAttributeSet(elt, attrs, source);
+    // Determine attributes
+    String loc_str = elt.getAttribute("loc");
+    AttributeSet attrs = source.createAttributeSet();
+    reader.initAttributeSet(elt, attrs, source);
 
-		// Create component if location known
-		if (loc_str == null || loc_str.equals("")) {
-			throw new XmlReaderException(Strings.get("compLocMissingError",
-						source.getName()));
-		} else {
-			try {
-				Location loc = Location.parse(loc_str);
-				return source.createComponent(loc, attrs);
-			} catch (NumberFormatException e) {
-				throw new XmlReaderException(Strings.get("compLocInvalidError",
-							source.getName(), loc_str));
-			}
-		}
-	}
+    // Create component if location known
+    if (loc_str == null || loc_str.equals("")) {
+      throw new XmlReaderException(Strings.get("compLocMissingError",
+            source.getName()));
+    } else {
+      try {
+        Location loc = Location.parse(loc_str);
+        return source.createComponent(loc, attrs);
+      } catch (NumberFormatException e) {
+        throw new XmlReaderException(Strings.get("compLocInvalidError",
+              source.getName(), loc_str));
+      }
+    }
+  }
 
-	private XmlReader.ReadContext reader;
+  private XmlReader.ReadContext reader;
 
-	private List<XmlReader.CircuitData> circuitsData;
+  private List<XmlReader.CircuitData> circuitsData;
 
-	public XmlCircuitReader(XmlReader.ReadContext reader,
-			List<XmlReader.CircuitData> circDatas) {
-		this.reader = reader;
-		this.circuitsData = circDatas;
-	}
+  public XmlCircuitReader(XmlReader.ReadContext reader,
+      List<XmlReader.CircuitData> circDatas) {
+    this.reader = reader;
+    this.circuitsData = circDatas;
+  }
 
-	void addWire(Circuit dest, CircuitMutator mutator, Element elt)
-		throws XmlReaderException {
-		Location pt0;
-		try {
-			String str = elt.getAttribute("from");
-			if (str == null || str.equals("")) {
-				throw new XmlReaderException(
-						Strings.get("wireStartMissingError"));
-			}
-			pt0 = Location.parse(str);
-		} catch (NumberFormatException e) {
-			throw new XmlReaderException(Strings.get("wireStartInvalidError"));
-		}
+  void addWire(Circuit dest, CircuitMutator mutator, Element elt)
+      throws XmlReaderException {
+    Location pt0;
+    try {
+      String str = elt.getAttribute("from");
+      if (str == null || str.equals("")) {
+        throw new XmlReaderException(
+            Strings.get("wireStartMissingError"));
+      }
+      pt0 = Location.parse(str);
+    } catch (NumberFormatException e) {
+      throw new XmlReaderException(Strings.get("wireStartInvalidError"));
+    }
 
-		Location pt1;
-		try {
-			String str = elt.getAttribute("to");
-			if (str == null || str.equals("")) {
-				throw new XmlReaderException(Strings.get("wireEndMissingError"));
-			}
-			pt1 = Location.parse(str);
-		} catch (NumberFormatException e) {
-			throw new XmlReaderException(Strings.get("wireEndInvalidError"));
-		}
+    Location pt1;
+    try {
+      String str = elt.getAttribute("to");
+      if (str == null || str.equals("")) {
+        throw new XmlReaderException(Strings.get("wireEndMissingError"));
+      }
+      pt1 = Location.parse(str);
+    } catch (NumberFormatException e) {
+      throw new XmlReaderException(Strings.get("wireEndInvalidError"));
+    }
 
-		mutator.add(dest, Wire.create(pt0, pt1));
-	}
+    mutator.add(dest, Wire.create(pt0, pt1));
+  }
 
-	private void buildCircuit(XmlReader.CircuitData circData, CircuitMutator mutator) {
-		Element elt = circData.circuitElement;
-		Circuit dest = circData.circuit;
-		Map<Element, Component> knownComponents = circData.knownComponents;
-		if (knownComponents == null)
-			knownComponents = Collections.emptyMap();
-		try {
-			reader.initAttributeSet(circData.circuitElement,
-					dest.getStaticAttributes(), null);
-		} catch (XmlReaderException e) {
-			reader.addErrors(e, circData.circuit.getName() + ".static");
-		}
+  private void buildCircuit(XmlReader.CircuitData circData, CircuitMutator mutator) {
+    Element elt = circData.circuitElement;
+    Circuit dest = circData.circuit;
+    Map<Element, Component> knownComponents = circData.knownComponents;
+    if (knownComponents == null)
+      knownComponents = Collections.emptyMap();
+    try {
+      reader.initAttributeSet(circData.circuitElement,
+          dest.getStaticAttributes(), null);
+    } catch (XmlReaderException e) {
+      reader.addErrors(e, circData.circuit.getName() + ".static");
+    }
 
-		for (Element sub_elt : XmlIterator.forChildElements(elt)) {
-			String sub_elt_name = sub_elt.getTagName();
-			if (sub_elt_name.equals("comp")) {
-				try {
-					Component comp = knownComponents.get(sub_elt);
-					if (comp == null) {
-						comp = getComponent(sub_elt, reader);
-					}
-					if (comp != null) {
-						mutator.add(dest, comp);
-					}
-				} catch (XmlReaderException e) {
-					reader.addErrors(e, circData.circuit.getName() + "."
-							+ toComponentString(sub_elt));
-				}
-			} else if (sub_elt_name.equals("wire")) {
-				try {
-					addWire(dest, mutator, sub_elt);
-				} catch (XmlReaderException e) {
-					reader.addErrors(e, circData.circuit.getName() + "."
-							+ toWireString(sub_elt));
-				}
-			}
-		}
-	}
+    for (Element sub_elt : XmlIterator.forChildElements(elt)) {
+      String sub_elt_name = sub_elt.getTagName();
+      if (sub_elt_name.equals("comp")) {
+        try {
+          Component comp = knownComponents.get(sub_elt);
+          if (comp == null) {
+            comp = getComponent(sub_elt, reader);
+          }
+          if (comp != null) {
+            mutator.add(dest, comp);
+          }
+        } catch (XmlReaderException e) {
+          reader.addErrors(e, circData.circuit.getName() + "."
+              + toComponentString(sub_elt));
+        }
+      } else if (sub_elt_name.equals("wire")) {
+        try {
+          addWire(dest, mutator, sub_elt);
+        } catch (XmlReaderException e) {
+          reader.addErrors(e, circData.circuit.getName() + "."
+              + toWireString(sub_elt));
+        }
+      }
+    }
+  }
 
-	private void buildDynamicAppearance(XmlReader.CircuitData circData, CircuitMutator mutator) {
-		Circuit dest = circData.circuit;
-		Collection<Component> components = circData.knownComponents.values();
-		List<AbstractCanvasObject> shapes = new ArrayList<AbstractCanvasObject>();
-		for (Element appearElt : XmlIterator.forChildElements(circData.circuitElement, "appear")) {
-			for (Element sub : XmlIterator.forChildElements(appearElt)) {
-				// Dynamic shapes are handled here. Static shapes are already done.
-				if (!sub.getTagName().startsWith("visible-"))
-					continue;
-				try {
-					AbstractCanvasObject m = AppearanceSvgReader.createShape(sub, null, dest);
-					if (m == null) {
-						reader.addError( Strings.get("fileAppearanceNotFound", sub.getTagName()),
-							circData.circuit.getName() + "." + sub.getTagName());
-					} else {
-						shapes.add(m);
-					}
-				} catch (RuntimeException e) {
-					reader.addError(Strings.get("fileAppearanceError", sub.getTagName()),
-							circData.circuit.getName() + "." + sub.getTagName());
-				}
-			}
-		}
-		if (!shapes.isEmpty()) {
-			if (circData.appearance == null) {
-				circData.appearance = shapes;
-			} else {
-				circData.appearance.addAll(shapes);
-			}
-		}
-		if (circData.appearance != null && !circData.appearance.isEmpty()) {
-			dest.getAppearance().setObjectsForce(circData.appearance);
-			dest.getAppearance().setDefaultAppearance(false);
-		}
-	}
+  private void buildDynamicAppearance(XmlReader.CircuitData circData, CircuitMutator mutator) {
+    Circuit dest = circData.circuit;
+    Collection<Component> components = circData.knownComponents.values();
+    List<AbstractCanvasObject> shapes = new ArrayList<AbstractCanvasObject>();
+    for (Element appearElt : XmlIterator.forChildElements(circData.circuitElement, "appear")) {
+      for (Element sub : XmlIterator.forChildElements(appearElt)) {
+        // Dynamic shapes are handled here. Static shapes are already done.
+        if (!sub.getTagName().startsWith("visible-"))
+          continue;
+        try {
+          AbstractCanvasObject m = AppearanceSvgReader.createShape(sub, null, dest);
+          if (m == null) {
+            reader.addError( Strings.get("fileAppearanceNotFound", sub.getTagName()),
+                circData.circuit.getName() + "." + sub.getTagName());
+          } else {
+            shapes.add(m);
+          }
+        } catch (RuntimeException e) {
+          reader.addError(Strings.get("fileAppearanceError", sub.getTagName()),
+              circData.circuit.getName() + "." + sub.getTagName());
+        }
+      }
+    }
+    if (!shapes.isEmpty()) {
+      if (circData.appearance == null) {
+        circData.appearance = shapes;
+      } else {
+        circData.appearance.addAll(shapes);
+      }
+    }
+    if (circData.appearance != null && !circData.appearance.isEmpty()) {
+      dest.getAppearance().setObjectsForce(circData.appearance);
+      dest.getAppearance().setDefaultAppearance(false);
+    }
+  }
 
-	@Override
-	protected Map<Circuit, Integer> getAccessedCircuits() {
-		HashMap<Circuit, Integer> access = new HashMap<Circuit, Integer>();
-		for (XmlReader.CircuitData data : circuitsData) {
-			access.put(data.circuit, READ_WRITE);
-		}
-		return access;
-	}
+  @Override
+  protected Map<Circuit, Integer> getAccessedCircuits() {
+    HashMap<Circuit, Integer> access = new HashMap<Circuit, Integer>();
+    for (XmlReader.CircuitData data : circuitsData) {
+      access.put(data.circuit, READ_WRITE);
+    }
+    return access;
+  }
 
-	@Override
-	protected void run(CircuitMutator mutator) {
-		for (XmlReader.CircuitData circuitData : circuitsData) {
-			buildCircuit(circuitData, mutator);
-		}
-		for (XmlReader.CircuitData circuitData : circuitsData) {
-			buildDynamicAppearance(circuitData, mutator);
-		}
-	}
+  @Override
+  protected void run(CircuitMutator mutator) {
+    for (XmlReader.CircuitData circuitData : circuitsData) {
+      buildCircuit(circuitData, mutator);
+    }
+    for (XmlReader.CircuitData circuitData : circuitsData) {
+      buildDynamicAppearance(circuitData, mutator);
+    }
+  }
 
-	private String toComponentString(Element elt) {
-		String name = elt.getAttribute("name");
-		String loc = elt.getAttribute("loc");
-		return name + "(" + loc + ")";
-	}
+  private String toComponentString(Element elt) {
+    String name = elt.getAttribute("name");
+    String loc = elt.getAttribute("loc");
+    return name + "(" + loc + ")";
+  }
 
-	private String toWireString(Element elt) {
-		String from = elt.getAttribute("from");
-		String to = elt.getAttribute("to");
-		return "w" + from + "-" + to;
-	}
+  private String toWireString(Element elt) {
+    String from = elt.getAttribute("from");
+    String to = elt.getAttribute("to");
+    return "w" + from + "-" + to;
+  }
 }

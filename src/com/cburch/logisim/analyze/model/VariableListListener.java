@@ -31,5 +31,5 @@
 package com.cburch.logisim.analyze.model;
 
 public interface VariableListListener {
-	public void listChanged(VariableListEvent event);
+  public void listChanged(VariableListEvent event);
 }

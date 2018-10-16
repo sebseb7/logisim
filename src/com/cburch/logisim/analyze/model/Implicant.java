@@ -43,401 +43,401 @@ import java.util.List;
 import java.util.Map;
 
 public class Implicant implements Comparable<Implicant> {
-	private static class TermIterator implements Iterable<Implicant>,
-			Iterator<Implicant> {
-		Implicant source;
-		int currentMask = 0;
+  private static class TermIterator
+    implements Iterable<Implicant>, Iterator<Implicant> {
+    Implicant source;
+    int currentMask = 0;
 
-		TermIterator(Implicant source) {
-			this.source = source;
-		}
+    TermIterator(Implicant source) {
+      this.source = source;
+    }
 
-		public boolean hasNext() {
-			return currentMask >= 0;
-		}
+    public boolean hasNext() {
+      return currentMask >= 0;
+    }
 
-		public Iterator<Implicant> iterator() {
-			return this;
-		}
+    public Iterator<Implicant> iterator() {
+      return this;
+    }
 
-		public Implicant next() {
-			int ret = currentMask | source.values;
-			int diffs = currentMask ^ source.unknowns;
-			int diff = diffs ^ ((diffs - 1) & diffs);
-			if (diff == 0) {
-				currentMask = -1;
-			} else {
-				currentMask = (currentMask & ~(diff - 1)) | diff;
-			}
-			return new Implicant(0, ret);
-		}
+    public Implicant next() {
+      int ret = currentMask | source.values;
+      int diffs = currentMask ^ source.unknowns;
+      int diff = diffs ^ ((diffs - 1) & diffs);
+      if (diff == 0) {
+        currentMask = -1;
+      } else {
+        currentMask = (currentMask & ~(diff - 1)) | diff;
+      }
+      return new Implicant(0, ret);
+    }
 
-		public void remove() {
-		}
-	}
+    public void remove() {
+    }
+  }
 
-	static List<Implicant> computeMinimal(int format, AnalyzerModel model,
-			String variable) {
-		TruthTable table = model.getTruthTable();
-		int column = model.getOutputs().bits.indexOf(variable);
-		if (column < 0)
-			return Collections.emptyList();
+  static List<Implicant> computeMinimal(int format, AnalyzerModel model,
+      String variable) {
+    TruthTable table = model.getTruthTable();
+    int column = model.getOutputs().bits.indexOf(variable);
+    if (column < 0)
+      return Collections.emptyList();
 
-		Entry desired = format == AnalyzerModel.FORMAT_SUM_OF_PRODUCTS ? Entry.ONE
-				: Entry.ZERO;
-		Entry undesired = desired == Entry.ONE ? Entry.ZERO : Entry.ONE;
+    Entry desired = format == AnalyzerModel.FORMAT_SUM_OF_PRODUCTS ? Entry.ONE
+        : Entry.ZERO;
+    Entry undesired = desired == Entry.ONE ? Entry.ZERO : Entry.ONE;
 
-		// determine the first-cut implicants, as well as the rows
-		// that we need to cover.
-		HashMap<Implicant, Entry> base = new HashMap<Implicant, Entry>();
-		HashSet<Implicant> toCover = new HashSet<Implicant>();
-		boolean knownFound = false;
-		for (int i = 0; i < table.getRowCount(); i++) {
-			Entry entry = table.getOutputEntry(i, column);
-			if (entry == undesired) {
-				knownFound = true;
-			} else if (entry == desired) {
-				knownFound = true;
-				Implicant imp = new Implicant(0, i);
-				base.put(imp, entry);
-				toCover.add(imp);
-			} else {
-				Implicant imp = new Implicant(0, i);
-				base.put(imp, entry);
-			}
-		}
-		if (!knownFound)
-			return null;
+    // determine the first-cut implicants, as well as the rows
+    // that we need to cover.
+    HashMap<Implicant, Entry> base = new HashMap<Implicant, Entry>();
+    HashSet<Implicant> toCover = new HashSet<Implicant>();
+    boolean knownFound = false;
+    for (int i = 0; i < table.getRowCount(); i++) {
+      Entry entry = table.getOutputEntry(i, column);
+      if (entry == undesired) {
+        knownFound = true;
+      } else if (entry == desired) {
+        knownFound = true;
+        Implicant imp = new Implicant(0, i);
+        base.put(imp, entry);
+        toCover.add(imp);
+      } else {
+        Implicant imp = new Implicant(0, i);
+        base.put(imp, entry);
+      }
+    }
+    if (!knownFound)
+      return null;
 
-		// work up to more general implicants, discovering
-		// any prime implicants.
-		HashSet<Implicant> primes = new HashSet<Implicant>();
-		HashMap<Implicant, Entry> current = base;
-		while (current.size() > 1) {
-			HashSet<Implicant> toRemove = new HashSet<Implicant>();
-			HashMap<Implicant, Entry> next = new HashMap<Implicant, Entry>();
-			for (Map.Entry<Implicant, Entry> curEntry : current.entrySet()) {
-				Implicant imp = curEntry.getKey();
-				Entry detEntry = curEntry.getValue();
-				for (int j = 1; j <= imp.values; j *= 2) {
-					if ((imp.values & j) != 0) {
-						Implicant opp = new Implicant(imp.unknowns, imp.values
-								^ j);
-						Entry oppEntry = current.get(opp);
-						if (oppEntry != null) {
-							toRemove.add(imp);
-							toRemove.add(opp);
-							Implicant i = new Implicant(opp.unknowns | j,
-									opp.values);
-							Entry e;
-							if (oppEntry == Entry.DONT_CARE
-									&& detEntry == Entry.DONT_CARE) {
-								e = Entry.DONT_CARE;
-							} else {
-								e = desired;
-							}
-							next.put(i, e);
-						}
-					}
-				}
-			}
+    // work up to more general implicants, discovering
+    // any prime implicants.
+    HashSet<Implicant> primes = new HashSet<Implicant>();
+    HashMap<Implicant, Entry> current = base;
+    while (current.size() > 1) {
+      HashSet<Implicant> toRemove = new HashSet<Implicant>();
+      HashMap<Implicant, Entry> next = new HashMap<Implicant, Entry>();
+      for (Map.Entry<Implicant, Entry> curEntry : current.entrySet()) {
+        Implicant imp = curEntry.getKey();
+        Entry detEntry = curEntry.getValue();
+        for (int j = 1; j <= imp.values; j *= 2) {
+          if ((imp.values & j) != 0) {
+            Implicant opp = new Implicant(imp.unknowns, imp.values
+                ^ j);
+            Entry oppEntry = current.get(opp);
+            if (oppEntry != null) {
+              toRemove.add(imp);
+              toRemove.add(opp);
+              Implicant i = new Implicant(opp.unknowns | j,
+                  opp.values);
+              Entry e;
+              if (oppEntry == Entry.DONT_CARE
+                  && detEntry == Entry.DONT_CARE) {
+                e = Entry.DONT_CARE;
+              } else {
+                e = desired;
+              }
+              next.put(i, e);
+            }
+          }
+        }
+      }
 
-			for (Map.Entry<Implicant, Entry> curEntry : current.entrySet()) {
-				Implicant det = curEntry.getKey();
-				if (!toRemove.contains(det) && curEntry.getValue() == desired) {
-					primes.add(det);
-				}
-			}
+      for (Map.Entry<Implicant, Entry> curEntry : current.entrySet()) {
+        Implicant det = curEntry.getKey();
+        if (!toRemove.contains(det) && curEntry.getValue() == desired) {
+          primes.add(det);
+        }
+      }
 
-			current = next;
-		}
+      current = next;
+    }
 
-		// we won't have more than one implicant left, but it
-		// is probably prime.
-		for (Map.Entry<Implicant, Entry> curEntry : current.entrySet()) {
-			Implicant imp = curEntry.getKey();
-			if (current.get(imp) == desired) {
-				primes.add(imp);
-			}
-		}
+    // we won't have more than one implicant left, but it
+    // is probably prime.
+    for (Map.Entry<Implicant, Entry> curEntry : current.entrySet()) {
+      Implicant imp = curEntry.getKey();
+      if (current.get(imp) == desired) {
+        primes.add(imp);
+      }
+    }
 
-		// determine the essential prime implicants
-		HashSet<Implicant> retSet = new HashSet<Implicant>();
-		HashSet<Implicant> covered = new HashSet<Implicant>();
-		for (Implicant required : toCover) {
-			if (covered.contains(required))
-				continue;
-			int row = required.getRow();
-			Implicant essential = null;
-			for (Implicant imp : primes) {
-				if ((row & ~imp.unknowns) == imp.values) {
-					if (essential == null)
-						essential = imp;
-					else {
-						essential = null;
-						break;
-					}
-				}
-			}
-			if (essential != null) {
-				retSet.add(essential);
-				primes.remove(essential);
-				for (Implicant imp : essential.getTerms()) {
-					covered.add(imp);
-				}
-			}
-		}
-		toCover.removeAll(covered);
+    // determine the essential prime implicants
+    HashSet<Implicant> retSet = new HashSet<Implicant>();
+    HashSet<Implicant> covered = new HashSet<Implicant>();
+    for (Implicant required : toCover) {
+      if (covered.contains(required))
+        continue;
+      int row = required.getRow();
+      Implicant essential = null;
+      for (Implicant imp : primes) {
+        if ((row & ~imp.unknowns) == imp.values) {
+          if (essential == null)
+            essential = imp;
+          else {
+            essential = null;
+            break;
+          }
+        }
+      }
+      if (essential != null) {
+        retSet.add(essential);
+        primes.remove(essential);
+        for (Implicant imp : essential.getTerms()) {
+          covered.add(imp);
+        }
+      }
+    }
+    toCover.removeAll(covered);
 
-		// This is an unusual case, but it's possible that the
-		// essential prime implicants don't cover everything.
-		// In that case, greedily pick out prime implicants
-		// that cover the most uncovered rows.
-		while (!toCover.isEmpty()) {
-			// find the implicant covering the most rows
-			Implicant max = null;
-			int maxCount = 0;
-			int maxUnknowns = Integer.MAX_VALUE;
-			for (Iterator<Implicant> it = primes.iterator(); it.hasNext();) {
-				Implicant imp = it.next();
-				int count = 0;
-				for (Implicant term : imp.getTerms()) {
-					if (toCover.contains(term))
-						++count;
-				}
-				if (count == 0) {
-					it.remove();
-				} else if (count > maxCount) {
-					max = imp;
-					maxCount = count;
-					maxUnknowns = imp.getUnknownCount();
-				} else if (count == maxCount) {
-					int unk = imp.getUnknownCount();
-					if (unk > maxUnknowns) {
-						max = imp;
-						maxUnknowns = unk;
-					}
-				}
-			}
+    // This is an unusual case, but it's possible that the
+    // essential prime implicants don't cover everything.
+    // In that case, greedily pick out prime implicants
+    // that cover the most uncovered rows.
+    while (!toCover.isEmpty()) {
+      // find the implicant covering the most rows
+      Implicant max = null;
+      int maxCount = 0;
+      int maxUnknowns = Integer.MAX_VALUE;
+      for (Iterator<Implicant> it = primes.iterator(); it.hasNext();) {
+        Implicant imp = it.next();
+        int count = 0;
+        for (Implicant term : imp.getTerms()) {
+          if (toCover.contains(term))
+            ++count;
+        }
+        if (count == 0) {
+          it.remove();
+        } else if (count > maxCount) {
+          max = imp;
+          maxCount = count;
+          maxUnknowns = imp.getUnknownCount();
+        } else if (count == maxCount) {
+          int unk = imp.getUnknownCount();
+          if (unk > maxUnknowns) {
+            max = imp;
+            maxUnknowns = unk;
+          }
+        }
+      }
 
-			// add it to our choice, and remove the covered rows
-			if (max != null) {
-				retSet.add(max);
-				primes.remove(max);
-				for (Implicant term : max.getTerms()) {
-					toCover.remove(term);
-				}
-			}
-		}
+      // add it to our choice, and remove the covered rows
+      if (max != null) {
+        retSet.add(max);
+        primes.remove(max);
+        for (Implicant term : max.getTerms()) {
+          toCover.remove(term);
+        }
+      }
+    }
 
-		// Now build up our sum-of-products expression
-		// from the remaining terms
-		ArrayList<Implicant> ret = new ArrayList<Implicant>(retSet);
-		Collections.sort(ret);
-		// try { throw new Exception(); }
-		// catch (Exception e) { e.printStackTrace(); }
-		return ret;
-	}
+    // Now build up our sum-of-products expression
+    // from the remaining terms
+    ArrayList<Implicant> ret = new ArrayList<Implicant>(retSet);
+    Collections.sort(ret);
+    // try { throw new Exception(); }
+    // catch (Exception e) { e.printStackTrace(); }
+    return ret;
+  }
 
-	static Expression toExpression(int format, AnalyzerModel model,
-			List<Implicant> implicants) {
-		if (implicants == null)
-			return null;
-		TruthTable table = model.getTruthTable();
-		if (format == AnalyzerModel.FORMAT_PRODUCT_OF_SUMS) {
-			Expression product = null;
-			for (Implicant imp : implicants) {
-				product = Expressions.and(product, imp.toSum(table));
-			}
-			return product == null ? Expressions.constant(1) : product;
-		} else {
-			Expression sum = null;
-			for (Implicant imp : implicants) {
-				sum = Expressions.or(sum, imp.toProduct(table));
-			}
-			return sum == null ? Expressions.constant(0) : sum;
-		}
-	}
+  static Expression toExpression(int format, AnalyzerModel model,
+      List<Implicant> implicants) {
+    if (implicants == null)
+      return null;
+    TruthTable table = model.getTruthTable();
+    if (format == AnalyzerModel.FORMAT_PRODUCT_OF_SUMS) {
+      Expression product = null;
+      for (Implicant imp : implicants) {
+        product = Expressions.and(product, imp.toSum(table));
+      }
+      return product == null ? Expressions.constant(1) : product;
+    } else {
+      Expression sum = null;
+      for (Implicant imp : implicants) {
+        sum = Expressions.or(sum, imp.toProduct(table));
+      }
+      return sum == null ? Expressions.constant(0) : sum;
+    }
+  }
 
-	static Implicant MINIMAL_IMPLICANT = new Implicant(0, -1);
-	static List<Implicant> MINIMAL_LIST = Arrays
-			.asList(new Implicant[] { MINIMAL_IMPLICANT });
+  static Implicant MINIMAL_IMPLICANT = new Implicant(0, -1);
+  static List<Implicant> MINIMAL_LIST = Arrays
+      .asList(new Implicant[] { MINIMAL_IMPLICANT });
 
-	final int unknowns, values;
+  final int unknowns, values;
 
-	private Implicant(int unknowns, int values) {
-		this.unknowns = unknowns;
-		this.values = values;
-	}
+  private Implicant(int unknowns, int values) {
+    this.unknowns = unknowns;
+    this.values = values;
+  }
 
-	public int compareTo(Implicant o) {
-		if (this.values < o.values)
-			return -1;
-		if (this.values > o.values)
-			return 1;
-		if (this.unknowns < o.unknowns)
-			return -1;
-		if (this.unknowns > o.unknowns)
-			return 1;
-		return 0;
-	}
+  public int compareTo(Implicant o) {
+    if (this.values < o.values)
+      return -1;
+    if (this.values > o.values)
+      return 1;
+    if (this.unknowns < o.unknowns)
+      return -1;
+    if (this.unknowns > o.unknowns)
+      return 1;
+    return 0;
+  }
 
-	@Override
-	public boolean equals(Object other) {
-		if (!(other instanceof Implicant))
-			return false;
-		Implicant o = (Implicant) other;
-		return this.unknowns == o.unknowns && this.values == o.values;
-	}
+  @Override
+  public boolean equals(Object other) {
+    if (!(other instanceof Implicant))
+      return false;
+    Implicant o = (Implicant) other;
+    return this.unknowns == o.unknowns && this.values == o.values;
+  }
 
-	public int getRow() {
-		if (unknowns != 0)
-			return -1;
-		return values;
-	}
+  public int getRow() {
+    if (unknowns != 0)
+      return -1;
+    return values;
+  }
 
-	public Iterable<Implicant> getTerms() {
-		return new TermIterator(this);
-	}
+  public Iterable<Implicant> getTerms() {
+    return new TermIterator(this);
+  }
 
-	public int getUnknownCount() {
-		int ret = 0;
-		int n = unknowns;
-		while (n != 0) {
-			n &= (n - 1);
-			ret++;
-		}
-		return ret;
-	}
+  public int getUnknownCount() {
+    int ret = 0;
+    int n = unknowns;
+    while (n != 0) {
+      n &= (n - 1);
+      ret++;
+    }
+    return ret;
+  }
 
-	@Override
-	public int hashCode() {
-		return (unknowns << 16) | values;
-	}
+  @Override
+  public int hashCode() {
+    return (unknowns << 16) | values;
+  }
 
-	private Expression toProduct(TruthTable source) {
-		Expression term = null;
-		int cols = source.getInputColumnCount();
-		for (int i = cols - 1; i >= 0; i--) {
-			if ((unknowns & (1 << i)) == 0) {
-				Expression literal = Expressions.variable(source
-						.getInputHeader(cols - 1 - i));
-				if ((values & (1 << i)) == 0)
-					literal = Expressions.not(literal);
-				term = Expressions.and(term, literal);
-			}
-		}
-		return term == null ? Expressions.constant(1) : term;
-	}
+  private Expression toProduct(TruthTable source) {
+    Expression term = null;
+    int cols = source.getInputColumnCount();
+    for (int i = cols - 1; i >= 0; i--) {
+      if ((unknowns & (1 << i)) == 0) {
+        Expression literal = Expressions.variable(source
+            .getInputHeader(cols - 1 - i));
+        if ((values & (1 << i)) == 0)
+          literal = Expressions.not(literal);
+        term = Expressions.and(term, literal);
+      }
+    }
+    return term == null ? Expressions.constant(1) : term;
+  }
 
-	private Expression toSum(TruthTable source) {
-		Expression term = null;
-		int cols = source.getInputColumnCount();
-		for (int i = cols - 1; i >= 0; i--) {
-			if ((unknowns & (1 << i)) == 0) {
-				Expression literal = Expressions.variable(source
-						.getInputHeader(cols - 1 - i));
-				if ((values & (1 << i)) != 0)
-					literal = Expressions.not(literal);
-				term = Expressions.or(term, literal);
-			}
-		}
-		return term == null ? Expressions.constant(1) : term;
-	}
+  private Expression toSum(TruthTable source) {
+    Expression term = null;
+    int cols = source.getInputColumnCount();
+    for (int i = cols - 1; i >= 0; i--) {
+      if ((unknowns & (1 << i)) == 0) {
+        Expression literal = Expressions.variable(source
+            .getInputHeader(cols - 1 - i));
+        if ((values & (1 << i)) != 0)
+          literal = Expressions.not(literal);
+        term = Expressions.or(term, literal);
+      }
+    }
+    return term == null ? Expressions.constant(1) : term;
+  }
 
-	static SortedMap<Implicant, String> computePartition(AnalyzerModel model) {
-		// The goal is to find a minimal partitioning of each of the regions (of
-		// the {0,1}^n hypercube) defined by the truth table output entries
-		// (string of zero, one, dont_care, error, etc.). Similar to K-maps, we
-		// can fairly easily find all the prime implicants, but unlike K-maps,
-		// we can't have overlap, so a different algorithm is called for. Maybe
-		// something from set-covering or binary-partition-trees? It's not even
-		// obvious what the complexity of this problem is. We'll just go with a
-		// simple greedy algorithm and hope for the best: sort the prime
-		// implicants, keep accepting non-overlapping ones until we have covered
-		// the region.
-		TruthTable table = model.getTruthTable();
-		int maxval = (1 << table.getInputColumnCount()) - 1;
-		// Determine the set of regions and the first-cut implicants for each
-		// region.
-		HashMap<String, HashSet<Implicant>> regions = new HashMap<>();
-		for (int i = 0; i < table.getVisibleRowCount(); i++) {
-			String val = table.getVisibleOutputs(i);
-			int idx = table.getVisibleRowIndex(i);
-			int dc = table.getVisibleRowDcMask(i);
-			Implicant imp = new Implicant(dc, idx);
-			HashSet<Implicant> region = regions.get(val);
-			if (region == null) {
-				region = new HashSet<>();
-				regions.put(val, region);
-			}
-			region.add(imp);
-		}
-		// For each region...
-		TreeMap<Implicant, String> ret = new TreeMap<>();
-		for (Map.Entry<String, HashSet<Implicant>> it : regions.entrySet()) {
-			String val = it.getKey();
-			HashSet<Implicant> base = it.getValue();
-			// System.out.printf("Computing rowset for output '%s' from %d cells\n", val, base.size());
+  static SortedMap<Implicant, String> computePartition(AnalyzerModel model) {
+    // The goal is to find a minimal partitioning of each of the regions (of
+    // the {0,1}^n hypercube) defined by the truth table output entries
+    // (string of zero, one, dont_care, error, etc.). Similar to K-maps, we
+    // can fairly easily find all the prime implicants, but unlike K-maps,
+    // we can't have overlap, so a different algorithm is called for. Maybe
+    // something from set-covering or binary-partition-trees? It's not even
+    // obvious what the complexity of this problem is. We'll just go with a
+    // simple greedy algorithm and hope for the best: sort the prime
+    // implicants, keep accepting non-overlapping ones until we have covered
+    // the region.
+    TruthTable table = model.getTruthTable();
+    int maxval = (1 << table.getInputColumnCount()) - 1;
+    // Determine the set of regions and the first-cut implicants for each
+    // region.
+    HashMap<String, HashSet<Implicant>> regions = new HashMap<>();
+    for (int i = 0; i < table.getVisibleRowCount(); i++) {
+      String val = table.getVisibleOutputs(i);
+      int idx = table.getVisibleRowIndex(i);
+      int dc = table.getVisibleRowDcMask(i);
+      Implicant imp = new Implicant(dc, idx);
+      HashSet<Implicant> region = regions.get(val);
+      if (region == null) {
+        region = new HashSet<>();
+        regions.put(val, region);
+      }
+      region.add(imp);
+    }
+    // For each region...
+    TreeMap<Implicant, String> ret = new TreeMap<>();
+    for (Map.Entry<String, HashSet<Implicant>> it : regions.entrySet()) {
+      String val = it.getKey();
+      HashSet<Implicant> base = it.getValue();
+      // System.out.printf("Computing rowset for output '%s' from %d cells\n", val, base.size());
 
-			// Work up to more general implicants.
-			HashSet<Implicant> all = new HashSet<>();
-			HashSet<Implicant> current = base;
-			while (current.size() > 0) {
-				// System.out.println("  ... starting round with " + current.size());
-				HashSet<Implicant> next = new HashSet<>();
-				for (Implicant imp : current) {
-					all.add(imp);
-					// System.out.printf("  row: %x/%x\n", imp.values, imp.unknowns);
-					for (int j = 1; j <= maxval; j *= 2) {
-						if ((imp.unknowns & j) != 0)
-							continue;
-						Implicant opp = new Implicant(imp.unknowns, imp.values ^ j);
-						if (!all.contains(opp))
-							continue;
-						// System.out.printf("  opp: %x/%x\n", opp.values, opp.unknowns);
-						Implicant i = new Implicant(opp.unknowns | j, opp.values);
-						next.add(i);
-						// System.out.printf("  add: %x/%x\n", i.values, i.unknowns);
-					}
-				}
-				current = next;
-			}
-			// System.out.printf("Found %d possible rows\n", all.size());
+      // Work up to more general implicants.
+      HashSet<Implicant> all = new HashSet<>();
+      HashSet<Implicant> current = base;
+      while (current.size() > 0) {
+        // System.out.println("  ... starting round with " + current.size());
+        HashSet<Implicant> next = new HashSet<>();
+        for (Implicant imp : current) {
+          all.add(imp);
+          // System.out.printf("  row: %x/%x\n", imp.values, imp.unknowns);
+          for (int j = 1; j <= maxval; j *= 2) {
+            if ((imp.unknowns & j) != 0)
+              continue;
+            Implicant opp = new Implicant(imp.unknowns, imp.values ^ j);
+            if (!all.contains(opp))
+              continue;
+            // System.out.printf("  opp: %x/%x\n", opp.values, opp.unknowns);
+            Implicant i = new Implicant(opp.unknowns | j, opp.values);
+            next.add(i);
+            // System.out.printf("  add: %x/%x\n", i.values, i.unknowns);
+          }
+        }
+        current = next;
+      }
+      // System.out.printf("Found %d possible rows\n", all.size());
 
-			ArrayList<Implicant> sorted = new ArrayList<>(all);
-			Collections.sort(sorted, sortByGenerality);
-			ArrayList<Implicant> chosen = new ArrayList<>();
-			for (Implicant imp : sorted) {
-				// System.out.printf("  row: %x/%x\n", imp.values, imp.unknowns);
-				if (disjoint(imp, chosen)) {
-					// System.out.println("    keeping");
-					chosen.add(imp);
-					ret.put(imp, val);
-				}
-			}
-		}
+      ArrayList<Implicant> sorted = new ArrayList<>(all);
+      Collections.sort(sorted, sortByGenerality);
+      ArrayList<Implicant> chosen = new ArrayList<>();
+      for (Implicant imp : sorted) {
+        // System.out.printf("  row: %x/%x\n", imp.values, imp.unknowns);
+        if (disjoint(imp, chosen)) {
+          // System.out.println("    keeping");
+          chosen.add(imp);
+          ret.put(imp, val);
+        }
+      }
+    }
 
-		// todo in caller: convert implicant to Row and val back to Entry[]
-		return ret;
-	}
+    // todo in caller: convert implicant to Row and val back to Entry[]
+    return ret;
+  }
 
-	private static boolean disjoint(Implicant imp, ArrayList<Implicant> chosen) {
-		for (Implicant other : chosen) {
-			int dc = imp.unknowns | other.unknowns;
-			if ((imp.values & ~dc) == (other.values & ~dc))
-				return false;
-		}
-		return true;
-	}
+  private static boolean disjoint(Implicant imp, ArrayList<Implicant> chosen) {
+    for (Implicant other : chosen) {
+      int dc = imp.unknowns | other.unknowns;
+      if ((imp.values & ~dc) == (other.values & ~dc))
+        return false;
+    }
+    return true;
+  }
 
-	private static final CompareGenerality sortByGenerality = new CompareGenerality();
-	private static class CompareGenerality implements Comparator<Implicant> {
-		public int compare(Implicant i1, Implicant i2) {
-			int diff = (i2.getUnknownCount() - i1.getUnknownCount());
-			if (diff != 0)
-				return diff;
-			return (i1.values & ~i1.unknowns) - (i2.values & ~i2.unknowns);
-		}
-	}
+  private static final CompareGenerality sortByGenerality = new CompareGenerality();
+  private static class CompareGenerality implements Comparator<Implicant> {
+    public int compare(Implicant i1, Implicant i2) {
+      int diff = (i2.getUnknownCount() - i1.getUnknownCount());
+      if (diff != 0)
+        return diff;
+      return (i1.values & ~i1.unknowns) - (i2.values & ~i2.unknowns);
+    }
+  }
 }

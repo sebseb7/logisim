@@ -76,354 +76,354 @@ import com.cburch.logisim.util.UniquelyNamedThread;
 
 public class ExportImage {
 
-	private static class ExportThread extends UniquelyNamedThread {
-		Frame frame;
-		Canvas canvas;
-		File dest;
-		ImageFileFilter filter;
-		List<Circuit> circuits;
-		double scale;
-		boolean printerView;
-		ProgressMonitor monitor;
+  private static class ExportThread extends UniquelyNamedThread {
+    Frame frame;
+    Canvas canvas;
+    File dest;
+    ImageFileFilter filter;
+    List<Circuit> circuits;
+    double scale;
+    boolean printerView;
+    ProgressMonitor monitor;
 
-		ExportThread(Frame frame, Canvas canvas, File dest, ImageFileFilter f,
-				List<Circuit> circuits, double scale, boolean printerView,
-				ProgressMonitor monitor) {
-			super("ExportThread");
-			this.frame = frame;
-			this.canvas = canvas;
-			this.dest = dest;
-			this.filter = f;
-			this.circuits = circuits;
-			this.scale = scale;
-			this.printerView = printerView;
-			this.monitor = monitor;
-		}
+    ExportThread(Frame frame, Canvas canvas, File dest, ImageFileFilter f,
+        List<Circuit> circuits, double scale, boolean printerView,
+        ProgressMonitor monitor) {
+      super("ExportThread");
+      this.frame = frame;
+      this.canvas = canvas;
+      this.dest = dest;
+      this.filter = f;
+      this.circuits = circuits;
+      this.scale = scale;
+      this.printerView = printerView;
+      this.monitor = monitor;
+    }
 
-		private void export(Circuit circuit) {
-			File filename;
-			if (dest.isDirectory()) {
-				filename = new File(dest, circuit.getName() + filter.extensions[0]);
-			} else if (filter.accept(dest)) {
-				filename = dest;
-			} else {
-				String newName = dest.getName() + filter.extensions[0];
-				filename = new File(dest.getParentFile(), newName);
-			}
-			String msg = exportImage(canvas, circuit,
-					scale, printerView, filename, filter.type, monitor);
-			if (msg != null) {
-				JOptionPane.showMessageDialog(frame, msg);
-			}
-		}
+    private void export(Circuit circuit) {
+      File filename;
+      if (dest.isDirectory()) {
+        filename = new File(dest, circuit.getName() + filter.extensions[0]);
+      } else if (filter.accept(dest)) {
+        filename = dest;
+      } else {
+        String newName = dest.getName() + filter.extensions[0];
+        filename = new File(dest.getParentFile(), newName);
+      }
+      String msg = exportImage(canvas, circuit,
+          scale, printerView, filename, filter.type, monitor);
+      if (msg != null) {
+        JOptionPane.showMessageDialog(frame, msg);
+      }
+    }
 
-		@Override
-		public void run() {
-			for (Circuit circ : circuits) {
-				export(circ);
-			}
-		}
-	}
+    @Override
+    public void run() {
+      for (Circuit circ : circuits) {
+        export(circ);
+      }
+    }
+  }
 
-	public static String exportImage(Canvas canvas, Circuit circuit, double scale, boolean printerView, File dest, int format, ProgressMonitor monitor) {
-		Bounds bds;
-		if (!printerView) {
-			bds = circuit.getBounds(canvas.getGraphics()).expand(BORDER_SIZE);
-		} else {
-			BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-			Graphics base = img.getGraphics();
-			bds = circuit.getBounds(base).expand(BORDER_SIZE);
-		}
-		int width = (int) Math.round(bds.getWidth() * scale);
-		int height = (int) Math.round(bds.getHeight() * scale);
-		if (width == 0)
-			width = 100;
-		if (height == 0)
-			height = 100;
-		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-		Graphics base = img.getGraphics();
-		Graphics g = base.create();
-		g.setColor(Color.white);
-		g.fillRect(0, 0, width, height);
-		g.setColor(Color.black);
-		if (g instanceof Graphics2D) {
-			((Graphics2D) g).scale(scale, scale);
-			((Graphics2D) g).translate(-bds.getX(), -bds.getY());
-		} else {
-			return Strings.get("couldNotCreateImage");
-		}
+  public static String exportImage(Canvas canvas, Circuit circuit, double scale, boolean printerView, File dest, int format, ProgressMonitor monitor) {
+    Bounds bds;
+    if (!printerView) {
+      bds = circuit.getBounds(canvas.getGraphics()).expand(BORDER_SIZE);
+    } else {
+      BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+      Graphics base = img.getGraphics();
+      bds = circuit.getBounds(base).expand(BORDER_SIZE);
+    }
+    int width = (int) Math.round(bds.getWidth() * scale);
+    int height = (int) Math.round(bds.getHeight() * scale);
+    if (width == 0)
+      width = 100;
+    if (height == 0)
+      height = 100;
+    BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+    Graphics base = img.getGraphics();
+    Graphics g = base.create();
+    g.setColor(Color.white);
+    g.fillRect(0, 0, width, height);
+    g.setColor(Color.black);
+    if (g instanceof Graphics2D) {
+      ((Graphics2D) g).scale(scale, scale);
+      ((Graphics2D) g).translate(-bds.getX(), -bds.getY());
+    } else {
+      return Strings.get("couldNotCreateImage");
+    }
 
-		CircuitState circuitState = canvas.getProject().getCircuitState(circuit);
-		ComponentDrawContext context = new ComponentDrawContext(canvas,
-				circuit, circuitState, base, g, printerView);
-		circuit.draw(context, null);
+    CircuitState circuitState = canvas.getProject().getCircuitState(circuit);
+    ComponentDrawContext context = new ComponentDrawContext(canvas,
+        circuit, circuitState, base, g, printerView);
+    circuit.draw(context, null);
 
-		try {
-			switch (format) {
-				case FORMAT_GIF:
-					GifEncoder.toFile(img, dest, monitor);
-					break;
-				case FORMAT_PNG:
-					ImageIO.write(img, "PNG", dest);
-					break;
-				case FORMAT_JPG:
-					ImageIO.write(img, "JPEG", dest);
-					break;
-			}
-		} catch (Exception e) {
-			return Strings.get("couldNotCreateFile");
-		} finally {
-			g.dispose();
-			if (monitor != null)
-				monitor.close();
-		}
-		return null;
-	}
+    try {
+      switch (format) {
+      case FORMAT_GIF:
+        GifEncoder.toFile(img, dest, monitor);
+        break;
+      case FORMAT_PNG:
+        ImageIO.write(img, "PNG", dest);
+        break;
+      case FORMAT_JPG:
+        ImageIO.write(img, "JPEG", dest);
+        break;
+      }
+    } catch (Exception e) {
+      return Strings.get("couldNotCreateFile");
+    } finally {
+      g.dispose();
+      if (monitor != null)
+        monitor.close();
+    }
+    return null;
+  }
 
-	private static class ImageFileFilter extends FileFilter {
-		private int type;
-		private String[] extensions;
-		private StringGetter desc;
+  private static class ImageFileFilter extends FileFilter {
+    private int type;
+    private String[] extensions;
+    private StringGetter desc;
 
-		private ImageFileFilter(int type, StringGetter desc, String[] exts) {
-			this.type = type;
-			this.desc = desc;
-			extensions = new String[exts.length];
-			for (int i = 0; i < exts.length; i++) {
-				extensions[i] = "." + exts[i].toLowerCase();
-			}
-		}
+    private ImageFileFilter(int type, StringGetter desc, String[] exts) {
+      this.type = type;
+      this.desc = desc;
+      extensions = new String[exts.length];
+      for (int i = 0; i < exts.length; i++) {
+        extensions[i] = "." + exts[i].toLowerCase();
+      }
+    }
 
-		@Override
-		public boolean accept(File f) {
-			String name = f.getName().toLowerCase();
-			for (int i = 0; i < extensions.length; i++) {
-				if (name.endsWith(extensions[i]))
-					return true;
-			}
-			return f.isDirectory();
-		}
+    @Override
+    public boolean accept(File f) {
+      String name = f.getName().toLowerCase();
+      for (int i = 0; i < extensions.length; i++) {
+        if (name.endsWith(extensions[i]))
+          return true;
+      }
+      return f.isDirectory();
+    }
 
-		@Override
-		public String getDescription() {
-			return desc.toString();
-		}
-	}
+    @Override
+    public String getDescription() {
+      return desc.toString();
+    }
+  }
 
-	private static class OptionsPanel extends JPanel implements ChangeListener {
-		private static final long serialVersionUID = 1L;
-		JSlider slider;
-		JLabel curScale;
-		JCheckBox printerView;
-		JRadioButton formatPng;
-		JRadioButton formatGif;
-		JRadioButton formatJpg;
-		GridBagLayout gridbag;
-		GridBagConstraints gbc;
-		Dimension curScaleDim;
+  private static class OptionsPanel extends JPanel implements ChangeListener {
+    private static final long serialVersionUID = 1L;
+    JSlider slider;
+    JLabel curScale;
+    JCheckBox printerView;
+    JRadioButton formatPng;
+    JRadioButton formatGif;
+    JRadioButton formatJpg;
+    GridBagLayout gridbag;
+    GridBagConstraints gbc;
+    Dimension curScaleDim;
 
-		@SuppressWarnings("rawtypes")
-		OptionsPanel(JList list) {
-			// set up components
-			formatPng = new JRadioButton("PNG");
-			formatGif = new JRadioButton("GIF");
-			formatJpg = new JRadioButton("JPEG");
-			ButtonGroup bgroup = new ButtonGroup();
-			bgroup.add(formatPng);
-			bgroup.add(formatGif);
-			bgroup.add(formatJpg);
-			formatPng.setSelected(true);
+    @SuppressWarnings("rawtypes")
+    OptionsPanel(JList list) {
+      // set up components
+      formatPng = new JRadioButton("PNG");
+      formatGif = new JRadioButton("GIF");
+      formatJpg = new JRadioButton("JPEG");
+      ButtonGroup bgroup = new ButtonGroup();
+      bgroup.add(formatPng);
+      bgroup.add(formatGif);
+      bgroup.add(formatJpg);
+      formatPng.setSelected(true);
 
-			slider = new JSlider(JSlider.HORIZONTAL, -3 * SLIDER_DIVISIONS,
-					3 * SLIDER_DIVISIONS, 0);
-			slider.setMajorTickSpacing(10);
-			slider.addChangeListener(this);
-			curScale = new JLabel("222%");
-			curScale.setHorizontalAlignment(SwingConstants.RIGHT);
-			curScale.setVerticalAlignment(SwingConstants.CENTER);
-			curScaleDim = new Dimension(curScale.getPreferredSize());
-			curScaleDim.height = Math.max(curScaleDim.height,
-					slider.getPreferredSize().height);
-			stateChanged(null);
+      slider = new JSlider(JSlider.HORIZONTAL, -3 * SLIDER_DIVISIONS,
+          3 * SLIDER_DIVISIONS, 0);
+      slider.setMajorTickSpacing(10);
+      slider.addChangeListener(this);
+      curScale = new JLabel("222%");
+      curScale.setHorizontalAlignment(SwingConstants.RIGHT);
+      curScale.setVerticalAlignment(SwingConstants.CENTER);
+      curScaleDim = new Dimension(curScale.getPreferredSize());
+      curScaleDim.height = Math.max(curScaleDim.height,
+          slider.getPreferredSize().height);
+      stateChanged(null);
 
-			printerView = new JCheckBox();
-			printerView.setSelected(true);
+      printerView = new JCheckBox();
+      printerView.setSelected(true);
 
-			// set up panel
-			gridbag = new GridBagLayout();
-			gbc = new GridBagConstraints();
-			setLayout(gridbag);
+      // set up panel
+      gridbag = new GridBagLayout();
+      gbc = new GridBagConstraints();
+      setLayout(gridbag);
 
-			// now add components into panel
-			gbc.gridy = 0;
-			gbc.gridx = GridBagConstraints.RELATIVE;
-			gbc.anchor = GridBagConstraints.NORTHWEST;
-			gbc.insets = new Insets(5, 0, 5, 0);
-			gbc.fill = GridBagConstraints.NONE;
-			addGb(new JLabel(Strings.get("labelCircuits") + " "));
-			gbc.fill = GridBagConstraints.HORIZONTAL;
-			addGb(new JScrollPane(list));
-			gbc.fill = GridBagConstraints.NONE;
+      // now add components into panel
+      gbc.gridy = 0;
+      gbc.gridx = GridBagConstraints.RELATIVE;
+      gbc.anchor = GridBagConstraints.NORTHWEST;
+      gbc.insets = new Insets(5, 0, 5, 0);
+      gbc.fill = GridBagConstraints.NONE;
+      addGb(new JLabel(Strings.get("labelCircuits") + " "));
+      gbc.fill = GridBagConstraints.HORIZONTAL;
+      addGb(new JScrollPane(list));
+      gbc.fill = GridBagConstraints.NONE;
 
-			gbc.gridy++;
-			addGb(new JLabel(Strings.get("labelImageFormat") + " "));
-			Box formatsPanel = new Box(BoxLayout.Y_AXIS);
-			formatsPanel.add(formatPng);
-			formatsPanel.add(formatGif);
-			formatsPanel.add(formatJpg);
-			addGb(formatsPanel);
+      gbc.gridy++;
+      addGb(new JLabel(Strings.get("labelImageFormat") + " "));
+      Box formatsPanel = new Box(BoxLayout.Y_AXIS);
+      formatsPanel.add(formatPng);
+      formatsPanel.add(formatGif);
+      formatsPanel.add(formatJpg);
+      addGb(formatsPanel);
 
-			gbc.gridy++;
-			addGb(new JLabel(Strings.get("labelScale") + " "));
-			addGb(slider);
-			addGb(curScale);
+      gbc.gridy++;
+      addGb(new JLabel(Strings.get("labelScale") + " "));
+      addGb(slider);
+      addGb(curScale);
 
-			gbc.gridy++;
-			addGb(new JLabel(Strings.get("labelPrinterView") + " "));
-			addGb(printerView);
-		}
+      gbc.gridy++;
+      addGb(new JLabel(Strings.get("labelPrinterView") + " "));
+      addGb(printerView);
+    }
 
-		private void addGb(JComponent comp) {
-			gridbag.setConstraints(comp, gbc);
-			add(comp);
-		}
+    private void addGb(JComponent comp) {
+      gridbag.setConstraints(comp, gbc);
+      add(comp);
+    }
 
-		int getImageFormat() {
-			if (formatGif.isSelected())
-				return FORMAT_GIF;
-			if (formatJpg.isSelected())
-				return FORMAT_JPG;
-			return FORMAT_PNG;
-		}
+    int getImageFormat() {
+      if (formatGif.isSelected())
+        return FORMAT_GIF;
+      if (formatJpg.isSelected())
+        return FORMAT_JPG;
+      return FORMAT_PNG;
+    }
 
-		boolean getPrinterView() {
-			return printerView.isSelected();
-		}
+    boolean getPrinterView() {
+      return printerView.isSelected();
+    }
 
-		double getScale() {
-			return Math.pow(2.0, (double) slider.getValue() / SLIDER_DIVISIONS);
-		}
+    double getScale() {
+      return Math.pow(2.0, (double) slider.getValue() / SLIDER_DIVISIONS);
+    }
 
-		public void stateChanged(ChangeEvent e) {
-			double scale = getScale();
-			curScale.setText((int) Math.round(100.0 * scale) + "%");
-			if (curScaleDim != null)
-				curScale.setPreferredSize(curScaleDim);
-		}
-	}
+    public void stateChanged(ChangeEvent e) {
+      double scale = getScale();
+      curScale.setText((int) Math.round(100.0 * scale) + "%");
+      if (curScaleDim != null)
+        curScale.setPreferredSize(curScaleDim);
+    }
+  }
 
-	static void doExport(Project proj) {
-		// First display circuit/parameter selection dialog
-		Frame frame = proj.getFrame();
-		CircuitJList list = new CircuitJList(proj, true);
-		if (list.getModel().getSize() == 0) {
-			JOptionPane.showMessageDialog(proj.getFrame(),
-					Strings.get("exportEmptyCircuitsMessage"),
-					Strings.get("exportEmptyCircuitsTitle"),
-					JOptionPane.YES_NO_OPTION);
-			return;
-		}
-		OptionsPanel options = new OptionsPanel(list);
-		int action = JOptionPane.showConfirmDialog(frame, options,
-				Strings.get("exportImageSelect"), JOptionPane.OK_CANCEL_OPTION,
-				JOptionPane.QUESTION_MESSAGE);
-		if (action != JOptionPane.OK_OPTION)
-			return;
-		List<Circuit> circuits = list.getSelectedCircuits();
-		double scale = options.getScale();
-		boolean printerView = options.getPrinterView();
-		if (circuits.isEmpty())
-			return;
+  static void doExport(Project proj) {
+    // First display circuit/parameter selection dialog
+    Frame frame = proj.getFrame();
+    CircuitJList list = new CircuitJList(proj, true);
+    if (list.getModel().getSize() == 0) {
+      JOptionPane.showMessageDialog(proj.getFrame(),
+          Strings.get("exportEmptyCircuitsMessage"),
+          Strings.get("exportEmptyCircuitsTitle"),
+          JOptionPane.YES_NO_OPTION);
+      return;
+    }
+    OptionsPanel options = new OptionsPanel(list);
+    int action = JOptionPane.showConfirmDialog(frame, options,
+        Strings.get("exportImageSelect"), JOptionPane.OK_CANCEL_OPTION,
+        JOptionPane.QUESTION_MESSAGE);
+    if (action != JOptionPane.OK_OPTION)
+      return;
+    List<Circuit> circuits = list.getSelectedCircuits();
+    double scale = options.getScale();
+    boolean printerView = options.getPrinterView();
+    if (circuits.isEmpty())
+      return;
 
-		ImageFileFilter filter;
-		int fmt = options.getImageFormat();
-		switch (fmt) {
-		case FORMAT_GIF:
-			filter = new ImageFileFilter(fmt,
-					Strings.getter("exportGifFilter"), new String[] { "gif" });
-			break;
-		case FORMAT_PNG:
-			filter = new ImageFileFilter(fmt,
-					Strings.getter("exportPngFilter"), new String[] { "png" });
-			break;
-		case FORMAT_JPG:
-			filter = new ImageFileFilter(fmt,
-					Strings.getter("exportJpgFilter"), new String[] { "jpg",
-							"jpeg", "jpe", "jfi", "jfif", "jfi" });
-			break;
-		default:
-			logger.error("Unexpected image format; aborted!");
-			return;
-		}
+    ImageFileFilter filter;
+    int fmt = options.getImageFormat();
+    switch (fmt) {
+    case FORMAT_GIF:
+      filter = new ImageFileFilter(fmt,
+          Strings.getter("exportGifFilter"), new String[] { "gif" });
+      break;
+    case FORMAT_PNG:
+      filter = new ImageFileFilter(fmt,
+          Strings.getter("exportPngFilter"), new String[] { "png" });
+      break;
+    case FORMAT_JPG:
+      filter = new ImageFileFilter(fmt,
+          Strings.getter("exportJpgFilter"), new String[] { "jpg",
+            "jpeg", "jpe", "jfi", "jfif", "jfi" });
+      break;
+    default:
+      logger.error("Unexpected image format; aborted!");
+      return;
+    }
 
-		// Then display file chooser
-		Loader loader = proj.getLogisimFile().getLoader();
-		JFileChooser chooser = loader.createChooser();
-		if (circuits.size() > 1) {
-			chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-			chooser.setDialogTitle(Strings.get("exportImageDirectorySelect"));
-		} else {
-			chooser.setFileFilter(filter);
-			chooser.setDialogTitle(Strings.get("exportImageFileSelect"));
-		}
-		int returnVal = chooser.showDialog(frame,
-				Strings.get("exportImageButton"));
-		if (returnVal != JFileChooser.APPROVE_OPTION)
-			return;
+    // Then display file chooser
+    Loader loader = proj.getLogisimFile().getLoader();
+    JFileChooser chooser = loader.createChooser();
+    if (circuits.size() > 1) {
+      chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+      chooser.setDialogTitle(Strings.get("exportImageDirectorySelect"));
+    } else {
+      chooser.setFileFilter(filter);
+      chooser.setDialogTitle(Strings.get("exportImageFileSelect"));
+    }
+    int returnVal = chooser.showDialog(frame,
+        Strings.get("exportImageButton"));
+    if (returnVal != JFileChooser.APPROVE_OPTION)
+      return;
 
-		// Determine whether destination is valid
-		File dest = chooser.getSelectedFile();
-		chooser.setCurrentDirectory(dest.isDirectory() ? dest : dest
-				.getParentFile());
-		if (dest.exists()) {
-			if (!dest.isDirectory()) {
-				int confirm = JOptionPane.showConfirmDialog(proj.getFrame(),
-						Strings.get("confirmOverwriteMessage"),
-						Strings.get("confirmOverwriteTitle"),
-						JOptionPane.YES_NO_OPTION);
-				if (confirm != JOptionPane.YES_OPTION)
-					return;
-			}
-		} else {
-			if (circuits.size() > 1) {
-				boolean created = dest.mkdir();
-				if (!created) {
-					JOptionPane.showMessageDialog(proj.getFrame(),
-							Strings.get("exportNewDirectoryErrorMessage"),
-							Strings.get("exportNewDirectoryErrorTitle"),
-							JOptionPane.YES_NO_OPTION);
-					return;
-				}
-			}
-		}
+    // Determine whether destination is valid
+    File dest = chooser.getSelectedFile();
+    chooser.setCurrentDirectory(dest.isDirectory() ? dest : dest
+        .getParentFile());
+    if (dest.exists()) {
+      if (!dest.isDirectory()) {
+        int confirm = JOptionPane.showConfirmDialog(proj.getFrame(),
+            Strings.get("confirmOverwriteMessage"),
+            Strings.get("confirmOverwriteTitle"),
+            JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION)
+          return;
+      }
+    } else {
+      if (circuits.size() > 1) {
+        boolean created = dest.mkdir();
+        if (!created) {
+          JOptionPane.showMessageDialog(proj.getFrame(),
+              Strings.get("exportNewDirectoryErrorMessage"),
+              Strings.get("exportNewDirectoryErrorTitle"),
+              JOptionPane.YES_NO_OPTION);
+          return;
+        }
+      }
+    }
 
-		// Create the progress monitor
-		ProgressMonitor monitor = new ProgressMonitor(frame,
-				Strings.get("exportImageProgress"), null, 0, 10000);
-		monitor.setMillisToDecideToPopup(100);
-		monitor.setMillisToPopup(200);
-		monitor.setProgress(0);
+    // Create the progress monitor
+    ProgressMonitor monitor = new ProgressMonitor(frame,
+        Strings.get("exportImageProgress"), null, 0, 10000);
+    monitor.setMillisToDecideToPopup(100);
+    monitor.setMillisToPopup(200);
+    monitor.setProgress(0);
 
-		// And start a thread to actually perform the operation
-		// (This is run in a thread so that Swing will update the
-		// monitor.)
-		new ExportThread(frame, frame.getCanvas(), dest, filter, circuits,
-				scale, printerView, monitor).start();
+    // And start a thread to actually perform the operation
+    // (This is run in a thread so that Swing will update the
+    // monitor.)
+    new ExportThread(frame, frame.getCanvas(), dest, filter, circuits,
+        scale, printerView, monitor).start();
 
-	}
+  }
 
-	final static Logger logger = LoggerFactory.getLogger(ExportImage.class);
+  final static Logger logger = LoggerFactory.getLogger(ExportImage.class);
 
-	private static final int SLIDER_DIVISIONS = 6;
+  private static final int SLIDER_DIVISIONS = 6;
 
-	public static final int FORMAT_GIF = 0;
+  public static final int FORMAT_GIF = 0;
 
-	public static final int FORMAT_PNG = 1;
+  public static final int FORMAT_PNG = 1;
 
-	public static final int FORMAT_JPG = 2;
+  public static final int FORMAT_JPG = 2;
 
-	private static final int BORDER_SIZE = 5;
+  private static final int BORDER_SIZE = 5;
 
-	private ExportImage() {
-	}
+  private ExportImage() {
+  }
 }

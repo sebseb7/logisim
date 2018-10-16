@@ -36,31 +36,31 @@ import com.cburch.logisim.data.Value;
 import com.cburch.logisim.proj.Project;
 
 public interface InstanceState {
-	public void fireInvalidated();
+  public void fireInvalidated();
 
-	public AttributeSet getAttributeSet();
+  public AttributeSet getAttributeSet();
 
-	public <E> E getAttributeValue(Attribute<E> attr);
+  public <E> E getAttributeValue(Attribute<E> attr);
 
-	public InstanceData getData();
+  public InstanceData getData();
 
-	public InstanceFactory getFactory();
+  public InstanceFactory getFactory();
 
-	public Instance getInstance();
+  public Instance getInstance();
 
-	public int getPortIndex(Port port);
+  public int getPortIndex(Port port);
 
-	public Value getPortValue(int portIndex);
+  public Value getPortValue(int portIndex);
 
-	public Project getProject();
+  public Project getProject();
 
-	public long getTickCount();
+  public long getTickCount();
 
-	public boolean isCircuitRoot();
+  public boolean isCircuitRoot();
 
-	public boolean isPortConnected(int portIndex);
+  public boolean isPortConnected(int portIndex);
 
-	public void setData(InstanceData value);
+  public void setData(InstanceData value);
 
-	public void setPort(int portIndex, Value value, int delay);
+  public void setPort(int portIndex, Value value, int delay);
 }

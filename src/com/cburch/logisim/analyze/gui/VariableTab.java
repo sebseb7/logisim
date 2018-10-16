@@ -64,317 +64,317 @@ import com.cburch.logisim.util.StringUtil;
 
 class VariableTab extends AnalyzerTab implements TabInterface {
 
-	private class MyListener implements ActionListener, DocumentListener, ListSelectionListener {
-		public void actionPerformed(ActionEvent event) {
-                        String name = field.getText().trim();
-                        int w = (Integer)width.getSelectedItem();
-                        Var newVar = new Var(name, w);
-                        Var oldVar = list.getSelectedValue();
-			Object src = event.getSource();
-			if ((src == add || src == field) && add.isEnabled()) {
-				if (!name.equals("")) {
-					data.add(newVar);
-					list.setSelectedValue(newVar, true);
-					width.setSelectedItem(1);
-					field.setText("");
-					field.grabFocus();
-				}
-			} else if (src == rename && rename.isEnabled()) {
-				if (oldVar != null && !name.equals("")) {
-					data.replace(oldVar, newVar);
-					list.setSelectedValue(newVar, true);
-					width.setSelectedItem(1);
-					field.setText("");
-					field.grabFocus();
-				}
-			} else if (src == remove && oldVar != null) {
-                                data.remove(oldVar);
-			} else if (src == moveUp && oldVar != null) {
-                                data.move(oldVar, -1);
-                                list.setSelectedValue(oldVar, true);
-			} else if (src == moveDown && oldVar != null) {
-                                data.move(oldVar, 1);
-                                list.setSelectedValue(oldVar, true);
-			} else if (src == width) {
-                                computeEnabled();
-                        }
-		}
+  private class MyListener implements ActionListener, DocumentListener, ListSelectionListener {
+    public void actionPerformed(ActionEvent event) {
+      String name = field.getText().trim();
+      int w = (Integer)width.getSelectedItem();
+      Var newVar = new Var(name, w);
+      Var oldVar = list.getSelectedValue();
+      Object src = event.getSource();
+      if ((src == add || src == field) && add.isEnabled()) {
+        if (!name.equals("")) {
+          data.add(newVar);
+          list.setSelectedValue(newVar, true);
+          width.setSelectedItem(1);
+          field.setText("");
+          field.grabFocus();
+        }
+      } else if (src == rename && rename.isEnabled()) {
+        if (oldVar != null && !name.equals("")) {
+          data.replace(oldVar, newVar);
+          list.setSelectedValue(newVar, true);
+          width.setSelectedItem(1);
+          field.setText("");
+          field.grabFocus();
+        }
+      } else if (src == remove && oldVar != null) {
+        data.remove(oldVar);
+      } else if (src == moveUp && oldVar != null) {
+        data.move(oldVar, -1);
+        list.setSelectedValue(oldVar, true);
+      } else if (src == moveDown && oldVar != null) {
+        data.move(oldVar, 1);
+        list.setSelectedValue(oldVar, true);
+      } else if (src == width) {
+        computeEnabled();
+      }
+    }
 
-		public void changedUpdate(DocumentEvent event) { computeEnabled(); }
-		public void insertUpdate(DocumentEvent event) { computeEnabled(); }
-		public void removeUpdate(DocumentEvent event) { computeEnabled(); }
-		public void valueChanged(ListSelectionEvent event) {
-                        Var var = list.getSelectedValue();
-                        if (var != null) {
-                                field.setText(var.name);
-                                width.setSelectedItem(var.width);
-                        }
-                        computeEnabled();
-                }
-	}
+    public void changedUpdate(DocumentEvent event) { computeEnabled(); }
+    public void insertUpdate(DocumentEvent event) { computeEnabled(); }
+    public void removeUpdate(DocumentEvent event) { computeEnabled(); }
+    public void valueChanged(ListSelectionEvent event) {
+      Var var = list.getSelectedValue();
+      if (var != null) {
+        field.setText(var.name);
+        width.setSelectedItem(var.width);
+      }
+      computeEnabled();
+    }
+  }
 
-	@SuppressWarnings("rawtypes")
-	private static class VariableListModel extends AbstractListModel implements
-			VariableListListener {
-		private static final long serialVersionUID = 1L;
-		private VariableList list;
-		private Var[] listCopy;
+  @SuppressWarnings("rawtypes")
+  private static class VariableListModel extends AbstractListModel
+    implements VariableListListener {
+    private static final long serialVersionUID = 1L;
+    private VariableList list;
+    private Var[] listCopy;
 
-		public VariableListModel(VariableList list) {
-			this.list = list;
-			updateCopy();
-			list.addVariableListListener(this);
-		}
+    public VariableListModel(VariableList list) {
+      this.list = list;
+      updateCopy();
+      list.addVariableListListener(this);
+    }
 
-		public Object getElementAt(int i) {
-			return i >= 0 && i < listCopy.length ? listCopy[i] : null;
-		}
+    public Object getElementAt(int i) {
+      return i >= 0 && i < listCopy.length ? listCopy[i] : null;
+    }
 
-		public int getSize() {
-			return listCopy.length;
-		}
+    public int getSize() {
+      return listCopy.length;
+    }
 
-		public void listChanged(VariableListEvent event) {
-			int oldSize = listCopy.length;
-			updateCopy();
-                        Integer idx = event.getIndex();
-			switch (event.getType()) {
-			case VariableListEvent.ALL_REPLACED:
-				fireContentsChanged(this, 0, oldSize);
-				return;
-			case VariableListEvent.ADD:
-                                fireIntervalAdded(this, idx, idx);
-				return;
-			case VariableListEvent.REMOVE:
-                                fireIntervalRemoved(this, idx, idx);
-				return;
-			case VariableListEvent.MOVE:
-				fireContentsChanged(this, 0, getSize());
-				return;
-			case VariableListEvent.REPLACE:
-                                fireContentsChanged(this, idx, idx);
-				return;
-			}
-		}
+    public void listChanged(VariableListEvent event) {
+      int oldSize = listCopy.length;
+      updateCopy();
+      Integer idx = event.getIndex();
+      switch (event.getType()) {
+      case VariableListEvent.ALL_REPLACED:
+        fireContentsChanged(this, 0, oldSize);
+        return;
+      case VariableListEvent.ADD:
+        fireIntervalAdded(this, idx, idx);
+        return;
+      case VariableListEvent.REMOVE:
+        fireIntervalRemoved(this, idx, idx);
+        return;
+      case VariableListEvent.MOVE:
+        fireContentsChanged(this, 0, getSize());
+        return;
+      case VariableListEvent.REPLACE:
+        fireContentsChanged(this, idx, idx);
+        return;
+      }
+    }
 
-		private void update() {
-			int oldSize = listCopy.length;
-			updateCopy();
-			fireContentsChanged(this, 0, oldSize);
-		}
+    private void update() {
+      int oldSize = listCopy.length;
+      updateCopy();
+      fireContentsChanged(this, 0, oldSize);
+    }
 
-		private void updateCopy() {
-			listCopy = list.vars.toArray(new Var[list.vars.size()]);
-		}
-	}
+    private void updateCopy() {
+      listCopy = list.vars.toArray(new Var[list.vars.size()]);
+    }
+  }
 
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	private VariableList data;
-	private MyListener myListener = new MyListener();
+  private VariableList data;
+  private MyListener myListener = new MyListener();
 
-	private JList<Var> list = new JList<Var>();
-	private JTextField field = new JTextField();
-	private JComboBox width;
-	private JButton remove = new JButton();
-	private JButton moveUp = new JButton();
-	private JButton moveDown = new JButton();
-	private JButton add = new JButton();
-	private JButton rename = new JButton();
-	private JLabel error = new JLabel(" ");
+  private JList<Var> list = new JList<Var>();
+  private JTextField field = new JTextField();
+  private JComboBox width;
+  private JButton remove = new JButton();
+  private JButton moveUp = new JButton();
+  private JButton moveDown = new JButton();
+  private JButton add = new JButton();
+  private JButton rename = new JButton();
+  private JLabel error = new JLabel(" ");
 
-	@SuppressWarnings("unchecked")
-	VariableTab(VariableList data, int maxwidth) {
-		this.data = data;
+  @SuppressWarnings("unchecked")
+  VariableTab(VariableList data, int maxwidth) {
+    this.data = data;
 
-		Integer widths[] = new Integer[maxwidth > 32 ? 32 : maxwidth];
-		for (int i = 0; i < widths.length; i++)
-			widths[i] = i+1;
-		width = new JComboBox(widths);
+    Integer widths[] = new Integer[maxwidth > 32 ? 32 : maxwidth];
+    for (int i = 0; i < widths.length; i++)
+      widths[i] = i+1;
+    width = new JComboBox(widths);
 
-		list.setModel(new VariableListModel(data));
-		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		list.addListSelectionListener(myListener);
-		remove.addActionListener(myListener);
-		moveUp.addActionListener(myListener);
-		moveDown.addActionListener(myListener);
-		add.addActionListener(myListener);
-		rename.addActionListener(myListener);
-		field.addActionListener(myListener);
-		field.getDocument().addDocumentListener(myListener);
-                width.addActionListener(myListener);
+    list.setModel(new VariableListModel(data));
+    list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    list.addListSelectionListener(myListener);
+    remove.addActionListener(myListener);
+    moveUp.addActionListener(myListener);
+    moveDown.addActionListener(myListener);
+    add.addActionListener(myListener);
+    rename.addActionListener(myListener);
+    field.addActionListener(myListener);
+    field.getDocument().addDocumentListener(myListener);
+    width.addActionListener(myListener);
 
-		JScrollPane listPane = new JScrollPane(list,
-				ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
-				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		listPane.setPreferredSize(new Dimension(100, 100));
+    JScrollPane listPane = new JScrollPane(list,
+        ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
+        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+    listPane.setPreferredSize(new Dimension(100, 100));
 
-		JPanel topPanel = new JPanel(new GridLayout(3, 1));
-		topPanel.add(remove);
-		topPanel.add(moveUp);
-		topPanel.add(moveDown);
+    JPanel topPanel = new JPanel(new GridLayout(3, 1));
+    topPanel.add(remove);
+    topPanel.add(moveUp);
+    topPanel.add(moveDown);
 
-		JPanel fieldPanel = new JPanel();
-		fieldPanel.add(rename);
-		fieldPanel.add(add);
+    JPanel fieldPanel = new JPanel();
+    fieldPanel.add(rename);
+    fieldPanel.add(add);
 
-		GridBagLayout gb = new GridBagLayout();
-		GridBagConstraints gc = new GridBagConstraints();
-		setLayout(gb);
-		Insets oldInsets = gc.insets;
+    GridBagLayout gb = new GridBagLayout();
+    GridBagConstraints gc = new GridBagConstraints();
+    setLayout(gb);
+    Insets oldInsets = gc.insets;
 
-		gc.insets = new Insets(10, 10, 0, 0);
-		gc.fill = GridBagConstraints.BOTH;
-		gc.weightx = 1.0;
-		gb.setConstraints(listPane, gc);
-		add(listPane);
+    gc.insets = new Insets(10, 10, 0, 0);
+    gc.fill = GridBagConstraints.BOTH;
+    gc.weightx = 1.0;
+    gb.setConstraints(listPane, gc);
+    add(listPane);
 
-		gc.fill = GridBagConstraints.NONE;
-		gc.anchor = GridBagConstraints.PAGE_START;
-		gc.weightx = 0.0;
-		gb.setConstraints(topPanel, gc);
-		add(topPanel);
+    gc.fill = GridBagConstraints.NONE;
+    gc.anchor = GridBagConstraints.PAGE_START;
+    gc.weightx = 0.0;
+    gb.setConstraints(topPanel, gc);
+    add(topPanel);
 
-		gc.insets = new Insets(10, 10, 0, 10);
-		gc.weightx = 1.0;
-		gc.gridx = 0;
-		gc.gridy = GridBagConstraints.RELATIVE;
-		gc.fill = GridBagConstraints.BOTH;
-		gb.setConstraints(field, gc);
-		add(field);
+    gc.insets = new Insets(10, 10, 0, 10);
+    gc.weightx = 1.0;
+    gc.gridx = 0;
+    gc.gridy = GridBagConstraints.RELATIVE;
+    gc.fill = GridBagConstraints.BOTH;
+    gb.setConstraints(field, gc);
+    add(field);
 
-                JPanel wPanel = new JPanel();
-                wPanel.add(new JLabel("width: "));
-                wPanel.add(width);
-		gc.insets = new Insets(10, 10, 0, 10);
-		gc.weightx = 0.0;
-		gc.gridx = 1;
-		gc.fill = GridBagConstraints.NONE;
-		gb.setConstraints(wPanel, gc);
-		add(wPanel);
+    JPanel wPanel = new JPanel();
+    wPanel.add(new JLabel("width: "));
+    wPanel.add(width);
+    gc.insets = new Insets(10, 10, 0, 10);
+    gc.weightx = 0.0;
+    gc.gridx = 1;
+    gc.fill = GridBagConstraints.NONE;
+    gb.setConstraints(wPanel, gc);
+    add(wPanel);
 
-		gc.insets = oldInsets;
-		gc.fill = GridBagConstraints.NONE;
-		gc.anchor = GridBagConstraints.LINE_END;
-		gb.setConstraints(fieldPanel, gc);
-		add(fieldPanel);
+    gc.insets = oldInsets;
+    gc.fill = GridBagConstraints.NONE;
+    gc.anchor = GridBagConstraints.LINE_END;
+    gb.setConstraints(fieldPanel, gc);
+    add(fieldPanel);
 
-		gc.fill = GridBagConstraints.HORIZONTAL;
-                gc.gridx = 0;
-                gc.gridwidth = 2;
-		gb.setConstraints(error, gc);
-		add(error);
+    gc.fill = GridBagConstraints.HORIZONTAL;
+    gc.gridx = 0;
+    gc.gridwidth = 2;
+    gb.setConstraints(error, gc);
+    add(error);
 
-		if (!data.vars.isEmpty())
-			list.setSelectedValue(data.vars.get(0), true);
-		computeEnabled();
-	}
+    if (!data.vars.isEmpty())
+      list.setSelectedValue(data.vars.get(0), true);
+    computeEnabled();
+  }
 
-	private void computeEnabled() {
-		int index = list.getSelectedIndex();
-		int max = list.getModel().getSize();
-		boolean selected = index >= 0 && index < max;
-		remove.setEnabled(selected);
-		moveUp.setEnabled(selected && index > 0);
-		moveDown.setEnabled(selected && index < max);
+  private void computeEnabled() {
+    int index = list.getSelectedIndex();
+    int max = list.getModel().getSize();
+    boolean selected = index >= 0 && index < max;
+    remove.setEnabled(selected);
+    moveUp.setEnabled(selected && index > 0);
+    moveDown.setEnabled(selected && index < max);
 
-		int err = validateInput();
-                int w = (Integer)width.getSelectedItem();
-		add.setEnabled(err == OK && data.bits.size() + w <= data.getMaximumSize());
-		rename.setEnabled((err == OK || err == RESIZED) && selected);
-	}
+    int err = validateInput();
+    int w = (Integer)width.getSelectedItem();
+    add.setEnabled(err == OK && data.bits.size() + w <= data.getMaximumSize());
+    rename.setEnabled((err == OK || err == RESIZED) && selected);
+  }
 
-	public void copy() {
-		field.requestFocus();
-		field.copy();
-	}
+  public void copy() {
+    field.requestFocus();
+    field.copy();
+  }
 
-	public void delete() {
-		field.requestFocus();
-		field.replaceSelection("");
-	}
+  public void delete() {
+    field.requestFocus();
+    field.replaceSelection("");
+  }
 
-	@Override
-	void localeChanged() {
-		remove.setText(Strings.get("variableRemoveButton"));
-		moveUp.setText(Strings.get("variableMoveUpButton"));
-		moveDown.setText(Strings.get("variableMoveDownButton"));
-		add.setText(Strings.get("variableAddButton"));
-		rename.setText(Strings.get("variableRenameButton"));
-		validateInput();
-	}
+  @Override
+  void localeChanged() {
+    remove.setText(Strings.get("variableRemoveButton"));
+    moveUp.setText(Strings.get("variableMoveUpButton"));
+    moveDown.setText(Strings.get("variableMoveDownButton"));
+    add.setText(Strings.get("variableAddButton"));
+    rename.setText(Strings.get("variableRenameButton"));
+    validateInput();
+  }
 
-	public void paste() {
-		field.requestFocus();
-		field.paste();
-	}
+  public void paste() {
+    field.requestFocus();
+    field.paste();
+  }
 
-	void registerDefaultButtons(DefaultRegistry registry) {
-		registry.registerDefaultButton(field, add);
-	}
+  void registerDefaultButtons(DefaultRegistry registry) {
+    registry.registerDefaultButton(field, add);
+  }
 
-	public void selectAll() {
-		field.requestFocus();
-		field.selectAll();
-	}
+  public void selectAll() {
+    field.requestFocus();
+    field.selectAll();
+  }
 
-	@Override
-	void updateTab() {
-		VariableListModel model = (VariableListModel) list.getModel();
-		model.update();
-	}
+  @Override
+  void updateTab() {
+    VariableListModel model = (VariableListModel) list.getModel();
+    model.update();
+  }
 
-        private static final int OK = 0;
-        private static final int EMPTY = 1;
-        private static final int UNCHANGED = 2;
-        private static final int RESIZED = 3;
-        private static final int BAD_NAME = 4;
-        private static final int DUP_NAME = 5;
+  private static final int OK = 0;
+  private static final int EMPTY = 1;
+  private static final int UNCHANGED = 2;
+  private static final int RESIZED = 3;
+  private static final int BAD_NAME = 4;
+  private static final int DUP_NAME = 5;
 
-	private int validateInput() {
-                Var oldVar = list.getSelectedValue();
-		String text = field.getText().trim();
-                int w = (Integer)width.getSelectedItem();
-		int err = OK;
-		if (text.length() == 0) {
-			err = EMPTY;
-		} else if (!Character.isJavaIdentifierStart(text.charAt(0))) {
-			error.setText(Strings.get("variableStartError"));
-			err = BAD_NAME;
-		} else {
-			for (int i = 1; i < text.length() && err == OK; i++) {
-				char c = text.charAt(i);
-				if (!Character.isJavaIdentifierPart(c)) {
-					error.setText(StringUtil.format(
-							Strings.get("variablePartError"), "" + c));
-				        err = BAD_NAME;
-				}
-			}
-		}
-                if (err == OK && oldVar != null) {
-                        if (oldVar.name.equals(text) && oldVar.width == w)
-                                err = UNCHANGED;
-                        else if (oldVar.name.equals(text))
-                                err = RESIZED;
-                }
-                if (err == OK) {
-                        for (int i = 0, n = data.vars.size(); i < n && err == OK; i++) {
-                                Var other = data.vars.get(i);
-                                if (other != oldVar && text.equals(other.name)) {
-                                        error.setText(Strings.get("variableDuplicateError"));
-                                        err = DUP_NAME;
-                                }
-                        }
-                }
-		if (err == OK || err == EMPTY) {
-			if (data.bits.size() + w > data.getMaximumSize()) {
-				error.setText(StringUtil.format(
-						Strings.get("variableMaximumError"),
-						"" + data.getMaximumSize()));
-			} else {
-				error.setText(" ");
-			}
-		}
-		return err;
-	}
+  private int validateInput() {
+    Var oldVar = list.getSelectedValue();
+    String text = field.getText().trim();
+    int w = (Integer)width.getSelectedItem();
+    int err = OK;
+    if (text.length() == 0) {
+      err = EMPTY;
+    } else if (!Character.isJavaIdentifierStart(text.charAt(0))) {
+      error.setText(Strings.get("variableStartError"));
+      err = BAD_NAME;
+    } else {
+      for (int i = 1; i < text.length() && err == OK; i++) {
+        char c = text.charAt(i);
+        if (!Character.isJavaIdentifierPart(c)) {
+          error.setText(StringUtil.format(
+                Strings.get("variablePartError"), "" + c));
+          err = BAD_NAME;
+        }
+      }
+    }
+    if (err == OK && oldVar != null) {
+      if (oldVar.name.equals(text) && oldVar.width == w)
+        err = UNCHANGED;
+      else if (oldVar.name.equals(text))
+        err = RESIZED;
+    }
+    if (err == OK) {
+      for (int i = 0, n = data.vars.size(); i < n && err == OK; i++) {
+        Var other = data.vars.get(i);
+        if (other != oldVar && text.equals(other.name)) {
+          error.setText(Strings.get("variableDuplicateError"));
+          err = DUP_NAME;
+        }
+      }
+    }
+    if (err == OK || err == EMPTY) {
+      if (data.bits.size() + w > data.getMaximumSize()) {
+        error.setText(StringUtil.format(
+              Strings.get("variableMaximumError"),
+              "" + data.getMaximumSize()));
+      } else {
+        error.setText(" ");
+      }
+    }
+    return err;
+  }
 }

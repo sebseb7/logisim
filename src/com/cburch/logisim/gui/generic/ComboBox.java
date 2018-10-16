@@ -33,44 +33,44 @@ import javax.swing.JComboBox;
 import javax.swing.ComboBoxModel;
 
 public class ComboBox<T> extends JComboBox<T> {
-	public ComboBox(T[] choices) {
-		super(choices);
-		setMaximumRowCount(Math.min(choices.length, 33));
-		setKeySelectionManager(new MultiCharSelectionManager());
-	}
+  public ComboBox(T[] choices) {
+    super(choices);
+    setMaximumRowCount(Math.min(choices.length, 33));
+    setKeySelectionManager(new MultiCharSelectionManager());
+  }
 
-	public static class MultiCharSelectionManager implements JComboBox.KeySelectionManager {
-		String prefix = "";
-		long last;
+  public static class MultiCharSelectionManager implements JComboBox.KeySelectionManager {
+    String prefix = "";
+    long last;
 
-		static int currentIndex(ComboBoxModel model) {
-			Object item = model.getSelectedItem();
-			for (int i = 0; item != null && i < model.getSize(); i++)
-				if (item.equals(model.getElementAt(i)))
-					return i;
-			return -1;
-		}
+    static int currentIndex(ComboBoxModel model) {
+      Object item = model.getSelectedItem();
+      for (int i = 0; item != null && i < model.getSize(); i++)
+        if (item.equals(model.getElementAt(i)))
+          return i;
+      return -1;
+    }
 
-		public int selectionForKey(char ch, ComboBoxModel model) {
-			int idx = currentIndex(model);
-			long now = System.currentTimeMillis();
-			if (now > last + 500) {
-				prefix = "";
-				idx = 0;
-			}
-			last = now;
+    public int selectionForKey(char ch, ComboBoxModel model) {
+      int idx = currentIndex(model);
+      long now = System.currentTimeMillis();
+      if (now > last + 500) {
+        prefix = "";
+        idx = 0;
+      }
+      last = now;
 
-			prefix += Character.toLowerCase(ch);
+      prefix += Character.toLowerCase(ch);
 
-			int n = model.getSize();
-			for (int offset = 0; offset < n; offset++) {
-				int i = (idx + offset) % n;
-				Object item = model.getElementAt(i);
-				if (item != null && item.toString().toLowerCase().startsWith(prefix))
-					return i;
-			}
+      int n = model.getSize();
+      for (int offset = 0; offset < n; offset++) {
+        int i = (idx + offset) % n;
+        Object item = model.getElementAt(i);
+        if (item != null && item.toString().toLowerCase().startsWith(prefix))
+          return i;
+      }
 
-			return -1;
-		}
-	}
+      return -1;
+    }
+  }
 }

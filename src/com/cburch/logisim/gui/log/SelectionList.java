@@ -41,72 +41,72 @@ import com.cburch.logisim.data.Value;
 
 @SuppressWarnings("rawtypes")
 class SelectionList extends JList {
-	private class Model extends AbstractListModel implements ModelListener {
-		private static final long serialVersionUID = 1L;
+  private class Model extends AbstractListModel implements ModelListener {
+    private static final long serialVersionUID = 1L;
 
-		public void entryAdded(ModelEvent event, Value[] values) {
-		}
+    public void entryAdded(ModelEvent event, Value[] values) {
+    }
 
-		public void filePropertyChanged(ModelEvent event) {
-		}
+    public void filePropertyChanged(ModelEvent event) {
+    }
 
-		public Object getElementAt(int index) {
-			return selection.get(index);
-		}
+    public Object getElementAt(int index) {
+      return selection.get(index);
+    }
 
-		public int getSize() {
-			return selection == null ? 0 : selection.size();
-		}
+    public int getSize() {
+      return selection == null ? 0 : selection.size();
+    }
 
-		public void selectionChanged(ModelEvent event) {
-			fireContentsChanged(this, 0, getSize());
-		}
-	}
+    public void selectionChanged(ModelEvent event) {
+      fireContentsChanged(this, 0, getSize());
+    }
+  }
 
-	private class MyCellRenderer extends DefaultListCellRenderer {
-		private static final long serialVersionUID = 1L;
+  private class MyCellRenderer extends DefaultListCellRenderer {
+    private static final long serialVersionUID = 1L;
 
-		@Override
-		public java.awt.Component getListCellRendererComponent(JList list,
-				Object value, int index, boolean isSelected, boolean hasFocus) {
-			java.awt.Component ret = super.getListCellRendererComponent(list,
-					value, index, isSelected, hasFocus);
-			if (ret instanceof JLabel && value instanceof SelectionItem) {
-				JLabel label = (JLabel) ret;
-				SelectionItem item = (SelectionItem) value;
-				Component comp = item.getComponent();
-				label.setIcon(new ComponentIcon(comp));
-				label.setText(item.toString() + " - " + item.getRadix());
-			}
-			return ret;
-		}
-	}
+    @Override
+    public java.awt.Component getListCellRendererComponent(JList list,
+        Object value, int index, boolean isSelected, boolean hasFocus) {
+      java.awt.Component ret = super.getListCellRendererComponent(list,
+          value, index, isSelected, hasFocus);
+      if (ret instanceof JLabel && value instanceof SelectionItem) {
+        JLabel label = (JLabel) ret;
+        SelectionItem item = (SelectionItem) value;
+        Component comp = item.getComponent();
+        label.setIcon(new ComponentIcon(comp));
+        label.setText(item.toString() + " - " + item.getRadix());
+      }
+      return ret;
+    }
+  }
 
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	private Selection selection;
+  private Selection selection;
 
-	@SuppressWarnings("unchecked")
-	public SelectionList() {
-		selection = null;
-		setModel(new Model());
-		setCellRenderer(new MyCellRenderer());
-		setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-	}
+  @SuppressWarnings("unchecked")
+  public SelectionList() {
+    selection = null;
+    setModel(new Model());
+    setCellRenderer(new MyCellRenderer());
+    setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+  }
 
-	public void localeChanged() {
-		repaint();
-	}
+  public void localeChanged() {
+    repaint();
+  }
 
-	public void setSelection(Selection value) {
-		if (selection != value) {
-			Model model = (Model) getModel();
-			if (selection != null)
-				selection.removeModelListener(model);
-			selection = value;
-			if (selection != null)
-				selection.addModelListener(model);
-			model.selectionChanged(null);
-		}
-	}
+  public void setSelection(Selection value) {
+    if (selection != value) {
+      Model model = (Model) getModel();
+      if (selection != null)
+        selection.removeModelListener(model);
+      selection = value;
+      if (selection != null)
+        selection.addModelListener(model);
+      model.selectionChanged(null);
+    }
+  }
 }

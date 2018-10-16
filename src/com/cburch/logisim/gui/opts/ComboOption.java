@@ -36,43 +36,43 @@ import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.util.StringGetter;
 
 class ComboOption {
-	@SuppressWarnings("rawtypes")
-	static void setSelected(JComboBox combo, Object value) {
-		for (int i = combo.getItemCount() - 1; i >= 0; i--) {
-			ComboOption opt = (ComboOption) combo.getItemAt(i);
-			if (opt.getValue().equals(value)) {
-				combo.setSelectedItem(opt);
-				return;
-			}
-		}
-		combo.setSelectedItem(combo.getItemAt(0));
-	}
+  @SuppressWarnings("rawtypes")
+  static void setSelected(JComboBox combo, Object value) {
+    for (int i = combo.getItemCount() - 1; i >= 0; i--) {
+      ComboOption opt = (ComboOption) combo.getItemAt(i);
+      if (opt.getValue().equals(value)) {
+        combo.setSelectedItem(opt);
+        return;
+      }
+    }
+    combo.setSelectedItem(combo.getItemAt(0));
+  }
 
-	private Object value;
+  private Object value;
 
-	private StringGetter getter;
+  private StringGetter getter;
 
-	ComboOption(AttributeOption value) {
-		this.value = value;
-		this.getter = null;
-	}
+  ComboOption(AttributeOption value) {
+    this.value = value;
+    this.getter = null;
+  }
 
-	ComboOption(String value, StringGetter getter) {
-		this.value = value;
-		this.getter = getter;
-	}
+  ComboOption(String value, StringGetter getter) {
+    this.value = value;
+    this.getter = getter;
+  }
 
-	public Object getValue() {
-		return value;
-	}
+  public Object getValue() {
+    return value;
+  }
 
-	@Override
-	public String toString() {
-		if (getter != null)
-			return getter.toString();
-		if (value instanceof AttributeOption)
-			return ((AttributeOption) value).toDisplayString();
-		return "???";
-	}
+  @Override
+  public String toString() {
+    if (getter != null)
+      return getter.toString();
+    if (value instanceof AttributeOption)
+      return ((AttributeOption) value).toDisplayString();
+    return "???";
+  }
 
 }

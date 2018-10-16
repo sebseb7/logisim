@@ -42,87 +42,87 @@ import com.cburch.logisim.data.AttributeSet;
 
 public class PLAHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-	@Override
-	public String getComponentStringIdentifier() {
-		return "PLA";
-	}
+  @Override
+  public String getComponentStringIdentifier() {
+    return "PLA";
+  }
 
-	@Override
-	public SortedMap<String, Integer> GetInputList(Netlist TheNetlist, AttributeSet attrs) {
-		SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
-		Inputs.put("Index", attrs.getValue(PLA.ATTR_IN_WIDTH).getWidth());
-		return Inputs;
-	}
+  @Override
+  public SortedMap<String, Integer> GetInputList(Netlist TheNetlist, AttributeSet attrs) {
+    SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
+    Inputs.put("Index", attrs.getValue(PLA.ATTR_IN_WIDTH).getWidth());
+    return Inputs;
+  }
 
-	private static String bits(char b[]) {
-		String s = "";
-		for (char c : b)
-			s = ((c == '0' || c == '1') ? c : '-') + s;
-		if (b.length == 1)
-			return "'" + s + "'";
-		else
-			return "\"" + s + "\"";
-	}
+  private static String bits(char b[]) {
+    String s = "";
+    for (char c : b)
+      s = ((c == '0' || c == '1') ? c : '-') + s;
+    if (b.length == 1)
+      return "'" + s + "'";
+    else
+      return "\"" + s + "\"";
+  }
 
-	private static String zeros(int sz) {
-		String s = "";
-		for (int i = 0; i < sz; i++)
-			s += '0';
-		if (sz == 1)
-			return "'" + s + "'";
-		else
-			return "\"" + s + "\"";
-	}
+  private static String zeros(int sz) {
+    String s = "";
+    for (int i = 0; i < sz; i++)
+      s += '0';
+    if (sz == 1)
+      return "'" + s + "'";
+    else
+      return "\"" + s + "\"";
+  }
 
-	@Override
-	public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
-			AttributeSet attrs, FPGAReport Reporter, String HDLType) {
-		ArrayList<String> Contents = new ArrayList<String>();
-		PLATable tt = attrs.getValue(PLA.ATTR_TABLE);
-		int outSz = attrs.getValue(PLA.ATTR_OUT_WIDTH).getWidth();
-		if (HDLType.equals(Settings.VHDL)) {
-			String leader = "    Result <= ";
-			String indent = "              ";
-			if (tt.rows().isEmpty()) {
-				Contents.add(leader + zeros(outSz) + ";");
-			} else {
-				for (PLATable.Row r : tt.rows()) {
-					Contents.add(leader + bits(r.outBits) + " WHEN std_match(Index, "+bits(r.inBits)+") ELSE");
-					leader = indent;
-				}
-				Contents.add(leader + zeros(outSz) + ";");
-			}
-		} else {
-			// todo
-		}
-		return Contents;
-	}
+  @Override
+  public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
+      AttributeSet attrs, FPGAReport Reporter, String HDLType) {
+    ArrayList<String> Contents = new ArrayList<String>();
+    PLATable tt = attrs.getValue(PLA.ATTR_TABLE);
+    int outSz = attrs.getValue(PLA.ATTR_OUT_WIDTH).getWidth();
+    if (HDLType.equals(Settings.VHDL)) {
+      String leader = "    Result <= ";
+      String indent = "              ";
+      if (tt.rows().isEmpty()) {
+        Contents.add(leader + zeros(outSz) + ";");
+      } else {
+        for (PLATable.Row r : tt.rows()) {
+          Contents.add(leader + bits(r.outBits) + " WHEN std_match(Index, "+bits(r.inBits)+") ELSE");
+          leader = indent;
+        }
+        Contents.add(leader + zeros(outSz) + ";");
+      }
+    } else {
+      // todo
+    }
+    return Contents;
+  }
 
-	@Override
-	public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist, AttributeSet attrs) {
-		SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-		Outputs.put("Result", attrs.getValue(PLA.ATTR_OUT_WIDTH).getWidth());
-		return Outputs;
-	}
+  @Override
+  public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist, AttributeSet attrs) {
+    SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
+    Outputs.put("Result", attrs.getValue(PLA.ATTR_OUT_WIDTH).getWidth());
+    return Outputs;
+  }
 
-	@Override
-	public SortedMap<String, String> GetPortMap(Netlist Nets,
-			NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-		SortedMap<String, String> PortMap = new TreeMap<String, String>();
-		PortMap.putAll(GetNetMap("Index", true, ComponentInfo, PLA.IN_PORT,
-				Reporter, HDLType, Nets));
-		PortMap.putAll(GetNetMap("Result", true, ComponentInfo, PLA.OUT_PORT,
-				Reporter, HDLType, Nets));
-		return PortMap;
-	}
+  @Override
+  public SortedMap<String, String> GetPortMap(Netlist Nets,
+      NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
+    SortedMap<String, String> PortMap = new TreeMap<String, String>();
+    PortMap.putAll(GetNetMap("Index", true, ComponentInfo, PLA.IN_PORT,
+          Reporter, HDLType, Nets));
+    PortMap.putAll(GetNetMap("Result", true, ComponentInfo, PLA.OUT_PORT,
+          Reporter, HDLType, Nets));
+    return PortMap;
+  }
 
-	@Override
-	public String GetSubDir() {
-		return "gates";
-	}
+  @Override
+  public String GetSubDir() {
+    return "gates";
+  }
 
-	@Override
-	public boolean HDLTargetSupported(String HDLType, AttributeSet attrs, char Vendor) {
-		return HDLType.equals(Settings.VHDL);
-	}
+  @Override
+  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs, char Vendor) {
+    return HDLType.equals(Settings.VHDL);
+  }
 }

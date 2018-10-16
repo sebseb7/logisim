@@ -33,64 +33,64 @@ package com.cburch.logisim.analyze.model;
 import com.cburch.logisim.util.StringGetter;
 
 public class Entry implements Comparable<Entry> {
-	public static Entry parse(String description) {
-		if (ZERO.description.equals(description))
-			return ZERO;
-		if (ONE.description.equals(description))
-			return ONE;
-		if (DONT_CARE.description.equals(description))
-			return DONT_CARE;
-		if (BUS_ERROR.description.equals(description))
-			return BUS_ERROR;
-		return null;
-	}
+  public static Entry parse(String description) {
+    if (ZERO.description.equals(description))
+      return ZERO;
+    if (ONE.description.equals(description))
+      return ONE;
+    if (DONT_CARE.description.equals(description))
+      return DONT_CARE;
+    if (BUS_ERROR.description.equals(description))
+      return BUS_ERROR;
+    return null;
+  }
 
-	public static final Entry OSCILLATE_ERROR = new Entry(-2, "@", Strings.getter("oscillateError"));
-	public static final Entry BUS_ERROR = new Entry(-1, "E", Strings.getter("busError"));
-	public static final Entry ZERO = new Entry(0, "0", null);
-	public static final Entry DONT_CARE = new Entry(1, "x", null);
-	public static final Entry ONE = new Entry(2, "1", null);
+  public static final Entry OSCILLATE_ERROR = new Entry(-2, "@", Strings.getter("oscillateError"));
+  public static final Entry BUS_ERROR = new Entry(-1, "E", Strings.getter("busError"));
+  public static final Entry ZERO = new Entry(0, "0", null);
+  public static final Entry DONT_CARE = new Entry(1, "x", null);
+  public static final Entry ONE = new Entry(2, "1", null);
 
-	private int sortOrder;
-	private String description;
-	private StringGetter errorMessage;
+  private int sortOrder;
+  private String description;
+  private StringGetter errorMessage;
 
-	private Entry(int sortOrder, String description, StringGetter errorMessage) {
-		this.sortOrder = sortOrder;
-		this.description = description;
-		this.errorMessage = errorMessage;
-	}
+  private Entry(int sortOrder, String description, StringGetter errorMessage) {
+    this.sortOrder = sortOrder;
+    this.description = description;
+    this.errorMessage = errorMessage;
+  }
 
-	public String getDescription() {
-		return description;
-	}
+  public String getDescription() {
+    return description;
+  }
 
-	public String getErrorMessage() {
-		return errorMessage == null ? null : errorMessage.toString();
-	}
+  public String getErrorMessage() {
+    return errorMessage == null ? null : errorMessage.toString();
+  }
 
-	public boolean isError() {
-		return errorMessage != null;
-	}
+  public boolean isError() {
+    return errorMessage != null;
+  }
 
-	@Override
-	public String toString() {
-		return "Entry[" + description + "]";
-	}
+  @Override
+  public String toString() {
+    return "Entry[" + description + "]";
+  }
 
-	public String toBitString() {
-		if (this == DONT_CARE)
-			return "x";
-		else if (this == ZERO)
-			return "0";
-		else if (this == ONE)
-			return "1";
-		else 
-			return "?";
-	}
+  public String toBitString() {
+    if (this == DONT_CARE)
+      return "x";
+    else if (this == ZERO)
+      return "0";
+    else if (this == ONE)
+      return "1";
+    else 
+      return "?";
+  }
 
-	@Override
-	public int compareTo(Entry other) {
-		return (this.sortOrder - other.sortOrder);
-	}
+  @Override
+  public int compareTo(Entry other) {
+    return (this.sortOrder - other.sortOrder);
+  }
 }

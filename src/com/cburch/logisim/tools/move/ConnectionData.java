@@ -37,54 +37,54 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 
 class ConnectionData {
-	private Location loc;
+  private Location loc;
 
-	private Direction dir;
+  private Direction dir;
 
-	/**
-	 * The list of wires leading up to this point - we may well want to truncate
-	 * this path somewhat.
-	 */
-	private List<Wire> wirePath;
+  /**
+   * The list of wires leading up to this point - we may well want to truncate
+   * this path somewhat.
+   */
+  private List<Wire> wirePath;
 
-	private Location wirePathStart;
+  private Location wirePathStart;
 
-	public ConnectionData(Location loc, Direction dir, List<Wire> wirePath,
-			Location wirePathStart) {
-		this.loc = loc;
-		this.dir = dir;
-		this.wirePath = wirePath;
-		this.wirePathStart = wirePathStart;
-	}
+  public ConnectionData(Location loc, Direction dir, List<Wire> wirePath,
+      Location wirePathStart) {
+    this.loc = loc;
+    this.dir = dir;
+    this.wirePath = wirePath;
+    this.wirePathStart = wirePathStart;
+  }
 
-	@Override
-	public boolean equals(Object other) {
-		if (other instanceof ConnectionData) {
-			ConnectionData o = (ConnectionData) other;
-			return this.loc.equals(o.loc) && this.dir.equals(o.dir);
-		} else {
-			return false;
-		}
-	}
+  @Override
+  public boolean equals(Object other) {
+    if (other instanceof ConnectionData) {
+      ConnectionData o = (ConnectionData) other;
+      return this.loc.equals(o.loc) && this.dir.equals(o.dir);
+    } else {
+      return false;
+    }
+  }
 
-	public Direction getDirection() {
-		return dir;
-	}
+  public Direction getDirection() {
+    return dir;
+  }
 
-	public Location getLocation() {
-		return loc;
-	}
+  public Location getLocation() {
+    return loc;
+  }
 
-	public List<Wire> getWirePath() {
-		return wirePath;
-	}
+  public List<Wire> getWirePath() {
+    return wirePath;
+  }
 
-	public Location getWirePathStart() {
-		return wirePathStart;
-	}
+  public Location getWirePathStart() {
+    return wirePathStart;
+  }
 
-	@Override
-	public int hashCode() {
-		return loc.hashCode() * 31 + (dir == null ? 0 : dir.hashCode());
-	}
+  @Override
+  public int hashCode() {
+    return loc.hashCode() * 31 + (dir == null ? 0 : dir.hashCode());
+  }
 }

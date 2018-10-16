@@ -48,234 +48,234 @@ import com.cburch.logisim.prefs.AppPreferences;
 
 public final class Softwares {
 
-	private static boolean createWorkLibrary(File tmpDir, String questaPath,
-			StringBuffer result) throws IOException, InterruptedException {
-		BufferedReader reader = null;
+  private static boolean createWorkLibrary(File tmpDir, String questaPath,
+      StringBuffer result) throws IOException, InterruptedException {
+    BufferedReader reader = null;
 
-		if (new File(FileUtil.correctPath(tmpDir.getCanonicalPath()) + "work")
-				.exists())
-			return true;
+    if (new File(FileUtil.correctPath(tmpDir.getCanonicalPath()) + "work")
+        .exists())
+      return true;
 
-		try {
-			List<String> command = new ArrayList<String>();
-			command.add(FileUtil.correctPath(questaPath) + QUESTA_BIN[VLIB]);
-			command.add("work");
+    try {
+      List<String> command = new ArrayList<String>();
+      command.add(FileUtil.correctPath(questaPath) + QUESTA_BIN[VLIB]);
+      command.add("work");
 
-			ProcessBuilder vlibBuilder = new ProcessBuilder(command);
-			vlibBuilder.directory(tmpDir);
-			Process vlib = vlibBuilder.start();
+      ProcessBuilder vlibBuilder = new ProcessBuilder(command);
+      vlibBuilder.directory(tmpDir);
+      Process vlib = vlibBuilder.start();
 
-			InputStream is = vlib.getInputStream();
-			InputStreamReader isr = new InputStreamReader(is);
-			reader = new BufferedReader(isr);
+      InputStream is = vlib.getInputStream();
+      InputStreamReader isr = new InputStreamReader(is);
+      reader = new BufferedReader(isr);
 
-			String line;
-			while ((line = reader.readLine()) != null) {
-				result.append(line);
-				result.append(System.getProperty("line.separator"));
-			}
+      String line;
+      while ((line = reader.readLine()) != null) {
+        result.append(line);
+        result.append(System.getProperty("line.separator"));
+      }
 
-			return vlib.waitFor() == 0;
-		} catch (IOException e) {
-			throw e;
-		} catch (InterruptedException e) {
-			throw e;
-		} finally {
-			try {
-				if (reader != null)
-					reader.close();
-			} catch (IOException ex) {
-				Logger.getLogger(Softwares.class.getName()).log(Level.SEVERE,
-						null, ex);
-			}
-		}
-	}
+      return vlib.waitFor() == 0;
+    } catch (IOException e) {
+      throw e;
+    } catch (InterruptedException e) {
+      throw e;
+    } finally {
+      try {
+        if (reader != null)
+          reader.close();
+      } catch (IOException ex) {
+        Logger.getLogger(Softwares.class.getName()).log(Level.SEVERE,
+            null, ex);
+      }
+    }
+  }
 
-	public static String getQuestaPath() {
-		return getQuestaPath(null);
-	}
+  public static String getQuestaPath() {
+    return getQuestaPath(null);
+  }
 
-	public static String getQuestaPath(Component parent) {
-		String prefPath = AppPreferences.QUESTA_PATH.get();
+  public static String getQuestaPath(Component parent) {
+    String prefPath = AppPreferences.QUESTA_PATH.get();
 
-		if (!validatePath(prefPath, QUESTA))
-			if ((prefPath = setQuestaPath()) == null)
-				return null;
+    if (!validatePath(prefPath, QUESTA))
+      if ((prefPath = setQuestaPath()) == null)
+        return null;
 
-		return prefPath;
-	}
+    return prefPath;
+  }
 
-	private static String[] loadQuesta() {
-		String[] questaProgs = { "vcom", "vsim", "vmap", "vlib" };
+  private static String[] loadQuesta() {
+    String[] questaProgs = { "vcom", "vsim", "vmap", "vlib" };
 
-		String osname = System.getProperty("os.name");
-		if (osname == null)
-			throw new IllegalArgumentException("no os.name");
-		else if (osname.toLowerCase().contains("windows"))
-			for (int i = 0; i < questaProgs.length; i++)
-				questaProgs[i] += ".exe";
+    String osname = System.getProperty("os.name");
+    if (osname == null)
+      throw new IllegalArgumentException("no os.name");
+    else if (osname.toLowerCase().contains("windows"))
+      for (int i = 0; i < questaProgs.length; i++)
+        questaProgs[i] += ".exe";
 
-		return questaProgs;
-	}
+    return questaProgs;
+  }
 
-	public static String setQuestaPath() {
-		return setQuestaPath(null);
-	}
+  public static String setQuestaPath() {
+    return setQuestaPath(null);
+  }
 
-	public static String setQuestaPath(Component parent) {
-		String path = null;
+  public static String setQuestaPath(Component parent) {
+    String path = null;
 
-		JFileChooser chooser = JFileChoosers.create();
-		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		chooser.setDialogTitle(Strings.get("questaDialogTitle"));
-		chooser.setApproveButtonText(Strings.get("questaDialogButton"));
-		int action = chooser.showOpenDialog(parent);
-		if (action == JFileChooser.APPROVE_OPTION) {
-			File file = chooser.getSelectedFile();
+    JFileChooser chooser = JFileChoosers.create();
+    chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+    chooser.setDialogTitle(Strings.get("questaDialogTitle"));
+    chooser.setApproveButtonText(Strings.get("questaDialogButton"));
+    int action = chooser.showOpenDialog(parent);
+    if (action == JFileChooser.APPROVE_OPTION) {
+      File file = chooser.getSelectedFile();
 
-			try {
-				path = file.getCanonicalPath();
-			} catch (IOException ex) {
-				JOptionPane.showMessageDialog(parent,
-						Strings.get("questaIoErrorMessage"),
-						Strings.get("questaErrorTitle"),
-						JOptionPane.ERROR_MESSAGE);
-				return null;
-			}
+      try {
+        path = file.getCanonicalPath();
+      } catch (IOException ex) {
+        JOptionPane.showMessageDialog(parent,
+            Strings.get("questaIoErrorMessage"),
+            Strings.get("questaErrorTitle"),
+            JOptionPane.ERROR_MESSAGE);
+        return null;
+      }
 
-			if (validatePath(path, QUESTA)) {
-				AppPreferences.QUESTA_PATH.set(path);
-			} else {
-				JOptionPane.showMessageDialog(parent,
-						Strings.get("questaErrorMessage"),
-						Strings.get("questaErrorTitle"),
-						JOptionPane.ERROR_MESSAGE);
-				return null;
-			}
-		}
+      if (validatePath(path, QUESTA)) {
+        AppPreferences.QUESTA_PATH.set(path);
+      } else {
+        JOptionPane.showMessageDialog(parent,
+            Strings.get("questaErrorMessage"),
+            Strings.get("questaErrorTitle"),
+            JOptionPane.ERROR_MESSAGE);
+        return null;
+      }
+    }
 
-		return path;
-	}
+    return path;
+  }
 
-	private static boolean validatePath(String path, String software) {
-		String[] programs;
+  private static boolean validatePath(String path, String software) {
+    String[] programs;
 
-		if (software.equals(QUESTA))
-			programs = QUESTA_BIN;
-		else
-			return false;
+    if (software.equals(QUESTA))
+      programs = QUESTA_BIN;
+    else
+      return false;
 
-		for (int i = 0; i < programs.length; i++) {
-			File test = new File(FileUtil.correctPath(path) + programs[i]);
-			if (!test.exists())
-				return false;
-		}
+    for (int i = 0; i < programs.length; i++) {
+      File test = new File(FileUtil.correctPath(path) + programs[i]);
+      if (!test.exists())
+        return false;
+    }
 
-		return true;
-	}
+    return true;
+  }
 
-	public static int validateVhdl(String vhdl, StringBuffer title,
-			StringBuffer result) {
-		if (!AppPreferences.QUESTA_VALIDATION.get())
-			return SUCCESS;
+  public static int validateVhdl(String vhdl, StringBuffer title,
+      StringBuffer result) {
+    if (!AppPreferences.QUESTA_VALIDATION.get())
+      return SUCCESS;
 
-		String questaPath = getQuestaPath();
-		BufferedReader reader = null;
-		File tmp = null;
+    String questaPath = getQuestaPath();
+    BufferedReader reader = null;
+    File tmp = null;
 
-		if (questaPath == null) {
-			result.append(Strings.get("questaValidationAbordedMessage"));
-			title.append(Strings.get("questaValidationAbordedTitle"));
-			return ABORD;
-		}
+    if (questaPath == null) {
+      result.append(Strings.get("questaValidationAbordedMessage"));
+      title.append(Strings.get("questaValidationAbordedTitle"));
+      return ABORD;
+    }
 
-		try {
-			tmp = FileUtil.createTmpFile(vhdl, "tmp", ".vhd");
-			File tmpDir = new File(tmp.getParentFile().getCanonicalPath());
+    try {
+      tmp = FileUtil.createTmpFile(vhdl, "tmp", ".vhd");
+      File tmpDir = new File(tmp.getParentFile().getCanonicalPath());
 
-			if (!createWorkLibrary(tmpDir, questaPath, result)) {
-				title.insert(0, Strings.get("questaLibraryErrorTitle"));
-				result.insert(0, System.getProperty("line.separator"));
-				result.insert(0, Strings.get("questaLibraryErrorMessage"));
-				return ERROR;
-			}
+      if (!createWorkLibrary(tmpDir, questaPath, result)) {
+        title.insert(0, Strings.get("questaLibraryErrorTitle"));
+        result.insert(0, System.getProperty("line.separator"));
+        result.insert(0, Strings.get("questaLibraryErrorMessage"));
+        return ERROR;
+      }
 
-			List<String> command = new ArrayList<String>();
-			command.add(FileUtil.correctPath(questaPath) + QUESTA_BIN[VCOM]);
-			command.add("-reportprogress");
-			command.add("300");
-			command.add("-93");
-			command.add("-work");
-			command.add("work");
-			command.add(tmp.getName());
+      List<String> command = new ArrayList<String>();
+      command.add(FileUtil.correctPath(questaPath) + QUESTA_BIN[VCOM]);
+      command.add("-reportprogress");
+      command.add("300");
+      command.add("-93");
+      command.add("-work");
+      command.add("work");
+      command.add(tmp.getName());
 
-			ProcessBuilder questa = new ProcessBuilder(command);
-			questa.directory(tmpDir);
-			Process vcom = questa.start();
+      ProcessBuilder questa = new ProcessBuilder(command);
+      questa.directory(tmpDir);
+      Process vcom = questa.start();
 
-			InputStream is = vcom.getInputStream();
-			InputStreamReader isr = new InputStreamReader(is);
-			reader = new BufferedReader(isr);
+      InputStream is = vcom.getInputStream();
+      InputStreamReader isr = new InputStreamReader(is);
+      reader = new BufferedReader(isr);
 
-			String line;
-			while ((line = reader.readLine()) != null) {
-				result.append(line);
-				result.append(System.getProperty("line.separator"));
-			}
+      String line;
+      while ((line = reader.readLine()) != null) {
+        result.append(line);
+        result.append(System.getProperty("line.separator"));
+      }
 
-			if (vcom.waitFor() != 0) {
-				title.insert(0, Strings.get("questaValidationFailedTitle"));
-				result.insert(0, System.getProperty("line.separator"));
-				result.insert(0, Strings.get("questaValidationFailedMessage"));
-				return ERROR;
-			}
-		} catch (IOException e) {
-			title.insert(0, Strings.get("questaValidationFailedTitle"));
-			result.replace(0, result.length(), e.getMessage());
-			result.insert(0, System.getProperty("line.separator"));
-			result.insert(0, Strings.get("questaValidationIoException"));
-			return ERROR;
-		} catch (InterruptedException e) {
-			title.insert(0, Strings.get("questaValidationFailedTitle"));
-			result.replace(0, result.length(), e.getMessage());
-			result.insert(0, System.getProperty("line.separator"));
-			result.insert(0, Strings.get("questaValidationInterrupted"));
-			return ERROR;
-		} finally {
-			try {
-				if (tmp != null)
-					tmp.deleteOnExit();
-				if (reader != null)
-					reader.close();
-			} catch (IOException ex) {
-				Logger.getLogger(Softwares.class.getName()).log(Level.SEVERE,
-						null, ex);
-			}
-		}
+      if (vcom.waitFor() != 0) {
+        title.insert(0, Strings.get("questaValidationFailedTitle"));
+        result.insert(0, System.getProperty("line.separator"));
+        result.insert(0, Strings.get("questaValidationFailedMessage"));
+        return ERROR;
+      }
+    } catch (IOException e) {
+      title.insert(0, Strings.get("questaValidationFailedTitle"));
+      result.replace(0, result.length(), e.getMessage());
+      result.insert(0, System.getProperty("line.separator"));
+      result.insert(0, Strings.get("questaValidationIoException"));
+      return ERROR;
+    } catch (InterruptedException e) {
+      title.insert(0, Strings.get("questaValidationFailedTitle"));
+      result.replace(0, result.length(), e.getMessage());
+      result.insert(0, System.getProperty("line.separator"));
+      result.insert(0, Strings.get("questaValidationInterrupted"));
+      return ERROR;
+    } finally {
+      try {
+        if (tmp != null)
+          tmp.deleteOnExit();
+        if (reader != null)
+          reader.close();
+      } catch (IOException ex) {
+        Logger.getLogger(Softwares.class.getName()).log(Level.SEVERE,
+            null, ex);
+      }
+    }
 
-		return SUCCESS;
-	}
+    return SUCCESS;
+  }
 
-	public static final String QUESTA = "questaSim";
+  public static final String QUESTA = "questaSim";
 
-	public static final String[] QUESTA_BIN = loadQuesta();
+  public static final String[] QUESTA_BIN = loadQuesta();
 
-	public static final int SUCCESS = 0;
+  public static final int SUCCESS = 0;
 
-	public static final int ERROR = 1;
+  public static final int ERROR = 1;
 
-	public static final int ABORD = 2;
+  public static final int ABORD = 2;
 
-	public static final int VCOM = 0;
+  public static final int VCOM = 0;
 
-	public static final int VSIM = 1;
+  public static final int VSIM = 1;
 
-	public static final int VMAP = 2;
+  public static final int VMAP = 2;
 
-	public static final int VLIB = 3;
+  public static final int VLIB = 3;
 
-	private Softwares() {
+  private Softwares() {
 
-	}
+  }
 
 }

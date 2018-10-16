@@ -100,1098 +100,1098 @@ import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.StringGetter;
 
-public class Canvas extends JPanel implements LocaleListener,
-		CanvasPaneContents {
-
-	private class MyListener implements MouseInputListener, KeyListener,
-			PopupMenuListener, PropertyChangeListener, MouseWheelListener {
-
-		boolean menu_on = false;
-
-		private Tool getToolFor(MouseEvent e) {
-			if (menu_on) {
-				return null;
-			}
-
-			Tool ret = mappings.getToolFor(e);
-			if (ret == null) {
-				return proj.getTool();
-			} else {
-				return ret;
-			}
-		}
-
-		//
-		// KeyListener methods
-		//
-		@Override
-		public void keyPressed(KeyEvent e) {
-			Tool tool = proj.getTool();
-			if (tool != null) {
-				tool.keyPressed(Canvas.this, e);
-			}
-		}
-
-		@Override
-		public void keyReleased(KeyEvent e) {
-			Tool tool = proj.getTool();
-			if (tool != null) {
-				tool.keyReleased(Canvas.this, e);
-			}
-		}
-
-		@Override
-		public void keyTyped(KeyEvent e) {
-			Tool tool = proj.getTool();
-			if (tool != null) {
-				tool.keyTyped(Canvas.this, e);
-			}
-		}
-
-		//
-		// MouseListener methods
-		//
-		@Override
-		public void mouseClicked(MouseEvent e) {
-		}
-
-		@Override
-		public void mouseDragged(MouseEvent e) {
-			if (drag_tool != null) {
-				drag_tool.mouseDragged(Canvas.this, getGraphics(), e);
-			}
-		}
-
-		@Override
-		public void mouseEntered(MouseEvent e) {
-			if (drag_tool != null) {
-				drag_tool.mouseEntered(Canvas.this, getGraphics(), e);
-			} else {
-				Tool tool = getToolFor(e);
-				if (tool != null) {
-					tool.mouseEntered(Canvas.this, getGraphics(), e);
-				}
-			}
-		}
-
-		@Override
-		public void mouseExited(MouseEvent e) {
-			if (drag_tool != null) {
-				drag_tool.mouseExited(Canvas.this, getGraphics(), e);
-			} else {
-				Tool tool = getToolFor(e);
-				if (tool != null) {
-					tool.mouseExited(Canvas.this, getGraphics(), e);
-				}
-			}
-		}
-
-		@Override
-		public void mouseMoved(MouseEvent e) {
-			if ((e.getModifiersEx() & BUTTONS_MASK) != 0) {
-				// If the control key is down while the mouse is being
-				// dragged, mouseMoved is called instead. This may well be
-				// an issue specific to the MacOS Java implementation,
-				// but it exists there in the 1.4 and 5.0 versions.
-				mouseDragged(e);
-				return;
-			}
-
-			Tool tool = getToolFor(e);
-			if (tool != null) {
-				tool.mouseMoved(Canvas.this, getGraphics(), e);
-			}
-		}
-
-		@Override
-		public void mousePressed(MouseEvent e) {
-			viewport.setErrorMessage(null, null);
-			proj.setStartupScreen(false);
-			Canvas.this.requestFocus();
-			drag_tool = getToolFor(e);
-			if (drag_tool != null) {
-				drag_tool.mousePressed(Canvas.this, getGraphics(), e);
-			}
-
-			completeAction();
-		}
-
-		@Override
-		public void mouseReleased(MouseEvent e) {
-			if (drag_tool != null) {
-				drag_tool.mouseReleased(Canvas.this, getGraphics(), e);
-				drag_tool = null;
-			}
-
-			Tool tool = proj.getTool();
-			if (tool != null) {
-				tool.mouseMoved(Canvas.this, getGraphics(), e);
-			}
-
-			completeAction();
-		}
-
-		@Override
-		public void mouseWheelMoved(MouseWheelEvent mwe) {
-			Tool tool = proj.getTool();
-			if (mwe.isControlDown()) {
-				ZoomModel zoomModel = proj.getFrame().getZoomModel();
-				double zoom = zoomModel.getZoomFactor();
-				// Attempt to maintain mouse position during zoom, using
-				// [m]ax, [v]alue, [e]xtent, and [r]elative position within it,
-				// to calculate target [n]ew[m]ax, [p]ercent and [n]ew[v]alue.
-				double mx = canvasPane.getHorizontalScrollBar().getMaximum();
-				int vx = canvasPane.getHorizontalScrollBar().getValue();
-				double ex = canvasPane.getHorizontalScrollBar().getVisibleAmount();
-				int rx = mwe.getX() - vx;
-				double my = canvasPane.getVerticalScrollBar().getMaximum();
-				int vy = canvasPane.getVerticalScrollBar().getValue();
-				double ey = canvasPane.getVerticalScrollBar().getVisibleAmount();
-				int ry = mwe.getY() - vy;
-				double newZoom = zoom;
-				if (mwe.getWheelRotation() < 0) { // ZOOM IN
-					newZoom += 0.1;
-					zoomModel.setZoomFactor(newZoom >= 4.0 ? 4.0 : newZoom);
-
-				} else { // ZOOM OUT
-					newZoom -= 0.1;
-					zoomModel.setZoomFactor(newZoom <= 0.2 ? 0.2 : newZoom);
-				}
-				newZoom = zoomModel.getZoomFactor();
-				double nmx = mx * newZoom / zoom;
-				double px = (vx / mx) + (ex/mx - ex/nmx) * (rx / ex);
-				int nvx = (int)(nmx * px);
-				double nmy = my * newZoom / zoom;
-				double py = (vy / my) + (ey/my - ey/nmy) * (ry / ey);
-				int nvy = (int)(nmy * py);
-				canvasPane.getHorizontalScrollBar().setValue(nvx);
-				canvasPane.getVerticalScrollBar().setValue(nvy);
-			} else if (tool != null && tool instanceof PokeTool && ((PokeTool)tool).isScrollable()) {
-				int id = (mwe.getWheelRotation() < 0) ? KeyEvent.VK_UP : KeyEvent.VK_DOWN;
-				KeyEvent e = new KeyEvent(mwe.getComponent(), KeyEvent.KEY_PRESSED,
-						mwe.getWhen(), 0, id, '\0');
-				tool.keyPressed(Canvas.this, e);
-			} else {
-				if (mwe.isShiftDown()) {
-					canvasPane.getHorizontalScrollBar().setValue(
-							scrollValue(canvasPane.getHorizontalScrollBar(),
-									mwe.getWheelRotation()));
-				} else {
-					canvasPane.getVerticalScrollBar().setValue(
-							scrollValue(canvasPane.getVerticalScrollBar(),
-									mwe.getWheelRotation()));
-				}
-			}
-		}
-
-		//
-		// PopupMenuListener mtehods
-		//
-		@Override
-		public void popupMenuCanceled(PopupMenuEvent e) {
-			menu_on = false;
-		}
-
-		@Override
-		public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
-			menu_on = false;
-		}
-
-		@Override
-		public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-		}
-
-		@Override
-		public void propertyChange(PropertyChangeEvent event) {
-			if (AppPreferences.GATE_SHAPE.isSource(event)
-					|| AppPreferences.SHOW_TICK_RATE.isSource(event)) {
-				paintThread.requestRepaint();
-			} else if (AppPreferences.COMPONENT_TIPS.isSource(event)) {
-				boolean showTips = AppPreferences.COMPONENT_TIPS.getBoolean();
-				setToolTipText(showTips ? "" : null);
-			}
-		}
-
-		private int scrollValue(JScrollBar bar, int val) {
-			if (val > 0) {
-				if (bar.getValue() < bar.getMaximum() + val * 2
-						* bar.getBlockIncrement()) {
-					return bar.getValue() + val * 2 * bar.getBlockIncrement();
-				}
-			} else {
-				if (bar.getValue() > bar.getMinimum() + val * 2
-						* bar.getBlockIncrement()) {
-					return bar.getValue() + val * 2 * bar.getBlockIncrement();
-				}
-			}
-			return 0;
-		}
-	}
-
-	private class MyProjectListener implements ProjectListener,
-			LibraryListener, CircuitListener, AttributeListener,
-			SimulatorListener, Selection.Listener {
-
-		@Override
-		public void attributeListChanged(AttributeEvent e) {
-		}
-
-		@Override
-		public void attributeValueChanged(AttributeEvent e) {
-			Attribute<?> attr = e.getAttribute();
-			if (attr == Options.ATTR_GATE_UNDEFINED) {
-				CircuitState circState = getCircuitState();
-				circState.markComponentsDirty(getCircuit().getNonWires());
-				// TODO actually, we'd want to mark all components in
-				// subcircuits as dirty as well
-			}
-		}
-
-		@Override
-		public void circuitChanged(CircuitEvent event) {
-			int act = event.getAction();
-			if (act == CircuitEvent.ACTION_REMOVE) {
-				Component c = (Component) event.getData();
-				if (c == painter.getHaloedComponent()) {
-					proj.getFrame().viewComponentAttributes(null, null);
-				}
-			} else if (act == CircuitEvent.ACTION_CLEAR) {
-				if (painter.getHaloedComponent() != null) {
-					proj.getFrame().viewComponentAttributes(null, null);
-				}
-			} else if (act == CircuitEvent.ACTION_INVALIDATE) {
-				completeAction();
-			}
-		}
-
-		private Tool findTool(List<? extends Tool> opts) {
-			Tool ret = null;
-			for (Tool o : opts) {
-				if (ret == null && o != null) {
-					ret = o;
-				} else if (o instanceof EditTool) {
-					ret = o;
-				}
-			}
-			return ret;
-		}
-
-		@Override
-		public void libraryChanged(LibraryEvent event) {
-			if (event.getAction() == LibraryEvent.REMOVE_TOOL) {
-				Object t = event.getData();
-				Circuit circ = null;
-				if (t instanceof AddTool) {
-					t = ((AddTool) t).getFactory();
-					if (t instanceof SubcircuitFactory) {
-						circ = ((SubcircuitFactory) t).getSubcircuit();
-					}
-				}
-
-				if (t == proj.getCurrentCircuit() && t != null) {
-					proj.setCurrentCircuit(proj.getLogisimFile()
-							.getMainCircuit());
-				}
-
-				if (proj.getTool() == event.getData()) {
-					Tool next = findTool(proj.getLogisimFile().getOptions()
-							.getToolbarData().getContents());
-					if (next == null) {
-						for (Library lib : proj.getLogisimFile().getLibraries()) {
-							next = findTool(lib.getTools());
-							if (next != null) {
-								break;
-							}
-						}
-					}
-					proj.setTool(next);
-				}
-
-				if (circ != null) {
-					CircuitState state = getCircuitState();
-					CircuitState last = state;
-					while (state != null && state.getCircuit() != circ) {
-						last = state;
-						state = state.getParentState();
-					}
-					if (state != null) {
-						getProject().setCircuitState(last.cloneState());
-					}
-				}
-			}
-		}
-
-		@Override
-		public void projectChanged(ProjectEvent event) {
-			int act = event.getAction();
-			if (act == ProjectEvent.ACTION_SET_CURRENT) {
-				viewport.setErrorMessage(null, null);
-				if (painter.getHaloedComponent() != null) {
-					proj.getFrame().viewComponentAttributes(null, null);
-				}
-			} else if (act == ProjectEvent.ACTION_SET_FILE) {
-				LogisimFile old = (LogisimFile) event.getOldData();
-				if (old != null) {
-					old.getOptions().getAttributeSet()
-							.removeAttributeListener(this);
-				}
-				LogisimFile file = (LogisimFile) event.getData();
-				if (file != null) {
-					AttributeSet attrs = file.getOptions().getAttributeSet();
-					attrs.addAttributeListener(this);
-					loadOptions(attrs);
-					mappings = file.getOptions().getMouseMappings();
-				}
-			} else if (act == ProjectEvent.ACTION_SET_TOOL) {
-				viewport.setErrorMessage(null, null);
-
-				Tool t = event.getTool();
-				if (t == null) {
-					setCursor(Cursor.getDefaultCursor());
-				} else {
-					setCursor(t.getCursor());
-				}
-			} else if (act == ProjectEvent.ACTION_SET_STATE) {
-				CircuitState oldState = (CircuitState) event.getOldData();
-				CircuitState newState = (CircuitState) event.getData();
-				if (oldState != null && newState != null) {
-					Propagator oldProp = oldState.getPropagator();
-					Propagator newProp = newState.getPropagator();
-					if (oldProp != newProp) {
-						tickCounter.clear();
-					}
-				}
-			}
-
-			if (act != ProjectEvent.ACTION_SELECTION
-					&& act != ProjectEvent.ACTION_START
-					&& act != ProjectEvent.UNDO_START) {
-				completeAction();
-			}
-		}
-
-		@Override
-		public void propagationCompleted(SimulatorEvent e) {
-			/*
-			 * This was a good idea for a while... but it leads to problems when
-			 * a repaint is done just before a user action takes place. //
-			 * repaint - but only if it's been a while since the last one long
-			 * now = System.currentTimeMillis(); if (now > lastRepaint +
-			 * repaintDuration) { lastRepaint = now; // (ensure that multiple
-			 * requests aren't made repaintDuration = 15 + (int) (20 *
-			 * Math.random()); // repaintDuration is for jittering the repaints
-			 * to // reduce aliasing effects repaint(); }
-			 */
-			paintThread.requestRepaint();
-		}
-
-		@Override
-		public void selectionChanged(Selection.Event event) {
-			repaint();
-		}
-
-		@Override
-		public void simulatorStateChanged(SimulatorEvent e) {
-		}
-
-		@Override
-		public void tickCompleted(SimulatorEvent e) {
-			waitForRepaintDone();
-		}
-	}
-
-	private class MyViewport extends JViewport {
-
-		private static final long serialVersionUID = 1L;
-		StringGetter errorMessage = null;
-		String widthMessage = null;
-		Color errorColor = DEFAULT_ERROR_COLOR;
-		boolean isNorth = false;
-		boolean isSouth = false;
-		boolean isWest = false;
-		boolean isEast = false;
-		boolean isNortheast = false;
-		boolean isNorthwest = false;
-		boolean isSoutheast = false;
-		boolean isSouthwest = false;
-
-		MyViewport() {
-		}
-
-		@Override
-		public Color getBackground() {
-			return getView() == null ? super.getBackground() : getView()
-					.getBackground();
-		}
-
-		@Override
-		public void paintChildren(Graphics g) {
-			super.paintChildren(g);
-			paintContents(g);
-		}
-
-		void paintContents(Graphics g) {
-			/*
-			 * TODO this is for the SimulatorPrototype class int speed =
-			 * proj.getSimulator().getSimulationSpeed(); String speedStr; if
-			 * (speed >= 10000000) { speedStr = (speed / 1000000) + " MHz"; }
-			 * else if (speed >= 1000000) { speedStr = (speed / 100000) / 10.0 +
-			 * " MHz"; } else if (speed >= 10000) { speedStr = (speed / 1000) +
-			 * " KHz"; } else if (speed >= 10000) { speedStr = (speed / 100) /
-			 * 10.0 + " KHz"; } else { speedStr = speed + " Hz"; } FontMetrics
-			 * fm = g.getFontMetrics(); g.drawString(speedStr, getWidth() - 10 -
-			 * fm.stringWidth(speedStr), getHeight() - 10);
-			 */
-
-			StringGetter message = errorMessage;
-			if (message != null) {
-				g.setColor(errorColor);
-				paintString(g, message.toString());
-				return;
-			}
-
-			if (proj.getSimulator().isOscillating()) {
-				g.setColor(DEFAULT_ERROR_COLOR);
-				paintString(g, Strings.get("canvasOscillationError"));
-				return;
-			}
-
-			if (proj.getSimulator().isExceptionEncountered()) {
-				g.setColor(DEFAULT_ERROR_COLOR);
-				paintString(g, Strings.get("canvasExceptionError"));
-				return;
-			}
-
-			computeViewportContents();
-			Dimension sz = getSize();
-			g.setColor(Value.WIDTH_ERROR_COLOR);
-
-			if (widthMessage != null) {
-				paintString(g, widthMessage);
-			}
-
-			int w = sz.width;
-			int h = sz.height;
-			int s = 25; // stem width
-			int l = 35; // head length
-			int a = 60; // head angle
-			if (isNorth)
-				GraphicsUtil.drawArrow(g, w/2, 24, w/2, 2, s, l, a);
-			if (isSouth)
-				GraphicsUtil.drawArrow(g, w/2, h - 24, w/2, h - 2, s, l, a);
-			if (isEast)
-				GraphicsUtil.drawArrow(g, w - 24, h/2, w - 2, h/2, s, l, a);
-			if (isWest)
-				GraphicsUtil.drawArrow(g, 24, h/2, 2, h/2, s, l, a);
-			if (isNortheast)
-				GraphicsUtil.drawArrow(g, w - 28, 28, w - 12, 12, s, l, a);
-			if (isNorthwest)
-				GraphicsUtil.drawArrow(g, 28, 28, 12, 12, s, l, a);
-			if (isSoutheast)
-				GraphicsUtil.drawArrow(g, w - 28, h - 28, w - 12, h - 12, s, l, a);
-			if (isSouthwest)
-				GraphicsUtil.drawArrow(g, 28, h - 28, 12, h - 12, s, l, a);
-
-			if (AppPreferences.SHOW_TICK_RATE.getBoolean()) {
-				String hz = tickCounter.getTickRate();
-				if (hz != null && !hz.equals("")) {
-					g.setColor(TICK_RATE_COLOR);
-					g.setFont(TICK_RATE_FONT);
-					FontMetrics fm = g.getFontMetrics();
-					int x = getWidth() - fm.stringWidth(hz) - 5;
-					int y = fm.getAscent() + 5;
-					g.drawString(hz, x, y);
-				}
-			}
-
-			GraphicsUtil.switchToWidth(g, 1);
-			g.setColor(Color.BLACK);
-
-		}
-
-		private void paintString(Graphics g, String msg) {
-			Font old = g.getFont();
-			g.setFont(old.deriveFont(Font.BOLD).deriveFont(18.0f));
-			FontMetrics fm = g.getFontMetrics();
-			int x = (getWidth() - fm.stringWidth(msg)) / 2;
-			if (x < 0) {
-				x = 0;
-			}
-			g.drawString(msg, x, getHeight() - 23);
-			g.setFont(old);
-		}
-
-		void setEast(boolean value) {
-			isEast = value;
-		}
-
-		void setErrorMessage(StringGetter msg, Color color) {
-			if (errorMessage != msg) {
-				errorMessage = msg;
-				errorColor = color == null ? DEFAULT_ERROR_COLOR : color;
-				paintThread.requestRepaint();
-			}
-		}
-
-		void setNorth(boolean value) {
-			isNorth = value;
-		}
-
-		void setNortheast(boolean value) {
-			isNortheast = value;
-		}
-
-		void setNorthwest(boolean value) {
-			isNorthwest = value;
-		}
-
-		void setSouth(boolean value) {
-			isSouth = value;
-		}
-
-		void setSoutheast(boolean value) {
-			isSoutheast = value;
-		}
-
-		void setSouthwest(boolean value) {
-			isSouthwest = value;
-		}
-
-		void setWest(boolean value) {
-			isWest = value;
-		}
-
-		void setWidthMessage(String msg) {
-			widthMessage = msg;
-			isNorth = false;
-			isSouth = false;
-			isWest = false;
-			isEast = false;
-			isNortheast = false;
-			isNorthwest = false;
-			isSoutheast = false;
-			isSouthwest = false;
-		}
-
-	}
-
-	public static void snapToGrid(MouseEvent e) {
-		int old_x = e.getX();
-		int old_y = e.getY();
-		int new_x = snapXToGrid(old_x);
-		int new_y = snapYToGrid(old_y);
-		e.translatePoint(new_x - old_x, new_y - old_y);
-	}
-
-	//
-	// static methods
-	//
-	public static int snapXToGrid(int x) {
-		if (x < 0) {
-			return -((-x + 5) / 10) * 10;
-		} else {
-			return ((x + 5) / 10) * 10;
-		}
-	}
-
-	public static int snapYToGrid(int y) {
-		if (y < 0) {
-			return -((-y + 5) / 10) * 10;
-		} else {
-			return ((y + 5) / 10) * 10;
-		}
-	}
-
-	private static final long serialVersionUID = 1L;
-	public static final Color HALO_COLOR = new Color(255, 0, 255);
-	// don't bother to update the size if it hasn't changed more than this
-	static final double SQRT_2 = Math.sqrt(2.0);
-	private static final int BOUNDS_BUFFER = 70;
-	// pixels shown in canvas beyond outermost boundaries
-	private static final int THRESH_SIZE_UPDATE = 10;
-	private static final int BUTTONS_MASK = InputEvent.BUTTON1_DOWN_MASK
-			| InputEvent.BUTTON2_DOWN_MASK | InputEvent.BUTTON3_DOWN_MASK;
-	private static final Color DEFAULT_ERROR_COLOR = new Color(192, 0, 0);
-	private static final Color TICK_RATE_COLOR = new Color(0, 0, 92, 92);
-	private static final Font TICK_RATE_FONT = new Font("serif", Font.BOLD, 12);
-	// public static BufferedImage image;
-	private Project proj;
-	private Tool drag_tool;
-	private Selection selection;
-	private MouseMappings mappings;
-	private CanvasPane canvasPane;
-	private Bounds oldPreferredSize;
-	private MyListener myListener = new MyListener();
-	private MyViewport viewport = new MyViewport();
-	private MyProjectListener myProjectListener = new MyProjectListener();
-
-	private TickCounter tickCounter;
-
-	private CanvasPaintThread paintThread;
-
-	private CanvasPainter painter;
-
-	private volatile boolean paintDirty = false; // only for within paintComponent
-
-	private boolean inPaint = false; // only for within paintComponent
-
-	private Object repaintLock = new Object(); // for waitForRepaintDone
-
-	public Canvas(Project proj) {
-		this.proj = proj;
-		this.selection = new Selection(proj, this);
-		this.painter = new CanvasPainter(this);
-		this.oldPreferredSize = null;
-		this.paintThread = new CanvasPaintThread(this);
-		this.mappings = proj.getOptions().getMouseMappings();
-		this.canvasPane = null;
-		this.tickCounter = new TickCounter();
-
-		setBackground(Color.white);
-		addMouseListener(myListener);
-		addMouseMotionListener(myListener);
-                setFocusTraversalKeysEnabled(false);
-		addKeyListener(myListener);
-		addMouseWheelListener(myListener);
-
-		// YSY
-		// try {
-		// URL url =
-		// Canvas.class.getClassLoader().getResource("resources/logisim/img/HESSO.png");
-		// image = ImageIO.read(url);
-		// } catch (IOException e) {
-		// e.printStackTrace();
-		// }
-
-		proj.addProjectListener(myProjectListener);
-		proj.addLibraryListener(myProjectListener);
-		proj.addCircuitListener(myProjectListener);
-		proj.getSimulator().addSimulatorListener(tickCounter);
-		selection.addListener(myProjectListener);
-		LocaleManager.addLocaleListener(this);
-
-		AttributeSet options = proj.getOptions().getAttributeSet();
-		options.addAttributeListener(myProjectListener);
-		AppPreferences.COMPONENT_TIPS.addPropertyChangeListener(myListener);
-		AppPreferences.GATE_SHAPE.addPropertyChangeListener(myListener);
-		AppPreferences.SHOW_TICK_RATE.addPropertyChangeListener(myListener);
-		loadOptions(options);
-		paintThread.start();
-	}
-
-	public void closeCanvas() {
-		paintThread.requestStop();
-	}
-
-	private void completeAction() {
-                if (proj.getCurrentCircuit() == null)
-                    return;
-		computeSize(false);
-		// TODO for SimulatorPrototype: proj.getSimulator().releaseUserEvents();
-		proj.getSimulator().requestPropagate();
-		// repaint will occur after propagation completes
-	}
-
-	public void computeSize(boolean immediate) {
-                if (proj.getCurrentCircuit() == null)
-                    return;
-		Bounds bounds = proj.getCurrentCircuit().getBounds();
-		int width = bounds.getX() + bounds.getWidth() + BOUNDS_BUFFER;
-		int height = bounds.getY() + bounds.getHeight() + BOUNDS_BUFFER;
-		Dimension dim;
-		if (canvasPane == null) {
-			dim = new Dimension(width, height);
-		} else {
-			dim = canvasPane.supportPreferredSize(width, height);
-		}
-		if (!immediate) {
-			Bounds old = oldPreferredSize;
-			if (old != null
-					&& Math.abs(old.getWidth() - dim.width) < THRESH_SIZE_UPDATE
-					&& Math.abs(old.getHeight() - dim.height) < THRESH_SIZE_UPDATE) {
-				return;
-			}
-		}
-		oldPreferredSize = Bounds.create(0, 0, dim.width, dim.height);
-		setPreferredSize(dim);
-		revalidate();
-	}
-
-	public Rectangle getViewableRect() {
-		Rectangle viewableBase;
-		Rectangle viewable;
-		if (canvasPane != null) {
-			viewableBase = canvasPane.getViewport().getViewRect();
-		} else {
-			Bounds bds = proj.getCurrentCircuit().getBounds();
-			viewableBase = new Rectangle(0, 0, bds.getWidth(), bds.getHeight());
-		}
-		double zoom = getZoomFactor();
-		if (zoom == 1.0) {
-			viewable = viewableBase;
-		} else {
-			viewable = new Rectangle((int) (viewableBase.x / zoom),
-					(int) (viewableBase.y / zoom),
-					(int) (viewableBase.width / zoom),
-					(int) (viewableBase.height / zoom));
-		}
-		return viewable;
-	}
-
-	private void computeViewportContents() {
-		Set<WidthIncompatibilityData> exceptions = proj.getCurrentCircuit()
-				.getWidthIncompatibilityData();
-		if (exceptions == null || exceptions.isEmpty()) {
-			viewport.setWidthMessage(null);
-			return;
-		}
-
-		Rectangle viewable = getViewableRect();
-
-		viewport.setWidthMessage(Strings.get("canvasWidthError")
-				+ (exceptions.size() == 1 ? "" : " (" + exceptions.size() + ")"));
-		for (WidthIncompatibilityData ex : exceptions) {
-			boolean isWithin = false;
-			for (int i = 0; i < ex.size(); i++) {
-				Location p = ex.getPoint(i);
-				int x = p.getX();
-				int y = p.getY();
-				if (x >= viewable.x && x < viewable.x + viewable.width
-						&& y >= viewable.y && y < viewable.y + viewable.height) {
-					isWithin = true;
-					break;
-				}
-			}
-
-			// If none are, insert an arrow.
-			if (!isWithin) {
-				Location p = ex.getPoint(0);
-				int x = p.getX();
-				int y = p.getY();
-				boolean isWest = x < viewable.x;
-				boolean isEast = x >= viewable.x + viewable.width;
-				boolean isNorth = y < viewable.y;
-				boolean isSouth = y >= viewable.y + viewable.height;
-
-				if (isNorth) {
-					if (isEast) {
-						viewport.setNortheast(true);
-					} else if (isWest) {
-						viewport.setNorthwest(true);
-					} else {
-						viewport.setNorth(true);
-					}
-				} else if (isSouth) {
-					if (isEast) {
-						viewport.setSoutheast(true);
-					} else if (isWest) {
-						viewport.setSouthwest(true);
-					} else {
-						viewport.setSouth(true);
-					}
-				} else {
-					if (isEast) {
-						viewport.setEast(true);
-					} else if (isWest) {
-						viewport.setWest(true);
-					}
-				}
-			}
-		}
-	}
-
-	//
-	// access methods
-	//
-	public Circuit getCircuit() {
-		return proj.getCurrentCircuit();
-	}
-
-	public CircuitState getCircuitState() {
-		return proj.getCircuitState();
-	}
-
-	Tool getDragTool() {
-		return drag_tool;
-	}
-
-	public StringGetter getErrorMessage() {
-		return viewport.errorMessage;
-	}
-
-	GridPainter getGridPainter() {
-		return painter.getGridPainter();
-	}
-
-	Component getHaloedComponent() {
-		return painter.getHaloedComponent();
-	}
-
-	@Override
-	public Dimension getPreferredScrollableViewportSize() {
-		return getPreferredSize();
-	}
-
-	public Project getProject() {
-		return proj;
-	}
-
-	@Override
-	public int getScrollableBlockIncrement(Rectangle visibleRect,
-			int orientation, int direction) {
-		return canvasPane.supportScrollableBlockIncrement(visibleRect,
-				orientation, direction);
-	}
-
-	@Override
-	public boolean getScrollableTracksViewportHeight() {
-		return false;
-	}
-
-	@Override
-	public boolean getScrollableTracksViewportWidth() {
-		return false;
-	}
-
-	@Override
-	public int getScrollableUnitIncrement(Rectangle visibleRect,
-			int orientation, int direction) {
-		return canvasPane.supportScrollableUnitIncrement(visibleRect,
-				orientation, direction);
-	}
-
-	public Selection getSelection() {
-		return selection;
-	}
-
-	@Override
-	public String getToolTipText(MouseEvent event) {
-		boolean showTips = AppPreferences.COMPONENT_TIPS.getBoolean();
-		if (showTips) {
-			Canvas.snapToGrid(event);
-			Location loc = Location.create(event.getX(), event.getY());
-			ComponentUserEvent e = null;
-			for (Component comp : getCircuit().getAllContaining(loc)) {
-				Object makerObj = comp.getFeature(ToolTipMaker.class);
-				if (makerObj != null && makerObj instanceof ToolTipMaker) {
-					ToolTipMaker maker = (ToolTipMaker) makerObj;
-					if (e == null) {
-						e = new ComponentUserEvent(this, loc.getX(), loc.getY());
-					}
-					String ret = maker.getToolTip(e);
-					if (ret != null) {
-						unrepairMouseEvent(event);
-						return ret;
-					}
-				}
-			}
-		}
-		return null;
-	}
-
-	//
-	// graphics methods
-	//
-	double getZoomFactor() {
-		CanvasPane pane = canvasPane;
-		return pane == null ? 1.0 : pane.getZoomFactor();
-	}
-
-	boolean ifPaintDirtyReset() {
-		if (paintDirty) {
-			paintDirty = false;
-			return false;
-		} else {
-			return true;
-		}
-	}
-
-	boolean isPopupMenuUp() {
-		return myListener.menu_on;
-	}
-
-	private void loadOptions(AttributeSet options) {
-		boolean showTips = AppPreferences.COMPONENT_TIPS.getBoolean();
-		setToolTipText(showTips ? "" : null);
-
-		proj.getSimulator().removeSimulatorListener(myProjectListener);
-		proj.getSimulator().addSimulatorListener(myProjectListener);
-	}
-
-	@Override
-	public void localeChanged() {
-		paintThread.requestRepaint();
-	}
-
-	@Override
-	public void paintComponent(Graphics g) {
-		// int i, j = 0;
-		// for (i = 0; i <= this.getParent().getWidth() / image.getWidth(); i++)
-		// {
-		// for (j = 0; j <= this.getParent().getHeight() / image.getHeight();
-		// j++) {
-		// g.drawImage(image, i * image.getWidth(), j * image.getHeight(),
-		// this);
-		// }
-		// }
-		Graphics2D g2d = (Graphics2D) g;
-		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-				RenderingHints.VALUE_ANTIALIAS_ON);
-		// g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-		//		RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-
-		inPaint = true;
-		try {
-			super.paintComponent(g);
-                        boolean clear = false;
-			do {
-                                if (clear) {
-                                    // Clear the screen so we don't get
-                                    // artifacts due to aliasing (e.g. where
-                                    // semi-transparent (gray) pixels on the
-                                    // edges of a line turn woudl darker if
-                                    // painted a second time.
-                                    g.setColor(Color.WHITE);
-                                    g.fillRect(0, 0, getWidth(), getHeight());
-                                }
-				painter.paintContents(g, proj);
-                                clear = true;
-			} while (paintDirty);
-			if (canvasPane == null) {
-				viewport.paintContents(g);
-			}
-		} finally {
-			inPaint = false;
-			synchronized (repaintLock) {
-				repaintLock.notifyAll();
-			}
-		}
-	}
-
-	@Override
-	protected void processMouseEvent(MouseEvent e) {
-		repairMouseEvent(e);
-		super.processMouseEvent(e);
-	}
-
-	@Override
-	protected void processMouseMotionEvent(MouseEvent e) {
-		repairMouseEvent(e);
-		super.processMouseMotionEvent(e);
-	}
-
-	@Override
-	public void recomputeSize() {
-		computeSize(true);
-	}
-
-	@Override
-	public void repaint() {
-		if (inPaint) {
-			paintDirty = true;
-		} else {
-			super.repaint();
-		}
-	}
-
-	@Override
-	public void repaint(int x, int y, int width, int height) {
-		double zoom = getZoomFactor();
-		if (zoom < 1.0) {
-			int newX = (int) Math.floor(x * zoom);
-			int newY = (int) Math.floor(y * zoom);
-			width += x - newX;
-			height += y - newY;
-			x = newX;
-			y = newY;
-		} else if (zoom > 1.0) {
-			int x1 = (int) Math.ceil((x + width) * zoom);
-			int y1 = (int) Math.ceil((y + height) * zoom);
-			width = x1 - x;
-			height = y1 - y;
-		}
-		super.repaint(x, y, width, height);
-	}
-
-	@Override
-	public void repaint(Rectangle r) {
-		double zoom = getZoomFactor();
-		if (zoom == 1.0) {
-			super.repaint(r);
-		} else {
-			this.repaint(r.x, r.y, r.width, r.height);
-		}
-	}
-
-	private void repairMouseEvent(MouseEvent e) {
-		double zoom = getZoomFactor();
-		if (zoom != 1.0) {
-			zoomEvent(e, zoom);
-		}
-	}
-
-	//
-	// CanvasPaneContents methods
-	//
-	@Override
-	public void setCanvasPane(CanvasPane value) {
-		canvasPane = value;
-		canvasPane.setViewport(viewport);
-		viewport.setView(this);
-		setOpaque(false);
-		computeSize(true);
-	}
-
-	public void setErrorMessage(StringGetter message) {
-		viewport.setErrorMessage(message, null);
-	}
-
-	public void setErrorMessage(StringGetter message, Color color) {
-		viewport.setErrorMessage(message, color);
-	}
-
-	void setHaloedComponent(Circuit circ, Component comp) {
-		painter.setHaloedComponent(circ, comp);
-	}
-
-	public void setHighlightedWires(WireSet value) {
-		painter.setHighlightedWires(value);
-	}
-
-	public void showPopupMenu(JPopupMenu menu, int x, int y) {
-		double zoom = getZoomFactor();
-		if (zoom != 1.0) {
-			x = (int) Math.round(x * zoom);
-			y = (int) Math.round(y * zoom);
-		}
-		myListener.menu_on = true;
-		menu.addPopupMenuListener(myListener);
-		menu.show(this, x, y);
-	}
-
-	private void unrepairMouseEvent(MouseEvent e) {
-		double zoom = getZoomFactor();
-		if (zoom != 1.0) {
-			zoomEvent(e, 1.0 / zoom);
-		}
-	}
-
-	private void waitForRepaintDone() {
-		synchronized (repaintLock) {
-			try {
-				while (inPaint) {
-					repaintLock.wait();
-				}
-			} catch (InterruptedException e) {
-			}
-		}
-	}
-
-	private void zoomEvent(MouseEvent e, double zoom) {
-		int oldx = e.getX();
-		int oldy = e.getY();
-		int newx = (int) Math.round(e.getX() / zoom);
-		int newy = (int) Math.round(e.getY() / zoom);
-		e.translatePoint(newx - oldx, newy - oldy);
-	}
+public class Canvas extends JPanel
+  implements LocaleListener, CanvasPaneContents {
+
+  private class MyListener implements MouseInputListener, KeyListener,
+          PopupMenuListener, PropertyChangeListener, MouseWheelListener {
+
+    boolean menu_on = false;
+
+    private Tool getToolFor(MouseEvent e) {
+      if (menu_on) {
+        return null;
+      }
+
+      Tool ret = mappings.getToolFor(e);
+      if (ret == null) {
+        return proj.getTool();
+      } else {
+        return ret;
+      }
+    }
+
+    //
+    // KeyListener methods
+    //
+    @Override
+    public void keyPressed(KeyEvent e) {
+      Tool tool = proj.getTool();
+      if (tool != null) {
+        tool.keyPressed(Canvas.this, e);
+      }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+      Tool tool = proj.getTool();
+      if (tool != null) {
+        tool.keyReleased(Canvas.this, e);
+      }
+    }
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+      Tool tool = proj.getTool();
+      if (tool != null) {
+        tool.keyTyped(Canvas.this, e);
+      }
+    }
+
+    //
+    // MouseListener methods
+    //
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent e) {
+      if (drag_tool != null) {
+        drag_tool.mouseDragged(Canvas.this, getGraphics(), e);
+      }
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+      if (drag_tool != null) {
+        drag_tool.mouseEntered(Canvas.this, getGraphics(), e);
+      } else {
+        Tool tool = getToolFor(e);
+        if (tool != null) {
+          tool.mouseEntered(Canvas.this, getGraphics(), e);
+        }
+      }
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+      if (drag_tool != null) {
+        drag_tool.mouseExited(Canvas.this, getGraphics(), e);
+      } else {
+        Tool tool = getToolFor(e);
+        if (tool != null) {
+          tool.mouseExited(Canvas.this, getGraphics(), e);
+        }
+      }
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+      if ((e.getModifiersEx() & BUTTONS_MASK) != 0) {
+        // If the control key is down while the mouse is being
+        // dragged, mouseMoved is called instead. This may well be
+        // an issue specific to the MacOS Java implementation,
+        // but it exists there in the 1.4 and 5.0 versions.
+        mouseDragged(e);
+        return;
+      }
+
+      Tool tool = getToolFor(e);
+      if (tool != null) {
+        tool.mouseMoved(Canvas.this, getGraphics(), e);
+      }
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+      viewport.setErrorMessage(null, null);
+      proj.setStartupScreen(false);
+      Canvas.this.requestFocus();
+      drag_tool = getToolFor(e);
+      if (drag_tool != null) {
+        drag_tool.mousePressed(Canvas.this, getGraphics(), e);
+      }
+
+      completeAction();
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+      if (drag_tool != null) {
+        drag_tool.mouseReleased(Canvas.this, getGraphics(), e);
+        drag_tool = null;
+      }
+
+      Tool tool = proj.getTool();
+      if (tool != null) {
+        tool.mouseMoved(Canvas.this, getGraphics(), e);
+      }
+
+      completeAction();
+    }
+
+    @Override
+    public void mouseWheelMoved(MouseWheelEvent mwe) {
+      Tool tool = proj.getTool();
+      if (mwe.isControlDown()) {
+        ZoomModel zoomModel = proj.getFrame().getZoomModel();
+        double zoom = zoomModel.getZoomFactor();
+        // Attempt to maintain mouse position during zoom, using
+        // [m]ax, [v]alue, [e]xtent, and [r]elative position within it,
+        // to calculate target [n]ew[m]ax, [p]ercent and [n]ew[v]alue.
+        double mx = canvasPane.getHorizontalScrollBar().getMaximum();
+        int vx = canvasPane.getHorizontalScrollBar().getValue();
+        double ex = canvasPane.getHorizontalScrollBar().getVisibleAmount();
+        int rx = mwe.getX() - vx;
+        double my = canvasPane.getVerticalScrollBar().getMaximum();
+        int vy = canvasPane.getVerticalScrollBar().getValue();
+        double ey = canvasPane.getVerticalScrollBar().getVisibleAmount();
+        int ry = mwe.getY() - vy;
+        double newZoom = zoom;
+        if (mwe.getWheelRotation() < 0) { // ZOOM IN
+          newZoom += 0.1;
+          zoomModel.setZoomFactor(newZoom >= 4.0 ? 4.0 : newZoom);
+
+        } else { // ZOOM OUT
+          newZoom -= 0.1;
+          zoomModel.setZoomFactor(newZoom <= 0.2 ? 0.2 : newZoom);
+        }
+        newZoom = zoomModel.getZoomFactor();
+        double nmx = mx * newZoom / zoom;
+        double px = (vx / mx) + (ex/mx - ex/nmx) * (rx / ex);
+        int nvx = (int)(nmx * px);
+        double nmy = my * newZoom / zoom;
+        double py = (vy / my) + (ey/my - ey/nmy) * (ry / ey);
+        int nvy = (int)(nmy * py);
+        canvasPane.getHorizontalScrollBar().setValue(nvx);
+        canvasPane.getVerticalScrollBar().setValue(nvy);
+      } else if (tool != null && tool instanceof PokeTool && ((PokeTool)tool).isScrollable()) {
+        int id = (mwe.getWheelRotation() < 0) ? KeyEvent.VK_UP : KeyEvent.VK_DOWN;
+        KeyEvent e = new KeyEvent(mwe.getComponent(), KeyEvent.KEY_PRESSED,
+            mwe.getWhen(), 0, id, '\0');
+        tool.keyPressed(Canvas.this, e);
+      } else {
+        if (mwe.isShiftDown()) {
+          canvasPane.getHorizontalScrollBar().setValue(
+              scrollValue(canvasPane.getHorizontalScrollBar(),
+                mwe.getWheelRotation()));
+        } else {
+          canvasPane.getVerticalScrollBar().setValue(
+              scrollValue(canvasPane.getVerticalScrollBar(),
+                mwe.getWheelRotation()));
+        }
+      }
+    }
+
+    //
+    // PopupMenuListener mtehods
+    //
+    @Override
+    public void popupMenuCanceled(PopupMenuEvent e) {
+      menu_on = false;
+    }
+
+    @Override
+    public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+      menu_on = false;
+    }
+
+    @Override
+    public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent event) {
+      if (AppPreferences.GATE_SHAPE.isSource(event)
+          || AppPreferences.SHOW_TICK_RATE.isSource(event)) {
+        paintThread.requestRepaint();
+      } else if (AppPreferences.COMPONENT_TIPS.isSource(event)) {
+        boolean showTips = AppPreferences.COMPONENT_TIPS.getBoolean();
+        setToolTipText(showTips ? "" : null);
+      }
+    }
+
+    private int scrollValue(JScrollBar bar, int val) {
+      if (val > 0) {
+        if (bar.getValue() < bar.getMaximum() + val * 2
+            * bar.getBlockIncrement()) {
+          return bar.getValue() + val * 2 * bar.getBlockIncrement();
+        }
+      } else {
+        if (bar.getValue() > bar.getMinimum() + val * 2
+            * bar.getBlockIncrement()) {
+          return bar.getValue() + val * 2 * bar.getBlockIncrement();
+        }
+      }
+      return 0;
+    }
+  }
+
+  private class MyProjectListener implements ProjectListener,
+          LibraryListener, CircuitListener, AttributeListener,
+          SimulatorListener, Selection.Listener {
+
+    @Override
+    public void attributeListChanged(AttributeEvent e) {
+    }
+
+    @Override
+    public void attributeValueChanged(AttributeEvent e) {
+      Attribute<?> attr = e.getAttribute();
+      if (attr == Options.ATTR_GATE_UNDEFINED) {
+        CircuitState circState = getCircuitState();
+        circState.markComponentsDirty(getCircuit().getNonWires());
+        // TODO actually, we'd want to mark all components in
+        // subcircuits as dirty as well
+      }
+    }
+
+    @Override
+    public void circuitChanged(CircuitEvent event) {
+      int act = event.getAction();
+      if (act == CircuitEvent.ACTION_REMOVE) {
+        Component c = (Component) event.getData();
+        if (c == painter.getHaloedComponent()) {
+          proj.getFrame().viewComponentAttributes(null, null);
+        }
+      } else if (act == CircuitEvent.ACTION_CLEAR) {
+        if (painter.getHaloedComponent() != null) {
+          proj.getFrame().viewComponentAttributes(null, null);
+        }
+      } else if (act == CircuitEvent.ACTION_INVALIDATE) {
+        completeAction();
+      }
+    }
+
+    private Tool findTool(List<? extends Tool> opts) {
+      Tool ret = null;
+      for (Tool o : opts) {
+        if (ret == null && o != null) {
+          ret = o;
+        } else if (o instanceof EditTool) {
+          ret = o;
+        }
+      }
+      return ret;
+    }
+
+    @Override
+    public void libraryChanged(LibraryEvent event) {
+      if (event.getAction() == LibraryEvent.REMOVE_TOOL) {
+        Object t = event.getData();
+        Circuit circ = null;
+        if (t instanceof AddTool) {
+          t = ((AddTool) t).getFactory();
+          if (t instanceof SubcircuitFactory) {
+            circ = ((SubcircuitFactory) t).getSubcircuit();
+          }
+        }
+
+        if (t == proj.getCurrentCircuit() && t != null) {
+          proj.setCurrentCircuit(proj.getLogisimFile()
+              .getMainCircuit());
+        }
+
+        if (proj.getTool() == event.getData()) {
+          Tool next = findTool(proj.getLogisimFile().getOptions()
+              .getToolbarData().getContents());
+          if (next == null) {
+            for (Library lib : proj.getLogisimFile().getLibraries()) {
+              next = findTool(lib.getTools());
+              if (next != null) {
+                break;
+              }
+            }
+          }
+          proj.setTool(next);
+        }
+
+        if (circ != null) {
+          CircuitState state = getCircuitState();
+          CircuitState last = state;
+          while (state != null && state.getCircuit() != circ) {
+            last = state;
+            state = state.getParentState();
+          }
+          if (state != null) {
+            getProject().setCircuitState(last.cloneState());
+          }
+        }
+      }
+    }
+
+    @Override
+    public void projectChanged(ProjectEvent event) {
+      int act = event.getAction();
+      if (act == ProjectEvent.ACTION_SET_CURRENT) {
+        viewport.setErrorMessage(null, null);
+        if (painter.getHaloedComponent() != null) {
+          proj.getFrame().viewComponentAttributes(null, null);
+        }
+      } else if (act == ProjectEvent.ACTION_SET_FILE) {
+        LogisimFile old = (LogisimFile) event.getOldData();
+        if (old != null) {
+          old.getOptions().getAttributeSet()
+              .removeAttributeListener(this);
+        }
+        LogisimFile file = (LogisimFile) event.getData();
+        if (file != null) {
+          AttributeSet attrs = file.getOptions().getAttributeSet();
+          attrs.addAttributeListener(this);
+          loadOptions(attrs);
+          mappings = file.getOptions().getMouseMappings();
+        }
+      } else if (act == ProjectEvent.ACTION_SET_TOOL) {
+        viewport.setErrorMessage(null, null);
+
+        Tool t = event.getTool();
+        if (t == null) {
+          setCursor(Cursor.getDefaultCursor());
+        } else {
+          setCursor(t.getCursor());
+        }
+      } else if (act == ProjectEvent.ACTION_SET_STATE) {
+        CircuitState oldState = (CircuitState) event.getOldData();
+        CircuitState newState = (CircuitState) event.getData();
+        if (oldState != null && newState != null) {
+          Propagator oldProp = oldState.getPropagator();
+          Propagator newProp = newState.getPropagator();
+          if (oldProp != newProp) {
+            tickCounter.clear();
+          }
+        }
+      }
+
+      if (act != ProjectEvent.ACTION_SELECTION
+          && act != ProjectEvent.ACTION_START
+          && act != ProjectEvent.UNDO_START) {
+        completeAction();
+      }
+    }
+
+    @Override
+    public void propagationCompleted(SimulatorEvent e) {
+      /*
+       * This was a good idea for a while... but it leads to problems when
+       * a repaint is done just before a user action takes place. //
+       * repaint - but only if it's been a while since the last one long
+       * now = System.currentTimeMillis(); if (now > lastRepaint +
+       * repaintDuration) { lastRepaint = now; // (ensure that multiple
+       * requests aren't made repaintDuration = 15 + (int) (20 *
+       * Math.random()); // repaintDuration is for jittering the repaints
+       * to // reduce aliasing effects repaint(); }
+       */
+      paintThread.requestRepaint();
+    }
+
+    @Override
+    public void selectionChanged(Selection.Event event) {
+      repaint();
+    }
+
+    @Override
+    public void simulatorStateChanged(SimulatorEvent e) {
+    }
+
+    @Override
+    public void tickCompleted(SimulatorEvent e) {
+      waitForRepaintDone();
+    }
+  }
+
+  private class MyViewport extends JViewport {
+
+    private static final long serialVersionUID = 1L;
+    StringGetter errorMessage = null;
+    String widthMessage = null;
+    Color errorColor = DEFAULT_ERROR_COLOR;
+    boolean isNorth = false;
+    boolean isSouth = false;
+    boolean isWest = false;
+    boolean isEast = false;
+    boolean isNortheast = false;
+    boolean isNorthwest = false;
+    boolean isSoutheast = false;
+    boolean isSouthwest = false;
+
+    MyViewport() {
+    }
+
+    @Override
+    public Color getBackground() {
+      return getView() == null ? super.getBackground() : getView()
+          .getBackground();
+    }
+
+    @Override
+    public void paintChildren(Graphics g) {
+      super.paintChildren(g);
+      paintContents(g);
+    }
+
+    void paintContents(Graphics g) {
+      /*
+       * TODO this is for the SimulatorPrototype class int speed =
+       * proj.getSimulator().getSimulationSpeed(); String speedStr; if
+       * (speed >= 10000000) { speedStr = (speed / 1000000) + " MHz"; }
+       * else if (speed >= 1000000) { speedStr = (speed / 100000) / 10.0 +
+       * " MHz"; } else if (speed >= 10000) { speedStr = (speed / 1000) +
+       * " KHz"; } else if (speed >= 10000) { speedStr = (speed / 100) /
+       * 10.0 + " KHz"; } else { speedStr = speed + " Hz"; } FontMetrics
+       * fm = g.getFontMetrics(); g.drawString(speedStr, getWidth() - 10 -
+       * fm.stringWidth(speedStr), getHeight() - 10);
+       */
+
+      StringGetter message = errorMessage;
+      if (message != null) {
+        g.setColor(errorColor);
+        paintString(g, message.toString());
+        return;
+      }
+
+      if (proj.getSimulator().isOscillating()) {
+        g.setColor(DEFAULT_ERROR_COLOR);
+        paintString(g, Strings.get("canvasOscillationError"));
+        return;
+      }
+
+      if (proj.getSimulator().isExceptionEncountered()) {
+        g.setColor(DEFAULT_ERROR_COLOR);
+        paintString(g, Strings.get("canvasExceptionError"));
+        return;
+      }
+
+      computeViewportContents();
+      Dimension sz = getSize();
+      g.setColor(Value.WIDTH_ERROR_COLOR);
+
+      if (widthMessage != null) {
+        paintString(g, widthMessage);
+      }
+
+      int w = sz.width;
+      int h = sz.height;
+      int s = 25; // stem width
+      int l = 35; // head length
+      int a = 60; // head angle
+      if (isNorth)
+        GraphicsUtil.drawArrow(g, w/2, 24, w/2, 2, s, l, a);
+      if (isSouth)
+        GraphicsUtil.drawArrow(g, w/2, h - 24, w/2, h - 2, s, l, a);
+      if (isEast)
+        GraphicsUtil.drawArrow(g, w - 24, h/2, w - 2, h/2, s, l, a);
+      if (isWest)
+        GraphicsUtil.drawArrow(g, 24, h/2, 2, h/2, s, l, a);
+      if (isNortheast)
+        GraphicsUtil.drawArrow(g, w - 28, 28, w - 12, 12, s, l, a);
+      if (isNorthwest)
+        GraphicsUtil.drawArrow(g, 28, 28, 12, 12, s, l, a);
+      if (isSoutheast)
+        GraphicsUtil.drawArrow(g, w - 28, h - 28, w - 12, h - 12, s, l, a);
+      if (isSouthwest)
+        GraphicsUtil.drawArrow(g, 28, h - 28, 12, h - 12, s, l, a);
+
+      if (AppPreferences.SHOW_TICK_RATE.getBoolean()) {
+        String hz = tickCounter.getTickRate();
+        if (hz != null && !hz.equals("")) {
+          g.setColor(TICK_RATE_COLOR);
+          g.setFont(TICK_RATE_FONT);
+          FontMetrics fm = g.getFontMetrics();
+          int x = getWidth() - fm.stringWidth(hz) - 5;
+          int y = fm.getAscent() + 5;
+          g.drawString(hz, x, y);
+        }
+      }
+
+      GraphicsUtil.switchToWidth(g, 1);
+      g.setColor(Color.BLACK);
+
+    }
+
+    private void paintString(Graphics g, String msg) {
+      Font old = g.getFont();
+      g.setFont(old.deriveFont(Font.BOLD).deriveFont(18.0f));
+      FontMetrics fm = g.getFontMetrics();
+      int x = (getWidth() - fm.stringWidth(msg)) / 2;
+      if (x < 0) {
+        x = 0;
+      }
+      g.drawString(msg, x, getHeight() - 23);
+      g.setFont(old);
+    }
+
+    void setEast(boolean value) {
+      isEast = value;
+    }
+
+    void setErrorMessage(StringGetter msg, Color color) {
+      if (errorMessage != msg) {
+        errorMessage = msg;
+        errorColor = color == null ? DEFAULT_ERROR_COLOR : color;
+        paintThread.requestRepaint();
+      }
+    }
+
+    void setNorth(boolean value) {
+      isNorth = value;
+    }
+
+    void setNortheast(boolean value) {
+      isNortheast = value;
+    }
+
+    void setNorthwest(boolean value) {
+      isNorthwest = value;
+    }
+
+    void setSouth(boolean value) {
+      isSouth = value;
+    }
+
+    void setSoutheast(boolean value) {
+      isSoutheast = value;
+    }
+
+    void setSouthwest(boolean value) {
+      isSouthwest = value;
+    }
+
+    void setWest(boolean value) {
+      isWest = value;
+    }
+
+    void setWidthMessage(String msg) {
+      widthMessage = msg;
+      isNorth = false;
+      isSouth = false;
+      isWest = false;
+      isEast = false;
+      isNortheast = false;
+      isNorthwest = false;
+      isSoutheast = false;
+      isSouthwest = false;
+    }
+
+  }
+
+  public static void snapToGrid(MouseEvent e) {
+    int old_x = e.getX();
+    int old_y = e.getY();
+    int new_x = snapXToGrid(old_x);
+    int new_y = snapYToGrid(old_y);
+    e.translatePoint(new_x - old_x, new_y - old_y);
+  }
+
+  //
+  // static methods
+  //
+  public static int snapXToGrid(int x) {
+    if (x < 0) {
+      return -((-x + 5) / 10) * 10;
+    } else {
+      return ((x + 5) / 10) * 10;
+    }
+  }
+
+  public static int snapYToGrid(int y) {
+    if (y < 0) {
+      return -((-y + 5) / 10) * 10;
+    } else {
+      return ((y + 5) / 10) * 10;
+    }
+  }
+
+  private static final long serialVersionUID = 1L;
+  public static final Color HALO_COLOR = new Color(255, 0, 255);
+  // don't bother to update the size if it hasn't changed more than this
+  static final double SQRT_2 = Math.sqrt(2.0);
+  private static final int BOUNDS_BUFFER = 70;
+  // pixels shown in canvas beyond outermost boundaries
+  private static final int THRESH_SIZE_UPDATE = 10;
+  private static final int BUTTONS_MASK = InputEvent.BUTTON1_DOWN_MASK
+      | InputEvent.BUTTON2_DOWN_MASK | InputEvent.BUTTON3_DOWN_MASK;
+  private static final Color DEFAULT_ERROR_COLOR = new Color(192, 0, 0);
+  private static final Color TICK_RATE_COLOR = new Color(0, 0, 92, 92);
+  private static final Font TICK_RATE_FONT = new Font("serif", Font.BOLD, 12);
+  // public static BufferedImage image;
+  private Project proj;
+  private Tool drag_tool;
+  private Selection selection;
+  private MouseMappings mappings;
+  private CanvasPane canvasPane;
+  private Bounds oldPreferredSize;
+  private MyListener myListener = new MyListener();
+  private MyViewport viewport = new MyViewport();
+  private MyProjectListener myProjectListener = new MyProjectListener();
+
+  private TickCounter tickCounter;
+
+  private CanvasPaintThread paintThread;
+
+  private CanvasPainter painter;
+
+  private volatile boolean paintDirty = false; // only for within paintComponent
+
+  private boolean inPaint = false; // only for within paintComponent
+
+  private Object repaintLock = new Object(); // for waitForRepaintDone
+
+  public Canvas(Project proj) {
+    this.proj = proj;
+    this.selection = new Selection(proj, this);
+    this.painter = new CanvasPainter(this);
+    this.oldPreferredSize = null;
+    this.paintThread = new CanvasPaintThread(this);
+    this.mappings = proj.getOptions().getMouseMappings();
+    this.canvasPane = null;
+    this.tickCounter = new TickCounter();
+
+    setBackground(Color.white);
+    addMouseListener(myListener);
+    addMouseMotionListener(myListener);
+    setFocusTraversalKeysEnabled(false);
+    addKeyListener(myListener);
+    addMouseWheelListener(myListener);
+
+    // YSY
+    // try {
+    // URL url =
+    // Canvas.class.getClassLoader().getResource("resources/logisim/img/HESSO.png");
+    // image = ImageIO.read(url);
+    // } catch (IOException e) {
+    // e.printStackTrace();
+    // }
+
+    proj.addProjectListener(myProjectListener);
+    proj.addLibraryListener(myProjectListener);
+    proj.addCircuitListener(myProjectListener);
+    proj.getSimulator().addSimulatorListener(tickCounter);
+    selection.addListener(myProjectListener);
+    LocaleManager.addLocaleListener(this);
+
+    AttributeSet options = proj.getOptions().getAttributeSet();
+    options.addAttributeListener(myProjectListener);
+    AppPreferences.COMPONENT_TIPS.addPropertyChangeListener(myListener);
+    AppPreferences.GATE_SHAPE.addPropertyChangeListener(myListener);
+    AppPreferences.SHOW_TICK_RATE.addPropertyChangeListener(myListener);
+    loadOptions(options);
+    paintThread.start();
+  }
+
+  public void closeCanvas() {
+    paintThread.requestStop();
+  }
+
+  private void completeAction() {
+    if (proj.getCurrentCircuit() == null)
+      return;
+    computeSize(false);
+    // TODO for SimulatorPrototype: proj.getSimulator().releaseUserEvents();
+    proj.getSimulator().requestPropagate();
+    // repaint will occur after propagation completes
+  }
+
+  public void computeSize(boolean immediate) {
+    if (proj.getCurrentCircuit() == null)
+      return;
+    Bounds bounds = proj.getCurrentCircuit().getBounds();
+    int width = bounds.getX() + bounds.getWidth() + BOUNDS_BUFFER;
+    int height = bounds.getY() + bounds.getHeight() + BOUNDS_BUFFER;
+    Dimension dim;
+    if (canvasPane == null) {
+      dim = new Dimension(width, height);
+    } else {
+      dim = canvasPane.supportPreferredSize(width, height);
+    }
+    if (!immediate) {
+      Bounds old = oldPreferredSize;
+      if (old != null
+          && Math.abs(old.getWidth() - dim.width) < THRESH_SIZE_UPDATE
+          && Math.abs(old.getHeight() - dim.height) < THRESH_SIZE_UPDATE) {
+        return;
+      }
+    }
+    oldPreferredSize = Bounds.create(0, 0, dim.width, dim.height);
+    setPreferredSize(dim);
+    revalidate();
+  }
+
+  public Rectangle getViewableRect() {
+    Rectangle viewableBase;
+    Rectangle viewable;
+    if (canvasPane != null) {
+      viewableBase = canvasPane.getViewport().getViewRect();
+    } else {
+      Bounds bds = proj.getCurrentCircuit().getBounds();
+      viewableBase = new Rectangle(0, 0, bds.getWidth(), bds.getHeight());
+    }
+    double zoom = getZoomFactor();
+    if (zoom == 1.0) {
+      viewable = viewableBase;
+    } else {
+      viewable = new Rectangle((int) (viewableBase.x / zoom),
+          (int) (viewableBase.y / zoom),
+          (int) (viewableBase.width / zoom),
+          (int) (viewableBase.height / zoom));
+    }
+    return viewable;
+  }
+
+  private void computeViewportContents() {
+    Set<WidthIncompatibilityData> exceptions = proj.getCurrentCircuit()
+        .getWidthIncompatibilityData();
+    if (exceptions == null || exceptions.isEmpty()) {
+      viewport.setWidthMessage(null);
+      return;
+    }
+
+    Rectangle viewable = getViewableRect();
+
+    viewport.setWidthMessage(Strings.get("canvasWidthError")
+        + (exceptions.size() == 1 ? "" : " (" + exceptions.size() + ")"));
+    for (WidthIncompatibilityData ex : exceptions) {
+      boolean isWithin = false;
+      for (int i = 0; i < ex.size(); i++) {
+        Location p = ex.getPoint(i);
+        int x = p.getX();
+        int y = p.getY();
+        if (x >= viewable.x && x < viewable.x + viewable.width
+            && y >= viewable.y && y < viewable.y + viewable.height) {
+          isWithin = true;
+          break;
+        }
+      }
+
+      // If none are, insert an arrow.
+      if (!isWithin) {
+        Location p = ex.getPoint(0);
+        int x = p.getX();
+        int y = p.getY();
+        boolean isWest = x < viewable.x;
+        boolean isEast = x >= viewable.x + viewable.width;
+        boolean isNorth = y < viewable.y;
+        boolean isSouth = y >= viewable.y + viewable.height;
+
+        if (isNorth) {
+          if (isEast) {
+            viewport.setNortheast(true);
+          } else if (isWest) {
+            viewport.setNorthwest(true);
+          } else {
+            viewport.setNorth(true);
+          }
+        } else if (isSouth) {
+          if (isEast) {
+            viewport.setSoutheast(true);
+          } else if (isWest) {
+            viewport.setSouthwest(true);
+          } else {
+            viewport.setSouth(true);
+          }
+        } else {
+          if (isEast) {
+            viewport.setEast(true);
+          } else if (isWest) {
+            viewport.setWest(true);
+          }
+        }
+      }
+    }
+  }
+
+  //
+  // access methods
+  //
+  public Circuit getCircuit() {
+    return proj.getCurrentCircuit();
+  }
+
+  public CircuitState getCircuitState() {
+    return proj.getCircuitState();
+  }
+
+  Tool getDragTool() {
+    return drag_tool;
+  }
+
+  public StringGetter getErrorMessage() {
+    return viewport.errorMessage;
+  }
+
+  GridPainter getGridPainter() {
+    return painter.getGridPainter();
+  }
+
+  Component getHaloedComponent() {
+    return painter.getHaloedComponent();
+  }
+
+  @Override
+  public Dimension getPreferredScrollableViewportSize() {
+    return getPreferredSize();
+  }
+
+  public Project getProject() {
+    return proj;
+  }
+
+  @Override
+  public int getScrollableBlockIncrement(Rectangle visibleRect,
+      int orientation, int direction) {
+    return canvasPane.supportScrollableBlockIncrement(visibleRect,
+        orientation, direction);
+  }
+
+  @Override
+  public boolean getScrollableTracksViewportHeight() {
+    return false;
+  }
+
+  @Override
+  public boolean getScrollableTracksViewportWidth() {
+    return false;
+  }
+
+  @Override
+  public int getScrollableUnitIncrement(Rectangle visibleRect,
+      int orientation, int direction) {
+    return canvasPane.supportScrollableUnitIncrement(visibleRect,
+        orientation, direction);
+  }
+
+  public Selection getSelection() {
+    return selection;
+  }
+
+  @Override
+  public String getToolTipText(MouseEvent event) {
+    boolean showTips = AppPreferences.COMPONENT_TIPS.getBoolean();
+    if (showTips) {
+      Canvas.snapToGrid(event);
+      Location loc = Location.create(event.getX(), event.getY());
+      ComponentUserEvent e = null;
+      for (Component comp : getCircuit().getAllContaining(loc)) {
+        Object makerObj = comp.getFeature(ToolTipMaker.class);
+        if (makerObj != null && makerObj instanceof ToolTipMaker) {
+          ToolTipMaker maker = (ToolTipMaker) makerObj;
+          if (e == null) {
+            e = new ComponentUserEvent(this, loc.getX(), loc.getY());
+          }
+          String ret = maker.getToolTip(e);
+          if (ret != null) {
+            unrepairMouseEvent(event);
+            return ret;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  //
+  // graphics methods
+  //
+  double getZoomFactor() {
+    CanvasPane pane = canvasPane;
+    return pane == null ? 1.0 : pane.getZoomFactor();
+  }
+
+  boolean ifPaintDirtyReset() {
+    if (paintDirty) {
+      paintDirty = false;
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  boolean isPopupMenuUp() {
+    return myListener.menu_on;
+  }
+
+  private void loadOptions(AttributeSet options) {
+    boolean showTips = AppPreferences.COMPONENT_TIPS.getBoolean();
+    setToolTipText(showTips ? "" : null);
+
+    proj.getSimulator().removeSimulatorListener(myProjectListener);
+    proj.getSimulator().addSimulatorListener(myProjectListener);
+  }
+
+  @Override
+  public void localeChanged() {
+    paintThread.requestRepaint();
+  }
+
+  @Override
+  public void paintComponent(Graphics g) {
+    // int i, j = 0;
+    // for (i = 0; i <= this.getParent().getWidth() / image.getWidth(); i++)
+    // {
+    // for (j = 0; j <= this.getParent().getHeight() / image.getHeight();
+    // j++) {
+    // g.drawImage(image, i * image.getWidth(), j * image.getHeight(),
+    // this);
+    // }
+    // }
+    Graphics2D g2d = (Graphics2D) g;
+    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+        RenderingHints.VALUE_ANTIALIAS_ON);
+    // g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+    //    RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+    inPaint = true;
+    try {
+      super.paintComponent(g);
+      boolean clear = false;
+      do {
+        if (clear) {
+          // Clear the screen so we don't get
+          // artifacts due to aliasing (e.g. where
+          // semi-transparent (gray) pixels on the
+          // edges of a line turn woudl darker if
+          // painted a second time.
+          g.setColor(Color.WHITE);
+          g.fillRect(0, 0, getWidth(), getHeight());
+        }
+        painter.paintContents(g, proj);
+        clear = true;
+      } while (paintDirty);
+      if (canvasPane == null) {
+        viewport.paintContents(g);
+      }
+    } finally {
+      inPaint = false;
+      synchronized (repaintLock) {
+        repaintLock.notifyAll();
+      }
+    }
+  }
+
+  @Override
+  protected void processMouseEvent(MouseEvent e) {
+    repairMouseEvent(e);
+    super.processMouseEvent(e);
+  }
+
+  @Override
+  protected void processMouseMotionEvent(MouseEvent e) {
+    repairMouseEvent(e);
+    super.processMouseMotionEvent(e);
+  }
+
+  @Override
+  public void recomputeSize() {
+    computeSize(true);
+  }
+
+  @Override
+  public void repaint() {
+    if (inPaint) {
+      paintDirty = true;
+    } else {
+      super.repaint();
+    }
+  }
+
+  @Override
+  public void repaint(int x, int y, int width, int height) {
+    double zoom = getZoomFactor();
+    if (zoom < 1.0) {
+      int newX = (int) Math.floor(x * zoom);
+      int newY = (int) Math.floor(y * zoom);
+      width += x - newX;
+      height += y - newY;
+      x = newX;
+      y = newY;
+    } else if (zoom > 1.0) {
+      int x1 = (int) Math.ceil((x + width) * zoom);
+      int y1 = (int) Math.ceil((y + height) * zoom);
+      width = x1 - x;
+      height = y1 - y;
+    }
+    super.repaint(x, y, width, height);
+  }
+
+  @Override
+  public void repaint(Rectangle r) {
+    double zoom = getZoomFactor();
+    if (zoom == 1.0) {
+      super.repaint(r);
+    } else {
+      this.repaint(r.x, r.y, r.width, r.height);
+    }
+  }
+
+  private void repairMouseEvent(MouseEvent e) {
+    double zoom = getZoomFactor();
+    if (zoom != 1.0) {
+      zoomEvent(e, zoom);
+    }
+  }
+
+  //
+  // CanvasPaneContents methods
+  //
+  @Override
+  public void setCanvasPane(CanvasPane value) {
+    canvasPane = value;
+    canvasPane.setViewport(viewport);
+    viewport.setView(this);
+    setOpaque(false);
+    computeSize(true);
+  }
+
+  public void setErrorMessage(StringGetter message) {
+    viewport.setErrorMessage(message, null);
+  }
+
+  public void setErrorMessage(StringGetter message, Color color) {
+    viewport.setErrorMessage(message, color);
+  }
+
+  void setHaloedComponent(Circuit circ, Component comp) {
+    painter.setHaloedComponent(circ, comp);
+  }
+
+  public void setHighlightedWires(WireSet value) {
+    painter.setHighlightedWires(value);
+  }
+
+  public void showPopupMenu(JPopupMenu menu, int x, int y) {
+    double zoom = getZoomFactor();
+    if (zoom != 1.0) {
+      x = (int) Math.round(x * zoom);
+      y = (int) Math.round(y * zoom);
+    }
+    myListener.menu_on = true;
+    menu.addPopupMenuListener(myListener);
+    menu.show(this, x, y);
+  }
+
+  private void unrepairMouseEvent(MouseEvent e) {
+    double zoom = getZoomFactor();
+    if (zoom != 1.0) {
+      zoomEvent(e, 1.0 / zoom);
+    }
+  }
+
+  private void waitForRepaintDone() {
+    synchronized (repaintLock) {
+      try {
+        while (inPaint) {
+          repaintLock.wait();
+        }
+      } catch (InterruptedException e) {
+      }
+    }
+  }
+
+  private void zoomEvent(MouseEvent e, double zoom) {
+    int oldx = e.getX();
+    int oldy = e.getY();
+    int newx = (int) Math.round(e.getX() / zoom);
+    int newy = (int) Math.round(e.getY() / zoom);
+    e.translatePoint(newx - oldx, newy - oldy);
+  }
 }

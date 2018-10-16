@@ -53,112 +53,112 @@ import com.cburch.draw.shapes.SvgReader;
 import com.cburch.draw.shapes.SvgCreator;
 
 public class RegisterShape extends DynamicElement {
-	static final Font DEFAULT_FONT = new Font("monospaced", Font.PLAIN, 10);
+  static final Font DEFAULT_FONT = new Font("monospaced", Font.PLAIN, 10);
 
-	private EditableLabel label;
+  private EditableLabel label;
 
-	public RegisterShape(int x, int y, DynamicElement.Path p) {
-		super(p, Bounds.create(x, y, 1, 1));
-		label = new EditableLabel(x, y, "0", DEFAULT_FONT);
-		label.setColor(Color.BLACK);
-		label.setHorizontalAlignment(EditableLabel.CENTER);
-		label.setVerticalAlignment(EditableLabel.MIDDLE);
-		calculateBounds();
-	}
+  public RegisterShape(int x, int y, DynamicElement.Path p) {
+    super(p, Bounds.create(x, y, 1, 1));
+    label = new EditableLabel(x, y, "0", DEFAULT_FONT);
+    label.setColor(Color.BLACK);
+    label.setHorizontalAlignment(EditableLabel.CENTER);
+    label.setVerticalAlignment(EditableLabel.MIDDLE);
+    calculateBounds();
+  }
 
-	void calculateBounds() {
-		BitWidth widthVal = path.leaf().getAttributeSet().getValue(StdAttr.WIDTH);
-		int width = (widthVal == null ? 8 : widthVal.getWidth());
-		String zeros = StringUtil.toHexString(width, 0);
-		label.setText(zeros);
-		int x = bounds.getX();
-		int y = bounds.getY();
-		bounds = StringUtil.estimateBounds(zeros, label.getFont()).translate(x, y);
-		label.setLocation(bounds.getCenterX(), bounds.getCenterY());
-	}
+  void calculateBounds() {
+    BitWidth widthVal = path.leaf().getAttributeSet().getValue(StdAttr.WIDTH);
+    int width = (widthVal == null ? 8 : widthVal.getWidth());
+    String zeros = StringUtil.toHexString(width, 0);
+    label.setText(zeros);
+    int x = bounds.getX();
+    int y = bounds.getY();
+    bounds = StringUtil.estimateBounds(zeros, label.getFont()).translate(x, y);
+    label.setLocation(bounds.getCenterX(), bounds.getCenterY());
+  }
 
-	@Override
-	public void translate(int dx, int dy) {
-		super.translate(dx, dy);
-		label.setLocation(bounds.getX(), bounds.getY());
-	}
+  @Override
+  public void translate(int dx, int dy) {
+    super.translate(dx, dy);
+    label.setLocation(bounds.getX(), bounds.getY());
+  }
 
-	@Override
-	public List<Attribute<?>> getAttributes() {
-		return UnmodifiableList.create(new Attribute<?>[] {
-			Text.ATTR_FONT,
-			ATTR_LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR });
-	}
+  @Override
+  public List<Attribute<?>> getAttributes() {
+    return UnmodifiableList.create(new Attribute<?>[] {
+      Text.ATTR_FONT,
+          ATTR_LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR });
+  }
 
-	@Override
-	@SuppressWarnings("unchecked")
-	public <V> V getValue(Attribute<V> attr) {
-		if (attr == Text.ATTR_FONT) {
-			return (V) label.getFont();
-		}
-		return super.getValue(attr);
-	}
+  @Override
+  @SuppressWarnings("unchecked")
+  public <V> V getValue(Attribute<V> attr) {
+    if (attr == Text.ATTR_FONT) {
+      return (V) label.getFont();
+    }
+    return super.getValue(attr);
+  }
 
-	@Override
-	public void updateValue(Attribute<?> attr, Object value) {
-		if (attr == Text.ATTR_FONT) {
-			label.setFont((Font)value);
-			calculateBounds();
-		} else {
-			super.updateValue(attr, value);
-		}
-	}
+  @Override
+  public void updateValue(Attribute<?> attr, Object value) {
+    if (attr == Text.ATTR_FONT) {
+      label.setFont((Font)value);
+      calculateBounds();
+    } else {
+      super.updateValue(attr, value);
+    }
+  }
 
-	@Override
-	public void paintDynamic(Graphics g, CircuitState state) {
-		calculateBounds();
-		int x = bounds.getX();
-		int y = bounds.getY();
-		int w = bounds.getWidth();
-		int h = bounds.getHeight();
-		GraphicsUtil.switchToWidth(g, 1);
-		if (state == null) {
-			g.setColor(Color.lightGray);
-			g.fillRect(x, y, w, h);
-		}
-		g.setColor(Color.BLACK);
-		g.drawRect(x, y, w, h);
-		if (state != null) {
-			BitWidth widthVal = path.leaf().getAttributeSet().getValue(StdAttr.WIDTH);
-			int width = (widthVal == null ? 8 : widthVal.getWidth());
-			RegisterData data = (RegisterData)getData(state);
-			int val = data == null ? 0 : data.value;
-			label.setText(StringUtil.toHexString(width, val));
-		}
-		label.paint(g);
-		drawLabel(g);
-	}
+  @Override
+  public void paintDynamic(Graphics g, CircuitState state) {
+    calculateBounds();
+    int x = bounds.getX();
+    int y = bounds.getY();
+    int w = bounds.getWidth();
+    int h = bounds.getHeight();
+    GraphicsUtil.switchToWidth(g, 1);
+    if (state == null) {
+      g.setColor(Color.lightGray);
+      g.fillRect(x, y, w, h);
+    }
+    g.setColor(Color.BLACK);
+    g.drawRect(x, y, w, h);
+    if (state != null) {
+      BitWidth widthVal = path.leaf().getAttributeSet().getValue(StdAttr.WIDTH);
+      int width = (widthVal == null ? 8 : widthVal.getWidth());
+      RegisterData data = (RegisterData)getData(state);
+      int val = data == null ? 0 : data.value;
+      label.setText(StringUtil.toHexString(width, val));
+    }
+    label.paint(g);
+    drawLabel(g);
+  }
 
-	@Override
-	public Element toSvgElement(Document doc) {
-		return toSvgElement(doc.createElement("visible-register"));
-	}
+  @Override
+  public Element toSvgElement(Document doc) {
+    return toSvgElement(doc.createElement("visible-register"));
+  }
 
-	public Element toSvgElement(Element ret) {
-		ret = super.toSvgElement(ret);
-		Font font = label.getFont();
-		if (!font.equals(DEFAULT_FONT))
-			SvgCreator.setFontAttribute(ret, font, "value-");
-		return ret;
-	}
+  public Element toSvgElement(Element ret) {
+    ret = super.toSvgElement(ret);
+    Font font = label.getFont();
+    if (!font.equals(DEFAULT_FONT))
+      SvgCreator.setFontAttribute(ret, font, "value-");
+    return ret;
+  }
 
-	public void parseSvgElement(Element elt) {
-		super.parseSvgElement(elt);
-		setValue(Text.ATTR_FONT, SvgReader.getFontAttribute(elt, "value-", "monospaced", 10));
-	}
+  public void parseSvgElement(Element elt) {
+    super.parseSvgElement(elt);
+    setValue(Text.ATTR_FONT, SvgReader.getFontAttribute(elt, "value-", "monospaced", 10));
+  }
 
-	@Override
-	public String getDisplayName() {
-		return Strings.get("registerComponent");
-	}
+  @Override
+  public String getDisplayName() {
+    return Strings.get("registerComponent");
+  }
 
-	@Override
-	public String toString() {
-		return "Register:" + getBounds();
-	}
+  @Override
+  public String toString() {
+    return "Register:" + getBounds();
+  }
 }

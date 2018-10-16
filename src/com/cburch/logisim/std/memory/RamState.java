@@ -38,71 +38,71 @@ import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.std.memory.Mem.MemListener;
 
-public class RamState extends MemState implements InstanceData,
-		AttributeListener {
+public class RamState extends MemState
+  implements InstanceData, AttributeListener {
 
-	private Instance parent;
-	private MemListener listener;
-	private ClockState clockState;
-	private int CurrentData = 0;
+  private Instance parent;
+  private MemListener listener;
+  private ClockState clockState;
+  private int CurrentData = 0;
 
-	RamState(Instance parent, MemContents contents, MemListener listener) {
-		super(contents);
-		this.parent = parent;
-		this.listener = listener;
-		this.clockState = new ClockState();
-		if (parent != null) {
-			parent.getAttributeSet().addAttributeListener(this);
-		}
-		contents.addHexModelListener(listener);
-	}
+  RamState(Instance parent, MemContents contents, MemListener listener) {
+    super(contents);
+    this.parent = parent;
+    this.listener = listener;
+    this.clockState = new ClockState();
+    if (parent != null) {
+      parent.getAttributeSet().addAttributeListener(this);
+    }
+    contents.addHexModelListener(listener);
+  }
 
-	@Override
-	public void attributeListChanged(AttributeEvent e) {
-		// TODO Auto-generated method stub
+  @Override
+  public void attributeListChanged(AttributeEvent e) {
+    // TODO Auto-generated method stub
 
-	}
+  }
 
-	@Override
-	public void attributeValueChanged(AttributeEvent e) {
-		AttributeSet attrs = e.getSource();
-		BitWidth addrBits = attrs.getValue(Mem.ADDR_ATTR);
-		BitWidth dataBits = attrs.getValue(Mem.DATA_ATTR);
-		getContents().setDimensions(addrBits.getWidth(), dataBits.getWidth());
-	}
+  @Override
+  public void attributeValueChanged(AttributeEvent e) {
+    AttributeSet attrs = e.getSource();
+    BitWidth addrBits = attrs.getValue(Mem.ADDR_ATTR);
+    BitWidth dataBits = attrs.getValue(Mem.DATA_ATTR);
+    getContents().setDimensions(addrBits.getWidth(), dataBits.getWidth());
+  }
 
-	@Override
-	public RamState clone() {
-		RamState ret = (RamState) super.clone();
-		ret.parent = null;
-		ret.clockState = this.clockState.clone();
-		ret.getContents().addHexModelListener(listener);
-		return ret;
-	}
+  @Override
+  public RamState clone() {
+    RamState ret = (RamState) super.clone();
+    ret.parent = null;
+    ret.clockState = this.clockState.clone();
+    ret.getContents().addHexModelListener(listener);
+    return ret;
+  }
 
-	int GetCurrentData() {
-		return CurrentData;
-	}
+  int GetCurrentData() {
+    return CurrentData;
+  }
 
-	public boolean setClock(Value newClock, Object trigger) {
-		return clockState.updateClock(newClock, trigger);
-	}
+  public boolean setClock(Value newClock, Object trigger) {
+    return clockState.updateClock(newClock, trigger);
+  }
 
-	void SetCurrentData(int data) {
-		CurrentData = data;
-	}
+  void SetCurrentData(int data) {
+    CurrentData = data;
+  }
 
-	void setRam(Instance value) {
-		if (parent == value) {
-			return;
-		}
-		if (parent != null) {
-			parent.getAttributeSet().removeAttributeListener(this);
-		}
-		parent = value;
-		if (value != null) {
-			value.getAttributeSet().addAttributeListener(this);
-		}
-	}
+  void setRam(Instance value) {
+    if (parent == value) {
+      return;
+    }
+    if (parent != null) {
+      parent.getAttributeSet().removeAttributeListener(this);
+    }
+    parent = value;
+    if (value != null) {
+      value.getAttributeSet().addAttributeListener(this);
+    }
+  }
 
 }

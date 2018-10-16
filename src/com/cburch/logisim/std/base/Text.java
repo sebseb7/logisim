@@ -53,181 +53,181 @@ import com.cburch.logisim.util.StringGetter;
 
 public class Text extends InstanceFactory {
 
-	private static class MultilineAttribute extends Attribute<String> {
-		MultilineAttribute(String name, StringGetter disp) {
-			super(name, disp);
-		}
+  private static class MultilineAttribute extends Attribute<String> {
+    MultilineAttribute(String name, StringGetter disp) {
+      super(name, disp);
+    }
 
-		@Override
-		public String parse(String escaped) {
-                        StringBuilder s = new StringBuilder();
-                        boolean escape = false;
-                        for (int i = 0; i < escaped.length(); i++) {
-                            char c = (char)escaped.charAt(i);
-                            if (c == '\\')
-                                escape = true;
-                            else if (escape) {
-                                escape = false;
-                                switch (c) {
-                                    case 't': s.append('\t'); break;
-                                    case 'n': s.append('\n'); break;
-                                    default: s.append(c); break;
-                                }
-                            } else {
-                                s.append(c);
-                            }
-                        }
-                        return s.toString();
-                }
-
-		public String toDisplayString(String s) {
-                        StringBuilder escaped = new StringBuilder();
-                        for (int i = 0; i < s.length(); i++) {
-                            char c = (char)s.charAt(i);
-                            switch (c) {
-                                case '\t': escaped.append("\\t"); break;
-                                case '\n': escaped.append("\\n"); break;
-                                case '\\': escaped.append("\\\\"); break;
-                                default: escaped.append(c); break;
-                            }
-                        }
-                        return escaped.toString();
-                }
+    @Override
+    public String parse(String escaped) {
+      StringBuilder s = new StringBuilder();
+      boolean escape = false;
+      for (int i = 0; i < escaped.length(); i++) {
+        char c = (char)escaped.charAt(i);
+        if (c == '\\')
+          escape = true;
+        else if (escape) {
+          escape = false;
+          switch (c) {
+          case 't': s.append('\t'); break;
+          case 'n': s.append('\n'); break;
+          default: s.append(c); break;
+          }
+        } else {
+          s.append(c);
         }
+      }
+      return s.toString();
+    }
+
+    public String toDisplayString(String s) {
+      StringBuilder escaped = new StringBuilder();
+      for (int i = 0; i < s.length(); i++) {
+        char c = (char)s.charAt(i);
+        switch (c) {
+        case '\t': escaped.append("\\t"); break;
+        case '\n': escaped.append("\\n"); break;
+        case '\\': escaped.append("\\\\"); break;
+        default: escaped.append(c); break;
+        }
+      }
+      return escaped.toString();
+    }
+  }
 
 
 
-	public static Attribute<String> ATTR_TEXT = new MultilineAttribute("text",
-			Strings.getter("textTextAttr"));
-	public static Attribute<Font> ATTR_FONT = Attributes.forFont("font",
-			Strings.getter("textFontAttr"));
-	public static Attribute<AttributeOption> ATTR_HALIGN = Attributes
-			.forOption(
-					"halign",
-					Strings.getter("textHorzAlignAttr"),
-					new AttributeOption[] {
-							new AttributeOption(Integer
-									.valueOf(TextField.H_LEFT), "left", Strings
-									.getter("textHorzAlignLeftOpt")),
-							new AttributeOption(Integer
-									.valueOf(TextField.H_RIGHT), "right",
-									Strings.getter("textHorzAlignRightOpt")),
-							new AttributeOption(Integer
-									.valueOf(TextField.H_CENTER), "center",
-									Strings.getter("textHorzAlignCenterOpt")), });
-	public static Attribute<AttributeOption> ATTR_VALIGN = Attributes
-			.forOption(
-					"valign",
-					Strings.getter("textVertAlignAttr"),
-					new AttributeOption[] {
-							new AttributeOption(Integer
-									.valueOf(TextField.V_TOP), "top", Strings
-									.getter("textVertAlignTopOpt")),
-							new AttributeOption(Integer
-									.valueOf(TextField.V_BASELINE), "base",
-									Strings.getter("textVertAlignBaseOpt")),
-							new AttributeOption(Integer
-									.valueOf(TextField.V_BOTTOM), "bottom",
-									Strings.getter("textVertAlignBottomOpt")),
-							new AttributeOption(Integer
-									.valueOf(TextField.H_CENTER), "center",
-									Strings.getter("textVertAlignCenterOpt")), });
+  public static Attribute<String> ATTR_TEXT = new MultilineAttribute("text",
+      Strings.getter("textTextAttr"));
+  public static Attribute<Font> ATTR_FONT = Attributes.forFont("font",
+      Strings.getter("textFontAttr"));
+  public static Attribute<AttributeOption> ATTR_HALIGN = Attributes
+      .forOption(
+          "halign",
+          Strings.getter("textHorzAlignAttr"),
+          new AttributeOption[] {
+            new AttributeOption(Integer
+                .valueOf(TextField.H_LEFT), "left", Strings
+                .getter("textHorzAlignLeftOpt")),
+            new AttributeOption(Integer
+                .valueOf(TextField.H_RIGHT), "right",
+                Strings.getter("textHorzAlignRightOpt")),
+            new AttributeOption(Integer
+                .valueOf(TextField.H_CENTER), "center",
+                Strings.getter("textHorzAlignCenterOpt")), });
+  public static Attribute<AttributeOption> ATTR_VALIGN = Attributes
+      .forOption(
+          "valign",
+          Strings.getter("textVertAlignAttr"),
+          new AttributeOption[] {
+            new AttributeOption(Integer
+                .valueOf(TextField.V_TOP), "top", Strings
+                .getter("textVertAlignTopOpt")),
+            new AttributeOption(Integer
+                .valueOf(TextField.V_BASELINE), "base",
+                Strings.getter("textVertAlignBaseOpt")),
+            new AttributeOption(Integer
+                .valueOf(TextField.V_BOTTOM), "bottom",
+                Strings.getter("textVertAlignBottomOpt")),
+            new AttributeOption(Integer
+                .valueOf(TextField.H_CENTER), "center",
+                Strings.getter("textVertAlignCenterOpt")), });
 
-	public static final Text FACTORY = new Text();
+  public static final Text FACTORY = new Text();
 
-	private Text() {
-		super("Text", Strings.getter("textComponent"));
-		setIconName("text.gif");
-		setShouldSnap(false);
-	}
+  private Text() {
+    super("Text", Strings.getter("textComponent"));
+    setIconName("text.gif");
+    setShouldSnap(false);
+  }
 
-	private void configureLabel(Instance instance) {
-		TextAttributes attrs = (TextAttributes) instance.getAttributeSet();
-		Location loc = instance.getLocation();
-		instance.setTextField(ATTR_TEXT, ATTR_FONT, loc.getX(), loc.getY(),
-				attrs.getHorizontalAlign(), attrs.getVerticalAlign(), true);
-	}
+  private void configureLabel(Instance instance) {
+    TextAttributes attrs = (TextAttributes) instance.getAttributeSet();
+    Location loc = instance.getLocation();
+    instance.setTextField(ATTR_TEXT, ATTR_FONT, loc.getX(), loc.getY(),
+        attrs.getHorizontalAlign(), attrs.getVerticalAlign(), true);
+  }
 
-	//
-	// methods for instances
-	//
-	@Override
-	protected void configureNewInstance(Instance instance) {
-		configureLabel(instance);
-		instance.addAttributeListener();
-	}
+  //
+  // methods for instances
+  //
+  @Override
+  protected void configureNewInstance(Instance instance) {
+    configureLabel(instance);
+    instance.addAttributeListener();
+  }
 
-	@Override
-	public AttributeSet createAttributeSet() {
-		return new TextAttributes();
-	}
+  @Override
+  public AttributeSet createAttributeSet() {
+    return new TextAttributes();
+  }
 
-	@Override
-	public Bounds getOffsetBounds(AttributeSet attrsBase) {
-		TextAttributes attrs = (TextAttributes) attrsBase;
-		String text = attrs.getText();
-		if (text == null || text.equals("")) {
-			return Bounds.EMPTY_BOUNDS;
-		} else {
-			Bounds bds = attrs.getOffsetBounds();
-			if (bds == null) {
-				bds = StringUtil.estimateBounds(attrs.getText(), attrs.getFont(),
-						attrs.getHorizontalAlign(),
-						attrs.getVerticalAlign());
-				attrs.setOffsetBounds(bds);
-			}
-			return bds;
-		}
-	}
+  @Override
+  public Bounds getOffsetBounds(AttributeSet attrsBase) {
+    TextAttributes attrs = (TextAttributes) attrsBase;
+    String text = attrs.getText();
+    if (text == null || text.equals("")) {
+      return Bounds.EMPTY_BOUNDS;
+    } else {
+      Bounds bds = attrs.getOffsetBounds();
+      if (bds == null) {
+        bds = StringUtil.estimateBounds(attrs.getText(), attrs.getFont(),
+            attrs.getHorizontalAlign(),
+            attrs.getVerticalAlign());
+        attrs.setOffsetBounds(bds);
+      }
+      return bds;
+    }
+  }
 
-	@Override
-	public boolean HDLSupportedComponent(String HDLIdentifier,
-			AttributeSet attrs, char Vendor) {
-		return true;
-	}
+  @Override
+  public boolean HDLSupportedComponent(String HDLIdentifier,
+      AttributeSet attrs, char Vendor) {
+    return true;
+  }
 
-	@Override
-	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-		if (attr == ATTR_HALIGN || attr == ATTR_VALIGN) {
-			configureLabel(instance);
-		}
-	}
+  @Override
+  protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
+    if (attr == ATTR_HALIGN || attr == ATTR_VALIGN) {
+      configureLabel(instance);
+    }
+  }
 
-	//
-	// graphics methods
-	//
-	@Override
-	public void paintGhost(InstancePainter painter) {
-		TextAttributes attrs = (TextAttributes) painter.getAttributeSet();
-		String text = attrs.getText();
-		if (text == null || text.equals(""))
-			return;
-                int halign = attrs.getHorizontalAlign();
-                int valign = attrs.getVerticalAlign();
-                Font font = attrs.getFont();
+  //
+  // graphics methods
+  //
+  @Override
+  public void paintGhost(InstancePainter painter) {
+    TextAttributes attrs = (TextAttributes) painter.getAttributeSet();
+    String text = attrs.getText();
+    if (text == null || text.equals(""))
+      return;
+    int halign = attrs.getHorizontalAlign();
+    int valign = attrs.getVerticalAlign();
+    Font font = attrs.getFont();
 
-		Graphics g = painter.getGraphics();
-                Location loc = painter.getLocation();
+    Graphics g = painter.getGraphics();
+    Location loc = painter.getLocation();
 
-                String lines[] = text.split("\n");
-                Rectangle r = GraphicsUtil.getTextBounds(g, font, lines, 0, 0, halign, valign);
-                Bounds b = Bounds.create(r).expand(4);
-		if (attrs.setOffsetBounds(b)) {
-			Instance instance = painter.getInstance();
-			if (instance != null)
-				instance.recomputeBounds();
-		}
+    String lines[] = text.split("\n");
+    Rectangle r = GraphicsUtil.getTextBounds(g, font, lines, 0, 0, halign, valign);
+    Bounds b = Bounds.create(r).expand(4);
+    if (attrs.setOffsetBounds(b)) {
+      Instance instance = painter.getInstance();
+      if (instance != null)
+        instance.recomputeBounds();
+    }
 
-                GraphicsUtil.drawText(g, font, lines, loc.getX(), loc.getY(), halign, valign);
-	}
+    GraphicsUtil.drawText(g, font, lines, loc.getX(), loc.getY(), halign, valign);
+  }
 
-	@Override
-	public void paintInstance(InstancePainter painter) {
-            painter.getGraphics().setColor(Color.BLACK);
-            paintGhost(painter);
-	}
+  @Override
+  public void paintInstance(InstancePainter painter) {
+    painter.getGraphics().setColor(Color.BLACK);
+    paintGhost(painter);
+  }
 
-	@Override
-	public void propagate(InstanceState state) {
-	}
+  @Override
+  public void propagate(InstanceState state) {
+  }
 }

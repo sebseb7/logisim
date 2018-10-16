@@ -31,11 +31,11 @@
 package com.cburch.logisim.analyze.gui;
 
 interface TabInterface {
-	public void copy();
+  public void copy();
 
-	public void delete();
+  public void delete();
 
-	public void paste();
+  public void paste();
 
-	public void selectAll();
+  public void selectAll();
 }

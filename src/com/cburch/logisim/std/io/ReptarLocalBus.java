@@ -49,162 +49,162 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class ReptarLocalBus extends InstanceFactory {
 
-	public static ArrayList<String> GetLabels() {
-		ArrayList<String> LabelNames = new ArrayList<String>();
-		for (int i = 0; i < IOComponentTypes
-				.GetNrOfFPGAPins(IOComponentTypes.LocalBus); i++) {
-			LabelNames.add("");
-		}
-		LabelNames.set(0, "SP6_LB_nCS3_i");
-		LabelNames.set(1, "SP6_LB_nADV_ALE_i");
-		LabelNames.set(2, "SP6_LB_RE_nOE_i");
-		LabelNames.set(3, "SP6_LB_nWE_i");
-		for (int i = 0; i < 8; i++) {
-			LabelNames.set(4 + i, "Addr_LB_i_" + (i + 16));
-		}
-		LabelNames.set(12, "SP6_LB_WAIT3_o");
-		LabelNames.set(13, "IRQ_o");
-		// LabelNames.set(Addr_Data_LB_o , "Addr_Data_LB_i_0" );
-		// LabelNames.set(Addr_Data_LB_i , "Addr_Data_LB_o_0" );
-		// LabelNames.set(5, "Addr_Data_LB_tris_o");
-		// LabelNames.set(6, "Addr_Data_LB_io_0");
-		// LabelNames.set(7, "Addr_Data_LB_io_0");
-		for (int i = 0; i < 16; i++) {
-			// LabelNames.set(7+i,"Addr_Data_LB_i_"+i);
-			// LabelNames.set(15+7+i,"Addr_Data_LB_o_"+i);
-			// LabelNames.set(15+15+7+i,"Addr_Data_LB_io_"+i);
-			LabelNames.set(14 + i, "Addr_Data_LB_io_" + i);
-		}
-		return LabelNames;
-	}
+  public static ArrayList<String> GetLabels() {
+    ArrayList<String> LabelNames = new ArrayList<String>();
+    for (int i = 0; i < IOComponentTypes
+        .GetNrOfFPGAPins(IOComponentTypes.LocalBus); i++) {
+      LabelNames.add("");
+    }
+    LabelNames.set(0, "SP6_LB_nCS3_i");
+    LabelNames.set(1, "SP6_LB_nADV_ALE_i");
+    LabelNames.set(2, "SP6_LB_RE_nOE_i");
+    LabelNames.set(3, "SP6_LB_nWE_i");
+    for (int i = 0; i < 8; i++) {
+      LabelNames.set(4 + i, "Addr_LB_i_" + (i + 16));
+    }
+    LabelNames.set(12, "SP6_LB_WAIT3_o");
+    LabelNames.set(13, "IRQ_o");
+    // LabelNames.set(Addr_Data_LB_o , "Addr_Data_LB_i_0" );
+    // LabelNames.set(Addr_Data_LB_i , "Addr_Data_LB_o_0" );
+    // LabelNames.set(5, "Addr_Data_LB_tris_o");
+    // LabelNames.set(6, "Addr_Data_LB_io_0");
+    // LabelNames.set(7, "Addr_Data_LB_io_0");
+    for (int i = 0; i < 16; i++) {
+      // LabelNames.set(7+i,"Addr_Data_LB_i_"+i);
+      // LabelNames.set(15+7+i,"Addr_Data_LB_o_"+i);
+      // LabelNames.set(15+15+7+i,"Addr_Data_LB_io_"+i);
+      LabelNames.set(14 + i, "Addr_Data_LB_io_" + i);
+    }
+    return LabelNames;
+  }
 
-	public static final int SP6_LB_nCS3_o = 0;
-	public static final int SP6_LB_nADV_ALE_o = 1;
-	public static final int SP6_LB_RE_nOE_o = 2;
-	public static final int SP6_LB_nWE_o = 3;
-	public static final int SP6_LB_WAIT3_i = 4;
-	public static final int Addr_Data_LB_o = 5;
-	public static final int Addr_Data_LB_i = 6;
-	public static final int Addr_Data_LB_tris_i = 7;
-	public static final int Addr_LB_o = 8;
-	public static final int IRQ_i = 9;
+  public static final int SP6_LB_nCS3_o = 0;
+  public static final int SP6_LB_nADV_ALE_o = 1;
+  public static final int SP6_LB_RE_nOE_o = 2;
+  public static final int SP6_LB_nWE_o = 3;
+  public static final int SP6_LB_WAIT3_i = 4;
+  public static final int Addr_Data_LB_o = 5;
+  public static final int Addr_Data_LB_i = 6;
+  public static final int Addr_Data_LB_tris_i = 7;
+  public static final int Addr_LB_o = 8;
+  public static final int IRQ_i = 9;
 
-	// private static final int Addr_Data_LB_io = 9;
-	private MappableResourcesContainer mapInfo;
+  // private static final int Addr_Data_LB_io = 9;
+  private MappableResourcesContainer mapInfo;
 
-	public ReptarLocalBus() {
-		super("ReptarLB", Strings.getter("repLBComponent"));
-		setAttributes(new Attribute[] { StdAttr.LABEL },
-				new Object[] { "LocalBus" });
-		// setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
-		setOffsetBounds(Bounds.create(-110, -10, 110, 110));
-		setIconName("localbus.gif");
+  public ReptarLocalBus() {
+    super("ReptarLB", Strings.getter("repLBComponent"));
+    setAttributes(new Attribute[] { StdAttr.LABEL },
+        new Object[] { "LocalBus" });
+    // setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
+    setOffsetBounds(Bounds.create(-110, -10, 110, 110));
+    setIconName("localbus.gif");
 
-		Port[] ps = new Port[10];
-		ps[SP6_LB_nCS3_o] = new Port(0, 0, Port.OUTPUT, 1);
-		ps[SP6_LB_nADV_ALE_o] = new Port(0, 10, Port.OUTPUT, 1);
-		ps[SP6_LB_RE_nOE_o] = new Port(0, 20, Port.OUTPUT, 1);
-		ps[SP6_LB_nWE_o] = new Port(0, 30, Port.OUTPUT, 1);
-		ps[SP6_LB_WAIT3_i] = new Port(0, 40, Port.INPUT, 1);
-		ps[Addr_Data_LB_o] = new Port(0, 50, Port.OUTPUT, 16);
-		ps[Addr_Data_LB_i] = new Port(0, 60, Port.INPUT, 16);
-		ps[Addr_Data_LB_tris_i] = new Port(0, 70, Port.INPUT, 1);
-		ps[Addr_LB_o] = new Port(0, 80, Port.OUTPUT, 8);
-		ps[IRQ_i] = new Port(0, 90, Port.INPUT, 1);
-		// ps[Addr_Data_LB_io ] = new Port(0,80, Port.INOUT,16);
-		ps[SP6_LB_nCS3_o].setToolTip(Strings.getter("repLBTip"));
-		ps[SP6_LB_nADV_ALE_o].setToolTip(Strings.getter("repLBTip"));
-		ps[SP6_LB_RE_nOE_o].setToolTip(Strings.getter("repLBTip"));
-		ps[SP6_LB_nWE_o].setToolTip(Strings.getter("repLBTip"));
-		ps[SP6_LB_WAIT3_i].setToolTip(Strings.getter("repLBTip"));
-		ps[Addr_Data_LB_o].setToolTip(Strings.getter("repLBTip"));
-		ps[Addr_Data_LB_i].setToolTip(Strings.getter("repLBTip"));
-		ps[Addr_Data_LB_tris_i].setToolTip(Strings.getter("repLBTip"));
-		ps[Addr_LB_o].setToolTip(Strings.getter("repLBTip"));
-		ps[IRQ_i].setToolTip(Strings.getter("repLBTip"));
-		// ps[Addr_Data_LB_io ].setToolTip(Strings.getter("repLBTip"));
-		setPorts(ps);
+    Port[] ps = new Port[10];
+    ps[SP6_LB_nCS3_o] = new Port(0, 0, Port.OUTPUT, 1);
+    ps[SP6_LB_nADV_ALE_o] = new Port(0, 10, Port.OUTPUT, 1);
+    ps[SP6_LB_RE_nOE_o] = new Port(0, 20, Port.OUTPUT, 1);
+    ps[SP6_LB_nWE_o] = new Port(0, 30, Port.OUTPUT, 1);
+    ps[SP6_LB_WAIT3_i] = new Port(0, 40, Port.INPUT, 1);
+    ps[Addr_Data_LB_o] = new Port(0, 50, Port.OUTPUT, 16);
+    ps[Addr_Data_LB_i] = new Port(0, 60, Port.INPUT, 16);
+    ps[Addr_Data_LB_tris_i] = new Port(0, 70, Port.INPUT, 1);
+    ps[Addr_LB_o] = new Port(0, 80, Port.OUTPUT, 8);
+    ps[IRQ_i] = new Port(0, 90, Port.INPUT, 1);
+    // ps[Addr_Data_LB_io ] = new Port(0,80, Port.INOUT,16);
+    ps[SP6_LB_nCS3_o].setToolTip(Strings.getter("repLBTip"));
+    ps[SP6_LB_nADV_ALE_o].setToolTip(Strings.getter("repLBTip"));
+    ps[SP6_LB_RE_nOE_o].setToolTip(Strings.getter("repLBTip"));
+    ps[SP6_LB_nWE_o].setToolTip(Strings.getter("repLBTip"));
+    ps[SP6_LB_WAIT3_i].setToolTip(Strings.getter("repLBTip"));
+    ps[Addr_Data_LB_o].setToolTip(Strings.getter("repLBTip"));
+    ps[Addr_Data_LB_i].setToolTip(Strings.getter("repLBTip"));
+    ps[Addr_Data_LB_tris_i].setToolTip(Strings.getter("repLBTip"));
+    ps[Addr_LB_o].setToolTip(Strings.getter("repLBTip"));
+    ps[IRQ_i].setToolTip(Strings.getter("repLBTip"));
+    // ps[Addr_Data_LB_io ].setToolTip(Strings.getter("repLBTip"));
+    setPorts(ps);
 
-		// From FPGA pin view
-		MyIOInformation = new IOComponentInformationContainer(12, 2, 16,
-				FPGAIOInformationContainer.IOComponentTypes.LocalBus);
+    // From FPGA pin view
+    MyIOInformation = new IOComponentInformationContainer(12, 2, 16,
+        FPGAIOInformationContainer.IOComponentTypes.LocalBus);
 
-	}
+  }
 
-	@Override
-	public String getHDLName(AttributeSet attrs) {
-		return attrs.getValue(StdAttr.LABEL);
-	}
+  @Override
+  public String getHDLName(AttributeSet attrs) {
+    return attrs.getValue(StdAttr.LABEL);
+  }
 
-	public MappableResourcesContainer getMapInfo() {
-		return mapInfo;
-	}
+  public MappableResourcesContainer getMapInfo() {
+    return mapInfo;
+  }
 
-	@Override
-	public boolean HDLSupportedComponent(String HDLIdentifier,
-			AttributeSet attrs, char Vendor) {
-		// return false;
-		if (MyHDLGenerator == null) {
-			MyHDLGenerator = new ReptarLocalBusHDLGeneratorFactory();
-		}
-		return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
-	}
+  @Override
+  public boolean HDLSupportedComponent(String HDLIdentifier,
+      AttributeSet attrs, char Vendor) {
+    // return false;
+    if (MyHDLGenerator == null) {
+      MyHDLGenerator = new ReptarLocalBusHDLGeneratorFactory();
+    }
+    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  }
 
-	@Override
-	public void paintInstance(InstancePainter painter) {
-		Graphics g = painter.getGraphics();
-		painter.drawBounds();
+  @Override
+  public void paintInstance(InstancePainter painter) {
+    Graphics g = painter.getGraphics();
+    painter.drawBounds();
 
-		g.setColor(Color.BLACK);
-		g.setFont(g.getFont().deriveFont(g.getFont().getSize2D() - 2));
-		painter.drawPort(SP6_LB_nCS3_o, "SP6_LB_nCS3_o", Direction.WEST);
-		painter.drawPort(SP6_LB_nADV_ALE_o, "SP6_LB_nADV_ALE_o", Direction.WEST);
-		painter.drawPort(SP6_LB_RE_nOE_o, "SP6_LB_RE_nOE_o", Direction.WEST);
-		painter.drawPort(SP6_LB_nWE_o, "SP6_LB_nWE_o", Direction.WEST);
-		painter.drawPort(SP6_LB_WAIT3_i, "SP6_LB_WAIT3_i", Direction.WEST);
-		painter.drawPort(Addr_Data_LB_o, "Addr_Data_LB_o", Direction.WEST);
-		painter.drawPort(Addr_Data_LB_i, "Addr_Data_LB_i", Direction.WEST);
-		painter.drawPort(Addr_Data_LB_tris_i, "Addr_Data_LB_tris_i",
-				Direction.WEST);
-		painter.drawPort(Addr_LB_o, "Addr_LB_o", Direction.WEST);
-		painter.drawPort(IRQ_i, "IRQ_i", Direction.WEST);
-		// painter.drawPort(Addr_Data_LB_io ,"Addr_Data_LB_io",Direction.WEST);
+    g.setColor(Color.BLACK);
+    g.setFont(g.getFont().deriveFont(g.getFont().getSize2D() - 2));
+    painter.drawPort(SP6_LB_nCS3_o, "SP6_LB_nCS3_o", Direction.WEST);
+    painter.drawPort(SP6_LB_nADV_ALE_o, "SP6_LB_nADV_ALE_o", Direction.WEST);
+    painter.drawPort(SP6_LB_RE_nOE_o, "SP6_LB_RE_nOE_o", Direction.WEST);
+    painter.drawPort(SP6_LB_nWE_o, "SP6_LB_nWE_o", Direction.WEST);
+    painter.drawPort(SP6_LB_WAIT3_i, "SP6_LB_WAIT3_i", Direction.WEST);
+    painter.drawPort(Addr_Data_LB_o, "Addr_Data_LB_o", Direction.WEST);
+    painter.drawPort(Addr_Data_LB_i, "Addr_Data_LB_i", Direction.WEST);
+    painter.drawPort(Addr_Data_LB_tris_i, "Addr_Data_LB_tris_i",
+        Direction.WEST);
+    painter.drawPort(Addr_LB_o, "Addr_LB_o", Direction.WEST);
+    painter.drawPort(IRQ_i, "IRQ_i", Direction.WEST);
+    // painter.drawPort(Addr_Data_LB_io ,"Addr_Data_LB_io",Direction.WEST);
 
-		// Location loc = painter.getLocation();
-		// int x = loc.getX();
-		// int y = loc.getY();
-		// GraphicsUtil.switchToWidth(g, 2);
-		// g.setColor(Color.BLACK);
-		// g.drawLine(x - 15, y, x - 5, y);
-		// g.drawLine(x - 10, y - 5, x - 10, y + 5);
-		// GraphicsUtil.switchToWidth(g, 1);
-	}
+    // Location loc = painter.getLocation();
+    // int x = loc.getX();
+    // int y = loc.getY();
+    // GraphicsUtil.switchToWidth(g, 2);
+    // g.setColor(Color.BLACK);
+    // g.drawLine(x - 15, y, x - 5, y);
+    // g.drawLine(x - 10, y - 5, x - 10, y + 5);
+    // GraphicsUtil.switchToWidth(g, 1);
+  }
 
-	@Override
-	public void propagate(InstanceState state) {
-		throw new UnsupportedOperationException(
-				"Reptar Local Bus simulation not implemented");
-		// // get attributes
-		// BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
-		//
-		// // compute outputs
-		// Value a = state.getPortValue(IN0);
-		// Value b = state.getPortValue(IN1);
-		// Value c_in = state.getPortValue(C_IN);
-		// Value[] outs = ReptarLocalBus.computeSum(dataWidth, a, b, c_in);
-		//
-		// // propagate them
-		// int delay = (dataWidth.getWidth() + 2) * PER_DELAY;
-		// state.setPort(OUT, outs[0], delay);
-		// state.setPort(C_OUT, outs[1], delay);
-	}
+  @Override
+  public void propagate(InstanceState state) {
+    throw new UnsupportedOperationException(
+        "Reptar Local Bus simulation not implemented");
+    // // get attributes
+    // BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
+    //
+    // // compute outputs
+    // Value a = state.getPortValue(IN0);
+    // Value b = state.getPortValue(IN1);
+    // Value c_in = state.getPortValue(C_IN);
+    // Value[] outs = ReptarLocalBus.computeSum(dataWidth, a, b, c_in);
+    //
+    // // propagate them
+    // int delay = (dataWidth.getWidth() + 2) * PER_DELAY;
+    // state.setPort(OUT, outs[0], delay);
+    // state.setPort(C_OUT, outs[1], delay);
+  }
 
-	@Override
-	public boolean RequiresGlobalClock() {
-		return true;
-	}
+  @Override
+  public boolean RequiresGlobalClock() {
+    return true;
+  }
 
-	public void setMapInfo(MappableResourcesContainer mapInfo) {
-		this.mapInfo = mapInfo;
-	}
+  public void setMapInfo(MappableResourcesContainer mapInfo) {
+    this.mapInfo = mapInfo;
+  }
 }

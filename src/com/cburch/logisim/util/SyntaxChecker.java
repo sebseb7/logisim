@@ -36,26 +36,26 @@ import javax.swing.JOptionPane;
 
 public class SyntaxChecker {
 
-	public static boolean isVariableNameAcceptable(String val) {
-		if (val.length() == 0)
-			return true;
-		if (val.length() > 0) {
-			variableMatcher = variablePattern.matcher(val);
-			forbiddenMatcher = forbiddenPattern.matcher(val);
-			return (variableMatcher.matches() && !forbiddenMatcher.find());
-		}
-		return false;
-	}
+  public static boolean isVariableNameAcceptable(String val) {
+    if (val.length() == 0)
+      return true;
+    if (val.length() > 0) {
+      variableMatcher = variablePattern.matcher(val);
+      forbiddenMatcher = forbiddenPattern.matcher(val);
+      return (variableMatcher.matches() && !forbiddenMatcher.find());
+    }
+    return false;
+  }
 
-	public static void showNonAcceptableNameMessage() {
-		JOptionPane.showMessageDialog(null,
-				Strings.get("variableNameNotAcceptable"));
-	}
+  public static void showNonAcceptableNameMessage() {
+    JOptionPane.showMessageDialog(null,
+        Strings.get("variableNameNotAcceptable"));
+  }
 
-	private static Pattern variablePattern = Pattern
-			.compile("^([a-zA-Z]+\\w*)");
-	private static Pattern forbiddenPattern = Pattern.compile("__");
+  private static Pattern variablePattern = Pattern
+      .compile("^([a-zA-Z]+\\w*)");
+  private static Pattern forbiddenPattern = Pattern.compile("__");
 
-	private static Matcher forbiddenMatcher;
-	private static Matcher variableMatcher;
+  private static Matcher forbiddenMatcher;
+  private static Matcher variableMatcher;
 }

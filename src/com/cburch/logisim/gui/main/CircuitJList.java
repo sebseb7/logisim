@@ -44,40 +44,40 @@ import com.cburch.logisim.proj.Project;
 
 @SuppressWarnings("rawtypes")
 class CircuitJList extends JList {
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	@SuppressWarnings("unchecked")
-	public CircuitJList(Project proj, boolean includeEmpty) {
-		LogisimFile file = proj.getLogisimFile();
-		Circuit current = proj.getCurrentCircuit();
-		Vector<Circuit> options = new Vector<Circuit>();
-		boolean currentFound = false;
-		for (Circuit circ : file.getCircuits()) {
-			if (!includeEmpty || circ.getBounds() != Bounds.EMPTY_BOUNDS) {
-				if (circ == current)
-					currentFound = true;
-				options.add(circ);
-			}
-		}
+  @SuppressWarnings("unchecked")
+  public CircuitJList(Project proj, boolean includeEmpty) {
+    LogisimFile file = proj.getLogisimFile();
+    Circuit current = proj.getCurrentCircuit();
+    Vector<Circuit> options = new Vector<Circuit>();
+    boolean currentFound = false;
+    for (Circuit circ : file.getCircuits()) {
+      if (!includeEmpty || circ.getBounds() != Bounds.EMPTY_BOUNDS) {
+        if (circ == current)
+          currentFound = true;
+        options.add(circ);
+      }
+    }
 
-		setListData(options);
-		if (currentFound)
-			setSelectedValue(current, true);
-		setVisibleRowCount(Math.min(6, options.size()));
-	}
+    setListData(options);
+    if (currentFound)
+      setSelectedValue(current, true);
+    setVisibleRowCount(Math.min(6, options.size()));
+  }
 
-	public List<Circuit> getSelectedCircuits() {
-		Object[] selected = getSelectedValuesList().toArray();
-		if (selected != null && selected.length > 0) {
-			ArrayList<Circuit> ret = new ArrayList<Circuit>(selected.length);
-			for (Object sel : selected) {
-				if (sel instanceof Circuit)
-					ret.add((Circuit) sel);
-			}
-			return ret;
-		} else {
-			return Collections.emptyList();
-		}
-	}
+  public List<Circuit> getSelectedCircuits() {
+    Object[] selected = getSelectedValuesList().toArray();
+    if (selected != null && selected.length > 0) {
+      ArrayList<Circuit> ret = new ArrayList<Circuit>(selected.length);
+      for (Object sel : selected) {
+        if (sel instanceof Circuit)
+          ret.add((Circuit) sel);
+      }
+      return ret;
+    } else {
+      return Collections.emptyList();
+    }
+  }
 
 }

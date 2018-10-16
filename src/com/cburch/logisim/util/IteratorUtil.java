@@ -35,72 +35,72 @@ import java.util.NoSuchElementException;
 
 public class IteratorUtil {
 
-	private static class EmptyIterator<E> implements Iterator<E> {
-		private EmptyIterator() {
-		}
+  private static class EmptyIterator<E> implements Iterator<E> {
+    private EmptyIterator() {
+    }
 
-		public boolean hasNext() {
-			return false;
-		}
+    public boolean hasNext() {
+      return false;
+    }
 
-		public E next() {
-			throw new NoSuchElementException();
-		}
+    public E next() {
+      throw new NoSuchElementException();
+    }
 
-		public void remove() {
-			throw new UnsupportedOperationException("EmptyIterator.remove");
-		}
-	}
+    public void remove() {
+      throw new UnsupportedOperationException("EmptyIterator.remove");
+    }
+  }
 
-	private static class IteratorUnion<E> implements Iterator<E> {
-		Iterator<? extends E> cur;
-		Iterator<? extends E> next;
+  private static class IteratorUnion<E> implements Iterator<E> {
+    Iterator<? extends E> cur;
+    Iterator<? extends E> next;
 
-		private IteratorUnion(Iterator<? extends E> cur,
-				Iterator<? extends E> next) {
-			this.cur = cur;
-			this.next = next;
-		}
+    private IteratorUnion(Iterator<? extends E> cur,
+        Iterator<? extends E> next) {
+      this.cur = cur;
+      this.next = next;
+    }
 
-		public boolean hasNext() {
-			return cur.hasNext() || (next != null && next.hasNext());
-		}
+    public boolean hasNext() {
+      return cur.hasNext() || (next != null && next.hasNext());
+    }
 
-		public E next() {
-			if (!cur.hasNext()) {
-				if (next == null)
-					throw new NoSuchElementException();
-				cur = next;
-				if (!cur.hasNext())
-					throw new NoSuchElementException();
-			}
-			return cur.next();
-		}
+    public E next() {
+      if (!cur.hasNext()) {
+        if (next == null)
+          throw new NoSuchElementException();
+        cur = next;
+        if (!cur.hasNext())
+          throw new NoSuchElementException();
+      }
+      return cur.next();
+    }
 
-		public void remove() {
-			cur.remove();
-		}
-	}
+    public void remove() {
+      cur.remove();
+    }
+  }
 
-	public static <E> Iterator<E> createJoinedIterator(
-			Iterator<? extends E> i0, Iterator<? extends E> i1) {
-		if (!i0.hasNext()) {
-			@SuppressWarnings("unchecked")
-			Iterator<E> ret = (Iterator<E>) i1;
-			return ret;
-		} else if (!i1.hasNext()) {
-			@SuppressWarnings("unchecked")
-			Iterator<E> ret = (Iterator<E>) i0;
-			return ret;
-		} else {
-			return new IteratorUnion<E>(i0, i1);
-		}
-	}
+  public static <E> Iterator<E> createJoinedIterator(
+      Iterator<? extends E> i0, Iterator<? extends E> i1) {
+    if (!i0.hasNext()) {
+      @SuppressWarnings("unchecked")
+      Iterator<E> ret = (Iterator<E>) i1;
+      return ret;
+    } else if (!i1.hasNext()) {
+      @SuppressWarnings("unchecked")
+      Iterator<E> ret = (Iterator<E>) i0;
+      return ret;
+    } else {
+      return new IteratorUnion<E>(i0, i1);
+    }
+  }
 
-	public static <E> Iterator<E> emptyIterator() {
-		return new EmptyIterator<E>();
-	}
+  public static <E> Iterator<E> emptyIterator() {
+    return new EmptyIterator<E>();
+  }
 
-	public static Iterator<?> EMPTY_ITERATOR = new EmptyIterator<Object>();
+  public static Iterator<?> EMPTY_ITERATOR = new EmptyIterator<Object>();
 
 }

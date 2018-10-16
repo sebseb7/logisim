@@ -48,76 +48,76 @@ import com.cburch.logisim.std.memory.RegisterShape;
 import com.cburch.logisim.std.memory.CounterShape;
 
 public class AppearanceSvgReader {
-	public static AbstractCanvasObject createShape(Element elt,
-			Map<Location, Instance> pins, Circuit circuit) {
-		String name = elt.getTagName();
-		if (name.equals("circ-anchor") || name.equals("circ-origin")) {
-			Location loc = getLocation(elt);
-			AbstractCanvasObject ret = new AppearanceAnchor(loc);
-			if (elt.hasAttribute("facing")) {
-				Direction facing = Direction.parse(elt.getAttribute("facing"));
-				ret.setValue(AppearanceAnchor.FACING, facing);
-			}
-			return ret;
-		} else if (name.equals("circ-port")) {
-			Location loc = getLocation(elt);
-			String[] pinStr = elt.getAttribute("pin").split(",");
-			Location pinLoc = Location.create(
-					Integer.parseInt(pinStr[0].trim()),
-					Integer.parseInt(pinStr[1].trim()));
-			Instance pin = pins.get(pinLoc);
-			if (pin == null)
-				return null;
-			return new AppearancePort(loc, pin);
-		} else if (name.startsWith("visible-")) {
-			String pathstr = elt.getAttribute("path");
-			if (pathstr == null || pathstr.length() == 0)
-				return null;
-			DynamicElement.Path path;
-			try {
-				path = DynamicElement.Path.fromSvgString(pathstr, circuit);
-			} catch (IllegalArgumentException e) {
-				System.out.println(e.getMessage());
-				return null;
-			}
-			if (path == null)
-				return null;
-			int x = (int)Double.parseDouble(elt.getAttribute("x").trim());
-			int y = (int)Double.parseDouble(elt.getAttribute("y").trim());
-			DynamicElement shape;
-			if (name.equals("visible-led")) {
-				shape = new LedShape(x, y, path);
-			} else if (name.equals("visible-rgbled")) {
-				shape = new RGBLedShape(x, y, path);
-			} else if (name.equals("visible-hexdigit")) {
-				shape = new HexDigitShape(x, y, path);
-			} else if (name.equals("visible-sevensegment")) {
-				shape = new SevenSegmentShape(x, y, path);
-			} else if (name.equals("visible-register")) {
-				shape = new RegisterShape(x, y, path);
-			} else if (name.equals("visible-counter")) {
-				shape = new CounterShape(x, y, path);
-			} else {
-				return null;
-			}
-			try {
-				shape.parseSvgElement(elt);
-			} catch (Exception e) {
-				e.printStackTrace();
-				throw e;
-			}
-			return shape;
-		}
-		return SvgReader.createShape(elt);
-	}
+  public static AbstractCanvasObject createShape(Element elt,
+      Map<Location, Instance> pins, Circuit circuit) {
+    String name = elt.getTagName();
+    if (name.equals("circ-anchor") || name.equals("circ-origin")) {
+      Location loc = getLocation(elt);
+      AbstractCanvasObject ret = new AppearanceAnchor(loc);
+      if (elt.hasAttribute("facing")) {
+        Direction facing = Direction.parse(elt.getAttribute("facing"));
+        ret.setValue(AppearanceAnchor.FACING, facing);
+      }
+      return ret;
+    } else if (name.equals("circ-port")) {
+      Location loc = getLocation(elt);
+      String[] pinStr = elt.getAttribute("pin").split(",");
+      Location pinLoc = Location.create(
+          Integer.parseInt(pinStr[0].trim()),
+          Integer.parseInt(pinStr[1].trim()));
+      Instance pin = pins.get(pinLoc);
+      if (pin == null)
+        return null;
+      return new AppearancePort(loc, pin);
+    } else if (name.startsWith("visible-")) {
+      String pathstr = elt.getAttribute("path");
+      if (pathstr == null || pathstr.length() == 0)
+        return null;
+      DynamicElement.Path path;
+      try {
+        path = DynamicElement.Path.fromSvgString(pathstr, circuit);
+      } catch (IllegalArgumentException e) {
+        System.out.println(e.getMessage());
+        return null;
+      }
+      if (path == null)
+        return null;
+      int x = (int)Double.parseDouble(elt.getAttribute("x").trim());
+      int y = (int)Double.parseDouble(elt.getAttribute("y").trim());
+      DynamicElement shape;
+      if (name.equals("visible-led")) {
+        shape = new LedShape(x, y, path);
+      } else if (name.equals("visible-rgbled")) {
+        shape = new RGBLedShape(x, y, path);
+      } else if (name.equals("visible-hexdigit")) {
+        shape = new HexDigitShape(x, y, path);
+      } else if (name.equals("visible-sevensegment")) {
+        shape = new SevenSegmentShape(x, y, path);
+      } else if (name.equals("visible-register")) {
+        shape = new RegisterShape(x, y, path);
+      } else if (name.equals("visible-counter")) {
+        shape = new CounterShape(x, y, path);
+      } else {
+        return null;
+      }
+      try {
+        shape.parseSvgElement(elt);
+      } catch (Exception e) {
+        e.printStackTrace();
+        throw e;
+      }
+      return shape;
+    }
+    return SvgReader.createShape(elt);
+  }
 
-	private static Location getLocation(Element elt) {
-		double x = Double.parseDouble(elt.getAttribute("x"));
-		double y = Double.parseDouble(elt.getAttribute("y"));
-		double w = Double.parseDouble(elt.getAttribute("width"));
-		double h = Double.parseDouble(elt.getAttribute("height"));
-		int px = (int) Math.round(x + w / 2);
-		int py = (int) Math.round(y + h / 2);
-		return Location.create(px, py);
-	}
+  private static Location getLocation(Element elt) {
+    double x = Double.parseDouble(elt.getAttribute("x"));
+    double y = Double.parseDouble(elt.getAttribute("y"));
+    double w = Double.parseDouble(elt.getAttribute("width"));
+    double h = Double.parseDouble(elt.getAttribute("height"));
+    int px = (int) Math.round(x + w / 2);
+    int py = (int) Math.round(y + h / 2);
+    return Location.create(px, py);
+  }
 }

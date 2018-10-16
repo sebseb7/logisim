@@ -58,235 +58,235 @@ import java.awt.Insets;
 import com.cburch.logisim.util.Icons;
 
 public class ZoomControl extends JPanel {
-	private class GridIcon extends JComponent implements MouseListener,
-			PropertyChangeListener {
-		private static final long serialVersionUID = 1L;
-		boolean state = true;
+  private class GridIcon extends JComponent
+    implements MouseListener, PropertyChangeListener {
+    private static final long serialVersionUID = 1L;
+    boolean state = true;
 
-		public GridIcon() {
-			addMouseListener(this);
-			setPreferredSize(new Dimension(20, 40));
-			setToolTipText("");
-			setFocusable(true);
-		}
+    public GridIcon() {
+      addMouseListener(this);
+      setPreferredSize(new Dimension(20, 40));
+      setToolTipText("");
+      setFocusable(true);
+    }
 
-		@Override
-		public String getToolTipText(MouseEvent e) {
-			return Strings.get("zoomShowGrid");
-		}
+    @Override
+    public String getToolTipText(MouseEvent e) {
+      return Strings.get("zoomShowGrid");
+    }
 
-		public void mouseClicked(MouseEvent e) {
-		}
+    public void mouseClicked(MouseEvent e) {
+    }
 
-		public void mouseEntered(MouseEvent e) {
-		}
+    public void mouseEntered(MouseEvent e) {
+    }
 
-		public void mouseExited(MouseEvent e) {
-		}
+    public void mouseExited(MouseEvent e) {
+    }
 
-		public void mousePressed(MouseEvent e) {
-			model.setShowGrid(!state);
-		}
+    public void mousePressed(MouseEvent e) {
+      model.setShowGrid(!state);
+    }
 
-		public void mouseReleased(MouseEvent e) {
-		}
+    public void mouseReleased(MouseEvent e) {
+    }
 
-		@Override
-		protected void paintComponent(Graphics g) {
-			int width = getWidth();
-			int height = getHeight();
-			g.setColor(state ? Color.BLACK : Color.GRAY);
-			int xdim = (Math.min(width, 18) - 4) / 3 * 3 + 1;
-			int ydim = (Math.min(height, 32) - 4) / 3 * 3 + 1;
-			int xoff = (width - xdim) / 2;
-			int yoff = (height - ydim) / 2;
-			for (int x = 0; x < xdim; x += 3) {
-				for (int y = 0; y < ydim; y += 3) {
-					g.drawLine(x + xoff, y + yoff, x + xoff, y + yoff);
-				}
-			}
-			g.setColor(Color.BLACK);
-			g.drawLine(xoff, yoff, xoff+3, yoff);
-			g.drawLine(xoff, yoff, xoff, yoff+3);
-			g.drawLine(xoff, yoff+ydim, xoff, yoff+ydim-3);
-			g.drawLine(xoff, yoff+ydim, xoff+3, yoff+ydim);
-			g.drawLine(xoff+xdim, yoff, xoff+xdim-3, yoff);
-			g.drawLine(xoff+xdim, yoff, xoff+xdim, yoff+3);
-			g.drawLine(xoff+xdim, yoff+ydim, xoff+xdim-3, yoff+ydim);
-			g.drawLine(xoff+xdim, yoff+ydim, xoff+xdim, yoff+ydim-3);
-		}
+    @Override
+    protected void paintComponent(Graphics g) {
+      int width = getWidth();
+      int height = getHeight();
+      g.setColor(state ? Color.BLACK : Color.GRAY);
+      int xdim = (Math.min(width, 18) - 4) / 3 * 3 + 1;
+      int ydim = (Math.min(height, 32) - 4) / 3 * 3 + 1;
+      int xoff = (width - xdim) / 2;
+      int yoff = (height - ydim) / 2;
+      for (int x = 0; x < xdim; x += 3) {
+        for (int y = 0; y < ydim; y += 3) {
+          g.drawLine(x + xoff, y + yoff, x + xoff, y + yoff);
+        }
+      }
+      g.setColor(Color.BLACK);
+      g.drawLine(xoff, yoff, xoff+3, yoff);
+      g.drawLine(xoff, yoff, xoff, yoff+3);
+      g.drawLine(xoff, yoff+ydim, xoff, yoff+ydim-3);
+      g.drawLine(xoff, yoff+ydim, xoff+3, yoff+ydim);
+      g.drawLine(xoff+xdim, yoff, xoff+xdim-3, yoff);
+      g.drawLine(xoff+xdim, yoff, xoff+xdim, yoff+3);
+      g.drawLine(xoff+xdim, yoff+ydim, xoff+xdim-3, yoff+ydim);
+      g.drawLine(xoff+xdim, yoff+ydim, xoff+xdim, yoff+ydim-3);
+    }
 
-		public void propertyChange(PropertyChangeEvent evt) {
-			update();
-		}
+    public void propertyChange(PropertyChangeEvent evt) {
+      update();
+    }
 
-		private void update() {
-			boolean grid = model.getShowGrid();
-			if (grid != state) {
-				state = grid;
-				repaint();
-			}
-		}
-	}
+    private void update() {
+      boolean grid = model.getShowGrid();
+      if (grid != state) {
+        state = grid;
+        repaint();
+      }
+    }
+  }
 
-	private class SliderModel extends DefaultBoundedRangeModel implements PropertyChangeListener {
-		private static final long serialVersionUID = 1L;
+  private class SliderModel extends DefaultBoundedRangeModel implements PropertyChangeListener {
+    private static final long serialVersionUID = 1L;
 
-		public SliderModel(ZoomModel model) {
-			super(nearestZoomOption(), 0, 0, model.getZoomOptions().length-1);
-		}
+    public SliderModel(ZoomModel model) {
+      super(nearestZoomOption(), 0, 0, model.getZoomOptions().length-1);
+    }
 
-		public void propertyChange(PropertyChangeEvent evt) {
-			fireStateChanged();
-		}
+    public void propertyChange(PropertyChangeEvent evt) {
+      fireStateChanged();
+    }
 
-		public void setValue(int i) {
-			zoomTo(i);
-		}
+    public void setValue(int i) {
+      zoomTo(i);
+    }
 
-		public int getValue() {
-			return nearestZoomOption();
-		}
-	}
+    public int getValue() {
+      return nearestZoomOption();
+    }
+  }
 
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	private ZoomModel model;
-	private ZoomLabel label;
-	private SliderModel sliderModel;
-	private JSlider slider;
-	private GridIcon grid;
+  private ZoomModel model;
+  private ZoomLabel label;
+  private SliderModel sliderModel;
+  private JSlider slider;
+  private GridIcon grid;
 
-	private int nearestZoomOption() {
-		double[] choices = model.getZoomOptions();
-		double factor = model.getZoomFactor() * 100.0;
-		int closest = 0;
-		for (int i = 1; i < choices.length; i++) {
-			if (Math.abs(choices[i] - factor) < Math.abs(choices[closest] - factor))
-				closest = i;
-		}
-		return closest;
-	}
+  private int nearestZoomOption() {
+    double[] choices = model.getZoomOptions();
+    double factor = model.getZoomFactor() * 100.0;
+    int closest = 0;
+    for (int i = 1; i < choices.length; i++) {
+      if (Math.abs(choices[i] - factor) < Math.abs(choices[closest] - factor))
+        closest = i;
+    }
+    return closest;
+  }
 
-	private class ZoomButton extends JButton {
-		boolean out;
-		public ZoomButton(String icon, boolean left) {
-			super(Icons.getIcon(icon));
-			out = left;
-			setOpaque(false);
-			setBackground(new java.awt.Color(0, 0, 0, 0));
-			setBorderPainted(false);
-			if (left)
-				setMargin(new Insets(2, 1, 2, 0));
-			else
-				setMargin(new Insets(2, 0, 2, 1));
-			addMouseListener(new ZoomMouseListener());
-			addActionListener(new ZoomActionListener());
-			setFocusable(false);
-		}
-		protected class ZoomMouseListener extends MouseAdapter {
-			public void mouseEntered(MouseEvent ev) {
-				setBorderPainted(true);
-			}
-			public void mouseExited(MouseEvent ev) { setBorderPainted(false); }
-		}
-		protected class ZoomActionListener implements ActionListener {
-			public void actionPerformed(ActionEvent e) {
-				if (out) zoomOut();
-				else zoomIn();
-			}
-		}
-	}
+  private class ZoomButton extends JButton {
+    boolean out;
+    public ZoomButton(String icon, boolean left) {
+      super(Icons.getIcon(icon));
+      out = left;
+      setOpaque(false);
+      setBackground(new java.awt.Color(0, 0, 0, 0));
+      setBorderPainted(false);
+      if (left)
+        setMargin(new Insets(2, 1, 2, 0));
+      else
+        setMargin(new Insets(2, 0, 2, 1));
+      addMouseListener(new ZoomMouseListener());
+      addActionListener(new ZoomActionListener());
+      setFocusable(false);
+    }
+    protected class ZoomMouseListener extends MouseAdapter {
+      public void mouseEntered(MouseEvent ev) {
+        setBorderPainted(true);
+      }
+      public void mouseExited(MouseEvent ev) { setBorderPainted(false); }
+    }
+    protected class ZoomActionListener implements ActionListener {
+      public void actionPerformed(ActionEvent e) {
+        if (out) zoomOut();
+        else zoomIn();
+      }
+    }
+  }
 
-	public ZoomControl(ZoomModel model) {
-		super(new BorderLayout());
-		this.model = model;
+  public ZoomControl(ZoomModel model) {
+    super(new BorderLayout());
+    this.model = model;
 
-		label = new ZoomLabel();
-		sliderModel = new SliderModel(model);
+    label = new ZoomLabel();
+    sliderModel = new SliderModel(model);
 
-		JButton plus = new ZoomButton("zoomin.gif", false);
-		JButton minus = new ZoomButton("zoomout.gif", true);
-		slider = new JSlider(sliderModel);
+    JButton plus = new ZoomButton("zoomin.gif", false);
+    JButton minus = new ZoomButton("zoomout.gif", true);
+    slider = new JSlider(sliderModel);
 
-		JPanel zoom = new JPanel(new BorderLayout());
-		zoom.add(minus, BorderLayout.WEST);
-		zoom.add(label, BorderLayout.CENTER);
-		zoom.add(plus, BorderLayout.EAST);
-		zoom.add(slider, BorderLayout.NORTH);
-		zoom.add(new JLabel("Zoom", SwingConstants.CENTER), BorderLayout.SOUTH);
+    JPanel zoom = new JPanel(new BorderLayout());
+    zoom.add(minus, BorderLayout.WEST);
+    zoom.add(label, BorderLayout.CENTER);
+    zoom.add(plus, BorderLayout.EAST);
+    zoom.add(slider, BorderLayout.NORTH);
+    zoom.add(new JLabel("Zoom", SwingConstants.CENTER), BorderLayout.SOUTH);
 
-		this.add(zoom, BorderLayout.CENTER);
+    this.add(zoom, BorderLayout.CENTER);
 
-		grid = new GridIcon();
-		this.add(grid, BorderLayout.EAST);
-		grid.update();
+    grid = new GridIcon();
+    this.add(grid, BorderLayout.EAST);
+    grid.update();
 
-		model.addPropertyChangeListener(ZoomModel.SHOW_GRID, grid);
-		model.addPropertyChangeListener(ZoomModel.ZOOM, sliderModel);
-		model.addPropertyChangeListener(ZoomModel.ZOOM, label);
-	}
+    model.addPropertyChangeListener(ZoomModel.SHOW_GRID, grid);
+    model.addPropertyChangeListener(ZoomModel.ZOOM, sliderModel);
+    model.addPropertyChangeListener(ZoomModel.ZOOM, label);
+  }
 
-	public String zoomString() {
-		double factor = model.getZoomFactor();
-		return String.format("%.0f%%", factor * 100.0);
-	}
+  public String zoomString() {
+    double factor = model.getZoomFactor();
+    return String.format("%.0f%%", factor * 100.0);
+  }
 
 
-	public void zoomIn() {
-		double zoom = model.getZoomFactor();
-		double[] choices = model.getZoomOptions();
-		double factor = zoom * 100.0 * 1.001;
-		for (int i = 0; i < choices.length; i++) {
-			if (choices[i] > factor) {
-				model.setZoomFactor(choices[i] / 100.0);
-				return;
-			}
-		}
-	}
+  public void zoomIn() {
+    double zoom = model.getZoomFactor();
+    double[] choices = model.getZoomOptions();
+    double factor = zoom * 100.0 * 1.001;
+    for (int i = 0; i < choices.length; i++) {
+      if (choices[i] > factor) {
+        model.setZoomFactor(choices[i] / 100.0);
+        return;
+      }
+    }
+  }
 
-	public void zoomOut() {
-		double zoom = model.getZoomFactor();
-		double[] choices = model.getZoomOptions();
-		double factor = zoom * 100.0 * 0.999;
-		for (int i = choices.length - 1; i >= 0; i--) {
-			if (choices[i] < factor) {
-				model.setZoomFactor(choices[i] / 100.0);
-				return;
-			}
-		}
-	}
+  public void zoomOut() {
+    double zoom = model.getZoomFactor();
+    double[] choices = model.getZoomOptions();
+    double factor = zoom * 100.0 * 0.999;
+    for (int i = choices.length - 1; i >= 0; i--) {
+      if (choices[i] < factor) {
+        model.setZoomFactor(choices[i] / 100.0);
+        return;
+      }
+    }
+  }
 
-	public void zoomTo(int i) {
-		double[] choices = model.getZoomOptions();
-		i = Math.max(Math.min(i, choices.length - 1), 0);
-		model.setZoomFactor(choices[i] / 100.0);
-	}
+  public void zoomTo(int i) {
+    double[] choices = model.getZoomOptions();
+    i = Math.max(Math.min(i, choices.length - 1), 0);
+    model.setZoomFactor(choices[i] / 100.0);
+  }
 
-	private class ZoomLabel extends JLabel implements PropertyChangeListener {
-		public ZoomLabel() { super(zoomString(), SwingConstants.CENTER); }
-		public void propertyChange(PropertyChangeEvent evt) { update(); }
-		public void update() { setText(zoomString()); }
-	}
+  private class ZoomLabel extends JLabel implements PropertyChangeListener {
+    public ZoomLabel() { super(zoomString(), SwingConstants.CENTER); }
+    public void propertyChange(PropertyChangeEvent evt) { update(); }
+    public void update() { setText(zoomString()); }
+  }
 
-	public void setZoomModel(ZoomModel value) {
-		ZoomModel oldModel = model;
-		if (oldModel != value) {
-			if (oldModel != null) {
-				oldModel.removePropertyChangeListener(ZoomModel.SHOW_GRID, grid);
-				oldModel.removePropertyChangeListener(ZoomModel.ZOOM, sliderModel);
-				oldModel.removePropertyChangeListener(ZoomModel.ZOOM, label);
-			}
-			model = value;
-			sliderModel = new SliderModel(model);
-			slider.setModel(sliderModel);
-			grid.update();
-			label.update();
-			if (value != null) {
-				value.addPropertyChangeListener(ZoomModel.SHOW_GRID, grid);
-				value.addPropertyChangeListener(ZoomModel.ZOOM, sliderModel);
-				value.addPropertyChangeListener(ZoomModel.ZOOM, label);
-			}
-		}
-	}
+  public void setZoomModel(ZoomModel value) {
+    ZoomModel oldModel = model;
+    if (oldModel != value) {
+      if (oldModel != null) {
+        oldModel.removePropertyChangeListener(ZoomModel.SHOW_GRID, grid);
+        oldModel.removePropertyChangeListener(ZoomModel.ZOOM, sliderModel);
+        oldModel.removePropertyChangeListener(ZoomModel.ZOOM, label);
+      }
+      model = value;
+      sliderModel = new SliderModel(model);
+      slider.setModel(sliderModel);
+      grid.update();
+      label.update();
+      if (value != null) {
+        value.addPropertyChangeListener(ZoomModel.SHOW_GRID, grid);
+        value.addPropertyChangeListener(ZoomModel.ZOOM, sliderModel);
+        value.addPropertyChangeListener(ZoomModel.ZOOM, label);
+      }
+    }
+  }
 }

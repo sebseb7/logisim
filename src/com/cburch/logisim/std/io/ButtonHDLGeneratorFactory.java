@@ -41,40 +41,40 @@ import com.cburch.logisim.data.AttributeSet;
 
 public class ButtonHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-	@Override
-	public ArrayList<String> GetInlinedCode(Netlist Nets, Long ComponentId,
-			NetlistComponent ComponentInfo, FPGAReport Reporter,
-			String CircuitName, String HDLType) {
-		ArrayList<String> Contents = new ArrayList<String>();
-		String Preamble = (HDLType.equals(Settings.VHDL)) ? "" : "assign ";
-		String AssignOperator = (HDLType.equals(Settings.VHDL)) ? " <= "
-				: " = ";
-		String OpenBracket = (HDLType.equals(Settings.VHDL)) ? "(" : "[";
-		String CloseBracket = (HDLType.equals(Settings.VHDL)) ? ")" : "]";
-		for (int i = 0; i < ComponentInfo.NrOfEnds(); i++) {
-			if (ComponentInfo.EndIsConnected(i)) {
-				Contents.add("   "
-						+ Preamble
-						+ GetNetName(ComponentInfo, i, true, HDLType, Nets)
-						+ AssignOperator
-						+ HDLGeneratorFactory.LocalInputBubbleBusname
-						+ OpenBracket
-						+ Integer.toString(ComponentInfo
-								.GetLocalBubbleInputStartId() + i)
-						+ CloseBracket + ";");
-			}
-		}
-		return Contents;
-	}
+  @Override
+  public ArrayList<String> GetInlinedCode(Netlist Nets, Long ComponentId,
+      NetlistComponent ComponentInfo, FPGAReport Reporter,
+      String CircuitName, String HDLType) {
+    ArrayList<String> Contents = new ArrayList<String>();
+    String Preamble = (HDLType.equals(Settings.VHDL)) ? "" : "assign ";
+    String AssignOperator = (HDLType.equals(Settings.VHDL)) ? " <= "
+        : " = ";
+    String OpenBracket = (HDLType.equals(Settings.VHDL)) ? "(" : "[";
+    String CloseBracket = (HDLType.equals(Settings.VHDL)) ? ")" : "]";
+    for (int i = 0; i < ComponentInfo.NrOfEnds(); i++) {
+      if (ComponentInfo.EndIsConnected(i)) {
+        Contents.add("   "
+            + Preamble
+            + GetNetName(ComponentInfo, i, true, HDLType, Nets)
+            + AssignOperator
+            + HDLGeneratorFactory.LocalInputBubbleBusname
+            + OpenBracket
+            + Integer.toString(ComponentInfo
+              .GetLocalBubbleInputStartId() + i)
+            + CloseBracket + ";");
+      }
+    }
+    return Contents;
+  }
 
-	@Override
-	public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-			char Vendor) {
-		return true;
-	}
+  @Override
+  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
+      char Vendor) {
+    return true;
+  }
 
-	@Override
-	public boolean IsOnlyInlined(String HDLType) {
-		return true;
-	}
+  @Override
+  public boolean IsOnlyInlined(String HDLType) {
+    return true;
+  }
 }

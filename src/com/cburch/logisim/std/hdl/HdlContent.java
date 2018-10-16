@@ -40,173 +40,169 @@ import com.cburch.logisim.circuit.CircuitEvent;
 
 public abstract class HdlContent implements HdlModel, Cloneable {
 
-	protected static <T> T[] concat(T[] first, T[] second) {
-		T[] result = Arrays.copyOf(first, first.length + second.length);
-		System.arraycopy(second, 0, result, first.length, second.length);
-		return result;
-	}
+  protected static <T> T[] concat(T[] first, T[] second) {
+    T[] result = Arrays.copyOf(first, first.length + second.length);
+    System.arraycopy(second, 0, result, first.length, second.length);
+    return result;
+  }
 
-	protected EventSourceWeakSupport<HdlModelListener> listeners;
-	//protected EventSourceWeakSupport<CircuitListener> circlisteners;
+  protected EventSourceWeakSupport<HdlModelListener> listeners;
+  //protected EventSourceWeakSupport<CircuitListener> circlisteners;
 
-	protected HdlContent() {
-		this.listeners = null;
-	}
+  protected HdlContent() {
+    this.listeners = null;
+  }
 
-	@Override
-	public void addHdlModelListener(HdlModelListener l) {
-		if (listeners == null) {
-			listeners = new EventSourceWeakSupport<HdlModelListener>();
-		}
-		listeners.add(l);
-	}
+  @Override
+  public void addHdlModelListener(HdlModelListener l) {
+    if (listeners == null) {
+      listeners = new EventSourceWeakSupport<HdlModelListener>();
+    }
+    listeners.add(l);
+  }
 
-        /*
-        public void addCircuitListener(CircuitListener l) {
-		if (circlisteners == null) {
-			circlisteners = new EventSourceWeakSupport<CircuitListener>();
-		}
-		circlisteners.add(l);
-        }
-        public void removeCircuitListener(CircuitListener l) {
-		if (circlisteners == null) {
-			return;
-		}
-		circlisteners.remove(l);
-        }
-        */
+  // public void addCircuitListener(CircuitListener l) {
+  //   if (circlisteners == null) {
+  //     circlisteners = new EventSourceWeakSupport<CircuitListener>();
+  //   }
+  //   circlisteners.add(l);
+  // }
+  // public void removeCircuitListener(CircuitListener l) {
+  //   if (circlisteners == null) {
+  //     return;
+  //   }
+  //   circlisteners.remove(l);
+  // }
 
-	@Override
-	public HdlContent clone() throws CloneNotSupportedException {
-		HdlContent ret = (HdlContent) super.clone();
-		ret.listeners = null;
-                int n = 0;
-                if (listeners != null) {
-                    for (HdlModelListener l : listeners) {
-                        n++;
-                    }
-                }
-		return ret;
-	}
+  @Override
+  public HdlContent clone() throws CloneNotSupportedException {
+    HdlContent ret = (HdlContent) super.clone();
+    ret.listeners = null;
+    int n = 0;
+    if (listeners != null) {
+      for (HdlModelListener l : listeners) {
+        n++;
+      }
+    }
+    return ret;
+  }
 
-        public String toString() {
-            String s = super.toString() + " " + listeners;
-                if (listeners != null) {
-            s += " [";
-                    for (HdlModelListener l : listeners) {
-                        s += "\n" + l.getClass() + " " + l.toString();
-                    }
-                s += "\n]";
-                }
-                return s;
-        }
+  public String toString() {
+    String s = super.toString() + " " + listeners;
+    if (listeners != null) {
+      s += " [";
+      for (HdlModelListener l : listeners) {
+        s += "\n" + l.getClass() + " " + l.toString();
+      }
+      s += "\n]";
+    }
+    return s;
+  }
 
-	@Override
-	public abstract boolean compare(HdlModel model);
+  @Override
+  public abstract boolean compare(HdlModel model);
 
-	@Override
-	public abstract boolean compare(String value);
+  @Override
+  public abstract boolean compare(String value);
 
-	protected void fireContentSet() {
-		if (listeners == null) {
-			return;
-		}
+  protected void fireContentSet() {
+    if (listeners == null) {
+      return;
+    }
 
-		boolean found = false;
-		for (HdlModelListener l : listeners) {
-			found = true;
-			l.contentSet(this);
-		}
+    boolean found = false;
+    for (HdlModelListener l : listeners) {
+      found = true;
+      l.contentSet(this);
+    }
 
-		if (!found) {
-			listeners = null;
-		}
-	}
+    if (!found) {
+      listeners = null;
+    }
+  }
 
-	protected void fireAboutToSave() {
-		if (listeners == null) {
-			return;
-		}
+  protected void fireAboutToSave() {
+    if (listeners == null) {
+      return;
+    }
 
-		boolean found = false;
-		for (HdlModelListener l : listeners) {
-			found = true;
-			l.aboutToSave(this);
-		}
+    boolean found = false;
+    for (HdlModelListener l : listeners) {
+      found = true;
+      l.aboutToSave(this);
+    }
 
-		if (!found) {
-			listeners = null;
-		}
-	}
+    if (!found) {
+      listeners = null;
+    }
+  }
 
-	protected void fireAppearanceChanged() {
-		if (listeners == null) {
-			return;
-		}
+  protected void fireAppearanceChanged() {
+    if (listeners == null) {
+      return;
+    }
 
-		boolean found = false;
-		for (HdlModelListener l : listeners) {
-			found = true;
-			l.appearanceChanged(this);
-		}
+    boolean found = false;
+    for (HdlModelListener l : listeners) {
+      found = true;
+      l.appearanceChanged(this);
+    }
 
-		if (!found) {
-			listeners = null;
-		}
-	}
+    if (!found) {
+      listeners = null;
+    }
+  }
 
-	public void displayChanged() {
-		if (listeners == null) {
-			return;
-		}
+  public void displayChanged() {
+    if (listeners == null) {
+      return;
+    }
 
-		boolean found = false;
-		for (HdlModelListener l : listeners) {
-			found = true;
-			l.displayChanged(this);
-		}
+    boolean found = false;
+    for (HdlModelListener l : listeners) {
+      found = true;
+      l.displayChanged(this);
+    }
 
-		if (!found) {
-			listeners = null;
-		}
-	}
+    if (!found) {
+      listeners = null;
+    }
+  }
 
-        /*
-        protected void fireNameChange() {
-		if (circlisteners == null) {
-			return;
-		}
+  // protected void fireNameChange() {
+  //   if (circlisteners == null) {
+  //     return;
+  //   }
 
-		boolean found = false;
-		for (CircuitListener l : circlisteners) {
-			found = true;
-			l.circuitChanged(CircuitEvent.ACTION_SET_NAME);
-		}
+  //   boolean found = false;
+  //   for (CircuitListener l : circlisteners) {
+  //     found = true;
+  //     l.circuitChanged(CircuitEvent.ACTION_SET_NAME);
+  //   }
 
-		if (!found) {
-			circlisteners = null;
-		}
-	}
-        */
+  //   if (!found) {
+  //     circlisteners = null;
+  //   }
+  // }
 
-	@Override
-	public abstract String getContent();
+  @Override
+  public abstract String getContent();
 
-	@Override
-	public abstract String getName();
+  @Override
+  public abstract String getName();
 
-	@Override
-	public void removeHdlModelListener(HdlModelListener l) {
-		if (listeners == null) {
-			return;
-		}
-		listeners.remove(l);
-		if (listeners.isEmpty()) {
-			listeners = null;
-		}
-	}
+  @Override
+  public void removeHdlModelListener(HdlModelListener l) {
+    if (listeners == null) {
+      return;
+    }
+    listeners.remove(l);
+    if (listeners.isEmpty()) {
+      listeners = null;
+    }
+  }
 
-	@Override
-	public abstract boolean setContent(String content); // does not necessarily validate
+  @Override
+  public abstract boolean setContent(String content); // does not necessarily validate
 
 }

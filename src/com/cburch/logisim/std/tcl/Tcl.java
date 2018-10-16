@@ -38,34 +38,34 @@ import com.cburch.logisim.tools.Tool;
 
 public class Tcl extends Library {
 
-	private static FactoryDescription[] DESCRIPTIONS = {
-			new FactoryDescription("TclConsoleReds",
-					Strings.getter("tclConsoleReds"), "tcl.gif",
-					"TclConsoleReds"),
-			new FactoryDescription("TclGeneric", Strings.getter("tclGeneric"),
-					"tcl.gif", "TclGeneric") };
+  private static FactoryDescription[] DESCRIPTIONS = {
+    new FactoryDescription("TclConsoleReds",
+        Strings.getter("tclConsoleReds"), "tcl.gif",
+        "TclConsoleReds"),
+    new FactoryDescription("TclGeneric", Strings.getter("tclGeneric"),
+        "tcl.gif", "TclGeneric") };
 
-	private List<Tool> tools = null;
+  private List<Tool> tools = null;
 
-	public Tcl() {
-	}
+  public Tcl() {
+  }
 
-	@Override
-	public String getDisplayName() {
-		return Strings.get("tclLibrary");
-	}
+  @Override
+  public String getDisplayName() {
+    return Strings.get("tclLibrary");
+  }
 
-	@Override
-	public String getName() {
-		return "TCL";
-	}
+  @Override
+  public String getName() {
+    return "TCL";
+  }
 
-	@Override
-	public List<Tool> getTools() {
-		if (tools == null) {
-			tools = FactoryDescription.getTools(Tcl.class, DESCRIPTIONS);
-		}
-		return tools;
-	}
+  @Override
+  public List<Tool> getTools() {
+    if (tools == null) {
+      tools = FactoryDescription.getTools(Tcl.class, DESCRIPTIONS);
+    }
+    return tools;
+  }
 
 }

@@ -45,99 +45,99 @@ import com.cburch.logisim.tools.WireRepairData;
 import com.cburch.logisim.util.GraphicsUtil;
 
 class OrGate extends AbstractGate {
-	private class OrGateHDLGeneratorFactory extends AbstractGateHDLGenerator {
-		@Override
-		public ArrayList<String> GetLogicFunction(int nr_of_inputs,
-				int bitwidth, boolean is_one_hot, String HDLType) {
-			ArrayList<String> Contents = new ArrayList<String>();
-			String Preamble = (HDLType.equals(Settings.VHDL) ? "" : "assign ");
-			String OrOperation = (HDLType.equals(Settings.VHDL) ? " OR" : " |");
-			String AssignOperation = (HDLType.equals(Settings.VHDL) ? " <= "
-					: " = ");
-			StringBuffer OneLine = new StringBuffer();
-			OneLine.append("   " + Preamble + "Result" + AssignOperation);
-			int TabWidth = OneLine.length();
-			boolean first = true;
-			for (int i = 0; i < nr_of_inputs; i++) {
-				if (!first) {
-					OneLine.append(OrOperation);
-					Contents.add(OneLine.toString());
-					OneLine.setLength(0);
-					while (OneLine.length() < TabWidth) {
-						OneLine.append(" ");
-					}
-				} else {
-					first = false;
-				}
-				OneLine.append("s_real_input_" + Integer.toString(i + 1));
-			}
-			OneLine.append(";");
-			Contents.add(OneLine.toString());
-			Contents.add("");
-			return Contents;
-		}
-	}
+  private class OrGateHDLGeneratorFactory extends AbstractGateHDLGenerator {
+    @Override
+    public ArrayList<String> GetLogicFunction(int nr_of_inputs,
+        int bitwidth, boolean is_one_hot, String HDLType) {
+      ArrayList<String> Contents = new ArrayList<String>();
+      String Preamble = (HDLType.equals(Settings.VHDL) ? "" : "assign ");
+      String OrOperation = (HDLType.equals(Settings.VHDL) ? " OR" : " |");
+      String AssignOperation = (HDLType.equals(Settings.VHDL) ? " <= "
+          : " = ");
+      StringBuffer OneLine = new StringBuffer();
+      OneLine.append("   " + Preamble + "Result" + AssignOperation);
+      int TabWidth = OneLine.length();
+      boolean first = true;
+      for (int i = 0; i < nr_of_inputs; i++) {
+        if (!first) {
+          OneLine.append(OrOperation);
+          Contents.add(OneLine.toString());
+          OneLine.setLength(0);
+          while (OneLine.length() < TabWidth) {
+            OneLine.append(" ");
+          }
+        } else {
+          first = false;
+        }
+        OneLine.append("s_real_input_" + Integer.toString(i + 1));
+      }
+      OneLine.append(";");
+      Contents.add(OneLine.toString());
+      Contents.add("");
+      return Contents;
+    }
+  }
 
-	public static OrGate FACTORY = new OrGate();
+  public static OrGate FACTORY = new OrGate();
 
-	private OrGate() {
-		super("OR Gate", Strings.getter("orGateComponent"));
-		setRectangularLabel("\u2265" + "1");
-		setIconNames("orGate.gif", "orGateRect.gif", "dinOrGate.gif");
-		setPaintInputLines(true);
-	}
+  private OrGate() {
+    super("OR Gate", Strings.getter("orGateComponent"));
+    setRectangularLabel("\u2265" + "1");
+    setIconNames("orGate.gif", "orGateRect.gif", "dinOrGate.gif");
+    setPaintInputLines(true);
+  }
 
-	@Override
-	protected Expression computeExpression(Expression[] inputs, int numInputs) {
-		Expression ret = inputs[0];
-		for (int i = 1; i < numInputs; i++) {
-			ret = Expressions.or(ret, inputs[i]);
-		}
-		return ret;
-	}
+  @Override
+  protected Expression computeExpression(Expression[] inputs, int numInputs) {
+    Expression ret = inputs[0];
+    for (int i = 1; i < numInputs; i++) {
+      ret = Expressions.or(ret, inputs[i]);
+    }
+    return ret;
+  }
 
-	@Override
-	protected Value computeOutput(Value[] inputs, int numInputs,
-			InstanceState state) {
-		return GateFunctions.computeOr(inputs, numInputs);
-	}
+  @Override
+  protected Value computeOutput(Value[] inputs, int numInputs,
+      InstanceState state) {
+    return GateFunctions.computeOr(inputs, numInputs);
+  }
 
-	@Override
-	protected Value getIdentity() {
-		return Value.FALSE;
-	}
+  @Override
+  protected Value getIdentity() {
+    return Value.FALSE;
+  }
 
-	@Override
-	public boolean HDLSupportedComponent(String HDLIdentifier,
-			AttributeSet attrs, char Vendor) {
-		if (MyHDLGenerator == null)
-			MyHDLGenerator = new OrGateHDLGeneratorFactory();
-		return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
-	}
+  @Override
+  public boolean HDLSupportedComponent(String HDLIdentifier,
+      AttributeSet attrs, char Vendor) {
+    if (MyHDLGenerator == null)
+      MyHDLGenerator = new OrGateHDLGeneratorFactory();
+    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  }
 
-	@Override
-	protected void paintDinShape(InstancePainter painter, int width,
-			int height, int inputs) {
-		PainterDin.paintOr(painter, width, height, false);
-	}
+  @Override
+  protected void paintDinShape(InstancePainter painter, int width,
+      int height, int inputs) {
+    PainterDin.paintOr(painter, width, height, false);
+  }
 
-	@Override
-	public void paintIconShaped(InstancePainter painter) {
-		Graphics g = painter.getGraphics();
-		GraphicsUtil.drawCenteredArc(g, 0, -5, 22, -90, 53);
-		GraphicsUtil.drawCenteredArc(g, 0, 23, 22, 90, -53);
-		GraphicsUtil.drawCenteredArc(g, -12, 9, 16, -30, 60);
-	}
+  @Override
+  public void paintIconShaped(InstancePainter painter) {
+    Graphics g = painter.getGraphics();
+    GraphicsUtil.drawCenteredArc(g, 0, -5, 22, -90, 53);
+    GraphicsUtil.drawCenteredArc(g, 0, 23, 22, 90, -53);
+    GraphicsUtil.drawCenteredArc(g, -12, 9, 16, -30, 60);
+  }
 
-	@Override
-	protected void paintShape(InstancePainter painter, int width, int height) {
-		PainterShaped.paintOr(painter, width, height);
-	}
+  @Override
+  protected void paintShape(InstancePainter painter, int width, int height) {
+    PainterShaped.paintOr(painter, width, height);
+  }
 
-	@Override
-	protected boolean shouldRepairWire(Instance instance, WireRepairData data) {
-		boolean ret = !data.getPoint().equals(instance.getLocation());
-		return ret;
-	}
+  @Override
+  protected boolean shouldRepairWire(Instance instance, WireRepairData data) {
+    boolean ret = !data.getPoint().equals(instance.getLocation());
+    return ret;
+  }
 
 }

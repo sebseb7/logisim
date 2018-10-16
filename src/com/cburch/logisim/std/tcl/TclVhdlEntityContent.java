@@ -48,45 +48,45 @@ import com.cburch.logisim.std.hdl.VhdlContent;
  */
 public class TclVhdlEntityContent extends VhdlContent {
 
-	public static TclVhdlEntityContent create() {
-		return new TclVhdlEntityContent();
-	}
+  public static TclVhdlEntityContent create() {
+    return new TclVhdlEntityContent();
+  }
 
-	// TODO: remove code duplication with parent class
-	private static String loadTemplate() {
-		InputStream input = VhdlContent.class.getResourceAsStream(RESOURCE);
-		BufferedReader in = new BufferedReader(new InputStreamReader(input));
+  // TODO: remove code duplication with parent class
+  private static String loadTemplate() {
+    InputStream input = VhdlContent.class.getResourceAsStream(RESOURCE);
+    BufferedReader in = new BufferedReader(new InputStreamReader(input));
 
-		StringBuilder tmp = new StringBuilder();
-		String line;
+    StringBuilder tmp = new StringBuilder();
+    String line;
 
-		try {
-			while ((line = in.readLine()) != null) {
-				tmp.append(line);
-				tmp.append(System.getProperty("line.separator"));
-			}
-		} catch (IOException ex) {
-			return "";
-		} finally {
-			try {
-				if (input != null)
-					input.close();
-			} catch (IOException ex) {
-				Logger.getLogger(VhdlContent.class.getName()).log(Level.SEVERE,
-						null, ex);
-			}
-		}
+    try {
+      while ((line = in.readLine()) != null) {
+        tmp.append(line);
+        tmp.append(System.getProperty("line.separator"));
+      }
+    } catch (IOException ex) {
+      return "";
+    } finally {
+      try {
+        if (input != null)
+          input.close();
+      } catch (IOException ex) {
+        Logger.getLogger(VhdlContent.class.getName()).log(Level.SEVERE,
+            null, ex);
+      }
+    }
 
-		return tmp.toString();
-	}
+    return tmp.toString();
+  }
 
-	private static final String RESOURCE = "/resources/logisim/tcl/entity.templ";
+  private static final String RESOURCE = "/resources/logisim/tcl/entity.templ";
 
-	private static final String TEMPLATE = loadTemplate();
+  private static final String TEMPLATE = loadTemplate();
 
-	protected TclVhdlEntityContent() {
-                super(null, null); /* todo: get project file */
-		super.setContent(TEMPLATE);
-	}
+  protected TclVhdlEntityContent() {
+    super(null, null); /* todo: get project file */
+    super.setContent(TEMPLATE);
+  }
 
 }

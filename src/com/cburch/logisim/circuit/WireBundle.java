@@ -37,104 +37,101 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 
 class WireBundle {
-	private BitWidth width = BitWidth.UNKNOWN;
-	private Value pullValue = Value.UNKNOWN;
-	private WireBundle parent;
-	private Location widthDeterminant = null;
-	private boolean isBuss = false;
-	WireThread[] threads = null;
-	CopyOnWriteArraySet<Location> points = new CopyOnWriteArraySet<Location>(); // points
-																				// bundle
-																				// hits
-	private WidthIncompatibilityData incompatibilityData = null;
+  private BitWidth width = BitWidth.UNKNOWN;
+  private Value pullValue = Value.UNKNOWN;
+  private WireBundle parent;
+  private Location widthDeterminant = null;
+  private boolean isBuss = false;
+  WireThread[] threads = null;
+  CopyOnWriteArraySet<Location> points = new CopyOnWriteArraySet<Location>(); // points bundle hits
+  private WidthIncompatibilityData incompatibilityData = null;
 
-	WireBundle() {
-		parent = this;
-	}
+  WireBundle() {
+    parent = this;
+  }
 
-	void addPullValue(Value val) {
-		pullValue = pullValue.combine(val);
-	}
+  void addPullValue(Value val) {
+    pullValue = pullValue.combine(val);
+  }
 
-	WireBundle find() {
-		WireBundle ret = this;
-		if (ret.parent != ret) {
-			do
-				ret = ret.parent;
-			while (ret.parent != ret);
-			this.parent = ret;
-		}
-		return ret;
-	}
+  WireBundle find() {
+    WireBundle ret = this;
+    if (ret.parent != ret) {
+      do
+        ret = ret.parent;
+      while (ret.parent != ret);
+      this.parent = ret;
+    }
+    return ret;
+  }
 
-	Value getPullValue() {
-		return pullValue;
-	}
+  Value getPullValue() {
+    return pullValue;
+  }
 
-	BitWidth getWidth() {
-		if (incompatibilityData != null) {
-			return BitWidth.UNKNOWN;
-		} else {
-			return width;
-		}
-	}
+  BitWidth getWidth() {
+    if (incompatibilityData != null) {
+      return BitWidth.UNKNOWN;
+    } else {
+      return width;
+    }
+  }
 
-	Location getWidthDeterminant() {
-		if (incompatibilityData != null) {
-			return null;
-		} else {
-			return widthDeterminant;
-		}
-	}
+  Location getWidthDeterminant() {
+    if (incompatibilityData != null) {
+      return null;
+    } else {
+      return widthDeterminant;
+    }
+  }
 
-	WidthIncompatibilityData getWidthIncompatibilityData() {
-		return incompatibilityData;
-	}
+  WidthIncompatibilityData getWidthIncompatibilityData() {
+    return incompatibilityData;
+  }
 
-	boolean isBus() {
-		return isBuss;
-	}
+  boolean isBus() {
+    return isBuss;
+  }
 
-	void isolate() {
-		parent = this;
-	}
+  void isolate() {
+    parent = this;
+  }
 
-	boolean isValid() {
-		return incompatibilityData == null;
-	}
+  boolean isValid() {
+    return incompatibilityData == null;
+  }
 
-	void setWidth(BitWidth width, Location det) {
-		if (width == BitWidth.UNKNOWN)
-			return;
-		if (incompatibilityData != null) {
-			incompatibilityData.add(det, width);
-			return;
-		}
-		if (this.width != BitWidth.UNKNOWN) {
-			if (width.equals(this.width)) {
-				isBuss = width.getWidth() > 1;
-				return; // the widths match, and the bundle is already set;
-						// nothing to do
-			} else { // the widths are broken: Create incompatibilityData
-						// holding this info
-				incompatibilityData = new WidthIncompatibilityData();
-				incompatibilityData.add(widthDeterminant, this.width);
-				incompatibilityData.add(det, width);
-				return;
-			}
-		}
-		this.width = width;
-		this.widthDeterminant = det;
-		this.threads = new WireThread[width.getWidth()];
-		for (int i = 0; i < threads.length; i++) {
-			threads[i] = new WireThread();
-		}
-	}
+  void setWidth(BitWidth width, Location det) {
+    if (width == BitWidth.UNKNOWN)
+      return;
+    if (incompatibilityData != null) {
+      incompatibilityData.add(det, width);
+      return;
+    }
+    if (this.width != BitWidth.UNKNOWN) {
+      if (width.equals(this.width)) {
+        isBuss = width.getWidth() > 1;
+        return; // the widths match, and the bundle is already set; nothing to do
+      } else {
+        // the widths are broken: Create incompatibilityData holding this info
+        incompatibilityData = new WidthIncompatibilityData();
+        incompatibilityData.add(widthDeterminant, this.width);
+        incompatibilityData.add(det, width);
+        return;
+      }
+    }
+    this.width = width;
+    this.widthDeterminant = det;
+    this.threads = new WireThread[width.getWidth()];
+    for (int i = 0; i < threads.length; i++) {
+      threads[i] = new WireThread();
+    }
+  }
 
-	void unite(WireBundle other) {
-		WireBundle group = this.find();
-		WireBundle group2 = other.find();
-		if (group != group2)
-			group.parent = group2;
-	}
+  void unite(WireBundle other) {
+    WireBundle group = this.find();
+    WireBundle group2 = other.find();
+    if (group != group2)
+      group.parent = group2;
+  }
 }

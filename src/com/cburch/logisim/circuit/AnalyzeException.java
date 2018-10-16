@@ -33,37 +33,37 @@ package com.cburch.logisim.circuit;
 import com.cburch.logisim.util.StringUtil;
 
 public class AnalyzeException extends Exception {
-	public static class CannotHandle extends AnalyzeException {
-		private static final long serialVersionUID = 1L;
+  public static class CannotHandle extends AnalyzeException {
+    private static final long serialVersionUID = 1L;
 
-		public CannotHandle(String reason) {
-			super(StringUtil.format(Strings.get("analyzeCannotHandleError"),
-					reason));
-		}
-	}
+    public CannotHandle(String reason) {
+      super(StringUtil.format(Strings.get("analyzeCannotHandleError"),
+            reason));
+    }
+  }
 
-	public static class Circular extends AnalyzeException {
-		private static final long serialVersionUID = 1L;
+  public static class Circular extends AnalyzeException {
+    private static final long serialVersionUID = 1L;
 
-		public Circular() {
-			super(Strings.get("analyzeCircularError"));
-		}
-	}
+    public Circular() {
+      super(Strings.get("analyzeCircularError"));
+    }
+  }
 
-	public static class Conflict extends AnalyzeException {
-		private static final long serialVersionUID = 1L;
+  public static class Conflict extends AnalyzeException {
+    private static final long serialVersionUID = 1L;
 
-		public Conflict() {
-			super(Strings.get("analyzeConflictError"));
-		}
-	}
+    public Conflict() {
+      super(Strings.get("analyzeConflictError"));
+    }
+  }
 
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	public AnalyzeException() {
-	}
+  public AnalyzeException() {
+  }
 
-	public AnalyzeException(String message) {
-		super(message);
-	}
+  public AnalyzeException(String message) {
+    super(message);
+  }
 }

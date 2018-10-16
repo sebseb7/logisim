@@ -31,5 +31,5 @@
 package com.cburch.logisim.comp;
 
 public interface TextFieldListener {
-	public void textChanged(TextFieldEvent e);
+  public void textChanged(TextFieldEvent e);
 }

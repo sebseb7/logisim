@@ -34,35 +34,35 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 abstract class AbstractPrefMonitor<E> implements PrefMonitor<E> {
-	private String name;
+  private String name;
 
-	AbstractPrefMonitor(String name) {
-		this.name = name;
-	}
+  AbstractPrefMonitor(String name) {
+    this.name = name;
+  }
 
-	public void addPropertyChangeListener(PropertyChangeListener listener) {
-		AppPreferences.addPropertyChangeListener(name, listener);
-	}
+  public void addPropertyChangeListener(PropertyChangeListener listener) {
+    AppPreferences.addPropertyChangeListener(name, listener);
+  }
 
-	public boolean getBoolean() {
-		return ((Boolean) get()).booleanValue();
-	}
+  public boolean getBoolean() {
+    return ((Boolean) get()).booleanValue();
+  }
 
-	public String getIdentifier() {
-		return name;
-	}
+  public String getIdentifier() {
+    return name;
+  }
 
-	public boolean isSource(PropertyChangeEvent event) {
-		return name.equals(event.getPropertyName());
-	}
+  public boolean isSource(PropertyChangeEvent event) {
+    return name.equals(event.getPropertyName());
+  }
 
-	public void removePropertyChangeListener(PropertyChangeListener listener) {
-		AppPreferences.removePropertyChangeListener(name, listener);
-	}
+  public void removePropertyChangeListener(PropertyChangeListener listener) {
+    AppPreferences.removePropertyChangeListener(name, listener);
+  }
 
-	public void setBoolean(boolean value) {
-		@SuppressWarnings("unchecked")
-		E valObj = (E) Boolean.valueOf(value);
-		set(valObj);
-	}
+  public void setBoolean(boolean value) {
+    @SuppressWarnings("unchecked")
+    E valObj = (E) Boolean.valueOf(value);
+    set(valObj);
+  }
 }

@@ -31,9 +31,9 @@
 package com.cburch.logisim.data;
 
 public interface AttributeOptionInterface {
-	public Object getValue();
+  public Object getValue();
 
-	public String toDisplayString();
+  public String toDisplayString();
 
-	public String toString();
+  public String toString();
 }

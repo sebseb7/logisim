@@ -36,28 +36,28 @@ import java.util.Map;
 import com.cburch.logisim.data.Attribute;
 
 public class KeyConfigurationResult {
-	private KeyConfigurationEvent event;
-	private Map<Attribute<?>, Object> attrValueMap;
+  private KeyConfigurationEvent event;
+  private Map<Attribute<?>, Object> attrValueMap;
 
-	public KeyConfigurationResult(KeyConfigurationEvent event,
-			Attribute<?> attr, Object value) {
-		this.event = event;
-		Map<Attribute<?>, Object> singleMap = new HashMap<Attribute<?>, Object>(1);
-		singleMap.put(attr, value);
-		this.attrValueMap = singleMap;
-	}
+  public KeyConfigurationResult(KeyConfigurationEvent event,
+      Attribute<?> attr, Object value) {
+    this.event = event;
+    Map<Attribute<?>, Object> singleMap = new HashMap<Attribute<?>, Object>(1);
+    singleMap.put(attr, value);
+    this.attrValueMap = singleMap;
+  }
 
-	public KeyConfigurationResult(KeyConfigurationEvent event,
-			Map<Attribute<?>, Object> values) {
-		this.event = event;
-		this.attrValueMap = values;
-	}
+  public KeyConfigurationResult(KeyConfigurationEvent event,
+      Map<Attribute<?>, Object> values) {
+    this.event = event;
+    this.attrValueMap = values;
+  }
 
-	public Map<Attribute<?>, Object> getAttributeValues() {
-		return attrValueMap;
-	}
+  public Map<Attribute<?>, Object> getAttributeValues() {
+    return attrValueMap;
+  }
 
-	public KeyConfigurationEvent getEvent() {
-		return event;
-	}
+  public KeyConfigurationEvent getEvent() {
+    return event;
+  }
 }

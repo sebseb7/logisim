@@ -40,76 +40,76 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.instance.StdAttr;
 
 class PinAttributes extends ProbeAttributes {
-	public static PinAttributes instance = new PinAttributes();
+  public static PinAttributes instance = new PinAttributes();
 
-	private static final List<Attribute<?>> ATTRIBUTES = Arrays
-			.asList(new Attribute<?>[] { StdAttr.FACING, Pin.ATTR_TYPE,
-					StdAttr.WIDTH, Pin.ATTR_TRISTATE, Pin.ATTR_PULL,
-					StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT,
-					RadixOption.ATTRIBUTE });
+  private static final List<Attribute<?>> ATTRIBUTES = Arrays
+      .asList(new Attribute<?>[] { StdAttr.FACING, Pin.ATTR_TYPE,
+        StdAttr.WIDTH, Pin.ATTR_TRISTATE, Pin.ATTR_PULL,
+        StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT,
+        RadixOption.ATTRIBUTE });
 
-	BitWidth width = BitWidth.ONE;
-	boolean threeState = false;// true;
-	int type = EndData.INPUT_ONLY;
-	Object pull = Pin.PULL_NONE;
+  BitWidth width = BitWidth.ONE;
+  boolean threeState = false;// true;
+  int type = EndData.INPUT_ONLY;
+  Object pull = Pin.PULL_NONE;
 
-	public PinAttributes() {
-	}
+  public PinAttributes() {
+  }
 
-	@Override
-	public List<Attribute<?>> getAttributes() {
-		return ATTRIBUTES;
-	}
+  @Override
+  public List<Attribute<?>> getAttributes() {
+    return ATTRIBUTES;
+  }
 
-	@Override
-	@SuppressWarnings("unchecked")
-	public <V> V getValue(Attribute<V> attr) {
-		if (attr == StdAttr.WIDTH)
-			return (V) width;
-		if (attr == Pin.ATTR_TRISTATE)
-			return (V) Boolean.valueOf(threeState);
-		if (attr == Pin.ATTR_TYPE)
-			return (V) Boolean.valueOf(type == EndData.OUTPUT_ONLY);
-		if (attr == Pin.ATTR_PULL)
-			return (V) pull;
-		return super.getValue(attr);
-	}
+  @Override
+  @SuppressWarnings("unchecked")
+  public <V> V getValue(Attribute<V> attr) {
+    if (attr == StdAttr.WIDTH)
+      return (V) width;
+    if (attr == Pin.ATTR_TRISTATE)
+      return (V) Boolean.valueOf(threeState);
+    if (attr == Pin.ATTR_TYPE)
+      return (V) Boolean.valueOf(type == EndData.OUTPUT_ONLY);
+    if (attr == Pin.ATTR_PULL)
+      return (V) pull;
+    return super.getValue(attr);
+  }
 
-	boolean isInput() {
-		return type != EndData.OUTPUT_ONLY;
-	}
+  boolean isInput() {
+    return type != EndData.OUTPUT_ONLY;
+  }
 
-	boolean isOutput() {
-		return type != EndData.INPUT_ONLY;
-	}
+  boolean isOutput() {
+    return type != EndData.INPUT_ONLY;
+  }
 
-	@Override
-	public <V> void setValue(Attribute<V> attr, V value) {
-		if (attr == StdAttr.WIDTH) {
-			BitWidth NewWidth = (BitWidth) value;
-			if (width == NewWidth)
-				return;
-			width = (BitWidth) value;
-		} else if (attr == Pin.ATTR_TRISTATE) {
-			boolean NewThree = ((Boolean) value).booleanValue();
-			if (threeState == NewThree)
-				return;
-			threeState = NewThree;
-		} else if (attr == Pin.ATTR_TYPE) {
-			int Newtype = ((Boolean) value).booleanValue() ? EndData.OUTPUT_ONLY
-					: EndData.INPUT_ONLY;
-			if (type == Newtype)
-				return;
-			type = Newtype;
-		} else if (attr == Pin.ATTR_PULL) {
-			Object newPull = value;
-			if (pull.equals(newPull))
-				return;
-			pull = newPull;
-		} else {
-			super.setValue(attr, value);
-			return;
-		}
-		fireAttributeValueChanged(attr, value);
-	}
+  @Override
+  public <V> void setValue(Attribute<V> attr, V value) {
+    if (attr == StdAttr.WIDTH) {
+      BitWidth NewWidth = (BitWidth) value;
+      if (width == NewWidth)
+        return;
+      width = (BitWidth) value;
+    } else if (attr == Pin.ATTR_TRISTATE) {
+      boolean NewThree = ((Boolean) value).booleanValue();
+      if (threeState == NewThree)
+        return;
+      threeState = NewThree;
+    } else if (attr == Pin.ATTR_TYPE) {
+      int Newtype = ((Boolean) value).booleanValue() ? EndData.OUTPUT_ONLY
+          : EndData.INPUT_ONLY;
+      if (type == Newtype)
+        return;
+      type = Newtype;
+    } else if (attr == Pin.ATTR_PULL) {
+      Object newPull = value;
+      if (pull.equals(newPull))
+        return;
+      pull = newPull;
+    } else {
+      super.setValue(attr, value);
+      return;
+    }
+    fireAttributeValueChanged(attr, value);
+  }
 }

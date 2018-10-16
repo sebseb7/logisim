@@ -43,67 +43,68 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Value;
 
 public class TFlipFlop extends AbstractFlipFlop {
-	private class TFFHDLGeneratorFactory extends
-			AbstractFlipFlopHDLGeneratorFactory implements HDLGeneratorFactory {
-		@Override
-		public String ComponentName() {
-			return "T Flip-Flop";
-		}
+  private class TFFHDLGeneratorFactory
+    extends AbstractFlipFlopHDLGeneratorFactory
+    implements HDLGeneratorFactory {
+    @Override
+    public String ComponentName() {
+      return "T Flip-Flop";
+    }
 
-		@Override
-		public Map<String, String> GetInputMaps(NetlistComponent ComponentInfo,
-				Netlist Nets, FPGAReport Reporter, String HDLType) {
-			Map<String, String> PortMap = new HashMap<String, String>();
-			PortMap.putAll(GetNetMap("T", true, ComponentInfo, 0, Reporter,
-					HDLType, Nets));
-			return PortMap;
-		}
+    @Override
+    public Map<String, String> GetInputMaps(NetlistComponent ComponentInfo,
+        Netlist Nets, FPGAReport Reporter, String HDLType) {
+      Map<String, String> PortMap = new HashMap<String, String>();
+      PortMap.putAll(GetNetMap("T", true, ComponentInfo, 0, Reporter,
+            HDLType, Nets));
+      return PortMap;
+    }
 
-		@Override
-		public Map<String, Integer> GetInputPorts() {
-			Map<String, Integer> Inputs = new HashMap<String, Integer>();
-			Inputs.put("T", 1);
-			return Inputs;
-		}
+    @Override
+    public Map<String, Integer> GetInputPorts() {
+      Map<String, Integer> Inputs = new HashMap<String, Integer>();
+      Inputs.put("T", 1);
+      return Inputs;
+    }
 
-		@Override
-		public ArrayList<String> GetUpdateLogic(String HDLType) {
-			ArrayList<String> Contents = new ArrayList<String>();
-			if (HDLType.endsWith(Settings.VHDL))
-				Contents.add("   s_next_state <= s_current_state_reg XOR T;");
-			else
-				Contents.add("   assign s_next_state = s_current_state_reg^T;");
-			return Contents;
-		}
-	}
+    @Override
+    public ArrayList<String> GetUpdateLogic(String HDLType) {
+      ArrayList<String> Contents = new ArrayList<String>();
+      if (HDLType.endsWith(Settings.VHDL))
+        Contents.add("   s_next_state <= s_current_state_reg XOR T;");
+      else
+        Contents.add("   assign s_next_state = s_current_state_reg^T;");
+      return Contents;
+    }
+  }
 
-	public TFlipFlop() {
-		super("T Flip-Flop", "tFlipFlop.gif", Strings
-				.getter("tFlipFlopComponent"), 1, false);
-	}
+  public TFlipFlop() {
+    super("T Flip-Flop", "tFlipFlop.gif", Strings
+        .getter("tFlipFlopComponent"), 1, false);
+  }
 
-	@Override
-	protected Value computeValue(Value[] inputs, Value curValue) {
-		if (curValue == Value.UNKNOWN)
-			curValue = Value.FALSE;
-		if (inputs[0] == Value.TRUE) {
-			return curValue.not();
-		} else {
-			return curValue;
-		}
-	}
+  @Override
+  protected Value computeValue(Value[] inputs, Value curValue) {
+    if (curValue == Value.UNKNOWN)
+      curValue = Value.FALSE;
+    if (inputs[0] == Value.TRUE) {
+      return curValue.not();
+    } else {
+      return curValue;
+    }
+  }
 
-	@Override
-	protected String getInputName(int index) {
-		return "T";
-	}
+  @Override
+  protected String getInputName(int index) {
+    return "T";
+  }
 
-	@Override
-	public boolean HDLSupportedComponent(String HDLIdentifier,
-			AttributeSet attrs, char Vendor) {
-		if (MyHDLGenerator == null)
-			MyHDLGenerator = new TFFHDLGeneratorFactory();
-		return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
-	}
+  @Override
+  public boolean HDLSupportedComponent(String HDLIdentifier,
+      AttributeSet attrs, char Vendor) {
+    if (MyHDLGenerator == null)
+      MyHDLGenerator = new TFFHDLGeneratorFactory();
+    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  }
 
 }

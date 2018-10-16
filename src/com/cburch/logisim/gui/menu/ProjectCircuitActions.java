@@ -65,268 +65,268 @@ import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.util.SyntaxChecker;
 
 public class ProjectCircuitActions {
-	private static void analyzeError(Project proj, String message) {
-		JOptionPane.showMessageDialog(proj.getFrame(), message,
-				Strings.get("analyzeErrorTitle"), JOptionPane.ERROR_MESSAGE);
-		return;
-	}
+  private static void analyzeError(Project proj, String message) {
+    JOptionPane.showMessageDialog(proj.getFrame(), message,
+        Strings.get("analyzeErrorTitle"), JOptionPane.ERROR_MESSAGE);
+    return;
+  }
 
-	private static void configureAnalyzer(Project proj, Circuit circuit,
-			Analyzer analyzer, Map<Instance, String> pinNames,
-			ArrayList<Var> inputVars, ArrayList<Var> outputVars) {
-		analyzer.getModel().setVariables(inputVars, outputVars);
+  private static void configureAnalyzer(Project proj, Circuit circuit,
+      Analyzer analyzer, Map<Instance, String> pinNames,
+      ArrayList<Var> inputVars, ArrayList<Var> outputVars) {
+    analyzer.getModel().setVariables(inputVars, outputVars);
 
-		// If there are no inputs, we stop with that tab selected
-		if (inputVars.size() == 0) {
-			analyzer.setSelectedTab(Analyzer.INPUTS_TAB);
-			return;
-		}
+    // If there are no inputs, we stop with that tab selected
+    if (inputVars.size() == 0) {
+      analyzer.setSelectedTab(Analyzer.INPUTS_TAB);
+      return;
+    }
 
-		// If there are no outputs, we stop with that tab selected
-		if (outputVars.size() == 0) {
-			analyzer.setSelectedTab(Analyzer.OUTPUTS_TAB);
-			return;
-		}
+    // If there are no outputs, we stop with that tab selected
+    if (outputVars.size() == 0) {
+      analyzer.setSelectedTab(Analyzer.OUTPUTS_TAB);
+      return;
+    }
 
-		// Attempt to show the corresponding expression
-		try {
-			Analyze.computeExpression(analyzer.getModel(), circuit, pinNames);
-			analyzer.setSelectedTab(Analyzer.EXPRESSION_TAB);
-			return;
-		} catch (AnalyzeException ex) {
-			JOptionPane.showMessageDialog(proj.getFrame(), ex.getMessage(),
-					Strings.get("analyzeNoExpressionTitle"),
-					JOptionPane.INFORMATION_MESSAGE);
-		}
+    // Attempt to show the corresponding expression
+    try {
+      Analyze.computeExpression(analyzer.getModel(), circuit, pinNames);
+      analyzer.setSelectedTab(Analyzer.EXPRESSION_TAB);
+      return;
+    } catch (AnalyzeException ex) {
+      JOptionPane.showMessageDialog(proj.getFrame(), ex.getMessage(),
+          Strings.get("analyzeNoExpressionTitle"),
+          JOptionPane.INFORMATION_MESSAGE);
+    }
 
-		// As a backup measure, we compute a truth table.
-		Analyze.computeTable(analyzer.getModel(), proj, circuit, pinNames);
-		analyzer.setSelectedTab(Analyzer.TABLE_TAB);
-	}
+    // As a backup measure, we compute a truth table.
+    Analyze.computeTable(analyzer.getModel(), proj, circuit, pinNames);
+    analyzer.setSelectedTab(Analyzer.TABLE_TAB);
+  }
 
-	public static void doAddCircuit(Project proj) {
-		String name = promptForCircuitName(proj.getFrame(),
-				proj.getLogisimFile(), "");
-		if (name != null) {
-			Circuit circuit = new Circuit(name, proj.getLogisimFile());
-			proj.doAction(LogisimFileActions.addCircuit(circuit));
-			proj.setCurrentCircuit(circuit);
-		}
-	}
+  public static void doAddCircuit(Project proj) {
+    String name = promptForCircuitName(proj.getFrame(),
+        proj.getLogisimFile(), "");
+    if (name != null) {
+      Circuit circuit = new Circuit(name, proj.getLogisimFile());
+      proj.doAction(LogisimFileActions.addCircuit(circuit));
+      proj.setCurrentCircuit(circuit);
+    }
+  }
 
-	public static void doAddVhdl(Project proj) {
-		String name = promptForVhdlName(proj.getFrame(),
-				proj.getLogisimFile(), "");
-		if (name != null) {
-                        VhdlContent content = VhdlContent.create(name, proj.getLogisimFile());
-                        if (content == null)
-                            return;
-			proj.doAction(LogisimFileActions.addVhdl(content));
-                        proj.setCurrentHdlModel(content);
-		}
-	}
+  public static void doAddVhdl(Project proj) {
+    String name = promptForVhdlName(proj.getFrame(),
+        proj.getLogisimFile(), "");
+    if (name != null) {
+      VhdlContent content = VhdlContent.create(name, proj.getLogisimFile());
+      if (content == null)
+        return;
+      proj.doAction(LogisimFileActions.addVhdl(content));
+      proj.setCurrentHdlModel(content);
+    }
+  }
 
-	public static void doImportVhdl(Project proj) {
-		String vhdl = proj.getLogisimFile().getLoader().vhdlImportChooser(proj.getFrame());
-		if (vhdl == null)
-                    return;
-                VhdlContent content = VhdlContent.parse(null, vhdl, proj.getLogisimFile());
-                if (content == null)
-                    return;
-                if (VhdlContent.labelVHDLInvalidNotify(content.getName(), proj.getLogisimFile())) {
-                    return;
-                }
-                proj.doAction(LogisimFileActions.addVhdl(content));
-                proj.setCurrentHdlModel(content);
-	}
+  public static void doImportVhdl(Project proj) {
+    String vhdl = proj.getLogisimFile().getLoader().vhdlImportChooser(proj.getFrame());
+    if (vhdl == null)
+      return;
+    VhdlContent content = VhdlContent.parse(null, vhdl, proj.getLogisimFile());
+    if (content == null)
+      return;
+    if (VhdlContent.labelVHDLInvalidNotify(content.getName(), proj.getLogisimFile())) {
+      return;
+    }
+    proj.doAction(LogisimFileActions.addVhdl(content));
+    proj.setCurrentHdlModel(content);
+  }
 
 
-	public static void doAnalyze(Project proj, Circuit circuit) {
-		Map<Instance, String> pinNames = Analyze.getPinLabels(circuit);
-		ArrayList<Var> inputVars = new ArrayList<Var>();
-		ArrayList<Var> outputVars = new ArrayList<Var>();
-                int numInputs = 0, numOutputs = 0;
-		for (Map.Entry<Instance, String> entry : pinNames.entrySet()) {
-			Instance pin = entry.getKey();
-			boolean isInput = Pin.FACTORY.isInputPin(pin);
-			int width = pin.getAttributeValue(StdAttr.WIDTH).getWidth();
-                        Var v = new Var(entry.getValue(), width);
-                        if (isInput) {
-                                inputVars.add(v);
-                                numInputs += width;
-                        } else {
-                                outputVars.add(v);
-                                numOutputs += width;
-                        }
-		}
-		if (numInputs > AnalyzerModel.MAX_INPUTS) {
-			analyzeError(proj, StringUtil.format(
-					Strings.get("analyzeTooManyInputsError"), ""
-							+ AnalyzerModel.MAX_INPUTS));
-			return;
-		}
-		if (numOutputs > AnalyzerModel.MAX_OUTPUTS) {
-			analyzeError(proj, StringUtil.format(
-					Strings.get("analyzeTooManyOutputsError"), ""
-							+ AnalyzerModel.MAX_OUTPUTS));
-			return;
-		}
+  public static void doAnalyze(Project proj, Circuit circuit) {
+    Map<Instance, String> pinNames = Analyze.getPinLabels(circuit);
+    ArrayList<Var> inputVars = new ArrayList<Var>();
+    ArrayList<Var> outputVars = new ArrayList<Var>();
+    int numInputs = 0, numOutputs = 0;
+    for (Map.Entry<Instance, String> entry : pinNames.entrySet()) {
+      Instance pin = entry.getKey();
+      boolean isInput = Pin.FACTORY.isInputPin(pin);
+      int width = pin.getAttributeValue(StdAttr.WIDTH).getWidth();
+      Var v = new Var(entry.getValue(), width);
+      if (isInput) {
+        inputVars.add(v);
+        numInputs += width;
+      } else {
+        outputVars.add(v);
+        numOutputs += width;
+      }
+    }
+    if (numInputs > AnalyzerModel.MAX_INPUTS) {
+      analyzeError(proj, StringUtil.format(
+            Strings.get("analyzeTooManyInputsError"), ""
+            + AnalyzerModel.MAX_INPUTS));
+      return;
+    }
+    if (numOutputs > AnalyzerModel.MAX_OUTPUTS) {
+      analyzeError(proj, StringUtil.format(
+            Strings.get("analyzeTooManyOutputsError"), ""
+            + AnalyzerModel.MAX_OUTPUTS));
+      return;
+    }
 
-		Analyzer analyzer = AnalyzerManager.getAnalyzer(proj.getFrame());
-		analyzer.getModel().setCurrentCircuit(proj, circuit);
-		configureAnalyzer(proj, circuit, analyzer, pinNames, inputVars, outputVars);
-		if (!analyzer.isVisible())
-			analyzer.setVisible(true);
-		analyzer.toFront();
-	}
+    Analyzer analyzer = AnalyzerManager.getAnalyzer(proj.getFrame());
+    analyzer.getModel().setCurrentCircuit(proj, circuit);
+    configureAnalyzer(proj, circuit, analyzer, pinNames, inputVars, outputVars);
+    if (!analyzer.isVisible())
+      analyzer.setVisible(true);
+    analyzer.toFront();
+  }
 
-	public static void doMoveCircuit(Project proj, Circuit cur, int delta) {
-		AddTool tool = proj.getLogisimFile().getAddTool(cur);
-		if (tool != null) {
-			int oldPos = proj.getLogisimFile().indexOfCircuit(cur);
-			int newPos = oldPos + delta;
-			int toolsCount = proj.getLogisimFile().getTools().size();
-			if (newPos >= 0 && newPos < toolsCount) {
-				proj.doAction(LogisimFileActions.moveCircuit(tool, newPos));
-			}
-		}
-	}
+  public static void doMoveCircuit(Project proj, Circuit cur, int delta) {
+    AddTool tool = proj.getLogisimFile().getAddTool(cur);
+    if (tool != null) {
+      int oldPos = proj.getLogisimFile().indexOfCircuit(cur);
+      int newPos = oldPos + delta;
+      int toolsCount = proj.getLogisimFile().getTools().size();
+      if (newPos >= 0 && newPos < toolsCount) {
+        proj.doAction(LogisimFileActions.moveCircuit(tool, newPos));
+      }
+    }
+  }
 
-	public static void doRemoveCircuit(Project proj, Circuit circuit) {
-		if (proj.getLogisimFile().getCircuits().size() == 1) {
-			JOptionPane.showMessageDialog(proj.getFrame(),
-					Strings.get("circuitRemoveLastError"),
-					Strings.get("circuitRemoveErrorTitle"),
-					JOptionPane.ERROR_MESSAGE);
-		} else if (!proj.getDependencies().canRemove(circuit)) {
-			JOptionPane.showMessageDialog(proj.getFrame(),
-					Strings.get("circuitRemoveUsedError"),
-					Strings.get("circuitRemoveErrorTitle"),
-					JOptionPane.ERROR_MESSAGE);
-		} else {
-			proj.doAction(LogisimFileActions.removeCircuit(circuit));
-		}
-	}
+  public static void doRemoveCircuit(Project proj, Circuit circuit) {
+    if (proj.getLogisimFile().getCircuits().size() == 1) {
+      JOptionPane.showMessageDialog(proj.getFrame(),
+          Strings.get("circuitRemoveLastError"),
+          Strings.get("circuitRemoveErrorTitle"),
+          JOptionPane.ERROR_MESSAGE);
+    } else if (!proj.getDependencies().canRemove(circuit)) {
+      JOptionPane.showMessageDialog(proj.getFrame(),
+          Strings.get("circuitRemoveUsedError"),
+          Strings.get("circuitRemoveErrorTitle"),
+          JOptionPane.ERROR_MESSAGE);
+    } else {
+      proj.doAction(LogisimFileActions.removeCircuit(circuit));
+    }
+  }
 
-	public static void doRemoveVhdl(Project proj, VhdlContent vhdl) {
-		if (!proj.getDependencies().canRemove(vhdl)) {
-			JOptionPane.showMessageDialog(proj.getFrame(),
-					Strings.get("circuitRemoveUsedError"),
-					Strings.get("circuitRemoveErrorTitle"),
-					JOptionPane.ERROR_MESSAGE);
-		} else {
-			proj.doAction(LogisimFileActions.removeVhdl(vhdl));
-		}
-	}
+  public static void doRemoveVhdl(Project proj, VhdlContent vhdl) {
+    if (!proj.getDependencies().canRemove(vhdl)) {
+      JOptionPane.showMessageDialog(proj.getFrame(),
+          Strings.get("circuitRemoveUsedError"),
+          Strings.get("circuitRemoveErrorTitle"),
+          JOptionPane.ERROR_MESSAGE);
+    } else {
+      proj.doAction(LogisimFileActions.removeVhdl(vhdl));
+    }
+  }
 
-	public static void doSetAsMainCircuit(Project proj, Circuit circuit) {
-		proj.doAction(LogisimFileActions.setMainCircuit(circuit));
-	}
+  public static void doSetAsMainCircuit(Project proj, Circuit circuit) {
+    proj.doAction(LogisimFileActions.setMainCircuit(circuit));
+  }
 
-	/**
-	 * Ask the user for the name of the new circuit to create. If the name is
-	 * valid, then it returns it, otherwise it displays an error message and
-	 * returns null.
-	 * 
-	 * @param frame
-	 *            Project's frame
-	 * @param lib
-	 *            Project's logisim file
-	 * @param initialValue
-	 *            Default suggested value (can be empty if no initial value)
-	 */
-	private static String promptForCircuitName(JFrame frame, Library lib,
-			String initialValue) {
-            return promptForNewName(frame, lib, initialValue, false);
-        }
+  /**
+   * Ask the user for the name of the new circuit to create. If the name is
+   * valid, then it returns it, otherwise it displays an error message and
+   * returns null.
+   * 
+   * @param frame
+   *            Project's frame
+   * @param lib
+   *            Project's logisim file
+   * @param initialValue
+   *            Default suggested value (can be empty if no initial value)
+   */
+  private static String promptForCircuitName(JFrame frame, Library lib,
+      String initialValue) {
+    return promptForNewName(frame, lib, initialValue, false);
+  }
 
-	private static String promptForVhdlName(JFrame frame, LogisimFile file,
-			String initialValue) {
-            String name = promptForNewName(frame, file, initialValue, true);
-            if (name == null)
-                return null;
-            if (VhdlContent.labelVHDLInvalidNotify(name, file)) {
-                return null;
-            }
-            return name;
-        }
+  private static String promptForVhdlName(JFrame frame, LogisimFile file,
+      String initialValue) {
+    String name = promptForNewName(frame, file, initialValue, true);
+    if (name == null)
+      return null;
+    if (VhdlContent.labelVHDLInvalidNotify(name, file)) {
+      return null;
+    }
+    return name;
+  }
 
-	private static String promptForNewName(JFrame frame, Library lib,
-			String initialValue, boolean vhdl) {
-                String title, prompt;
-                if (vhdl) {
-                    title = Strings.get("vhdlNameDialogTitle");
-                    prompt = Strings.get("vhdlNamePrompt");
-                } else {
-                    title = Strings.get("circuitNameDialogTitle");
-                    prompt = Strings.get("circuitNamePrompt");
-                }
-		JLabel label = new JLabel(prompt);
-		final JTextField field = new JTextField(15);
-		field.setText(initialValue);
-		JLabel error = new JLabel(" ");
-		GridBagLayout gb = new GridBagLayout();
-		GridBagConstraints gc = new GridBagConstraints();
-		JPanel strut = new JPanel(null);
-		strut.setPreferredSize(new Dimension(
-				3 * field.getPreferredSize().width / 2, 0));
-		JPanel panel = new JPanel(gb);
-		gc.gridx = 0;
-		gc.gridy = GridBagConstraints.RELATIVE;
-		gc.weightx = 1.0;
-		gc.fill = GridBagConstraints.NONE;
-		gc.anchor = GridBagConstraints.LINE_START;
-		gb.setConstraints(label, gc);
-		panel.add(label);
-		gb.setConstraints(field, gc);
-		panel.add(field);
-		gb.setConstraints(error, gc);
-		panel.add(error);
-		gb.setConstraints(strut, gc);
-		panel.add(strut);
-		JOptionPane pane = new JOptionPane(panel, JOptionPane.QUESTION_MESSAGE,
-				JOptionPane.OK_CANCEL_OPTION);
-		pane.setInitialValue(field);
-		JDialog dlog = pane.createDialog(frame,title);
-		dlog.addWindowFocusListener(new WindowFocusListener() {
-			public void windowGainedFocus(WindowEvent arg0) {
-				field.requestFocus();
-			}
+  private static String promptForNewName(JFrame frame, Library lib,
+      String initialValue, boolean vhdl) {
+    String title, prompt;
+    if (vhdl) {
+      title = Strings.get("vhdlNameDialogTitle");
+      prompt = Strings.get("vhdlNamePrompt");
+    } else {
+      title = Strings.get("circuitNameDialogTitle");
+      prompt = Strings.get("circuitNamePrompt");
+    }
+    JLabel label = new JLabel(prompt);
+    final JTextField field = new JTextField(15);
+    field.setText(initialValue);
+    JLabel error = new JLabel(" ");
+    GridBagLayout gb = new GridBagLayout();
+    GridBagConstraints gc = new GridBagConstraints();
+    JPanel strut = new JPanel(null);
+    strut.setPreferredSize(new Dimension(
+          3 * field.getPreferredSize().width / 2, 0));
+    JPanel panel = new JPanel(gb);
+    gc.gridx = 0;
+    gc.gridy = GridBagConstraints.RELATIVE;
+    gc.weightx = 1.0;
+    gc.fill = GridBagConstraints.NONE;
+    gc.anchor = GridBagConstraints.LINE_START;
+    gb.setConstraints(label, gc);
+    panel.add(label);
+    gb.setConstraints(field, gc);
+    panel.add(field);
+    gb.setConstraints(error, gc);
+    panel.add(error);
+    gb.setConstraints(strut, gc);
+    panel.add(strut);
+    JOptionPane pane = new JOptionPane(panel, JOptionPane.QUESTION_MESSAGE,
+        JOptionPane.OK_CANCEL_OPTION);
+    pane.setInitialValue(field);
+    JDialog dlog = pane.createDialog(frame,title);
+    dlog.addWindowFocusListener(new WindowFocusListener() {
+      public void windowGainedFocus(WindowEvent arg0) {
+        field.requestFocus();
+      }
 
-			public void windowLostFocus(WindowEvent arg0) {
-			}
-		});
+      public void windowLostFocus(WindowEvent arg0) {
+      }
+    });
 
-		field.selectAll();
-		dlog.pack();
-		dlog.setVisible(true);
-		field.requestFocusInWindow();
-		Object action = pane.getValue();
-		if (action == null || !(action instanceof Integer)
-				|| ((Integer) action).intValue() != JOptionPane.OK_OPTION) {
-			return null;
-		}
+    field.selectAll();
+    dlog.pack();
+    dlog.setVisible(true);
+    field.requestFocusInWindow();
+    Object action = pane.getValue();
+    if (action == null || !(action instanceof Integer)
+        || ((Integer) action).intValue() != JOptionPane.OK_OPTION) {
+      return null;
+    }
 
-		String name = field.getText().trim();
-		if (name.equals("")) {
-			error.setText(Strings.get("circuitNameMissingError"));
-		} else if (!SyntaxChecker.isVariableNameAcceptable(name)) {
-			error.setText(Strings.get("circuitNameInvalidName"));
-		} else {
-			if (lib.getTool(name) == null) {
-				return name;
-			} else {
-				error.setText(Strings.get("circuitNameDuplicateError"));
-			}
-		}
+    String name = field.getText().trim();
+    if (name.equals("")) {
+      error.setText(Strings.get("circuitNameMissingError"));
+    } else if (!SyntaxChecker.isVariableNameAcceptable(name)) {
+      error.setText(Strings.get("circuitNameInvalidName"));
+    } else {
+      if (lib.getTool(name) == null) {
+        return name;
+      } else {
+        error.setText(Strings.get("circuitNameDuplicateError"));
+      }
+    }
 
-		/* If the name is invalid, display the error message */
-		JOptionPane.showMessageDialog(frame, error,
-				Strings.get("analyzeErrorTitle"), JOptionPane.ERROR_MESSAGE);
+    /* If the name is invalid, display the error message */
+    JOptionPane.showMessageDialog(frame, error,
+        Strings.get("analyzeErrorTitle"), JOptionPane.ERROR_MESSAGE);
 
-		return null;
-	}
+    return null;
+  }
 
-	private ProjectCircuitActions() {
-	}
+  private ProjectCircuitActions() {
+  }
 }

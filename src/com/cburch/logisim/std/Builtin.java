@@ -47,31 +47,31 @@ import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 
 public class Builtin extends Library {
-	private List<Library> libraries = null;
+  private List<Library> libraries = null;
 
-	public Builtin() {
-		libraries = Arrays.asList(new Library[] { new Base(), new Gates(),
-				new Wiring(), new Plexers(), new Arithmetic(), new Memory(),
-				new Io(),  new Tcl(), new BFHPraktika(), });
-	}
+  public Builtin() {
+    libraries = Arrays.asList(new Library[] { new Base(), new Gates(),
+      new Wiring(), new Plexers(), new Arithmetic(), new Memory(),
+      new Io(),  new Tcl(), new BFHPraktika(), });
+  }
 
-	@Override
-	public String getDisplayName() {
-		return Strings.get("builtinLibrary");
-	}
+  @Override
+  public String getDisplayName() {
+    return Strings.get("builtinLibrary");
+  }
 
-	@Override
-	public List<Library> getLibraries() {
-		return libraries;
-	}
+  @Override
+  public List<Library> getLibraries() {
+    return libraries;
+  }
 
-	@Override
-	public String getName() {
-		return "Builtin";
-	}
+  @Override
+  public String getName() {
+    return "Builtin";
+  }
 
-	@Override
-	public List<Tool> getTools() {
-		return Collections.emptyList();
-	}
+  @Override
+  public List<Tool> getTools() {
+    return Collections.emptyList();
+  }
 }

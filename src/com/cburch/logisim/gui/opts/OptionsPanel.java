@@ -39,38 +39,38 @@ import com.cburch.logisim.file.Options;
 import com.cburch.logisim.proj.Project;
 
 abstract class OptionsPanel extends JPanel {
-	private static final long serialVersionUID = 1L;
-	private OptionsFrame optionsFrame;
+  private static final long serialVersionUID = 1L;
+  private OptionsFrame optionsFrame;
 
-	public OptionsPanel(OptionsFrame frame) {
-		super();
-		this.optionsFrame = frame;
-	}
+  public OptionsPanel(OptionsFrame frame) {
+    super();
+    this.optionsFrame = frame;
+  }
 
-	public OptionsPanel(OptionsFrame frame, LayoutManager manager) {
-		super(manager);
-		this.optionsFrame = frame;
-	}
+  public OptionsPanel(OptionsFrame frame, LayoutManager manager) {
+    super(manager);
+    this.optionsFrame = frame;
+  }
 
-	public abstract String getHelpText();
+  public abstract String getHelpText();
 
-	LogisimFile getLogisimFile() {
-		return optionsFrame.getLogisimFile();
-	}
+  LogisimFile getLogisimFile() {
+    return optionsFrame.getLogisimFile();
+  }
 
-	Options getOptions() {
-		return optionsFrame.getOptions();
-	}
+  Options getOptions() {
+    return optionsFrame.getOptions();
+  }
 
-	OptionsFrame getOptionsFrame() {
-		return optionsFrame;
-	}
+  OptionsFrame getOptionsFrame() {
+    return optionsFrame;
+  }
 
-	Project getProject() {
-		return optionsFrame.getProject();
-	}
+  Project getProject() {
+    return optionsFrame.getProject();
+  }
 
-	public abstract String getTitle();
+  public abstract String getTitle();
 
-	public abstract void localeChanged();
+  public abstract void localeChanged();
 }

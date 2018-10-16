@@ -43,80 +43,80 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.StdAttr;
 
 public class RegisterPoker extends InstancePoker {
-	private int initValue;
-	private int curValue;
+  private int initValue;
+  private int curValue;
 
-	@Override
-	public boolean init(InstanceState state, MouseEvent e) {
-		RegisterData data = (RegisterData) state.getData();
-		if (data == null) {
-			data = new RegisterData();
-			state.setData(data);
-		}
-		initValue = data.value;
-		curValue = initValue;
-		return true;
-	}
+  @Override
+  public boolean init(InstanceState state, MouseEvent e) {
+    RegisterData data = (RegisterData) state.getData();
+    if (data == null) {
+      data = new RegisterData();
+      state.setData(data);
+    }
+    initValue = data.value;
+    curValue = initValue;
+    return true;
+  }
 
-	@Override
-	public void keyTyped(InstanceState state, KeyEvent e) {
-		int val = Character.digit(e.getKeyChar(), 16);
-		if (val < 0)
-			return;
+  @Override
+  public void keyTyped(InstanceState state, KeyEvent e) {
+    int val = Character.digit(e.getKeyChar(), 16);
+    if (val < 0)
+      return;
 
-		BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
-		if (dataWidth == null)
-			dataWidth = BitWidth.create(8);
-		curValue = (curValue * 16 + val) & dataWidth.getMask();
-		RegisterData data = (RegisterData) state.getData();
-		data.value = curValue;
+    BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
+    if (dataWidth == null)
+      dataWidth = BitWidth.create(8);
+    curValue = (curValue * 16 + val) & dataWidth.getMask();
+    RegisterData data = (RegisterData) state.getData();
+    data.value = curValue;
 
-		state.fireInvalidated();
-	}
+    state.fireInvalidated();
+  }
 
-	@Override
-	public void keyPressed(InstanceState state, KeyEvent e) {
-		BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
-		if (dataWidth == null)
-			dataWidth = BitWidth.create(8);
-		if (e.getKeyCode() == KeyEvent.VK_UP) {
-			int maxVal = dataWidth.getMask();
-			if (curValue != maxVal) {
-				curValue = curValue + 1;
-				RegisterData data = (RegisterData) state.getData();
-				data.value = curValue;
-				state.fireInvalidated();
-			}
-		} else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-			if (curValue != 0) {
-				curValue = curValue - 1;
-				RegisterData data = (RegisterData) state.getData();
-				data.value = curValue;
-				state.fireInvalidated();
-			}
-		}
-	}
+  @Override
+  public void keyPressed(InstanceState state, KeyEvent e) {
+    BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
+    if (dataWidth == null)
+      dataWidth = BitWidth.create(8);
+    if (e.getKeyCode() == KeyEvent.VK_UP) {
+      int maxVal = dataWidth.getMask();
+      if (curValue != maxVal) {
+        curValue = curValue + 1;
+        RegisterData data = (RegisterData) state.getData();
+        data.value = curValue;
+        state.fireInvalidated();
+      }
+    } else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+      if (curValue != 0) {
+        curValue = curValue - 1;
+        RegisterData data = (RegisterData) state.getData();
+        data.value = curValue;
+        state.fireInvalidated();
+      }
+    }
+  }
 
-	@Override
-	public void paint(InstancePainter painter) {
-		Bounds bds = painter.getBounds();
-		BitWidth dataWidth = painter.getAttributeValue(StdAttr.WIDTH);
-		int width = dataWidth == null ? 8 : dataWidth.getWidth();
-		int len = (width + 3) / 4;
+  @Override
+  public void paint(InstancePainter painter) {
+    Bounds bds = painter.getBounds();
+    BitWidth dataWidth = painter.getAttributeValue(StdAttr.WIDTH);
+    int width = dataWidth == null ? 8 : dataWidth.getWidth();
+    int len = (width + 3) / 4;
 
-		Graphics g = painter.getGraphics();
-		g.setColor(Color.RED);
-	    if (painter.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
-			if (len > 4) {
-				g.drawRect(bds.getX(), bds.getY() + 3, bds.getWidth(), 25);
-			} else {
-				int wid = 7 * len + 2;
-				g.drawRect(bds.getX() + (bds.getWidth() - wid) / 2, bds.getY() + 4, wid, 15);
-			}
-		} else {
-			int wid = 7 * len + 2;
-			g.drawRect(bds.getX() + (bds.getWidth() - wid) / 2, bds.getY(), wid, 16);
-		}
-		g.setColor(Color.BLACK);
-	}
+    Graphics g = painter.getGraphics();
+    g.setColor(Color.RED);
+    if (painter.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
+      if (len > 4) {
+        g.drawRect(bds.getX(), bds.getY() + 3, bds.getWidth(), 25);
+      } else {
+        int wid = 7 * len + 2;
+        g.drawRect(bds.getX() + (bds.getWidth() - wid) / 2, bds.getY() + 4, wid, 15);
+      }
+    } else {
+      int wid = 7 * len + 2;
+      g.drawRect(bds.getX() + (bds.getWidth() - wid) / 2, bds.getY(), wid, 16);
+    }
+    g.setColor(Color.BLACK);
+  }
 }

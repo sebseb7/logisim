@@ -34,60 +34,60 @@ import java.util.Iterator;
 import java.util.ArrayList;
 
 public class Var implements Iterable<String> {
-	public final int width;
-        public final String name;
+  public final int width;
+  public final String name;
 
-	public Var(String n, int w) {
-                name = n;
-                width = w;
-        }
+  public Var(String n, int w) {
+    name = n;
+    width = w;
+  }
 
-        @Override
-	public boolean equals(Object o) {
-                if (!(o instanceof Var))
-                        return false;
-                Var other = (Var)o;
-                return (other.name.equals(this.name) && other.width == this.width);
-        }
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof Var))
+      return false;
+    Var other = (Var)o;
+    return (other.name.equals(this.name) && other.width == this.width);
+  }
 
-        @Override
-        public int hashCode() {
-                return name.hashCode() + width;
-        }
+  @Override
+  public int hashCode() {
+    return name.hashCode() + width;
+  }
 
-        @Override
-        public String toString() {
-                if (width > 1)
-                        return name + "[" +(width-1) + "..0]";
-                else
-                        return name;
-        }
+  @Override
+  public String toString() {
+    if (width > 1)
+      return name + "[" +(width-1) + "..0]";
+    else
+      return name;
+  }
 
-        public String bitName(int b) {
-                if (b >= width) {
-                        throw new IllegalArgumentException("Can't access bit " + b + " of " + width);
-                }
-                if (width > 1)
-                        return name + ":" + b;
-                else
-                        return name;
-        }
+  public String bitName(int b) {
+    if (b >= width) {
+      throw new IllegalArgumentException("Can't access bit " + b + " of " + width);
+    }
+    if (width > 1)
+      return name + ":" + b;
+    else
+      return name;
+  }
 
-        public Iterator<String> iterator() {
-                return new Iterator<String>() {
-                        int b = width - 1;
-                        @Override
-                        public boolean hasNext() {
-                                return (b >= 0);
-                        }
-                        @Override
-                        public String next() {
-                                return bitName(b--);
-                        }
-                        @Override
-                        public void remove() {
-                                throw new UnsupportedOperationException();
-                        }
-                };
-        }
+  public Iterator<String> iterator() {
+    return new Iterator<String>() {
+      int b = width - 1;
+      @Override
+      public boolean hasNext() {
+        return (b >= 0);
+      }
+      @Override
+      public String next() {
+        return bitName(b--);
+      }
+      @Override
+      public void remove() {
+        throw new UnsupportedOperationException();
+      }
+    };
+  }
 }

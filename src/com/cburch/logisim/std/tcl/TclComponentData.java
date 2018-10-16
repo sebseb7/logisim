@@ -43,99 +43,99 @@ import com.cburch.logisim.data.Value;
  */
 public class TclComponentData implements InstanceData {
 
-	/**
-	 * Retrieves the state associated with this Tcl console in the circuit
-	 * state, generating the state if necessary.
-	 */
-	public static TclComponentData get(InstanceState state) {
-		TclComponentData ret = (TclComponentData) state.getData();
-		if (ret == null) {
-			// If it doesn't yet exist, then we'll set it up with our default
-			// values and put it into the circuit state so it can be retrieved
-			// in future propagations.
-			ret = new TclComponentData(state);
-			state.setData(ret);
-		}
-		return ret;
-	}
+  /**
+   * Retrieves the state associated with this Tcl console in the circuit
+   * state, generating the state if necessary.
+   */
+  public static TclComponentData get(InstanceState state) {
+    TclComponentData ret = (TclComponentData) state.getData();
+    if (ret == null) {
+      // If it doesn't yet exist, then we'll set it up with our default
+      // values and put it into the circuit state so it can be retrieved
+      // in future propagations.
+      ret = new TclComponentData(state);
+      state.setData(ret);
+    }
+    return ret;
+  }
 
-	private SocketClient tclClient;
+  private SocketClient tclClient;
 
-	private TclWrapperListenerThread tclWrapperListenerThread;
+  private TclWrapperListenerThread tclWrapperListenerThread;
 
-	private TclWrapper tclWrapper;
+  private TclWrapper tclWrapper;
 
-	private InstanceState instanceState;
+  private InstanceState instanceState;
 
-        private Value prevClockValue = Value.UNKNOWN;
+  private Value prevClockValue = Value.UNKNOWN;
 
-	TclComponentData(InstanceState state) {
+  TclComponentData(InstanceState state) {
 
-		instanceState = state;
+    instanceState = state;
 
-		tclClient = new SocketClient();
-		tclWrapper = new TclWrapper(this);
-	}
+    tclClient = new SocketClient();
+    tclWrapper = new TclWrapper(this);
+  }
 
-	@Override
-	public Object clone() {
-		return null;
-	}
+  @Override
+  public Object clone() {
+    return null;
+  }
 
-	public InstanceState getState() {
-		return instanceState;
-	}
+  public InstanceState getState() {
+    return instanceState;
+  }
 
-	public SocketClient getTclClient() {
-		return tclClient;
-	}
+  public SocketClient getTclClient() {
+    return tclClient;
+  }
 
-	public TclWrapper getTclWrapper() {
-		return tclWrapper;
-	}
+  public TclWrapper getTclWrapper() {
+    return tclWrapper;
+  }
 
-	public boolean isConnected() {
-		return tclClient.isConnected();
-	}
-        
-        public boolean isNewTick() {
-                boolean newTick = false;
-                boolean found   = false;
+  public boolean isConnected() {
+    return tclClient.isConnected();
+  }
 
-                for (Port p : instanceState.getInstance().getPorts()) {
-                    if (p.getToolTip().equals("sysclk_i")) {
-                        Value val = instanceState.getPortValue(instanceState.getPortIndex(p));
-                        newTick = (val != prevClockValue);
-                        if (newTick) {
-                            prevClockValue = val;
-                        }
-                        found = true;
-                        break;
-                    }
-                }
-                
-                if (!found) {
-                    throw new UnsupportedOperationException("Could not find the 'sysclock' in the TCL component");
-                }
+  public boolean isNewTick() {
+    boolean newTick = false;
+    boolean found   = false;
 
-                return newTick;
+    for (Port p : instanceState.getInstance().getPorts()) {
+      if (p.getToolTip().equals("sysclk_i")) {
+        Value val = instanceState.getPortValue(instanceState.getPortIndex(p));
+        newTick = (val != prevClockValue);
+        if (newTick) {
+          prevClockValue = val;
         }
+        found = true;
+        break;
+      }
+    }
 
-	public String receive() {
-		return tclWrapperListenerThread.receive();
-	}
+    if (!found) {
+      throw new UnsupportedOperationException("Could not find the 'sysclock' in the TCL component");
+    }
 
-	public void send(String message) {
-		tclClient.send(message);
-	}
+    return newTick;
+  }
 
-	public void tclWrapperStartCallback() {
+  public String receive() {
+    return tclWrapperListenerThread.receive();
+  }
 
-		tclClient.start();
+  public void send(String message) {
+    tclClient.send(message);
+  }
 
-		tclWrapperListenerThread = new TclWrapperListenerThread(tclClient,
-				((InstanceStateImpl) instanceState).getCircuitState()
-						.getProject().getSimulator());
-		tclWrapperListenerThread.start();
-	}
+  public void tclWrapperStartCallback() {
+
+    tclClient.start();
+
+    tclWrapperListenerThread = new TclWrapperListenerThread(tclClient,
+        ((InstanceStateImpl) instanceState).getCircuitState()
+        .getProject().getSimulator());
+    tclWrapperListenerThread.start();
+  }
 }

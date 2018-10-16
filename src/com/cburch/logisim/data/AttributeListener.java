@@ -31,7 +31,7 @@
 package com.cburch.logisim.data;
 
 public interface AttributeListener {
-	public void attributeListChanged(AttributeEvent e);
+  public void attributeListChanged(AttributeEvent e);
 
-	public void attributeValueChanged(AttributeEvent e);
+  public void attributeValueChanged(AttributeEvent e);
 }

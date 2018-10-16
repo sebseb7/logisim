@@ -52,126 +52,124 @@ import com.cburch.logisim.util.GraphicsUtil;
 
 public class Divider extends InstanceFactory {
 
-	public static final AttributeOption SIGNED_OPTION = Comparator.SIGNED_OPTION;
-	public static final AttributeOption UNSIGNED_OPTION = Comparator.UNSIGNED_OPTION;
-	public static final Attribute<AttributeOption> MODE_ATTR = Comparator.MODE_ATTRIBUTE;
+  public static final AttributeOption SIGNED_OPTION = Comparator.SIGNED_OPTION;
+  public static final AttributeOption UNSIGNED_OPTION = Comparator.UNSIGNED_OPTION;
+  public static final Attribute<AttributeOption> MODE_ATTR = Comparator.MODE_ATTRIBUTE;
 
-	static Value[] computeResult(BitWidth width, Value a, Value b, Value upper, boolean unsigned) {
-		int w = width.getWidth();
-		if (upper == Value.NIL || upper.isUnknown())
-			upper = Value.createKnown(width, 0);
-		if (a.isFullyDefined() && b.isFullyDefined() && upper.isFullyDefined()) {
-			BigInteger uu = BigInteger.valueOf(Multiplier.extend(w, upper.toIntValue(), unsigned));
-			BigInteger aa = BigInteger.valueOf(Multiplier.extend(w, a.toIntValue(), unsigned));
-			BigInteger bb = BigInteger.valueOf(Multiplier.extend(w, b.toIntValue(), unsigned));
+  static Value[] computeResult(BitWidth width, Value a, Value b, Value upper, boolean unsigned) {
+    int w = width.getWidth();
+    if (upper == Value.NIL || upper.isUnknown())
+      upper = Value.createKnown(width, 0);
+    if (a.isFullyDefined() && b.isFullyDefined() && upper.isFullyDefined()) {
+      BigInteger uu = BigInteger.valueOf(Multiplier.extend(w, upper.toIntValue(), unsigned));
+      BigInteger aa = BigInteger.valueOf(Multiplier.extend(w, a.toIntValue(), unsigned));
+      BigInteger bb = BigInteger.valueOf(Multiplier.extend(w, b.toIntValue(), unsigned));
 
-			BigInteger num = uu.shiftLeft(w).or(aa);
-			BigInteger den = bb.equals(BigInteger.ZERO) ? BigInteger.valueOf(1) : bb;
+      BigInteger num = uu.shiftLeft(w).or(aa);
+      BigInteger den = bb.equals(BigInteger.ZERO) ? BigInteger.valueOf(1) : bb;
 
-			BigInteger res[] = num.divideAndRemainder(den);
-			long mask = (1L << w) - 1;
-			int result = res[0].and(BigInteger.valueOf(mask)).intValue();
-			int rem = res[1].and(BigInteger.valueOf(mask)).intValue();
-			/*
-			if (rem < 0) {
-				if (den >= 0) {
-					rem += den;
-					result--;
-				} else {
-					rem -= den;
-					result++;
-				}
-			}
-			*/
-			return new Value[] { Value.createKnown(width, result),
-					Value.createKnown(width, rem) };
-		} else if (a.isErrorValue() || b.isErrorValue() || upper.isErrorValue()) {
-			return new Value[] { Value.createError(width),
-					Value.createError(width) };
-		} else {
-			return new Value[] { Value.createUnknown(width),
-					Value.createUnknown(width) };
-		}
-	}
+      BigInteger res[] = num.divideAndRemainder(den);
+      long mask = (1L << w) - 1;
+      int result = res[0].and(BigInteger.valueOf(mask)).intValue();
+      int rem = res[1].and(BigInteger.valueOf(mask)).intValue();
+      // if (rem < 0) {
+      //   if (den >= 0) {
+      //     rem += den;
+      //     result--;
+      //   } else {
+      //     rem -= den;
+      //     result++;
+      //   }
+      // }
+      return new Value[] { Value.createKnown(width, result),
+        Value.createKnown(width, rem) };
+    } else if (a.isErrorValue() || b.isErrorValue() || upper.isErrorValue()) {
+      return new Value[] { Value.createError(width),
+        Value.createError(width) };
+    } else {
+      return new Value[] { Value.createUnknown(width),
+        Value.createUnknown(width) };
+    }
+  }
 
-	static final int PER_DELAY = 1;
-	public static final int IN0 = 0;
-	public static final int IN1 = 1;
-	public static final int OUT = 2;
-	public static final int UPPER = 3;
+  static final int PER_DELAY = 1;
+  public static final int IN0 = 0;
+  public static final int IN1 = 1;
+  public static final int OUT = 2;
+  public static final int UPPER = 3;
 
-	public static final int REM = 4;
+  public static final int REM = 4;
 
-	public Divider() {
-		super("Divider", Strings.getter("dividerComponent"));
-		setAttributes(new Attribute[] { StdAttr.WIDTH, MODE_ATTR },
-				new Object[] { BitWidth.create(8), SIGNED_OPTION });
-		setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
-		setOffsetBounds(Bounds.create(-40, -20, 40, 40));
-		setIconName("divider.gif");
+  public Divider() {
+    super("Divider", Strings.getter("dividerComponent"));
+    setAttributes(new Attribute[] { StdAttr.WIDTH, MODE_ATTR },
+        new Object[] { BitWidth.create(8), SIGNED_OPTION });
+    setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
+    setOffsetBounds(Bounds.create(-40, -20, 40, 40));
+    setIconName("divider.gif");
 
-		Port[] ps = new Port[5];
-		ps[IN0] = new Port(-40, -10, Port.INPUT, StdAttr.WIDTH);
-		ps[IN1] = new Port(-40, 10, Port.INPUT, StdAttr.WIDTH);
-		ps[OUT] = new Port(0, 0, Port.OUTPUT, StdAttr.WIDTH);
-		ps[UPPER] = new Port(-20, -20, Port.INPUT, StdAttr.WIDTH);
-		ps[REM] = new Port(-20, 20, Port.OUTPUT, StdAttr.WIDTH);
-		ps[IN0].setToolTip(Strings.getter("dividerDividendLowerTip"));
-		ps[IN1].setToolTip(Strings.getter("dividerDivisorTip"));
-		ps[OUT].setToolTip(Strings.getter("dividerOutputTip"));
-		ps[UPPER].setToolTip(Strings.getter("dividerDividendUpperTip"));
-		ps[REM].setToolTip(Strings.getter("dividerRemainderTip"));
-		setPorts(ps);
-	}
+    Port[] ps = new Port[5];
+    ps[IN0] = new Port(-40, -10, Port.INPUT, StdAttr.WIDTH);
+    ps[IN1] = new Port(-40, 10, Port.INPUT, StdAttr.WIDTH);
+    ps[OUT] = new Port(0, 0, Port.OUTPUT, StdAttr.WIDTH);
+    ps[UPPER] = new Port(-20, -20, Port.INPUT, StdAttr.WIDTH);
+    ps[REM] = new Port(-20, 20, Port.OUTPUT, StdAttr.WIDTH);
+    ps[IN0].setToolTip(Strings.getter("dividerDividendLowerTip"));
+    ps[IN1].setToolTip(Strings.getter("dividerDivisorTip"));
+    ps[OUT].setToolTip(Strings.getter("dividerOutputTip"));
+    ps[UPPER].setToolTip(Strings.getter("dividerDividendUpperTip"));
+    ps[REM].setToolTip(Strings.getter("dividerRemainderTip"));
+    setPorts(ps);
+  }
 
-	@Override
-	public boolean HDLSupportedComponent(String HDLIdentifier,
-			AttributeSet attrs, char Vendor) {
-		if (MyHDLGenerator == null)
-			MyHDLGenerator = new DividerHDLGeneratorFactory();
-		return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
-	}
+  @Override
+  public boolean HDLSupportedComponent(String HDLIdentifier,
+      AttributeSet attrs, char Vendor) {
+    if (MyHDLGenerator == null)
+      MyHDLGenerator = new DividerHDLGeneratorFactory();
+    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  }
 
-	@Override
-	public void paintInstance(InstancePainter painter) {
-		Graphics g = painter.getGraphics();
-		painter.drawBounds();
+  @Override
+  public void paintInstance(InstancePainter painter) {
+    Graphics g = painter.getGraphics();
+    painter.drawBounds();
 
-		g.setColor(Color.GRAY);
-		painter.drawPort(IN0);
-		painter.drawPort(IN1);
-		painter.drawPort(OUT);
-		painter.drawPort(UPPER, Strings.get("dividerUpperInput"),
-				Direction.NORTH);
-		painter.drawPort(REM, Strings.get("dividerRemainderOutput"),
-				Direction.SOUTH);
+    g.setColor(Color.GRAY);
+    painter.drawPort(IN0);
+    painter.drawPort(IN1);
+    painter.drawPort(OUT);
+    painter.drawPort(UPPER, Strings.get("dividerUpperInput"),
+        Direction.NORTH);
+    painter.drawPort(REM, Strings.get("dividerRemainderOutput"),
+        Direction.SOUTH);
 
-		Location loc = painter.getLocation();
-		int x = loc.getX();
-		int y = loc.getY();
-		GraphicsUtil.switchToWidth(g, 2);
-		g.setColor(Color.BLACK);
-		g.fillOval(x - 12, y - 7, 4, 4);
-		g.drawLine(x - 15, y, x - 5, y);
-		g.fillOval(x - 12, y + 3, 4, 4);
-		GraphicsUtil.switchToWidth(g, 1);
-	}
+    Location loc = painter.getLocation();
+    int x = loc.getX();
+    int y = loc.getY();
+    GraphicsUtil.switchToWidth(g, 2);
+    g.setColor(Color.BLACK);
+    g.fillOval(x - 12, y - 7, 4, 4);
+    g.drawLine(x - 15, y, x - 5, y);
+    g.fillOval(x - 12, y + 3, 4, 4);
+    GraphicsUtil.switchToWidth(g, 1);
+  }
 
-	@Override
-	public void propagate(InstanceState state) {
-		// get attributes
-		BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
-		boolean unsigned = state.getAttributeValue(MODE_ATTR).equals(UNSIGNED_OPTION);
+  @Override
+  public void propagate(InstanceState state) {
+    // get attributes
+    BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
+    boolean unsigned = state.getAttributeValue(MODE_ATTR).equals(UNSIGNED_OPTION);
 
-		// compute outputs
-		Value a = state.getPortValue(IN0);
-		Value b = state.getPortValue(IN1);
-		Value upper = state.getPortValue(UPPER);
-		Value[] outs = computeResult(dataWidth, a, b, upper, unsigned);
+    // compute outputs
+    Value a = state.getPortValue(IN0);
+    Value b = state.getPortValue(IN1);
+    Value upper = state.getPortValue(UPPER);
+    Value[] outs = computeResult(dataWidth, a, b, upper, unsigned);
 
-		// propagate them
-		int delay = dataWidth.getWidth() * (dataWidth.getWidth() + 2) * PER_DELAY;
-		state.setPort(OUT, outs[0], delay);
-		state.setPort(REM, outs[1], delay);
-	}
+    // propagate them
+    int delay = dataWidth.getWidth() * (dataWidth.getWidth() + 2) * PER_DELAY;
+    state.setPort(OUT, outs[0], delay);
+    state.setPort(REM, outs[1], delay);
+  }
 }

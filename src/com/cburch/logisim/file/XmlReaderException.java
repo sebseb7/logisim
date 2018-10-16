@@ -34,23 +34,23 @@ import java.util.Collections;
 import java.util.List;
 
 class XmlReaderException extends Exception {
-	private static final long serialVersionUID = 1L;
-	private List<String> messages;
+  private static final long serialVersionUID = 1L;
+  private List<String> messages;
 
-	public XmlReaderException(List<String> messages) {
-		this.messages = messages;
-	}
+  public XmlReaderException(List<String> messages) {
+    this.messages = messages;
+  }
 
-	public XmlReaderException(String message) {
-		this(Collections.singletonList(message));
-	}
+  public XmlReaderException(String message) {
+    this(Collections.singletonList(message));
+  }
 
-	@Override
-	public String getMessage() {
-		return messages.get(0);
-	}
+  @Override
+  public String getMessage() {
+    return messages.get(0);
+  }
 
-	public List<String> getMessages() {
-		return messages;
-	}
+  public List<String> getMessages() {
+    return messages;
+  }
 }

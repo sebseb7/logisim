@@ -31,17 +31,17 @@
 package com.cburch.logisim.util;
 
 class Strings {
-	public static String get(String key) {
-		return source.get(key);
-	}
+  public static String get(String key) {
+    return source.get(key);
+  }
 
-	public static LocaleManager getLocaleManager() {
-		return source;
-	}
+  public static LocaleManager getLocaleManager() {
+    return source;
+  }
 
-	public static StringGetter getter(String key) {
-		return source.getter(key);
-	}
+  public static StringGetter getter(String key) {
+    return source.getter(key);
+  }
 
-	static LocaleManager source = new LocaleManager("resources/logisim", "util");
+  static LocaleManager source = new LocaleManager("resources/logisim", "util");
 }

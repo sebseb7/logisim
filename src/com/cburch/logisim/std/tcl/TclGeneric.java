@@ -59,157 +59,157 @@ import com.cburch.logisim.util.StringUtil;
  */
 public class TclGeneric extends TclComponent {
 
-	static class ContentAttribute extends Attribute<VhdlContent> {
+  static class ContentAttribute extends Attribute<VhdlContent> {
 
-		public ContentAttribute() {
-			super("content", Strings.getter("tclInterfaceDefinition"));
-		}
+    public ContentAttribute() {
+      super("content", Strings.getter("tclInterfaceDefinition"));
+    }
 
-		@Override
-		public java.awt.Component getCellEditor(Window source, VhdlContent value) {
-			Project proj = source instanceof com.cburch.logisim.gui.main.Frame ? ((com.cburch.logisim.gui.main.Frame) source)
-					.getProject() : null;
-			return TclGenericAttributes.getContentEditor(source, value, proj);
-		}
+    @Override
+    public java.awt.Component getCellEditor(Window source, VhdlContent value) {
+      Project proj = source instanceof com.cburch.logisim.gui.main.Frame ? ((com.cburch.logisim.gui.main.Frame) source)
+          .getProject() : null;
+      return TclGenericAttributes.getContentEditor(source, value, proj);
+    }
 
-		@Override
-		public VhdlContent parse(String value) {
-			return VhdlContent.parse(null, value, null /* todo: get project file */);
-		}
+    @Override
+    public VhdlContent parse(String value) {
+      return VhdlContent.parse(null, value, null /* todo: get project file */);
+    }
 
-		@Override
-		public String toDisplayString(VhdlContent value) {
-			return Strings.get("tclInterfaceDefinitionValue");
-		}
+    @Override
+    public String toDisplayString(VhdlContent value) {
+      return Strings.get("tclInterfaceDefinitionValue");
+    }
 
-		@Override
-		public String toStandardString(VhdlContent value) {
-			return value.getContent();
-		}
-	}
+    @Override
+    public String toStandardString(VhdlContent value) {
+      return value.getContent();
+    }
+  }
 
-	static class TclGenericListener implements HdlModelListener {
+  static class TclGenericListener implements HdlModelListener {
 
-		Instance instance;
+    Instance instance;
 
-		TclGenericListener(Instance instance) {
-			this.instance = instance;
-		}
+    TclGenericListener(Instance instance) {
+      this.instance = instance;
+    }
 
-		@Override
-		public void contentSet(HdlModel source) {
-			instance.fireInvalidated();
-			instance.recomputeBounds();
-		}
-                @Override
-                public void aboutToSave(HdlModel source) { }
-                @Override
-                public void displayChanged(HdlModel source) { }
-                @Override
-                public void appearanceChanged(HdlModel source) { }
-	}
+    @Override
+    public void contentSet(HdlModel source) {
+      instance.fireInvalidated();
+      instance.recomputeBounds();
+    }
+    @Override
+    public void aboutToSave(HdlModel source) { }
+    @Override
+    public void displayChanged(HdlModel source) { }
+    @Override
+    public void appearanceChanged(HdlModel source) { }
+  }
 
-	static final Attribute<VhdlContent> CONTENT_ATTR = new ContentAttribute();
+  static final Attribute<VhdlContent> CONTENT_ATTR = new ContentAttribute();
 
-	private WeakHashMap<Instance, TclGenericListener> contentListeners;
+  private WeakHashMap<Instance, TclGenericListener> contentListeners;
 
-	public TclGeneric() {
-		super("TclGeneric", Strings.getter("tclGeneric"));
+  public TclGeneric() {
+    super("TclGeneric", Strings.getter("tclGeneric"));
 
-		contentListeners = new WeakHashMap<Instance, TclGenericListener>();
-	}
+    contentListeners = new WeakHashMap<Instance, TclGenericListener>();
+  }
 
-	@Override
-	protected void configureNewInstance(Instance instance) {
-		VhdlContent content = instance.getAttributeValue(CONTENT_ATTR);
-		TclGenericListener listener = new TclGenericListener(instance);
+  @Override
+  protected void configureNewInstance(Instance instance) {
+    VhdlContent content = instance.getAttributeValue(CONTENT_ATTR);
+    TclGenericListener listener = new TclGenericListener(instance);
 
-		contentListeners.put(instance, listener);
-		content.addHdlModelListener(listener);
+    contentListeners.put(instance, listener);
+    content.addHdlModelListener(listener);
 
-		instance.addAttributeListener();
-		updatePorts(instance);
-	}
+    instance.addAttributeListener();
+    updatePorts(instance);
+  }
 
-	@Override
-	public AttributeSet createAttributeSet() {
-		return new TclGenericAttributes();
-	}
+  @Override
+  public AttributeSet createAttributeSet() {
+    return new TclGenericAttributes();
+  }
 
-	@Override
-	public String getDisplayName() {
-		return Strings.get("tclGeneric");
-	}
+  @Override
+  public String getDisplayName() {
+    return Strings.get("tclGeneric");
+  }
 
-	@Override
-	public Bounds getOffsetBounds(AttributeSet attrs) {
-		VhdlContent content = attrs.getValue(CONTENT_ATTR);
-		int nbInputs = 1; // content.getInputsNumber(); // FIXME (kwalsh)
-		int nbOutputs = 1; // content.getOutputsNumber(); // FIXME(kwalsh)
+  @Override
+  public Bounds getOffsetBounds(AttributeSet attrs) {
+    VhdlContent content = attrs.getValue(CONTENT_ATTR);
+    int nbInputs = 1; // content.getInputsNumber(); // FIXME (kwalsh)
+    int nbOutputs = 1; // content.getOutputsNumber(); // FIXME(kwalsh)
 
-		return Bounds.create(0, 0, WIDTH, Math.max(nbInputs, nbOutputs)
-				* PORT_GAP + HEIGHT);
-	}
+    return Bounds.create(0, 0, WIDTH, Math.max(nbInputs, nbOutputs)
+        * PORT_GAP + HEIGHT);
+  }
 
-	@Override
-	protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-		if (attr == CONTENT_ATTR) {
-			updatePorts(instance);
-			instance.recomputeBounds();
-		}
-	}
+  @Override
+  protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
+    if (attr == CONTENT_ATTR) {
+      updatePorts(instance);
+      instance.recomputeBounds();
+    }
+  }
 
-	@Override
-	public void paintInstance(InstancePainter painter) {
-		Graphics g = painter.getGraphics();
-		VhdlContent content = painter.getAttributeValue(CONTENT_ATTR);
-		FontMetrics metric = g.getFontMetrics();
+  @Override
+  public void paintInstance(InstancePainter painter) {
+    Graphics g = painter.getGraphics();
+    VhdlContent content = painter.getAttributeValue(CONTENT_ATTR);
+    FontMetrics metric = g.getFontMetrics();
 
-		Bounds bds = painter.getBounds();
-		int x0 = bds.getX() + (bds.getWidth() / 2);
-		int y0 = bds.getY() + metric.getHeight() + 12;
-		GraphicsUtil.drawText(g,
-				StringUtil.resizeString(content.getName(), metric, WIDTH), x0,
-				y0, GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
+    Bounds bds = painter.getBounds();
+    int x0 = bds.getX() + (bds.getWidth() / 2);
+    int y0 = bds.getY() + metric.getHeight() + 12;
+    GraphicsUtil.drawText(g,
+        StringUtil.resizeString(content.getName(), metric, WIDTH), x0,
+        y0, GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
 
-		String glbLabel = painter.getAttributeValue(StdAttr.LABEL);
-		if (glbLabel != null) {
-			Font font = g.getFont();
-			g.setFont(painter.getAttributeValue(StdAttr.LABEL_FONT));
-			GraphicsUtil.drawCenteredText(g, glbLabel,
-					bds.getX() + bds.getWidth() / 2, bds.getY()
-							- g.getFont().getSize());
-			g.setFont(font);
-		}
+    String glbLabel = painter.getAttributeValue(StdAttr.LABEL);
+    if (glbLabel != null) {
+      Font font = g.getFont();
+      g.setFont(painter.getAttributeValue(StdAttr.LABEL_FONT));
+      GraphicsUtil.drawCenteredText(g, glbLabel,
+          bds.getX() + bds.getWidth() / 2, bds.getY()
+          - g.getFont().getSize());
+      g.setFont(font);
+    }
 
-		g.setColor(Color.GRAY);
-		g.setFont(g.getFont().deriveFont((float) 10));
-		metric = g.getFontMetrics();
+    g.setColor(Color.GRAY);
+    g.setFont(g.getFont().deriveFont((float) 10));
+    metric = g.getFontMetrics();
 
-		Port[] inputs = null; // FIXME(kwalsh) content.getInputs();
-		Port[] outputs = null; // FIXME(kwalsh) content.getOutputs();
+    Port[] inputs = null; // FIXME(kwalsh) content.getInputs();
+    Port[] outputs = null; // FIXME(kwalsh) content.getOutputs();
 
-		for (int i = 0; i < inputs.length; i++)
-			GraphicsUtil.drawText(g, StringUtil.resizeString(
-					inputs[i].getToolTip(), metric, (WIDTH / 2) - X_PADDING),
-					bds.getX() + 5, bds.getY() + HEIGHT - 2 + (i * PORT_GAP),
-					GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
-		for (int i = 0; i < outputs.length; i++)
-			GraphicsUtil.drawText(g, StringUtil.resizeString(
-					outputs[i].getToolTip(), metric, (WIDTH / 2) - X_PADDING),
-					bds.getX() + WIDTH - 5, bds.getY() + HEIGHT - 2
-							+ (i * PORT_GAP), GraphicsUtil.H_RIGHT,
-					GraphicsUtil.V_CENTER);
+    for (int i = 0; i < inputs.length; i++)
+      GraphicsUtil.drawText(g, StringUtil.resizeString(
+            inputs[i].getToolTip(), metric, (WIDTH / 2) - X_PADDING),
+          bds.getX() + 5, bds.getY() + HEIGHT - 2 + (i * PORT_GAP),
+          GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+    for (int i = 0; i < outputs.length; i++)
+      GraphicsUtil.drawText(g, StringUtil.resizeString(
+            outputs[i].getToolTip(), metric, (WIDTH / 2) - X_PADDING),
+          bds.getX() + WIDTH - 5, bds.getY() + HEIGHT - 2
+          + (i * PORT_GAP), GraphicsUtil.H_RIGHT,
+          GraphicsUtil.V_CENTER);
 
-		painter.drawBounds();
-		painter.drawPorts();
-	}
+    painter.drawBounds();
+    painter.drawPorts();
+  }
 
-	@Override
-	void updatePorts(Instance instance) {
-		VhdlContent content = instance.getAttributeValue(CONTENT_ATTR);
-		// instance.setPorts(content.getPorts());
-		// setPorts(content.getPorts());
-                // // FIXME(kwalsh)
-	}
+  @Override
+  void updatePorts(Instance instance) {
+    VhdlContent content = instance.getAttributeValue(CONTENT_ATTR);
+    // instance.setPorts(content.getPorts());
+    // setPorts(content.getPorts());
+    // // FIXME(kwalsh)
+  }
 }

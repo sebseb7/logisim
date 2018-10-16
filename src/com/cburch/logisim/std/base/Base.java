@@ -44,29 +44,29 @@ import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.tools.WiringTool;
 
 public class Base extends Library {
-	private List<Tool> tools = null;
+  private List<Tool> tools = null;
 
-	public Base() {
-		SelectTool select = new SelectTool();
-		WiringTool wiring = new WiringTool();
+  public Base() {
+    SelectTool select = new SelectTool();
+    WiringTool wiring = new WiringTool();
 
-		tools = Arrays.asList(new Tool[] { new PokeTool(),
-				new EditTool(select, wiring), select, wiring, new TextTool(),
-				new MenuTool(), new AddTool(Text.FACTORY), });
-	}
+    tools = Arrays.asList(new Tool[] { new PokeTool(),
+      new EditTool(select, wiring), select, wiring, new TextTool(),
+      new MenuTool(), new AddTool(Text.FACTORY), });
+  }
 
-	@Override
-	public String getDisplayName() {
-		return Strings.get("baseLibrary");
-	}
+  @Override
+  public String getDisplayName() {
+    return Strings.get("baseLibrary");
+  }
 
-	@Override
-	public String getName() {
-		return "Base";
-	}
+  @Override
+  public String getName() {
+    return "Base";
+  }
 
-	@Override
-	public List<Tool> getTools() {
-		return tools;
-	}
+  @Override
+  public List<Tool> getTools() {
+    return tools;
+  }
 }

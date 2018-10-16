@@ -35,32 +35,32 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.StringGetter;
 
 public class CircuitAction extends Action {
-	private StringGetter name;
-	private CircuitTransaction forward;
-	private CircuitTransaction reverse;
+  private StringGetter name;
+  private CircuitTransaction forward;
+  private CircuitTransaction reverse;
 
-	CircuitAction(StringGetter name, CircuitMutation forward) {
-		this.name = name;
-		this.forward = forward;
-	}
+  CircuitAction(StringGetter name, CircuitMutation forward) {
+    this.name = name;
+    this.forward = forward;
+  }
 
-	@Override
-	public void doIt(Project proj) {
-		CircuitTransactionResult result = forward.execute();
-		if (result != null) {
-			reverse = result.getReverseTransaction();
-		}
-	}
+  @Override
+  public void doIt(Project proj) {
+    CircuitTransactionResult result = forward.execute();
+    if (result != null) {
+      reverse = result.getReverseTransaction();
+    }
+  }
 
-	@Override
-	public String getName() {
-		return name.toString();
-	}
+  @Override
+  public String getName() {
+    return name.toString();
+  }
 
-	@Override
-	public void undo(Project proj) {
-		if (reverse != null) {
-			reverse.execute();
-		}
-	}
+  @Override
+  public void undo(Project proj) {
+    if (reverse != null) {
+      reverse.execute();
+    }
+  }
 }

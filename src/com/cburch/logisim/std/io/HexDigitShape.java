@@ -37,22 +37,22 @@ import com.cburch.logisim.circuit.appear.DynamicElement;
 
 public class HexDigitShape extends SevenSegmentShape {
 
-	public HexDigitShape(int x, int y, DynamicElement.Path p) {
-		super(x, y, p);
-	}
+  public HexDigitShape(int x, int y, DynamicElement.Path p) {
+    super(x, y, p);
+  }
 
-	@Override
-	public Element toSvgElement(Document doc) {
-		return toSvgElement(doc.createElement("visible-hexdigit"));
-	}
+  @Override
+  public Element toSvgElement(Document doc) {
+    return toSvgElement(doc.createElement("visible-hexdigit"));
+  }
 
-	@Override
-	public String getDisplayName() {
-		return Strings.get("hexDigitComponent");
-	}
+  @Override
+  public String getDisplayName() {
+    return Strings.get("hexDigitComponent");
+  }
 
-	@Override
-	public String toString() {
-		return "Hex Digit:" + getBounds();
-	}
+  @Override
+  public String toString() {
+    return "Hex Digit:" + getBounds();
+  }
 }

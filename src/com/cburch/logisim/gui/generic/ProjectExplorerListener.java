@@ -40,15 +40,15 @@ import com.cburch.logisim.tools.AddTool;
 
 public interface ProjectExplorerListener {
 
-	public void deleteRequested(ProjectExplorerEvent event);
+  public void deleteRequested(ProjectExplorerEvent event);
 
-	public void doubleClicked(ProjectExplorerEvent event);
+  public void doubleClicked(ProjectExplorerEvent event);
 
-	public JPopupMenu menuRequested(ProjectExplorerEvent event);
+  public JPopupMenu menuRequested(ProjectExplorerEvent event);
 
-	public void moveRequested(ProjectExplorerEvent event, AddTool dragged,
-			AddTool target);
+  public void moveRequested(ProjectExplorerEvent event, AddTool dragged,
+      AddTool target);
 
-	public void selectionChanged(ProjectExplorerEvent event);
+  public void selectionChanged(ProjectExplorerEvent event);
 
 }

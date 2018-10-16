@@ -66,137 +66,137 @@ import com.cburch.hdl.HdlModel;
 
 
 class HdlToolbarModel extends AbstractToolbarModel implements HdlModelListener {
-    private Project proj;
-    private HdlContentView editor;
-    private List<ToolbarItem> items;
+  private Project proj;
+  private HdlContentView editor;
+  private List<ToolbarItem> items;
 
-    HdlToolbarItem hdlImport, hdlExport, hdlValidate;
+  HdlToolbarItem hdlImport, hdlExport, hdlValidate;
 
-    public static final String HDL_IMPORT = "hdlImport";
-    public static final String HDL_EXPORT = "hdlExport";
-    public static final String HDL_VALIDATE = "hdlValidate";
+  public static final String HDL_IMPORT = "hdlImport";
+  public static final String HDL_EXPORT = "hdlExport";
+  public static final String HDL_VALIDATE = "hdlValidate";
 
-    public HdlToolbarModel(Project proj, HdlContentView editor) {
-        this.proj = proj;
-        this.editor = editor;
+  public HdlToolbarModel(Project proj, HdlContentView editor) {
+    this.proj = proj;
+    this.editor = editor;
 
-        ArrayList<ToolbarItem> rawItems = new ArrayList<ToolbarItem>();
-        hdlImport = new HdlToolbarItem("hdlimport.gif", HDL_IMPORT, Strings.getter("hdlOpenButton"));
-        hdlExport = new HdlToolbarItem("hdlexport.gif", HDL_EXPORT, Strings.getter("hdlSaveButton"));
-        hdlValidate = new HdlToolbarItem("hdlvalidate.gif", HDL_VALIDATE, Strings.getter("validateButton"));
-        rawItems.add(hdlImport);
-        rawItems.add(hdlExport);
-        rawItems.add(hdlValidate);
-        items = Collections.unmodifiableList(rawItems);
+    ArrayList<ToolbarItem> rawItems = new ArrayList<ToolbarItem>();
+    hdlImport = new HdlToolbarItem("hdlimport.gif", HDL_IMPORT, Strings.getter("hdlOpenButton"));
+    hdlExport = new HdlToolbarItem("hdlexport.gif", HDL_EXPORT, Strings.getter("hdlSaveButton"));
+    hdlValidate = new HdlToolbarItem("hdlvalidate.gif", HDL_VALIDATE, Strings.getter("validateButton"));
+    rawItems.add(hdlImport);
+    rawItems.add(hdlExport);
+    rawItems.add(hdlValidate);
+    items = Collections.unmodifiableList(rawItems);
+  }
+
+  @Override
+  public List<ToolbarItem> getItems() {
+    return items;
+  }
+
+  @Override
+  public boolean isSelected(ToolbarItem item) {
+    return false;
+  }
+
+  @Override
+  public void itemSelected(ToolbarItem item) {
+    doAction(((HdlToolbarItem)item).action);
+  }
+
+  boolean validateEnabled = false;
+
+  void doAction(String action) {
+    if (action == HDL_IMPORT)
+      editor.doImport();
+    else if (action == HDL_EXPORT)
+      editor.doExport();
+    else if (action == HDL_VALIDATE)
+      editor.doValidate();
+  }
+
+  boolean isEnabled(String action) {
+    if (action == HDL_VALIDATE)
+      return validateEnabled;
+    else
+      return true;
+  }
+
+  void setDirty(boolean dirty) {
+    if (validateEnabled == dirty)
+      return;
+    validateEnabled = dirty;
+    fireToolbarContentsChanged();
+  }
+
+  @Override
+  public void contentSet(HdlModel source) {
+    if (validateEnabled) {
+      validateEnabled = false;
+      fireToolbarContentsChanged();
+    }
+  }
+
+  @Override
+  public void aboutToSave(HdlModel source) { }
+
+  @Override
+  public void displayChanged(HdlModel source) { }
+
+  @Override
+  public void appearanceChanged(HdlModel source) { }
+
+  private class HdlToolbarItem implements ToolbarItem {
+    Icon icon;
+    String action;
+    StringGetter toolTip;
+
+    public HdlToolbarItem(String iconName, String action, StringGetter toolTip) {
+      this.icon = Icons.getIcon(iconName);
+      this.action = action;
+      this.toolTip = toolTip;
     }
 
-    @Override
-    public List<ToolbarItem> getItems() {
-        return items;
+    public void doAction() {
+      if (isEnabled(action))
+        HdlToolbarModel.this.doAction(action);
     }
 
-    @Override
-    public boolean isSelected(ToolbarItem item) {
-        return false;
+    public Dimension getDimension(Object orientation) {
+      if (icon == null)
+        return new Dimension(16, 16);
+      int w = icon.getIconWidth();
+      int h = icon.getIconHeight();
+      return new Dimension(w, h + 2);
     }
 
-    @Override
-    public void itemSelected(ToolbarItem item) {
-        doAction(((HdlToolbarItem)item).action);
+    public String getToolTip() {
+      return (toolTip == null ? null : toolTip.toString());
     }
 
-    boolean validateEnabled = false;
-
-    void doAction(String action) {
-        if (action == HDL_IMPORT)
-            editor.doImport();
-        else if (action == HDL_EXPORT)
-            editor.doExport();
-        else if (action == HDL_VALIDATE)
-            editor.doValidate();
+    public boolean isSelectable() {
+      return isEnabled(action);
     }
 
-    boolean isEnabled(String action) {
-        if (action == HDL_VALIDATE)
-            return validateEnabled;
-        else
-            return true;
+    public void paintIcon(Component destination, Graphics g) {
+      if (!isSelectable() && g instanceof Graphics2D) {
+        Composite c = AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+            0.3f);
+        ((Graphics2D) g).setComposite(c);
+      }
+
+      if (icon == null) {
+        g.setColor(new Color(255, 128, 128));
+        g.fillRect(4, 4, 8, 8);
+        g.setColor(Color.BLACK);
+        g.drawLine(4, 4, 12, 12);
+        g.drawLine(4, 12, 12, 4);
+        g.drawRect(4, 4, 8, 8);
+      } else {
+        icon.paintIcon(destination, g, 0, 1);
+      }
     }
-
-    void setDirty(boolean dirty) {
-        if (validateEnabled == dirty)
-            return;
-        validateEnabled = dirty;
-        fireToolbarContentsChanged();
-    }
-
-    @Override
-    public void contentSet(HdlModel source) {
-        if (validateEnabled) {
-            validateEnabled = false;
-            fireToolbarContentsChanged();
-        }
-    }
-
-    @Override
-    public void aboutToSave(HdlModel source) { }
-
-    @Override
-    public void displayChanged(HdlModel source) { }
-
-    @Override
-    public void appearanceChanged(HdlModel source) { }
-
-    private class HdlToolbarItem implements ToolbarItem {
-        Icon icon;
-        String action;
-        StringGetter toolTip;
-
-        public HdlToolbarItem(String iconName, String action, StringGetter toolTip) {
-            this.icon = Icons.getIcon(iconName);
-            this.action = action;
-            this.toolTip = toolTip;
-        }
-
-        public void doAction() {
-            if (isEnabled(action))
-                HdlToolbarModel.this.doAction(action);
-        }
-
-        public Dimension getDimension(Object orientation) {
-            if (icon == null)
-                return new Dimension(16, 16);
-            int w = icon.getIconWidth();
-            int h = icon.getIconHeight();
-            return new Dimension(w, h + 2);
-        }
-
-        public String getToolTip() {
-            return (toolTip == null ? null : toolTip.toString());
-        }
-
-        public boolean isSelectable() {
-            return isEnabled(action);
-        }
-
-        public void paintIcon(Component destination, Graphics g) {
-            if (!isSelectable() && g instanceof Graphics2D) {
-                Composite c = AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-                        0.3f);
-                ((Graphics2D) g).setComposite(c);
-            }
-
-            if (icon == null) {
-                g.setColor(new Color(255, 128, 128));
-                g.fillRect(4, 4, 8, 8);
-                g.setColor(Color.BLACK);
-                g.drawLine(4, 4, 12, 12);
-                g.drawLine(4, 12, 12, 4);
-                g.drawRect(4, 4, 8, 8);
-            } else {
-                icon.paintIcon(destination, g, 0, 1);
-            }
-        }
-    }
+  }
 
 }

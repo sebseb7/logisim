@@ -40,79 +40,79 @@ import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Location;
 
 public class MoveResult {
-	private ReplacementMap replacements;
-	private Collection<ConnectionData> unsatisfiedConnections;
-	private Collection<Location> unconnectedLocations;
-	private int totalDistance;
+  private ReplacementMap replacements;
+  private Collection<ConnectionData> unsatisfiedConnections;
+  private Collection<Location> unconnectedLocations;
+  private int totalDistance;
 
-	public MoveResult(MoveRequest request, ReplacementMap replacements,
-			Collection<ConnectionData> unsatisfiedConnections, int totalDistance) {
-		this.replacements = replacements;
-		this.unsatisfiedConnections = unsatisfiedConnections;
-		this.totalDistance = totalDistance;
+  public MoveResult(MoveRequest request, ReplacementMap replacements,
+      Collection<ConnectionData> unsatisfiedConnections, int totalDistance) {
+    this.replacements = replacements;
+    this.unsatisfiedConnections = unsatisfiedConnections;
+    this.totalDistance = totalDistance;
 
-		ArrayList<Location> unconnected = new ArrayList<Location>();
-		for (ConnectionData conn : unsatisfiedConnections) {
-			unconnected.add(conn.getLocation());
-		}
-		unconnectedLocations = unconnected;
-	}
+    ArrayList<Location> unconnected = new ArrayList<Location>();
+    for (ConnectionData conn : unsatisfiedConnections) {
+      unconnected.add(conn.getLocation());
+    }
+    unconnectedLocations = unconnected;
+  }
 
-	void addUnsatisfiedConnections(Collection<ConnectionData> toAdd) {
-		unsatisfiedConnections.addAll(toAdd);
-		for (ConnectionData conn : toAdd) {
-			unconnectedLocations.add(conn.getLocation());
-		}
-	}
+  void addUnsatisfiedConnections(Collection<ConnectionData> toAdd) {
+    unsatisfiedConnections.addAll(toAdd);
+    for (ConnectionData conn : toAdd) {
+      unconnectedLocations.add(conn.getLocation());
+    }
+  }
 
-	public ReplacementMap getReplacementMap() {
-		return replacements;
-	}
+  public ReplacementMap getReplacementMap() {
+    return replacements;
+  }
 
-	int getTotalDistance() {
-		return totalDistance;
-	}
+  int getTotalDistance() {
+    return totalDistance;
+  }
 
-	public Collection<Location> getUnconnectedLocations() {
-		return unconnectedLocations;
-	}
+  public Collection<Location> getUnconnectedLocations() {
+    return unconnectedLocations;
+  }
 
-	Collection<ConnectionData> getUnsatisifiedConnections() {
-		return unsatisfiedConnections;
-	}
+  Collection<ConnectionData> getUnsatisifiedConnections() {
+    return unsatisfiedConnections;
+  }
 
-	public Collection<Wire> getWiresToAdd() {
-		@SuppressWarnings("unchecked")
-		Collection<Wire> ret = (Collection<Wire>) replacements.getAdditions();
-		return ret;
-	}
+  public Collection<Wire> getWiresToAdd() {
+    @SuppressWarnings("unchecked")
+    Collection<Wire> ret = (Collection<Wire>) replacements.getAdditions();
+    return ret;
+  }
 
-	public Collection<Wire> getWiresToRemove() {
-		@SuppressWarnings("unchecked")
-		Collection<Wire> ret = (Collection<Wire>) replacements.getAdditions();
-		return ret;
-	}
+  public Collection<Wire> getWiresToRemove() {
+    @SuppressWarnings("unchecked")
+    Collection<Wire> ret = (Collection<Wire>) replacements.getAdditions();
+    return ret;
+  }
 
-	public void print(PrintStream out) {
-		boolean printed = false;
-		for (Component w : replacements.getAdditions()) {
-			printed = true;
-			out.println("add " + w);
-		}
-		for (Component w : replacements.getRemovals()) {
-			printed = true;
-			out.println("del " + w);
-		}
-		for (Component w : replacements.getReplacedComponents()) {
-			printed = true;
-			out.print("repl " + w + " by");
-			for (Component w2 : replacements.getComponentsReplacing(w)) {
-				out.print(" " + w2);
-			}
-			out.println();
-		}
-		if (!printed) {
-			out.println("no replacements");
-		}
-	}
+  public void print(PrintStream out) {
+    boolean printed = false;
+    for (Component w : replacements.getAdditions()) {
+      printed = true;
+      out.println("add " + w);
+    }
+    for (Component w : replacements.getRemovals()) {
+      printed = true;
+      out.println("del " + w);
+    }
+    for (Component w : replacements.getReplacedComponents()) {
+      printed = true;
+      out.print("repl " + w + " by");
+      for (Component w2 : replacements.getComponentsReplacing(w)) {
+        out.print(" " + w2);
+      }
+      out.println();
+    }
+    if (!printed) {
+      out.println("no replacements");
+    }
+  }
 }

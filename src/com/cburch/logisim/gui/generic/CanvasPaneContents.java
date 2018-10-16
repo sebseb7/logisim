@@ -37,22 +37,22 @@ import java.awt.event.MouseWheelListener;
 import javax.swing.Scrollable;
 
 public interface CanvasPaneContents extends Scrollable {
-	// from Scrollable
-	public Dimension getPreferredScrollableViewportSize();
+  // from Scrollable
+  public Dimension getPreferredScrollableViewportSize();
 
-	public int getScrollableBlockIncrement(Rectangle visibleRect,
-			int orientation, int direction);
+  public int getScrollableBlockIncrement(Rectangle visibleRect,
+      int orientation, int direction);
 
-	public boolean getScrollableTracksViewportHeight();
+  public boolean getScrollableTracksViewportHeight();
 
-	public boolean getScrollableTracksViewportWidth();
+  public boolean getScrollableTracksViewportWidth();
 
-	public int getScrollableUnitIncrement(Rectangle visibleRect,
-			int orientation, int direction);
+  public int getScrollableUnitIncrement(Rectangle visibleRect,
+      int orientation, int direction);
 
-	public void recomputeSize();
+  public void recomputeSize();
 
-	public void setCanvasPane(CanvasPane pane);
+  public void setCanvasPane(CanvasPane pane);
 
-	public void addMouseWheelListener(MouseWheelListener listener);
+  public void addMouseWheelListener(MouseWheelListener listener);
 }

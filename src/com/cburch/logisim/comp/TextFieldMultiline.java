@@ -41,37 +41,37 @@ import com.cburch.logisim.util.GraphicsUtil;
 
 public class TextFieldMultiline extends TextField {
 
-	private String lines[] = new String[0];
+  private String lines[] = new String[0];
 
-	public TextFieldMultiline(int x, int y, int halign, int valign) {
-		this(x, y, halign, valign, null);
-	}
+  public TextFieldMultiline(int x, int y, int halign, int valign) {
+    this(x, y, halign, valign, null);
+  }
 
-	public TextFieldMultiline(int x, int y, int halign, int valign, Font font) {
-                super(x, y, halign, valign, font);
-	}
+  public TextFieldMultiline(int x, int y, int halign, int valign, Font font) {
+    super(x, y, halign, valign, font);
+  }
 
-	public void draw(Graphics g) {
-                GraphicsUtil.drawText(g, font, lines, x, y, halign, valign);
-	}
+  public void draw(Graphics g) {
+    GraphicsUtil.drawText(g, font, lines, x, y, halign, valign);
+  }
 
-	public Bounds getBounds(Graphics g) {
-            return Bounds.create(GraphicsUtil.getTextBounds(g, font, lines, x, y, halign, valign));
-	}
+  public Bounds getBounds(Graphics g) {
+    return Bounds.create(GraphicsUtil.getTextBounds(g, font, lines, x, y, halign, valign));
+  }
 
-	public TextFieldCaret getCaret(Graphics g, int pos) {
-		return new TextFieldMultilineCaret(this, g, pos);
-	}
+  public TextFieldCaret getCaret(Graphics g, int pos) {
+    return new TextFieldMultilineCaret(this, g, pos);
+  }
 
-	public TextFieldCaret getCaret(Graphics g, int x, int y) {
-		return new TextFieldMultilineCaret(this, g, x, y);
-	}
+  public TextFieldCaret getCaret(Graphics g, int x, int y) {
+    return new TextFieldMultilineCaret(this, g, x, y);
+  }
 
-	public void setText(String text) {
-		if (!text.equals(this.text)) {
-                        lines = text.split("\n");
-                        super.setText(text);
-		}
-	}
+  public void setText(String text) {
+    if (!text.equals(this.text)) {
+      lines = text.split("\n");
+      super.setText(text);
+    }
+  }
 
 }

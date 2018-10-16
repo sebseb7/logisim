@@ -39,18 +39,18 @@ import javax.swing.tree.TreePath;
 
 public class ProjectExplorerEvent {
 
-	private TreePath path;
+  private TreePath path;
 
-	public ProjectExplorerEvent(TreePath path) {
-		this.path = path;
-	}
+  public ProjectExplorerEvent(TreePath path) {
+    this.path = path;
+  }
 
-	public Object getTarget() {
-		return path == null ? null : path.getLastPathComponent();
-	}
+  public Object getTarget() {
+    return path == null ? null : path.getLastPathComponent();
+  }
 
-	public TreePath getTreePath() {
-		return path;
-	}
+  public TreePath getTreePath() {
+    return path;
+  }
 
 }

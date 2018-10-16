@@ -33,22 +33,22 @@ package com.cburch.logisim.circuit;
 import java.util.Collection;
 
 public class CircuitTransactionResult {
-	private CircuitMutatorImpl mutator;
+  private CircuitMutatorImpl mutator;
 
-	CircuitTransactionResult(CircuitMutatorImpl mutator) {
-		this.mutator = mutator;
-	}
+  CircuitTransactionResult(CircuitMutatorImpl mutator) {
+    this.mutator = mutator;
+  }
 
-	public Collection<Circuit> getModifiedCircuits() {
-		return mutator.getModifiedCircuits();
-	}
+  public Collection<Circuit> getModifiedCircuits() {
+    return mutator.getModifiedCircuits();
+  }
 
-	public ReplacementMap getReplacementMap(Circuit circuit) {
-		ReplacementMap ret = mutator.getReplacementMap(circuit);
-		return ret == null ? new ReplacementMap() : ret;
-	}
+  public ReplacementMap getReplacementMap(Circuit circuit) {
+    ReplacementMap ret = mutator.getReplacementMap(circuit);
+    return ret == null ? new ReplacementMap() : ret;
+  }
 
-	public CircuitTransaction getReverseTransaction() {
-		return mutator.getReverseTransaction();
-	}
+  public CircuitTransaction getReverseTransaction() {
+    return mutator.getReverseTransaction();
+  }
 }

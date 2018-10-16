@@ -43,66 +43,66 @@ import com.cburch.logisim.prefs.PrefMonitor;
 import com.cburch.logisim.util.StringGetter;
 
 class PrefOptionList implements ActionListener, PropertyChangeListener {
-	private PrefMonitor<String> pref;
-	private StringGetter labelStr;
+  private PrefMonitor<String> pref;
+  private StringGetter labelStr;
 
-	private JLabel label;
-	private JComboBox<PrefOption> combo;
+  private JLabel label;
+  private JComboBox<PrefOption> combo;
 
-	public PrefOptionList(PrefMonitor<String> pref, StringGetter labelStr,
-			PrefOption[] options) {
-		this.pref = pref;
-		this.labelStr = labelStr;
+  public PrefOptionList(PrefMonitor<String> pref, StringGetter labelStr,
+      PrefOption[] options) {
+    this.pref = pref;
+    this.labelStr = labelStr;
 
-		label = new JLabel(labelStr.toString() + " ");
-		combo = new JComboBox<>();
-		for (PrefOption opt : options) {
-			combo.addItem(opt);
-		}
+    label = new JLabel(labelStr.toString() + " ");
+    combo = new JComboBox<>();
+    for (PrefOption opt : options) {
+      combo.addItem(opt);
+    }
 
-		combo.addActionListener(this);
-		pref.addPropertyChangeListener(this);
-		selectOption(pref.get());
-	}
+    combo.addActionListener(this);
+    pref.addPropertyChangeListener(this);
+    selectOption(pref.get());
+  }
 
-	public void actionPerformed(ActionEvent e) {
-		PrefOption x = (PrefOption) combo.getSelectedItem();
-		pref.set((String) x.getValue());
-	}
+  public void actionPerformed(ActionEvent e) {
+    PrefOption x = (PrefOption) combo.getSelectedItem();
+    pref.set((String) x.getValue());
+  }
 
-	JPanel createJPanel() {
-		JPanel ret = new JPanel();
-		ret.add(label);
-		ret.add(combo);
-		return ret;
-	}
+  JPanel createJPanel() {
+    JPanel ret = new JPanel();
+    ret.add(label);
+    ret.add(combo);
+    return ret;
+  }
 
-	JComboBox<PrefOption> getJComboBox() {
-		return combo;
-	}
+  JComboBox<PrefOption> getJComboBox() {
+    return combo;
+  }
 
-	JLabel getJLabel() {
-		return label;
-	}
+  JLabel getJLabel() {
+    return label;
+  }
 
-	void localeChanged() {
-		label.setText(labelStr.toString() + " ");
-	}
+  void localeChanged() {
+    label.setText(labelStr.toString() + " ");
+  }
 
-	public void propertyChange(PropertyChangeEvent event) {
-		if (pref.isSource(event)) {
-			selectOption(pref.get());
-		}
-	}
+  public void propertyChange(PropertyChangeEvent event) {
+    if (pref.isSource(event)) {
+      selectOption(pref.get());
+    }
+  }
 
-	private void selectOption(Object value) {
-		for (int i = combo.getItemCount() - 1; i >= 0; i--) {
-			PrefOption opt = (PrefOption) combo.getItemAt(i);
-			if (opt.getValue().equals(value)) {
-				combo.setSelectedItem(opt);
-				return;
-			}
-		}
-		combo.setSelectedItem(combo.getItemAt(0));
-	}
+  private void selectOption(Object value) {
+    for (int i = combo.getItemCount() - 1; i >= 0; i--) {
+      PrefOption opt = (PrefOption) combo.getItemAt(i);
+      if (opt.getValue().equals(value)) {
+        combo.setSelectedItem(opt);
+        return;
+      }
+    }
+    combo.setSelectedItem(combo.getItemAt(0));
+  }
 }

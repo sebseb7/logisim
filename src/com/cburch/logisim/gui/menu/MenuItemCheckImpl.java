@@ -37,36 +37,36 @@ import javax.swing.JCheckBoxMenuItem;
 
 class MenuItemCheckImpl extends JCheckBoxMenuItem implements MenuItem {
 
-	private static final long serialVersionUID = 1L;
-	private MenuItemHelper helper;
+  private static final long serialVersionUID = 1L;
+  private MenuItemHelper helper;
 
-	public MenuItemCheckImpl(Menu menu, LogisimMenuItem menuItem) {
-		helper = new MenuItemHelper(this, menu, menuItem);
-		super.addActionListener(helper);
-		setEnabled(true);
-	}
+  public MenuItemCheckImpl(Menu menu, LogisimMenuItem menuItem) {
+    helper = new MenuItemHelper(this, menu, menuItem);
+    super.addActionListener(helper);
+    setEnabled(true);
+  }
 
-	public void actionPerformed(ActionEvent event) {
-		helper.actionPerformed(event);
-	}
+  public void actionPerformed(ActionEvent event) {
+    helper.actionPerformed(event);
+  }
 
-	@Override
-	public void addActionListener(ActionListener l) {
-		helper.addActionListener(l);
-	}
+  @Override
+  public void addActionListener(ActionListener l) {
+    helper.addActionListener(l);
+  }
 
-	public boolean hasListeners() {
-		return helper.hasListeners();
-	}
+  public boolean hasListeners() {
+    return helper.hasListeners();
+  }
 
-	@Override
-	public void removeActionListener(ActionListener l) {
-		helper.removeActionListener(l);
-	}
+  @Override
+  public void removeActionListener(ActionListener l) {
+    helper.removeActionListener(l);
+  }
 
-	@Override
-	public void setEnabled(boolean value) {
-		helper.setEnabled(value);
-		super.setEnabled(value && helper.hasListeners());
-	}
+  @Override
+  public void setEnabled(boolean value) {
+    helper.setEnabled(value);
+    super.setEnabled(value && helper.hasListeners());
+  }
 }

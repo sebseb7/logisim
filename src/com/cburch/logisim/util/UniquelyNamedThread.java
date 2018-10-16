@@ -34,29 +34,29 @@ import java.util.*;
 
 public class UniquelyNamedThread extends Thread {
 
-	private static Object lock = new Object();
-	private static HashMap<String,Integer> lastID = new HashMap<String,Integer>();
+  private static Object lock = new Object();
+  private static HashMap<String,Integer> lastID = new HashMap<String,Integer>();
 
-	private static String nextName(String prefix) {
-		int id = 0;
-		synchronized(lock) {
-			Integer i = lastID.get(prefix);
-			if (i != null)
-				id = i.intValue() + 1;
-			lastID.put(prefix, id);
-		}
-		return prefix + "-" + id;
-	}
+  private static String nextName(String prefix) {
+    int id = 0;
+    synchronized(lock) {
+      Integer i = lastID.get(prefix);
+      if (i != null)
+        id = i.intValue() + 1;
+      lastID.put(prefix, id);
+    }
+    return prefix + "-" + id;
+  }
 
-	// private UniquelyNamedThread() { }
-	// private UniquelyNamedThread(Runnable runnable) { }
+  // private UniquelyNamedThread() { }
+  // private UniquelyNamedThread(Runnable runnable) { }
 
-	public UniquelyNamedThread(String prefix) {
-		super(nextName(prefix));
-	}
+  public UniquelyNamedThread(String prefix) {
+    super(nextName(prefix));
+  }
 
-	public UniquelyNamedThread(Runnable runnable, String prefix) {
-		super(runnable, nextName(prefix));
-	}
+  public UniquelyNamedThread(Runnable runnable, String prefix) {
+    super(runnable, nextName(prefix));
+  }
 
 }

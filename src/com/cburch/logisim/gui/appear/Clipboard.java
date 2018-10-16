@@ -35,47 +35,47 @@ import java.beans.PropertyChangeListener;
 import com.cburch.logisim.util.PropertyChangeWeakSupport;
 
 class Clipboard {
-	//
-	// PropertyChangeSource methods
-	//
-	public static void addPropertyChangeListener(PropertyChangeListener listener) {
-		propertySupport.addPropertyChangeListener(listener);
-	}
+  //
+  // PropertyChangeSource methods
+  //
+  public static void addPropertyChangeListener(PropertyChangeListener listener) {
+    propertySupport.addPropertyChangeListener(listener);
+  }
 
-	public static void addPropertyChangeListener(String propertyName,
-			PropertyChangeListener listener) {
-		propertySupport.addPropertyChangeListener(propertyName, listener);
-	}
+  public static void addPropertyChangeListener(String propertyName,
+      PropertyChangeListener listener) {
+    propertySupport.addPropertyChangeListener(propertyName, listener);
+  }
 
-	public static ClipboardContents get() {
-		return current;
-	}
+  public static ClipboardContents get() {
+    return current;
+  }
 
-	public static boolean isEmpty() {
-		return current == null || current.getElements().isEmpty();
-	}
+  public static boolean isEmpty() {
+    return current == null || current.getElements().isEmpty();
+  }
 
-	public static void removePropertyChangeListener(
-			PropertyChangeListener listener) {
-		propertySupport.removePropertyChangeListener(listener);
-	}
+  public static void removePropertyChangeListener(
+      PropertyChangeListener listener) {
+    propertySupport.removePropertyChangeListener(listener);
+  }
 
-	public static void removePropertyChangeListener(String propertyName,
-			PropertyChangeListener listener) {
-		propertySupport.removePropertyChangeListener(propertyName, listener);
-	}
+  public static void removePropertyChangeListener(String propertyName,
+      PropertyChangeListener listener) {
+    propertySupport.removePropertyChangeListener(propertyName, listener);
+  }
 
-	public static void set(ClipboardContents value) {
-		ClipboardContents old = current;
-		current = value;
-		propertySupport.firePropertyChange(contentsProperty, old, current);
-	}
+  public static void set(ClipboardContents value) {
+    ClipboardContents old = current;
+    current = value;
+    propertySupport.firePropertyChange(contentsProperty, old, current);
+  }
 
-	public static final String contentsProperty = "appearance";
-	private static ClipboardContents current = ClipboardContents.EMPTY;
-	private static PropertyChangeWeakSupport propertySupport = new PropertyChangeWeakSupport(
-			Clipboard.class);
+  public static final String contentsProperty = "appearance";
+  private static ClipboardContents current = ClipboardContents.EMPTY;
+  private static PropertyChangeWeakSupport propertySupport = new PropertyChangeWeakSupport(
+      Clipboard.class);
 
-	private Clipboard() {
-	}
+  private Clipboard() {
+  }
 }

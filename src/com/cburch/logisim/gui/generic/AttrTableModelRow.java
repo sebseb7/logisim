@@ -34,15 +34,15 @@ import java.awt.Component;
 import java.awt.Window;
 
 public interface AttrTableModelRow {
-	public Component getEditor(Window parent);
+  public Component getEditor(Window parent);
 
-	public String getLabel();
+  public String getLabel();
 
-	public String getValue();
+  public String getValue();
 
-	public boolean isValueEditable();
+  public boolean isValueEditable();
 
-	public boolean multiEditCompatible(AttrTableModelRow other);
+  public boolean multiEditCompatible(AttrTableModelRow other);
 
-	public void setValue(Window parent, Object value) throws AttrTableSetException;
+  public void setValue(Window parent, Object value) throws AttrTableSetException;
 }

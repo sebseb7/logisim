@@ -52,79 +52,79 @@ import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.util.WindowMenuItemManager;
 
 public class WindowManagers {
-	private static class MyListener implements PropertyChangeListener {
-		public void propertyChange(PropertyChangeEvent event) {
-			computeListeners();
-		}
-	}
+  private static class MyListener implements PropertyChangeListener {
+    public void propertyChange(PropertyChangeEvent event) {
+      computeListeners();
+    }
+  }
 
-	private static class ProjectManager extends WindowMenuItemManager implements
-			ProjectListener, LibraryListener {
-		private Project proj;
+  private static class ProjectManager extends WindowMenuItemManager
+    implements ProjectListener, LibraryListener {
+    private Project proj;
 
-		ProjectManager(Project proj) {
-			super(proj.getLogisimFile().getName(), false);
-			this.proj = proj;
-			proj.addProjectListener(this);
-			proj.addLibraryListener(this);
-			frameOpened(proj.getFrame());
-		}
+    ProjectManager(Project proj) {
+      super(proj.getLogisimFile().getName(), false);
+      this.proj = proj;
+      proj.addProjectListener(this);
+      proj.addLibraryListener(this);
+      frameOpened(proj.getFrame());
+    }
 
-		@Override
-		public JFrame getJFrame(boolean create, java.awt.Component parent) {
-			return proj.getFrame();
-		}
+    @Override
+    public JFrame getJFrame(boolean create, java.awt.Component parent) {
+      return proj.getFrame();
+    }
 
-		public void libraryChanged(LibraryEvent event) {
-			if (event.getAction() == LibraryEvent.SET_NAME) {
-				setText((String) event.getData());
-			}
-		}
+    public void libraryChanged(LibraryEvent event) {
+      if (event.getAction() == LibraryEvent.SET_NAME) {
+        setText((String) event.getData());
+      }
+    }
 
-		public void projectChanged(ProjectEvent event) {
-			if (event.getAction() == ProjectEvent.ACTION_SET_FILE) {
-				setText(proj.getLogisimFile().getName());
-			}
-		}
-	}
+    public void projectChanged(ProjectEvent event) {
+      if (event.getAction() == ProjectEvent.ACTION_SET_FILE) {
+        setText(proj.getLogisimFile().getName());
+      }
+    }
+  }
 
-	private static void computeListeners() {
-		List<Project> nowOpen = Projects.getOpenProjects();
+  private static void computeListeners() {
+    List<Project> nowOpen = Projects.getOpenProjects();
 
-		HashSet<Project> closed = new HashSet<Project>(projectMap.keySet());
-		closed.removeAll(nowOpen);
-		for (Project proj : closed) {
-			ProjectManager manager = projectMap.get(proj);
-			manager.frameClosed(manager.getJFrame(false, null));
-			projectMap.remove(proj);
-		}
+    HashSet<Project> closed = new HashSet<Project>(projectMap.keySet());
+    closed.removeAll(nowOpen);
+    for (Project proj : closed) {
+      ProjectManager manager = projectMap.get(proj);
+      manager.frameClosed(manager.getJFrame(false, null));
+      projectMap.remove(proj);
+    }
 
-		HashSet<Project> opened = new LinkedHashSet<Project>(nowOpen);
-		opened.removeAll(projectMap.keySet());
-		for (Project proj : opened) {
-			ProjectManager manager = new ProjectManager(proj);
-			projectMap.put(proj, manager);
-		}
-	}
+    HashSet<Project> opened = new LinkedHashSet<Project>(nowOpen);
+    opened.removeAll(projectMap.keySet());
+    for (Project proj : opened) {
+      ProjectManager manager = new ProjectManager(proj);
+      projectMap.put(proj, manager);
+    }
+  }
 
-	public static void initialize() {
-		if (!initialized) {
-			initialized = true;
-			if (Main.ANALYZE)
-				AnalyzerManager.initialize();
-			PreferencesFrame.initializeManager();
-			Projects.addPropertyChangeListener(Projects.projectListProperty,
-					myListener);
-			computeListeners();
-		}
-	}
+  public static void initialize() {
+    if (!initialized) {
+      initialized = true;
+      if (Main.ANALYZE)
+        AnalyzerManager.initialize();
+      PreferencesFrame.initializeManager();
+      Projects.addPropertyChangeListener(Projects.projectListProperty,
+          myListener);
+      computeListeners();
+    }
+  }
 
-	private static boolean initialized = false;
+  private static boolean initialized = false;
 
-	private static MyListener myListener = new MyListener();
+  private static MyListener myListener = new MyListener();
 
-	private static HashMap<Project, ProjectManager> projectMap = new LinkedHashMap<Project, ProjectManager>();
+  private static HashMap<Project, ProjectManager> projectMap = new LinkedHashMap<Project, ProjectManager>();
 
-	private WindowManagers() {
-	}
+  private WindowManagers() {
+  }
 }

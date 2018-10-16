@@ -42,21 +42,21 @@ import com.cburch.logisim.util.StringGetter;
 
 class Strings {
 
-	public static String get(String key) {
-		if (source == null)
-			System.out.println("source is null");
-		return source.get(key);
-	}
+  public static String get(String key) {
+    if (source == null)
+      System.out.println("source is null");
+    return source.get(key);
+  }
 
-	public static Locale[] getLocaleOptions() {
-		return source.getLocaleOptions();
-	}
+  public static Locale[] getLocaleOptions() {
+    return source.getLocaleOptions();
+  }
 
-	public static StringGetter getter(String key) {
-		return source.getter(key);
-	}
+  public static StringGetter getter(String key) {
+    return source.getter(key);
+  }
 
-	private static LocaleManager source = new LocaleManager(
-			"resources/logisim", "test");
+  private static LocaleManager source = new LocaleManager(
+      "resources/logisim", "test");
 
 }

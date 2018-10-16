@@ -32,104 +32,104 @@ package com.cburch.logisim.circuit;
 import com.cburch.logisim.util.UniquelyNamedThread;
 
 class SimulatorTicker extends UniquelyNamedThread {
-	private Simulator.PropagationManager manager;
-	private int ticksPerTickPhase;
-	private int millisPerTickPhase;
+  private Simulator.PropagationManager manager;
+  private int ticksPerTickPhase;
+  private int millisPerTickPhase;
 
-	private boolean shouldTick;
-	private int ticksPending;
-	private boolean complete;
+  private boolean shouldTick;
+  private int ticksPending;
+  private boolean complete;
 
-	public SimulatorTicker(Simulator.PropagationManager manager) {
-		super("SimulationTicker");
-		this.manager = manager;
-		ticksPerTickPhase = 1;
-		millisPerTickPhase = 1000;
-		shouldTick = false;
-		ticksPending = 0;
-		complete = false;
-	}
+  public SimulatorTicker(Simulator.PropagationManager manager) {
+    super("SimulationTicker");
+    this.manager = manager;
+    ticksPerTickPhase = 1;
+    millisPerTickPhase = 1000;
+    shouldTick = false;
+    ticksPending = 0;
+    complete = false;
+  }
 
-	@Override
-	public void run() {
-		long lastTick = System.currentTimeMillis();
-		while (true) {
-			boolean curShouldTick = shouldTick;
-			int millis = millisPerTickPhase;
-			int ticks = ticksPerTickPhase;
-			try {
-				synchronized (this) {
-					curShouldTick = shouldTick;
-					millis = millisPerTickPhase;
-					ticks = ticksPerTickPhase;
-					while (!curShouldTick && ticksPending == 0 && !complete) {
-						wait();
-						curShouldTick = shouldTick;
-						millis = millisPerTickPhase;
-						ticks = ticksPerTickPhase;
-					}
-				}
-			} catch (InterruptedException e) {
-			}
+  @Override
+  public void run() {
+    long lastTick = System.currentTimeMillis();
+    while (true) {
+      boolean curShouldTick = shouldTick;
+      int millis = millisPerTickPhase;
+      int ticks = ticksPerTickPhase;
+      try {
+        synchronized (this) {
+          curShouldTick = shouldTick;
+          millis = millisPerTickPhase;
+          ticks = ticksPerTickPhase;
+          while (!curShouldTick && ticksPending == 0 && !complete) {
+            wait();
+            curShouldTick = shouldTick;
+            millis = millisPerTickPhase;
+            ticks = ticksPerTickPhase;
+          }
+        }
+      } catch (InterruptedException e) {
+      }
 
-			if (complete)
-				break;
+      if (complete)
+        break;
 
-			int toTick;
-			long now = System.currentTimeMillis();
-			if (curShouldTick && now - lastTick >= millis) {
-				toTick = ticks;
-			} else {
-				toTick = ticksPending;
-			}
+      int toTick;
+      long now = System.currentTimeMillis();
+      if (curShouldTick && now - lastTick >= millis) {
+        toTick = ticks;
+      } else {
+        toTick = ticksPending;
+      }
 
-			if (toTick > 0) {
-				lastTick = now;
-				for (int i = 0; i < toTick; i++) {
-					manager.requestTick();
-				}
-				synchronized (this) {
-					if (ticksPending > toTick)
-						ticksPending -= toTick;
-					else
-						ticksPending = 0;
-				}
-				// we fire tickCompleted in this thread so that other
-				// objects (in particular the repaint process) can slow
-				// the thread down.
-			}
+      if (toTick > 0) {
+        lastTick = now;
+        for (int i = 0; i < toTick; i++) {
+          manager.requestTick();
+        }
+        synchronized (this) {
+          if (ticksPending > toTick)
+            ticksPending -= toTick;
+          else
+            ticksPending = 0;
+        }
+        // we fire tickCompleted in this thread so that other
+        // objects (in particular the repaint process) can slow
+        // the thread down.
+      }
 
-			try {
-				long nextTick = lastTick + millis;
-				int wait = (int) (nextTick - System.currentTimeMillis());
-				if (wait < 1)
-					wait = 1;
-				if (wait > 100)
-					wait = 100;
-				Thread.sleep(wait);
-			} catch (InterruptedException e) {
-			}
-		}
-	}
+      try {
+        long nextTick = lastTick + millis;
+        int wait = (int) (nextTick - System.currentTimeMillis());
+        if (wait < 1)
+          wait = 1;
+        if (wait > 100)
+          wait = 100;
+        Thread.sleep(wait);
+      } catch (InterruptedException e) {
+      }
+    }
+  }
 
-	synchronized void setAwake(boolean value) {
-		shouldTick = value;
-		if (shouldTick)
-			notifyAll();
-	}
+  synchronized void setAwake(boolean value) {
+    shouldTick = value;
+    if (shouldTick)
+      notifyAll();
+  }
 
-	public synchronized void setTickFrequency(int millis, int ticks) {
-		millisPerTickPhase = millis;
-		ticksPerTickPhase = ticks;
-	}
+  public synchronized void setTickFrequency(int millis, int ticks) {
+    millisPerTickPhase = millis;
+    ticksPerTickPhase = ticks;
+  }
 
-	public synchronized void shutDown() {
-		complete = true;
-		notifyAll();
-	}
+  public synchronized void shutDown() {
+    complete = true;
+    notifyAll();
+  }
 
-	public synchronized void tickOnce() {
-		ticksPending++;
-		notifyAll();
-	}
+  public synchronized void tickOnce() {
+    ticksPending++;
+    notifyAll();
+  }
 }

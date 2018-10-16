@@ -40,99 +40,99 @@ import com.cburch.logisim.data.AttributeSet;
 
 public class BitExtenderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-	@Override
-	public ArrayList<String> GetInlinedCode(Netlist Nets, Long ComponentId,
-			NetlistComponent ComponentInfo, FPGAReport Reporter,
-			String CircuitName, String HDLType) {
-		ArrayList<String> Contents = new ArrayList<String>();
-		String Preamble = (HDLType.equals(Settings.VHDL)) ? "" : "assign ";
-		String AssignOperator = (HDLType.equals(Settings.VHDL)) ? " <= "
-				: " = ";
-		String ZeroBit = (HDLType.equals(Settings.VHDL)) ? "'0'" : "1'b0";
-		String SetBit = (HDLType.equals(Settings.VHDL)) ? "'1'" : "1'b1";
-		int NrOfPins = ComponentInfo.NrOfEnds();
-		for (int i = 1; i < NrOfPins; i++) {
-			if (!ComponentInfo.EndIsConnected(i)) {
-				Reporter.AddError("Bit Extender component has floating input connection in circuit \""
-						+ CircuitName + "\"!");
-				return Contents;
-			}
-		}
-		if (ComponentInfo.GetComponent().getEnd(0).getWidth().getWidth() == 1) {
-			/* Special case: Single bit output */
-			Contents.add("   " + Preamble
-					+ GetNetName(ComponentInfo, 0, true, HDLType, Nets)
-					+ AssignOperator
-					+ GetNetName(ComponentInfo, 1, true, HDLType, Nets));
-			Contents.add("");
-		} else {
-			/*
-			 * We make ourselves life easy, we just enumerate through all the
-			 * bits
-			 */
-			StringBuffer Replacement = new StringBuffer();
-			String type = (String) ComponentInfo.GetComponent()
-					.getAttributeSet().getValue(BitExtender.ATTR_TYPE)
-					.getValue();
-			if (type.equals("zero"))
-				Replacement.append(ZeroBit);
-			if (type.equals("one"))
-				Replacement.append(SetBit);
-			if (type.equals("sign")) {
-				if (ComponentInfo.getEnd(1).NrOfBits() > 1) {
-					Replacement.append(GetBusEntryName(ComponentInfo, 1, true,
-							ComponentInfo.GetComponent().getEnd(1).getWidth()
-									.getWidth() - 1, HDLType, Nets));
-				} else {
-					Replacement.append(GetNetName(ComponentInfo, 1, true,
-							HDLType, Nets));
-				}
-			}
-			if (type.equals("input"))
-				Replacement.append(GetNetName(ComponentInfo, 2, true, HDLType,
-						Nets));
-			for (int bit = 0; bit < ComponentInfo.GetComponent().getEnd(0)
-					.getWidth().getWidth(); bit++) {
-				if (bit < ComponentInfo.GetComponent().getEnd(1).getWidth()
-						.getWidth()) {
-					if (ComponentInfo.getEnd(1).NrOfBits() > 1) {
-						Contents.add("   "
-								+ Preamble
-								+ GetBusEntryName(ComponentInfo, 0, true, bit,
-										HDLType, Nets)
-								+ AssignOperator
-								+ GetBusEntryName(ComponentInfo, 1, true, bit,
-										HDLType, Nets) + ";");
-					} else {
-						Contents.add("   "
-								+ Preamble
-								+ GetBusEntryName(ComponentInfo, 0, true, bit,
-										HDLType, Nets)
-								+ AssignOperator
-								+ GetNetName(ComponentInfo, 1, true, HDLType,
-										Nets) + ";");
-					}
-				} else {
-					Contents.add("   "
-							+ Preamble
-							+ GetBusEntryName(ComponentInfo, 0, true, bit,
-									HDLType, Nets) + AssignOperator
-							+ Replacement.toString() + ";");
-				}
-			}
-			Contents.add("");
-		}
-		return Contents;
-	}
+  @Override
+  public ArrayList<String> GetInlinedCode(Netlist Nets, Long ComponentId,
+      NetlistComponent ComponentInfo, FPGAReport Reporter,
+      String CircuitName, String HDLType) {
+    ArrayList<String> Contents = new ArrayList<String>();
+    String Preamble = (HDLType.equals(Settings.VHDL)) ? "" : "assign ";
+    String AssignOperator = (HDLType.equals(Settings.VHDL)) ? " <= "
+        : " = ";
+    String ZeroBit = (HDLType.equals(Settings.VHDL)) ? "'0'" : "1'b0";
+    String SetBit = (HDLType.equals(Settings.VHDL)) ? "'1'" : "1'b1";
+    int NrOfPins = ComponentInfo.NrOfEnds();
+    for (int i = 1; i < NrOfPins; i++) {
+      if (!ComponentInfo.EndIsConnected(i)) {
+        Reporter.AddError("Bit Extender component has floating input connection in circuit \""
+            + CircuitName + "\"!");
+        return Contents;
+      }
+    }
+    if (ComponentInfo.GetComponent().getEnd(0).getWidth().getWidth() == 1) {
+      /* Special case: Single bit output */
+      Contents.add("   " + Preamble
+          + GetNetName(ComponentInfo, 0, true, HDLType, Nets)
+          + AssignOperator
+          + GetNetName(ComponentInfo, 1, true, HDLType, Nets));
+      Contents.add("");
+    } else {
+      /*
+       * We make ourselves life easy, we just enumerate through all the
+       * bits
+       */
+      StringBuffer Replacement = new StringBuffer();
+      String type = (String) ComponentInfo.GetComponent()
+          .getAttributeSet().getValue(BitExtender.ATTR_TYPE)
+          .getValue();
+      if (type.equals("zero"))
+        Replacement.append(ZeroBit);
+      if (type.equals("one"))
+        Replacement.append(SetBit);
+      if (type.equals("sign")) {
+        if (ComponentInfo.getEnd(1).NrOfBits() > 1) {
+          Replacement.append(GetBusEntryName(ComponentInfo, 1, true,
+                ComponentInfo.GetComponent().getEnd(1).getWidth()
+                .getWidth() - 1, HDLType, Nets));
+        } else {
+          Replacement.append(GetNetName(ComponentInfo, 1, true,
+                HDLType, Nets));
+        }
+      }
+      if (type.equals("input"))
+        Replacement.append(GetNetName(ComponentInfo, 2, true, HDLType,
+              Nets));
+      for (int bit = 0; bit < ComponentInfo.GetComponent().getEnd(0)
+          .getWidth().getWidth(); bit++) {
+        if (bit < ComponentInfo.GetComponent().getEnd(1).getWidth()
+            .getWidth()) {
+          if (ComponentInfo.getEnd(1).NrOfBits() > 1) {
+            Contents.add("   "
+                + Preamble
+                + GetBusEntryName(ComponentInfo, 0, true, bit,
+                  HDLType, Nets)
+                + AssignOperator
+                + GetBusEntryName(ComponentInfo, 1, true, bit,
+                  HDLType, Nets) + ";");
+          } else {
+            Contents.add("   "
+                + Preamble
+                + GetBusEntryName(ComponentInfo, 0, true, bit,
+                  HDLType, Nets)
+                + AssignOperator
+                + GetNetName(ComponentInfo, 1, true, HDLType,
+                  Nets) + ";");
+          }
+        } else {
+          Contents.add("   "
+              + Preamble
+              + GetBusEntryName(ComponentInfo, 0, true, bit,
+                HDLType, Nets) + AssignOperator
+              + Replacement.toString() + ";");
+        }
+      }
+      Contents.add("");
+    }
+    return Contents;
+  }
 
-	@Override
-	public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-			char Vendor) {
-		return true;
-	}
+  @Override
+  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
+      char Vendor) {
+    return true;
+  }
 
-	@Override
-	public boolean IsOnlyInlined(String HDLType) {
-		return true;
-	}
+  @Override
+  public boolean IsOnlyInlined(String HDLType) {
+    return true;
+  }
 }

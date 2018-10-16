@@ -33,11 +33,11 @@ package com.cburch.logisim.instance;
 import com.cburch.logisim.data.Value;
 
 public abstract class InstanceLogger {
-	public abstract String getLogName(InstanceState state, Object option);
+  public abstract String getLogName(InstanceState state, Object option);
 
-	public Object[] getLogOptions(InstanceState state) {
-		return null;
-	}
+  public Object[] getLogOptions(InstanceState state) {
+    return null;
+  }
 
-	public abstract Value getLogValue(InstanceState state, Object option);
+  public abstract Value getLogValue(InstanceState state, Object option);
 }

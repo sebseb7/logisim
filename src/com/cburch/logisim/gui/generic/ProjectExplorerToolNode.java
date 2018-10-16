@@ -46,62 +46,62 @@ import com.cburch.hdl.HdlModelListener;
 import com.cburch.hdl.HdlModel;
 
 public class ProjectExplorerToolNode extends ProjectExplorerModel.Node<Tool>
-		implements CircuitListener, HdlModelListener {
+  implements CircuitListener, HdlModelListener {
 
-	private static final long serialVersionUID = 1L;
-	private Circuit circuit;
-	private VhdlContent vhdl;
+  private static final long serialVersionUID = 1L;
+  private Circuit circuit;
+  private VhdlContent vhdl;
 
-	public ProjectExplorerToolNode(ProjectExplorerModel model, Tool tool) {
-		super(model, tool);
-		if (tool instanceof AddTool) {
-			Object factory = ((AddTool) tool).getFactory();
+  public ProjectExplorerToolNode(ProjectExplorerModel model, Tool tool) {
+    super(model, tool);
+    if (tool instanceof AddTool) {
+      Object factory = ((AddTool) tool).getFactory();
 
-			if (factory instanceof SubcircuitFactory) {
-				circuit = ((SubcircuitFactory) factory).getSubcircuit();
-				circuit.addCircuitListener(this);
-			} else if (factory instanceof VhdlEntity) {
-                                vhdl = ((VhdlEntity) factory).getContent();
-                                vhdl.addHdlModelListener(this);
-                        }
-		}
-	}
+      if (factory instanceof SubcircuitFactory) {
+        circuit = ((SubcircuitFactory) factory).getSubcircuit();
+        circuit.addCircuitListener(this);
+      } else if (factory instanceof VhdlEntity) {
+        vhdl = ((VhdlEntity) factory).getContent();
+        vhdl.addHdlModelListener(this);
+      }
+    }
+  }
 
-	public void circuitChanged(CircuitEvent event) {
-		int act = event.getAction();
-		if (act == CircuitEvent.ACTION_SET_NAME || act == CircuitEvent.ACTION_DISPLAY_CHANGE) {
-                        fireNodeChanged();
-		}
-	}
+  public void circuitChanged(CircuitEvent event) {
+    int act = event.getAction();
+    if (act == CircuitEvent.ACTION_SET_NAME || act == CircuitEvent.ACTION_DISPLAY_CHANGE) {
+      fireNodeChanged();
+    }
+  }
 
-        @Override
-        public void contentSet(HdlModel model) {
-            fireNodeChanged();
-        }
+  @Override
+  public void contentSet(HdlModel model) {
+    fireNodeChanged();
+  }
 
-        @Override
-        public void aboutToSave(HdlModel source) { }
+  @Override
+  public void aboutToSave(HdlModel source) { }
 
-        @Override
-        public void displayChanged(HdlModel source) {
-            fireNodeChanged();
-        }
-        @Override
-        public void appearanceChanged(HdlModel source) { }
+  @Override
+  public void displayChanged(HdlModel source) {
+    fireNodeChanged();
+  }
+  @Override
+  public void appearanceChanged(HdlModel source) { }
 
-	@Override
-	ProjectExplorerToolNode create(Tool userObject) {
-		return new ProjectExplorerToolNode(getModel(), userObject);
-	}
+  @Override
+  ProjectExplorerToolNode create(Tool userObject) {
+    return new ProjectExplorerToolNode(getModel(), userObject);
+  }
 
-	@Override
-	void decommission() {
-		if (circuit != null) {
-			circuit.removeCircuitListener(this);
-		}
-                if (vhdl != null) {
-                        vhdl.removeHdlModelListener(this);
-                }
-	}
+  @Override
+  void decommission() {
+    if (circuit != null) {
+      circuit.removeCircuitListener(this);
+    }
+    if (vhdl != null) {
+      vhdl.removeHdlModelListener(this);
+    }
+  }
 
 }

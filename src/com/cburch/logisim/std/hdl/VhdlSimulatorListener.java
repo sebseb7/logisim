@@ -38,5 +38,5 @@ package com.cburch.logisim.std.hdl;
  * @since 2.12.0.t
  */
 public interface VhdlSimulatorListener {
-	public void stateChanged();
+  public void stateChanged();
 }

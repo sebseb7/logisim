@@ -31,29 +31,29 @@
 package com.cburch.logisim.analyze.model;
 
 public class TruthTableEvent {
-	private TruthTable source;
-	private int column;
-	private Object data;
+  private TruthTable source;
+  private int column;
+  private Object data;
 
-	public TruthTableEvent(TruthTable source, int column) {
-		this.source = source;
-		this.column = column;
-	}
+  public TruthTableEvent(TruthTable source, int column) {
+    this.source = source;
+    this.column = column;
+  }
 
-	public TruthTableEvent(TruthTable source, VariableListEvent event) {
-		this.source = source;
-		this.data = event;
-	}
+  public TruthTableEvent(TruthTable source, VariableListEvent event) {
+    this.source = source;
+    this.data = event;
+  }
 
-	public int getColumn() {
-		return column;
-	}
+  public int getColumn() {
+    return column;
+  }
 
-	public Object getData() {
-		return data;
-	}
+  public Object getData() {
+    return data;
+  }
 
-	public TruthTable getSource() {
-		return source;
-	}
+  public TruthTable getSource() {
+    return source;
+  }
 }

@@ -31,14 +31,14 @@
 package com.cburch.logisim.gui.menu;
 
 public class LogisimMenuItem {
-	private String name;
+  private String name;
 
-	LogisimMenuItem(String name) {
-		this.name = name;
-	}
+  LogisimMenuItem(String name) {
+    this.name = name;
+  }
 
-	@Override
-	public String toString() {
-		return name;
-	}
+  @Override
+  public String toString() {
+    return name;
+  }
 }

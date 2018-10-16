@@ -66,553 +66,553 @@ import com.cburch.logisim.std.hdl.VhdlEntity;
 
 public class LogisimFile extends Library implements LibraryEventSource {
 
-	private static class WritingThread extends UniquelyNamedThread {
-		OutputStream out;
-		LogisimFile file;
+  private static class WritingThread extends UniquelyNamedThread {
+    OutputStream out;
+    LogisimFile file;
 
-		WritingThread(OutputStream out, LogisimFile file) {
-			super("WritingThread");
-			this.out = out;
-			this.file = file;
-		}
+    WritingThread(OutputStream out, LogisimFile file) {
+      super("WritingThread");
+      this.out = out;
+      this.file = file;
+    }
 
-		@Override
-		public void run() {
-			try {
-				file.write(out, file.loader);
-			} catch (IOException e) {
-				file.loader.showError(StringUtil.format(
-						Strings.get("fileDuplicateError"), e.toString()));
-			}
-			try {
-				out.close();
-			} catch (IOException e) {
-				file.loader.showError(StringUtil.format(
-						Strings.get("fileDuplicateError"), e.toString()));
-			}
-		}
-	}
+    @Override
+    public void run() {
+      try {
+        file.write(out, file.loader);
+      } catch (IOException e) {
+        file.loader.showError(StringUtil.format(
+              Strings.get("fileDuplicateError"), e.toString()));
+      }
+      try {
+        out.close();
+      } catch (IOException e) {
+        file.loader.showError(StringUtil.format(
+              Strings.get("fileDuplicateError"), e.toString()));
+      }
+    }
+  }
 
-	//
-	// creation methods
-	//
-	public static LogisimFile createNew(Loader loader) {
-		LogisimFile ret = new LogisimFile(loader);
-		ret.main = new Circuit("main", ret);
-		// The name will be changed in LogisimPreferences
-		ret.tools.add(new AddTool(ret.main.getSubcircuitFactory()));
-		return ret;
-	}
+  //
+  // creation methods
+  //
+  public static LogisimFile createNew(Loader loader) {
+    LogisimFile ret = new LogisimFile(loader);
+    ret.main = new Circuit("main", ret);
+    // The name will be changed in LogisimPreferences
+    ret.tools.add(new AddTool(ret.main.getSubcircuitFactory()));
+    return ret;
+  }
 
-	private static String getFirstLine(BufferedInputStream in)
-			throws IOException {
-		byte[] first = new byte[512];
-		in.mark(first.length - 1);
-		in.read(first);
-		in.reset();
+  private static String getFirstLine(BufferedInputStream in)
+      throws IOException {
+    byte[] first = new byte[512];
+    in.mark(first.length - 1);
+    in.read(first);
+    in.reset();
 
-		int lineBreak = first.length;
-		for (int i = 0; i < lineBreak; i++) {
-			if (first[i] == '\n') {
-				lineBreak = i;
-			}
-		}
-		return new String(first, 0, lineBreak, "UTF-8");
-	}
+    int lineBreak = first.length;
+    for (int i = 0; i < lineBreak; i++) {
+      if (first[i] == '\n') {
+        lineBreak = i;
+      }
+    }
+    return new String(first, 0, lineBreak, "UTF-8");
+  }
 
-	public static LogisimFile load(File file, Loader loader) throws IOException {
-		InputStream in = new FileInputStream(file);
-		Throwable firstExcept = null;
-		try {
-			return loadSub(in, loader, file);
-		} catch (Throwable t) {
-			firstExcept = t;
-		} finally {
-			in.close();
-		}
+  public static LogisimFile load(File file, Loader loader) throws IOException {
+    InputStream in = new FileInputStream(file);
+    Throwable firstExcept = null;
+    try {
+      return loadSub(in, loader, file);
+    } catch (Throwable t) {
+      firstExcept = t;
+    } finally {
+      in.close();
+    }
 
-		if (firstExcept != null) {
-			// We'll now try to do it using a reader. This is to work around
-			// Logisim versions prior to 2.5.1, when files were not saved using
-			// UTF-8 as the encoding (though the XML file reported otherwise).
-			try {
-				in = new ReaderInputStream(new FileReader(file), "UTF8");
-				return loadSub(in, loader, file);
-			} catch (Exception t) {
-                                firstExcept.printStackTrace();
-				loader.showError(StringUtil.format(
-						Strings.get("xmlFormatError"), firstExcept.toString()));
-			} finally {
-				try {
-					in.close();
-				} catch (Exception t) {
-				}
-			}
-		}
-
-		return null;
-	}
-
-	public static LogisimFile load(InputStream in, Loader loader)
-			throws IOException {
-		try {
-			return loadSub(in, loader);
-		} catch (SAXException e) {
-                        e.printStackTrace();
-			loader.showError(StringUtil.format(Strings.get("xmlFormatError"),
-					e.toString()));
-			return null;
-		}
-	}
-
-	public static LogisimFile loadSub(InputStream in, Loader loader)
-			throws IOException, SAXException {
-		return (loadSub(in, loader, null));
-	}
-
-	public static LogisimFile loadSub(InputStream in, Loader loader, File file)
-			throws IOException, SAXException {
-		// fetch first line and then reset
-		BufferedInputStream inBuffered = new BufferedInputStream(in);
-		String firstLine = getFirstLine(inBuffered);
-
-		if (firstLine == null) {
-			throw new IOException("File is empty");
-		} else if (firstLine.equals("Logisim v1.0")) {
-			// if this is a 1.0 file, then set up a pipe to translate to
-			// 2.0 and then interpret as a 2.0 file
-			throw new IOException("Version 1.0 files no longer supported");
-		}
-
-		XmlReader xmlReader = new XmlReader(loader, file);
-		LogisimFile ret = xmlReader.readLibrary(inBuffered);
-		ret.loader = loader;
-		return ret;
-	}
-
-	private EventSourceWeakSupport<LibraryListener> listeners = new EventSourceWeakSupport<LibraryListener>();
-	private Loader loader;
-	private LinkedList<String> messages = new LinkedList<String>();
-	private Options options = new Options();
-
-	private LinkedList<AddTool> tools = new LinkedList<AddTool>();
-
-	private LinkedList<Library> libraries = new LinkedList<Library>();
-
-	private Circuit main = null;
-
-	private String name;
-
-	private boolean dirty = false;
-
-	LogisimFile(Loader loader) {
-		this.loader = loader;
-
-		// Creates the default project name, adding an underscore if needed
-		name = Strings.get("defaultProjectName");
-		if (Projects.windowNamed(name)) {
-			for (int i = 2; true; i++) {
-				if (!Projects.windowNamed(name + "_" + i)) {
-					name += "_" + i;
-					break;
-				}
-			}
-		}
-
-	}
-
-	public void addCircuit(Circuit circuit) {
-		addCircuit(circuit, tools.size());
-	}
-
-	public void addCircuit(Circuit circuit, int index) {
-		AddTool tool = new AddTool(circuit.getSubcircuitFactory());
-		tools.add(index, tool);
-		if (tools.size() == 1)
-			setMainCircuit(circuit);
-		fireEvent(LibraryEvent.ADD_TOOL, tool);
-	}
-
-	public void addVhdlContent(VhdlContent content) {
-		addVhdlContent(content, tools.size());
-	}
-
-        public void addVhdlContent(VhdlContent content, int index) {
-            AddTool tool = new AddTool(new VhdlEntity(content));
-            tools.add(index, tool);
-            fireEvent(LibraryEvent.ADD_TOOL, tool);
-                    com.cburch.logisim.tools.FactoryAttributes s =
-                        (com.cburch.logisim.tools.FactoryAttributes) tool.getAttributeSet();
+    if (firstExcept != null) {
+      // We'll now try to do it using a reader. This is to work around
+      // Logisim versions prior to 2.5.1, when files were not saved using
+      // UTF-8 as the encoding (though the XML file reported otherwise).
+      try {
+        in = new ReaderInputStream(new FileReader(file), "UTF8");
+        return loadSub(in, loader, file);
+      } catch (Exception t) {
+        firstExcept.printStackTrace();
+        loader.showError(StringUtil.format(
+              Strings.get("xmlFormatError"), firstExcept.toString()));
+      } finally {
+        try {
+          in.close();
+        } catch (Exception t) {
         }
+      }
+    }
 
-	public void addLibrary(Library lib) {
-		libraries.add(lib);
-		fireEvent(LibraryEvent.ADD_LIBRARY, lib);
-	}
+    return null;
+  }
 
-	//
-	// listener methods
-	//
-	public void addLibraryListener(LibraryListener what) {
-		listeners.add(what);
-	}
+  public static LogisimFile load(InputStream in, Loader loader)
+      throws IOException {
+    try {
+      return loadSub(in, loader);
+    } catch (SAXException e) {
+      e.printStackTrace();
+      loader.showError(StringUtil.format(Strings.get("xmlFormatError"),
+            e.toString()));
+      return null;
+    }
+  }
 
-	//
-	// modification actions
-	//
-	public void addMessage(String msg) {
-		messages.addLast(msg);
-	}
+  public static LogisimFile loadSub(InputStream in, Loader loader)
+      throws IOException, SAXException {
+    return (loadSub(in, loader, null));
+  }
 
-	@SuppressWarnings("resource")
-	public LogisimFile cloneLogisimFile(Loader newloader) {
-		PipedInputStream reader = new PipedInputStream();
-		PipedOutputStream writer = new PipedOutputStream();
-		try {
-			reader.connect(writer);
-		} catch (IOException e) {
-			newloader.showError(StringUtil.format(
-					Strings.get("fileDuplicateError"), e.toString()));
-			return null;
-		}
-		new WritingThread(writer, this).start();
-		try {
-			return LogisimFile.load(reader, newloader);
-		} catch (IOException e) {
-			newloader.showError(StringUtil.format(
-					Strings.get("fileDuplicateError"), e.toString()));
-			try {
-				reader.close();
-			} catch (IOException e1) {
-			}
-			return null;
-		}
-	}
+  public static LogisimFile loadSub(InputStream in, Loader loader, File file)
+      throws IOException, SAXException {
+    // fetch first line and then reset
+    BufferedInputStream inBuffered = new BufferedInputStream(in);
+    String firstLine = getFirstLine(inBuffered);
 
-	public boolean contains(Circuit circ) {
-		for (AddTool tool : tools) {
-                        if (tool.getFactory() instanceof SubcircuitFactory) {
-                            SubcircuitFactory factory = (SubcircuitFactory) tool.getFactory();
-                            if (factory.getSubcircuit() == circ)
-                                    return true;
-                        }
-		}
-		return false;
-	}
+    if (firstLine == null) {
+      throw new IOException("File is empty");
+    } else if (firstLine.equals("Logisim v1.0")) {
+      // if this is a 1.0 file, then set up a pipe to translate to
+      // 2.0 and then interpret as a 2.0 file
+      throw new IOException("Version 1.0 files no longer supported");
+    }
 
-        public boolean containsFactory(String name) {
-            for (AddTool tool : tools) {
-                    if (tool.getFactory() instanceof VhdlEntity) {
-                        VhdlEntity factory = (VhdlEntity) tool.getFactory();
-                        if (factory.getContent().getName().equals(name))
-                                return true;
-                    } else if (tool.getFactory() instanceof SubcircuitFactory) {
-                            SubcircuitFactory factory = (SubcircuitFactory) tool.getFactory();
-                            if (factory.getSubcircuit().getName().equals(name))
-                                return true;
-                    }
-            } 
-            return false;
+    XmlReader xmlReader = new XmlReader(loader, file);
+    LogisimFile ret = xmlReader.readLibrary(inBuffered);
+    ret.loader = loader;
+    return ret;
+  }
+
+  private EventSourceWeakSupport<LibraryListener> listeners = new EventSourceWeakSupport<LibraryListener>();
+  private Loader loader;
+  private LinkedList<String> messages = new LinkedList<String>();
+  private Options options = new Options();
+
+  private LinkedList<AddTool> tools = new LinkedList<AddTool>();
+
+  private LinkedList<Library> libraries = new LinkedList<Library>();
+
+  private Circuit main = null;
+
+  private String name;
+
+  private boolean dirty = false;
+
+  LogisimFile(Loader loader) {
+    this.loader = loader;
+
+    // Creates the default project name, adding an underscore if needed
+    name = Strings.get("defaultProjectName");
+    if (Projects.windowNamed(name)) {
+      for (int i = 2; true; i++) {
+        if (!Projects.windowNamed(name + "_" + i)) {
+          name += "_" + i;
+          break;
         }
+      }
+    }
 
-	public boolean contains(VhdlContent content) {
-		for (AddTool tool : tools) {
-                        if (tool.getFactory() instanceof VhdlEntity) {
-                            VhdlEntity factory = (VhdlEntity) tool.getFactory();
-                            if (factory.getContent() == content)
-                                    return true;
-                        }
-		}
-		return false;
-	}
+  }
 
-	private Tool findTool(Library lib, Tool query) {
-		for (Tool tool : lib.getTools()) {
-			if (tool.equals(query))
-				return tool;
-		}
-		return null;
-	}
+  public void addCircuit(Circuit circuit) {
+    addCircuit(circuit, tools.size());
+  }
 
-	Tool findTool(Tool query) {
-		for (Library lib : getLibraries()) {
-			Tool ret = findTool(lib, query);
-			if (ret != null)
-				return ret;
-		}
-		return null;
-	}
+  public void addCircuit(Circuit circuit, int index) {
+    AddTool tool = new AddTool(circuit.getSubcircuitFactory());
+    tools.add(index, tool);
+    if (tools.size() == 1)
+      setMainCircuit(circuit);
+    fireEvent(LibraryEvent.ADD_TOOL, tool);
+  }
 
-	private void fireEvent(int action, Object data) {
-		LibraryEvent e = new LibraryEvent(this, action, data);
-		for (LibraryListener l : listeners) {
-			l.libraryChanged(e);
-		}
-	}
+  public void addVhdlContent(VhdlContent content) {
+    addVhdlContent(content, tools.size());
+  }
 
-	public AddTool getAddTool(Circuit circ) {
-		for (AddTool tool : tools) {
-                        if (tool.getFactory() instanceof SubcircuitFactory) {
-                            SubcircuitFactory factory = (SubcircuitFactory) tool.getFactory();
-                            if (factory.getSubcircuit() == circ) {
-                                    return tool;
-                            }
-                        }
-		}
-		return null;
-	}
+  public void addVhdlContent(VhdlContent content, int index) {
+    AddTool tool = new AddTool(new VhdlEntity(content));
+    tools.add(index, tool);
+    fireEvent(LibraryEvent.ADD_TOOL, tool);
+    com.cburch.logisim.tools.FactoryAttributes s =
+        (com.cburch.logisim.tools.FactoryAttributes) tool.getAttributeSet();
+  }
 
-	public AddTool getAddTool(VhdlContent content) {
-		for (AddTool tool : tools) {
-                    if (tool.getFactory() instanceof VhdlEntity) {
-			VhdlEntity factory = (VhdlEntity) tool.getFactory();
-			if (factory.getContent() == content) {
-				return tool;
-			}
-                    }
-		}
-		return null;
-	}
+  public void addLibrary(Library lib) {
+    libraries.add(lib);
+    fireEvent(LibraryEvent.ADD_LIBRARY, lib);
+  }
 
-	public Circuit getCircuit(String name) {
-		if (name == null)
-			return null;
-		for (AddTool tool : tools) {
-                        if (tool.getFactory() instanceof SubcircuitFactory) {
-                            SubcircuitFactory factory = (SubcircuitFactory) tool.getFactory();
-                            if (name.equals(factory.getName()))
-                                    return factory.getSubcircuit();
-                        }
-		}
-		return null;
-	}
+  //
+  // listener methods
+  //
+  public void addLibraryListener(LibraryListener what) {
+    listeners.add(what);
+  }
 
-        public VhdlContent getVhdlContent(String name) {
-		if (name == null)
-			return null;
-		for (AddTool tool : tools) {
-                        if (tool.getFactory() instanceof VhdlEntity) {
-                            VhdlEntity factory = (VhdlEntity) tool.getFactory();
-                            if (name.equals(factory.getName()))
-                                    return factory.getContent();
-                        }
-		}
-		return null;
-	}
+  //
+  // modification actions
+  //
+  public void addMessage(String msg) {
+    messages.addLast(msg);
+  }
 
-	public int getCircuitCount() {
-		return getCircuits().size();
-	}
+  @SuppressWarnings("resource")
+  public LogisimFile cloneLogisimFile(Loader newloader) {
+    PipedInputStream reader = new PipedInputStream();
+    PipedOutputStream writer = new PipedOutputStream();
+    try {
+      reader.connect(writer);
+    } catch (IOException e) {
+      newloader.showError(StringUtil.format(
+            Strings.get("fileDuplicateError"), e.toString()));
+      return null;
+    }
+    new WritingThread(writer, this).start();
+    try {
+      return LogisimFile.load(reader, newloader);
+    } catch (IOException e) {
+      newloader.showError(StringUtil.format(
+            Strings.get("fileDuplicateError"), e.toString()));
+      try {
+        reader.close();
+      } catch (IOException e1) {
+      }
+      return null;
+    }
+  }
 
-	public List<Circuit> getCircuits() {
-		List<Circuit> ret = new ArrayList<Circuit>(tools.size());
-		for (AddTool tool : tools) {
-                        if (tool.getFactory() instanceof SubcircuitFactory) {
-                            SubcircuitFactory factory = (SubcircuitFactory) tool.getFactory();
-                            ret.add(factory.getSubcircuit());
-                        }
-		}
-		return ret;
-	}
+  public boolean contains(Circuit circ) {
+    for (AddTool tool : tools) {
+      if (tool.getFactory() instanceof SubcircuitFactory) {
+        SubcircuitFactory factory = (SubcircuitFactory) tool.getFactory();
+        if (factory.getSubcircuit() == circ)
+          return true;
+      }
+    }
+    return false;
+  }
 
-        public int indexOfCircuit(Circuit circ) {
-		for (int i = 0; i < tools.size(); i++) {
-                        AddTool tool = tools.get(i);
-                        if (tool.getFactory() instanceof SubcircuitFactory) {
-                            SubcircuitFactory factory = (SubcircuitFactory) tool.getFactory();
-                            if (factory.getSubcircuit() == circ) {
-                                    return i;
-                            }
-                        }
-		}
-		return -1;
+  public boolean containsFactory(String name) {
+    for (AddTool tool : tools) {
+      if (tool.getFactory() instanceof VhdlEntity) {
+        VhdlEntity factory = (VhdlEntity) tool.getFactory();
+        if (factory.getContent().getName().equals(name))
+          return true;
+      } else if (tool.getFactory() instanceof SubcircuitFactory) {
+        SubcircuitFactory factory = (SubcircuitFactory) tool.getFactory();
+        if (factory.getSubcircuit().getName().equals(name))
+          return true;
+      }
+    } 
+    return false;
+  }
+
+  public boolean contains(VhdlContent content) {
+    for (AddTool tool : tools) {
+      if (tool.getFactory() instanceof VhdlEntity) {
+        VhdlEntity factory = (VhdlEntity) tool.getFactory();
+        if (factory.getContent() == content)
+          return true;
+      }
+    }
+    return false;
+  }
+
+  private Tool findTool(Library lib, Tool query) {
+    for (Tool tool : lib.getTools()) {
+      if (tool.equals(query))
+        return tool;
+    }
+    return null;
+  }
+
+  Tool findTool(Tool query) {
+    for (Library lib : getLibraries()) {
+      Tool ret = findTool(lib, query);
+      if (ret != null)
+        return ret;
+    }
+    return null;
+  }
+
+  private void fireEvent(int action, Object data) {
+    LibraryEvent e = new LibraryEvent(this, action, data);
+    for (LibraryListener l : listeners) {
+      l.libraryChanged(e);
+    }
+  }
+
+  public AddTool getAddTool(Circuit circ) {
+    for (AddTool tool : tools) {
+      if (tool.getFactory() instanceof SubcircuitFactory) {
+        SubcircuitFactory factory = (SubcircuitFactory) tool.getFactory();
+        if (factory.getSubcircuit() == circ) {
+          return tool;
         }
+      }
+    }
+    return null;
+  }
 
-	public List<VhdlContent> getVhdlContents() {
-		List<VhdlContent> ret = new ArrayList<VhdlContent>(tools.size());
-		for (AddTool tool : tools) {
-                    if (tool.getFactory() instanceof VhdlEntity) {
-                        VhdlEntity factory = (VhdlEntity) tool.getFactory();
-                        ret.add(factory.getContent());
-                    }
-		}
-		return ret;
-	}
+  public AddTool getAddTool(VhdlContent content) {
+    for (AddTool tool : tools) {
+      if (tool.getFactory() instanceof VhdlEntity) {
+        VhdlEntity factory = (VhdlEntity) tool.getFactory();
+        if (factory.getContent() == content) {
+          return tool;
+        }
+      }
+    }
+    return null;
+  }
 
-	public int indexOfVhdl(VhdlContent vhdl) {
-		for (int i = 0; i < tools.size(); i++) {
-			AddTool tool = tools.get(i);
-			if (tool.getFactory() instanceof VhdlEntity) {
-				VhdlEntity factory = (VhdlEntity) tool.getFactory();
-				if (factory.getContent() == vhdl) {
-					return i;
-				}
-			}
-		}
-		return -1;
-	}
+  public Circuit getCircuit(String name) {
+    if (name == null)
+      return null;
+    for (AddTool tool : tools) {
+      if (tool.getFactory() instanceof SubcircuitFactory) {
+        SubcircuitFactory factory = (SubcircuitFactory) tool.getFactory();
+        if (name.equals(factory.getName()))
+          return factory.getSubcircuit();
+      }
+    }
+    return null;
+  }
 
-	@Override
-	public List<Library> getLibraries() {
-		return libraries;
-	}
+  public VhdlContent getVhdlContent(String name) {
+    if (name == null)
+      return null;
+    for (AddTool tool : tools) {
+      if (tool.getFactory() instanceof VhdlEntity) {
+        VhdlEntity factory = (VhdlEntity) tool.getFactory();
+        if (name.equals(factory.getName()))
+          return factory.getContent();
+      }
+    }
+    return null;
+  }
 
-	public Loader getLoader() {
-		return loader;
-	}
+  public int getCircuitCount() {
+    return getCircuits().size();
+  }
 
-	public Circuit getMainCircuit() {
-		return main;
-	}
+  public List<Circuit> getCircuits() {
+    List<Circuit> ret = new ArrayList<Circuit>(tools.size());
+    for (AddTool tool : tools) {
+      if (tool.getFactory() instanceof SubcircuitFactory) {
+        SubcircuitFactory factory = (SubcircuitFactory) tool.getFactory();
+        ret.add(factory.getSubcircuit());
+      }
+    }
+    return ret;
+  }
 
-	public String getMessage() {
-		if (messages.size() == 0)
-			return null;
-		return messages.removeFirst();
-	}
+  public int indexOfCircuit(Circuit circ) {
+    for (int i = 0; i < tools.size(); i++) {
+      AddTool tool = tools.get(i);
+      if (tool.getFactory() instanceof SubcircuitFactory) {
+        SubcircuitFactory factory = (SubcircuitFactory) tool.getFactory();
+        if (factory.getSubcircuit() == circ) {
+          return i;
+        }
+      }
+    }
+    return -1;
+  }
 
-	//
-	// access methods
-	//
-	@Override
-	public String getName() {
-		return name;
-	}
+  public List<VhdlContent> getVhdlContents() {
+    List<VhdlContent> ret = new ArrayList<VhdlContent>(tools.size());
+    for (AddTool tool : tools) {
+      if (tool.getFactory() instanceof VhdlEntity) {
+        VhdlEntity factory = (VhdlEntity) tool.getFactory();
+        ret.add(factory.getContent());
+      }
+    }
+    return ret;
+  }
 
-	public Options getOptions() {
-		return options;
-	}
+  public int indexOfVhdl(VhdlContent vhdl) {
+    for (int i = 0; i < tools.size(); i++) {
+      AddTool tool = tools.get(i);
+      if (tool.getFactory() instanceof VhdlEntity) {
+        VhdlEntity factory = (VhdlEntity) tool.getFactory();
+        if (factory.getContent() == vhdl) {
+          return i;
+        }
+      }
+    }
+    return -1;
+  }
 
-	@Override
-	public List<AddTool> getTools() {
-		return tools;
-	}
+  @Override
+  public List<Library> getLibraries() {
+    return libraries;
+  }
 
-	public String getUnloadLibraryMessage(Library lib) {
-		HashSet<ComponentFactory> factories = new HashSet<ComponentFactory>();
-		for (Tool tool : lib.getTools()) {
-			if (tool instanceof AddTool) {
-				factories.add(((AddTool) tool).getFactory());
-			}
-		}
+  public Loader getLoader() {
+    return loader;
+  }
 
-		for (Circuit circuit : getCircuits()) {
-			for (Component comp : circuit.getNonWires()) {
-				if (factories.contains(comp.getFactory())) {
-					return StringUtil.format(Strings.get("unloadUsedError"),
-							circuit.getName());
-				}
-			}
-		}
+  public Circuit getMainCircuit() {
+    return main;
+  }
 
-		ToolbarData tb = options.getToolbarData();
-		MouseMappings mm = options.getMouseMappings();
-		for (Tool t : lib.getTools()) {
-			if (tb.usesToolFromSource(t)) {
-				return Strings.get("unloadToolbarError");
-			}
-			if (mm.usesToolFromSource(t)) {
-				return Strings.get("unloadMappingError");
-			}
-		}
+  public String getMessage() {
+    if (messages.size() == 0)
+      return null;
+    return messages.removeFirst();
+  }
 
-		return null;
-	}
+  //
+  // access methods
+  //
+  @Override
+  public String getName() {
+    return name;
+  }
 
-	@Override
-	public boolean isDirty() {
-		return dirty;
-	}
+  public Options getOptions() {
+    return options;
+  }
 
-	public void moveCircuit(AddTool tool, int index) {
-		int oldIndex = tools.indexOf(tool);
-		if (oldIndex < 0) {
-			tools.add(index, tool);
-			fireEvent(LibraryEvent.ADD_TOOL, tool);
-		} else {
-			AddTool value = tools.remove(oldIndex);
-			tools.add(index, value);
-			fireEvent(LibraryEvent.MOVE_TOOL, tool);
-		}
-	}
+  @Override
+  public List<AddTool> getTools() {
+    return tools;
+  }
 
-	public void removeCircuit(Circuit circuit) {
-		if (getCircuitCount() <= 1) {
-			throw new RuntimeException("Cannot remove last circuit");
-		}
+  public String getUnloadLibraryMessage(Library lib) {
+    HashSet<ComponentFactory> factories = new HashSet<ComponentFactory>();
+    for (Tool tool : lib.getTools()) {
+      if (tool instanceof AddTool) {
+        factories.add(((AddTool) tool).getFactory());
+      }
+    }
 
-		int index = indexOfCircuit(circuit);
-		if (index >= 0) {
-			Tool circuitTool = tools.remove(index);
+    for (Circuit circuit : getCircuits()) {
+      for (Component comp : circuit.getNonWires()) {
+        if (factories.contains(comp.getFactory())) {
+          return StringUtil.format(Strings.get("unloadUsedError"),
+              circuit.getName());
+        }
+      }
+    }
 
-			if (main == circuit) {
-				AddTool dflt_tool = tools.get(0);
-				SubcircuitFactory factory = (SubcircuitFactory) dflt_tool
-						.getFactory();
-				setMainCircuit(factory.getSubcircuit());
-			}
-			fireEvent(LibraryEvent.REMOVE_TOOL, circuitTool);
-		}
-	}
+    ToolbarData tb = options.getToolbarData();
+    MouseMappings mm = options.getMouseMappings();
+    for (Tool t : lib.getTools()) {
+      if (tb.usesToolFromSource(t)) {
+        return Strings.get("unloadToolbarError");
+      }
+      if (mm.usesToolFromSource(t)) {
+        return Strings.get("unloadMappingError");
+      }
+    }
 
-	public void removeVhdl(VhdlContent vhdl) {
-		int index = indexOfVhdl(vhdl);
-		if (index >= 0) {
-			Tool vhdlTool = tools.remove(index);
-			fireEvent(LibraryEvent.REMOVE_TOOL, vhdlTool);
-		}
-	}
+    return null;
+  }
 
-	public void removeLibrary(Library lib) {
-		libraries.remove(lib);
-		fireEvent(LibraryEvent.REMOVE_LIBRARY, lib);
-	}
+  @Override
+  public boolean isDirty() {
+    return dirty;
+  }
 
-	public void removeLibraryListener(LibraryListener what) {
-		listeners.remove(what);
-	}
+  public void moveCircuit(AddTool tool, int index) {
+    int oldIndex = tools.indexOf(tool);
+    if (oldIndex < 0) {
+      tools.add(index, tool);
+      fireEvent(LibraryEvent.ADD_TOOL, tool);
+    } else {
+      AddTool value = tools.remove(oldIndex);
+      tools.add(index, value);
+      fireEvent(LibraryEvent.MOVE_TOOL, tool);
+    }
+  }
 
-	public void setDirty(boolean value) {
-		if (dirty != value) {
-			dirty = value;
-			fireEvent(LibraryEvent.DIRTY_STATE, value ? Boolean.TRUE
-					: Boolean.FALSE);
-		}
-	}
+  public void removeCircuit(Circuit circuit) {
+    if (getCircuitCount() <= 1) {
+      throw new RuntimeException("Cannot remove last circuit");
+    }
 
-	public void setMainCircuit(Circuit circuit) {
-		if (circuit == null)
-			return;
-		this.main = circuit;
-		fireEvent(LibraryEvent.SET_MAIN, circuit);
-	}
+    int index = indexOfCircuit(circuit);
+    if (index >= 0) {
+      Tool circuitTool = tools.remove(index);
 
-	public void setName(String name) {
-		this.name = name;
-		fireEvent(LibraryEvent.SET_NAME, name);
-	}
+      if (main == circuit) {
+        AddTool dflt_tool = tools.get(0);
+        SubcircuitFactory factory = (SubcircuitFactory) dflt_tool
+            .getFactory();
+        setMainCircuit(factory.getSubcircuit());
+      }
+      fireEvent(LibraryEvent.REMOVE_TOOL, circuitTool);
+    }
+  }
 
-	//
-	// other methods
-	//
-	void write(OutputStream out, LibraryLoader loader) throws IOException {
-		write(out, loader, null);
-	}
+  public void removeVhdl(VhdlContent vhdl) {
+    int index = indexOfVhdl(vhdl);
+    if (index >= 0) {
+      Tool vhdlTool = tools.remove(index);
+      fireEvent(LibraryEvent.REMOVE_TOOL, vhdlTool);
+    }
+  }
 
-	void write(OutputStream out, LibraryLoader loader, File dest)
-			throws IOException {
-		try {
-			XmlWriter.write(this, out, loader, dest);
-		} catch (TransformerConfigurationException e) {
-			loader.showError("internal error configuring transformer");
-		} catch (ParserConfigurationException e) {
-			loader.showError("internal error configuring parser");
-		} catch (TransformerException e) {
-			String msg = e.getMessage();
-			String err = Strings.get("xmlConversionError");
-			if (msg == null)
-				err += ": " + msg;
-			loader.showError(err);
-		}
-	}
+  public void removeLibrary(Library lib) {
+    libraries.remove(lib);
+    fireEvent(LibraryEvent.REMOVE_LIBRARY, lib);
+  }
+
+  public void removeLibraryListener(LibraryListener what) {
+    listeners.remove(what);
+  }
+
+  public void setDirty(boolean value) {
+    if (dirty != value) {
+      dirty = value;
+      fireEvent(LibraryEvent.DIRTY_STATE, value ? Boolean.TRUE
+          : Boolean.FALSE);
+    }
+  }
+
+  public void setMainCircuit(Circuit circuit) {
+    if (circuit == null)
+      return;
+    this.main = circuit;
+    fireEvent(LibraryEvent.SET_MAIN, circuit);
+  }
+
+  public void setName(String name) {
+    this.name = name;
+    fireEvent(LibraryEvent.SET_NAME, name);
+  }
+
+  //
+  // other methods
+  //
+  void write(OutputStream out, LibraryLoader loader) throws IOException {
+    write(out, loader, null);
+  }
+
+  void write(OutputStream out, LibraryLoader loader, File dest)
+      throws IOException {
+    try {
+      XmlWriter.write(this, out, loader, dest);
+    } catch (TransformerConfigurationException e) {
+      loader.showError("internal error configuring transformer");
+    } catch (ParserConfigurationException e) {
+      loader.showError("internal error configuring parser");
+    } catch (TransformerException e) {
+      String msg = e.getMessage();
+      String err = Strings.get("xmlConversionError");
+      if (msg == null)
+        err += ": " + msg;
+      loader.showError(err);
+    }
+  }
 }
