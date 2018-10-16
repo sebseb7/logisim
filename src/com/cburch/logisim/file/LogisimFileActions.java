@@ -258,19 +258,23 @@ public class LogisimFileActions {
 
     @Override
     public void doIt(Project proj) {
-      LogisimFile src = ProjectActions.createNewFile(proj);
+      LogisimFile src = ProjectActions.createNewFile(proj == null ? null : proj.getFrame());
       LogisimFile dst = proj.getLogisimFile();
 
       copyToolAttributes(src, dst);
       for (Library srcLib : src.getLibraries()) {
         Library dstLib = dst.getLibrary(srcLib.getName());
         if (dstLib == null) {
-          String desc = src.getLoader().getDescriptor(srcLib);
-          dstLib = dst.getLoader().loadLibrary(desc);
-          proj.getLogisimFile().addLibrary(dstLib);
-          if (libraries == null)
-            libraries = new ArrayList<Library>();
-          libraries.add(dstLib);
+          try {
+            String desc = src.getLoader().getDescriptor(srcLib);
+            dstLib = dst.getLoader().loadLibrary(desc);
+            proj.getLogisimFile().addLibrary(dstLib);
+            if (libraries == null)
+              libraries = new ArrayList<Library>();
+            libraries.add(dstLib);
+          } catch (LoadCanceledByUser ex) {
+            // todo: log
+          }
         }
         copyToolAttributes(srcLib, dstLib);
       }

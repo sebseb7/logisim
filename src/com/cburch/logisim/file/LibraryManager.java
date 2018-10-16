@@ -224,13 +224,9 @@ class LibraryManager {
       return desc_sep + lib.getName();
     } else {
       LibraryDescriptor desc = invMap.get(lib);
-      if (desc != null) {
-        return desc.toDescriptor(loader);
-      } else {
-        throw new LoaderException(StringUtil.format(
-              Strings.get("fileDescriptorUnknownError"),
-              lib.getDisplayName()));
-      }
+      if (desc == null)
+        return null;
+      return desc.toDescriptor(loader);
     }
   }
 
@@ -263,7 +259,7 @@ class LibraryManager {
     return ret;
   }
 
-  public Library loadLibrary(Loader loader, String desc) {
+  public Library loadLibrary(Loader loader, String desc) throws LoadCanceledByUser {
     // It may already be loaded.
     // Otherwise we'll have to decode it.
     int sep = desc.indexOf(desc_sep);

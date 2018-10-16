@@ -363,8 +363,8 @@ class XmlWriter {
       return null;
     String name = "" + libs.size();
     String desc = loader.getDescriptor(lib);
-    if (desc == null) {
-      loader.showError("library location unknown: " + lib.getName());
+    if (desc == null) { // should never happen for a loaded file?
+      loader.showError("internal error: missing library: " + lib.getName());
       return null;
     }
     libs.put(lib, name);

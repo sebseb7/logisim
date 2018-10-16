@@ -48,6 +48,7 @@ import javax.swing.SwingUtilities;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.file.LoadFailedException;
+import com.cburch.logisim.file.LoadCanceledByUser;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.main.Frame;
@@ -129,32 +130,25 @@ public class ProjectActions {
     return file;
   }
 
-  private static Frame createFrame(Project sourceProject, Project newProject) {
-    if (sourceProject != null) {
-      Frame frame = sourceProject.getFrame();
-      if (frame != null) {
-        frame.savePreferences();
-      }
-    }
+  private static Frame createFrame(Frame sourceProjectFrame, Project newProject) {
+    if (sourceProjectFrame != null)
+        sourceProjectFrame.savePreferences();
     Frame newFrame = new Frame(newProject);
     newProject.setFrame(newFrame);
     return newFrame;
   }
 
-  public static LogisimFile createNewFile(Project baseProject) {
-    Loader loader = new Loader(baseProject == null ? null
-        : baseProject.getFrame());
+  public static LogisimFile createNewFile(Component errReportFrame) {
+    Loader loader = new Loader(errReportFrame);
     InputStream templReader = AppPreferences.getTemplate().createStream();
     LogisimFile file;
     try {
       file = loader.openLogisimFile(templReader);
     } catch (IOException ex) {
-      displayException(baseProject.getFrame(), ex);
+      displayException(errReportFrame, ex);
       file = createEmptyFile(loader);
-    } catch (LoadFailedException ex) {
-      if (!ex.isShown()) {
-        displayException(baseProject.getFrame(), ex);
-      }
+    } catch (LoadCanceledByUser ex) {
+      displayException(errReportFrame, ex);
       file = createEmptyFile(loader);
     } finally {
       try {
@@ -173,10 +167,10 @@ public class ProjectActions {
         JOptionPane.ERROR_MESSAGE);
   }
 
-  public static Project doNew(Project baseProject) {
-    LogisimFile file = createNewFile(baseProject);
+  public static Project doNew(Frame baseProjectFrame) {
+    LogisimFile file = createNewFile(baseProjectFrame);
     Project newProj = new Project(file);
-    Frame frame = createFrame(baseProject, newProj);
+    Frame frame = createFrame(baseProjectFrame, newProj);
     frame.setVisible(true);
     frame.getCanvas().requestFocus();
     newProj.getLogisimFile().getLoader().setParent(frame);
@@ -197,7 +191,7 @@ public class ProjectActions {
       file = loader.openLogisimFile(templReader);
     } catch (IOException ex) {
       displayException(monitor, ex);
-    } catch (LoadFailedException ex) {
+    } catch (LoadCanceledByUser ex) {
       displayException(monitor, ex);
     } finally {
       try {
@@ -282,20 +276,18 @@ public class ProjectActions {
         proj.setLogisimFile(lib);
       }
     } catch (LoadFailedException ex) {
-      if (!ex.isShown()) {
-        JOptionPane.showMessageDialog(
-            parent,
-            StringUtil.format(Strings.get("fileOpenError"),
-              ex.toString()),
-            Strings.get("fileOpenErrorTitle"),
-            JOptionPane.ERROR_MESSAGE);
-      }
+      JOptionPane.showMessageDialog(
+          parent,
+          StringUtil.format(Strings.get("fileOpenError"),
+            ex.toString()),
+          Strings.get("fileOpenErrorTitle"),
+          JOptionPane.ERROR_MESSAGE);
       return null;
     }
 
     Frame frame = proj.getFrame();
     if (frame == null) {
-      frame = createFrame(baseProject, proj);
+      frame = createFrame(baseProject == null ? baseProject.getFrame() : null, proj);
     }
     frame.setVisible(true);
     frame.toFront();

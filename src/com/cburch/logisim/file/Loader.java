@@ -201,7 +201,7 @@ public class Loader implements LibraryLoader {
   //
   // helper methods
   //
-  File getFileFor(String name, FileFilter filter) {
+  File getFileFor(String name, FileFilter filter) throws LoadCanceledByUser {
     // Determine the actual file name.
     File file = new File(name);
     if (!file.isAbsolute()) {
@@ -219,9 +219,8 @@ public class Loader implements LibraryLoader {
             Strings.get("fileLibraryMissingTitle"), file.getName()));
       int action = chooser.showDialog(parent,
           Strings.get("fileLibraryMissingButton"));
-      if (action != JFileChooser.APPROVE_OPTION) {
-        throw new LoaderException(Strings.get("fileLoadCanceledError"));
-      }
+      if (action != JFileChooser.APPROVE_OPTION)
+        throw new LoadCanceledByUser();
       file = chooser.getSelectedFile();
     }
     return file;
@@ -297,7 +296,7 @@ public class Loader implements LibraryLoader {
   //
   // Library methods
   //
-  public Library loadLibrary(String desc) {
+  public Library loadLibrary(String desc) throws LoadCanceledByUser {
     return LibraryManager.instance.loadLibrary(this, desc);
   }
 
@@ -342,17 +341,12 @@ public class Loader implements LibraryLoader {
   }
 
   public LogisimFile openLogisimFile(File file) throws LoadFailedException {
-    try {
       LogisimFile ret = loadLogisimFile(file);
-      if (ret != null)
-        setMainFile(file);
-      else
-        throw new LoadFailedException("File could not be opened");
+      if (ret == null)
+        throw new LoadFailedException("File could not be opened"); // fixme i18n
+      setMainFile(file);
       showMessages(ret);
       return ret;
-    } catch (LoaderException e) {
-      throw new LoadFailedException(e.getMessage(), e.isShown());
-    }
   }
 
   public LogisimFile openLogisimFile(File file, Map<File, File> substitutions)
@@ -366,13 +360,8 @@ public class Loader implements LibraryLoader {
   }
 
   public LogisimFile openLogisimFile(InputStream reader)
-      throws LoadFailedException, IOException {
-    LogisimFile ret = null;
-    try {
-      ret = LogisimFile.load(reader, this);
-    } catch (LoaderException e) {
-      return null;
-    }
+      throws /* LoadFailedException, */ IOException, LoadCanceledByUser {
+    LogisimFile ret = LogisimFile.load(reader, this);
     showMessages(ret);
     return ret;
   }

@@ -154,24 +154,20 @@ public class LogisimFile extends Library implements LibraryEventSource {
   }
 
   public static LogisimFile load(InputStream in, Loader loader)
-      throws IOException {
+      throws IOException, LoadCanceledByUser {
     try {
-      return loadSub(in, loader);
+      return loadSub(in, loader, null);
     } catch (SAXException e) {
       e.printStackTrace();
       loader.showError(StringUtil.format(Strings.get("xmlFormatError"),
             e.toString()));
-      return null;
+      throw new IOException("huh?", e);
+      // return null;
     }
   }
 
-  public static LogisimFile loadSub(InputStream in, Loader loader)
-      throws IOException, SAXException {
-    return (loadSub(in, loader, null));
-  }
-
-  public static LogisimFile loadSub(InputStream in, Loader loader, File file)
-      throws IOException, SAXException {
+  private static LogisimFile loadSub(InputStream in, Loader loader, File file)
+      throws IOException, SAXException, LoadCanceledByUser {
     // fetch first line and then reset
     BufferedInputStream inBuffered = new BufferedInputStream(in);
     String firstLine = getFirstLine(inBuffered);
@@ -281,12 +277,14 @@ public class LogisimFile extends Library implements LibraryEventSource {
     } catch (IOException e) {
       newloader.showError(StringUtil.format(
             Strings.get("fileDuplicateError"), e.toString()));
-      try {
-        reader.close();
-      } catch (IOException e1) {
-      }
-      return null;
+    } catch (LoadCanceledByUser e) {
+      newloader.showError(StringUtil.format(
+            Strings.get("fileDuplicateError"), e.toString()));
+    } finally {
+      try { reader.close();
+      } catch (IOException e1) { }
     }
+    return null;
   }
 
   public boolean contains(Circuit circ) {

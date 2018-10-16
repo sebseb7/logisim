@@ -51,7 +51,7 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
 import com.cburch.logisim.file.Loader;
-import com.cburch.logisim.file.LoaderException;
+import com.cburch.logisim.file.LoadCanceledByUser;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.prefs.Template;
@@ -80,7 +80,14 @@ class TemplateOptions extends OptionsPanel {
             AppPreferences.setTemplateFile(file, template);
             AppPreferences
                 .setTemplateType(AppPreferences.TEMPLATE_CUSTOM);
-          } catch (LoaderException ex) {
+          } catch (LoadCanceledByUser ex) {
+            JOptionPane.showMessageDialog(
+                getPreferencesFrame(),
+                StringUtil.format(
+                  Strings.get("templateErrorMessage"),
+                  ex.toString()),
+                Strings.get("templateErrorTitle"),
+                JOptionPane.ERROR_MESSAGE);
           } catch (IOException ex) {
             JOptionPane.showMessageDialog(
                 getPreferencesFrame(),

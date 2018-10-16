@@ -310,7 +310,7 @@ class XmlReader {
       }
     }
 
-    private Library toLibrary(Element elt) {
+    private Library toLibrary(Element elt) throws LoadCanceledByUser {
       if (!elt.hasAttribute("name")) {
         loader.showError(Strings.get("libNameMissingError"));
         return null;
@@ -344,7 +344,7 @@ class XmlReader {
       return ret;
     }
 
-    private void toLogisimFile(Element elt) {
+    private void toLogisimFile(Element elt) throws LoadCanceledByUser {
       // determine the version producing this file
       String versionString = elt.getAttribute("source");
       if (versionString.equals("")) {
@@ -1094,10 +1094,9 @@ class XmlReader {
       end = libElt.getNextSibling();
     }
     for (Library lib : ((Loader)loader).getBuiltin().getLibraries()) {
-      String desc = ((Loader)loader).getDescriptor(lib);
-      if (desc == null || found.contains(desc)) {
+      String desc = loader.getDescriptor(lib);
+      if (found.contains(desc))
         continue;
-      }
       Element libElt = doc.createElement("lib");
       libElt.setAttribute("name", "" + (maxLib + 1));
       libElt.setAttribute("desc", desc);
@@ -1183,7 +1182,7 @@ class XmlReader {
     return builder.parse(is);
   }
 
-  LogisimFile readLibrary(InputStream is) throws IOException, SAXException {
+  LogisimFile readLibrary(InputStream is) throws IOException, SAXException, LoadCanceledByUser {
     Document doc = loadXmlFrom(is);
     Element elt = doc.getDocumentElement();
     elt = ensureLogisimCompatibility(elt);
