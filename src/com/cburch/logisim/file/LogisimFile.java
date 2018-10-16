@@ -311,7 +311,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
         if (factory.getSubcircuit().getName().equals(name))
           return true;
       }
-    } 
+    }
     return false;
   }
 

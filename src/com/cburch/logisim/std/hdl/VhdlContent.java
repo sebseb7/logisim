@@ -53,7 +53,6 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.instance.Port;
-import com.cburch.logisim.std.hdl.VhdlEntityAttributes;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 
 public class VhdlContent extends HdlContent {
@@ -234,11 +233,11 @@ public class VhdlContent extends HdlContent {
 
   static final String ENTITY_PATTERN = "(\\s*\\bentity\\s+)%entityname%(\\s+is)\\b";
   static final String ARCH_PATTERN = "(\\s*\\barchitecture\\s+\\w+\\s+of\\s+)%entityname%\\b";
-  static final String END_PATTERN = "(\\s*\\bend\\s+)%entityname%(\\s*;)";    
+  static final String END_PATTERN = "(\\s*\\bend\\s+)%entityname%(\\s*;)";
 
   /**
    * Check if a given label could be a valid VHDL variable name
-   * 
+   *
    * @param label
    *            candidate VHDL variable name
    * @return true if the label is NOT a valid name, false otherwise

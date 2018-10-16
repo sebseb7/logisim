@@ -91,9 +91,9 @@ public class ClockHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       int HighTicks = attrs.getValue(Clock.ATTR_HIGH).intValue();
       int LowTicks = attrs.getValue(Clock.ATTR_LOW).intValue();
       if (HighTicks != 1 || LowTicks != 1) {
-        Reporter.AddFatalError("Clock component detected with " +HighTicks+":"+LowTicks+ " hi:lo duty cycle," +
-            " but maximum clock speed was selected. Only 1:1 duty cycle is supported with " +
-            " maximum clock speed.");
+        Reporter.AddFatalError("Clock component detected with " +HighTicks+":"+LowTicks+ " hi:lo duty cycle,"
+            + " but maximum clock speed was selected. Only 1:1 duty cycle is supported with "
+            + " maximum clock speed.");
       }
       if (HDLType.equals(Settings.VHDL)) {
         Contents.add("   ClockBus <= GlobalClock & '1' & '1' & NOT(GlobalClock) & GlobalClock;");

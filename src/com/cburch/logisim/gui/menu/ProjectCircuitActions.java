@@ -227,7 +227,7 @@ public class ProjectCircuitActions {
    * Ask the user for the name of the new circuit to create. If the name is
    * valid, then it returns it, otherwise it displays an error message and
    * returns null.
-   * 
+   *
    * @param frame
    *            Project's frame
    * @param lib
@@ -287,7 +287,7 @@ public class ProjectCircuitActions {
     JOptionPane pane = new JOptionPane(panel, JOptionPane.QUESTION_MESSAGE,
         JOptionPane.OK_CANCEL_OPTION);
     pane.setInitialValue(field);
-    JDialog dlog = pane.createDialog(frame,title);
+    JDialog dlog = pane.createDialog(frame, title);
     dlog.addWindowFocusListener(new WindowFocusListener() {
       public void windowGainedFocus(WindowEvent arg0) {
         field.requestFocus();

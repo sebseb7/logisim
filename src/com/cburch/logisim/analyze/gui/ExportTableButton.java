@@ -109,22 +109,22 @@ class ExportTableButton extends JButton {
       int colwidth[] = new int[inputs.vars.size() + outputs.vars.size()];
       int i;
       i = 0;
-      for(Var var : inputs.vars)
+      for (Var var : inputs.vars)
         colwidth[i++] = Math.max(var.toString().length(), var.width);
-      for(Var var : outputs.vars)
+      for (Var var : outputs.vars)
         colwidth[i++] = Math.max(var.toString().length(), var.width);
       i = 0;
-      for(Var var : inputs.vars) {
+      for (Var var : inputs.vars) {
         center(out, var.toString(), colwidth[i++]);
         out.print(" ");
       }
       out.print("|");
-      for(Var var : outputs.vars) {
+      for (Var var : outputs.vars) {
         out.print(" ");
         center(out, var.toString(), colwidth[i++]);
       }
       out.println();
-      for(i = 0; i < colwidth.length; i++) {
+      for (i = 0; i < colwidth.length; i++) {
         for (int j = 0; j < colwidth[i]+1; j++)
           out.print("~");
       }

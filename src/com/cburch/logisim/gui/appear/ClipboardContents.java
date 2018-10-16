@@ -40,7 +40,7 @@ import com.cburch.logisim.data.Location;
 
 class ClipboardContents {
   static final ClipboardContents EMPTY = new ClipboardContents(
-      Collections.<CanvasObject> emptySet(), null, null);
+      Collections.<CanvasObject>emptySet(), null, null);
 
   private Collection<CanvasObject> onClipboard;
   private Location anchorLocation;

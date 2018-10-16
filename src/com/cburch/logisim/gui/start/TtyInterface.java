@@ -43,7 +43,6 @@ import org.slf4j.LoggerFactory;
 
 import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.analyze.model.TruthTable;
-import com.cburch.logisim.analyze.model.AnalyzerModel;
 import com.cburch.logisim.circuit.Analyze;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
@@ -340,7 +339,7 @@ public class TtyInterface {
       for (String n : names) {
         if (!n.trim().equals("*") && !n.trim().equals(c.toString()))
           continue;
-        File dest = new File(c.toString() + ".png"); 
+        File dest = new File(c.toString() + ".png");
         System.out.println("Exporting " + c + " as " + dest);
         String msg = ExportImage.exportImage(canvas, c, scale, true, dest, format, null);
         if (msg != null) {

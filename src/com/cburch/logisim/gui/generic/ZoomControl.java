@@ -44,8 +44,6 @@ import java.beans.PropertyChangeListener;
 
 import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.SwingConstants;
-import javax.swing.BorderFactory;
-import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JButton;

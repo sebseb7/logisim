@@ -86,7 +86,7 @@ import javax.swing.ProgressMonitor;
  * sverrehu@ifi.uio.no
  * <P>
  * </CENTER>
- * 
+ *
  * @version 0.90 21 Apr 1996
  * @author <A HREF="http://www.cs.brown.edu/people/amd/">Adam Doppelt</A>
  */
@@ -221,7 +221,6 @@ public class GifEncoder {
     static void LZWCompress(OutputStream output, int codesize,
         byte toCompress[]) throws IOException {
       byte c;
-      short index;
       int clearcode, endofinfo, numbits, limit;
       short prefix = (short) 0xFFFF;
 
@@ -239,7 +238,8 @@ public class GifEncoder {
 
       for (int loop = 0; loop < toCompress.length; ++loop) {
         c = toCompress[loop];
-        if ((index = strings.FindCharString(prefix, c)) != -1)
+        short index = strings.FindCharString(prefix, c);
+        if (index != -1)
           prefix = index;
         else {
           bitFile.WriteBits(prefix, numbits);
@@ -466,7 +466,7 @@ public class GifEncoder {
    * Construct a GIFEncoder. The constructor will convert the image to an
    * indexed color array. <B>This may take some time.</B>
    * <P>
-   * 
+   *
    * @param image
    *            The image to encode. The image <B>must</B> be completely
    *            loaded.
@@ -490,7 +490,7 @@ public class GifEncoder {
     }
 
     try {
-      if (grabber.grabPixels() != true)
+      if (!grabber.grabPixels())
         throw new AWTException(Strings.get("grabberError") + ": "
             + grabber.status());
     } catch (InterruptedException e) {

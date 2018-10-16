@@ -118,11 +118,10 @@ class CanvasPainter implements PropertyChangeListener {
         GraphicsUtil.outlineText(g, caption, p.getX() + 4,
             p.getY() + 1 + fm.getAscent(),
             Value.WIDTH_ERROR_CAPTION_COLOR,
-            common != null && !w.equals(common) ?
-            Value.WIDTH_ERROR_HIGHLIGHT_COLOR :
-            Value.WIDTH_ERROR_CAPTION_BGCOLOR);
+            common != null && !w.equals(common)
+            ? Value.WIDTH_ERROR_HIGHLIGHT_COLOR
+            : Value.WIDTH_ERROR_CAPTION_BGCOLOR);
       }
-
     }
     g.setColor(Color.BLACK);
     GraphicsUtil.switchToWidth(g, 1);

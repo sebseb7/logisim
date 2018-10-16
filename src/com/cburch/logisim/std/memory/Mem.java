@@ -251,7 +251,7 @@ abstract class Mem extends InstanceFactory {
     int dataLines = lineSize(painter.getAttributeSet());
     if (painter.getShowState()) {
       MemState state = getState(painter);
-      state.paint(painter.getGraphics(), bds.getX(), bds.getY(), 
+      state.paint(painter.getGraphics(), bds.getX(), bds.getY(),
           15, 15, bds.getWidth() - 30, bds.getHeight() - 20, true, dataLines);
     } else {
       int addrBits = painter.getAttributeValue(ADDR_ATTR).getWidth();
@@ -276,7 +276,7 @@ abstract class Mem extends InstanceFactory {
             bds.getY() + bds.getHeight() / 2 + 20);
     }
 
-    GraphicsUtil.drawCenteredText( g,
+    GraphicsUtil.drawCenteredText(g,
         MEM + " " + GetSizeLabel(painter.getAttributeValue(Mem.ADDR_ATTR).getWidth())
         + " x "
         + Integer.toString(painter.getAttributeValue(Mem.DATA_ATTR).getWidth()),

@@ -55,8 +55,6 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.Constant;
 import com.cburch.logisim.std.wiring.Pin;
-import com.cburch.logisim.std.wiring.Pin;
-import com.cburch.logisim.std.gates.NegateAttribute;
 
 public class CircuitBuilder {
 

@@ -184,7 +184,7 @@ public class AppearanceEditHandler extends EditHandler
 
     if (!remove.isEmpty()) {
       canvas.getProject().doAction(
-          new SelectionAction(canvas, 
+          new SelectionAction(canvas,
             Strings.getter("deleteSelectionAction"), remove, null,
             select, anchorLocation, anchorFacing));
     }

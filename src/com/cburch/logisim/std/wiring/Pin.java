@@ -120,7 +120,7 @@ public class Pin extends InstanceFactory {
           EditDecimal.this.setVisible(false);
         }
       });
-      addWindowFocusListener(new WindowFocusListener() {            
+      addWindowFocusListener(new WindowFocusListener() {
         public void windowLostFocus(WindowEvent e) {
           EditDecimal.this.setVisible(false);
         }
@@ -162,7 +162,7 @@ public class Pin extends InstanceFactory {
       gbc.gridy = 0;
       gbc.gridwidth = GridBagConstraints.REMAINDER;
       gbc.anchor = GridBagConstraints.BASELINE;
-      gbc.insets = new Insets(8,4,8,4);
+      gbc.insets = new Insets(8, 4, 8, 4);
       text.addKeyListener(this);
       text.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
       text.setBackground(VALID_COLOR);
@@ -312,8 +312,8 @@ public class Pin extends InstanceFactory {
 
       BitWidth width = state.getAttributeValue(StdAttr.WIDTH);
       PinState pinState = getState(state);
-      int r = (radix == RadixOption.RADIX_16 ? 4 :
-          (radix == RadixOption.RADIX_8 ? 3 : 1));
+      int r = (radix == RadixOption.RADIX_16
+          ? 4 : (radix == RadixOption.RADIX_8 ? 3 : 1));
       if (bit+r > width.getWidth())
         r = width.getWidth() - bit;
       Value val[] = pinState.intendedValue.getAll();
@@ -388,8 +388,8 @@ public class Pin extends InstanceFactory {
         }
         if (bitCaret < 0) {
           BitWidth width = state.getAttributeValue(StdAttr.WIDTH);
-          int r = (radix == RadixOption.RADIX_16 ? 4 :
-              (radix == RadixOption.RADIX_8 ? 3 : 1));
+          int r = (radix == RadixOption.RADIX_16
+              ? 4 : (radix == RadixOption.RADIX_8 ? 3 : 1));
           bitCaret = ((width.getWidth()-1)/r) * r;
         }
         bitPressed = -1;
@@ -402,8 +402,8 @@ public class Pin extends InstanceFactory {
       RadixOption radix = state.getAttributeValue(RadixOption.ATTRIBUTE);
       if (radix == RadixOption.RADIX_10_SIGNED || radix == RadixOption.RADIX_10_UNSIGNED)
         return;
-      int r = (radix == RadixOption.RADIX_16 ? 4 :
-          (radix == RadixOption.RADIX_8 ? 3 : 1));
+      int r = (radix == RadixOption.RADIX_16
+          ? 4 : (radix == RadixOption.RADIX_8 ? 3 : 1));
       BitWidth width = state.getAttributeValue(StdAttr.WIDTH);
       if (bitCaret < 0)
         bitCaret = ((width.getWidth()-1)/r) * r;
@@ -422,8 +422,8 @@ public class Pin extends InstanceFactory {
       RadixOption radix = painter.getAttributeValue(RadixOption.ATTRIBUTE);
       if (radix == RadixOption.RADIX_10_SIGNED || radix == RadixOption.RADIX_10_UNSIGNED)
         return;
-      int r = (radix == RadixOption.RADIX_16 ? 4 :
-          (radix == RadixOption.RADIX_8 ? 3 : 1));
+      int r = (radix == RadixOption.RADIX_16
+          ? 4 : (radix == RadixOption.RADIX_8 ? 3 : 1));
       if (width.getWidth() <= r)
         return;
       Bounds bds = painter.getBounds();

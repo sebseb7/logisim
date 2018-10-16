@@ -755,8 +755,8 @@ public class Circuit {
       } else if (factory instanceof VhdlEntity) {
         VhdlEntity vhdl = (VhdlEntity)factory;
         vhdl.removeCircuitUsing(c);
-      } else if (factory instanceof DynamicElementProvider &&
-          c instanceof InstanceComponent) {
+      } else if (factory instanceof DynamicElementProvider
+          && c instanceof InstanceComponent) {
         // TODO: remove stale appearance dynamic elements in
         // CircuitTransaction.execute() instead?
         HashSet<Circuit> allAffected = new HashSet<>();

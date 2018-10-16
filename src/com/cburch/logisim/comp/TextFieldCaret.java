@@ -48,7 +48,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.tools.Caret;
 import com.cburch.logisim.tools.CaretEvent;
 import com.cburch.logisim.tools.CaretListener;
-import com.cburch.draw.util.TextMetrics;
 
 class TextFieldCaret implements Caret, TextFieldListener {
 
@@ -167,9 +166,9 @@ class TextFieldCaret implements Caret, TextFieldListener {
   }
 
   protected boolean wordBoundary(int pos) {
-    return (pos == 0 || pos >= curText.length() ||
-        (Character.isWhitespace(curText.charAt(pos-1)) !=
-         Character.isWhitespace(curText.charAt(pos))));
+    return (pos == 0 || pos >= curText.length()
+        || (Character.isWhitespace(curText.charAt(pos-1))
+          != Character.isWhitespace(curText.charAt(pos))));
   }
 
   protected boolean allowedCharacter(char c) {

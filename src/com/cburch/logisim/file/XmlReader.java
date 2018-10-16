@@ -291,7 +291,7 @@ class XmlReader {
         try {
           AbstractCanvasObject m = AppearanceSvgReader.createShape(sub, pins, null);
           if (m == null) {
-            addError( Strings.get("fileAppearanceNotFound", sub.getTagName()),
+            addError(Strings.get("fileAppearanceNotFound", sub.getTagName()),
                 context + "." + sub.getTagName());
           } else {
             shapes.add(m);
@@ -482,7 +482,7 @@ class XmlReader {
 
   /**
    * Change label names in an XML tree according to a list of suggested labels
-   * 
+   *
    * @param root
    *            root element of the XML tree
    * @param nodeType
@@ -518,7 +518,7 @@ class XmlReader {
   /**
    * Sets to the empty string any label attribute in tool nodes derived from
    * elt.
-   * 
+   *
    * @param root
    *            root node
    */
@@ -572,7 +572,7 @@ class XmlReader {
    * valid ones. Here valid means: [a-zA-Z][a-zA-Z0-9_]* This applies, in our
    * context, to circuit's names and labels (and their corresponding
    * component's names, of course), and to comp's labels.
-   * 
+   *
    * @param root
    *            root element of the XML tree
    * @param nodeType
@@ -615,7 +615,7 @@ class XmlReader {
    * In some old version of Logisim, buggy Logisim versions, labels where
    * incorrectly stored also in toolbar and lib components. If this is the
    * case, clean them up..
-   * 
+   *
    * @param root
    *            root element of the XML tree
    */
@@ -639,7 +639,7 @@ class XmlReader {
    * characters) UUID at the end if the name has been altered. Whitespaces at
    * the beginning and at the end of the string are trimmed by default (if
    * this is the only change, then no suffix is appended).
-   * 
+   *
    * @param initialLabel
    *            initial (possibly invalid) label
    * @return a valid VHDL label
@@ -655,7 +655,7 @@ class XmlReader {
    * suffix at the end if the name has been altered. Whitespaces at the
    * beginning and at the end of the string are trimmed by default (if this is
    * the only change, then no suffix is appended).
-   * 
+   *
    * @param initialLabel
    *            initial (possibly invalid) label
    * @param suffix
@@ -705,7 +705,7 @@ class XmlReader {
   /**
    * Traverses an XML tree and gets a list of attribute values for the given
    * attribute and node types.
-   * 
+   *
    * @param root
    *            root element of the XML tree
    * @param nodeType
@@ -742,7 +742,7 @@ class XmlReader {
   /**
    * Check XML's circuit nodes, and return a list of values corresponding to
    * the desired attribute.
-   * 
+   *
    * @param root
    *            XML's root
    * @param attrType
@@ -797,7 +797,7 @@ class XmlReader {
    * desired attribute. The checked comp nodes are NOT those referring to
    * circuits -- we can see if this is the case by checking whether the lib
    * attribute is present or not.
-   * 
+   *
    * @param root
    *            XML's root
    * @param attrValuesList
@@ -836,7 +836,7 @@ class XmlReader {
 
   /**
    * Replace invalid labels in circuit nodes.
-   * 
+   *
    * @param root
    *            XML's root
    * @param attrType
@@ -922,7 +922,7 @@ class XmlReader {
 
   /**
    * Replace invalid labels in comp nodes.
-   * 
+   *
    * @param root
    *            XML's root
    * @param validLabels
@@ -1061,14 +1061,14 @@ class XmlReader {
             String name = compElt.getAttribute("name");
             if (lib == null || name == null || !lib.equals(memLibName))
               continue;
-            if (name.equals("J-K Flip-Flop") || name.equals("S-R Flip-Flop") ||
-                name.equals("T Flip-Flop") || name.equals("D Flip-Flop") ||
-                name.equals("RAM") || name.equals("ROM") ||
-                name.equals("Register") || name.equals("Shift Register")) {
+            if (name.equals("J-K Flip-Flop") || name.equals("S-R Flip-Flop")
+                || name.equals("T Flip-Flop") || name.equals("D Flip-Flop")
+                || name.equals("RAM") || name.equals("ROM")
+                || name.equals("Register") || name.equals("Shift Register")) {
               setDefaultAttribute(doc, compElt, "appearance", "classic");
             }
-            if (name.equals("J-K Flip-Flop") || name.equals("S-R Flip-Flop") ||
-                name.equals("T Flip-Flop") || name.equals("D Flip-Flop")) {
+            if (name.equals("J-K Flip-Flop") || name.equals("S-R Flip-Flop")
+                || name.equals("T Flip-Flop") || name.equals("D Flip-Flop")) {
               setDefaultAttribute(doc, compElt, "enable", "true");
             }
           }
@@ -1084,7 +1084,7 @@ class XmlReader {
     for (Element libElt : XmlIterator.forChildElements(root, "lib")) {
       String desc = libElt.getAttribute("desc");
       String name = libElt.getAttribute("name");
-      if (desc != null) 
+      if (desc != null)
         found.add(desc);
       if (name != null) {
         int thisLabel = Integer.parseInt(name);
@@ -1131,8 +1131,8 @@ class XmlReader {
       Attribute<Object> attr = (Attribute<Object>) attrBase;
       Object val = attrs.getValue(attr);
       if (attrs.isToSave(attr) && val != null) {
-        Object dflt = source == null ?
-            null : source.getDefaultAttributeValue(attr, ver);
+        Object dflt = source == null
+            ? null : source.getDefaultAttributeValue(attr, ver);
         if (dflt == null || !dflt.equals(val)) {
           Element a = doc.createElement("a");
           a.setAttribute("name", attr.getName());

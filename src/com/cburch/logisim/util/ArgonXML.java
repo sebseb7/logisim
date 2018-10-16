@@ -30,7 +30,7 @@
 /**
  * Simple XML parser, taken from
  * http://argonrain.wordpress.com/about/xml-java/
- * 
+ *
  * Example usage:
  * --[ config.xml ]--
  * <config>
@@ -48,7 +48,7 @@
  *   </users>
  *   <test/>
  * </config>
- * 
+ *
  * --[ PARSER ]--
  * ArgonXML config = new ArgonXML("config.xml","config");
  * System.out.println("title: "+config.child("title").content());
@@ -65,7 +65,7 @@
  *       ", email: "+(email==null ? "-" : email));
  * }
  * System.out.println("test: "+config.option("test"));
- * 
+ *
  */
 
 package com.cburch.logisim.util;

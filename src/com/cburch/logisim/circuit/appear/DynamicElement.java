@@ -47,7 +47,6 @@ import com.cburch.draw.shapes.SvgReader;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Bounds;
-import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.Attributes;
@@ -212,8 +211,8 @@ public abstract class DynamicElement extends AbstractCanvasObject {
 
   @Override
   public boolean matches(CanvasObject other) {
-    return (other instanceof DynamicElement) &&
-        this.bounds.equals(((DynamicElement)other).bounds);
+    return (other instanceof DynamicElement)
+        && this.bounds.equals(((DynamicElement)other).bounds);
   }
 
   @Override

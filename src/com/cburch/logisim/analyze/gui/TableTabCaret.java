@@ -133,7 +133,7 @@ class TableTabCaret {
         if (rows > 2) rows--;
         move(cursor.row - rows, cursor.col, shift);
         break;
-      } 
+      }
     }
 
     public void keyReleased(KeyEvent e) { }
@@ -380,9 +380,15 @@ class TableTabCaret {
     Pt() { row = -1; col = -1; }
     Pt(int r, int c) { row = r; col = c; }
     boolean isValid() {
-      return row >= 0 && col >= 0 &&
-          row < table.getRowCount() &&
-          col < table.getColumnCount();
+      return row >= 0 && col >= 0
+          && row < table.getRowCount()
+          && col < table.getColumnCount();
+    }
+    @Override
+    public int hashCode() {
+      int result = row;
+      result = 31 * result + col;
+      return result;
     }
     @Override
     public boolean equals(Object o) {

@@ -35,8 +35,6 @@ package com.cburch.logisim.gui.generic;
  * http://www.cs.cornell.edu/courses/cs3410/2015sp/
  */
 import java.util.Enumeration;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeNode;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.SwingUtilities;

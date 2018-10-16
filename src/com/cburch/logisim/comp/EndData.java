@@ -54,6 +54,11 @@ public class EndData {
     this.exclusive = exclusive;
   }
 
+  public int hashCode() {
+    return loc.hashCode() + 31 * width.hashCode()
+        + 31*31*(exclusive?1:0);
+  }
+
   @Override
   public boolean equals(Object other) {
     if (!(other instanceof EndData))

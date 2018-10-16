@@ -114,9 +114,6 @@ public class Attributes {
 
   private static class ColorChooser extends ColorPicker
     implements JInputComponent {
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
 
     ColorChooser(Color initial) {
@@ -141,11 +138,6 @@ public class Attributes {
       this.str = str;
     }
 
-    /*
-     * public String get() { return str; }
-     * 
-     * @Override public String toString() { return get(); }
-     */
     public String toString() {
       return str;
     }
@@ -215,9 +207,6 @@ public class Attributes {
 
   private static class FontChooser extends JFontChooser
     implements JInputComponent {
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
 
     FontChooser(Font initial) {

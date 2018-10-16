@@ -74,7 +74,7 @@ public class VhdlHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       Integer v = attrs.getValue(a);
       if (v != null) {
         ParameterMap.put(g.getName(), v);
-        /* 
+        /*
            } else if (!g.hasDefaultValue()) {
            FPGAReport.AddFatalError("VHDL entity instance " +
            attrs.getValue(VhdlEntity.NAME_ATTR) +

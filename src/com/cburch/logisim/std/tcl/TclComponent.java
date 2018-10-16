@@ -141,7 +141,7 @@ public abstract class TclComponent extends InstanceFactory {
 
   /**
    * We cannot make a VHDL architecture equivalent to the TCL script
-   * 
+   *
    * @return false
    */
   @Override
@@ -240,7 +240,7 @@ public abstract class TclComponent extends InstanceFactory {
         tclComponentData.send(message);
       }
 
-      /* 
+      /*
        * If it is a new tick, ask the console to force the sti in the
        * console and set them in Logisim in return. If it is not a new
        * tick, simply send the updated obs to the console.
@@ -253,7 +253,9 @@ public abstract class TclComponent extends InstanceFactory {
         String server_response;
 
         /* Ignore all messages until "sync" is recieved */
-        while ((server_response = tclComponentData.receive()) != null 
+        do {
+          server_response = tclComponentData.receive();
+        } while (server_response != null
             && server_response.length() > 0
             && !server_response.equals("sync"));
       }

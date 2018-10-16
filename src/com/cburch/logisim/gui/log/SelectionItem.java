@@ -151,6 +151,10 @@ public class SelectionItem implements AttributeListener, CircuitListener {
     return changed;
   }
 
+  public int hashCode() {
+    return longDescriptor.hashCode();
+  }
+
   @Override
   public boolean equals(Object obj) {
     if (obj == this) {

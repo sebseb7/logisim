@@ -213,7 +213,7 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
   }
 
   private boolean classicAppearance = true;
-  public void paint(Graphics g, int leftX, int topY, 
+  public void paint(Graphics g, int leftX, int topY,
       int offsetX, int offsetY,
       int DisplayWidth, int DisplayHeight, boolean classic, int dataLines) {
     if (RecalculateParameters || classicAppearance != classic) {

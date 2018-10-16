@@ -53,7 +53,6 @@ import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceComponent;
-import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
 public class CircuitAppearance extends Drawing {
@@ -209,14 +208,14 @@ public class CircuitAppearance extends Drawing {
   public AttributeOption getCircuitAppearance() {
     if (circuit == null || circuit.getStaticAttributes() == null)
       return null;
-    else 
+    else
       return circuit.getStaticAttributes().getValue(CircuitAttributes.APPEARANCE_ATTR);
   }
 
   public String getCircuitName() {
     if (circuit == null || circuit.getStaticAttributes() == null)
       return null;
-    else 
+    else
       return circuit.getStaticAttributes().getValue(CircuitAttributes.NAME_ATTR);
   }
 

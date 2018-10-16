@@ -46,7 +46,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.filechooser.FileFilter;
-import java.awt.Component;
 
 import com.cburch.logisim.Main;
 import com.cburch.logisim.std.Builtin;

@@ -455,7 +455,7 @@ public class EditTool extends Tool {
         cache.clear();
       }
 
-      Location oldWireLoc = wireLoc; 
+      Location oldWireLoc = wireLoc;
       boolean ret = isEligible && isWiringPoint(canvas, snap, mods);
       wireLoc = ret ? snap : NULL_LOCATION;
       cache.put(snap, Boolean.valueOf(ret));

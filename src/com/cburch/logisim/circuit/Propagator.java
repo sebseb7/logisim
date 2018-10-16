@@ -269,29 +269,29 @@ public class Propagator {
 
   /*
    * TODO for the SimulatorPrototype class void step() { clock++;
-   * 
+   *
    * // propagate all values for this clock tick HashMap visited = new
    * HashMap(); // State -> set of ComponentPoints handled while
    * (!toProcess.isEmpty()) { SetData data; data = (SetData) toProcess.peek();
    * if (data.time != clock) break; toProcess.remove(); CircuitState state =
    * data.state;
-   * 
+   *
    * // if it's already handled for this clock tick, continue HashSet handled
    * = (HashSet) visited.get(state); if (handled != null) { if
    * (!handled.add(new ComponentPoint(data.cause, data.loc))) continue; } else
    * { handled = new HashSet(); visited.put(state, handled); handled.add(new
    * ComponentPoint(data.cause, data.loc)); }
-   * 
+   *
    * if (oscAdding) oscPoints.add(state, data.loc);
-   * 
+   *
    * // change the information about value SetData oldHead = (SetData)
    * state.causes.get(data.loc); Value oldVal = computeValue(oldHead); SetData
    * newHead = addCause(state, oldHead, data); Value newVal =
    * computeValue(newHead);
-   * 
+   *
    * // if the value at point has changed, propagate it if
    * (!newVal.equals(oldVal)) { state.markPointAsDirty(data.loc); } }
-   * 
+   *
    * clearDirtyPoints(); clearDirtyComponents(); }
    */
 

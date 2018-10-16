@@ -35,7 +35,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.tools.ToolTipMaker;
 
 // 128 x 128 pixel LCD display with 8bpp color (byte addressed)
@@ -81,7 +80,8 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
     public String getName() { return "RGB Video"; }
     public String getDisplayName() { return Strings.get("rgbVideoComponent"); }
     public AttributeSet createAttributeSet() {
-      return AttributeSets.fixedSet(ATTRIBUTES, new Object[] { BLINK_OPTIONS[0], RESET_OPTIONS[0], COLOR_OPTIONS[0], new Integer(128), new Integer(128), new Integer(2) });
+      return AttributeSets.fixedSet(ATTRIBUTES, new Object[] {
+        BLINK_OPTIONS[0], RESET_OPTIONS[0], COLOR_OPTIONS[0], new Integer(128), new Integer(128), new Integer(2) });
     }
     public Component createComponent(Location loc, AttributeSet attrs) { return new Video(loc, attrs); }
     public Bounds getOffsetBounds(AttributeSet attrs) {
@@ -156,23 +156,23 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
     Location loc = getLocation();
     int size = getBounds().getWidth();
     State s = getState(context.getCircuitState());
-    drawVideo(context, loc.getX(), loc.getY(), s); 
+    drawVideo(context, loc.getX(), loc.getY(), s);
   }
 
   static void drawVideoIcon(ComponentDrawContext context, int x, int y) {
     Graphics g = context.getGraphics();
     g.setColor(Color.WHITE);
-    g.fillRoundRect(x+2,y+2,16-1,16-1,3,3);
+    g.fillRoundRect(x+2, y+2, 16-1, 16-1, 3, 3);
     g.setColor(Color.BLACK);
-    g.drawRoundRect(x+2,y+2,16-1,16-1,3,3);
+    g.drawRoundRect(x+2, y+2, 16-1, 16-1, 3, 3);
     g.setColor(Color.RED);
-    g.fillRect(x+5,y+5,5,5);
+    g.fillRect(x+5, y+5, 5, 5);
     g.setColor(Color.BLUE);
-    g.fillRect(x+10,y+5,5,5);
+    g.fillRect(x+10, y+5, 5, 5);
     g.setColor(Color.GREEN);
-    g.fillRect(x+5,y+10,5,5);
+    g.fillRect(x+5, y+10, 5, 5);
     g.setColor(Color.CYAN);
-    g.fillRect(x+10,y+10,5,5);
+    g.fillRect(x+10, y+10, 5, 5);
     g.setColor(Color.BLACK);
   }
 
@@ -185,12 +185,12 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
   static DirectColorModel rgb555 = new DirectColorModel(15, 0x7C00, 0x03E0, 0x001F);
   static DirectColorModel rgb565 = new DirectColorModel(16, 0xF800, 0x07E0, 0x001F);
   static DirectColorModel rgb = new DirectColorModel(24, 0xFF0000, 0x00FF00, 0x0000FF);
-  static IndexColorModel gray4 = new IndexColorModel(4, 16, 
+  static IndexColorModel gray4 = new IndexColorModel(4, 16,
       new int[] {
         0x000000, 0x111111, 0x222222, 0x333333, 0x444444, 0x555555, 0x666666, 0x777777,
         0x888888, 0x999999, 0xaaaaaa, 0xbbbbbb, 0xcccccc, 0xdddddd, 0xeeeeee, 0xffffff,
       }, 0, 0, null);
-  static IndexColorModel atari = new IndexColorModel(7, 128, 
+  static IndexColorModel atari = new IndexColorModel(7, 128,
       new int[] {
         0x000000, 0x0a0a0a, 0x373737, 0x5f5f5f, 0x7a7a7a, 0xa1a1a1, 0xc5c5c5, 0xededed,
         0x000000, 0x352100, 0x5a4500, 0x816c00, 0x9c8700, 0xc3af01, 0xe8d326, 0xfffa4d,
@@ -209,12 +209,12 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
         0x000a00, 0x073a00, 0x2b5f00, 0x528600, 0x6da100, 0x95c800, 0xb9ed1c, 0xe0ff43,
         0x000000, 0x352100, 0x5a4500, 0x816c00, 0x9c8700, 0xc3af01, 0xe8d326, 0xfffa4d,
       }, 0, 0, null);
-  static IndexColorModel xterm16 = new IndexColorModel(4, 16, 
+  static IndexColorModel xterm16 = new IndexColorModel(4, 16,
       new int[] {
         0x000000, 0x800000, 0x008000, 0x808000, 0x000080, 0x800080, 0x008080, 0xc0c0c0,
         0x808080, 0xff0000, 0x00ff00, 0xffff00, 0x0000ff, 0xff00ff, 0x00ffff, 0xffffff,
       }, 0, 0, null);
-  static IndexColorModel xterm256 = new IndexColorModel(8, 256, 
+  static IndexColorModel xterm256 = new IndexColorModel(8, 256,
       new int[] {
         0x000000, 0x800000, 0x008000, 0x808000, 0x000080, 0x800080, 0x008080, 0xc0c0c0,
         0x808080, 0xff0000, 0x00ff00, 0xffff00, 0x0000ff, 0xff00ff, 0x00ffff, 0xffffff,
@@ -352,10 +352,9 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
     case P_WE: return Strings.get("rgbVideoWE");
     case P_X: return Strings.get("rgbVideoX");
     case P_Y: return Strings.get("rgbVideoY");
-    case P_DATA: {
+    case P_DATA:
       AttributeSet attrs = getAttributeSet();
       return String.format(Strings.get("rgbVideoData"), attrs.getValue(COLOR_OPTION).toString());
-    }
     case P_RST: return Strings.get("rgbVideoRST");
     default: return null;
     }

@@ -49,7 +49,7 @@ class PinAttributes extends ProbeAttributes {
         RadixOption.ATTRIBUTE });
 
   BitWidth width = BitWidth.ONE;
-  boolean threeState = false;// true;
+  boolean threeState = false; // true;
   int type = EndData.INPUT_ONLY;
   Object pull = Pin.PULL_NONE;
 

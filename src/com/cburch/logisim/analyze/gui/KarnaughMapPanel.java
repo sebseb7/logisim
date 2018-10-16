@@ -481,12 +481,12 @@ class KarnaughMapPanel extends JPanel implements TruthTablePanel {
        * rowMin * cellHeight + IMP_INSET; int y1 = y + rowMax * cellHeight
        * + cellHeight - IMP_INSET; int dy = y1 - y0; int x0 = x +
        * cellWidth - IMP_INSET; int x1 = x + 3 * cellWidth + IMP_INSET;
-       * 
+       *
        * // half going off left edge g.fillRect(x, y0, cellWidth -
        * IMP_INSET - IMP_RADIUS, dy); g.fillRect(x0 - IMP_RADIUS, y0 +
        * IMP_RADIUS, IMP_RADIUS, dy - d); g.fillArc(x0 - d, y0, d, d, 0,
        * 90); g.fillArc(x0 - d, y1 - d, d, d, 0, -90);
-       * 
+       *
        * // half going off right edge g.fillRect(x1 + IMP_RADIUS, y0,
        * cellWidth - IMP_INSET - IMP_RADIUS, dy); g.fillRect(x1, y0 +
        * IMP_RADIUS, IMP_RADIUS, dy - d); g.fillArc(x1, y0, d, d, 180,

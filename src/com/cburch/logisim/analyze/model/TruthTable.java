@@ -400,8 +400,8 @@ public class TruthTable {
         // find a bit we can flip in s so it doesn't conflict
         int pos;
         for (pos = s.inputs.length - 1; pos >= 0; pos--) {
-          if (s.inputs[pos] == Entry.DONT_CARE &&
-              rNew.inputs[pos] != Entry.DONT_CARE)
+          if (s.inputs[pos] == Entry.DONT_CARE
+              && rNew.inputs[pos] != Entry.DONT_CARE)
             break;
         }
         if (pos < 0)
@@ -500,8 +500,8 @@ public class TruthTable {
       for (Integer idx : r) {
         if (taken[idx] != 0 && !force) {
           throw new IllegalArgumentException(String.format(
-                "Some inputs are repeated." +
-                " For example, rows %d and %d have overlapping input values %s and %s.",
+                "Some inputs are repeated."
+                + " For example, rows %d and %d have overlapping input values %s and %s.",
                 taken[idx], i+1, newRows.get(taken[idx]-1).toBitString(ivars), r.toBitString(ivars)));
         } else if (taken[idx] != 0) {
           // todo: split row
@@ -515,8 +515,8 @@ public class TruthTable {
     for (int i = 0; i < getRowCount(); i++) {
       if (taken[i] == 0 && !force) {
         throw new IllegalArgumentException(String.format(
-              "Some inputs are missing." +
-              " For example, there is no row for input %s.",
+              "Some inputs are missing."
+              + " For example, there is no row for input %s.",
               new Row(i, ni, 0).toBitString(ivars)));
       } else if (taken[i] == 0) {
         newRows.add(new Row(i, ni, 0));

@@ -357,9 +357,9 @@ public class ProjectActions {
 
   /**
    * Saves a Logisim project in a .circ file.
-   * 
+   *
    * It is the action listener for the File->Save as... menu option.
-   * 
+   *
    * @param proj
    *            project to be saved
    * @return true if success, false otherwise

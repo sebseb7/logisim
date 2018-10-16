@@ -82,7 +82,6 @@ class ExpressionView extends JPanel {
         char cur = text.charAt(i);
         if (cur == ' ') {
           badness[i] = BADNESS_BEFORE_SPACE;
-          ;
         } else if (Character.isJavaIdentifierPart(cur)) {
           if (Character.isJavaIdentifierPart(prev)) {
             badness[i] = BADNESS_IDENT_BREAK;
@@ -382,7 +381,7 @@ class ExpressionView extends JPanel {
       return new Dimension(10, height);
     }
 
-    private AttributedString style(String s, int end, ArrayList<Range>subs) {
+    private AttributedString style(String s, int end, ArrayList<Range> subs) {
       AttributedString as = new AttributedString(s.substring(0, end));
       for (Range r : subs) {
         if (r.stopIndex <= end)

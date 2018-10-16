@@ -31,12 +31,10 @@
 package com.cburch.logisim.analyze.gui;
 
 import java.util.Scanner;
-import java.util.Date;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.io.File;
-import java.io.PrintStream;
 import java.io.IOException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -142,7 +140,7 @@ class ImportTableButton extends JButton {
       d = 0xa + (c - 'a');
     else if ('A' <= c && c <= 'F')
       d = 0xA + (c - 'A');
-    else 
+    else
       throw new IOException(String.format("Line %d: Hex digit '%c' in \"%s\" must be one of '0'-'9', 'a'-'f' or 'x'.", lineno, c, sval));
     if (nbits < 4 && (d >= (1<<nbits)))
       throw new IOException(String.format("Line %d: Hex value \"%s\" contains too many bits for %s.", lineno, sval, var.name));
@@ -154,7 +152,7 @@ class ImportTableButton extends JButton {
       // must be binary
       for (int i = 0; i < var.width; i++)
         row[col++] = parseBit(sval.charAt(i), sval, var);
-    } else if (sval.length() == (var.width + 3)/4) { 
+    } else if (sval.length() == (var.width + 3)/4) {
       // try hex
       for (int i = 0; i < var.width; i++) {
         row[col++] = parseHex(sval.charAt((i+((4-(var.width%4))%4))/4), (var.width-i-1)%4, var.width - ((var.width-i-1)/4)*4, sval, var);

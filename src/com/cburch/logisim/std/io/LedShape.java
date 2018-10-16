@@ -47,7 +47,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.util.UnmodifiableList;
 import com.cburch.logisim.util.GraphicsUtil;
-import com.cburch.logisim.std.io.Io;
 import com.cburch.logisim.instance.InstanceDataSingleton;
 
 public class LedShape extends DynamicElement {

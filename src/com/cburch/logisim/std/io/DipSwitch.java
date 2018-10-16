@@ -243,7 +243,7 @@ public class DipSwitch extends InstanceFactory {
       y -= 40;
     } else if (facing == Direction.EAST) {
     } else if (facing == Direction.WEST) {
-    } 
+    }
     Graphics g = painter.getGraphics();
     g.translate(x, y);
     double rotate = 0.0;

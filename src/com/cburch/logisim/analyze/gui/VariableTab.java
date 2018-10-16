@@ -30,9 +30,6 @@
 
 package com.cburch.logisim.analyze.gui;
 
-import java.util.HashMap;
-import java.util.ArrayList;
-
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;

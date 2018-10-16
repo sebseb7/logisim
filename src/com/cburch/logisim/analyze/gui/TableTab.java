@@ -223,16 +223,17 @@ class TableTab extends JPanel implements TruthTablePanel, TabInterface {
       int col = 0;
       for (Var v : vars) {
         for (int b = v.width - 1; b >= 0; b--) {
-          Entry entry = isInput ?
-              table.getVisibleInputEntry(row, col++) :
-              table.getVisibleOutputEntry(row, col++);
+          Entry entry = isInput
+              ? table.getVisibleInputEntry(row, col++)
+              : table.getVisibleOutputEntry(row, col++);
           if (entry.isError()) {
             g.setColor(ERROR_COLOR);
             g.fillRect(x, y, cellWidth, cellHeight);
             g.setColor(Color.BLACK);
           }
-          g.setColor(entry == Entry.ZERO || entry == Entry.DONT_CARE ? Color.DARK_GRAY :
-              entry == Entry.BUS_ERROR ? Color.RED : Color.BLACK);
+          g.setColor(entry == Entry.ZERO || entry == Entry.DONT_CARE
+              ? Color.DARK_GRAY
+              : entry == Entry.BUS_ERROR ? Color.RED : Color.BLACK);
           String label = entry.getDescription();
           int width = fm.stringWidth(label);
           boolean provisional = false;
@@ -261,7 +262,7 @@ class TableTab extends JPanel implements TruthTablePanel, TabInterface {
   private class TightButton extends JButton {
     TightButton(String s) {
       super(s);
-      setMargin(new Insets(0,0,0,0));
+      setMargin(new Insets(0, 0, 0, 0));
     }
   }
 
@@ -271,7 +272,7 @@ class TableTab extends JPanel implements TruthTablePanel, TabInterface {
     public Dimension getPreferredSize() {
       Dimension d = super.getPreferredSize();
       int s = (int)d.getHeight(); // (int)(d.getWidth()<d.getHeight() ? d.getHeight() : d.getWidth());
-      return new Dimension (s,s);
+      return new Dimension(s, s);
     }
   }
 

@@ -59,7 +59,7 @@ public class HexDigit extends InstanceFactory implements DynamicElementProvider 
 
   public HexDigit() {
     super("Hex Digit Display", Strings.getter("hexDigitComponent"));
-    setAttributes(new Attribute[] { 
+    setAttributes(new Attribute[] {
       Io.ATTR_ON_COLOR, Io.ATTR_OFF_COLOR, Io.ATTR_BACKGROUND,
           StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT},
           new Object[] {

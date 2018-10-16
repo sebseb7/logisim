@@ -223,8 +223,8 @@ public class ShowStateDialog extends JDialog implements ActionListener {
       // move down
       shape.translate(0, 10);
       Location loc = shape.getLocation();
-      if (loc.getX() < bbox.getX() + bbox.getWidth() &&
-          loc.getY() + shape.getBounds().getHeight() >= bbox.getY() + bbox.getHeight())
+      if (loc.getX() < bbox.getX() + bbox.getWidth()
+          && loc.getY() + shape.getBounds().getHeight() >= bbox.getY() + bbox.getHeight())
         // if we are below the bounding box, move right and up
         shape.translate(10, (bbox.getY()+9)/10*10 - loc.getY());
     }
@@ -263,8 +263,8 @@ public class ShowStateDialog extends JDialog implements ActionListener {
     for (int i = 0; i < node.getChildCount(); i++) {
       DefaultMutableTreeNode child = (DefaultMutableTreeNode)node.getChildAt(i);
       Ref r = (Ref)child.getUserObject();
-      if (r.ic.getLocation().equals(ic.getLocation()) &&
-          r.ic.getFactory().getName().equals(ic.getFactory().getName()))
+      if (r.ic.getLocation().equals(ic.getLocation())
+          && r.ic.getFactory().getName().equals(ic.getFactory().getName()))
         return child;
     }
     return null;

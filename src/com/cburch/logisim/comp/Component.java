@@ -76,13 +76,13 @@ public interface Component {
    * <code>Class</code> object corresponding to an interface, and the method
    * should return an implementation of that interface if it supports the
    * feature.
-   * 
+   *
    * As of this writing, possible values for <code>key</code> include:
    * <code>Pokable.class</code>, <code>CustomHandles.class</code>,
    * <code>WireRepair.class</code>, <code>TextEditable.class</code>,
    * <code>MenuExtender.class</code>, <code>ToolTipMaker.class</code>,
    * <code>ExpressionComputer.class</code>, and <code>Loggable.class</code>.
-   * 
+   *
    * @param key
    *            an object representing a feature.
    * @return an object representing information about how the component

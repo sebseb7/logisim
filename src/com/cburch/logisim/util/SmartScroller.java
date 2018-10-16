@@ -59,7 +59,7 @@ import javax.swing.text.JTextComponent;
  * was added
  *
  * Similiar logic would apply for horizontal scrolling.
- * 
+ *
  * http://www.camick.com/java/source/SmartScroller.java
  */
 public class SmartScroller implements AdjustmentListener {

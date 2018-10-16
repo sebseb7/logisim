@@ -228,6 +228,12 @@ public class Selection extends SelectionBase {
     context.setGraphics(g);
   }
 
+
+  public int hashCode() {
+    return this.selected.hashCode()
+        + 31 * this.lifted.hashCode();
+  }
+
   @Override
   public boolean equals(Object other) {
     if (!(other instanceof Selection))

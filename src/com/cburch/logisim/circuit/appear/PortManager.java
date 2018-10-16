@@ -45,7 +45,6 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.circuit.CircuitAttributes;
 
 class PortManager {
   private static Location computeDefaultLocation(CircuitAppearance appear,

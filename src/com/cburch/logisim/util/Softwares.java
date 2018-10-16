@@ -99,8 +99,7 @@ public final class Softwares {
     String prefPath = AppPreferences.QUESTA_PATH.get();
 
     if (!validatePath(prefPath, QUESTA))
-      if ((prefPath = setQuestaPath()) == null)
-        return null;
+        prefPath = setQuestaPath();
 
     return prefPath;
   }

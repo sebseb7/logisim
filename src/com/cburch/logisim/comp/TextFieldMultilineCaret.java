@@ -34,17 +34,10 @@ import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.LinkedList;
 
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.data.Bounds;
-import com.cburch.logisim.tools.Caret;
-import com.cburch.logisim.tools.CaretEvent;
-import com.cburch.logisim.tools.CaretListener;
 import com.cburch.draw.util.TextMetrics;
 
 class TextFieldMultilineCaret extends TextFieldCaret {
@@ -165,8 +158,8 @@ class TextFieldMultilineCaret extends TextFieldCaret {
   }
 
   protected boolean allowedCharacter(char c) {
-    return (c != KeyEvent.CHAR_UNDEFINED) &&
-        (c == '\n' || c == '\t' || !Character.isISOControl(c));
+    return (c != KeyEvent.CHAR_UNDEFINED)
+        && (c == '\n' || c == '\t' || !Character.isISOControl(c));
   }
 
   protected int findCaret(int x, int y) {

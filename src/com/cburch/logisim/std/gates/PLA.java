@@ -9,14 +9,11 @@ package com.cburch.logisim.std.gates;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.Font;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
@@ -24,10 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.bfh.logisim.designrulecheck.CorrectLabel;
-import com.cburch.logisim.analyze.model.Expressions;
-import com.cburch.logisim.circuit.CircuitState;
-import com.cburch.logisim.circuit.ExpressionComputer;
-import com.cburch.logisim.comp.ComponentEvent;
 import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -35,7 +28,6 @@ import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
-import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.instance.Instance;
@@ -68,7 +60,7 @@ class PLA extends InstanceFactory {
   });
 
   private static class TruthTableAttribute extends Attribute<PLATable> {
-    public TruthTableAttribute() { 
+    public TruthTableAttribute() {
       super("table", Strings.getter("Program"));
     }
 
@@ -80,11 +72,11 @@ class PLA extends InstanceFactory {
     }
 
     @Override
-    public String toDisplayString(PLATable value) { 
+    public String toDisplayString(PLATable value) {
       return Strings.get("(click to edit)");
     }
 
-    @Override 
+    @Override
     public String toStandardString(PLATable tt) {
       return tt.toStandardString();
     }

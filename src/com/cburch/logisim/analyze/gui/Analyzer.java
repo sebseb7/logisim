@@ -48,7 +48,6 @@ import javax.swing.JTabbedPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import java.awt.BorderLayout;
 import java.awt.Dialog.ModalityType;
 import javax.swing.JDialog;
 import javax.swing.JProgressBar;
@@ -308,7 +307,7 @@ public class Analyzer extends LFrame {
       //   @Override
       //   public void actionPerformed(ActionEvent evt) {
       //   }
-      // }); 
+      // });
       // panel.add(cancel, BorderLayout.PAGE_END);
       add(panel);
       setPreferredSize(new Dimension(300, 70));

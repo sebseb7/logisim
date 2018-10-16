@@ -31,7 +31,6 @@
 package com.cburch.logisim.analyze.model;
 
 import java.util.Iterator;
-import java.util.ArrayList;
 
 public class Var implements Iterable<String> {
   public final int width;

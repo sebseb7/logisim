@@ -31,10 +31,7 @@
 package com.cburch.logisim.comp;
 
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
-import java.util.ArrayList;
-import java.util.LinkedList;
 
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.util.GraphicsUtil;

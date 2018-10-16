@@ -83,7 +83,7 @@ public class RegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
         Contents.add("               s_state_reg <= D;");
         Contents.add("            END IF;");
         Contents.add("         END IF;");
-        Contents.add("      ELSIF ("+ActiveLevelStr+" = 0) THEN"); 
+        Contents.add("      ELSIF ("+ActiveLevelStr+" = 0) THEN");
         Contents.add("         IF (Clock'event AND (Clock = '0')) THEN");
         Contents.add("         IF (ClockEnable = '1' AND Tick = '1') THEN");
         Contents.add("               s_state_reg <= D;");
@@ -100,7 +100,7 @@ public class RegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
         Contents.add("               s_state_reg <= D;");
         Contents.add("            END IF;");
         Contents.add("         END IF;");
-        Contents.add("      ELSIF ("+ActiveLevelStr+" = 0) THEN"); 
+        Contents.add("      ELSIF ("+ActiveLevelStr+" = 0) THEN");
         Contents.add("         IF (Clock = '0') THEN");
         Contents.add("            IF (ClockEnable = '1' AND Tick = '1') THEN");
         Contents.add("               s_state_reg <= D;");

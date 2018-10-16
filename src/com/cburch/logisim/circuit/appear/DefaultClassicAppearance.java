@@ -25,8 +25,8 @@ public class DefaultClassicAppearance {
   private DefaultClassicAppearance() { }
 
   public static List<CanvasObject> build(Collection<Instance> pins) {
-    Map<Direction,List<Instance>> edge;
-    edge = new HashMap<Direction,List<Instance>>();
+    Map<Direction, List<Instance>> edge;
+    edge = new HashMap<Direction, List<Instance>>();
     edge.put(Direction.NORTH, new ArrayList<Instance>());
     edge.put(Direction.SOUTH, new ArrayList<Instance>());
     edge.put(Direction.EAST, new ArrayList<Instance>());

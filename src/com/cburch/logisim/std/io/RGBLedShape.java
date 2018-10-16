@@ -40,7 +40,6 @@ import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.util.GraphicsUtil;
-import com.cburch.logisim.std.io.Io;
 import com.cburch.logisim.instance.InstanceDataSingleton;
 
 public class RGBLedShape extends LedShape {

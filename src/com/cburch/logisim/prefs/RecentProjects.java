@@ -50,6 +50,13 @@ class RecentProjects implements PreferenceChangeListener {
     }
 
     @Override
+    public int hashCode() {
+      int x = Long.valueOf(time).hashCode();
+      int y = (file == null ? 0 : file.hashCode());
+      return x + 31*y;
+    }
+
+    @Override
     public boolean equals(Object other) {
       if (other instanceof FileTime) {
         FileTime o = (FileTime) other;

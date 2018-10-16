@@ -61,8 +61,6 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
-import com.cburch.draw.undo.Action;
-import com.cburch.logisim.gui.appear.CanvasActionAdapter;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.MenuExtender;
 import com.cburch.logisim.util.GraphicsUtil;
@@ -147,7 +145,7 @@ public class SubcircuitFactory extends InstanceFactory {
 
   private void configureLabel(Instance instance) {
     Bounds bds = instance.getBounds();
-    Direction loc = 
+    Direction loc =
         instance.getAttributeValue(CircuitAttributes.LABEL_LOCATION_ATTR);
 
     int x = bds.getX() + bds.getWidth() / 2;

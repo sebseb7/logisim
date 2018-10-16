@@ -46,8 +46,6 @@ import com.cburch.logisim.circuit.CircuitMutator;
 import com.cburch.logisim.circuit.CircuitTransaction;
 import com.cburch.logisim.circuit.appear.AppearanceSvgReader;
 import com.cburch.logisim.circuit.Wire;
-import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.AttributeSet;
@@ -62,7 +60,7 @@ public class XmlCircuitReader extends CircuitTransaction {
    * Get a circuit's component from a read XML file. If the component has a
    * non-null "trackercomp" field, it means that it is tracked, therefore it
    * is skipped in the non-tracked version to avoid errors.
-   * 
+   *
    * @param elt
    *            XML element to parse
    * @param reader
@@ -210,7 +208,7 @@ public class XmlCircuitReader extends CircuitTransaction {
         try {
           AbstractCanvasObject m = AppearanceSvgReader.createShape(sub, null, dest);
           if (m == null) {
-            reader.addError( Strings.get("fileAppearanceNotFound", sub.getTagName()),
+            reader.addError(Strings.get("fileAppearanceNotFound", sub.getTagName()),
                 circData.circuit.getName() + "." + sub.getTagName());
           } else {
             shapes.add(m);

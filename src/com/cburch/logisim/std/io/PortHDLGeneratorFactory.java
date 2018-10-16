@@ -30,9 +30,6 @@
 package com.cburch.logisim.std.io;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.Map;
@@ -44,13 +41,7 @@ import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.settings.Settings;
-import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.circuit.Splitter;
-import com.cburch.logisim.circuit.Wire;
-import com.cburch.logisim.comp.Component;
-import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.AttributeSet;
-import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.StdAttr;
 
 public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
@@ -181,7 +172,7 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   // #4
   @Override
   public ArrayList<String> GetArchitecture(Netlist TheNetlist,
-      AttributeSet attrs, Map<String, File> MemInitFiles, 
+      AttributeSet attrs, Map<String, File> MemInitFiles,
       String ComponentName, FPGAReport Reporter,
       String HDLType) {
 
@@ -201,7 +192,7 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
         if (io.size == 1)
           ioBusAll += "(" + io.end + ")";
         else
-          ioBusAll += "(" + io.end + " DOWNTO " + io.start + ")" ;
+          ioBusAll += "(" + io.end + " DOWNTO " + io.start + ")";
         switch (io.type) {
         case OUTPUT:
           Contents.add("  " + io.name + " <= " + ioBusAll + ";");

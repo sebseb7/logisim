@@ -332,7 +332,7 @@ public class ShiftRegister extends InstanceFactory {
       Object parallel = attrs.getValue(ATTR_LOAD);
       if (parallel == null || ((Boolean) parallel).booleanValue()) {
         int len = attrs.getValue(ATTR_LENGTH).intValue();
-        return Bounds.create(0, -20, 20 + 10 * len, 40); 
+        return Bounds.create(0, -20, 20 + 10 * len, 40);
       } else {
         return Bounds.create(0, -20, 30, 40);
       }

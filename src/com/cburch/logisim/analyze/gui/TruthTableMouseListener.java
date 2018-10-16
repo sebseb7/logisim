@@ -34,7 +34,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
 import com.cburch.logisim.analyze.model.Entry;
-import com.cburch.logisim.analyze.model.TruthTable;
 
 class TruthTableMouseListener implements MouseListener {
   private int cellX;

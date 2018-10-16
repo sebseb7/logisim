@@ -39,7 +39,7 @@ import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Direction;
 
-public interface StdAttr {
+public class StdAttr {
   public static final Attribute<Direction> FACING = Attributes.forDirection(
       "facing", Strings.getter("stdFacingAttr"));
 

@@ -119,7 +119,7 @@ public class MenuSimulate extends Menu {
              * the signal reset will be sent to the VHDL simulator
              * before the sim is loaded and errors will occur Time
              * (0,5s) is arbitrary
-             * 
+             *
              * FIXME: if you find a way to make a blocking reset
              * until it's restarted, feel free to go on
              */
@@ -186,7 +186,7 @@ public class MenuSimulate extends Menu {
         LogFrame frame = menubar.getProject().getLogFrame(true);
         frame.setVisible(true);
       } else if (src == assemblyWindow) {
-        if (assWin == null || assWin.isVisible() == false) {
+        if (assWin == null || !assWin.isVisible()) {
           assWin = new AssemblyWindow(proj);
           assWin.setVisible(true);
         } else {

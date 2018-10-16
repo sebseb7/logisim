@@ -199,7 +199,7 @@ public class RegTabContent extends JScrollPane
    * with the given name. The function will search iteratively in all
    * sub-circuits of the given circuit if it cannot be found directly, and
    * will return null if the value cannot be found.
-   * 
+   *
    * @param cs
    *            The state of the circuit in which the value is searched.
    * @param cn
@@ -214,10 +214,9 @@ public class RegTabContent extends JScrollPane
     } else {
       if (cs.getSubstates() != null && cs.getSubstates().size() > 0) {
         for (CircuitState cst : cs.getSubstates()) {
-          Value ret;
-          if ((ret = findVal(cst, cn, loc)) != null) {
+          Value ret = findVal(cst, cn, loc);
+          if (ret != null)
             return ret;
-          }
         }
       }
       return null;
@@ -228,7 +227,7 @@ public class RegTabContent extends JScrollPane
    * This function will register all the components of type "Register" contain
    * in the given circuit. The registers will only be registered if their
    * ATTR_SHOW_IN_TAB is set to true, and if their label is not empty.
-   * 
+   *
    * @param circuit
    *            The circuit in which the registers are searched.
    */

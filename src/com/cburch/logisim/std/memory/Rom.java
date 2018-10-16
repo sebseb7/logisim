@@ -222,7 +222,7 @@ public class Rom extends Mem {
     g.drawLine(xpos + 20 + SymbolWidth - 10, ypos + getControlHeight(attrs)
         - 10, xpos + 20 + SymbolWidth - 10, ypos
         + getControlHeight(attrs));
-    GraphicsUtil.drawCenteredText( g,
+    GraphicsUtil.drawCenteredText(g,
         "ROM " + GetSizeLabel(painter.getAttributeValue(Mem.ADDR_ATTR) .getWidth())
         + " x "
         + painter.getAttributeValue(Mem.DATA_ATTR).getWidth(),
@@ -398,7 +398,7 @@ public class Rom extends Mem {
         int dataLines = Mem.lineSize(painter.getAttributeSet());
         MemState state = getState(painter);
         state.paint(painter.getGraphics(), bds.getX(), bds.getY(),
-            25, getControlHeight(painter.getAttributeSet()) + 5, 
+            25, getControlHeight(painter.getAttributeSet()) + 5,
             Mem.SymbolWidth - 20, 20 * NrOfBits - 10, false, dataLines);
       }
     }

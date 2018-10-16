@@ -35,7 +35,6 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.circuit.ExpressionComputer;

@@ -85,7 +85,7 @@ public class Entry implements Comparable<Entry> {
       return "0";
     else if (this == ONE)
       return "1";
-    else 
+    else
       return "?";
   }
 

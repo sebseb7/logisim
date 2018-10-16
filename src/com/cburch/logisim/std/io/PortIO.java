@@ -153,7 +153,7 @@ public class PortIO extends InstanceFactory {
       dy = 10;
     else if (facing == Direction.WEST)
       dx = -10;
-    else 
+    else
       dx = 10;
     if (dir == INPUT || dir == OUTPUT) {
       x += dx; y += dy;
@@ -223,7 +223,7 @@ public class PortIO extends InstanceFactory {
     int n = attrs.getValue(ATTR_SIZE).intValue();
     if (n < 8)
       n = 8;
-    return Bounds.create(0, 0, 10 + n/2 * 10 , 50)
+    return Bounds.create(0, 0, 10 + n/2 * 10, 50)
         .rotate(Direction.EAST, facing, 0, 0);
   }
 
@@ -275,7 +275,7 @@ public class PortIO extends InstanceFactory {
         v = Value.FALSE;
       else if (v == Value.FALSE)
         v = Value.TRUE;
-      else 
+      else
         v = Value.UNKNOWN;
       usr[n] = usr[n].set(i, v);
     }
@@ -334,13 +334,13 @@ public class PortIO extends InstanceFactory {
     int h = bds.getHeight();
     int x = painter.getLocation().getX();
     int y = painter.getLocation().getY();
-    Graphics g = painter.getGraphics(); 
-    g.translate(x, y); 
-    double rotate = 0.0; 
-    if (facing != Direction.EAST && g instanceof Graphics2D) { 
-      rotate = -facing.toRadians(); 
-      ((Graphics2D) g).rotate(rotate); 
-    } 
+    Graphics g = painter.getGraphics();
+    g.translate(x, y);
+    double rotate = 0.0;
+    if (facing != Direction.EAST && g instanceof Graphics2D) {
+      rotate = -facing.toRadians();
+      ((Graphics2D) g).rotate(rotate);
+    }
 
     GraphicsUtil.switchToWidth(g, 2);
     g.setColor(Color.DARK_GRAY);
@@ -409,7 +409,7 @@ public class PortIO extends InstanceFactory {
     }
 
     GraphicsUtil.switchToWidth(g, 1);
-    ((Graphics2D) g).rotate(-rotate); 
+    ((Graphics2D) g).rotate(-rotate);
     g.translate(-x, -y);
 
     painter.drawPorts();

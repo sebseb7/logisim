@@ -305,8 +305,7 @@ public class TestFrame extends JFrame {
   private void setSimulator(Simulator value, Circuit circuit) {
     if ((value == null) == (curModel == null)) {
       if (value == null
-          || value.getCircuitState().getCircuit() ==
-          curModel.getCircuit())
+          || value.getCircuitState().getCircuit() == curModel.getCircuit())
         return;
     }
 

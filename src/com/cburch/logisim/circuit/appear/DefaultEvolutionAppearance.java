@@ -49,7 +49,6 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.Pin;
-import com.cburch.logisim.util.StringUtil;
 
 public class DefaultEvolutionAppearance {
   // Precise font dimensions vary based on the platform. We need component
@@ -69,17 +68,17 @@ public class DefaultEvolutionAppearance {
 
 
   // private static int[] asciiWidths = { // 12 point font
-  //   4,  5,  5, 10,  8, 11, 10,  3,  // ' ', '!', '"', '#', '$', '%', '&', ''', 
-  //   5,  5,  6, 10,  4,  4,  4,  4,  // '(', ')', '*', '+', ',', '-', '.', '/', 
-  //   8,  8,  8,  8,  8,  8,  8,  8,  // '0', '1', '2', '3', '4', '5', '6', '7', 
-  //   8,  8,  4,  4, 10, 10, 10,  6,  // '8', '9', ':', ';', '<', '=', '>', '?', 
-  //  13,  8,  8,  8,  9,  8,  7,  9,  // '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 
-  //   9,  3,  3,  7,  6, 10,  9,  9,  // 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 
-  //   8,  9,  8,  8,  7,  9,  8, 11,  // 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 
-  //   7,  7,  9,  5,  4,  5, 10,  6,  // 'X', 'Y', 'Z', '[', '\', ']', '^', '_', 
-  //   6,  8,  8,  7,  8,  8,  4,  8,  // '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 
-  //   8,  3,  3,  7,  3, 11,  8,  8,  // 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 
-  //   8,  8,  5,  7,  5,  8,  6,  9,  // 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 
+  //   4,  5,  5, 10,  8, 11, 10,  3,  // ' ', '!', '"', '#', '$', '%', '&', ''',
+  //   5,  5,  6, 10,  4,  4,  4,  4,  // '(', ')', '*', '+', ',', '-', '.', '/',
+  //   8,  8,  8,  8,  8,  8,  8,  8,  // '0', '1', '2', '3', '4', '5', '6', '7',
+  //   8,  8,  4,  4, 10, 10, 10,  6,  // '8', '9', ':', ';', '<', '=', '>', '?',
+  //  13,  8,  8,  8,  9,  8,  7,  9,  // '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
+  //   9,  3,  3,  7,  6, 10,  9,  9,  // 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+  //   8,  9,  8,  8,  7,  9,  8, 11,  // 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
+  //   7,  7,  9,  5,  4,  5, 10,  6,  // 'X', 'Y', 'Z', '[', '\', ']', '^', '_',
+  //   6,  8,  8,  7,  8,  8,  4,  8,  // '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
+  //   8,  3,  3,  7,  3, 11,  8,  8,  // 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+  //   8,  8,  5,  7,  5,  8,  6,  9,  // 'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
   //   6,  6,  5,  8,  4,  8, 10,      // 'x', 'y', 'z', '{', '|', '}', '~',
   // };
 
@@ -99,7 +98,7 @@ public class DefaultEvolutionAppearance {
   };
 
   public static void calculateTextDimensions(float fontsize) {
-    Text label = new Text(0,0,"a");
+    Text label = new Text(0, 0, "a");
     Font f = label.getLabel().getFont().deriveFont(fontsize);
     Canvas canvas = new Canvas();
     FontMetrics fm = canvas.getFontMetrics(f);
@@ -213,7 +212,7 @@ public class DefaultEvolutionAppearance {
     placePins(ret, edge.get(Direction.EAST), rx + width, ry + offsEast, 0, PORT_GAP, false);
 
     if (name != null && name.length() > 0) {
-      Text label = new Text(rx+width/2,ry+TOP_TEXT_MARGIN, name);
+      Text label = new Text(rx+width/2, ry+TOP_TEXT_MARGIN, name);
       label.getLabel().setHorizontalAlignment(EditableLabel.CENTER);
       label.getLabel().setVerticalAlignment(EditableLabel.TOP);
       label.getLabel().setColor(Color.BLACK);
@@ -246,7 +245,7 @@ public class DefaultEvolutionAppearance {
       if (pin.getAttributeSet().containsAttribute(StdAttr.LABEL)) {
         String text = pin.getAttributeValue(StdAttr.LABEL);
         if (text != null && text.length() > 0) {
-          Text label = new Text(x+ldx,y,text);
+          Text label = new Text(x+ldx, y, text);
           label.getLabel().setHorizontalAlignment(halign);
           label.getLabel().setVerticalAlignment(EditableLabel.MIDDLE);
           label.getLabel().setColor(color);

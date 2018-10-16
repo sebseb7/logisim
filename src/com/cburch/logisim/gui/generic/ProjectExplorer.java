@@ -344,8 +344,8 @@ public class ProjectExplorer extends JTree implements LocaleListener {
         viewed = (circ != null && circ == proj.getCurrentCircuit());
       else
         viewed = (vhdl != null && vhdl == proj.getFrame().getHdlEditorView());
-      boolean haloed = !viewed &&
-          (tool == haloedTool && AppPreferences.ATTRIBUTE_HALO.getBoolean());
+      boolean haloed = !viewed
+          && (tool == haloedTool && AppPreferences.ATTRIBUTE_HALO.getBoolean());
 
       // draw halo if appropriate
       if (haloed) {

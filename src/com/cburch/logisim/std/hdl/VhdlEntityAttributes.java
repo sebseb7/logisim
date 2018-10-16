@@ -30,7 +30,6 @@
 
 package com.cburch.logisim.std.hdl;
 
-import java.awt.Dialog;
 import java.awt.Font;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -41,7 +40,6 @@ import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.Direction;
-import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.data.AttributeListener;
@@ -50,7 +48,6 @@ import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.proj.Project;
 import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
 
@@ -303,8 +300,8 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
       fireAttributeValueChanged(attr, value);
       return;
     }
-    if (attr == StdAttr.APPEARANCE &&
-        (value == StdAttr.APPEAR_FPGA || value == StdAttr.APPEAR_CLASSIC)) {
+    if (attr == StdAttr.APPEARANCE
+        && (value == StdAttr.APPEAR_FPGA || value == StdAttr.APPEAR_CLASSIC)) {
       AttributeOption a = (AttributeOption) value;
       if (content.getAppearance().equals(a))
         return;

@@ -38,8 +38,6 @@ import javax.swing.Icon;
 import com.cburch.draw.tools.DrawingAttributeSet;
 import com.cburch.draw.toolbar.ToolbarClickableItem;
 import com.cburch.logisim.util.Icons;
-import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.comp.Component;
 
 public class ShowStateTool implements ToolbarClickableItem {
 

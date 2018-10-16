@@ -124,7 +124,7 @@ class TableTabClip implements ClipboardOwner {
           contents[r - s.y][c - s.x] =
               t.getInputEntry(r, c).getDescription();
         } else {
-          contents[r - s.y][c - s.x] = 
+          contents[r - s.y][c - s.x] =
               t.getOutputEntry(r, c - inputs).getDescription();
         }
       }

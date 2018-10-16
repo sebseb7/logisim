@@ -76,6 +76,10 @@ public class Direction implements AttributeOptionInterface {
     return this.id == other.id;
   }
 
+  public boolean equals(Object other) {
+    return (other instanceof Direction) && this.id == ((Direction)other).id;
+  }
+
   public StringGetter getDisplayGetter() {
     return disp;
   }

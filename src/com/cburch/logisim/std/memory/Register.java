@@ -56,7 +56,6 @@ import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.tools.key.JoinedConfigurator;
 import com.cburch.logisim.tools.key.DirectionConfigurator;
-import com.cburch.logisim.tools.key.BitWidthConfigurator;
 
 public class Register extends InstanceFactory implements DynamicElementProvider {
   public static void DrawRegisterClassic(InstancePainter painter, int x, int y,

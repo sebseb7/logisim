@@ -110,7 +110,7 @@ public class Ram extends Mem {
   //       data is read from memory (pre-update old data, if WE was 1)
   //    fast clock rises, start of cycle 3:
   //       data is latched into output register (since OE was 1)
-  // 
+  //
   // New behavior:
   //
   // For Logisim simulation, no internal registers. If you want registers, add
@@ -369,7 +369,7 @@ public class Ram extends Mem {
   }
 
   private void DrawConnections(Graphics g, int xpos, int ypos,
-      boolean singleBit, boolean separate, 
+      boolean singleBit, boolean separate,
       boolean ByteEnabled, int bit) {
     Font font = g.getFont();
     GraphicsUtil.switchToWidth(g, 2);

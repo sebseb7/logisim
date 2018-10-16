@@ -33,7 +33,7 @@ package com.cburch.logisim.std.hdl;
 /**
  * Listener interface for all classes who wants to be advised on current VHDL
  * simulator status changes.
- * 
+ *
  * @author christian.mueller@heig-vd.ch
  * @since 2.12.0.t
  */

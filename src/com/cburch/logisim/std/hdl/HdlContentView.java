@@ -56,7 +56,6 @@ import com.cburch.logisim.util.JFileChoosers;
 import com.cburch.draw.toolbar.ToolbarModel;
 import com.cburch.logisim.proj.Action;
 import com.cburch.hdl.HdlModelListener;
-import com.cburch.hdl.HdlModel;
 
 import com.kwalsh.logisim.vhdl.VhdlSyntax;
 
@@ -179,7 +178,7 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
   private HdlToolbarModel toolbar;
 
   public HdlContentView(Project proj) {
-    super(new BorderLayout()); 
+    super(new BorderLayout());
     this.project = proj;
     this.model = null;
     this.toolbar = new HdlToolbarModel(proj, this);

@@ -74,7 +74,7 @@ public class RamAttributes extends AbstractAttributeSet {
 
   private static List<Attribute<?>> ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { Mem.ADDR_ATTR, Mem.DATA_ATTR, Mem.LINE_ATTR,
-        StdAttr.TRIGGER, ATTR_TYPE, ATTR_DBUS, 
+        StdAttr.TRIGGER, ATTR_TYPE, ATTR_DBUS,
         Ram.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,
         StdAttr.APPEARANCE});
 

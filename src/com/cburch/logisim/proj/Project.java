@@ -259,17 +259,12 @@ public class Project {
 
   /**
    * Decide whether or not you can redo
-   * 
+   *
    * @return if we can redo
    */
   public boolean getCanRedo() {
-    // If there's a redo option found...
-    if (redoLog.size() > 0)
-      // We can redo
-      return true;
-    else
-      // Otherwise we can't.
-      return false;
+    // If there's a redo option found, we can redo.
+    return (redoLog.size() > 0);
   }
 
   public ChronoFrame getChronoFrame(boolean create) {
@@ -373,7 +368,7 @@ public class Project {
 
   /**
    * Returns the action of the last entry in the redo log
-   * 
+   *
    * @return last action in redo log
    */
   public Action getLastRedoAction() {

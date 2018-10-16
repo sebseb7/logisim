@@ -255,7 +255,7 @@ public class Print {
 
     PrinterJob job = PrinterJob.getPrinterJob();
     job.setPrintable(print, format);
-    if (job.printDialog() == false)
+    if (!job.printDialog())
       return;
     try {
       job.print();

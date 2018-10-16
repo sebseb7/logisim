@@ -30,8 +30,6 @@
 
 package com.cburch.logisim.std.hdl;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,20 +43,8 @@ import java.awt.Graphics2D;
 import javax.swing.Icon;
 
 import com.cburch.logisim.proj.Project;
-import com.cburch.draw.canvas.Canvas;
 import com.cburch.draw.toolbar.AbstractToolbarModel;
 import com.cburch.draw.toolbar.ToolbarItem;
-import com.cburch.draw.toolbar.ToolbarSeparator;
-import com.cburch.draw.tools.AbstractTool;
-import com.cburch.draw.tools.CurveTool;
-import com.cburch.draw.tools.DrawingAttributeSet;
-import com.cburch.draw.tools.LineTool;
-import com.cburch.draw.tools.OvalTool;
-import com.cburch.draw.tools.PolyTool;
-import com.cburch.draw.tools.RectangleTool;
-import com.cburch.draw.tools.RoundRectangleTool;
-import com.cburch.draw.tools.TextTool;
-import com.cburch.draw.tools.ToolbarToolItem;
 import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.hdl.HdlModelListener;

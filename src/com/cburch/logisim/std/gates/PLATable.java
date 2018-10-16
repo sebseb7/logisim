@@ -98,7 +98,7 @@ public class PLATable {
   public void setOutSize(int sz) { resize(inSize, sz); }
 
   public Row addTableRow() {
-    Row r = new Row(inSize, outSize); 
+    Row r = new Row(inSize, outSize);
     rows.add(r);
     return r;
   }
@@ -649,7 +649,7 @@ public class PLATable {
     private static final int bs = 18;
     private static final int buttonHgap = 2;
     private static final int edgeThickness = 2;
-    private static final Border stdBorder = BorderFactory.createEtchedBorder(); 
+    private static final Border stdBorder = BorderFactory.createEtchedBorder();
     private static final Border clickBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
     private static Dimension buttonSize = new Dimension(bs - 2*edgeThickness - buttonHgap, bs - 2*edgeThickness);
     static abstract class BitStateButton extends JPanel {

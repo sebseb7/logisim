@@ -112,7 +112,7 @@ public class PainterShaped {
      * used prior to 2.5.1, when moved to GeneralPath int wingHeight =
      * (totalHeight - mainHeight) / 2; double wingCenterX = wingHeight *
      * Math.sqrt(3) / 2; double mainCenterX = mainHeight * Math.sqrt(3) / 2;
-     * 
+     *
      * for (int i = 0; i < inputs; i++) { Location loci =
      * factory.getInputOffset(attrs, i); int disti = 5 +
      * loc0.manhattanDistanceTo(loci); if (disti > totalHeight - disti) { //

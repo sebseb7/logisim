@@ -38,12 +38,8 @@ import java.util.Collection;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
-import java.awt.Window;
-import javax.swing.SwingUtilities;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,14 +55,12 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
-import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.util.StringGetter;
@@ -78,7 +72,6 @@ import com.cburch.logisim.circuit.appear.DefaultEvolutionAppearance;
 import com.cburch.logisim.circuit.appear.DefaultClassicAppearance;
 import com.cburch.logisim.circuit.appear.CircuitAppearance;
 import com.cburch.logisim.data.Direction;
-import com.cburch.logisim.comp.EndData;
 import com.cburch.draw.model.CanvasObject;
 
 public class VhdlEntity extends InstanceFactory implements HdlModelListener {
@@ -100,7 +93,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
     super("", null);
     this.content = content;
     this.content.addHdlModelListener(this);
-    if (content.isValid()) 
+    if (content.isValid())
       this.setIconName("vhdl.gif");
     else
       this.setIconName("vhdl-invalid.gif");
@@ -190,7 +183,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
   private static class VhdlAppearance extends CircuitAppearance {
     String style;
-    VhdlAppearance(List <CanvasObject> shapes) {
+    VhdlAppearance(List<CanvasObject> shapes) {
       super(null);
       setObjectsForce(shapes);
     }
@@ -264,8 +257,8 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
       vhdlSimulator.send("sync");
 
       /* Get response from tcl server */
-      String server_response;
-      while ((server_response = vhdlSimulator.receive()) != null
+      String server_response = vhdlSimulator.receive();
+      while (server_response != null
           && server_response.length() > 0
           && !server_response.equals("sync")) {
 
@@ -400,7 +393,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
   @Override
   public void contentSet(HdlModel source) {
-    if (content.isValid()) 
+    if (content.isValid())
       this.setIconName("vhdl.gif");
     else
       this.setIconName("vhdl-invalid.gif");

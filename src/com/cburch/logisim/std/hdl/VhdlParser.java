@@ -53,7 +53,7 @@ public class VhdlParser {
       if (!match.lookingAt())
         return false;
       m = match;
-      if (match.hitEnd()) 
+      if (match.hitEnd())
         input = "";
       else
         input = input.substring(m.end());
