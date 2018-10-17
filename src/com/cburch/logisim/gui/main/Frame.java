@@ -483,7 +483,7 @@ public class Frame extends LFrame implements LocaleListener {
     Circuit circuit = proj.getCurrentCircuit();
     String name = proj.getLogisimFile().getName();
     if (circuit != null) {
-      s = StringUtil.format(Strings.get("titleCircFileKnown"),
+      s = String.format(Strings.get("titleCircFileKnown"),
           circuit.getName(), name);
     } else {
       s = StringUtil.format(Strings.get("titleFileKnown"), name);

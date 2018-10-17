@@ -255,6 +255,10 @@ public class LocaleManager {
     return ret;
   }
 
+  public String fmt(String key, Object ...args) {
+    return String.format(get(key), args);
+  }
+
   public Locale[] getLocaleOptions() {
     String locs = null;
     try {

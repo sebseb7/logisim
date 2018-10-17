@@ -75,8 +75,7 @@ public class DurationAttribute extends Attribute<Integer> {
     if (value.equals(Integer.valueOf(1))) {
       return Strings.get("clockDurationOneValue");
     } else {
-      return StringUtil.format(Strings.get("clockDurationValue"),
-          value.toString());
+      return S.fmt("clockDurationValue", value.toString());
     }
   }
 

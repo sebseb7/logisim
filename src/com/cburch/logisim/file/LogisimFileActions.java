@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.file;
+import static com.cburch.logisim.file.Strings.S;
 
 import java.util.ArrayList;
 
@@ -58,7 +59,7 @@ public class LogisimFileActions {
 
     @Override
     public String getName() {
-      return Strings.get("addCircuitAction");
+      return S.get("addCircuitAction");
     }
 
     @Override
@@ -81,7 +82,7 @@ public class LogisimFileActions {
 
     @Override
     public String getName() {
-      return Strings.get("addVhdlAction");
+      return S.get("addVhdlAction");
     }
 
     @Override
@@ -107,9 +108,9 @@ public class LogisimFileActions {
     @Override
     public String getName() {
       if (libs.length == 1) {
-        return Strings.get("loadLibraryAction");
+        return S.get("loadLibraryAction");
       } else {
-        return Strings.get("loadLibrariesAction");
+        return S.get("loadLibrariesAction");
       }
     }
 
@@ -147,7 +148,7 @@ public class LogisimFileActions {
 
     @Override
     public String getName() {
-      return Strings.get("moveCircuitAction");
+      return S.get("moveCircuitAction");
     }
 
     @Override
@@ -178,7 +179,7 @@ public class LogisimFileActions {
 
     @Override
     public String getName() {
-      return Strings.get("removeCircuitAction");
+      return S.get("removeCircuitAction");
     }
 
     @Override
@@ -203,7 +204,7 @@ public class LogisimFileActions {
 
     @Override
     public String getName() {
-      return Strings.get("removeVhdlAction");
+      return S.get("removeVhdlAction");
     }
 
     @Override
@@ -287,7 +288,7 @@ public class LogisimFileActions {
 
     @Override
     public String getName() {
-      return Strings.get("revertDefaultsAction");
+      return S.get("revertDefaultsAction");
     }
 
     @Override
@@ -322,7 +323,7 @@ public class LogisimFileActions {
 
     @Override
     public String getName() {
-      return Strings.get("setMainCircuitAction");
+      return S.get("setMainCircuitAction");
     }
 
     @Override
@@ -348,9 +349,9 @@ public class LogisimFileActions {
     @Override
     public String getName() {
       if (libs.length == 1) {
-        return Strings.get("unloadLibraryAction");
+        return S.get("unloadLibraryAction");
       } else {
-        return Strings.get("unloadLibrariesAction");
+        return S.get("unloadLibrariesAction");
       }
     }
 

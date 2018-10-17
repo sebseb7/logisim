@@ -78,8 +78,7 @@ class FilePanel extends LogPanel {
             Strings.get("fileAppendOption"),
             Strings.get("fileCancelOption"), };
           int option = JOptionPane.showOptionDialog(getLogFrame(),
-              StringUtil.format(Strings.get("fileExistsMessage"),
-                file.getName()),
+              StringUtil.format(Strings.get("fileExistsMessage"), file.getName()),
               Strings.get("fileExistsTitle"), 0,
               JOptionPane.QUESTION_MESSAGE, null, options,
               options[0]);

@@ -226,8 +226,7 @@ public class ValueTable extends JPanel {
       if (radix == 0)
         return null;
 
-      return StringUtil.format(Strings.get("tableHeaderHelp"),
-          Integer.toString(radix));
+      return S.fmt("tableHeaderHelp", Integer.toString(radix));
     }
 
     public void paintComponent(Graphics g) {

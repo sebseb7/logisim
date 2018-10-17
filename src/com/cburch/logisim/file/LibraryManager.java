@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.file;
+import static com.cburch.logisim.file.Strings.S;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +40,6 @@ import java.util.HashMap;
 import java.util.WeakHashMap;
 
 import com.cburch.logisim.tools.Library;
-import com.cburch.logisim.util.StringUtil;
 
 class LibraryManager {
   private static class JarDescriptor extends LibraryDescriptor {
@@ -264,8 +264,7 @@ class LibraryManager {
     // Otherwise we'll have to decode it.
     int sep = desc.indexOf(desc_sep);
     if (sep < 0) {
-      loader.showError(StringUtil.format(
-            Strings.get("fileDescriptorError"), desc));
+      loader.showError(S.fmt("fileDescriptorError", desc));
       return null;
     }
     String type = desc.substring(0, sep);
@@ -274,8 +273,7 @@ class LibraryManager {
     if (type.equals("")) {
       Library ret = loader.getBuiltin().getLibrary(name);
       if (ret == null) {
-        loader.showError(StringUtil.format(
-              Strings.get("fileBuiltinMissingError"), name));
+        loader.showError(S.fmt("fileBuiltinMissingError", name));
         return null;
       }
       return ret;
@@ -289,8 +287,7 @@ class LibraryManager {
       File toRead = loader.getFileFor(fileName, Loader.JAR_FILTER);
       return loadJarLibrary(loader, toRead, className);
     } else {
-      loader.showError(StringUtil.format(Strings.get("fileTypeError"),
-            type, desc));
+      loader.showError(S.fmt("fileTypeError", type, desc));
       return null;
     }
   }
@@ -316,9 +313,7 @@ class LibraryManager {
   public void reload(Loader loader, LoadedLibrary lib) {
     LibraryDescriptor descriptor = invMap.get(lib);
     if (descriptor == null) {
-      loader.showError(StringUtil.format(
-            Strings.get("unknownLibraryFileError"),
-            lib.getDisplayName()));
+      loader.showError(S.fmt("unknownLibraryFileError", lib.getDisplayName()));
     } else {
       try {
         descriptor.setBase(loader, lib);

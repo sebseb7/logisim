@@ -254,8 +254,7 @@ public class MenuSimulate extends Menu {
         } else {
           hzStr = "" + f;
         }
-        setText(StringUtil.format(Strings.get("simulateTickFreqItem"),
-              hzStr));
+        setText(S.fmt("simulateTickFreqItem", hzStr));
       } else {
         String kHzStr;
         double kf = Math.round(f / 100) / 10.0;
@@ -264,8 +263,7 @@ public class MenuSimulate extends Menu {
         } else {
           kHzStr = "" + kf;
         }
-        setText(StringUtil.format(Strings.get("simulateTickKFreqItem"),
-              kHzStr));
+        setText(S.fmt("simulateTickKFreqItem", kHzStr));
       }
     }
   }

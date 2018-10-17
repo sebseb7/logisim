@@ -102,8 +102,7 @@ public class OptionsFrame extends LFrame {
 
     public void localeChanged() {
       String title = project.getLogisimFile().getDisplayName();
-      setText(StringUtil.format(Strings.get("optionsFrameMenuItem"),
-            title));
+      setText(S.fmt("optionsFrameMenuItem", title));
     }
   }
 

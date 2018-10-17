@@ -67,8 +67,7 @@ class MenuEdit extends Menu {
         undo.setText(Strings.get("editCantUndoItem"));
         undo.setEnabled(false);
       } else {
-        undo.setText(StringUtil.format(Strings.get("editUndoItem"),
-              last.getName()));
+        undo.setText(S.fmt("editUndoItem", last.getName()));
         undo.setEnabled(true);
       }
 
@@ -81,8 +80,7 @@ class MenuEdit extends Menu {
 
           // Set the detailed, localized text
 
-          redo.setText(StringUtil.format(Strings.get("editRedoItem"),
-                lastRedo.getName()));
+          redo.setText(S.fmt("editRedoItem", lastRedo.getName()));
 
           // Set it to enabled
           redo.setEnabled(true);

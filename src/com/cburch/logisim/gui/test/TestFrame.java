@@ -181,10 +181,8 @@ public class TestFrame extends JFrame {
     }
 
     public void testResultsChanged(int numPass, int numFail) {
-      pass.setText(StringUtil.format(Strings.get("passMessage"),
-            Integer.toString(numPass)));
-      fail.setText(StringUtil.format(Strings.get("failMessage"),
-            Integer.toString(numFail)));
+      pass.setText(S.fmt("passMessage", Integer.toString(numPass)));
+      fail.setText(S.fmt("failMessage", Integer.toString(numFail)));
       finished = numPass + numFail;
     }
 

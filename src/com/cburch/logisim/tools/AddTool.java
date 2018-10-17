@@ -255,8 +255,7 @@ public class AddTool extends Tool {
       }
     }
     if (ret == null) {
-      ret = StringUtil.format(Strings.get("addToolText"),
-          getDisplayName());
+      ret = S.fmt("addToolText", getDisplayName());
     }
     return ret;
   }

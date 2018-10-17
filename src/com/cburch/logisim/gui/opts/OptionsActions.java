@@ -88,8 +88,7 @@ class OptionsActions {
 
     @Override
     public String getName() {
-      return StringUtil.format(Strings.get("setOptionAction"),
-          attr.getDisplayName());
+      return S.fmt("setOptionAction", attr.getDisplayName());
     }
 
     @Override

@@ -378,8 +378,7 @@ public class Startup {
   }
 
   private static void printUsage() {
-    System.err.println(StringUtil.format(Strings.get("argUsage"),
-          Startup.class.getName())); // OK
+    System.err.println(S.fmt("argUsage", Startup.class.getName())); // OK
     System.err.println(); // OK
     System.err.println(Strings.get("argOptionHeader")); // OK
     System.err.println("   " + Strings.get("argNoUpdatesOption")); // OK

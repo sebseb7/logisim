@@ -56,8 +56,7 @@ public class TestThread extends UniquelyNamedThread implements CircuitListener {
   // used only for automated testing via command line arguments
   public static int doTestVector(Project proj, Circuit circuit,
       String vectorname) {
-    System.out.println(StringUtil.format(Strings.get("testLoadingVector"),
-          vectorname));
+    System.out.println(S.fmt("testLoadingVector", vectorname));
     TestVector vec;
     try {
       vec = new TestVector(vectorname);
@@ -76,8 +75,7 @@ public class TestThread extends UniquelyNamedThread implements CircuitListener {
       return -1;
     }
 
-    System.out.println(StringUtil.format(Strings.get("testRunning"),
-          Integer.toString(vec.data.size())));
+    System.out.println(S.fmt("testRunning", Integer.toString(vec.data.size())));
 
     int numPass = 0, numFail = 0;
     for (int i = 0; i < vec.data.size(); i++) {
@@ -87,23 +85,20 @@ public class TestThread extends UniquelyNamedThread implements CircuitListener {
         numPass++;
       } catch (FailException e) {
         System.out.println();
-        System.err.println(StringUtil.format(Strings.get("testFailed"),
-              Integer.toString(i + 1)));
+        System.err.println(S.fmt("testFailed", Integer.toString(i + 1)));
         for (; e != null; e = e.getMore())
           System.out.println("  " + e.getMessage());
         numFail++;
         continue;
       } catch (TestException e) {
         System.out.println();
-        System.err.println(StringUtil.format(Strings.get("testFailed"),
-              Integer.toString(i + 1) + " " + e.getMessage()));
+        System.err.println(S.fmt("testFailed", Integer.toString(i + 1) + " " + e.getMessage()));
         numFail++;
         continue;
       }
     }
     System.out.println();
-    System.out.println(StringUtil.format(Strings.get("testResults"),
-          Integer.toString(numPass), Integer.toString(numFail)));
+    System.out.println(S.fmt("testResults", Integer.toString(numPass), Integer.toString(numFail)));
     return 0;
   }
   private Instance[] pin;

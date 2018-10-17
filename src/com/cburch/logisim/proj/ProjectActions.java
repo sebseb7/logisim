@@ -160,8 +160,7 @@ public class ProjectActions {
   }
 
   private static void displayException(Component parent, Exception ex) {
-    String msg = StringUtil.format(Strings.get("templateOpenError"),
-        ex.toString());
+    String msg = S.fmt("templateOpenError", ex.toString());
     String ttl = Strings.get("templateOpenErrorTitle");
     JOptionPane.showMessageDialog(parent, msg, ttl,
         JOptionPane.ERROR_MESSAGE);
@@ -278,8 +277,7 @@ public class ProjectActions {
     } catch (LoadFailedException ex) {
       JOptionPane.showMessageDialog(
           parent,
-          StringUtil.format(Strings.get("fileOpenError"),
-            ex.toString()),
+          S.fmt("fileOpenError", ex.toString()),
           Strings.get("fileOpenErrorTitle"),
           JOptionPane.ERROR_MESSAGE);
       return null;

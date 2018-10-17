@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.file;
+import static com.cburch.logisim.file.Strings.S;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -77,24 +78,21 @@ public class XmlCircuitReader extends CircuitTransaction {
     // Determine the factory that creates this element
     String name = elt.getAttribute("name");
     if (name == null || name.equals("")) {
-      throw new XmlReaderException(Strings.get("compNameMissingError"));
+      throw new XmlReaderException(S.get("compNameMissingError"));
     }
 
     String libName = elt.getAttribute("lib");
     Library lib = reader.findLibrary(libName);
     if (lib == null) {
-      throw new XmlReaderException(Strings.get("compUnknownError",
-            "no-lib"));
+      throw new XmlReaderException(S.fmt("compUnknownError", "no-lib"));
     }
 
     Tool tool = lib.getTool(name);
     if (tool == null || !(tool instanceof AddTool)) {
       if (libName == null || libName.equals("")) {
-        throw new XmlReaderException(Strings.get("compUnknownError",
-              name));
+        throw new XmlReaderException(S.fmt("compUnknownError", name));
       } else {
-        throw new XmlReaderException(Strings.get("compAbsentError",
-              name, libName));
+        throw new XmlReaderException(S.fmt("compAbsentError", name, libName));
       }
     }
     ComponentFactory source = ((AddTool) tool).getFactory();
@@ -106,15 +104,13 @@ public class XmlCircuitReader extends CircuitTransaction {
 
     // Create component if location known
     if (loc_str == null || loc_str.equals("")) {
-      throw new XmlReaderException(Strings.get("compLocMissingError",
-            source.getName()));
+      throw new XmlReaderException(S.fmt("compLocMissingError", source.getName()));
     } else {
       try {
         Location loc = Location.parse(loc_str);
         return source.createComponent(loc, attrs);
       } catch (NumberFormatException e) {
-        throw new XmlReaderException(Strings.get("compLocInvalidError",
-              source.getName(), loc_str));
+        throw new XmlReaderException(S.fmt("compLocInvalidError", source.getName(), loc_str));
       }
     }
   }
@@ -135,23 +131,22 @@ public class XmlCircuitReader extends CircuitTransaction {
     try {
       String str = elt.getAttribute("from");
       if (str == null || str.equals("")) {
-        throw new XmlReaderException(
-            Strings.get("wireStartMissingError"));
+        throw new XmlReaderException(S.get("wireStartMissingError"));
       }
       pt0 = Location.parse(str);
     } catch (NumberFormatException e) {
-      throw new XmlReaderException(Strings.get("wireStartInvalidError"));
+      throw new XmlReaderException(S.get("wireStartInvalidError"));
     }
 
     Location pt1;
     try {
       String str = elt.getAttribute("to");
       if (str == null || str.equals("")) {
-        throw new XmlReaderException(Strings.get("wireEndMissingError"));
+        throw new XmlReaderException(S.get("wireEndMissingError"));
       }
       pt1 = Location.parse(str);
     } catch (NumberFormatException e) {
-      throw new XmlReaderException(Strings.get("wireEndInvalidError"));
+      throw new XmlReaderException(S.get("wireEndInvalidError"));
     }
 
     mutator.add(dest, Wire.create(pt0, pt1));
@@ -208,13 +203,13 @@ public class XmlCircuitReader extends CircuitTransaction {
         try {
           AbstractCanvasObject m = AppearanceSvgReader.createShape(sub, null, dest);
           if (m == null) {
-            reader.addError(Strings.get("fileAppearanceNotFound", sub.getTagName()),
+            reader.addError(S.fmt("fileAppearanceNotFound", sub.getTagName()),
                 circData.circuit.getName() + "." + sub.getTagName());
           } else {
             shapes.add(m);
           }
         } catch (RuntimeException e) {
-          reader.addError(Strings.get("fileAppearanceError", sub.getTagName()),
+          reader.addError(S.fmt("fileAppearanceError", sub.getTagName()),
               circData.circuit.getName() + "." + sub.getTagName());
         }
       }
