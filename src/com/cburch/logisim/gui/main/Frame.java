@@ -503,8 +503,10 @@ public class Frame extends LFrame implements LocaleListener {
       return true;
     }
     toFront();
-    String[] options = { S.get("saveOption"),
-      S.get("discardOption"), S.get("cancelOption") };
+    String[] options = {
+      S.get("saveOption"),
+      S.get("discardOption"),
+      S.get("cancelOption") };
     int result = JOptionPane.showOptionDialog(this, message, title, 0,
         JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
     boolean ret;
