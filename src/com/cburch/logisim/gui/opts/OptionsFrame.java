@@ -49,26 +49,14 @@ import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.file.LogisimFileActions;
 import com.cburch.logisim.file.Options;
 import com.cburch.logisim.gui.generic.LFrame;
-import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
+import com.cburch.logisim.util.TableLayout;
 
 public class OptionsFrame extends LFrame {
-  private class MyListener
-    implements ActionListener, LibraryListener, LocaleListener {
-    public void actionPerformed(ActionEvent event) {
-      Object src = event.getSource();
-      if (src == revert) {
-        getProject().doAction(LogisimFileActions.revertDefaults());
-      } else if (src == close) {
-        WindowEvent e = new WindowEvent(OptionsFrame.this,
-            WindowEvent.WINDOW_CLOSING);
-        OptionsFrame.this.processWindowEvent(e);
-      }
-    }
-
+  private class MyListener implements LibraryListener, LocaleListener {
     public void libraryChanged(LibraryEvent event) {
       if (event.getAction() == LibraryEvent.SET_NAME) {
         setTitle(computeTitle(file));
@@ -83,8 +71,6 @@ public class OptionsFrame extends LFrame {
         tabbedPane.setToolTipTextAt(i, panels[i].getToolTipText());
         panels[i].localeChanged();
       }
-      revert.setText(S.get("revertButton"));
-      close.setText(S.get("closeButton"));
       windowManager.localeChanged();
     }
   }
@@ -119,19 +105,16 @@ public class OptionsFrame extends LFrame {
   private WindowMenuManager windowManager = new WindowMenuManager();
   private OptionsPanel[] panels;
   private JTabbedPane tabbedPane;
-  private JButton revert = new JButton();
-
-  private JButton close = new JButton();
 
   public OptionsFrame(Project project) {
     this.project = project;
     this.file = project.getLogisimFile();
     file.addLibraryListener(myListener);
     setDefaultCloseOperation(HIDE_ON_CLOSE);
-    setJMenuBar(new LogisimMenuBar(this, project));
 
     panels = new OptionsPanel[] { new SimulateOptions(this),
-      new ToolbarOptions(this), new MouseOptions(this), };
+      new ToolbarOptions(this), new MouseOptions(this),
+      new RevertPanel(this)};
     tabbedPane = new JTabbedPane();
     for (int index = 0; index < panels.length; index++) {
       OptionsPanel panel = panels[index];
@@ -139,20 +122,15 @@ public class OptionsFrame extends LFrame {
           panel.getToolTipText());
     }
 
-    JPanel buttonPanel = new JPanel();
-    buttonPanel.add(revert);
-    buttonPanel.add(close);
-    revert.addActionListener(myListener);
-    close.addActionListener(myListener);
-
     Container contents = getContentPane();
     tabbedPane.setPreferredSize(new Dimension(450, 300));
     contents.add(tabbedPane, BorderLayout.CENTER);
-    contents.add(buttonPanel, BorderLayout.SOUTH);
 
     LocaleManager.addLocaleListener(myListener);
     myListener.localeChanged();
     pack();
+
+    setLocationRelativeTo(project.getFrame());
   }
 
   public LogisimFile getLogisimFile() {
@@ -177,5 +155,44 @@ public class OptionsFrame extends LFrame {
       windowManager.frameOpened(this);
     }
     super.setVisible(value);
+  }
+
+  static class RevertPanel extends OptionsPanel {
+    private class MyListener implements ActionListener {
+      public void actionPerformed(ActionEvent event) {
+        Object src = event.getSource();
+        if (src == revert) {
+          getProject().doAction(LogisimFileActions.revertDefaults());
+        }
+      }
+    }
+
+    private MyListener myListener = new MyListener();
+    private JButton revert = new JButton();
+
+    public RevertPanel(OptionsFrame window) {
+      super(window);
+
+      setLayout(new TableLayout(1));
+      JPanel buttonPanel = new JPanel();
+      buttonPanel.add(revert);
+      revert.addActionListener(myListener);
+      add(buttonPanel);
+    }
+
+    @Override
+    public String getHelpText() {
+      return S.get("revertHelp");
+    }
+
+    @Override
+    public String getTitle() {
+      return S.get("revertTitle");
+    }
+
+    @Override
+    public void localeChanged() {
+      revert.setText(S.get("revertButton"));
+    }
   }
 }
