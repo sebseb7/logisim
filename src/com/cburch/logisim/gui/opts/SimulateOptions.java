@@ -57,7 +57,7 @@ class SimulateOptions extends OptionsPanel {
           AttributeSet attrs = getOptions().getAttributeSet();
           getProject().doAction(
               OptionsActions.setAttribute(attrs,
-                Options.sim_limit_attr, opt));
+                Options.ATTR_SIM_LIMIT, opt));
         }
       } else if (source == simRandomness) {
         AttributeSet attrs = getOptions().getAttributeSet();
@@ -65,16 +65,14 @@ class SimulateOptions extends OptionsPanel {
             : Integer.valueOf(0);
         getProject().doAction(
             OptionsActions.setAttribute(attrs,
-              Options.sim_rand_attr, val));
+              Options.ATTR_SIM_RAND, val));
       } else if (source == gateUndefined) {
         ComboOption opt = (ComboOption) gateUndefined.getSelectedItem();
         if (opt != null) {
           AttributeSet attrs = getOptions().getAttributeSet();
-          getProject()
-              .doAction(
-                  OptionsActions.setAttribute(attrs,
-                    Options.ATTR_GATE_UNDEFINED,
-                    opt.getValue()));
+          getProject().doAction(
+              OptionsActions.setAttribute(attrs,
+                Options.ATTR_GATE_UNDEFINED, opt.getValue()));
         }
       } else if (source == tickMainStep) {
         ComboOption opt = (ComboOption) tickMainStep.getSelectedItem();
@@ -93,10 +91,14 @@ class SimulateOptions extends OptionsPanel {
     public void attributeValueChanged(AttributeEvent e) {
       Attribute<?> attr = e.getAttribute();
       Object val = e.getValue();
-      if (attr == Options.sim_limit_attr) {
+      if (attr == Options.ATTR_SIM_LIMIT) {
         loadSimLimit((Integer) val);
-      } else if (attr == Options.sim_rand_attr) {
+      } else if (attr == Options.ATTR_SIM_RAND) {
         loadSimRandomness((Integer) val);
+      } else if (attr == Options.ATTR_GATE_UNDEFINED) {
+        loadGateUndefined(val);
+      } else if (attr == Options.ATTR_TICK_MAIN) {
+        loadTickMain(val);
       }
     }
 
@@ -176,10 +178,9 @@ class SimulateOptions extends OptionsPanel {
 
     window.getOptions().getAttributeSet().addAttributeListener(myListener);
     AttributeSet attrs = getOptions().getAttributeSet();
-    myListener.loadSimLimit(attrs.getValue(Options.sim_limit_attr));
-    myListener.loadGateUndefined(attrs
-        .getValue(Options.ATTR_GATE_UNDEFINED));
-    myListener.loadSimRandomness(attrs.getValue(Options.sim_rand_attr));
+    myListener.loadSimLimit(attrs.getValue(Options.ATTR_SIM_LIMIT));
+    myListener.loadGateUndefined(attrs.getValue(Options.ATTR_GATE_UNDEFINED));
+    myListener.loadSimRandomness(attrs.getValue(Options.ATTR_SIM_RAND));
     myListener.loadTickMain(attrs.getValue(Options.ATTR_TICK_MAIN));
   }
 

@@ -48,9 +48,9 @@ public class Options {
   public static final AttributeOption TICK_MAIN_HALF_PERIOD = new AttributeOption(
       "half_period", S.getter("tick_main_half_period"));
 
-  public static final Attribute<Integer> sim_limit_attr = Attributes
+  public static final Attribute<Integer> ATTR_SIM_LIMIT = Attributes
       .forInteger("simlimit", S.getter("simLimitOption"));
-  public static final Attribute<Integer> sim_rand_attr = Attributes
+  public static final Attribute<Integer> ATTR_SIM_RAND = Attributes
       .forInteger("simrand", S.getter("simRandomOption"));
   public static final Attribute<AttributeOption> ATTR_GATE_UNDEFINED = Attributes
       .forOption("gateUndefined", S.getter("gateUndefinedOption"),
@@ -64,7 +64,7 @@ public class Options {
   public static final Integer sim_rand_dflt = Integer.valueOf(32);
 
   private static final Attribute<?>[] ATTRIBUTES = { ATTR_GATE_UNDEFINED,
-    sim_limit_attr, sim_rand_attr, ATTR_TICK_MAIN, };
+    ATTR_SIM_LIMIT, ATTR_SIM_RAND, ATTR_TICK_MAIN, };
   private static final Object[] DEFAULTS = { GATE_UNDEFINED_IGNORE,
     Integer.valueOf(1000), Integer.valueOf(0), TICK_MAIN_HALF_PERIOD, };
 
