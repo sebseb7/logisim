@@ -31,6 +31,7 @@
 package com.cburch.logisim.gui.prefs;
 import static com.cburch.logisim.gui.prefs.Strings.S;
 
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -39,6 +40,7 @@ import java.awt.event.ActionListener;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
 
+import javax.swing.JPanel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -99,7 +101,6 @@ public class SoftwaresOptions extends OptionsPanel {
     questaPathButton.addActionListener(myListener);
     AppPreferences.getPrefs().addPreferenceChangeListener(myListener);
 
-    JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
     GridBagLayout layout = new GridBagLayout();
     GridBagConstraints c = new GridBagConstraints();
     setLayout(layout);
@@ -107,40 +108,31 @@ public class SoftwaresOptions extends OptionsPanel {
     c.insets = new Insets(2, 4, 4, 2);
     c.anchor = GridBagConstraints.BASELINE_LEADING;
 
-    c.gridx = 0;
-    c.gridy = 0;
+    c.fill = GridBagConstraints.HORIZONTAL;
+
     c.gridwidth = 3;
-    c.fill = GridBagConstraints.NONE;
+
+    c.gridx = 0; c.gridy = 0;
     add(questaValidationCheckBox, c);
 
-    c.gridx = 0;
-    c.gridy = 1;
-    c.gridwidth = 4;
-    c.weightx = 1.0;
-    c.fill = GridBagConstraints.HORIZONTAL;
-    add(sep, c);
-
-    c.gridx = 0;
-    c.gridy = 2;
-    c.gridwidth = 3;
-    c.fill = GridBagConstraints.NONE;
+    c.gridx = 0; c.gridy = 1;
     add(questaPathLabel, c);
 
-    c.gridx = 0;
-    c.gridy = 3;
-    c.gridwidth = 2;
-    c.weightx = 1.0;
-    c.fill = GridBagConstraints.HORIZONTAL;
+    c.gridwidth = 1;
+
+    c.gridx = 0; c.gridy = 3; c.weightx = 0.0;
+    JPanel strut = new JPanel();
+    strut.setMinimumSize(new Dimension(50, 1));
+    strut.setPreferredSize(new Dimension(50, 1));
+    add(strut, c);
+
+    c.gridx = 1; c.gridy = 3; c.weightx = 1.0;
     add(questaPathField, c);
 
-    c.gridx = 2;
-    c.gridy = 3;
-    c.fill = GridBagConstraints.NONE;
+    c.gridx = 2; c.gridy = 3; c.weightx = 0.0;
     add(questaPathButton, c);
 
-    questaValidationCheckBox.setSelected(AppPreferences.QUESTA_VALIDATION
-        .getBoolean());
-
+    questaValidationCheckBox.setSelected(AppPreferences.QUESTA_VALIDATION.getBoolean());
     questaPathField.setText(AppPreferences.QUESTA_PATH.get());
     questaPathField.setEditable(false);
   }
