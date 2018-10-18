@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.prefs;
+import static com.cburch.logisim.gui.prefs.Strings.S;
 
 import java.awt.BorderLayout;
 import java.awt.Font;
@@ -49,15 +50,15 @@ class ExperimentalOptions extends OptionsPanel {
     super(window);
 
     accel = new PrefOptionList(AppPreferences.GRAPHICS_ACCELERATION,
-        Strings.getter("accelLabel"), new PrefOption[] {
+        S.getter("accelLabel"), new PrefOption[] {
           new PrefOption(AppPreferences.ACCEL_DEFAULT,
-              Strings.getter("accelDefault")),
+              S.getter("accelDefault")),
           new PrefOption(AppPreferences.ACCEL_NONE,
-              Strings.getter("accelNone")),
+              S.getter("accelNone")),
           new PrefOption(AppPreferences.ACCEL_OPENGL,
-              Strings.getter("accelOpenGL")),
+              S.getter("accelOpenGL")),
           new PrefOption(AppPreferences.ACCEL_D3D,
-              Strings.getter("accelD3D")), });
+              S.getter("accelD3D")), });
 
     JPanel accelPanel = new JPanel(new BorderLayout());
     accelPanel.add(accel.getJLabel(), BorderLayout.LINE_START);
@@ -75,17 +76,17 @@ class ExperimentalOptions extends OptionsPanel {
 
   @Override
   public String getHelpText() {
-    return Strings.get("experimentHelp");
+    return S.get("experimentHelp");
   }
 
   @Override
   public String getTitle() {
-    return Strings.get("experimentTitle");
+    return S.get("experimentTitle");
   }
 
   @Override
   public void localeChanged() {
     accel.localeChanged();
-    accelRestart.setText(Strings.get("accelRestartLabel"));
+    accelRestart.setText(S.get("accelRestartLabel"));
   }
 }

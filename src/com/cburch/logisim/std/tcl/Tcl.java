@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.tcl;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.util.List;
 
@@ -40,9 +41,9 @@ public class Tcl extends Library {
 
   private static FactoryDescription[] DESCRIPTIONS = {
     new FactoryDescription("TclConsoleReds",
-        Strings.getter("tclConsoleReds"), "tcl.gif",
+        S.getter("tclConsoleReds"), "tcl.gif",
         "TclConsoleReds"),
-    new FactoryDescription("TclGeneric", Strings.getter("tclGeneric"),
+    new FactoryDescription("TclGeneric", S.getter("tclGeneric"),
         "tcl.gif", "TclGeneric") };
 
   private List<Tool> tools = null;
@@ -52,7 +53,7 @@ public class Tcl extends Library {
 
   @Override
   public String getDisplayName() {
-    return Strings.get("tclLibrary");
+    return S.get("tclLibrary");
   }
 
   @Override

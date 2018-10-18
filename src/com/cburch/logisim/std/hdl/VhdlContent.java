@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.hdl;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Dimension;
 import java.awt.Insets;
@@ -254,15 +255,15 @@ public class VhdlContent extends HdlContent {
   public static boolean labelVHDLInvalidNotify(String label, LogisimFile file) {
     String err = null;
     if (!label.matches("^[A-Za-z][A-Za-z0-9_]*") || label.endsWith("_") || label.matches(".*__.*")) {
-      err = Strings.get("vhdlInvalidNameError");
+      err = S.get("vhdlInvalidNameError");
     } else if (CorrectLabel.VHDLKeywords.contains(label.toLowerCase())) {
-      err = Strings.get("vhdlKeywordNameError");
+      err = S.get("vhdlKeywordNameError");
     } else if (file != null && file.containsFactory(label)) {
-      err = Strings.get("vhdlDuplicateNameError");
+      err = S.get("vhdlDuplicateNameError");
     } else {
       return false;
     }
-    JOptionPane.showMessageDialog(null, label + ": " + err, Strings.get("validationParseError"),
+    JOptionPane.showMessageDialog(null, label + ": " + err, S.get("validationParseError"),
         JOptionPane.ERROR_MESSAGE);
     return true;
   }
@@ -304,8 +305,8 @@ public class VhdlContent extends HdlContent {
 
       JOptionPane.showOptionDialog(null, sp, errTitle.toString(),
           JOptionPane.OK_OPTION, JOptionPane.ERROR_MESSAGE, null,
-          new String[] { Strings.get("validationErrorButton") },
-          Strings.get("validationErrorButton"));
+          new String[] { S.get("validationErrorButton") },
+          S.get("validationErrorButton"));
     } else if (errCode == Softwares.ABORD) {
       JOptionPane.showMessageDialog(null, errMessage.toString(),
           errTitle.toString(), JOptionPane.INFORMATION_MESSAGE);
@@ -335,7 +336,7 @@ public class VhdlContent extends HdlContent {
         String msg = ex.getMessage();
         if (msg == null || msg.length() == 0)
           msg = ex.toString();
-        errTitle.append(Strings.get("validationParseError"));
+        errTitle.append(S.get("validationParseError"));
         errMessage.append(msg);
         errException = ex;
         return false;

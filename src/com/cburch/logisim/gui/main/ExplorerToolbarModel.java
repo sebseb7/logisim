@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.main;
+import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.util.List;
 
@@ -52,16 +53,16 @@ class ExplorerToolbarModel extends AbstractToolbarModel
 
     itemToolbox = new LogisimToolbarItem(menu, "projtool.gif",
         LogisimMenuBar.VIEW_TOOLBOX,
-        Strings.getter("projectViewToolboxTip"));
+        S.getter("projectViewToolboxTip"));
     itemSimulation = new LogisimToolbarItem(menu, "projsim.gif",
         LogisimMenuBar.VIEW_SIMULATION,
-        Strings.getter("projectViewSimulationTip"));
+        S.getter("projectViewSimulationTip"));
     itemLayout = new LogisimToolbarItem(menu, "projlayo.gif",
         LogisimMenuBar.EDIT_LAYOUT,
-        Strings.getter("projectEditLayoutTip"));
+        S.getter("projectEditLayoutTip"));
     itemAppearance = new LogisimToolbarItem(menu, "projapp.gif",
         LogisimMenuBar.EDIT_APPEARANCE,
-        Strings.getter("projectEditAppearanceTip"));
+        S.getter("projectEditAppearanceTip"));
 
     items = UnmodifiableList.create(new ToolbarItem[] { itemToolbox,
       itemSimulation, new ToolbarSeparator(4), itemLayout,

@@ -28,6 +28,7 @@
  *       http://reds.heig-vd.ch
  *******************************************************************************/
 package com.cburch.logisim.util;
+import static com.cburch.logisim.util.Strings.S;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,7 +50,7 @@ public class SyntaxChecker {
 
   public static void showNonAcceptableNameMessage() {
     JOptionPane.showMessageDialog(null,
-        Strings.get("variableNameNotAcceptable"));
+        S.get("variableNameNotAcceptable"));
   }
 
   private static Pattern variablePattern = Pattern

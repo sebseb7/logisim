@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.io;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Graphics;
 import java.awt.Color;
@@ -114,7 +115,7 @@ public class SevenSegmentShape extends DynamicElement {
 
   @Override
   public String getDisplayName() {
-    return Strings.get("sevenSegmentComponent");
+    return S.get("sevenSegmentComponent");
   }
 
   @Override

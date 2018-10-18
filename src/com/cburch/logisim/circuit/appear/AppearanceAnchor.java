@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.circuit.appear;
+import static com.cburch.logisim.circuit.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -49,7 +50,7 @@ import com.cburch.logisim.util.UnmodifiableList;
 
 public class AppearanceAnchor extends AppearanceElement {
   public static final Attribute<Direction> FACING = Attributes.forDirection(
-      "facing", Strings.getter("appearanceFacingAttr"));
+      "facing", S.getter("appearanceFacingAttr"));
   static final List<Attribute<?>> ATTRIBUTES = UnmodifiableList
       .create(new Attribute<?>[] { FACING });
 
@@ -98,7 +99,7 @@ public class AppearanceAnchor extends AppearanceElement {
 
   @Override
   public String getDisplayName() {
-    return Strings.get("circuitAnchor");
+    return S.get("circuitAnchor");
   }
 
   public Direction getFacing() {

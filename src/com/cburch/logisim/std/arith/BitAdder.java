@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.arith;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Graphics;
 
@@ -52,10 +53,10 @@ import com.cburch.logisim.util.GraphicsUtil;
 
 public class BitAdder extends InstanceFactory {
   static final Attribute<Integer> NUM_INPUTS = Attributes.forIntegerRange(
-      "inputs", Strings.getter("gateInputsAttr"), 1, 32);
+      "inputs", S.getter("gateInputsAttr"), 1, 32);
 
   public BitAdder() {
-    super("BitAdder", Strings.getter("bitAdderComponent"));
+    super("BitAdder", S.getter("bitAdderComponent"));
     setAttributes(new Attribute[] { StdAttr.WIDTH, NUM_INPUTS },
         new Object[] { BitWidth.create(8), Integer.valueOf(1) });
     setKeyConfigurator(JoinedConfigurator.create(new IntegerConfigurator(
@@ -101,10 +102,10 @@ public class BitAdder extends InstanceFactory {
 
     Port[] ps = new Port[inputs + 1];
     ps[0] = new Port(0, 0, Port.OUTPUT, BitWidth.create(outWidth));
-    ps[0].setToolTip(Strings.getter("bitAdderOutputManyTip"));
+    ps[0].setToolTip(S.getter("bitAdderOutputManyTip"));
     for (int i = 0; i < inputs; i++) {
       ps[i + 1] = new Port(-40, y + i * dy, Port.INPUT, inWidth);
-      ps[i + 1].setToolTip(Strings.getter("bitAdderInputTip"));
+      ps[i + 1].setToolTip(S.getter("bitAdderInputTip"));
     }
     instance.setPorts(ps);
   }

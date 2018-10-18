@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.io;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -84,17 +85,17 @@ public class Tty extends InstanceFactory {
   private static final Font DEFAULT_FONT = new Font("monospaced", Font.PLAIN, 12);
 
   private static final Attribute<Integer> ATTR_COLUMNS = Attributes
-      .forIntegerRange("cols", Strings.getter("ttyColsAttr"), 1, 120);
+      .forIntegerRange("cols", S.getter("ttyColsAttr"), 1, 120);
 
   private static final Attribute<Integer> ATTR_ROWS = Attributes
-      .forIntegerRange("rows", Strings.getter("ttyRowsAttr"), 1, 48);
+      .forIntegerRange("rows", S.getter("ttyRowsAttr"), 1, 48);
 
   public static final Attribute<Integer> ATTR_WIDTH = Attributes
-      .forIntegerRange("asciiwidth", Strings.getter("asciiWidthAttr"),
+      .forIntegerRange("asciiwidth", S.getter("asciiWidthAttr"),
           7, 8);
 
   public Tty() {
-    super("TTY", Strings.getter("ttyComponent"));
+    super("TTY", S.getter("ttyComponent"));
     setAttributes(new Attribute[] {
       ATTR_ROWS, ATTR_COLUMNS, ATTR_WIDTH,
           StdAttr.EDGE_TRIGGER, Io.ATTR_COLOR, Io.ATTR_BACKGROUND,
@@ -132,10 +133,10 @@ public class Tty extends InstanceFactory {
     ps[CK] = new Port(0, 0, Port.INPUT, 1);
     ps[WE] = new Port(10, 10, Port.INPUT, 1);
     ps[IN] = new Port(0, -10, Port.INPUT, asciiWidth);
-    ps[CLR].setToolTip(Strings.getter("ttyClearTip"));
-    ps[CK].setToolTip(Strings.getter("ttyClockTip"));
-    ps[WE].setToolTip(Strings.getter("ttyEnableTip"));
-    ps[IN].setToolTip(Strings.getter("ttyInputTip"));
+    ps[CLR].setToolTip(S.getter("ttyClearTip"));
+    ps[CK].setToolTip(S.getter("ttyClockTip"));
+    ps[WE].setToolTip(S.getter("ttyEnableTip"));
+    ps[IN].setToolTip(S.getter("ttyInputTip"));
     instance.setPorts(ps);
   }
 
@@ -237,11 +238,11 @@ public class Tty extends InstanceFactory {
         y += ROW_HEIGHT;
       }
     } else {
-      String str = Strings.get("ttyDesc", "" + rows, "" + cols);
+      String str = S.fmt("ttyDesc", "" + rows, "" + cols);
       FontMetrics fm = g.getFontMetrics();
       int strWidth = fm.stringWidth(str);
       if (strWidth + BORDER > bds.getWidth()) {
-        str = Strings.get("ttyDescShort");
+        str = S.get("ttyDescShort");
         strWidth = fm.stringWidth(str);
       }
       int x = bds.getX() + (bds.getWidth() - strWidth) / 2;

@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.util;
+import static com.cburch.logisim.util.Strings.S;
 
 import java.awt.Dimension;
 import java.awt.Frame;
@@ -80,11 +81,11 @@ public class WindowMenu extends JMenu {
     }
 
     public void localeChanged() {
-      WindowMenu.this.setText(Strings.get("windowMenu"));
-      minimize.setText(Strings.get("windowMinimizeItem"));
-      close.setText(Strings.get("windowCloseItem"));
-      zoom.setText(MacCompatibility.isQuitAutomaticallyPresent() ? Strings
-          .get("windowZoomItemMac") : Strings.get("windowZoomItem"));
+      WindowMenu.this.setText(S.get("windowMenu"));
+      minimize.setText(S.get("windowMinimizeItem"));
+      close.setText(S.get("windowCloseItem"));
+      zoom.setText(MacCompatibility.isQuitAutomaticallyPresent()
+          ? S.get("windowZoomItemMac") : S.get("windowZoomItem"));
     }
   }
 

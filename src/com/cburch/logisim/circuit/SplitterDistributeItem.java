@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.circuit;
+import static com.cburch.logisim.circuit.Strings.S;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -84,9 +85,9 @@ class SplitterDistributeItem extends JMenuItem implements ActionListener {
 
   private StringGetter toGetter() {
     if (order > 0) {
-      return Strings.getter("splitterDistributeAscending");
+      return S.getter("splitterDistributeAscending");
     } else {
-      return Strings.getter("splitterDistributeDescending");
+      return S.getter("splitterDistributeDescending");
     }
   }
 }

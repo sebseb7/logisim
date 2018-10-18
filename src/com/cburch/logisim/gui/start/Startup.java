@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.start;
+import static com.cburch.logisim.gui.start.Strings.S;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -66,7 +67,6 @@ import com.cburch.logisim.proj.ProjectActions;
 import com.cburch.logisim.util.ArgonXML;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.MacCompatibility;
-import com.cburch.logisim.util.StringUtil;
 
 public class Startup {
 
@@ -131,7 +131,7 @@ public class Startup {
           i++;
           String[] fmts = args[i].split(",");
           if (fmts.length == 0) {
-            logger.error("{}", Strings.get("ttyFormatError"));
+            logger.error("{}", S.get("ttyFormatError"));
           }
           for (int j = 0; j < fmts.length; j++) {
             String fmt = fmts[j].trim();
@@ -154,11 +154,11 @@ public class Startup {
             } else if (fmt.equals("tabs")) {
               ret.ttyFormat |= TtyInterface.FORMAT_TABLE_TABBED;
             } else {
-              logger.error("{}", Strings.get("ttyFormatError"));
+              logger.error("{}", S.get("ttyFormatError"));
             }
           }
         } else {
-          logger.error("{}", Strings.get("ttyFormatError"));
+          logger.error("{}", S.get("ttyFormatError"));
           return null;
         }
       } else if (arg.equals("-png")) {
@@ -167,11 +167,11 @@ public class Startup {
           i++;
           String[] circuits = args[i].split(",");
           if (circuits.length == 0) {
-            logger.error("{}", Strings.get("pngArgError"));
+            logger.error("{}", S.get("pngArgError"));
           }
           ret.headlessPngCircuits = circuits;
         } else {
-          logger.error("{}", Strings.get("pngArgError"));
+          logger.error("{}", S.get("pngArgError"));
           return null;
         }
       } else if (arg.equals("-list")) {
@@ -182,37 +182,37 @@ public class Startup {
           File b = new File(args[i + 2]);
           if (ret.substitutions.containsKey(a)) {
             logger.error("{}",
-                Strings.get("argDuplicateSubstitutionError"));
+                S.get("argDuplicateSubstitutionError"));
             return null;
           } else {
             ret.substitutions.put(a, b);
             i += 2;
           }
         } else {
-          logger.error("{}", Strings.get("argTwoSubstitutionError"));
+          logger.error("{}", S.get("argTwoSubstitutionError"));
           return null;
         }
       } else if (arg.equals("-load")) {
         if (i + 1 < args.length) {
           i++;
           if (ret.loadFile != null) {
-            logger.error("{}", Strings.get("loadMultipleError"));
+            logger.error("{}", S.get("loadMultipleError"));
           }
           File f = new File(args[i]);
           ret.loadFile = f;
         } else {
-          logger.error("{}", Strings.get("loadNeedsFileError"));
+          logger.error("{}", S.get("loadNeedsFileError"));
           return null;
         }
       } else if (arg.equals("-empty")) {
         if (ret.templFile != null || ret.templEmpty || ret.templPlain) {
-          logger.error("{}", Strings.get("argOneTemplateError"));
+          logger.error("{}", S.get("argOneTemplateError"));
           return null;
         }
         ret.templEmpty = true;
       } else if (arg.equals("-plain")) {
         if (ret.templFile != null || ret.templEmpty || ret.templPlain) {
-          logger.error("{}", Strings.get("argOneTemplateError"));
+          logger.error("{}", S.get("argOneTemplateError"));
           return null;
         }
         ret.templPlain = true;
@@ -231,7 +231,7 @@ public class Startup {
           AppPreferences.GATE_SHAPE
               .set(AppPreferences.SHAPE_RECTANGULAR);
         } else {
-          logger.error("{}", Strings.get("argGatesOptionError"));
+          logger.error("{}", S.get("argGatesOptionError"));
           System.exit(-1);
         }
       } else if (arg.equals("-geom")) {
@@ -241,7 +241,7 @@ public class Startup {
         }
         String wxh[] = args[i].split("[xX]");
         if (wxh.length != 2 || wxh[0].length() < 1 || wxh[1].length() < 1) {
-          logger.error("{}", Strings.get("argGeometryError"));
+          logger.error("{}", S.get("argGeometryError"));
           System.exit(1);
         }
         int p = wxh[1].indexOf('+', 1);
@@ -252,14 +252,14 @@ public class Startup {
           wxh[1] = wxh[1].substring(0, p);
           String xy[] = loc.split("\\+");
           if (xy.length != 2 || xy[0].length() < 1 || xy[0].length() < 1) {
-            logger.error("{}", Strings.get("argGeometryError"));
+            logger.error("{}", S.get("argGeometryError"));
             System.exit(1);
           }
           try {
             x = Integer.parseInt(xy[0]);
             y = Integer.parseInt(xy[1]);
           } catch (NumberFormatException e) {
-            logger.error("{}", Strings.get("argGeometryError"));
+            logger.error("{}", S.get("argGeometryError"));
             System.exit(1);
           }
         }
@@ -268,11 +268,11 @@ public class Startup {
           w = Integer.parseInt(wxh[0]);
           h = Integer.parseInt(wxh[1]);
         } catch (NumberFormatException e) {
-          logger.error("{}", Strings.get("argGeometryError"));
+          logger.error("{}", S.get("argGeometryError"));
           System.exit(1);
         }
         if (w <= 0 || h <= 0) {
-          logger.error("{}", Strings.get("argGeometryError"));
+          logger.error("{}", S.get("argGeometryError"));
           System.exit(1);
         }
         AppPreferences.WINDOW_WIDTH.set(w);
@@ -296,12 +296,12 @@ public class Startup {
         } else if (a.equals("no")) {
           AppPreferences.ACCENTS_REPLACE.setBoolean(true);
         } else {
-          logger.error("{}", Strings.get("argAccentsOptionError"));
+          logger.error("{}", S.get("argAccentsOptionError"));
           System.exit(-1);
         }
       } else if (arg.equals("-template")) {
         if (ret.templFile != null || ret.templEmpty || ret.templPlain) {
-          logger.error("{}", Strings.get("argOneTemplateError"));
+          logger.error("{}", S.get("argOneTemplateError"));
           return null;
         }
         i++;
@@ -310,11 +310,9 @@ public class Startup {
         }
         ret.templFile = new File(args[i]);
         if (!ret.templFile.exists()) {
-          logger.error("{}", StringUtil.format(
-                Strings.get("templateMissingError"), args[i]));
+          logger.error("{}", S.fmt("templateMissingError", args[i]));
         } else if (!ret.templFile.canRead()) {
-          logger.error("{}", StringUtil.format(
-                Strings.get("templateCannotReadError"), args[i]));
+          logger.error("{}", S.fmt("templateCannotReadError", args[i]));
         }
       } else if (arg.equals("-nosplash")) {
         ret.showSplash = false;
@@ -351,7 +349,7 @@ public class Startup {
         } else if (a.equals("no")) {
           AppPreferences.QUESTA_VALIDATION.setBoolean(false);
         } else {
-          logger.error("{}", Strings.get("argQuestaOptionError"));
+          logger.error("{}", S.get("argQuestaOptionError"));
           System.exit(-1);
         }
       } else if (arg.charAt(0) == '-') {
@@ -366,11 +364,11 @@ public class Startup {
       printUsage();
     }
     if (Main.headless && ret.filesToOpen.isEmpty()) {
-      logger.error("{}", Strings.get("ttyNeedsFileError"));
+      logger.error("{}", S.get("ttyNeedsFileError"));
       return null;
     }
     if (ret.loadFile != null && !Main.headless) {
-      logger.error("{}", Strings.get("loadNeedsTtyError"));
+      logger.error("{}", S.get("loadNeedsTtyError"));
       return null;
     }
 
@@ -380,29 +378,29 @@ public class Startup {
   private static void printUsage() {
     System.err.println(S.fmt("argUsage", Startup.class.getName())); // OK
     System.err.println(); // OK
-    System.err.println(Strings.get("argOptionHeader")); // OK
-    System.err.println("   " + Strings.get("argNoUpdatesOption")); // OK
-    System.err.println("   " + Strings.get("argGeometryOption")); // OK
-    System.err.println("   " + Strings.get("argAccentsOption")); // OK
-    System.err.println("   " + Strings.get("argClearOption")); // OK
-    System.err.println("   " + Strings.get("argEmptyOption")); // OK
-    System.err.println("   " + Strings.get("argAnalyzeOption")); // OK
-    System.err.println("   " + Strings.get("argTestOption")); // OK
-    System.err.println("   " + Strings.get("argGatesOption")); // OK
-    System.err.println("   " + Strings.get("argHelpOption")); // OK
-    System.err.println("   " + Strings.get("argLoadOption")); // OK
-    System.err.println("   " + Strings.get("argLocaleOption")); // OK
-    System.err.println("   " + Strings.get("argNoSplashOption")); // OK
-    System.err.println("   " + Strings.get("argPlainOption")); // OK
-    System.err.println("   " + Strings.get("argSubOption")); // OK
-    System.err.println("   " + Strings.get("argTemplateOption")); // OK
-    System.err.println("   " + Strings.get("argTtyOption")); // OK
-    System.err.println("   " + Strings.get("argCircuitOption")); // OK
-    System.err.println("   " + Strings.get("argListOption")); // OK
-    System.err.println("   " + Strings.get("argPngOption")); // OK
-    System.err.println("   " + Strings.get("argPngsOption")); // OK
-    System.err.println("   " + Strings.get("argQuestaOption")); // OK
-    System.err.println("   " + Strings.get("argVersionOption")); // OK
+    System.err.println(S.get("argOptionHeader")); // OK
+    System.err.println("   " + S.get("argNoUpdatesOption")); // OK
+    System.err.println("   " + S.get("argGeometryOption")); // OK
+    System.err.println("   " + S.get("argAccentsOption")); // OK
+    System.err.println("   " + S.get("argClearOption")); // OK
+    System.err.println("   " + S.get("argEmptyOption")); // OK
+    System.err.println("   " + S.get("argAnalyzeOption")); // OK
+    System.err.println("   " + S.get("argTestOption")); // OK
+    System.err.println("   " + S.get("argGatesOption")); // OK
+    System.err.println("   " + S.get("argHelpOption")); // OK
+    System.err.println("   " + S.get("argLoadOption")); // OK
+    System.err.println("   " + S.get("argLocaleOption")); // OK
+    System.err.println("   " + S.get("argNoSplashOption")); // OK
+    System.err.println("   " + S.get("argPlainOption")); // OK
+    System.err.println("   " + S.get("argSubOption")); // OK
+    System.err.println("   " + S.get("argTemplateOption")); // OK
+    System.err.println("   " + S.get("argTtyOption")); // OK
+    System.err.println("   " + S.get("argCircuitOption")); // OK
+    System.err.println("   " + S.get("argListOption")); // OK
+    System.err.println("   " + S.get("argPngOption")); // OK
+    System.err.println("   " + S.get("argPngsOption")); // OK
+    System.err.println("   " + S.get("argQuestaOption")); // OK
+    System.err.println("   " + S.get("argVersionOption")); // OK
     System.exit(-1);
   }
 
@@ -435,15 +433,15 @@ public class Startup {
   }
 
   private static void setLocale(String lang) {
-    Locale[] opts = Strings.getLocaleOptions();
+    Locale[] opts = S.getLocaleOptions();
     for (int i = 0; i < opts.length; i++) {
       if (lang.equals(opts[i].toString())) {
         LocaleManager.setLocale(opts[i]);
         return;
       }
     }
-    logger.warn("{}", Strings.get("invalidLocaleError"));
-    logger.warn("{}", Strings.get("invalidLocaleOptionsHeader"));
+    logger.warn("{}", S.get("invalidLocaleError"));
+    logger.warn("{}", S.get("invalidLocaleOptionsHeader"));
 
     for (int i = 0; i < opts.length; i++) {
       logger.warn("   {}", opts[i].toString());

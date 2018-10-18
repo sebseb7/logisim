@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.menu;
+import static com.cburch.logisim.gui.menu.Strings.S;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -73,7 +74,7 @@ class OpenRecent extends JMenu implements PropertyChangeListener {
 
   private static String getFileText(File file) {
     if (file == null) {
-      return Strings.get("fileOpenRecentNoChoices");
+      return S.get("fileOpenRecentNoChoices");
     } else {
       String ret;
       try {
@@ -110,10 +111,10 @@ class OpenRecent extends JMenu implements PropertyChangeListener {
   }
 
   void localeChanged() {
-    setText(Strings.get("fileOpenRecentItem"));
+    setText(S.get("fileOpenRecentItem"));
     for (RecentItem item : recentItems) {
       if (item.file == null) {
-        item.setText(Strings.get("fileOpenRecentNoChoices"));
+        item.setText(S.get("fileOpenRecentNoChoices"));
       }
     }
   }

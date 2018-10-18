@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.io;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -133,7 +134,7 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
   static Color DEFAULT_OFF = new Color(220, 220, 220);
 
   public SevenSegment() {
-    super("7-Segment Display", Strings.getter("sevenSegmentComponent"));
+    super("7-Segment Display", S.getter("sevenSegmentComponent"));
     setAttributes(new Attribute[] { Io.ATTR_ON_COLOR, Io.ATTR_OFF_COLOR,
       Io.ATTR_BACKGROUND, Io.ATTR_ACTIVE, StdAttr.LABEL,
       StdAttr.LABEL_LOC, StdAttr.LABEL_FONT }, new Object[] {
@@ -151,14 +152,14 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
     ps[Segment_F] = new Port(10, 0, Port.INPUT, 1);
     ps[Segment_G] = new Port(0, 0, Port.INPUT, 1);
     ps[DP] = new Port(30, 60, Port.INPUT, 1);
-    ps[Segment_A].setToolTip(Strings.getter("Segment_A"));
-    ps[Segment_B].setToolTip(Strings.getter("Segment_B"));
-    ps[Segment_C].setToolTip(Strings.getter("Segment_C"));
-    ps[Segment_D].setToolTip(Strings.getter("Segment_D"));
-    ps[Segment_E].setToolTip(Strings.getter("Segment_E"));
-    ps[Segment_F].setToolTip(Strings.getter("Segment_F"));
-    ps[Segment_G].setToolTip(Strings.getter("Segment_G"));
-    ps[DP].setToolTip(Strings.getter("DecimalPoint"));
+    ps[Segment_A].setToolTip(S.getter("Segment_A"));
+    ps[Segment_B].setToolTip(S.getter("Segment_B"));
+    ps[Segment_C].setToolTip(S.getter("Segment_C"));
+    ps[Segment_D].setToolTip(S.getter("Segment_D"));
+    ps[Segment_E].setToolTip(S.getter("Segment_E"));
+    ps[Segment_F].setToolTip(S.getter("Segment_F"));
+    ps[Segment_G].setToolTip(S.getter("Segment_G"));
+    ps[DP].setToolTip(S.getter("DecimalPoint"));
     MyIOInformation = new IOComponentInformationContainer(0, 8, 0, null,
         GetLabels(), null,
         FPGAIOInformationContainer.IOComponentTypes.SevenSegment);

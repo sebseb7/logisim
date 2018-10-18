@@ -31,21 +31,7 @@
 package com.cburch.logisim.analyze.model;
 
 import com.cburch.logisim.util.LocaleManager;
-import com.cburch.logisim.util.StringGetter;
 
-class Strings {
-  public static String get(String key) {
-    return source.get(key);
-  }
-
-  public static StringGetter getter(String key) {
-    return source.getter(key);
-  }
-
-  public static StringGetter getter(String key, String arg) {
-    return source.getter(key, arg);
-  }
-
-  private static LocaleManager source = new LocaleManager(
-      "resources/logisim", "analyze");
+public class Strings {
+  public static final LocaleManager S = new LocaleManager("resources/logisim", "analyze");
 }

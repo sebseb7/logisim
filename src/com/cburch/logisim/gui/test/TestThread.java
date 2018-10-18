@@ -34,6 +34,7 @@
  */
 
 package com.cburch.logisim.gui.test;
+import static com.cburch.logisim.gui.test.Strings.S;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
@@ -48,7 +49,6 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.wiring.Pin;
-import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.util.UniquelyNamedThread;
 
 public class TestThread extends UniquelyNamedThread implements CircuitListener {
@@ -61,8 +61,7 @@ public class TestThread extends UniquelyNamedThread implements CircuitListener {
     try {
       vec = new TestVector(vectorname);
     } catch (Exception e) {
-      System.err.println(StringUtil.format(
-            Strings.get("testLoadingFailed"), e.getMessage()));
+      System.err.println(S.fmt("testLoadingFailed", e.getMessage()));
       return -1;
     }
 
@@ -70,8 +69,7 @@ public class TestThread extends UniquelyNamedThread implements CircuitListener {
     try {
       tester = new TestThread(proj, circuit, vec);
     } catch (TestException e) {
-      System.err.println(StringUtil.format(
-            Strings.get("testSetupFailed"), e.getMessage()));
+      System.err.println(S.fmt("testSetupFailed", e.getMessage()));
       return -1;
     }
 

@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.main;
+import static com.cburch.logisim.gui.main.Strings.S;
 
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.gui.generic.AttributeSetTableModel;
@@ -47,7 +48,7 @@ public class AttrTableToolModel extends AttributeSetTableModel {
 
   @Override
   public String getTitle() {
-    return Strings.get("toolAttrTitle", tool.getDisplayName());
+    return S.fmt("toolAttrTitle", tool.getDisplayName());
   }
 
   public Tool getTool() {

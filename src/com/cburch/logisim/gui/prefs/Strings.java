@@ -30,30 +30,8 @@
 
 package com.cburch.logisim.gui.prefs;
 
-import java.util.Locale;
-
-import javax.swing.JComponent;
-
 import com.cburch.logisim.util.LocaleManager;
-import com.cburch.logisim.util.StringGetter;
 
-class Strings {
-  public static JComponent createLocaleSelector() {
-    return source.createLocaleSelector();
-  }
-
-  public static String get(String key) {
-    return source.get(key);
-  }
-
-  public static Locale[] getLocaleOptions() {
-    return source.getLocaleOptions();
-  }
-
-  public static StringGetter getter(String key) {
-    return source.getter(key);
-  }
-
-  private static LocaleManager source = new LocaleManager(
-      "resources/logisim", "prefs");
+public class Strings {
+  public static final LocaleManager S = new LocaleManager("resources/logisim", "prefs");
 }

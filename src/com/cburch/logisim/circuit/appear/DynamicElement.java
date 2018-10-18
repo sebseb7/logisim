@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.circuit.appear;
+import static com.cburch.logisim.circuit.Strings.S;
 
 import java.util.List;
 import java.awt.Graphics;
@@ -61,19 +62,19 @@ import com.cburch.logisim.util.GraphicsUtil;
 public abstract class DynamicElement extends AbstractCanvasObject {
 
   public static final AttributeOption LABEL_NONE = new AttributeOption(
-      "none", Strings.getter("circuitLabelNone"));
+      "none", S.getter("circuitLabelNone"));
   public static final AttributeOption LABEL_TOP = new AttributeOption(
-      "top", Strings.getter("circuitLabelTop"));
+      "top", S.getter("circuitLabelTop"));
   public static final AttributeOption LABEL_BOTTOM = new AttributeOption(
-      "bottom", Strings.getter("circuitLabelBottom"));
+      "bottom", S.getter("circuitLabelBottom"));
   public static final AttributeOption LABEL_LEFT = new AttributeOption(
-      "left", Strings.getter("circuitLabelLeft"));
+      "left", S.getter("circuitLabelLeft"));
   public static final AttributeOption LABEL_RIGHT = new AttributeOption(
-      "right", Strings.getter("circuitLabelRight"));
+      "right", S.getter("circuitLabelRight"));
   public static final AttributeOption LABEL_CENTER = new AttributeOption(
-      "center", Strings.getter("circuitLabelCenter"));
+      "center", S.getter("circuitLabelCenter"));
   public static final Attribute<AttributeOption> ATTR_LABEL = Attributes
-      .forOption("showlabel", Strings.getter("circuitShowLabelAttr"),
+      .forOption("showlabel", S.getter("circuitShowLabelAttr"),
           new AttributeOption[] { LABEL_NONE,
             LABEL_TOP, LABEL_BOTTOM, LABEL_LEFT, LABEL_RIGHT, LABEL_CENTER });
 

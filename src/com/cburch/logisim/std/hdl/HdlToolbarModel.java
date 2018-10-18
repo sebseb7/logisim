@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.hdl;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -67,9 +68,9 @@ class HdlToolbarModel extends AbstractToolbarModel implements HdlModelListener {
     this.editor = editor;
 
     ArrayList<ToolbarItem> rawItems = new ArrayList<ToolbarItem>();
-    hdlImport = new HdlToolbarItem("hdlimport.gif", HDL_IMPORT, Strings.getter("hdlOpenButton"));
-    hdlExport = new HdlToolbarItem("hdlexport.gif", HDL_EXPORT, Strings.getter("hdlSaveButton"));
-    hdlValidate = new HdlToolbarItem("hdlvalidate.gif", HDL_VALIDATE, Strings.getter("validateButton"));
+    hdlImport = new HdlToolbarItem("hdlimport.gif", HDL_IMPORT, S.getter("hdlOpenButton"));
+    hdlExport = new HdlToolbarItem("hdlexport.gif", HDL_EXPORT, S.getter("hdlSaveButton"));
+    hdlValidate = new HdlToolbarItem("hdlvalidate.gif", HDL_VALIDATE, S.getter("validateButton"));
     rawItems.add(hdlImport);
     rawItems.add(hdlExport);
     rawItems.add(hdlValidate);

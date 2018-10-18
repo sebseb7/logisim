@@ -34,6 +34,7 @@
  */
 
 package com.cburch.logisim.gui.test;
+import static com.cburch.logisim.gui.test.Strings.S;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -65,7 +66,6 @@ import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
-import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.util.WindowMenuItemManager;
 
 public class TestFrame extends JFrame {
@@ -87,10 +87,8 @@ public class TestFrame extends JFrame {
         if (!file.exists() || !file.canRead() || file.isDirectory()) {
           JOptionPane.showMessageDialog(
               TestFrame.this,
-              StringUtil.format(
-                Strings.get("fileCannotReadMessage"),
-                file.getName()),
-              Strings.get("fileCannotReadTitle"),
+              S.fmt("fileCannotReadMessage", file.getName()),
+              S.get("fileCannotReadTitle"),
               JOptionPane.OK_OPTION);
           return;
         }
@@ -105,28 +103,24 @@ public class TestFrame extends JFrame {
         } catch (IOException e) {
           JOptionPane.showMessageDialog(
               TestFrame.this,
-              StringUtil.format(
-                Strings.get("fileCannotParseMessage"),
-                file.getName(), e.getMessage()),
-              Strings.get("fileCannotReadTitle"),
+              S.fmt("fileCannotParseMessage", file.getName(), e.getMessage()),
+              S.get("fileCannotReadTitle"),
               JOptionPane.OK_OPTION);
         } catch (TestException e) {
           JOptionPane.showMessageDialog(
               TestFrame.this,
-              StringUtil.format(
-                Strings.get("fileWrongPinsMessage"),
-                file.getName(), e.getMessage()),
-              Strings.get("fileWrongPinsTitle"),
+              S.fmt("fileWrongPinsMessage", file.getName(), e.getMessage()),
+              S.get("fileWrongPinsTitle"),
               JOptionPane.OK_OPTION);
         }
       } else if (src == run) {
         try {
           getModel().start();
         } catch (TestException e) {
-          JOptionPane.showMessageDialog(TestFrame.this, StringUtil
-              .format(Strings.get("fileWrongPinsMessage"),
-                curFile.getName(), e.getMessage()), Strings
-              .get("fileWrongPinsTitle"), JOptionPane.OK_OPTION);
+          JOptionPane.showMessageDialog(TestFrame.this,
+              S.fmt("fileWrongPinsMessage", curFile.getName(), e.getMessage()),
+              S.get("fileWrongPinsTitle"),
+              JOptionPane.OK_OPTION);
         }
       } else if (src == stop) {
         getModel().setPaused(true);
@@ -139,11 +133,11 @@ public class TestFrame extends JFrame {
     public void localeChanged() {
       setTitle(computeTitle(curModel, project));
       panel.localeChanged();
-      load.setText(Strings.get("loadButton"));
-      run.setText(Strings.get("runButton"));
-      stop.setText(Strings.get("stopButton"));
-      reset.setText(Strings.get("resetButton"));
-      close.setText(Strings.get("closeButton"));
+      load.setText(S.get("loadButton"));
+      run.setText(S.get("runButton"));
+      stop.setText(S.get("stopButton"));
+      reset.setText(S.get("resetButton"));
+      close.setText(S.get("closeButton"));
       myListener.testResultsChanged(getModel().getPass(), getModel()
           .getFail());
       windowManager.localeChanged();
@@ -198,7 +192,7 @@ public class TestFrame extends JFrame {
     implements LocaleListener, ProjectListener {
 
     WindowMenuManager() {
-      super(Strings.get("logFrameMenuItem"), false);
+      super(S.get("logFrameMenuItem"), false);
       project.addProjectListener(this);
     }
 
@@ -208,7 +202,7 @@ public class TestFrame extends JFrame {
 
     public void localeChanged() {
       String title = project.getLogisimFile().getDisplayName();
-      setText(StringUtil.format(Strings.get("testFrameMenuItem"), title));
+      setText(S.fmt("testFrameMenuItem", title));
     }
 
     public void projectChanged(ProjectEvent event) {
@@ -221,7 +215,7 @@ public class TestFrame extends JFrame {
 
   private static String computeTitle(Model data, Project proj) {
     String name = data == null ? "???" : data.getCircuit().getName();
-    return StringUtil.format(Strings.get("testFrameTitle"), name, proj
+    return S.fmt("testFrameTitle", name, proj
         .getLogisimFile().getDisplayName());
   }
 

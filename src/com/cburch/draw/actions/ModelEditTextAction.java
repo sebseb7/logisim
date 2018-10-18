@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.draw.actions;
+import static com.cburch.draw.Strings.S;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -56,7 +57,7 @@ public class ModelEditTextAction extends ModelAction {
 
 	@Override
 	public String getName() {
-		return Strings.get("actionEditText");
+		return S.get("actionEditText");
 	}
 
 	@Override

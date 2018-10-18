@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.circuit;
+import static com.cburch.logisim.circuit.Strings.S;
 
 import java.awt.Font;
 import java.util.Arrays;
@@ -109,30 +110,30 @@ public class CircuitAttributes extends AbstractAttributeSet {
   }
 
   public static final Attribute<String> NAME_ATTR = Attributes.forString(
-      "circuit", Strings.getter("circuitName"));
+      "circuit", S.getter("circuitName"));
 
   public static final Attribute<Direction> LABEL_LOCATION_ATTR = Attributes
-      .forDirection("labelloc", Strings.getter("circuitLabelLocAttr"));
+      .forDirection("labelloc", S.getter("circuitLabelLocAttr"));
 
   public static final Attribute<String> CIRCUIT_LABEL_ATTR = Attributes
-      .forString("clabel", Strings.getter("circuitLabelAttr"));
+      .forString("clabel", S.getter("circuitLabelAttr"));
 
   public static final Attribute<Direction> CIRCUIT_LABEL_FACING_ATTR = Attributes
-      .forDirection("clabelup", Strings.getter("circuitLabelDirAttr"));
+      .forDirection("clabelup", S.getter("circuitLabelDirAttr"));
 
   public static final Attribute<Font> CIRCUIT_LABEL_FONT_ATTR = Attributes
-      .forFont("clabelfont", Strings.getter("circuitLabelFontAttr"));
+      .forFont("clabelfont", S.getter("circuitLabelFontAttr"));
   public static final Attribute<Boolean> CIRCUIT_IS_VHDL_BOX = Attributes
-      .forBoolean("circuitvhdl", Strings.getter("circuitIsVhdl"));
+      .forBoolean("circuitvhdl", S.getter("circuitIsVhdl"));
   public static final Attribute<String> CIRCUIT_VHDL_PATH = Attributes
-      .forString("circuitvhdlpath", Strings.getter("circuitVhdlPath"));
+      .forString("circuitvhdlpath", S.getter("circuitVhdlPath"));
 
   public static final AttributeOption APPEAR_CLASSIC = StdAttr.APPEAR_CLASSIC;
   public static final AttributeOption APPEAR_FPGA = StdAttr.APPEAR_FPGA;
   public static final AttributeOption APPEAR_CUSTOM = new AttributeOption(
-      "custom", Strings.getter("circuitCustomAppearance"));
+      "custom", S.getter("circuitCustomAppearance"));
   public static final Attribute<AttributeOption> APPEARANCE_ATTR = Attributes
-      .forOption("appearance", Strings.getter("circuitAppearanceAttr"),
+      .forOption("appearance", S.getter("circuitAppearanceAttr"),
           new AttributeOption[] { APPEAR_CLASSIC, APPEAR_FPGA, APPEAR_CUSTOM });
 
   private static final Attribute<?>[] STATIC_ATTRS = { NAME_ATTR,

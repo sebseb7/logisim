@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.draw.actions;
+import static com.cburch.draw.Strings.S;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -54,7 +55,7 @@ public class ModelMoveHandleAction extends ModelAction {
 
 	@Override
 	public String getName() {
-		return Strings.get("actionMoveHandle");
+		return S.get("actionMoveHandle");
 	}
 
 	public Handle getNewHandle() {

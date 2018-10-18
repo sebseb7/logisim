@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.tools;
+import static com.cburch.logisim.tools.Strings.S;
 
 import java.awt.Color;
 import java.awt.Cursor;
@@ -64,7 +65,6 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.key.KeyConfigurationEvent;
 import com.cburch.logisim.tools.key.KeyConfigurationResult;
 import com.cburch.logisim.tools.key.KeyConfigurator;
-import com.cburch.logisim.util.StringUtil;
 
 public class AddTool extends Tool {
   private class MyAttributeListener implements AttributeListener {
@@ -389,14 +389,14 @@ public class AddTool extends Tool {
     // verify the addition would be valid
     Circuit circ = canvas.getCircuit();
     if (!canvas.getProject().getLogisimFile().contains(circ)) {
-      canvas.setErrorMessage(Strings.getter("cannotModifyError"));
+      canvas.setErrorMessage(S.getter("cannotModifyError"));
       return;
     }
     if (factory instanceof SubcircuitFactory) {
       SubcircuitFactory circFact = (SubcircuitFactory) factory;
       Dependencies depends = canvas.getProject().getDependencies();
       if (!depends.canAdd(circ, circFact.getSubcircuit())) {
-        canvas.setErrorMessage(Strings.getter("circularError"));
+        canvas.setErrorMessage(S.getter("circularError"));
         return;
       }
     }
@@ -426,20 +426,20 @@ public class AddTool extends Tool {
       Component c = source.createComponent(loc, attrsCopy);
 
       if (circ.hasConflict(c)) {
-        canvas.setErrorMessage(Strings.getter("exclusiveError"));
+        canvas.setErrorMessage(S.getter("exclusiveError"));
         return;
       }
 
       Bounds bds = c.getBounds(g);
       if (bds.getX() < 0 || bds.getY() < 0) {
-        canvas.setErrorMessage(Strings.getter("negativeCoordError"));
+        canvas.setErrorMessage(S.getter("negativeCoordError"));
         return;
       }
 
       try {
         CircuitMutation mutation = new CircuitMutation(circ);
         mutation.add(c);
-        Action action = mutation.toAction(Strings.getter(
+        Action action = mutation.toAction(S.getter(
               "addComponentAction", factory.getDisplayGetter()));
         canvas.getProject().doAction(action);
         lastAddition = action;

@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.circuit;
+import static com.cburch.logisim.circuit.Strings.S;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,7 +50,7 @@ public class SplitterAttributes extends AbstractAttributeSet {
     BitOutOption[] options;
 
     private BitOutAttribute(int which, BitOutOption[] options) {
-      super("bit" + which, Strings.getter("splitterBitAttr", "" + which));
+      super("bit" + which, S.getter("splitterBitAttr", "" + which));
       this.which = which;
       this.options = options;
     }
@@ -129,7 +130,7 @@ public class SplitterAttributes extends AbstractAttributeSet {
     @Override
     public String toString() {
       if (value < 0) {
-        return Strings.get("splitterBitNone");
+        return S.get("splitterBitNone");
       } else {
         String ret = "" + value;
         Direction noteDir;
@@ -199,29 +200,29 @@ public class SplitterAttributes extends AbstractAttributeSet {
   }
 
   public static final Attribute<Integer> ATTR_SPACING = Attributes
-      .forIntegerRange("spacing", Strings.getter("splitterSpacing"), 1, 9);
+      .forIntegerRange("spacing", S.getter("splitterSpacing"), 1, 9);
 
   public static final AttributeOption APPEAR_LEGACY = new AttributeOption(
-      "legacy", Strings.getter("splitterAppearanceLegacy"));
+      "legacy", S.getter("splitterAppearanceLegacy"));
 
   public static final AttributeOption APPEAR_LEFT = new AttributeOption(
-      "left", Strings.getter("splitterAppearanceLeft"));
+      "left", S.getter("splitterAppearanceLeft"));
 
   public static final AttributeOption APPEAR_RIGHT = new AttributeOption(
-      "right", Strings.getter("splitterAppearanceRight"));
+      "right", S.getter("splitterAppearanceRight"));
   public static final AttributeOption APPEAR_CENTER = new AttributeOption(
-      "center", Strings.getter("splitterAppearanceCenter"));
+      "center", S.getter("splitterAppearanceCenter"));
 
   public static final Attribute<AttributeOption> ATTR_APPEARANCE = Attributes
-      .forOption("appear", Strings.getter("splitterAppearanceAttr"),
+      .forOption("appear", S.getter("splitterAppearanceAttr"),
           new AttributeOption[] { APPEAR_LEFT, APPEAR_RIGHT,
             APPEAR_CENTER, APPEAR_LEGACY });
 
   public static final Attribute<BitWidth> ATTR_WIDTH = Attributes
-      .forBitWidth("incoming", Strings.getter("splitterBitWidthAttr"));
+      .forBitWidth("incoming", S.getter("splitterBitWidthAttr"));
 
   public static final Attribute<Integer> ATTR_FANOUT = Attributes
-      .forIntegerRange("fanout", Strings.getter("splitterFanOutAttr"), 1,
+      .forIntegerRange("fanout", S.getter("splitterFanOutAttr"), 1,
           32);
 
   private static final List<Attribute<?>> INIT_ATTRIBUTES = Arrays

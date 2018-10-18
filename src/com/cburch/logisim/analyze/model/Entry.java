@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.analyze.model;
+import static com.cburch.logisim.analyze.model.Strings.S;
 
 import com.cburch.logisim.util.StringGetter;
 
@@ -45,8 +46,8 @@ public class Entry implements Comparable<Entry> {
     return null;
   }
 
-  public static final Entry OSCILLATE_ERROR = new Entry(-2, "@", Strings.getter("oscillateError"));
-  public static final Entry BUS_ERROR = new Entry(-1, "E", Strings.getter("busError"));
+  public static final Entry OSCILLATE_ERROR = new Entry(-2, "@", S.getter("oscillateError"));
+  public static final Entry BUS_ERROR = new Entry(-1, "E", S.getter("busError"));
   public static final Entry ZERO = new Entry(0, "0", null);
   public static final Entry DONT_CARE = new Entry(1, "x", null);
   public static final Entry ONE = new Entry(2, "1", null);

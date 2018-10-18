@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.proj;
+import static com.cburch.logisim.proj.Strings.S;
 
 import java.awt.Component;
 import java.io.File;
@@ -56,7 +57,6 @@ import com.cburch.logisim.gui.start.SplashScreen;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.JFileChoosers;
-import com.cburch.logisim.util.StringUtil;
 
 public class ProjectActions {
   private static class CreateFrame implements Runnable {
@@ -161,7 +161,7 @@ public class ProjectActions {
 
   private static void displayException(Component parent, Exception ex) {
     String msg = S.fmt("templateOpenError", ex.toString());
-    String ttl = Strings.get("templateOpenErrorTitle");
+    String ttl = S.get("templateOpenErrorTitle");
     JOptionPane.showMessageDialog(parent, msg, ttl,
         JOptionPane.ERROR_MESSAGE);
   }
@@ -232,16 +232,14 @@ public class ProjectActions {
       proj.getFrame().toFront();
       loader = proj.getLogisimFile().getLoader();
       if (proj.isFileDirty()) {
-        String message = StringUtil.format(Strings
-            .get("openAlreadyMessage"), proj.getLogisimFile()
-            .getName());
+        String message = S.fmt("openAlreadyMessage", proj.getLogisimFile().getName());
         String[] options = {
-          Strings.get("openAlreadyLoseChangesOption"),
-          Strings.get("openAlreadyNewWindowOption"),
-          Strings.get("openAlreadyCancelOption"), };
+          S.get("openAlreadyLoseChangesOption"),
+          S.get("openAlreadyNewWindowOption"),
+          S.get("openAlreadyCancelOption"), };
         int result = JOptionPane
             .showOptionDialog(proj.getFrame(), message,
-                Strings.get("openAlreadyTitle"), 0,
+                S.get("openAlreadyTitle"), 0,
                 JOptionPane.QUESTION_MESSAGE, null, options,
                 options[2]);
         if (result == 0) {
@@ -278,7 +276,7 @@ public class ProjectActions {
       JOptionPane.showMessageDialog(
           parent,
           S.fmt("fileOpenError", ex.toString()),
-          Strings.get("fileOpenErrorTitle"),
+          S.get("fileOpenErrorTitle"),
           JOptionPane.ERROR_MESSAGE);
       return null;
     }
@@ -317,7 +315,7 @@ public class ProjectActions {
     top.savePreferences();
 
     for (Project proj : new ArrayList<Project>(Projects.getOpenProjects())) {
-      if (!proj.confirmClose(Strings.get("confirmQuitTitle")))
+      if (!proj.confirmClose(S.get("confirmQuitTitle")))
         return;
     }
     System.exit(0);
@@ -390,12 +388,12 @@ public class ProjectActions {
         f = new File(f.getParentFile(), old + circExt);
       } else {
         String ext = old.substring(ext0);
-        String ttl = Strings.get("replaceExtensionTitle");
-        String msg = Strings.get("replaceExtensionMessage", ext);
+        String ttl = S.get("replaceExtensionTitle");
+        String msg = S.fmt("replaceExtensionMessage", ext);
         Object[] options = {
-          Strings.get("replaceExtensionReplaceOpt", ext),
-          Strings.get("replaceExtensionAddOpt", circExt),
-          Strings.get("replaceExtensionKeepOpt") };
+          S.fmt("replaceExtensionReplaceOpt", ext),
+          S.fmt("replaceExtensionAddOpt", circExt),
+          S.get("replaceExtensionKeepOpt") };
         JOptionPane dlog = new JOptionPane(msg);
         dlog.setMessageType(JOptionPane.QUESTION_MESSAGE);
         dlog.setOptions(options);
@@ -413,8 +411,8 @@ public class ProjectActions {
 
     if (f.exists()) {
       int confirm = JOptionPane.showConfirmDialog(proj.getFrame(),
-          Strings.get("confirmOverwriteMessage"),
-          Strings.get("confirmOverwriteTitle"),
+          S.get("confirmOverwriteMessage"),
+          S.get("confirmOverwriteTitle"),
           JOptionPane.YES_NO_OPTION);
       if (confirm != JOptionPane.YES_OPTION)
         return false;

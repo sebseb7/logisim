@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.start;
+import static com.cburch.logisim.gui.start.Strings.S;
 
 import java.io.File;
 import java.io.IOException;
@@ -62,7 +63,6 @@ import com.cburch.logisim.std.io.Tty;
 import com.cburch.logisim.std.memory.Ram;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.Library;
-import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.util.UniquelyNamedThread;
 import com.cburch.logisim.gui.main.ExportImage;
 import com.cburch.logisim.gui.main.Canvas;
@@ -137,8 +137,7 @@ public class TtyInterface {
       precision = 0.0000001;
     hertz = (int) (hertz / precision) * precision;
     String hertzStr = hertz == (int) hertz ? "" + (int) hertz : "" + hertz;
-    Object[] paramArray = { StringUtil.format(Strings.get("ttySpeedMsg")),
-      hertzStr, tickCount, elapse };
+    Object[] paramArray = { S.get("ttySpeedMsg"), hertzStr, tickCount, elapse };
     logger.info("{}", paramArray);
   }
 
@@ -168,12 +167,12 @@ public class TtyInterface {
         fmt + "%s\n", // OK
         Integer.valueOf(totalWithout.getUniqueCount()),
         Integer.valueOf(totalWithout.getRecursiveCount()),
-        Strings.get("statsTotalWithout"));
+        S.get("statsTotalWithout"));
     System.out.printf(
         fmt + "%s\n", // OK
         Integer.valueOf(total.getUniqueCount()),
         Integer.valueOf(total.getRecursiveCount()),
-        Strings.get("statsTotalWith"));
+        S.get("statsTotalWith"));
   }
 
   private static boolean displayTableRow(boolean showHeader, ArrayList<Value> prevOutputs,
@@ -302,8 +301,7 @@ public class TtyInterface {
     try {
       file = loader.openLogisimFile(fileToOpen, args.getSubstitutions());
     } catch (LoadFailedException e) {
-      logger.error("{}",
-          Strings.get("ttyLoadError", fileToOpen.getName()));
+      logger.error("{}", S.fmt("ttyLoadError", fileToOpen.getName()));
 
       System.exit(-1);
       return;
@@ -396,11 +394,11 @@ public class TtyInterface {
       try {
         boolean loaded = loadRam(circState, loadfile);
         if (!loaded) {
-          logger.error("{}", Strings.get("loadNoRamError"));
+          logger.error("{}", S.get("loadNoRamError"));
           System.exit(-1);
         }
       } catch (IOException e) {
-        logger.error("{}: {}", Strings.get("loadIoError"), e.toString());
+        logger.error("{}: {}", S.get("loadIoError"), e.toString());
         System.exit(-1);
       }
     }
@@ -422,7 +420,7 @@ public class TtyInterface {
       keyboardStates = new ArrayList<InstanceState>();
       boolean ttyFound = prepareForTty(circState, keyboardStates);
       if (!ttyFound) {
-        logger.error("{}", Strings.get("ttyNoTtyError"));
+        logger.error("{}", S.get("ttyNoTtyError"));
         System.exit(-1);
       }
       if (keyboardStates.isEmpty()) {
@@ -489,9 +487,9 @@ public class TtyInterface {
       ensureLineTerminated();
     if (showHalt || retCode != 0) {
       if (retCode == 0) {
-        logger.error("{}", Strings.get("ttyHaltReasonPin"));
+        logger.error("{}", S.get("ttyHaltReasonPin"));
       } else if (retCode == 1) {
-        logger.error("{}", Strings.get("ttyHaltReasonOscillation"));
+        logger.error("{}", S.get("ttyHaltReasonOscillation"));
       }
     }
     if (showSpeed) {

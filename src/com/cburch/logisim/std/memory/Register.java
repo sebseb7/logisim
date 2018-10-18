@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.memory;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -139,10 +140,10 @@ public class Register extends InstanceFactory implements DynamicElementProvider 
   static final int Ysize = 90;
 
   public static final Attribute<Boolean> ATTR_SHOW_IN_TAB = Attributes
-      .forBoolean("showInTab", Strings.getter("registerShowInTab"));
+      .forBoolean("showInTab", S.getter("registerShowInTab"));
 
   public Register() {
-    super("Register", Strings.getter("registerComponent"));
+    super("Register", S.getter("registerComponent"));
     setAttributes(new Attribute[] { StdAttr.WIDTH, StdAttr.TRIGGER,
       StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR,
       ATTR_SHOW_IN_TAB, StdAttr.APPEARANCE},
@@ -188,11 +189,11 @@ public class Register extends InstanceFactory implements DynamicElementProvider 
       ps[CLR] = new Port(30, 90, Port.INPUT, 1);
       ps[EN] = new Port(0, 50, Port.INPUT, 1);
     }
-    ps[OUT].setToolTip(Strings.getter("registerQTip"));
-    ps[IN].setToolTip(Strings.getter("registerDTip"));
-    ps[CK].setToolTip(Strings.getter("registerClkTip"));
-    ps[CLR].setToolTip(Strings.getter("registerClrTip"));
-    ps[EN].setToolTip(Strings.getter("registerEnableTip"));
+    ps[OUT].setToolTip(S.getter("registerQTip"));
+    ps[IN].setToolTip(S.getter("registerDTip"));
+    ps[CK].setToolTip(S.getter("registerClkTip"));
+    ps[CLR].setToolTip(S.getter("registerClrTip"));
+    ps[EN].setToolTip(S.getter("registerEnableTip"));
     instance.setPorts(ps);
   }
 
@@ -240,8 +241,8 @@ public class Register extends InstanceFactory implements DynamicElementProvider 
         b = str.substring(split);
       }
     } else {
-      a = Strings.get("registerLabel");
-      b = Strings.get("registerWidthLabel", "" + widthVal.getWidth());
+      a = S.get("registerLabel");
+      b = S.fmt("registerWidthLabel", "" + widthVal.getWidth());
     }
 
     // draw boundary, label
@@ -259,7 +260,7 @@ public class Register extends InstanceFactory implements DynamicElementProvider 
     }
     g.setColor(Color.GRAY);
     painter.drawPort(CLR, "0", Direction.SOUTH);
-    painter.drawPort(EN, Strings.get("memEnableLabel"), Direction.EAST);
+    painter.drawPort(EN, S.get("memEnableLabel"), Direction.EAST);
     g.setColor(Color.BLACK);
     painter.drawClock(CK, Direction.NORTH);
 

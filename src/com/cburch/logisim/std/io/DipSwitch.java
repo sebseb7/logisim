@@ -28,6 +28,7 @@
  *       http://reds.heig-vd.ch
  *******************************************************************************/
 package com.cburch.logisim.std.io;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -133,11 +134,11 @@ public class DipSwitch extends InstanceFactory {
   public static final int MIN_SWITCH = 2;
 
   public static final Attribute<BitWidth> ATTR_SIZE = Attributes
-      .forBitWidth("number", Strings.getter("nrOfSwitch"),
+      .forBitWidth("number", S.getter("nrOfSwitch"),
           MIN_SWITCH, MAX_SWITCH);
 
   public DipSwitch() {
-    super("DipSwitch", Strings.getter("DipSwitchComponent"));
+    super("DipSwitch", S.getter("DipSwitchComponent"));
     int dipSize = 8;
     setAttributes(new Attribute[] { StdAttr.FACING, StdAttr.LABEL, StdAttr.LABEL_LOC,
       StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR, ATTR_SIZE },
@@ -185,7 +186,7 @@ public class DipSwitch extends InstanceFactory {
     Port[] ps = new Port[n];
     for (int i = 0; i < ps.length; i++) {
       ps[i] = new Port(cx+(i+1)*dx, cy+(i+1)*dy, Port.OUTPUT, 1);
-      ps[i].setToolTip(Strings.getter("DIP"+(i+1)));
+      ps[i].setToolTip(S.getter("DIP"+(i+1)));
     }
     instance.setPorts(ps);
   }

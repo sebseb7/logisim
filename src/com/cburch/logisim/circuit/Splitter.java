@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.circuit;
+import static com.cburch.logisim.circuit.Strings.S;
 
 import javax.swing.JPopupMenu;
 
@@ -50,7 +51,6 @@ import com.cburch.logisim.tools.MenuExtender;
 import com.cburch.logisim.tools.ToolTipMaker;
 import com.cburch.logisim.tools.WireRepair;
 import com.cburch.logisim.tools.WireRepairData;
-import com.cburch.logisim.util.StringUtil;
 
 public class Splitter extends ManagedComponent
   implements WireRepair, ToolTipMaker, MenuExtender, AttributeListener {
@@ -201,7 +201,7 @@ public class Splitter extends ManagedComponent
     }
 
     if (end == 0) {
-      return Strings.get("splitterCombinedTip");
+      return S.get("splitterCombinedTip");
     } else if (end > 0) {
       int bits = 0;
       StringBuilder buf = new StringBuilder();
@@ -225,19 +225,14 @@ public class Splitter extends ManagedComponent
       }
       if (inString)
         appendBuf(buf, bit_end.length - 1, beginString);
-      String base;
       switch (bits) {
       case 0:
-        base = Strings.get("splitterSplit0Tip");
-        break;
+        return S.fmt("splitterSplit0Tip", buf.toString());
       case 1:
-        base = Strings.get("splitterSplit1Tip");
-        break;
+        return S.fmt("splitterSplit1Tip", buf.toString());
       default:
-        base = Strings.get("splitterSplitManyTip");
-        break;
+        return S.fmt("splitterSplitManyTip", buf.toString());
       }
-      return StringUtil.format(base, buf.toString());
     } else {
       return null;
     }

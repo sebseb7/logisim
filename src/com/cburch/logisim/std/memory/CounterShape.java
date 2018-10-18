@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.memory;
+import static com.cburch.logisim.std.Strings.S;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -47,7 +48,7 @@ public class CounterShape extends RegisterShape {
 
   @Override
   public String getDisplayName() {
-    return Strings.get("counterComponent");
+    return S.get("counterComponent");
   }
 
   @Override

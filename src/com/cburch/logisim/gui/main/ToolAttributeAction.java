@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.main;
+import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -73,7 +74,7 @@ public class ToolAttributeAction extends Action {
 
   @Override
   public String getName() {
-    return Strings.get("changeToolAttrAction");
+    return S.get("changeToolAttrAction");
   }
 
   @Override

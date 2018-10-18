@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.draw.shapes;
+import static com.cburch.draw.Strings.S;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -131,7 +132,7 @@ public class Curve extends FillableCanvasObject {
 
 	@Override
 	public String getDisplayName() {
-		return Strings.get("shapeCurve");
+		return S.get("shapeCurve");
 	}
 
 	public Location getEnd0() {

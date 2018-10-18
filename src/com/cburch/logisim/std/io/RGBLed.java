@@ -28,6 +28,7 @@
  *       http://reds.heig-vd.ch
  *******************************************************************************/
 package com.cburch.logisim.std.io;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -87,7 +88,7 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
   public static final int BLUE = 2;
 
   public RGBLed() {
-    super("RGBLED", Strings.getter("RGBledComponent"));
+    super("RGBLED", S.getter("RGBledComponent"));
     setAttributes(new Attribute[] { StdAttr.FACING, Io.ATTR_ACTIVE, StdAttr.LABEL,
       StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR },
       new Object[] { Direction.WEST, Boolean.TRUE, "", StdAttr.LABEL_CENTER,
@@ -121,9 +122,9 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
     ps[RED] = new Port(0, 0, Port.INPUT, 1);
     ps[GREEN] = new Port(cx+dx, cy+dy, Port.INPUT, 1);
     ps[BLUE] = new Port(cx-dx, cy-dy, Port.INPUT, 1);
-    ps[RED].setToolTip(Strings.getter("RED"));
-    ps[GREEN].setToolTip(Strings.getter("GREEN"));
-    ps[BLUE].setToolTip(Strings.getter("BLUE"));
+    ps[RED].setToolTip(S.getter("RED"));
+    ps[GREEN].setToolTip(S.getter("GREEN"));
+    ps[BLUE].setToolTip(S.getter("BLUE"));
     instance.setPorts(ps);
   }
 

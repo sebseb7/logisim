@@ -6,6 +6,7 @@
  * of Computer Science, University of Copenhagen.
  */
 package com.cburch.logisim.std.io;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
@@ -61,24 +62,24 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
   static final Integer[] SIZE_OPTIONS = { 2, 4, 8, 16, 32, 64, 128, 256 };
 
   public static final Attribute BLINK_OPTION = Attributes.forOption("cursor",
-      Strings.getter("rgbVideoCursor"), BLINK_OPTIONS);
+      S.getter("rgbVideoCursor"), BLINK_OPTIONS);
   public static final Attribute RESET_OPTION = Attributes.forOption("reset",
-      Strings.getter("rgbVideoReset"), RESET_OPTIONS);
+      S.getter("rgbVideoReset"), RESET_OPTIONS);
   public static final Attribute COLOR_OPTION = Attributes.forOption("color",
-      Strings.getter("rgbVideoColor"), COLOR_OPTIONS);
+      S.getter("rgbVideoColor"), COLOR_OPTIONS);
   public static final Attribute<Integer> WIDTH_OPTION = Attributes.forOption("width",
-      Strings.getter("rgbVideoWidth"), SIZE_OPTIONS);
+      S.getter("rgbVideoWidth"), SIZE_OPTIONS);
   public static final Attribute<Integer> HEIGHT_OPTION = Attributes.forOption("height",
-      Strings.getter("rgbVideoHeight"), SIZE_OPTIONS);
+      S.getter("rgbVideoHeight"), SIZE_OPTIONS);
   public static final Attribute<Integer> SCALE_OPTION = Attributes.forIntegerRange("scale",
-      Strings.getter("rgbVideoScale"), 1, 8);
+      S.getter("rgbVideoScale"), 1, 8);
 
   private static final Attribute[] ATTRIBUTES = { BLINK_OPTION, RESET_OPTION, COLOR_OPTION, WIDTH_OPTION, HEIGHT_OPTION, SCALE_OPTION };
 
   private static class Factory extends AbstractComponentFactory {
     private Factory() { }
     public String getName() { return "RGB Video"; }
-    public String getDisplayName() { return Strings.get("rgbVideoComponent"); }
+    public String getDisplayName() { return S.get("rgbVideoComponent"); }
     public AttributeSet createAttributeSet() {
       return AttributeSets.fixedSet(ATTRIBUTES, new Object[] {
         BLINK_OPTIONS[0], RESET_OPTIONS[0], COLOR_OPTIONS[0], new Integer(128), new Integer(128), new Integer(2) });
@@ -348,14 +349,14 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
       }
     }
     switch (end) {
-    case P_CLK: return Strings.get("rgbVideoCLK");
-    case P_WE: return Strings.get("rgbVideoWE");
-    case P_X: return Strings.get("rgbVideoX");
-    case P_Y: return Strings.get("rgbVideoY");
+    case P_CLK: return S.get("rgbVideoCLK");
+    case P_WE: return S.get("rgbVideoWE");
+    case P_X: return S.get("rgbVideoX");
+    case P_Y: return S.get("rgbVideoY");
     case P_DATA:
       AttributeSet attrs = getAttributeSet();
-      return String.format(Strings.get("rgbVideoData"), attrs.getValue(COLOR_OPTION).toString());
-    case P_RST: return Strings.get("rgbVideoRST");
+      return S.fmt("rgbVideoData", attrs.getValue(COLOR_OPTION).toString());
+    case P_RST: return S.get("rgbVideoRST");
     default: return null;
     }
   }

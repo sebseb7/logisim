@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,7 +58,7 @@ public class Builtin extends Library {
 
   @Override
   public String getDisplayName() {
-    return Strings.get("builtinLibrary");
+    return S.get("builtinLibrary");
   }
 
   @Override

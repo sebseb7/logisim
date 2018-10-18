@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.opts;
+import static com.cburch.logisim.gui.opts.Strings.S;
 
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -36,7 +37,6 @@ import com.cburch.logisim.file.MouseMappings;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.Tool;
-import com.cburch.logisim.util.StringUtil;
 
 class OptionsActions {
   private static class RemoveMapping extends Action {
@@ -57,7 +57,7 @@ class OptionsActions {
 
     @Override
     public String getName() {
-      return Strings.get("removeMouseMappingAction");
+      return S.get("removeMouseMappingAction");
     }
 
     @Override
@@ -117,7 +117,7 @@ class OptionsActions {
 
     @Override
     public String getName() {
-      return Strings.get("addMouseMappingAction");
+      return S.get("addMouseMappingAction");
     }
 
     @Override

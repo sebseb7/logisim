@@ -28,6 +28,7 @@
  *       http://reds.heig-vd.ch
  *******************************************************************************/
 package com.cburch.logisim.gui.main;
+import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.awt.Color;
 import java.awt.Cursor;
@@ -552,13 +553,13 @@ public class Canvas extends JPanel
 
       if (proj.getSimulator().isOscillating()) {
         g.setColor(DEFAULT_ERROR_COLOR);
-        paintString(g, Strings.get("canvasOscillationError"));
+        paintString(g, S.get("canvasOscillationError"));
         return;
       }
 
       if (proj.getSimulator().isExceptionEncountered()) {
         g.setColor(DEFAULT_ERROR_COLOR);
-        paintString(g, Strings.get("canvasExceptionError"));
+        paintString(g, S.get("canvasExceptionError"));
         return;
       }
 
@@ -848,7 +849,7 @@ public class Canvas extends JPanel
 
     Rectangle viewable = getViewableRect();
 
-    viewport.setWidthMessage(Strings.get("canvasWidthError")
+    viewport.setWidthMessage(S.get("canvasWidthError")
         + (exceptions.size() == 1 ? "" : " (" + exceptions.size() + ")"));
     for (WidthIncompatibilityData ex : exceptions) {
       boolean isWithin = false;

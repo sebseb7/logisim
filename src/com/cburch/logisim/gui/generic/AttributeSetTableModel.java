@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.generic;
+import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.awt.Component;
 import java.awt.Window;
@@ -107,11 +108,11 @@ public abstract class AttributeSetTableModel
         }
         setValueRequested(attr, value);
       } catch (ClassCastException e) {
-        String msg = Strings.get("attributeChangeInvalidError") + ": "
+        String msg = S.get("attributeChangeInvalidError") + ": "
             + e;
         throw new AttrTableSetException(msg);
       } catch (NumberFormatException e) {
-        String msg = Strings.get("attributeChangeInvalidError");
+        String msg = S.get("attributeChangeInvalidError");
         String emsg = e.getMessage();
         if (emsg != null && emsg.length() > 0)
           msg += ": " + emsg;

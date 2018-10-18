@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.analyze.gui;
+import static com.cburch.logisim.analyze.model.Strings.S;
 
 import java.awt.event.ItemListener;
 
@@ -147,7 +148,7 @@ class OutputSelector {
   }
 
   void localeChanged() {
-    label.setText(Strings.get("outputSelectLabel"));
+    label.setText(S.get("outputSelectLabel"));
   }
 
   public void removeItemListener(ItemListener l) {

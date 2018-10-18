@@ -28,6 +28,7 @@
  *       http://reds.heig-vd.ch
  *******************************************************************************/
 package com.cburch.logisim.std.io;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -76,16 +77,16 @@ public class PortIO extends InstanceFactory {
   public static final int MAX_IO = 128;
   public static final int MIN_IO = 2;
   public static final Attribute<Integer> ATTR_SIZE = Attributes
-      .forIntegerRange("number", Strings.getter("pioNumber"), MIN_IO,
+      .forIntegerRange("number", S.getter("pioNumber"), MIN_IO,
           MAX_IO);
   // public static final Attribute<Boolean> ATTR_BUS =
-  // Attributes.forBoolean("showBus", Strings.getter("pioShowBus"));
-  // public static final String BUSES = Strings.getter("pioBuses").toString();
-  // public static final String PINS = Strings.getter("pioPins").toString();
+  // Attributes.forBoolean("showBus", S.getter("pioShowBus"));
+  // public static final String BUSES = S.getter("pioBuses").toString();
+  // public static final String PINS = S.getter("pioPins").toString();
   // public static final String[] OPTIONS = { BUSES, PINS };
 
   // public static final Attribute<String> ATTR_BUS = Attributes.forOption(
-  //    "showBus", Strings.getter("pioShowBus"), OPTIONS);
+  //    "showBus", S.getter("pioShowBus"), OPTIONS);
 
 
   public static final String INPUT = "input";
@@ -95,12 +96,12 @@ public class PortIO extends InstanceFactory {
 
   public static final String[] DIRECTIONS = { INPUT, OUTPUT, INOUT_1, INOUT_N };
   public static final Attribute<String> ATTR_DIR = Attributes.forOption(
-      "direction", Strings.getter("pioDirection"), DIRECTIONS);
+      "direction", S.getter("pioDirection"), DIRECTIONS);
 
   private MappableResourcesContainer mapInfo;
 
   public PortIO() {
-    super("PortIO", Strings.getter("pioComponent"));
+    super("PortIO", S.getter("pioComponent"));
     int portSize = 8;
     setAttributes(new Attribute[] { StdAttr.FACING, StdAttr.LABEL, StdAttr.LABEL_LOC,
       StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR, ATTR_SIZE, ATTR_DIR},

@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.circuit;
+import static com.cburch.logisim.circuit.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -106,7 +107,7 @@ public class SplitterFactory extends AbstractComponentFactory {
 
   @Override
   public StringGetter getDisplayGetter() {
-    return Strings.getter("splitterComponent");
+    return S.getter("splitterComponent");
   }
 
   @Override

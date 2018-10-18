@@ -32,6 +32,6 @@ package com.cburch.logisim.file;
 
 import com.cburch.logisim.util.LocaleManager;
 
-class Strings {
-  static LocaleManager S = new LocaleManager("resources/logisim", "file");
+public class Strings {
+  public static final LocaleManager S = new LocaleManager("resources/logisim", "file");
 }

@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.hdl;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
@@ -124,7 +125,7 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
 
   void doExport() {
     JFileChooser chooser = JFileChoosers.createSelected(getDefaultExportFile(null));
-    chooser.setDialogTitle(Strings.get("hdlSaveDialog"));
+    chooser.setDialogTitle(S.get("hdlSaveDialog"));
     int choice = chooser.showSaveDialog(HdlContentView.this);
     if (choice == JFileChooser.APPROVE_OPTION) {
       File f = chooser.getSelectedFile();
@@ -133,7 +134,7 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
       } catch (IOException e) {
         JOptionPane.showMessageDialog(HdlContentView.this,
             e.getMessage(),
-            Strings.get("hexSaveErrorTitle"),
+            S.get("hexSaveErrorTitle"),
             JOptionPane.ERROR_MESSAGE);
       }
     }
@@ -157,10 +158,10 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
   }
 
   public static boolean confirmImport(Component parent) {
-    String[] options = { Strings.get("importOption"),
-      Strings.get("cancelOption") };
+    String[] options = { S.get("importOption"),
+      S.get("cancelOption") };
     return JOptionPane.showOptionDialog(parent,
-        Strings.get("importMessage"), Strings.get("importTitle"), 0,
+        S.get("importMessage"), S.get("importTitle"), 0,
         JOptionPane.QUESTION_MESSAGE, null, options, options[0]) == 0;
   }
 

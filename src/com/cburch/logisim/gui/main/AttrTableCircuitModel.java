@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.main;
+import static com.cburch.logisim.gui.main.Strings.S;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitMutation;
@@ -49,19 +50,19 @@ public class AttrTableCircuitModel extends AttributeSetTableModel {
 
   @Override
   public String getTitle() {
-    return Strings.get("circuitAttrTitle", circ.getName());
+    return S.fmt("circuitAttrTitle", circ.getName());
   }
 
   @Override
   public void setValueRequested(Attribute<Object> attr, Object value)
       throws AttrTableSetException {
     if (!proj.getLogisimFile().contains(circ)) {
-      String msg = Strings.get("cannotModifyCircuitError");
+      String msg = S.get("cannotModifyCircuitError");
       throw new AttrTableSetException(msg);
     } else {
       CircuitMutation xn = new CircuitMutation(circ);
       xn.setForCircuit(attr, value);
-      proj.doAction(xn.toAction(Strings.getter("changeCircuitAttrAction")));
+      proj.doAction(xn.toAction(S.getter("changeCircuitAttrAction")));
     }
   }
 }

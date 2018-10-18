@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.analyze.gui;
+import static com.cburch.logisim.analyze.model.Strings.S;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -375,11 +376,11 @@ class TableTab extends JPanel implements TruthTablePanel, TabInterface {
     outputVars = table.getOutputVariables();
     if (inputVars.size() == 0) {
       inputVars = new ArrayList<>();
-      inputVars.add(new Var(Strings.get("tableNoInputs"), 0));
+      inputVars.add(new Var(S.get("tableNoInputs"), 0));
     }
     if (outputVars.size() == 0) {
       outputVars = new ArrayList<>();
-      outputVars.add(new Var(Strings.get("tableNoOutputs"), 0));
+      outputVars.add(new Var(S.get("tableNoOutputs"), 0));
     }
 
     cellHeight = DEFAULT_CELL_HEIGHT;

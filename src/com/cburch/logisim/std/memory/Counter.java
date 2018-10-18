@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.memory;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -69,19 +70,19 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
   final static Logger logger = LoggerFactory.getLogger(Counter.class);
 
   static final AttributeOption ON_GOAL_WRAP = new AttributeOption("wrap",
-      "wrap", Strings.getter("counterGoalWrap"));
+      "wrap", S.getter("counterGoalWrap"));
   static final AttributeOption ON_GOAL_STAY = new AttributeOption("stay",
-      "stay", Strings.getter("counterGoalStay"));
+      "stay", S.getter("counterGoalStay"));
   static final AttributeOption ON_GOAL_CONT = new AttributeOption("continue",
-      "continue", Strings.getter("counterGoalContinue"));
+      "continue", S.getter("counterGoalContinue"));
 
   static final AttributeOption ON_GOAL_LOAD = new AttributeOption("load",
-      "load", Strings.getter("counterGoalLoad"));
+      "load", S.getter("counterGoalLoad"));
   static final Attribute<Integer> ATTR_MAX = Attributes.forHexInteger("max",
-      Strings.getter("counterMaxAttr"));
+      S.getter("counterMaxAttr"));
 
   static final Attribute<AttributeOption> ATTR_ON_GOAL = Attributes
-      .forOption("ongoal", Strings.getter("counterGoalAttr"),
+      .forOption("ongoal", S.getter("counterGoalAttr"),
           new AttributeOption[] { ON_GOAL_WRAP, ON_GOAL_STAY,
             ON_GOAL_CONT, ON_GOAL_LOAD });
   static final int DELAY = 8;
@@ -96,7 +97,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
   static final int CARRY = 7;
 
   public Counter() {
-    super("Counter", Strings.getter("counterComponent"));
+    super("Counter", S.getter("counterComponent"));
     setOffsetBounds(Bounds.create(-30, -20, 30, 40));
     setIconName("counter.gif");
     setInstancePoker(CounterPoker.class);
@@ -144,14 +145,14 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
       ps[EN] = new Port(0, 70, Port.INPUT, 1);
       ps[CARRY] = new Port(40 + SymbolWidth(width), 50, Port.OUTPUT, 1);
     }
-    ps[OUT].setToolTip(Strings.getter("counterQTip"));
-    ps[IN].setToolTip(Strings.getter("counterDataTip"));
-    ps[CK].setToolTip(Strings.getter("counterClockTip"));
-    ps[CLR].setToolTip(Strings.getter("counterResetTip"));
-    ps[LD].setToolTip(Strings.getter("counterLoadTip"));
-    ps[UD].setToolTip(Strings.getter("counterUpDownTip"));
-    ps[EN].setToolTip(Strings.getter("counterEnableTip"));
-    ps[CARRY].setToolTip(Strings.getter("counterCarryTip"));
+    ps[OUT].setToolTip(S.getter("counterQTip"));
+    ps[IN].setToolTip(S.getter("counterDataTip"));
+    ps[CK].setToolTip(S.getter("counterClockTip"));
+    ps[CLR].setToolTip(S.getter("counterResetTip"));
+    ps[LD].setToolTip(S.getter("counterLoadTip"));
+    ps[UD].setToolTip(S.getter("counterUpDownTip"));
+    ps[EN].setToolTip(S.getter("counterEnableTip"));
+    ps[CARRY].setToolTip(S.getter("counterCarryTip"));
     instance.setPorts(ps);
   }
 
@@ -405,8 +406,8 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
         b = str.substring(split);
       }
     } else {
-      a = Strings.get("counterLabel");
-      b = Strings.get("registerWidthLabel", "" + widthVal.getWidth());
+      a = S.get("counterLabel");
+      b = S.fmt("registerWidthLabel", "" + widthVal.getWidth());
     }
 
     // draw boundary, label
@@ -427,7 +428,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
     painter.drawPort(UD);
     painter.drawPort(CARRY);
     painter.drawPort(CLR, "0", Direction.SOUTH);
-    painter.drawPort(EN, Strings.get("counterEnableLabel"), Direction.EAST);
+    painter.drawPort(EN, S.get("counterEnableLabel"), Direction.EAST);
     g.setColor(Color.BLACK);
     painter.drawClock(CK, Direction.NORTH);
 

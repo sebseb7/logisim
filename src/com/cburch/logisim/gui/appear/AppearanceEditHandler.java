@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.appear;
+import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -185,7 +186,7 @@ public class AppearanceEditHandler extends EditHandler
     if (!remove.isEmpty()) {
       canvas.getProject().doAction(
           new SelectionAction(canvas,
-            Strings.getter("deleteSelectionAction"), remove, null,
+            S.getter("deleteSelectionAction"), remove, null,
             select, anchorLocation, anchorFacing));
     }
   }
@@ -210,7 +211,7 @@ public class AppearanceEditHandler extends EditHandler
     if (!clones.isEmpty()) {
       canvas.getProject().doAction(
           new SelectionAction(canvas,
-            Strings.getter("duplicateSelectionAction"), null, clones,
+            S.getter("duplicateSelectionAction"), null, clones,
             select, null, null));
     }
   }
@@ -279,7 +280,7 @@ public class AppearanceEditHandler extends EditHandler
 
     canvas.getProject().doAction(
         new SelectionAction(canvas,
-          Strings.getter("pasteClipboardAction"), null, add, add,
+          S.getter("pasteClipboardAction"), null, add, add,
           anchorLocation, clip.getAnchorFacing()));
   }
 

@@ -33,6 +33,7 @@
  */
 
 package com.cburch.logisim.std.wiring;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -63,11 +64,11 @@ import com.cburch.logisim.util.Icons;
 
 public class Transistor extends InstanceFactory {
   static final AttributeOption TYPE_P = new AttributeOption("p",
-      Strings.getter("transistorTypeP"));
+      S.getter("transistorTypeP"));
   static final AttributeOption TYPE_N = new AttributeOption("n",
-      Strings.getter("transistorTypeN"));
+      S.getter("transistorTypeN"));
   static final Attribute<AttributeOption> ATTR_TYPE = Attributes.forOption(
-      "type", Strings.getter("transistorTypeAttr"),
+      "type", S.getter("transistorTypeAttr"),
       new AttributeOption[] { TYPE_P, TYPE_N });
 
   static final int OUTPUT = 0;
@@ -78,7 +79,7 @@ public class Transistor extends InstanceFactory {
   private static final Icon ICON_P = Icons.getIcon("trans0.gif");
 
   public Transistor() {
-    super("Transistor", Strings.getter("transistorComponent"));
+    super("Transistor", S.getter("transistorComponent"));
     setAttributes(new Attribute[] { ATTR_TYPE, StdAttr.FACING,
       Wiring.ATTR_GATE, StdAttr.WIDTH }, new Object[] { TYPE_P,
         Direction.EAST, Wiring.GATE_TOP_LEFT, BitWidth.ONE });
@@ -297,13 +298,13 @@ public class Transistor extends InstanceFactory {
           1);
     }
     if (instance.getAttributeValue(ATTR_TYPE) == TYPE_P) {
-      ports[GATE].setToolTip(Strings.getter("transistorPGate"));
-      ports[INPUT].setToolTip(Strings.getter("transistorPSource"));
-      ports[OUTPUT].setToolTip(Strings.getter("transistorPDrain"));
+      ports[GATE].setToolTip(S.getter("transistorPGate"));
+      ports[INPUT].setToolTip(S.getter("transistorPSource"));
+      ports[OUTPUT].setToolTip(S.getter("transistorPDrain"));
     } else {
-      ports[GATE].setToolTip(Strings.getter("transistorNGate"));
-      ports[INPUT].setToolTip(Strings.getter("transistorNSource"));
-      ports[OUTPUT].setToolTip(Strings.getter("transistorNDrain"));
+      ports[GATE].setToolTip(S.getter("transistorNGate"));
+      ports[INPUT].setToolTip(S.getter("transistorNSource"));
+      ports[OUTPUT].setToolTip(S.getter("transistorNDrain"));
     }
     instance.setPorts(ports);
   }

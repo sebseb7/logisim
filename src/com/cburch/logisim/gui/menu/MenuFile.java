@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.menu;
+import static com.cburch.logisim.gui.menu.Strings.S;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -183,16 +184,16 @@ class MenuFile extends Menu implements ActionListener {
   }
 
   public void localeChanged() {
-    this.setText(Strings.get("fileMenu"));
-    newi.setText(Strings.get("fileNewItem"));
-    open.setText(Strings.get("fileOpenItem"));
+    this.setText(S.get("fileMenu"));
+    newi.setText(S.get("fileNewItem"));
+    open.setText(S.get("fileOpenItem"));
     openRecent.localeChanged();
-    close.setText(Strings.get("fileCloseItem"));
-    save.setText(Strings.get("fileSaveItem"));
-    saveAs.setText(Strings.get("fileSaveAsItem"));
-    exportImage.setText(Strings.get("fileExportImageItem"));
-    print.setText(Strings.get("filePrintItem"));
-    prefs.setText(Strings.get("filePreferencesItem"));
-    quit.setText(Strings.get("fileQuitItem"));
+    close.setText(S.get("fileCloseItem"));
+    save.setText(S.get("fileSaveItem"));
+    saveAs.setText(S.get("fileSaveAsItem"));
+    exportImage.setText(S.get("fileExportImageItem"));
+    print.setText(S.get("filePrintItem"));
+    prefs.setText(S.get("filePreferencesItem"));
+    quit.setText(S.get("fileQuitItem"));
   }
 }

@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.prefs;
+import static com.cburch.logisim.gui.prefs.Strings.S;
 
 import javax.swing.JPanel;
 
@@ -45,10 +46,10 @@ class WindowOptions extends OptionsPanel {
     super(window);
 
     checks = new PrefBoolean[] { new PrefBoolean(
-        AppPreferences.SHOW_TICK_RATE, Strings.getter("windowTickRate")), };
+        AppPreferences.SHOW_TICK_RATE, S.getter("windowTickRate")), };
 
     toolbarPlacement = new PrefOptionList(AppPreferences.TOOLBAR_PLACEMENT,
-        Strings.getter("windowToolbarLocation"), new PrefOption[] {
+        S.getter("windowToolbarLocation"), new PrefOption[] {
           new PrefOption(Direction.NORTH.toString(),
               Direction.NORTH.getDisplayGetter()),
           new PrefOption(Direction.SOUTH.toString(),
@@ -58,9 +59,9 @@ class WindowOptions extends OptionsPanel {
           new PrefOption(Direction.WEST.toString(),
               Direction.WEST.getDisplayGetter()),
           new PrefOption(AppPreferences.TOOLBAR_DOWN_MIDDLE,
-              Strings.getter("windowToolbarDownMiddle")),
+              S.getter("windowToolbarDownMiddle")),
           new PrefOption(AppPreferences.TOOLBAR_HIDDEN,
-              Strings.getter("windowToolbarHidden")) });
+              S.getter("windowToolbarHidden")) });
 
     JPanel panel = new JPanel(new TableLayout(2));
     panel.add(toolbarPlacement.getJLabel());
@@ -75,12 +76,12 @@ class WindowOptions extends OptionsPanel {
 
   @Override
   public String getHelpText() {
-    return Strings.get("windowHelp");
+    return S.get("windowHelp");
   }
 
   @Override
   public String getTitle() {
-    return Strings.get("windowTitle");
+    return S.get("windowTitle");
   }
 
   @Override

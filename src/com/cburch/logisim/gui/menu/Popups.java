@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.menu;
+import static com.cburch.logisim.gui.menu.Strings.S;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -60,19 +61,19 @@ public class Popups {
     /* Tool tool; */
     Circuit circuit;
     JMenuItem analyze = new JMenuItem(
-        Strings.get("projectAnalyzeCircuitItem"));
+        S.get("projectAnalyzeCircuitItem"));
     JMenuItem stats = new JMenuItem(
-        Strings.get("projectGetCircuitStatisticsItem"));
-    JMenuItem main = new JMenuItem(Strings.get("projectSetAsMainItem"));
+        S.get("projectGetCircuitStatisticsItem"));
+    JMenuItem main = new JMenuItem(S.get("projectSetAsMainItem"));
     JMenuItem remove = new JMenuItem(
-        Strings.get("projectRemoveCircuitItem"));
+        S.get("projectRemoveCircuitItem"));
     JMenuItem editLayout = new JMenuItem(
-        Strings.get("projectEditCircuitLayoutItem"));
+        S.get("projectEditCircuitLayoutItem"));
     JMenuItem editAppearance = new JMenuItem(
-        Strings.get("projectEditCircuitAppearanceItem"));
+        S.get("projectEditCircuitAppearanceItem"));
 
     CircuitPopup(Project proj, Tool tool, Circuit circuit) {
-      super(Strings.get("circuitMenu"));
+      super(S.get("circuitMenu"));
       this.proj = proj;
       /* this.tool = tool; */
       this.circuit = circuit;
@@ -134,12 +135,12 @@ public class Popups {
     Project proj;
     VhdlContent vhdl;
     JMenuItem edit = new JMenuItem(
-        Strings.get("projectEditVhdlItem"));
+        S.get("projectEditVhdlItem"));
     JMenuItem remove = new JMenuItem(
-        Strings.get("projectRemoveVhdlItem"));
+        S.get("projectRemoveVhdlItem"));
 
     VhdlPopup(Project proj, Tool tool, VhdlContent vhdl) {
-      super(Strings.get("vhdlMenu"));
+      super(S.get("vhdlMenu"));
       this.proj = proj;
       /* this.tool = tool; */
       this.vhdl = vhdl;
@@ -172,12 +173,12 @@ public class Popups {
     Project proj;
     Library lib;
     JMenuItem unload = new JMenuItem(
-        Strings.get("projectUnloadLibraryItem"));
+        S.get("projectUnloadLibraryItem"));
     JMenuItem reload = new JMenuItem(
-        Strings.get("projectReloadLibraryItem"));
+        S.get("projectReloadLibraryItem"));
 
     LibraryPopup(Project proj, Library lib, boolean is_top) {
-      super(Strings.get("libMenu"));
+      super(S.get("libMenu"));
       this.proj = proj;
       this.lib = lib;
 
@@ -204,16 +205,16 @@ public class Popups {
   private static class ProjectPopup extends JPopupMenu
     implements ActionListener {
     Project proj;
-    JMenuItem add = new JMenuItem(Strings.get("projectAddCircuitItem"));
-    JMenu load = new JMenu(Strings.get("projectLoadLibraryItem"));
+    JMenuItem add = new JMenuItem(S.get("projectAddCircuitItem"));
+    JMenu load = new JMenu(S.get("projectLoadLibraryItem"));
     JMenuItem loadBuiltin = new JMenuItem(
-        Strings.get("projectLoadBuiltinItem"));
+        S.get("projectLoadBuiltinItem"));
     JMenuItem loadLogisim = new JMenuItem(
-        Strings.get("projectLoadLogisimItem"));
-    JMenuItem loadJar = new JMenuItem(Strings.get("projectLoadJarItem"));
+        S.get("projectLoadLogisimItem"));
+    JMenuItem loadJar = new JMenuItem(S.get("projectLoadJarItem"));
 
     ProjectPopup(Project proj) {
-      super(Strings.get("projMenu"));
+      super(S.get("projMenu"));
       this.proj = proj;
 
       load.add(loadBuiltin);

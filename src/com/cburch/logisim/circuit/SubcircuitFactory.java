@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.circuit;
+import static com.cburch.logisim.circuit.Strings.S;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
@@ -91,7 +92,7 @@ public class SubcircuitFactory extends InstanceFactory {
     public void configureMenu(JPopupMenu menu, Project proj) {
       this.proj = proj;
       String name = instance.getFactory().getDisplayName();
-      String text = Strings.get("subcircuitViewItem", name);
+      String text = S.fmt("subcircuitViewItem", name);
       JMenuItem item = new JMenuItem(text);
       item.addActionListener(this);
       menu.add(item);

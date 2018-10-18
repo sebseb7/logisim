@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.prefs;
+import static com.cburch.logisim.gui.prefs.Strings.S;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -146,20 +147,19 @@ public class SoftwaresOptions extends OptionsPanel {
 
   @Override
   public String getHelpText() {
-    return Strings.get("softwaresHelp");
+    return S.get("softwaresHelp");
   }
 
   @Override
   public String getTitle() {
-    return Strings.get("softwaresTitle");
+    return S.get("softwaresTitle");
   }
 
   @Override
   public void localeChanged() {
-    questaValidationCheckBox.setText(Strings
-        .get("softwaresQuestaValidationLabel"));
-    questaPathButton.setText(Strings.get("softwaresQuestaPathButton"));
-    questaPathLabel.setText(Strings.get("softwaresQuestaPathLabel"));
+    questaValidationCheckBox.setText(S.get("softwaresQuestaValidationLabel"));
+    questaPathButton.setText(S.get("softwaresQuestaPathButton"));
+    questaPathLabel.setText(S.get("softwaresQuestaPathLabel"));
   }
 
 }

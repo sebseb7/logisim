@@ -28,24 +28,21 @@
  *       http://reds.heig-vd.ch
  *******************************************************************************/
 package com.bfh.logisim.library;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
 
-import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
-import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
-import com.cburch.logisim.std.arith.Strings;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 
@@ -54,10 +51,10 @@ public class DynamicClock extends InstanceFactory{
 	private static final int SPEED = 0;
 
 	public static final Attribute<BitWidth> WIDTH_ATTR = Attributes
-			.forBitWidth("width", Strings.getter("Tick Resolution"), 1, 32);
+			.forBitWidth("width", S.getter("Tick Resolution"), 1, 32);
 
 	public DynamicClock() {
-		super("Dynamic_Clock_Control", Strings.getter("DynamicClockControl"));
+		super("Dynamic_Clock_Control", S.getter("DynamicClockControl"));
 		setAttributes(new Attribute[] { DynamicClock.WIDTH_ATTR },
 				new Object[] { BitWidth.create(28) });
 		setKeyConfigurator(new BitWidthConfigurator(DynamicClock.WIDTH_ATTR,1,32,0));
@@ -65,7 +62,7 @@ public class DynamicClock extends InstanceFactory{
 		setIconName("dynclock.gif");
 		Port[] ps = new Port[1];
 		ps[SPEED] = new Port(-30, 30, Port.INPUT, WIDTH_ATTR);
-                ps[SPEED].setToolTip(Strings.getter("CountReset: Reset value for tick counter (higher numbers make slower clocks)"));
+                ps[SPEED].setToolTip(S.getter("CountReset: Reset value for tick counter (higher numbers make slower clocks)"));
 		setPorts(ps);
 	}
 	

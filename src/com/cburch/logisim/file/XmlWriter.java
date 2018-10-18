@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.file;
+import static com.cburch.logisim.file.Strings.S;
 
 import java.io.File;
 import java.io.OutputStream;
@@ -75,7 +76,6 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.InputEventUtil;
-import com.cburch.logisim.util.StringUtil;
 
 class XmlWriter {
 
@@ -442,15 +442,14 @@ class XmlWriter {
     Library lib = findLibrary(tool);
     String lib_name;
     if (lib == null) {
-      loader.showError(StringUtil.format("tool `%s' not found",
-            tool.getDisplayName()));
+      loader.showError(S.fmt("xmlToolNotFound", tool.getDisplayName()));
       return null;
     } else if (lib == file) {
       lib_name = null;
     } else {
       lib_name = libs.get(lib);
       if (lib_name == null) {
-        loader.showError("unknown library within file");
+        loader.showError(S.fmt("toolLibraryMissingError", tool.getDisplayName()));
         return null;
       }
     }

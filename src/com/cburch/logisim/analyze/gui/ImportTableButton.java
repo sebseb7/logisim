@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.analyze.gui;
+import static com.cburch.logisim.analyze.model.Strings.S;
 
 import java.util.Scanner;
 import java.util.ArrayList;
@@ -47,7 +48,6 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.analyze.model.Entry;
 import com.cburch.logisim.analyze.model.TruthTable;
-import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.util.JFileChoosers;
 import com.cburch.logisim.analyze.model.AnalyzerModel;
 import com.cburch.logisim.analyze.model.VariableList;
@@ -69,7 +69,7 @@ class ImportTableButton extends JButton {
   }
 
   void localeChanged() {
-    setText(Strings.get("importTableButton"));
+    setText(S.get("importTableButton"));
   }
 
   static final Pattern NAME_FORMAT = Pattern.compile("([a-zA-Z][a-zA-Z_0-9]*)\\[(-?[0-9]+)\\.\\.(-?[0-9]+)\\]");
@@ -227,8 +227,8 @@ class ImportTableButton extends JButton {
         table.setVisibleRows(rows, false);
       } catch (IllegalArgumentException e) {
         int confirm = JOptionPane.showConfirmDialog(parent,
-            new String[]{ e.getMessage(), Strings.get("tableParseErrorMessage") },
-            Strings.get("tableParseErrorTitle"),
+            new String[]{ e.getMessage(), S.get("tableParseErrorMessage") },
+            S.get("tableParseErrorTitle"),
             JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION)
           return;
@@ -253,7 +253,7 @@ class ImportTableButton extends JButton {
         lastFile = new File("truthtable.txt");
     }
     JFileChooser chooser = JFileChoosers.createSelected(lastFile);
-    chooser.setDialogTitle(Strings.get("openButton"));
+    chooser.setDialogTitle(S.get("openButton"));
     chooser.addChoosableFileFilter(chooser.getAcceptAllFileFilter());
     chooser.addChoosableFileFilter(ExportTableButton.FILE_FILTER);
     chooser.setFileFilter(ExportTableButton.FILE_FILTER);
@@ -262,14 +262,14 @@ class ImportTableButton extends JButton {
       File file = chooser.getSelectedFile();
       if (file.isDirectory()) {
         JOptionPane.showMessageDialog(parent,
-            StringUtil.format(Strings.get("notFileMessage"), file.getName()),
-            Strings.get("openErrorTitle"), JOptionPane.OK_OPTION);
+            S.fmt("notFileMessage", file.getName()),
+            S.get("openErrorTitle"), JOptionPane.OK_OPTION);
         return;
       }
       if (!file.exists() || !file.canRead()) {
         JOptionPane.showMessageDialog(parent,
-            StringUtil.format(Strings.get("cantReadMessage"), file.getName()),
-            Strings.get("openErrorTitle"), JOptionPane.OK_OPTION);
+            S.fmt("cantReadMessage", file.getName()),
+            S.get("openErrorTitle"), JOptionPane.OK_OPTION);
         return;
       }
       try {
@@ -278,7 +278,7 @@ class ImportTableButton extends JButton {
       } catch (IOException e) {
         JOptionPane.showMessageDialog(parent,
             e.getMessage(),
-            Strings.get("openErrorTitle"),
+            S.get("openErrorTitle"),
             JOptionPane.ERROR_MESSAGE);
       }
     }

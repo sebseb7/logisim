@@ -32,6 +32,7 @@
  * @(#)GIFEncoder.java    0.90 4/21/96 Adam Doppelt
  */
 package com.cburch.logisim.util;
+import static com.cburch.logisim.util.Strings.S;
 
 import java.awt.AWTException;
 import java.awt.Image;
@@ -491,7 +492,7 @@ public class GifEncoder {
 
     try {
       if (!grabber.grabPixels())
-        throw new AWTException(Strings.get("grabberError") + ": "
+        throw new AWTException(S.get("grabberError") + ": "
             + grabber.status());
     } catch (InterruptedException e) {
       ;
@@ -525,7 +526,7 @@ public class GifEncoder {
             break;
 
         if (search > 255)
-          throw new AWTException(Strings.get("manyColorError"));
+          throw new AWTException(S.get("manyColorError"));
 
         pixels_[y * width_ + x] = (byte) search;
 

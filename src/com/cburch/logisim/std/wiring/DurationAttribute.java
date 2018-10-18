@@ -29,12 +29,12 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.wiring;
+import static com.cburch.logisim.std.Strings.S;
 
 import javax.swing.JTextField;
 
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.util.StringGetter;
-import com.cburch.logisim.util.StringUtil;
 
 public class DurationAttribute extends Attribute<Integer> {
   private int min;
@@ -58,22 +58,20 @@ public class DurationAttribute extends Attribute<Integer> {
     try {
       Integer ret = Integer.valueOf(value);
       if (ret.intValue() < min) {
-        throw new NumberFormatException(StringUtil.format(
-              Strings.get("durationSmallMessage"), "" + min));
+        throw new NumberFormatException(S.fmt("durationSmallMessage", "" + min));
       } else if (ret.intValue() > max) {
-        throw new NumberFormatException(StringUtil.format(
-              Strings.get("durationLargeMessage"), "" + max));
+        throw new NumberFormatException(S.fmt("durationLargeMessage", "" + max));
       }
       return ret;
     } catch (NumberFormatException e) {
-      throw new NumberFormatException(Strings.get("freqInvalidMessage"));
+      throw new NumberFormatException(S.get("freqInvalidMessage"));
     }
   }
 
   @Override
   public String toDisplayString(Integer value) {
     if (value.equals(Integer.valueOf(1))) {
-      return Strings.get("clockDurationOneValue");
+      return S.get("clockDurationOneValue");
     } else {
       return S.fmt("clockDurationValue", value.toString());
     }

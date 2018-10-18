@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.log;
+import static com.cburch.logisim.gui.log.Strings.S;
 
 /**
  * Code taken from Cornell's version of Logisim:
@@ -54,7 +55,6 @@ import javax.swing.event.ChangeListener;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.util.GraphicsUtil;
-import com.cburch.logisim.util.StringUtil;
 
 public class ValueTable extends JPanel {
 
@@ -127,7 +127,7 @@ public class ValueTable extends JPanel {
       if (columns == 0) {
         rowCount = 0;
         GraphicsUtil.drawCenteredText(g,
-            Strings.get("tableEmptyMessage"), sz.width / 2,
+            S.get("tableEmptyMessage"), sz.width / 2,
             sz.height / 2);
         return;
       }

@@ -470,7 +470,7 @@ class XmlReader {
       }
       Tool tool = lib.getTool(name);
       if (tool == null) {
-        throw new XmlReaderException(S.get("toolNotFound"));
+        throw new XmlReaderException(S.fmt("xmlToolNotFound", name));
       }
       return tool;
     }

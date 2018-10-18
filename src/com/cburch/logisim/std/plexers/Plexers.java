@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.plexers;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Graphics;
 import java.util.List;
@@ -108,40 +109,40 @@ public class Plexers extends Library {
   }
 
   static final AttributeOption SIZE_NARROW = new AttributeOption(
-      Integer.valueOf(20), Strings.getter("gateSizeNarrowOpt"));
+      Integer.valueOf(20), S.getter("gateSizeNarrowOpt"));
   static final AttributeOption SIZE_WIDE = new AttributeOption(
-      Integer.valueOf(40), Strings.getter("gateSizeWideOpt")); /* 30 for 2-to-1 */
+      Integer.valueOf(40), S.getter("gateSizeWideOpt")); /* 30 for 2-to-1 */
   public static final Attribute<AttributeOption> ATTR_SIZE = Attributes
-      .forOption("size", Strings.getter("gateSizeAttr"),
+      .forOption("size", S.getter("gateSizeAttr"),
           new AttributeOption[] { SIZE_NARROW, SIZE_WIDE });
 
   public static final Attribute<BitWidth> ATTR_SELECT = Attributes
-      .forBitWidth("select", Strings.getter("plexerSelectBitsAttr"), 1, 5);
+      .forBitWidth("select", S.getter("plexerSelectBitsAttr"), 1, 5);
   public static final Object DEFAULT_SELECT = BitWidth.create(1);
 
   public static final Attribute<Boolean> ATTR_TRISTATE = Attributes
-      .forBoolean("tristate", Strings.getter("plexerThreeStateAttr"));
+      .forBoolean("tristate", S.getter("plexerThreeStateAttr"));
   public static final Object DEFAULT_TRISTATE = Boolean.FALSE;
   public static final AttributeOption DISABLED_FLOATING = new AttributeOption(
-      "Z", Strings.getter("plexerDisabledFloating"));
+      "Z", S.getter("plexerDisabledFloating"));
 
   public static final AttributeOption DISABLED_ZERO = new AttributeOption(
-      "0", Strings.getter("plexerDisabledZero"));
+      "0", S.getter("plexerDisabledZero"));
 
   public static final Attribute<AttributeOption> ATTR_DISABLED = Attributes
-      .forOption("disabled", Strings.getter("plexerDisabledAttr"),
+      .forOption("disabled", S.getter("plexerDisabledAttr"),
           new AttributeOption[] { DISABLED_FLOATING, DISABLED_ZERO });
   public static final Attribute<Boolean> ATTR_ENABLE = Attributes.forBoolean(
-      "enable", Strings.getter("plexerEnableAttr"));
+      "enable", S.getter("plexerEnableAttr"));
   public static final Object DEFAULT_ENABLE = Boolean.FALSE;
   static final AttributeOption SELECT_BOTTOM_LEFT = new AttributeOption("bl",
-      Strings.getter("plexerSelectBottomLeftOption"));
+      S.getter("plexerSelectBottomLeftOption"));
 
   static final AttributeOption SELECT_TOP_RIGHT = new AttributeOption("tr",
-      Strings.getter("plexerSelectTopRightOption"));
+      S.getter("plexerSelectTopRightOption"));
 
   static final Attribute<AttributeOption> ATTR_SELECT_LOC = Attributes
-      .forOption("selloc", Strings.getter("plexerSelectLocAttr"),
+      .forOption("selloc", S.getter("plexerSelectLocAttr"),
           new AttributeOption[] { SELECT_BOTTOM_LEFT,
             SELECT_TOP_RIGHT });
 
@@ -149,19 +150,19 @@ public class Plexers extends Library {
 
   private static FactoryDescription[] DESCRIPTIONS = {
     new FactoryDescription("Multiplexer",
-        Strings.getter("multiplexerComponent"), "multiplexer.gif",
+        S.getter("multiplexerComponent"), "multiplexer.gif",
         "Multiplexer"),
     new FactoryDescription("Demultiplexer",
-        Strings.getter("demultiplexerComponent"),
+        S.getter("demultiplexerComponent"),
         "demultiplexer.gif", "Demultiplexer"),
     new FactoryDescription("Decoder",
-        Strings.getter("decoderComponent"), "decoder.gif",
+        S.getter("decoderComponent"), "decoder.gif",
         "Decoder"),
     new FactoryDescription("Priority Encoder",
-        Strings.getter("priorityEncoderComponent"), "priencod.gif",
+        S.getter("priorityEncoderComponent"), "priencod.gif",
         "PriorityEncoder"),
     new FactoryDescription("BitSelector",
-        Strings.getter("bitSelectorComponent"), "bitSelector.gif",
+        S.getter("bitSelectorComponent"), "bitSelector.gif",
         "BitSelector"), };
 
   private List<Tool> tools = null;
@@ -171,7 +172,7 @@ public class Plexers extends Library {
 
   @Override
   public String getDisplayName() {
-    return Strings.get("plexerLibrary");
+    return S.get("plexerLibrary");
   }
 
   @Override

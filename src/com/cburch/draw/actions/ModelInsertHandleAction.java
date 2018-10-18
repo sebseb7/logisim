@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.draw.actions;
+import static com.cburch.draw.Strings.S;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -52,7 +53,7 @@ public class ModelInsertHandleAction extends ModelAction {
 
 	@Override
 	public String getName() {
-		return Strings.get("actionInsertHandle");
+		return S.get("actionInsertHandle");
 	}
 
 	@Override

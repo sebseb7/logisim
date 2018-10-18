@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.main;
+import static com.cburch.logisim.gui.main.Strings.S;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.Wire;
@@ -90,17 +91,16 @@ class AttrTableSelectionModel extends AttributeSetTableModel
     }
 
     if (variousFound) {
-      return Strings.get("selectionVarious", "" + totalCount);
+      return S.fmt("selectionVarious", "" + totalCount);
     } else if (factoryCount == 0) {
       String circName = frame.getCanvas().getCircuit().getName();
-      return Strings.get("circuitAttrTitle", circName);
+      return S.fmt("circuitAttrTitle", circName);
     } else if (factoryCount == 1 && label != null && label.length() > 0) {
-      return Strings.get("selectionOne", factory.getDisplayName()) + " \"" + label + "\"";
+      return S.fmt("selectionOne", factory.getDisplayName()) + " \"" + label + "\"";
     } else if (factoryCount == 1) {
-      return Strings.get("selectionOne", factory.getDisplayName());
+      return S.fmt("selectionOne", factory.getDisplayName());
     } else {
-      return Strings.get("selectionMultiple", factory.getDisplayName(),
-          "" + factoryCount);
+      return S.fmt("selectionMultiple", factory.getDisplayName(), "" + factoryCount);
     }
   }
 
@@ -124,7 +124,7 @@ class AttrTableSelectionModel extends AttributeSetTableModel
       circuitModel.setValueRequested(attr, value);
     } else {
       SetAttributeAction act = new SetAttributeAction(circuit,
-          Strings.getter("selectionAttributeAction"));
+          S.getter("selectionAttributeAction"));
       for (Component comp : selection.getComponents()) {
         if (!(comp instanceof Wire)) {
           act.set(comp, attr, value);

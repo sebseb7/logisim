@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.analyze.gui;
+import static com.cburch.logisim.analyze.model.Strings.S;
 
 import java.awt.Rectangle;
 import java.awt.datatransfer.Clipboard;
@@ -147,8 +148,8 @@ class TableTabClip implements ClipboardOwner {
       // ArrayIndexOutOfBounds
       // exception on a Linux computer using Sun's Java 5 JVM
       JOptionPane.showMessageDialog(table.getRootPane(),
-          Strings.get("clipPasteSupportedError"),
-          Strings.get("clipPasteErrorTitle"),
+          S.get("clipPasteSupportedError"),
+          S.get("clipPasteErrorTitle"),
           JOptionPane.ERROR_MESSAGE);
       return;
     }
@@ -212,8 +213,8 @@ class TableTabClip implements ClipboardOwner {
       }
     } else {
       JOptionPane.showMessageDialog(table.getRootPane(),
-          Strings.get("clipPasteSupportedError"),
-          Strings.get("clipPasteErrorTitle"),
+          S.get("clipPasteSupportedError"),
+          S.get("clipPasteErrorTitle"),
           JOptionPane.ERROR_MESSAGE);
       return;
     }
@@ -229,16 +230,16 @@ class TableTabClip implements ClipboardOwner {
       if (s.y + entries.length > rows
           || s.x + entries[0].length > inputs + outputs) {
         JOptionPane.showMessageDialog(table.getRootPane(),
-            Strings.get("clipPasteEndError"),
-            Strings.get("clipPasteErrorTitle"),
+            S.get("clipPasteEndError"),
+            S.get("clipPasteErrorTitle"),
             JOptionPane.ERROR_MESSAGE);
         return;
       }
     } else {
       if (s.height != entries.length || s.width != entries[0].length) {
         JOptionPane.showMessageDialog(table.getRootPane(),
-            Strings.get("clipPasteSizeError"),
-            Strings.get("clipPasteErrorTitle"),
+            S.get("clipPasteSizeError"),
+            S.get("clipPasteErrorTitle"),
             JOptionPane.ERROR_MESSAGE);
         return;
       }

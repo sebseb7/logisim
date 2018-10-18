@@ -34,6 +34,7 @@
  */
 
 package com.cburch.logisim.gui.test;
+import static com.cburch.logisim.gui.test.Strings.S;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -46,7 +47,6 @@ import com.cburch.logisim.data.TestException;
 import com.cburch.logisim.data.TestVector;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.gui.log.ValueTable;
-import com.cburch.logisim.util.StringUtil;
 
 class TestPanel extends JPanel implements ValueTable.Model {
 
@@ -105,7 +105,7 @@ class TestPanel extends JPanel implements ValueTable.Model {
 
   public String getColumnName(int i) {
     TestVector vec = getModel().getVector();
-    return i == 0 ? Strings.get("statusHeader") : vec.columnName[i - 1];
+    return i == 0 ? S.get("statusHeader") : vec.columnName[i - 1];
   }
 
   // ValueTable.Model implementation
@@ -139,8 +139,8 @@ class TestPanel extends JPanel implements ValueTable.Model {
     int columns = vec.columnName.length;
     String msg[] = new String[columns];
     Value[] altdata = new Value[columns];
-    String passMsg = Strings.get("passStatus");
-    String failMsg = Strings.get("failStatus");
+    String passMsg = S.get("passStatus");
+    String failMsg = S.get("failStatus");
 
     for (int i = firstRow; i < firstRow + numRows; i++) {
       int row = model.sortedIndex(i);
@@ -155,9 +155,7 @@ class TestPanel extends JPanel implements ValueTable.Model {
           for (FailException e = (FailException) err; e != null; e = e
               .getMore()) {
             int col = e.getColumn();
-            msg[col] = StringUtil.format(Strings
-                .get("expectedValueMessage"), e.getExpected()
-                .toDisplayString(getColumnValueRadix(col + 1)));
+            msg[col] = S.fmt("expectedValueMessage", e.getExpected() .toDisplayString(getColumnValueRadix(col + 1)));
             altdata[col] = e.getComputed();
           }
         } else if (err != null) {

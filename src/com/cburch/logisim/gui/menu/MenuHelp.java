@@ -28,6 +28,7 @@
  *       http://reds.heig-vd.ch
  *******************************************************************************/
 package com.cburch.logisim.gui.menu;
+import static com.cburch.logisim.gui.menu.Strings.S;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -95,7 +96,7 @@ class MenuHelp extends JMenu implements ActionListener {
   }
 
   private void loadBroker() {
-    String helpUrl = Strings.get("helpsetUrl");
+    String helpUrl = S.get("helpsetUrl");
     if (helpUrl == null) {
       helpUrl = "doc/doc_en.hs";
     }
@@ -106,7 +107,7 @@ class MenuHelp extends JMenu implements ActionListener {
         if (hsURL == null) {
           disableHelp();
           JOptionPane.showMessageDialog(menubar.getParentWindow(),
-              Strings.get("helpNotFoundError"));
+              S.get("helpNotFoundError"));
           return;
         }
         helpSetUrl = helpUrl;
@@ -114,7 +115,7 @@ class MenuHelp extends JMenu implements ActionListener {
         helpComponent = new JHelp(helpSet);
         if (helpFrame == null) {
           helpFrame = new LFrame();
-          helpFrame.setTitle(Strings.get("helpWindowTitle"));
+          helpFrame.setTitle(S.get("helpWindowTitle"));
           helpFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
           helpFrame.getContentPane().add(helpComponent);
           helpFrame.pack();
@@ -127,21 +128,21 @@ class MenuHelp extends JMenu implements ActionListener {
         disableHelp();
         e.printStackTrace();
         JOptionPane.showMessageDialog(menubar.getParentWindow(),
-            Strings.get("helpUnavailableError"));
+            S.get("helpUnavailableError"));
         return;
       }
     }
   }
 
   public void localeChanged() {
-    this.setText(Strings.get("helpMenu"));
+    this.setText(S.get("helpMenu"));
     if (helpFrame != null) {
-      helpFrame.setTitle(Strings.get("helpWindowTitle"));
+      helpFrame.setTitle(S.get("helpWindowTitle"));
     }
-    tutorial.setText(Strings.get("helpTutorialItem"));
-    guide.setText(Strings.get("helpGuideItem"));
-    library.setText(Strings.get("helpLibraryItem"));
-    about.setText(Strings.get("helpAboutItem"));
+    tutorial.setText(S.get("helpTutorialItem"));
+    guide.setText(S.get("helpGuideItem"));
+    library.setText(S.get("helpLibraryItem"));
+    about.setText(S.get("helpAboutItem"));
     if (helpFrame != null) {
       helpFrame.setLocale(Locale.getDefault());
       loadBroker();
@@ -158,7 +159,7 @@ class MenuHelp extends JMenu implements ActionListener {
       disableHelp();
       e.printStackTrace();
       JOptionPane.showMessageDialog(menubar.getParentWindow(),
-          Strings.get("helpDisplayError"));
+          S.get("helpDisplayError"));
     }
   }
 }

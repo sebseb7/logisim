@@ -33,6 +33,7 @@
  */
 
 package com.cburch.logisim.std.wiring;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -63,7 +64,7 @@ public class TransmissionGate extends InstanceFactory {
   static final int GATE1 = 3;
 
   public TransmissionGate() {
-    super("Transmission Gate", Strings.getter("transmissionGateComponent"));
+    super("Transmission Gate", S.getter("transmissionGateComponent"));
     setIconName("transmis.gif");
     setAttributes(new Attribute[] { StdAttr.FACING, Wiring.ATTR_GATE,
       StdAttr.WIDTH }, new Object[] { Direction.EAST,
@@ -256,10 +257,10 @@ public class TransmissionGate extends InstanceFactory {
       ports[GATE1] = new Port(20 * (dx + dy), 20 * (-dx + dy),
           Port.INPUT, 1);
     }
-    ports[INPUT].setToolTip(Strings.getter("transmissionGateSource"));
-    ports[OUTPUT].setToolTip(Strings.getter("transmissionGateDrain"));
-    ports[GATE0].setToolTip(Strings.getter("transmissionGatePGate"));
-    ports[GATE1].setToolTip(Strings.getter("transmissionGateNGate"));
+    ports[INPUT].setToolTip(S.getter("transmissionGateSource"));
+    ports[OUTPUT].setToolTip(S.getter("transmissionGateDrain"));
+    ports[GATE0].setToolTip(S.getter("transmissionGatePGate"));
+    ports[GATE1].setToolTip(S.getter("transmissionGateNGate"));
     instance.setPorts(ports);
   }
 }

@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.base;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.util.Arrays;
 import java.util.List;
@@ -57,7 +58,7 @@ public class Base extends Library {
 
   @Override
   public String getDisplayName() {
-    return Strings.get("baseLibrary");
+    return S.get("baseLibrary");
   }
 
   @Override

@@ -28,6 +28,7 @@
  *       http://reds.heig-vd.ch
  *******************************************************************************/
 package com.bfh.logisim.library;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -45,7 +46,6 @@ import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
-import com.cburch.logisim.std.arith.Strings;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 
 public class bin2bcd extends InstanceFactory{
@@ -54,11 +54,11 @@ public class bin2bcd extends InstanceFactory{
 	private static final int BINin = 0;
 	private static final int InnerDistance = 60;
 
-	public static final Attribute<BitWidth> ATTR_BinBits = Attributes
-			.forBitWidth("binvalue", Strings.getter("Binairy data bits"), 4, 13);
+	public static final Attribute<BitWidth> ATTR_BinBits =
+      Attributes.forBitWidth("binvalue", S.getter("Binairy data bits"), 4, 13);
 
 	public bin2bcd() {
-		super("Binairy_to_BCD_converter", Strings.getter("Bin2BCD"));
+		super("Binairy_to_BCD_converter", S.getter("Bin2BCD"));
 		setAttributes(new Attribute[] { bin2bcd.ATTR_BinBits },
 				new Object[] { BitWidth.create(9) });
 		setKeyConfigurator(new BitWidthConfigurator(bin2bcd.ATTR_BinBits,4,13,0));
@@ -73,7 +73,7 @@ public class bin2bcd extends InstanceFactory{
 		painter.drawBounds();
 		painter.drawPort(BINin,"Bin",Direction.EAST);
 		for (int i = NrOfPorts ; i > 0; i--)
-		   painter.drawPort((NrOfPorts-i)+1,Integer.toString((int)Math.pow(10.0, NrOfPorts-i)), Direction.NORTH);
+		   painter.drawPort((NrOfPorts-i)+1, Integer.toString((int)Math.pow(10.0, NrOfPorts-i)), Direction.NORTH);
 		
 	}
 	
@@ -118,11 +118,11 @@ public class bin2bcd extends InstanceFactory{
 		int NrOfPorts = (int)(Math.log10(1<<nrofbits.getWidth())+1.0);
 		Port[] ps = new Port[NrOfPorts+1];
 		ps[BINin] = new Port((int)(-0.5*InnerDistance), 0, Port.INPUT, bin2bcd.ATTR_BinBits);
-		ps[BINin].setToolTip(Strings.getter("BinairyInputTip"));
+		ps[BINin].setToolTip(S.getter("BinairyInputTip"));
 		for (int i = NrOfPorts ; i > 0; i--) {
 			ps[i]= new Port((NrOfPorts-i)*InnerDistance, -20, Port.OUTPUT, 4);
 			int value = (int)Math.pow(10.0, i-1);
-			ps[i].setToolTip(Strings.getter(Integer.toString(value)));
+			ps[i].setToolTip(S.getter(Integer.toString(value)));
 		}
 		instance.setPorts(ps);
 	}

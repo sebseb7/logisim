@@ -6,6 +6,7 @@
  */
 
 package com.cburch.logisim.std.gates;
+import static com.cburch.logisim.std.Strings.S;
 
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.util.JFileChoosers;
@@ -174,7 +175,7 @@ public class PLATable {
     try {
       in = new BufferedReader(new FileReader(src));
     } catch (IOException e) {
-      throw new IOException(Strings.get("plaFileOpenError"));
+      throw new IOException(S.get("plaFileOpenError"));
     }
     PLATable tt = null;
     try {
@@ -195,7 +196,7 @@ public class PLATable {
     try {
       out = new FileWriter(dst);
     } catch (IOException e) {
-      throw new IOException(Strings.get("plaFileCreateError"));
+      throw new IOException(S.get("plaFileCreateError"));
     }
     try {
       out.write("# Logisim PLA program table\n");
@@ -404,7 +405,7 @@ public class PLATable {
     void read() {
       JFileChooser chooser = JFileChoosers.create();
       chooser.setSelectedFile(new File(normalizeName(oldTable.label)));
-      chooser.setDialogTitle(Strings.get("plaLoadDialogTitle"));
+      chooser.setDialogTitle(S.get("plaLoadDialogTitle"));
       chooser.setFileFilter(Loader.TXT_FILTER);
       int choice = chooser.showOpenDialog(null);
       if (choice == JFileChooser.APPROVE_OPTION) {
@@ -415,7 +416,7 @@ public class PLATable {
           reset();
         } catch (IOException e) {
           JOptionPane.showMessageDialog(null, e.getMessage(),
-              Strings.get("plaLoadErrorTitle"),
+              S.get("plaLoadErrorTitle"),
               JOptionPane.ERROR_MESSAGE);
         }
       }
@@ -424,7 +425,7 @@ public class PLATable {
     void write() {
       JFileChooser chooser = JFileChoosers.create();
       chooser.setSelectedFile(new File(normalizeName(oldTable.label)));
-      chooser.setDialogTitle(Strings.get("plaSaveDialogTitle"));
+      chooser.setDialogTitle(S.get("plaSaveDialogTitle"));
       chooser.setFileFilter(Loader.TXT_FILTER);
       int choice = chooser.showSaveDialog(null);
       if (choice == JFileChooser.APPROVE_OPTION) {
@@ -433,7 +434,7 @@ public class PLATable {
           newTable.save(f);
         } catch (IOException e) {
           JOptionPane.showMessageDialog(null, e.getMessage(),
-              Strings.get("plaSaveErrorTitle"),
+              S.get("plaSaveErrorTitle"),
               JOptionPane.ERROR_MESSAGE);
         }
       }

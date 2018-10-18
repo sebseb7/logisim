@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.memory;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Graphics;
 import java.awt.Color;
@@ -45,9 +46,9 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.util.UnmodifiableList;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.std.base.Text;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.util.StringUtil;
 import com.cburch.draw.util.EditableLabel;
 import com.cburch.draw.shapes.SvgReader;
 import com.cburch.draw.shapes.SvgCreator;
@@ -154,7 +155,7 @@ public class RegisterShape extends DynamicElement {
 
   @Override
   public String getDisplayName() {
-    return Strings.get("registerComponent");
+    return S.get("registerComponent");
   }
 
   @Override

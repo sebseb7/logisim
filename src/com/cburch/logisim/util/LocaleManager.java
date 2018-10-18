@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.util;
+import static com.cburch.logisim.util.Strings.S;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -43,8 +44,8 @@ import javax.swing.JScrollPane;
 
 public class LocaleManager {
   private static class LocaleGetter implements StringGetter {
-    private LocaleManager source;
-    private String key;
+    LocaleManager source;
+    String key;
 
     LocaleGetter(LocaleManager source, String key) {
       this.source = source;
@@ -54,10 +55,32 @@ public class LocaleManager {
     public String toString() {
       return source.get(key);
     }
+  }
 
-    /*
-     * @Override public String toString() { return get(); }
-     */
+  private static class LocaleFormatterWithString extends LocaleGetter {
+    String arg;
+
+    LocaleFormatterWithString(LocaleManager source, String key, String arg) {
+      super(source, key);
+      this.arg = arg;
+    }
+
+    public String toString() {
+      return source.fmt(key, arg);
+    }
+  }
+
+  private static class LocaleFormatterWithGetter extends LocaleGetter {
+    StringGetter arg;
+
+    LocaleFormatterWithGetter(LocaleManager source, String key, StringGetter arg) {
+      super(source, key);
+      this.arg = arg;
+    }
+
+    public String toString() {
+      return source.fmt(key, arg.toString());
+    }
   }
 
   public static void addLocaleListener(LocaleListener l) {
@@ -72,7 +95,7 @@ public class LocaleManager {
     HashMap<Character, String> ret = null;
     String val;
     try {
-      val = Strings.source.locale.getString("accentReplacements");
+      val = S.locale.getString("accentReplacements");
     } catch (MissingResourceException e) {
       return null;
     }
@@ -150,7 +173,7 @@ public class LocaleManager {
   public static void setLocale(Locale loc) {
     Locale cur = getLocale();
     if (!loc.equals(cur)) {
-      Locale[] opts = Strings.getLocaleManager().getLocaleOptions();
+      Locale[] opts = S.getLocaleOptions();
       Locale select = null;
       Locale backup = null;
       String locLang = loc.getLanguage();
@@ -193,7 +216,7 @@ public class LocaleManager {
 
   private static ArrayList<LocaleManager> managers = new ArrayList<LocaleManager>();
 
-  private static String DATE_FORMAT = Strings.get("dateFormat");
+  private static String DATE_FORMAT = S.get("dateFormat");
 
   public final static SimpleDateFormat parserSDF = new SimpleDateFormat(
       LocaleManager.DATE_FORMAT);
@@ -297,11 +320,11 @@ public class LocaleManager {
   }
 
   public StringGetter getter(String key, String arg) {
-    return StringUtil.formatter(getter(key), arg);
+    return new LocaleFormatterWithString(this, key, arg);
   }
 
   public StringGetter getter(String key, StringGetter arg) {
-    return StringUtil.formatter(getter(key), arg);
+    return new LocaleFormatterWithGetter(this, key, arg);
   }
 
   private void loadDefault() {

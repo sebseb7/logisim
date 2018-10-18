@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.prefs;
+import static com.cburch.logisim.gui.prefs.Strings.S;
 
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -56,7 +57,6 @@ import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.prefs.Template;
 import com.cburch.logisim.util.JFileChoosers;
-import com.cburch.logisim.util.StringUtil;
 
 class TemplateOptions extends OptionsPanel {
   private class MyListener implements ActionListener, PropertyChangeListener {
@@ -64,8 +64,8 @@ class TemplateOptions extends OptionsPanel {
       Object src = event.getSource();
       if (src == templateButton) {
         JFileChooser chooser = JFileChoosers.create();
-        chooser.setDialogTitle(Strings.get("selectDialogTitle"));
-        chooser.setApproveButtonText(Strings.get("selectDialogButton"));
+        chooser.setDialogTitle(S.get("selectDialogTitle"));
+        chooser.setApproveButtonText(S.get("selectDialogButton"));
         int action = chooser.showOpenDialog(getPreferencesFrame());
         if (action == JFileChooser.APPROVE_OPTION) {
           File file = chooser.getSelectedFile();
@@ -83,18 +83,14 @@ class TemplateOptions extends OptionsPanel {
           } catch (LoadCanceledByUser ex) {
             JOptionPane.showMessageDialog(
                 getPreferencesFrame(),
-                StringUtil.format(
-                  Strings.get("templateErrorMessage"),
-                  ex.toString()),
-                Strings.get("templateErrorTitle"),
+                S.fmt("templateErrorMessage", ex.toString()),
+                S.get("templateErrorTitle"),
                 JOptionPane.ERROR_MESSAGE);
           } catch (IOException ex) {
             JOptionPane.showMessageDialog(
                 getPreferencesFrame(),
-                StringUtil.format(
-                  Strings.get("templateErrorMessage"),
-                  ex.toString()),
-                Strings.get("templateErrorTitle"),
+                S.fmt("templateErrorMessage", ex.toString()),
+                S.get("templateErrorTitle"),
                 JOptionPane.ERROR_MESSAGE);
           } finally {
             try {
@@ -225,19 +221,19 @@ class TemplateOptions extends OptionsPanel {
 
   @Override
   public String getHelpText() {
-    return Strings.get("templateHelp");
+    return S.get("templateHelp");
   }
 
   @Override
   public String getTitle() {
-    return Strings.get("templateTitle");
+    return S.get("templateTitle");
   }
 
   @Override
   public void localeChanged() {
-    plain.setText(Strings.get("templatePlainOption"));
-    empty.setText(Strings.get("templateEmptyOption"));
-    custom.setText(Strings.get("templateCustomOption"));
-    templateButton.setText(Strings.get("templateSelectButton"));
+    plain.setText(S.get("templatePlainOption"));
+    empty.setText(S.get("templateEmptyOption"));
+    custom.setText(S.get("templateCustomOption"));
+    templateButton.setText(S.get("templateSelectButton"));
   }
 }

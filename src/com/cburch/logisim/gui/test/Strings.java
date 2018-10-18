@@ -28,35 +28,10 @@
  *       http://reds.heig-vd.ch
  *******************************************************************************/
 
-/**
- * Code taken from Cornell's version of Logisim:
- * http://www.cs.cornell.edu/courses/cs3410/2015sp/
- */
-
 package com.cburch.logisim.gui.test;
 
-import java.util.Locale;
-
 import com.cburch.logisim.util.LocaleManager;
-import com.cburch.logisim.util.StringGetter;
 
-class Strings {
-
-  public static String get(String key) {
-    if (source == null)
-      System.out.println("source is null");
-    return source.get(key);
-  }
-
-  public static Locale[] getLocaleOptions() {
-    return source.getLocaleOptions();
-  }
-
-  public static StringGetter getter(String key) {
-    return source.getter(key);
-  }
-
-  private static LocaleManager source = new LocaleManager(
-      "resources/logisim", "test");
-
+public class Strings {
+  public static final LocaleManager S = new LocaleManager("resources/logisim", "test");
 }

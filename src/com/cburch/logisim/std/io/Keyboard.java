@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.io;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -194,15 +195,15 @@ public class Keyboard extends InstanceFactory {
   private static final char FORM_FEED = '\u000c'; // control-L
 
   public static final Attribute<Integer> ATTR_BUFFER = Attributes
-      .forIntegerRange("buflen", Strings.getter("keybBufferLengthAttr"),
+      .forIntegerRange("buflen", S.getter("keybBufferLengthAttr"),
           1, 256);
 
   public static final Attribute<Integer> ATTR_WIDTH = Attributes
-      .forIntegerRange("asciiwidth", Strings.getter("asciiWidthAttr"),
+      .forIntegerRange("asciiwidth", S.getter("asciiWidthAttr"),
           7, 8);
 
   public Keyboard() {
-    super("Keyboard", Strings.getter("keyboardComponent"));
+    super("Keyboard", S.getter("keyboardComponent"));
     setAttributes(new Attribute[] { ATTR_BUFFER, ATTR_WIDTH, StdAttr.EDGE_TRIGGER, StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT},
         new Object[] { Integer.valueOf(32), Integer.valueOf(7), StdAttr.TRIG_RISING, "", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT});
     setOffsetBounds(Bounds.create(0, -15, WIDTH, HEIGHT));
@@ -230,11 +231,11 @@ public class Keyboard extends InstanceFactory {
     ps[RE] = new Port(10, 10, Port.INPUT, 1);
     ps[AVL] = new Port(130, 10, Port.OUTPUT, 1);
     ps[OUT] = new Port(140, 10, Port.OUTPUT, asciiWidth);
-    ps[CLR].setToolTip(Strings.getter("keybClearTip"));
-    ps[CK].setToolTip(Strings.getter("keybClockTip"));
-    ps[RE].setToolTip(Strings.getter("keybEnableTip"));
-    ps[AVL].setToolTip(Strings.getter("keybAvailTip"));
-    ps[OUT].setToolTip(Strings.getter("keybOutputTip"));
+    ps[CLR].setToolTip(S.getter("keybClearTip"));
+    ps[CK].setToolTip(S.getter("keybClockTip"));
+    ps[RE].setToolTip(S.getter("keybEnableTip"));
+    ps[AVL].setToolTip(S.getter("keybAvailTip"));
+    ps[OUT].setToolTip(S.getter("keybOutputTip"));
     instance.setPorts(ps);
   }
 
@@ -393,7 +394,7 @@ public class Keyboard extends InstanceFactory {
       }
     } else {
       int len = getBufferLength(painter.getAttributeValue(ATTR_BUFFER));
-      String str = Strings.get("keybDesc", "" + len);
+      String str = S.fmt("keybDesc", "" + len);
       FontMetrics fm = g.getFontMetrics();
       int x = bds.getX() + (WIDTH - fm.stringWidth(str)) / 2;
       int y = bds.getY() + (HEIGHT + fm.getAscent()) / 2;

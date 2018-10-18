@@ -28,6 +28,7 @@
  *       http://reds.heig-vd.ch
  *******************************************************************************/
 package com.cburch.logisim.std.memory;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
 import java.util.Arrays;
@@ -58,18 +59,18 @@ public class RamAttributes extends AbstractAttributeSet {
 
   /* here the rest is defined */
   static final AttributeOption VOLATILE = new AttributeOption("volatile",
-      Strings.getter("ramTypeVolatile"));
+      S.getter("ramTypeVolatile"));
   static final AttributeOption NONVOLATILE = new AttributeOption("nonvolatile",
-      Strings.getter("ramTypeNonVolatile"));
+      S.getter("ramTypeNonVolatile"));
   static final Attribute<AttributeOption> ATTR_TYPE = Attributes.forOption(
-      "type", Strings.getter("ramTypeAttr"), new AttributeOption[] {
+      "type", S.getter("ramTypeAttr"), new AttributeOption[] {
         VOLATILE, NONVOLATILE });
   static final AttributeOption BUS_BIDIR = new AttributeOption("bidir",
-      Strings.getter("ramBidirDataBus"));
+      S.getter("ramBidirDataBus"));
   static final AttributeOption BUS_SEP = new AttributeOption("bibus",
-      Strings.getter("ramSeparateDataBus"));
+      S.getter("ramSeparateDataBus"));
   static final Attribute<AttributeOption> ATTR_DBUS = Attributes.forOption(
-      "databus", Strings.getter("ramDataAttr"), new AttributeOption[] {
+      "databus", S.getter("ramDataAttr"), new AttributeOption[] {
         BUS_BIDIR, BUS_SEP });
 
   private static List<Attribute<?>> ATTRIBUTES = Arrays

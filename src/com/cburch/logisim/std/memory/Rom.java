@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.memory;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
 import java.awt.Graphics;
@@ -65,7 +66,7 @@ import com.cburch.logisim.util.GraphicsUtil;
 public class Rom extends Mem {
   static class ContentsAttribute extends Attribute<MemContents> {
     public ContentsAttribute() {
-      super("contents", Strings.getter("romContentsAttr"));
+      super("contents", S.getter("romContentsAttr"));
     }
 
     @Override
@@ -106,7 +107,7 @@ public class Rom extends Mem {
 
     @Override
     public String toDisplayString(MemContents value) {
-      return Strings.get("romContentsValue");
+      return S.get("romContentsValue");
     }
 
     @Override
@@ -129,7 +130,7 @@ public class Rom extends Mem {
     MemContents contents;
 
     ContentsCell(Window source, MemContents contents) {
-      super(Strings.get("romContentsValue"));
+      super(S.get("romContentsValue"));
       this.source = source;
       this.contents = contents;
       addMouseListener(this);
@@ -165,7 +166,7 @@ public class Rom extends Mem {
   private WeakHashMap<Instance, MemListener> memListeners;
 
   public Rom() {
-    super("ROM", Strings.getter("romComponent"), 0);
+    super("ROM", S.getter("romComponent"), 0);
     setIconName("rom.gif");
     memListeners = new WeakHashMap<Instance, MemListener>();
   }
@@ -185,15 +186,15 @@ public class Rom extends Mem {
     int dataLines = Mem.lineSize(instance.getAttributeSet());
     Port[] ps = new Port[MEM_INPUTS + dataLines-1];
     ps[ADDR] = new Port(0, 10, Port.INPUT, ADDR_ATTR);
-    ps[ADDR].setToolTip(Strings.getter("memAddrTip"));
+    ps[ADDR].setToolTip(S.getter("memAddrTip"));
     int ypos = (instance.getAttributeValue(Mem.DATA_ATTR).getWidth() == 1) ? getControlHeight(instance
         .getAttributeSet()) + 10 : getControlHeight(instance
         .getAttributeSet());
     ps[DATA] = new Port(SymbolWidth + 40, ypos, Port.OUTPUT, DATA_ATTR);
-    ps[DATA].setToolTip(Strings.getter("memDataTip"));
+    ps[DATA].setToolTip(S.getter("memDataTip"));
     for (int i = 1; i < dataLines; i++) {
       ps[MEM_INPUTS+i-1] = new Port(SymbolWidth + 40, ypos+i*10, Port.OUTPUT, DATA_ATTR);
-      ps[MEM_INPUTS+i-1].setToolTip(Strings.getter("memDataTip"+i));
+      ps[MEM_INPUTS+i-1].setToolTip(S.getter("memDataTip"+i));
     }
     instance.setPorts(ps);
   }

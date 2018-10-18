@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.io;
+import static com.cburch.logisim.std.Strings.S;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -48,7 +49,7 @@ public class HexDigitShape extends SevenSegmentShape {
 
   @Override
   public String getDisplayName() {
-    return Strings.get("hexDigitComponent");
+    return S.get("hexDigitComponent");
   }
 
   @Override

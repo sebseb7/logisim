@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.analyze.gui;
+import static com.cburch.logisim.analyze.model.Strings.S;
 
 import java.util.Date;
 import java.io.File;
@@ -47,7 +48,6 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.analyze.model.Entry;
 import com.cburch.logisim.analyze.model.TruthTable;
-import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.util.JFileChoosers;
 import com.cburch.logisim.analyze.model.AnalyzerModel;
 import com.cburch.logisim.analyze.model.VariableList;
@@ -69,7 +69,7 @@ class ExportTableButton extends JButton {
   }
 
   void localeChanged() {
-    setText(Strings.get("exportTableButton"));
+    setText(S.get("exportTableButton"));
   }
 
   private static void center(PrintStream out, String s, int n) {
@@ -172,7 +172,7 @@ class ExportTableButton extends JButton {
         lastFile = new File("truthtable.txt");
     }
     JFileChooser chooser = JFileChoosers.createSelected(lastFile);
-    chooser.setDialogTitle(Strings.get("saveButton"));
+    chooser.setDialogTitle(S.get("saveButton"));
     chooser.addChoosableFileFilter(chooser.getAcceptAllFileFilter());
     chooser.addChoosableFileFilter(FILE_FILTER);
     chooser.setFileFilter(FILE_FILTER);
@@ -181,20 +181,20 @@ class ExportTableButton extends JButton {
       File file = chooser.getSelectedFile();
       if (file.isDirectory()) {
         JOptionPane.showMessageDialog(parent,
-            StringUtil.format(Strings.get("notFileMessage"), file.getName()),
-            Strings.get("saveErrorTitle"), JOptionPane.OK_OPTION);
+            S.fmt("notFileMessage", file.getName()),
+            S.get("saveErrorTitle"), JOptionPane.OK_OPTION);
         return;
       }
       if (file.exists() && !file.canWrite()) {
         JOptionPane.showMessageDialog(parent,
-            StringUtil.format(Strings.get("cantWriteMessage"), file.getName()),
-            Strings.get("saveErrorTitle"), JOptionPane.OK_OPTION);
+            S.fmt("cantWriteMessage", file.getName()),
+            S.get("saveErrorTitle"), JOptionPane.OK_OPTION);
         return;
       }
       if (file.exists()) {
         int confirm = JOptionPane.showConfirmDialog(parent,
-            StringUtil.format(Strings.get("confirmOverwriteMessage"), file.getName()),
-            Strings.get("confirmOverwriteTitle"),
+            S.fmt("confirmOverwriteMessage", file.getName()),
+            S.get("confirmOverwriteTitle"),
             JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION)
           return;
@@ -205,7 +205,7 @@ class ExportTableButton extends JButton {
       } catch (IOException e) {
         JOptionPane.showMessageDialog(parent,
             e.getMessage(),
-            Strings.get("saveErrorTitle"),
+            S.get("saveErrorTitle"),
             JOptionPane.ERROR_MESSAGE);
       }
     }

@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.draw.shapes;
+import static com.cburch.draw.Strings.S;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -70,51 +71,51 @@ public class DrawAttr {
 			12);
 
 	public static final AttributeOption HALIGN_LEFT = new AttributeOption(
-			Integer.valueOf(EditableLabel.LEFT), Strings.getter("alignLeft"));
+			Integer.valueOf(EditableLabel.LEFT), S.getter("alignLeft"));
 	public static final AttributeOption HALIGN_CENTER = new AttributeOption(
-			Integer.valueOf(EditableLabel.CENTER), Strings.getter("alignCenter"));
+			Integer.valueOf(EditableLabel.CENTER), S.getter("alignCenter"));
 	public static final AttributeOption HALIGN_RIGHT = new AttributeOption(
-			Integer.valueOf(EditableLabel.RIGHT), Strings.getter("alignRight"));
+			Integer.valueOf(EditableLabel.RIGHT), S.getter("alignRight"));
 
 	public static final AttributeOption VALIGN_TOP = new AttributeOption(
-			Integer.valueOf(EditableLabel.TOP), Strings.getter("alignTop"));
+			Integer.valueOf(EditableLabel.TOP), S.getter("alignTop"));
 	public static final AttributeOption VALIGN_MIDDLE = new AttributeOption(
-			Integer.valueOf(EditableLabel.MIDDLE), Strings.getter("alignMiddle"));
+			Integer.valueOf(EditableLabel.MIDDLE), S.getter("alignMiddle"));
 	public static final AttributeOption VALIGN_BASELINE = new AttributeOption(
-			Integer.valueOf(EditableLabel.BASELINE), Strings.getter("alignBaseline"));
+			Integer.valueOf(EditableLabel.BASELINE), S.getter("alignBaseline"));
 	public static final AttributeOption VALIGN_BOTTOM = new AttributeOption(
-			Integer.valueOf(EditableLabel.BOTTOM), Strings.getter("alignBottom"));
+			Integer.valueOf(EditableLabel.BOTTOM), S.getter("alignBottom"));
 
 	public static final AttributeOption PAINT_STROKE = new AttributeOption(
-			"stroke", Strings.getter("paintStroke"));
+			"stroke", S.getter("paintStroke"));
 	public static final AttributeOption PAINT_FILL = new AttributeOption(
-			"fill", Strings.getter("paintFill"));
+			"fill", S.getter("paintFill"));
 	public static final AttributeOption PAINT_STROKE_FILL = new AttributeOption(
-			"both", Strings.getter("paintBoth"));
+			"both", S.getter("paintBoth"));
 	public static final Attribute<Font> FONT = Attributes.forFont("font",
-			Strings.getter("attrFont"));
+			S.getter("attrFont"));
 	public static final Attribute<AttributeOption> HALIGNMENT = Attributes
-			.forOption("halign", Strings.getter("attrHAlign"),
+			.forOption("halign", S.getter("attrHAlign"),
 					new AttributeOption[] { HALIGN_LEFT, HALIGN_CENTER, HALIGN_RIGHT });
 	public static final Attribute<AttributeOption> VALIGNMENT = Attributes
-			.forOption("valign", Strings.getter("attrVAlign"),
+			.forOption("valign", S.getter("attrVAlign"),
 					new AttributeOption[] { VALIGN_TOP, VALIGN_MIDDLE, VALIGN_BASELINE, VALIGN_BOTTOM });
 	public static final Attribute<AttributeOption> PAINT_TYPE = Attributes
-			.forOption("paintType", Strings.getter("attrPaint"),
+			.forOption("paintType", S.getter("attrPaint"),
 					new AttributeOption[] { PAINT_STROKE, PAINT_FILL,
 							PAINT_STROKE_FILL });
 	public static final Attribute<Integer> STROKE_WIDTH = Attributes
-			.forIntegerRange("stroke-width", Strings.getter("attrStrokeWidth"),
+			.forIntegerRange("stroke-width", S.getter("attrStrokeWidth"),
 					1, 8);
 	public static final Attribute<Color> STROKE_COLOR = Attributes.forColor(
-			"stroke", Strings.getter("attrStroke"));
+			"stroke", S.getter("attrStroke"));
 
 	public static final Attribute<Color> FILL_COLOR = Attributes.forColor(
-			"fill", Strings.getter("attrFill"));
+			"fill", S.getter("attrFill"));
 	public static final Attribute<Color> TEXT_DEFAULT_FILL = Attributes
-			.forColor("fill", Strings.getter("attrFill"));
+			.forColor("fill", S.getter("attrFill"));
 	public static final Attribute<Integer> CORNER_RADIUS = Attributes
-			.forIntegerRange("rx", Strings.getter("attrRx"), 1, 1000);
+			.forIntegerRange("rx", S.getter("attrRx"), 1, 1000);
 
 	public static final List<Attribute<?>> ATTRS_TEXT // for text
 	= createAttributes(new Attribute[] { FONT, HALIGNMENT, VALIGNMENT, FILL_COLOR });

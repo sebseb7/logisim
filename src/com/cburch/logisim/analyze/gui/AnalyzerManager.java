@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.analyze.gui;
+import static com.cburch.logisim.analyze.model.Strings.S;
 
 import javax.swing.JFrame;
 
@@ -57,7 +58,7 @@ public class AnalyzerManager extends WindowMenuItemManager
   private static AnalyzerManager analysisManager = null;
 
   private AnalyzerManager() {
-    super(Strings.get("analyzerWindowTitle"), true);
+    super(S.get("analyzerWindowTitle"), true);
     LocaleManager.addLocaleListener(this);
   }
 
@@ -71,6 +72,6 @@ public class AnalyzerManager extends WindowMenuItemManager
   }
 
   public void localeChanged() {
-    setText(Strings.get("analyzerWindowTitle"));
+    setText(S.get("analyzerWindowTitle"));
   }
 }

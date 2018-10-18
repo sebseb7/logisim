@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.wiring;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
 import java.awt.Color;
@@ -163,7 +164,7 @@ public class Probe extends InstanceFactory {
   public static final Probe FACTORY = new Probe();
 
   public Probe() {
-    super("Probe", Strings.getter("probeComponent"));
+    super("Probe", S.getter("probeComponent"));
     setIconName("probe.gif");
     setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK));
     setFacingAttribute(StdAttr.FACING);

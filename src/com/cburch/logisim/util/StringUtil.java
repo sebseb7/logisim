@@ -44,28 +44,6 @@ public class StringUtil {
     };
   }
 
-  public static String format(String fmt, String... args) {
-    return String.format(fmt, (Object[]) args);
-  }
-
-  public static StringGetter formatter(final StringGetter base,
-      final String arg) {
-    return new StringGetter() {
-      public String toString() {
-        return format(base.toString(), arg);
-      }
-    };
-  }
-
-  public static StringGetter formatter(final StringGetter base,
-      final StringGetter arg) {
-    return new StringGetter() {
-      public String toString() {
-        return format(base.toString(), arg.toString());
-      }
-    };
-  }
-
   public static String resizeString(String value, FontMetrics metrics,
       int maxWidth) {
     int width = metrics.stringWidth(value);

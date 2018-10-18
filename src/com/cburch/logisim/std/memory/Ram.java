@@ -28,6 +28,7 @@
  *       http://reds.heig-vd.ch
  *******************************************************************************/
 package com.cburch.logisim.std.memory;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
 import java.awt.Graphics;
@@ -140,7 +141,7 @@ public class Ram extends Mem {
   static class ContentsAttribute extends Attribute<MemContents> {
 
     public ContentsAttribute() {
-      super("contents", Strings.getter("romContentsAttr"));
+      super("contents", S.getter("romContentsAttr"));
     }
 
     @Override
@@ -177,7 +178,7 @@ public class Ram extends Mem {
 
     @Override
     public String toDisplayString(MemContents value) {
-      return Strings.get("romContentsValue");
+      return S.get("romContentsValue");
     }
 
     @Override
@@ -201,7 +202,7 @@ public class Ram extends Mem {
     MemContents contents;
 
     ContentsCell(Window source, MemContents contents) {
-      super(Strings.get("romContentsValue"));
+      super(S.get("romContentsValue"));
       this.source = source;
       this.contents = contents;
       addMouseListener(this);
@@ -240,7 +241,7 @@ public class Ram extends Mem {
         Label = null;
       }
       if (option instanceof Integer) {
-        String disp = Strings.get("ramComponent");
+        String disp = S.get("ramComponent");
         Location loc = state.getInstance().getLocation();
         return (Label == null) ? disp + loc + "[" + option + "]"
             : Label + "[" + option + "]";
@@ -300,7 +301,7 @@ public class Ram extends Mem {
   private static Object[][] logOptions = new Object[9][];
 
   public Ram() {
-    super("RAM", Strings.getter("ramComponent"), 3);
+    super("RAM", S.getter("ramComponent"), 3);
     setIconName("ram.gif");
     setInstanceLogger(Logger.class);
   }
@@ -330,35 +331,35 @@ public class Ram extends Mem {
     int WE = CLK+1; // 1, always
     int LE = WE+1; // (datalines) of them, only if multiple data lines
     ps[ADDR] = new Port(0, 10, Port.INPUT, ADDR_ATTR);
-    ps[ADDR].setToolTip(Strings.getter("memAddrTip"));
+    ps[ADDR].setToolTip(S.getter("memAddrTip"));
     ps[CLK] = new Port(0, (classic ? 40 : 70) + enables * 10, Port.INPUT, 1);
-    ps[CLK].setToolTip(Strings.getter("ramClkTip"));
+    ps[CLK].setToolTip(S.getter("ramClkTip"));
     ps[WE] = new Port(0, (classic ? 30 : 50), Port.INPUT, 1);
-    ps[WE].setToolTip(Strings.getter("ramWETip"));
+    ps[WE].setToolTip(S.getter("ramWETip"));
     int ypos = getControlHeight(instance.getAttributeSet());
     if (!classic && instance.getAttributeValue(Mem.DATA_ATTR).getWidth() == 1)
       ypos += 10;
     if (separate) {
       for (int i = 0; i < dataLines; i++) {
         ps[DIN0+i] = new Port(0, ypos, Port.INPUT, DATA_ATTR);
-        ps[DIN0+i].setToolTip(Strings.getter("ramInTip"+i));
+        ps[DIN0+i].setToolTip(S.getter("ramInTip"+i));
         ps[i==0?DATA:(DATA1+i-1)] = new Port(SymbolWidth + 40, ypos, Port.OUTPUT, DATA_ATTR);
-        ps[i==0?DATA:(DATA1+i-1)].setToolTip(Strings.getter("memDataTip"+i));
+        ps[i==0?DATA:(DATA1+i-1)].setToolTip(S.getter("memDataTip"+i));
         ypos += 10;
       }
     } else {
       ps[OE] = new Port(0, (classic ? 20 : 60), Port.INPUT, 1);
-      ps[OE].setToolTip(Strings.getter("ramOETip"));
+      ps[OE].setToolTip(S.getter("ramOETip"));
       for (int i = 0; i < dataLines; i++) {
         ps[i==0?DATA:(DATA1+i-1)] = new Port(SymbolWidth + 50, ypos, Port.OUTPUT, DATA_ATTR);
-        ps[i==0?DATA:(DATA1+i-1)].setToolTip(Strings.getter("memDataTip"+i));
+        ps[i==0?DATA:(DATA1+i-1)].setToolTip(S.getter("memDataTip"+i));
         ypos += 10;
       }
     }
     for (int i = 0; i < enables; i++) {
       ypos = (classic ? 40 : 70);
       ps[LE + i] = new Port(0, ypos + i * 10, Port.INPUT, 1);
-      ps[LE + i].setToolTip(Strings.getter("ramLETip"+i));
+      ps[LE + i].setToolTip(S.getter("ramLETip"+i));
     }
     instance.setPorts(ps);
   }
@@ -707,19 +708,19 @@ public class Ram extends Mem {
     int WE = CLK+1; // 1, always
     int LE = WE+1; // (datalines) of them, only if multiple data lines
 
-    painter.drawPort(WE, Strings.get("ramWELabel"), Direction.EAST);
+    painter.drawPort(WE, S.get("ramWELabel"), Direction.EAST);
     painter.drawClock(CLK, Direction.EAST);
 
     if (separate)
-      painter.drawPort(DATAIN[0], Strings.get("ramDataLabel"), Direction.EAST);
+      painter.drawPort(DATAIN[0], S.get("ramDataLabel"), Direction.EAST);
     else
-      painter.drawPort(OE, Strings.get("ramOELabel"), Direction.EAST);
+      painter.drawPort(OE, S.get("ramOELabel"), Direction.EAST);
     for (int i = 1; i < dataLines; i++)
       painter.drawPort(DATAIN[i], ""+i, Direction.EAST);
 
     int enables = numWriteEnables(painter.getAttributeSet());
     for (int i = 0; i < enables; i++) {
-      painter.drawPort(LE + i, Strings.get("ramWELabel")+i, Direction.EAST);
+      painter.drawPort(LE + i, S.get("ramWELabel")+i, Direction.EAST);
     }
   }
 

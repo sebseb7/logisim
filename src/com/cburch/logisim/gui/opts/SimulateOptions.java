@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.opts;
+import static com.cburch.logisim.gui.opts.Strings.S;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -184,19 +185,19 @@ class SimulateOptions extends OptionsPanel {
 
   @Override
   public String getHelpText() {
-    return Strings.get("simulateHelp");
+    return S.get("simulateHelp");
   }
 
   @Override
   public String getTitle() {
-    return Strings.get("simulateTitle");
+    return S.get("simulateTitle");
   }
 
   @Override
   public void localeChanged() {
-    simLimitLabel.setText(Strings.get("simulateLimit"));
-    gateUndefinedLabel.setText(Strings.get("gateUndefined"));
-    simRandomness.setText(Strings.get("simulateRandomness"));
-    tickMainLabel.setText(Strings.get("mainTick"));
+    simLimitLabel.setText(S.get("simulateLimit"));
+    gateUndefinedLabel.setText(S.get("gateUndefined"));
+    simRandomness.setText(S.get("simulateRandomness"));
+    tickMainLabel.setText(S.get("mainTick"));
   }
 }

@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.main;
+import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.util.List;
 
@@ -48,16 +49,16 @@ class ToolboxToolbarModel extends AbstractToolbarModel
   public ToolboxToolbarModel(MenuListener menu) {
     itemAdd = new LogisimToolbarItem(menu, "projadd.gif",
         LogisimMenuBar.ADD_CIRCUIT,
-        Strings.getter("projectAddCircuitTip"));
+        S.getter("projectAddCircuitTip"));
     itemUp = new LogisimToolbarItem(menu, "projup.gif",
         LogisimMenuBar.MOVE_CIRCUIT_UP,
-        Strings.getter("projectMoveCircuitUpTip"));
+        S.getter("projectMoveCircuitUpTip"));
     itemDown = new LogisimToolbarItem(menu, "projdown.gif",
         LogisimMenuBar.MOVE_CIRCUIT_DOWN,
-        Strings.getter("projectMoveCircuitDownTip"));
+        S.getter("projectMoveCircuitDownTip"));
     itemDelete = new LogisimToolbarItem(menu, "projdel.gif",
         LogisimMenuBar.REMOVE_CIRCUIT,
-        Strings.getter("projectRemoveCircuitTip"));
+        S.getter("projectRemoveCircuitTip"));
 
     items = UnmodifiableList.create(new ToolbarItem[] { itemAdd, itemUp,
       itemDown, itemDelete, });

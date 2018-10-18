@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.draw.actions;
+import static com.cburch.draw.Strings.S;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -40,7 +41,7 @@ import com.cburch.draw.undo.Action;
 public abstract class ModelAction extends Action {
 	static String getShapesName(Collection<CanvasObject> coll) {
 		if (coll.size() != 1) {
-			return Strings.get("shapeMultiple");
+			return S.get("shapeMultiple");
 		} else {
 			CanvasObject shape = coll.iterator().next();
 			return shape.getDisplayName();

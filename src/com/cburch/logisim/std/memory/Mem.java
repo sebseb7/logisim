@@ -28,6 +28,7 @@
  *       http://reds.heig-vd.ch
  *******************************************************************************/
 package com.cburch.logisim.std.memory;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -59,7 +60,6 @@ import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.tools.key.JoinedConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringGetter;
-import com.cburch.logisim.util.StringUtil;
 
 abstract class Mem extends InstanceFactory {
   // Note: The code is meant to be able to handle up to 32-bit addresses, but
@@ -93,21 +93,21 @@ abstract class Mem extends InstanceFactory {
   }
 
   static final AttributeOption SINGLE = new AttributeOption("single",
-      Strings.getter("memSingle"));
+      S.getter("memSingle"));
   static final AttributeOption DUAL = new AttributeOption("dual",
-      Strings.getter("memDual"));
+      S.getter("memDual"));
   static final AttributeOption QUAD = new AttributeOption("quad",
-      Strings.getter("memQuad"));
+      S.getter("memQuad"));
   static final Attribute<AttributeOption> LINE_ATTR = Attributes.forOption(
-      "line", Strings.getter("memLineSize"), new AttributeOption[] {
+      "line", S.getter("memLineSize"), new AttributeOption[] {
         SINGLE, DUAL, QUAD });
 
   public static final int SymbolWidth = 200;
   public static final Attribute<BitWidth> ADDR_ATTR = Attributes.forBitWidth(
-      "addrWidth", Strings.getter("ramAddrWidthAttr"), 2, 24);
+      "addrWidth", S.getter("ramAddrWidthAttr"), 2, 24);
 
   public static final Attribute<BitWidth> DATA_ATTR = Attributes.forBitWidth(
-      "dataWidth", Strings.getter("ramDataWidthAttr"));
+      "dataWidth", S.getter("ramDataWidthAttr"));
   // port-related constants
   static final int DATA = 0;
   static final int ADDR = 1;
@@ -259,13 +259,13 @@ abstract class Mem extends InstanceFactory {
       int bytes = ((1 << addrBits)*dataBits + 7)/8;
       String label;
       if (bytes >= 1<<30) {
-        label = StringUtil.format(Strings.get(mem+"GigabyteLabel"), "" + (bytes >>> 30));
+        label = S.fmt(mem+"GigabyteLabel", "" + (bytes >>> 30));
       } else if (bytes >= 1<<20) {
-        label = StringUtil.format(Strings.get(mem+"MegabyteLabel"), "" + (bytes >> 20));
+        label = S.fmt(mem+"MegabyteLabel", "" + (bytes >> 20));
       } else if (bytes >= 1<<10) {
-        label = StringUtil.format(Strings.get(mem+"KilobyteLabel"), "" + (bytes >> 10));
+        label = S.fmt(mem+"KilobyteLabel", "" + (bytes >> 10));
       } else {
-        label = StringUtil.format(Strings.get(mem+"ByteLabel"), "" + bytes);
+        label = S.fmt(mem+"ByteLabel", "" + bytes);
       }
       GraphicsUtil.drawCenteredText(g, label,
           bds.getX() + bds.getWidth() / 2,
@@ -283,12 +283,12 @@ abstract class Mem extends InstanceFactory {
         bds.getX() + (SymbolWidth / 2) + 20, bds.getY() + 6);
 
     // draw input and output ports
-    painter.drawPort(DATA, Strings.get("ramDataLabel"), Direction.WEST);
-    painter.drawPort(ADDR, Strings.get("ramAddrLabel"), Direction.EAST);
+    painter.drawPort(DATA, S.get("ramDataLabel"), Direction.WEST);
+    painter.drawPort(ADDR, S.get("ramAddrLabel"), Direction.EAST);
     for (int i = 1; i < dataLines; i++)
       painter.drawPort(MEM_INPUTS+i-1, ""+i, Direction.WEST);
     // g.setColor(Color.GRAY);
-    // painter.drawPort(CS, Strings.get("ramCSLabel"), Direction.SOUTH);
+    // painter.drawPort(CS, S.get("ramCSLabel"), Direction.SOUTH);
   }
 
   public static int lineSize(AttributeSet attrs) {

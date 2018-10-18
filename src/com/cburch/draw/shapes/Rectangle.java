@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.draw.shapes;
+import static com.cburch.draw.Strings.S;
 
 import java.awt.Graphics;
 import java.util.List;
@@ -67,7 +68,7 @@ public class Rectangle extends Rectangular {
 
 	@Override
 	public String getDisplayName() {
-		return Strings.get("shapeRect");
+		return S.get("shapeRect");
 	}
 
 	@Override

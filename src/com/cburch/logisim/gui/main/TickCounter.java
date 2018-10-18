@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.main;
+import static com.cburch.logisim.gui.main.Strings.S;
 
 import com.cburch.logisim.circuit.Simulator;
 import com.cburch.logisim.circuit.SimulatorEvent;
@@ -101,10 +102,9 @@ class TickCounter implements SimulatorListener {
           min = rate;
 
         if (min >= 1000.0) {
-          return Strings.get("tickRateKHz",
-              roundString(rate / 1000.0, min / 1000.0));
+          return S.fmt("tickRateKHz", roundString(rate / 1000.0, min / 1000.0));
         } else {
-          return Strings.get("tickRateHz", roundString(rate, min));
+          return S.fmt("tickRateHz", roundString(rate, min));
         }
       }
     }

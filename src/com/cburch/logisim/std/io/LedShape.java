@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.io;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Graphics;
 import java.awt.Color;
@@ -113,7 +114,7 @@ public class LedShape extends DynamicElement {
 
   @Override
   public String getDisplayName() {
-    return Strings.get("ledComponent");
+    return S.get("ledComponent");
   }
 
   @Override

@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.gates;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -59,7 +60,7 @@ class OddParityGate extends AbstractGate {
   public static OddParityGate FACTORY = new OddParityGate();
 
   private OddParityGate() {
-    super("Odd Parity", Strings.getter("oddParityComponent"));
+    super("Odd Parity", S.getter("oddParityComponent"));
     setRectangularLabel("2k+1");
     setIconNames("parityOddGate.gif");
   }

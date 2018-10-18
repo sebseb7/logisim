@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.prefs;
+import static com.cburch.logisim.gui.prefs.Strings.S;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -60,13 +61,13 @@ public class PreferencesFrame extends LFrame {
     }
 
     public void localeChanged() {
-      setTitle(Strings.get("preferencesFrameTitle"));
+      setTitle(S.get("preferencesFrameTitle"));
       for (int i = 0; i < panels.length; i++) {
         tabbedPane.setTitleAt(i, panels[i].getTitle());
         tabbedPane.setToolTipTextAt(i, panels[i].getToolTipText());
         panels[i].localeChanged();
       }
-      close.setText(Strings.get("closeButton"));
+      close.setText(S.get("closeButton"));
     }
   }
 
@@ -75,7 +76,7 @@ public class PreferencesFrame extends LFrame {
     private PreferencesFrame window = null;
 
     WindowMenuManager() {
-      super(Strings.get("preferencesFrameMenuItem"), true);
+      super(S.get("preferencesFrameMenuItem"), true);
       LocaleManager.addLocaleListener(this);
     }
 
@@ -92,7 +93,7 @@ public class PreferencesFrame extends LFrame {
     }
 
     public void localeChanged() {
-      setText(Strings.get("preferencesFrameMenuItem"));
+      setText(S.get("preferencesFrameMenuItem"));
     }
   }
 

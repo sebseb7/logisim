@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.tools;
+import static com.cburch.logisim.tools.Strings.S;
 
 import java.awt.Color;
 import java.awt.Cursor;
@@ -84,7 +85,7 @@ public class SelectTool extends Tool {
     }
 
     public String toString() {
-      return Strings.get("moveWorkingMsg");
+      return S.get("moveWorkingMsg");
     }
   }
 
@@ -277,12 +278,12 @@ public class SelectTool extends Tool {
 
   @Override
   public String getDescription() {
-    return Strings.get("selectToolDesc");
+    return S.get("selectToolDesc");
   }
 
   @Override
   public String getDisplayName() {
-    return Strings.get("selectTool");
+    return S.get("selectTool");
   }
 
   @Override
@@ -472,9 +473,9 @@ public class SelectTool extends Tool {
       int dy = curDy;
       if (dx != 0 || dy != 0) {
         if (!proj.getLogisimFile().contains(canvas.getCircuit())) {
-          canvas.setErrorMessage(Strings.getter("cannotModifyError"));
+          canvas.setErrorMessage(S.getter("cannotModifyError"));
         } else if (proj.getSelection().hasConflictWhenMoved(dx, dy)) {
-          canvas.setErrorMessage(Strings.getter("exclusiveError"));
+          canvas.setErrorMessage(S.getter("exclusiveError"));
         } else {
           boolean connect = shouldConnect(canvas, e.getModifiersEx());
           drawConnections = false;
@@ -573,7 +574,7 @@ public class SelectTool extends Tool {
       if (!results.isEmpty()) {
         SetAttributeAction act = new SetAttributeAction(
             canvas.getCircuit(),
-            Strings.getter("changeComponentAttributesAction"));
+            S.getter("changeComponentAttributesAction"));
         for (KeyConfigurationResult result : results) {
           Component comp = (Component) result.getEvent().getData();
           Map<Attribute<?>, Object> newValues = result

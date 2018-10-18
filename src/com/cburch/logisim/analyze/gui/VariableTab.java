@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.analyze.gui;
+import static com.cburch.logisim.analyze.model.Strings.S;
 
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -57,7 +58,6 @@ import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.analyze.model.VariableList;
 import com.cburch.logisim.analyze.model.VariableListEvent;
 import com.cburch.logisim.analyze.model.VariableListListener;
-import com.cburch.logisim.util.StringUtil;
 
 class VariableTab extends AnalyzerTab implements TabInterface {
 
@@ -293,11 +293,11 @@ class VariableTab extends AnalyzerTab implements TabInterface {
 
   @Override
   void localeChanged() {
-    remove.setText(Strings.get("variableRemoveButton"));
-    moveUp.setText(Strings.get("variableMoveUpButton"));
-    moveDown.setText(Strings.get("variableMoveDownButton"));
-    add.setText(Strings.get("variableAddButton"));
-    rename.setText(Strings.get("variableRenameButton"));
+    remove.setText(S.get("variableRemoveButton"));
+    moveUp.setText(S.get("variableMoveUpButton"));
+    moveDown.setText(S.get("variableMoveDownButton"));
+    add.setText(S.get("variableAddButton"));
+    rename.setText(S.get("variableRenameButton"));
     validateInput();
   }
 
@@ -336,14 +336,13 @@ class VariableTab extends AnalyzerTab implements TabInterface {
     if (text.length() == 0) {
       err = EMPTY;
     } else if (!Character.isJavaIdentifierStart(text.charAt(0))) {
-      error.setText(Strings.get("variableStartError"));
+      error.setText(S.get("variableStartError"));
       err = BAD_NAME;
     } else {
       for (int i = 1; i < text.length() && err == OK; i++) {
         char c = text.charAt(i);
         if (!Character.isJavaIdentifierPart(c)) {
-          error.setText(StringUtil.format(
-                Strings.get("variablePartError"), "" + c));
+          error.setText(S.fmt("variablePartError", "" + c));
           err = BAD_NAME;
         }
       }
@@ -358,16 +357,14 @@ class VariableTab extends AnalyzerTab implements TabInterface {
       for (int i = 0, n = data.vars.size(); i < n && err == OK; i++) {
         Var other = data.vars.get(i);
         if (other != oldVar && text.equals(other.name)) {
-          error.setText(Strings.get("variableDuplicateError"));
+          error.setText(S.get("variableDuplicateError"));
           err = DUP_NAME;
         }
       }
     }
     if (err == OK || err == EMPTY) {
       if (data.bits.size() + w > data.getMaximumSize()) {
-        error.setText(StringUtil.format(
-              Strings.get("variableMaximumError"),
-              "" + data.getMaximumSize()));
+        error.setText(S.fmt("variableMaximumError", "" + data.getMaximumSize()));
       } else {
         error.setText(" ");
       }

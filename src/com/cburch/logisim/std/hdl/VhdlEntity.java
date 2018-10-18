@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.hdl;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -62,8 +63,8 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.util.GraphicsUtil;
-import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.util.StringGetter;
+import com.cburch.logisim.util.StringUtil;
 
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.instance.InstanceComponent;
@@ -79,7 +80,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
   final static Logger logger = LoggerFactory.getLogger(VhdlEntity.class);
 
   static final Attribute<String> NAME_ATTR = Attributes.forString(
-      "vhdlEntity", Strings.getter("vhdlEntityName"));
+      "vhdlEntity", S.getter("vhdlEntityName"));
 
   static final int WIDTH = 140;
   static final int HEIGHT = 40;
@@ -111,7 +112,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
   @Override
   public StringGetter getDisplayGetter() {
     if (content == null)
-      return Strings.getter("vhdlComponent");
+      return S.getter("vhdlComponent");
     else
       return StringUtil.constantGetter(content.getName());
   }

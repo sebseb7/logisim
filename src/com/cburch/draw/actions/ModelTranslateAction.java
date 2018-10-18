@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.draw.actions;
+import static com.cburch.draw.Strings.S;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -37,7 +38,6 @@ import java.util.Set;
 
 import com.cburch.draw.model.CanvasModel;
 import com.cburch.draw.model.CanvasObject;
-import com.cburch.draw.undo.Action;
 
 public class ModelTranslateAction extends ModelAction {
 	private Set<CanvasObject> moved;
@@ -59,7 +59,7 @@ public class ModelTranslateAction extends ModelAction {
 
 	@Override
 	public String getName() {
-		return Strings.get("actionTranslate", getShapesName(moved));
+		return S.fmt("actionTranslate", getShapesName(moved));
 	}
 
 	@Override

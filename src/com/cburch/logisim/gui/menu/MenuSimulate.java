@@ -28,6 +28,7 @@
  *       http://reds.heig-vd.ch
  *******************************************************************************/
 package com.cburch.logisim.gui.menu;
+import static com.cburch.logisim.gui.menu.Strings.S;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -55,7 +56,6 @@ import com.cburch.logisim.gui.test.TestFrame;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.wiring.Clock;
-import com.cburch.logisim.util.StringUtil;
 
 @SuppressWarnings("serial")
 public class MenuSimulate extends Menu {
@@ -279,8 +279,7 @@ public class MenuSimulate extends Menu {
         } else {
           hzStr = "" + SupportedTickFrequencies[i];
         }
-        result.add(StringUtil.format(
-              Strings.get("simulateTickFreqItem"), hzStr));
+        result.add(S.fmt("simulateTickFreqItem", hzStr));
       } else {
         String kHzStr;
         double kf = Math.round(SupportedTickFrequencies[i] / 100) / 10.0;
@@ -289,8 +288,7 @@ public class MenuSimulate extends Menu {
         } else {
           kHzStr = "" + kf;
         }
-        result.add(StringUtil.format(
-              Strings.get("simulateTickKFreqItem"), kHzStr));
+        result.add(S.fmt("simulateTickKFreqItem", kHzStr));
       }
 
     }
@@ -445,23 +443,23 @@ public class MenuSimulate extends Menu {
   }
 
   public void localeChanged() {
-    this.setText(Strings.get("simulateMenu"));
-    run.setText(Strings.get("simulateRunItem"));
-    reset.setText(Strings.get("simulateResetItem"));
-    step.setText(Strings.get("simulateStepItem"));
-    simulate_vhdl_enable.setText(Strings.get("simulateVhdlEnableItem"));
-    vhdl_sim_files.setText(Strings.get("simulateGenVhdlFilesItem"));
-    tickOnce.setText(Strings.get("simulateTickOnceItem"));
-    tickOnceMain.setText(Strings.get("simulateTickOnceMainItem"));
-    ticksEnabled.setText(Strings.get("simulateTickItem"));
-    tickFreq.setText(Strings.get("simulateTickFreqMenu"));
+    this.setText(S.get("simulateMenu"));
+    run.setText(S.get("simulateRunItem"));
+    reset.setText(S.get("simulateResetItem"));
+    step.setText(S.get("simulateStepItem"));
+    simulate_vhdl_enable.setText(S.get("simulateVhdlEnableItem"));
+    vhdl_sim_files.setText(S.get("simulateGenVhdlFilesItem"));
+    tickOnce.setText(S.get("simulateTickOnceItem"));
+    tickOnceMain.setText(S.get("simulateTickOnceMainItem"));
+    ticksEnabled.setText(S.get("simulateTickItem"));
+    tickFreq.setText(S.get("simulateTickFreqMenu"));
     for (int i = 0; i < tickFreqs.length; i++) {
       tickFreqs[i].localeChanged();
     }
-    downStateMenu.setText(Strings.get("simulateDownStateMenu"));
-    upStateMenu.setText(Strings.get("simulateUpStateMenu"));
-    log.setText(Strings.get("simulateLogItem"));
-    test.setText(Strings.get("simulateTestItem"));
+    downStateMenu.setText(S.get("simulateDownStateMenu"));
+    upStateMenu.setText(S.get("simulateUpStateMenu"));
+    log.setText(S.get("simulateLogItem"));
+    test.setText(S.get("simulateTestItem"));
     assemblyWindow.setText("Assembly viewer");
   }
 

@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.arith;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -155,10 +156,10 @@ public class Multiplier extends InstanceFactory {
   public static final int C_OUT = 4;
 
   public static final Attribute<BitWidth> WIDTH_ATTR = Attributes
-      .forBitWidth("width", Strings.getter("stdDataWidthAttr"), 2, 32);
+      .forBitWidth("width", S.getter("stdDataWidthAttr"), 2, 32);
 
   public Multiplier() {
-    super("Multiplier", Strings.getter("multiplierComponent"));
+    super("Multiplier", S.getter("multiplierComponent"));
     setAttributes(new Attribute[] { WIDTH_ATTR, MODE_ATTR },
         new Object[] { BitWidth.create(8), SIGNED_OPTION });
     setKeyConfigurator(new BitWidthConfigurator(WIDTH_ATTR));
@@ -171,11 +172,11 @@ public class Multiplier extends InstanceFactory {
     ps[OUT] = new Port(0, 0, Port.OUTPUT, WIDTH_ATTR);
     ps[C_IN] = new Port(-20, -20, Port.INPUT, WIDTH_ATTR);
     ps[C_OUT] = new Port(-20, 20, Port.OUTPUT, WIDTH_ATTR);
-    ps[IN0].setToolTip(Strings.getter("multiplierInputTip"));
-    ps[IN1].setToolTip(Strings.getter("multiplierInputTip"));
-    ps[OUT].setToolTip(Strings.getter("multiplierOutputTip"));
-    ps[C_IN].setToolTip(Strings.getter("multiplierCarryInTip"));
-    ps[C_OUT].setToolTip(Strings.getter("multiplierCarryOutTip"));
+    ps[IN0].setToolTip(S.getter("multiplierInputTip"));
+    ps[IN1].setToolTip(S.getter("multiplierInputTip"));
+    ps[OUT].setToolTip(S.getter("multiplierOutputTip"));
+    ps[C_IN].setToolTip(S.getter("multiplierCarryInTip"));
+    ps[C_OUT].setToolTip(S.getter("multiplierCarryOutTip"));
     setPorts(ps);
   }
 

@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.io;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.event.KeyEvent;
@@ -58,7 +59,7 @@ public class HexDigit extends InstanceFactory implements DynamicElementProvider 
   protected static final int DP = 1;
 
   public HexDigit() {
-    super("Hex Digit Display", Strings.getter("hexDigitComponent"));
+    super("Hex Digit Display", S.getter("hexDigitComponent"));
     setAttributes(new Attribute[] {
       Io.ATTR_ON_COLOR, Io.ATTR_OFF_COLOR, Io.ATTR_BACKGROUND,
           StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT},
@@ -68,8 +69,8 @@ public class HexDigit extends InstanceFactory implements DynamicElementProvider 
     Port[] ps = new Port[2];
     ps[HEX] = new Port(0, 0, Port.INPUT, 4);
     ps[DP] = new Port(20, 0, Port.INPUT, 1);
-    ps[HEX].setToolTip(Strings.getter("hexDigitDataTip"));
-    ps[DP].setToolTip(Strings.getter("hexDigitDPTip"));
+    ps[HEX].setToolTip(S.getter("hexDigitDataTip"));
+    ps[DP].setToolTip(S.getter("hexDigitDPTip"));
     setPorts(ps);
     setOffsetBounds(Bounds.create(-15, -60, 40, 60));
     setIconName("hexdig.gif");

@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.draw.actions;
+import static com.cburch.draw.Strings.S;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -78,9 +79,9 @@ public class ModelChangeAttributeAction extends ModelAction {
 			attr = a;
 		}
 		if (a == null) {
-			return Strings.get("actionChangeAttributes");
+			return S.get("actionChangeAttributes");
 		} else {
-			return Strings.get("actionChangeAttribute", a.getDisplayName());
+			return S.fmt("actionChangeAttribute", a.getDisplayName());
 		}
 	}
 

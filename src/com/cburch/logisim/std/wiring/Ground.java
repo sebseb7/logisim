@@ -33,6 +33,7 @@
  */
 
 package com.cburch.logisim.std.wiring;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Graphics2D;
 
@@ -55,7 +56,7 @@ import com.cburch.logisim.util.GraphicsUtil;
 
 public class Ground extends InstanceFactory {
   public Ground() {
-    super("Ground", Strings.getter("groundComponent"));
+    super("Ground", S.getter("groundComponent"));
     setIconName("ground.gif");
     setAttributes(new Attribute[] { StdAttr.FACING, StdAttr.WIDTH },
         new Object[] { Direction.SOUTH, BitWidth.ONE });

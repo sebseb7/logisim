@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.hdl;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -251,7 +252,7 @@ public class VhdlParser {
     if (type.equalsIgnoreCase("inout"))
       return Port.INOUT;
     throw new IllegalVhdlContentException(
-        Strings.get("invalidTypeException") + ": " + type);
+        S.get("invalidTypeException") + ": " + type);
   }
 
   public void parse() throws IllegalVhdlContentException {
@@ -259,21 +260,21 @@ public class VhdlParser {
     parseLibraries(input);
 
     if (!input.next(ENTITY))
-      throw new IllegalVhdlContentException(Strings.get("CannotFindEntityException"));
+      throw new IllegalVhdlContentException(S.get("CannotFindEntityException"));
     name = input.match().group(1);
 
     while (parsePorts(input) || parseGenerics(input))
       ;
 
     if (!input.next(END))
-      throw new IllegalVhdlContentException(Strings.get("CannotFindEntityException"));
+      throw new IllegalVhdlContentException(S.get("CannotFindEntityException"));
     if (!input.match().group(1).equals(name))
-      throw new IllegalVhdlContentException(Strings.get("CannotFindEntityException"));
+      throw new IllegalVhdlContentException(S.get("CannotFindEntityException"));
 
     parseArchitecture(input);
 
     if (input.remaining().length() > 0)
-      throw new IllegalVhdlContentException(Strings.get("CannotFindEntityException"));
+      throw new IllegalVhdlContentException(S.get("CannotFindEntityException"));
   }
 
   private void parseArchitecture(Scanner input) throws IllegalVhdlContentException {
@@ -299,7 +300,7 @@ public class VhdlParser {
     // Example: "name1, name2, name3 : OUT std_logic_vector(expr downto expr)"
 
     if (!input.next(PORT))
-      throw new IllegalVhdlContentException(Strings.get("portDeclarationException"));
+      throw new IllegalVhdlContentException(S.get("portDeclarationException"));
     String names = input.match().group(1).trim();
     String ptype = getPortType(input.match().group(2).trim());
     String type = input.match().group(3).trim();
@@ -309,7 +310,7 @@ public class VhdlParser {
       width = 1;
     } else {
       if (!input.next(RANGE))
-        throw new IllegalVhdlContentException(Strings.get("portDeclarationException"));
+        throw new IllegalVhdlContentException(S.get("portDeclarationException"));
       int upper = Integer.parseInt(input.match().group(1));
       int lower = Integer.parseInt(input.match().group(2));
       width = upper - lower + 1;
@@ -329,12 +330,12 @@ public class VhdlParser {
     if (!input.next(PORTS))
       return false;
     if (!input.next(OPENLIST))
-      throw new IllegalVhdlContentException(Strings.get("portDeclarationException"));
+      throw new IllegalVhdlContentException(S.get("portDeclarationException"));
     parsePort(input);
     while (input.next(SEMICOLON))
       parsePort(input);
     if (!input.next(DONELIST))
-      throw new IllegalVhdlContentException(Strings.get("portDeclarationException"));
+      throw new IllegalVhdlContentException(S.get("portDeclarationException"));
     return true;
   }
 
@@ -343,11 +344,11 @@ public class VhdlParser {
     // Example: "name : integer := constant"
     // Example: "name1, name2, name3 : integer"
     if (!input.next(GENERIC))
-      throw new IllegalVhdlContentException(Strings.get("genericDeclarationException"));
+      throw new IllegalVhdlContentException(S.get("genericDeclarationException"));
     String names = input.match().group(1).trim();
     String type = input.match().group(2).trim();
     if (!type.equalsIgnoreCase("integer") && !type.equalsIgnoreCase("natural") && !type.equalsIgnoreCase("positive")) {
-      throw new IllegalVhdlContentException(Strings.get("genericTypeException") + ": " + type);
+      throw new IllegalVhdlContentException(S.get("genericTypeException") + ": " + type);
     }
     type = type.toLowerCase();
     int dval = 0;
@@ -359,10 +360,10 @@ public class VhdlParser {
       try {
         dval = Integer.decode(s);
       } catch (NumberFormatException e) {
-        throw new IllegalVhdlContentException(Strings.get("genericValueException") + ": " + s);
+        throw new IllegalVhdlContentException(S.get("genericValueException") + ": " + s);
       }
       if (type.equals("natural") && dval < 0 || type.equals("positive") && dval < 1)
-        throw new IllegalVhdlContentException(Strings.get("genericValueException") + ": " + dval);
+        throw new IllegalVhdlContentException(S.get("genericValueException") + ": " + dval);
     }
 
     for (String name : names.split("\\s*,\\s*")) {
@@ -376,12 +377,12 @@ public class VhdlParser {
     if (!input.next(GENERICS))
       return false;
     if (!input.next(OPENLIST))
-      throw new IllegalVhdlContentException(Strings.get("genericDeclarationException"));
+      throw new IllegalVhdlContentException(S.get("genericDeclarationException"));
     parseGeneric(input);
     while (input.next(SEMICOLON))
       parseGeneric(input);
     if (!input.next(DONELIST))
-      throw new IllegalVhdlContentException(Strings.get("genericDeclarationException"));
+      throw new IllegalVhdlContentException(S.get("genericDeclarationException"));
     return true;
   }
 
@@ -391,7 +392,7 @@ public class VhdlParser {
       input = new StringBuffer(source);
     } catch (NullPointerException ex) {
       throw new IllegalVhdlContentException(
-          Strings.get("emptySourceException"));
+          S.get("emptySourceException"));
     }
 
     int from;

@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.io;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -97,7 +98,7 @@ public class Button extends InstanceFactory {
   private static final int DEPTH = 3;
 
   public Button() {
-    super("Button", Strings.getter("buttonComponent"));
+    super("Button", S.getter("buttonComponent"));
     setAttributes(new Attribute[] { StdAttr.FACING, Io.ATTR_COLOR,
       StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT,
       StdAttr.LABEL_COLOR }, new Object[] { Direction.EAST,

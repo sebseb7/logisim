@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.analyze.gui;
+import static com.cburch.logisim.analyze.model.Strings.S;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -130,24 +131,24 @@ public class Analyzer extends LFrame {
 
   private class MyListener implements LocaleListener {
     public void localeChanged() {
-      Analyzer.this.setTitle(Strings.get("analyzerWindowTitle"));
-      tabbedPane.setTitleAt(INPUTS_TAB, Strings.get("inputsTab"));
-      tabbedPane.setTitleAt(OUTPUTS_TAB, Strings.get("outputsTab"));
-      tabbedPane.setTitleAt(TABLE_TAB, Strings.get("tableTab"));
-      tabbedPane.setTitleAt(EXPRESSION_TAB, Strings.get("expressionTab"));
-      tabbedPane.setTitleAt(MINIMIZED_TAB, Strings.get("minimizedTab"));
+      Analyzer.this.setTitle(S.get("analyzerWindowTitle"));
+      tabbedPane.setTitleAt(INPUTS_TAB, S.get("inputsTab"));
+      tabbedPane.setTitleAt(OUTPUTS_TAB, S.get("outputsTab"));
+      tabbedPane.setTitleAt(TABLE_TAB, S.get("tableTab"));
+      tabbedPane.setTitleAt(EXPRESSION_TAB, S.get("expressionTab"));
+      tabbedPane.setTitleAt(MINIMIZED_TAB, S.get("minimizedTab"));
       tabbedPane
-          .setToolTipTextAt(INPUTS_TAB, Strings.get("inputsTabTip"));
+          .setToolTipTextAt(INPUTS_TAB, S.get("inputsTabTip"));
       tabbedPane.setToolTipTextAt(OUTPUTS_TAB,
-          Strings.get("outputsTabTip"));
-      tabbedPane.setToolTipTextAt(TABLE_TAB, Strings.get("tableTabTip"));
+          S.get("outputsTabTip"));
+      tabbedPane.setToolTipTextAt(TABLE_TAB, S.get("tableTabTip"));
       tabbedPane.setToolTipTextAt(EXPRESSION_TAB,
-          Strings.get("expressionTabTip"));
+          S.get("expressionTabTip"));
       tabbedPane.setToolTipTextAt(MINIMIZED_TAB,
-          Strings.get("minimizedTabTip"));
-      importTable.setText(Strings.get("importTableButton"));
-      buildCircuit.setText(Strings.get("buildCircuitButton"));
-      exportTable.setText(Strings.get("exportTableButton"));
+          S.get("minimizedTabTip"));
+      importTable.setText(S.get("importTableButton"));
+      buildCircuit.setText(S.get("buildCircuitButton"));
+      exportTable.setText(S.get("exportTableButton"));
       inputsPanel.localeChanged();
       outputsPanel.localeChanged();
       truthTablePanel.localeChanged();

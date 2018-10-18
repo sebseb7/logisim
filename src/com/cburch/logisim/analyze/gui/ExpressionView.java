@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.analyze.gui;
+import static com.cburch.logisim.analyze.model.Strings.S;
 
 import java.awt.Dimension;
 import java.awt.FontMetrics;
@@ -254,7 +255,7 @@ class ExpressionView extends JPanel {
       } else {
         if (exprData.text.length() == 0) {
           lineStyled = null;
-          lineText = new String[] { Strings.get("expressionEmpty") };
+          lineText = new String[] { S.get("expressionEmpty") };
           lineSubscripts = new ArrayList<ArrayList<Range>>();
           lineSubscripts.add(new ArrayList<Range>());
           lineNots = new ArrayList<ArrayList<Range>>();

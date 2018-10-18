@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.std.memory;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -146,7 +147,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
   private Attribute<AttributeOption> triggerAttribute;
 
   public static final Attribute<Boolean> ATTR_ENABLE = Attributes.forBoolean(
-      "enable", Strings.getter("flipFlopEnableAttr"));
+      "enable", S.getter("flipFlopEnableAttr"));
 
   private int numInputs;
 
@@ -218,13 +219,13 @@ abstract class AbstractFlipFlop extends InstanceFactory {
         ps[numInputs + 5] = new Port(30, 60, Port.INPUT,  1);
       }
     }
-    ps[numInputs].setToolTip(Strings.getter("flipFlopClockTip"));
-    ps[numInputs + 1].setToolTip(Strings.getter("flipFlopQTip"));
-    ps[numInputs + 2].setToolTip(Strings.getter("flipFlopNotQTip"));
-    ps[numInputs + 3].setToolTip(Strings.getter("flipFlopResetTip"));
-    ps[numInputs + 4].setToolTip(Strings.getter("flipFlopPresetTip"));
+    ps[numInputs].setToolTip(S.getter("flipFlopClockTip"));
+    ps[numInputs + 1].setToolTip(S.getter("flipFlopQTip"));
+    ps[numInputs + 2].setToolTip(S.getter("flipFlopNotQTip"));
+    ps[numInputs + 3].setToolTip(S.getter("flipFlopResetTip"));
+    ps[numInputs + 4].setToolTip(S.getter("flipFlopPresetTip"));
     if (enable > 0) {
-      ps[numInputs + 5].setToolTip(Strings.getter("flipFlopEnableTip"));
+      ps[numInputs + 5].setToolTip(S.getter("flipFlopEnableTip"));
     }
     instance.setPorts(ps);
   }
@@ -308,7 +309,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
     painter.drawPort(n + 3, "0", Direction.SOUTH);
     painter.drawPort(n + 4, "1", Direction.SOUTH);
     if (enable > 0) {
-      painter.drawPort(n + 5, Strings.get("memEnableLabel"), Direction.SOUTH);
+      painter.drawPort(n + 5, S.get("memEnableLabel"), Direction.SOUTH);
     }
     g.setColor(Color.BLACK);
     for (int i = 0; i < n; i++) {

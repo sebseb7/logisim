@@ -6,6 +6,7 @@
  */
 
 package com.cburch.logisim.std.gates;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -45,9 +46,9 @@ class PLA extends InstanceFactory {
   static final int OUT_PORT = 1;
 
   static final Attribute<BitWidth> ATTR_IN_WIDTH
-      = Attributes.forBitWidth("in_width", Strings.getter("Bit Width In"));
+      = Attributes.forBitWidth("in_width", S.getter("Bit Width In"));
   static final Attribute<BitWidth> ATTR_OUT_WIDTH
-      = Attributes.forBitWidth("out_width", Strings.getter("Bit Width Out"));
+      = Attributes.forBitWidth("out_width", S.getter("Bit Width Out"));
   static Attribute<PLATable> ATTR_TABLE = new TruthTableAttribute();
 
   public static InstanceFactory FACTORY = new PLA();
@@ -61,7 +62,7 @@ class PLA extends InstanceFactory {
 
   private static class TruthTableAttribute extends Attribute<PLATable> {
     public TruthTableAttribute() {
-      super("table", Strings.getter("Program"));
+      super("table", S.getter("Program"));
     }
 
     @Override
@@ -73,7 +74,7 @@ class PLA extends InstanceFactory {
 
     @Override
     public String toDisplayString(PLATable value) {
-      return Strings.get("(click to edit)");
+      return S.get("(click to edit)");
     }
 
     @Override
@@ -152,7 +153,7 @@ class PLA extends InstanceFactory {
   }
 
   public PLA() {
-    super("PLA", Strings.getter("PLA"));
+    super("PLA", S.getter("PLA"));
     setIconName("pla.gif");
     setFacingAttribute(StdAttr.FACING);
   }
@@ -181,8 +182,8 @@ class PLA extends InstanceFactory {
     else dx = 50;
     Port[] ps = { new Port(0, 0, Port.INPUT, ATTR_IN_WIDTH),
       new Port(dx, dy, Port.OUTPUT, ATTR_OUT_WIDTH) };
-    ps[IN_PORT].setToolTip(Strings.getter("input"));
-    ps[OUT_PORT].setToolTip(Strings.getter("output"));
+    ps[IN_PORT].setToolTip(S.getter("input"));
+    ps[OUT_PORT].setToolTip(S.getter("output"));
     instance.setPorts(ps);
   }
 
@@ -299,7 +300,7 @@ class PLA extends InstanceFactory {
     public void configureMenu(JPopupMenu menu, Project proj) {
       this.frame = proj.getFrame();
 
-      edit = new JMenuItem(Strings.get("plaEditMenuItem"));
+      edit = new JMenuItem(S.get("plaEditMenuItem"));
       edit.setEnabled(true);
       edit.addActionListener(this);
 

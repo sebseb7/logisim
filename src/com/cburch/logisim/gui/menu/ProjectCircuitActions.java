@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.menu;
+import static com.cburch.logisim.gui.menu.Strings.S;
 
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -61,13 +62,12 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
-import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.util.SyntaxChecker;
 
 public class ProjectCircuitActions {
   private static void analyzeError(Project proj, String message) {
     JOptionPane.showMessageDialog(proj.getFrame(), message,
-        Strings.get("analyzeErrorTitle"), JOptionPane.ERROR_MESSAGE);
+        S.get("analyzeErrorTitle"), JOptionPane.ERROR_MESSAGE);
     return;
   }
 
@@ -95,7 +95,7 @@ public class ProjectCircuitActions {
       return;
     } catch (AnalyzeException ex) {
       JOptionPane.showMessageDialog(proj.getFrame(), ex.getMessage(),
-          Strings.get("analyzeNoExpressionTitle"),
+          S.get("analyzeNoExpressionTitle"),
           JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -160,15 +160,11 @@ public class ProjectCircuitActions {
       }
     }
     if (numInputs > AnalyzerModel.MAX_INPUTS) {
-      analyzeError(proj, StringUtil.format(
-            Strings.get("analyzeTooManyInputsError"), ""
-            + AnalyzerModel.MAX_INPUTS));
+      analyzeError(proj, S.fmt("analyzeTooManyInputsError", "" + AnalyzerModel.MAX_INPUTS));
       return;
     }
     if (numOutputs > AnalyzerModel.MAX_OUTPUTS) {
-      analyzeError(proj, StringUtil.format(
-            Strings.get("analyzeTooManyOutputsError"), ""
-            + AnalyzerModel.MAX_OUTPUTS));
+      analyzeError(proj, S.fmt("analyzeTooManyOutputsError", "" + AnalyzerModel.MAX_OUTPUTS));
       return;
     }
 
@@ -195,13 +191,13 @@ public class ProjectCircuitActions {
   public static void doRemoveCircuit(Project proj, Circuit circuit) {
     if (proj.getLogisimFile().getCircuits().size() == 1) {
       JOptionPane.showMessageDialog(proj.getFrame(),
-          Strings.get("circuitRemoveLastError"),
-          Strings.get("circuitRemoveErrorTitle"),
+          S.get("circuitRemoveLastError"),
+          S.get("circuitRemoveErrorTitle"),
           JOptionPane.ERROR_MESSAGE);
     } else if (!proj.getDependencies().canRemove(circuit)) {
       JOptionPane.showMessageDialog(proj.getFrame(),
-          Strings.get("circuitRemoveUsedError"),
-          Strings.get("circuitRemoveErrorTitle"),
+          S.get("circuitRemoveUsedError"),
+          S.get("circuitRemoveErrorTitle"),
           JOptionPane.ERROR_MESSAGE);
     } else {
       proj.doAction(LogisimFileActions.removeCircuit(circuit));
@@ -211,8 +207,8 @@ public class ProjectCircuitActions {
   public static void doRemoveVhdl(Project proj, VhdlContent vhdl) {
     if (!proj.getDependencies().canRemove(vhdl)) {
       JOptionPane.showMessageDialog(proj.getFrame(),
-          Strings.get("circuitRemoveUsedError"),
-          Strings.get("circuitRemoveErrorTitle"),
+          S.get("circuitRemoveUsedError"),
+          S.get("circuitRemoveErrorTitle"),
           JOptionPane.ERROR_MESSAGE);
     } else {
       proj.doAction(LogisimFileActions.removeVhdl(vhdl));
@@ -255,11 +251,11 @@ public class ProjectCircuitActions {
       String initialValue, boolean vhdl) {
     String title, prompt;
     if (vhdl) {
-      title = Strings.get("vhdlNameDialogTitle");
-      prompt = Strings.get("vhdlNamePrompt");
+      title = S.get("vhdlNameDialogTitle");
+      prompt = S.get("vhdlNamePrompt");
     } else {
-      title = Strings.get("circuitNameDialogTitle");
-      prompt = Strings.get("circuitNamePrompt");
+      title = S.get("circuitNameDialogTitle");
+      prompt = S.get("circuitNamePrompt");
     }
     JLabel label = new JLabel(prompt);
     final JTextField field = new JTextField(15);
@@ -309,20 +305,20 @@ public class ProjectCircuitActions {
 
     String name = field.getText().trim();
     if (name.equals("")) {
-      error.setText(Strings.get("circuitNameMissingError"));
+      error.setText(S.get("circuitNameMissingError"));
     } else if (!SyntaxChecker.isVariableNameAcceptable(name)) {
-      error.setText(Strings.get("circuitNameInvalidName"));
+      error.setText(S.get("circuitNameInvalidName"));
     } else {
       if (lib.getTool(name) == null) {
         return name;
       } else {
-        error.setText(Strings.get("circuitNameDuplicateError"));
+        error.setText(S.get("circuitNameDuplicateError"));
       }
     }
 
     /* If the name is invalid, display the error message */
     JOptionPane.showMessageDialog(frame, error,
-        Strings.get("analyzeErrorTitle"), JOptionPane.ERROR_MESSAGE);
+        S.get("analyzeErrorTitle"), JOptionPane.ERROR_MESSAGE);
 
     return null;
   }

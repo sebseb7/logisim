@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.analyze.gui;
+import static com.cburch.logisim.analyze.model.Strings.S;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -55,7 +56,6 @@ import com.cburch.logisim.file.LogisimFileActions;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.std.gates.CircuitBuilder;
-import com.cburch.logisim.util.StringUtil;
 import com.cburch.logisim.gui.main.Frame;
 
 class BuildCircuitButton extends JButton {
@@ -135,10 +135,10 @@ class BuildCircuitButton extends JButton {
       gb.setConstraints(nands, gc);
       add(nands);
 
-      projectLabel.setText(Strings.get("buildProjectLabel"));
-      nameLabel.setText(Strings.get("buildNameLabel"));
-      twoInputs.setText(Strings.get("buildTwoInputsLabel"));
-      nands.setText(Strings.get("buildNandsLabel"));
+      projectLabel.setText(S.get("buildProjectLabel"));
+      nameLabel.setText(S.get("buildNameLabel"));
+      twoInputs.setText(S.get("buildTwoInputsLabel"));
+      nands.setText(S.get("buildNandsLabel"));
     }
   }
 
@@ -154,7 +154,7 @@ class BuildCircuitButton extends JButton {
       while (!ok) {
         DialogPanel dlog = new DialogPanel();
         int action = JOptionPane.showConfirmDialog(parent, dlog,
-            Strings.get("buildDialogTitle"),
+            S.get("buildDialogTitle"),
             JOptionPane.OK_CANCEL_OPTION,
             JOptionPane.QUESTION_MESSAGE);
         if (action != JOptionPane.OK_OPTION)
@@ -164,8 +164,8 @@ class BuildCircuitButton extends JButton {
             .getSelectedItem();
         if (projectItem == null) {
           JOptionPane.showMessageDialog(parent,
-              Strings.get("buildNeedProjectError"),
-              Strings.get("buildDialogErrorTitle"),
+              S.get("buildNeedProjectError"),
+              S.get("buildDialogErrorTitle"),
               JOptionPane.ERROR_MESSAGE);
           continue;
         }
@@ -174,18 +174,16 @@ class BuildCircuitButton extends JButton {
         name = dlog.name.getText().trim();
         if (name.equals("")) {
           JOptionPane.showMessageDialog(parent,
-              Strings.get("buildNeedCircuitError"),
-              Strings.get("buildDialogErrorTitle"),
+              S.get("buildNeedCircuitError"),
+              S.get("buildDialogErrorTitle"),
               JOptionPane.ERROR_MESSAGE);
           continue;
         }
 
         if (dest != null && dest.getLogisimFile().getCircuit(name) != null) {
           int choice = JOptionPane.showConfirmDialog(parent,
-              StringUtil.format(
-                Strings.get("buildConfirmReplaceMessage"),
-                name),
-              Strings.get("buildConfirmReplaceTitle"),
+              S.fmt("buildConfirmReplaceMessage", name),
+              S.get("buildConfirmReplaceTitle"),
               JOptionPane.YES_NO_OPTION);
           if (choice != JOptionPane.YES_OPTION) {
             continue;
@@ -231,7 +229,7 @@ class BuildCircuitButton extends JButton {
   }
 
   void localeChanged() {
-    setText(Strings.get("buildCircuitButton"));
+    setText(S.get("buildCircuitButton"));
   }
 
   private void performAction(Project dest, String name, boolean replace,
@@ -247,7 +245,7 @@ class BuildCircuitButton extends JButton {
 
       CircuitMutation xn = CircuitBuilder.build(circuit, model,
           twoInputs, useNands);
-      dest.doAction(xn.toAction(Strings.getter("replaceCircuitAction")));
+      dest.doAction(xn.toAction(S.getter("replaceCircuitAction")));
     } else {
       // create new project if necessary
       if (dest == null)

@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.instance;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
 import java.awt.Color;
@@ -41,49 +42,49 @@ import com.cburch.logisim.data.Direction;
 
 public class StdAttr {
   public static final Attribute<Direction> FACING = Attributes.forDirection(
-      "facing", Strings.getter("stdFacingAttr"));
+      "facing", S.getter("stdFacingAttr"));
 
   public static final Attribute<BitWidth> WIDTH = Attributes.forBitWidth(
-      "width", Strings.getter("stdDataWidthAttr"));
+      "width", S.getter("stdDataWidthAttr"));
 
   public static final AttributeOption TRIG_RISING = new AttributeOption(
-      "rising", Strings.getter("stdTriggerRising"));
+      "rising", S.getter("stdTriggerRising"));
   public static final AttributeOption TRIG_FALLING = new AttributeOption(
-      "falling", Strings.getter("stdTriggerFalling"));
+      "falling", S.getter("stdTriggerFalling"));
   public static final AttributeOption TRIG_HIGH = new AttributeOption("high",
-      Strings.getter("stdTriggerHigh"));
+      S.getter("stdTriggerHigh"));
   public static final AttributeOption TRIG_LOW = new AttributeOption("low",
-      Strings.getter("stdTriggerLow"));
+      S.getter("stdTriggerLow"));
   public static final Attribute<AttributeOption> TRIGGER = Attributes
-      .forOption("trigger", Strings.getter("stdTriggerAttr"),
+      .forOption("trigger", S.getter("stdTriggerAttr"),
           new AttributeOption[] { TRIG_RISING, TRIG_FALLING,
             TRIG_HIGH, TRIG_LOW });
   public static final Attribute<AttributeOption> EDGE_TRIGGER = Attributes
-      .forOption("trigger", Strings.getter("stdTriggerAttr"),
+      .forOption("trigger", S.getter("stdTriggerAttr"),
           new AttributeOption[] { TRIG_RISING, TRIG_FALLING });
 
   public static final Attribute<String> LABEL = Attributes.forString("label",
-      Strings.getter("stdLabelAttr"));
+      S.getter("stdLabelAttr"));
 
   public static final Attribute<Font> LABEL_FONT = Attributes.forFont(
-      "labelfont", Strings.getter("stdLabelFontAttr"));
+      "labelfont", S.getter("stdLabelFontAttr"));
   public static final Font DEFAULT_LABEL_FONT = new Font("SansSerif",
       Font.PLAIN, 12);
   public static final Attribute<Color> LABEL_COLOR = Attributes.forColor(
-      "labelcolor", Strings.getter("stdLabelColorAttr"));
+      "labelcolor", S.getter("stdLabelColorAttr"));
   public static final AttributeOption LABEL_CENTER = new AttributeOption("center",
-      "center", Strings.getter("stdLabelCenter"));
+      "center", S.getter("stdLabelCenter"));
   public static final Attribute<Object> LABEL_LOC = Attributes.forOption(
-      "labelloc", Strings.getter("stdLabelLocAttr"), new Object[] {
+      "labelloc", S.getter("stdLabelLocAttr"), new Object[] {
           LABEL_CENTER, Direction.NORTH, Direction.SOUTH,
           Direction.EAST, Direction.WEST });
 
   public static final AttributeOption APPEAR_CLASSIC = new AttributeOption(
-      "classic", Strings.getter("stdClassicAppearance"));
+      "classic", S.getter("stdClassicAppearance"));
   public static final AttributeOption APPEAR_FPGA = new AttributeOption(
-      "evolution", Strings.getter("stdEvolutionAppearance"));
+      "evolution", S.getter("stdEvolutionAppearance"));
   public static final Attribute<AttributeOption> APPEARANCE = Attributes
-      .forOption("appearance", Strings.getter("stdAppearanceAttr"),
+      .forOption("appearance", S.getter("stdAppearanceAttr"),
           new AttributeOption[] { APPEAR_CLASSIC, APPEAR_FPGA });
 
 }

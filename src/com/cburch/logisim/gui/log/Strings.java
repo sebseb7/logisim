@@ -31,17 +31,7 @@
 package com.cburch.logisim.gui.log;
 
 import com.cburch.logisim.util.LocaleManager;
-import com.cburch.logisim.util.StringGetter;
 
-class Strings {
-  public static String get(String key) {
-    return source.get(key);
-  }
-
-  public static StringGetter getter(String key) {
-    return source.getter(key);
-  }
-
-  private static LocaleManager source = new LocaleManager(
-      "resources/logisim", "log");
+public class Strings {
+  public static final LocaleManager S = new LocaleManager("resources/logisim", "log");
 }

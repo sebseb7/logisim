@@ -29,6 +29,7 @@
  *******************************************************************************/
 
 package com.cburch.logisim.gui.appear;
+import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -81,19 +82,19 @@ public class ShowStateDialog extends JDialog implements ActionListener {
     setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
     Circuit circuit = canvas.getCircuit();
-    setTitle(Strings.get("showStateDialogTitle", circuit.getName()));
+    setTitle(S.fmt("showStateDialogTitle", circuit.getName()));
 
     root = enumerate(circuit, null);
     if (root == null) {
-      root = new DefaultMutableTreeNode(Strings.get("showStateDialogEmptyNode", circuit.getName()));
+      root = new DefaultMutableTreeNode(S.fmt("showStateDialogEmptyNode", circuit.getName()));
     }
     tree = new CheckboxTree(root);
     tree.getCheckingModel().setCheckingMode(TreeCheckingModel.CheckingMode.PROPAGATE_PRESERVING_CHECK);
     tree.setCheckingPaths(getPaths());
     JScrollPane infoPane = new JScrollPane(tree);
 
-    ok = new JButton(Strings.get("showStateDialogOkButton"));
-    cancel = new JButton(Strings.get("showStateDialogCancelButton"));
+    ok = new JButton(S.get("showStateDialogOkButton"));
+    cancel = new JButton(S.get("showStateDialogCancelButton"));
     ok.addActionListener(this);
     cancel.addActionListener(this);
     JPanel buttonPanel = new JPanel();
@@ -299,7 +300,7 @@ public class ShowStateDialog extends JDialog implements ActionListener {
     }
     public String toString() {
       if (ic == null)
-        return Strings.get("showStateDialogNodeTitle", c.getName());
+        return S.fmt("showStateDialogNodeTitle", c.getName());
       else
         return super.toString();
     }

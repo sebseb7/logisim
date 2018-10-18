@@ -28,6 +28,7 @@
  *       http://reds.heig-vd.ch
  *******************************************************************************/
 package com.bfh.logisim.library;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -41,7 +42,6 @@ import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
-import com.cburch.logisim.std.arith.Strings;
 
 public class hex2sevenseg extends InstanceFactory{
 
@@ -56,7 +56,7 @@ public class hex2sevenseg extends InstanceFactory{
 	public static final int Hexin = 7;
 
 	public hex2sevenseg() {
-		super("Hex_to_7_Segment_decoder", Strings.getter("Hex2SevenSegment"));
+		super("Hex_to_7_Segment_decoder", S.getter("Hex2SevenSegment"));
 		setOffsetBounds(Bounds.create(-10, -20, 50, 100));
 		Port[] ps = new Port[8];
 		ps[Segment_A] = new Port(20, 0, Port.OUTPUT, 1);
@@ -67,14 +67,14 @@ public class hex2sevenseg extends InstanceFactory{
 		ps[Segment_F] = new Port(10, 0, Port.OUTPUT, 1);
 		ps[Segment_G] = new Port(0, 0, Port.OUTPUT, 1);
 		ps[Hexin] = new Port(10,80,Port.INPUT,4);
-		ps[Segment_A].setToolTip(Strings.getter("Segment_A"));
-		ps[Segment_B].setToolTip(Strings.getter("Segment_B"));
-		ps[Segment_C].setToolTip(Strings.getter("Segment_C"));
-		ps[Segment_D].setToolTip(Strings.getter("Segment_D"));
-		ps[Segment_E].setToolTip(Strings.getter("Segment_E"));
-		ps[Segment_F].setToolTip(Strings.getter("Segment_F"));
-		ps[Segment_G].setToolTip(Strings.getter("Segment_G"));
-		ps[Hexin].setToolTip(Strings.getter("Hex Value"));
+		ps[Segment_A].setToolTip(S.getter("Segment_A"));
+		ps[Segment_B].setToolTip(S.getter("Segment_B"));
+		ps[Segment_C].setToolTip(S.getter("Segment_C"));
+		ps[Segment_D].setToolTip(S.getter("Segment_D"));
+		ps[Segment_E].setToolTip(S.getter("Segment_E"));
+		ps[Segment_F].setToolTip(S.getter("Segment_F"));
+		ps[Segment_G].setToolTip(S.getter("Segment_G"));
+		ps[Hexin].setToolTip(S.getter("Hex Value"));
 		setPorts(ps);
 	}
 	
