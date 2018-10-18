@@ -33,6 +33,9 @@ student and, before that, as an undergrad at Cornell. Unsurprisingly, this new
 fork is to support the course I now teach, csci226, at
 [Holy Cross](http://mathcs.holycross.edu/~csci226/).
 
+This version, Logisim-evolution (Holy Cross Edition) is maintained by:
+* Kevin Walsh (kwalsh@holycross.edu), [College of the Holy Cross](http://holycross.edu) 
+
 Below is the README.md file from the upstream reds-heig fork.
 
 logisim-evolution
