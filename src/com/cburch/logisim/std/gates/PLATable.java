@@ -75,6 +75,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.BoundedRangeModel;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
@@ -342,16 +343,20 @@ public class PLATable {
     private final float tinyFont = 8.8f;
     private HeaderPanel hdrPanel;
     private TablePanel ttPanel;
+    private JPanel ttScrollPanel;
     private PLATable oldTable, newTable;
+    private BoundedRangeModel vScrollModel;
 
     public EditorDialog(Frame parent) {
       super(parent, "", true);
-      setLocation(300, 200);
+      // setLocation(300, 200);
       setResizable(true);
       Container cPane = super.getContentPane();
       cPane.setLayout(new BorderLayout(5, 5));
 
       hdrPanel = new HeaderPanel();
+      // Give header a vertical (but invisible) vertical scroll bar, to help
+      // align with the lower panel.
       JScrollPane header = new JScrollPane(hdrPanel,
           JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
       header.getVerticalScrollBar().setUI(new BasicScrollBarUI() {
@@ -369,16 +374,20 @@ public class PLATable {
       });
 
       ttPanel = new TablePanel();
-      JScrollPane table = new JScrollPane(ttPanel,
+      ttScrollPanel = new JPanel();
+      ttScrollPanel.add(ttPanel, BorderLayout.CENTER);
+      JScrollPane table = new JScrollPane(ttScrollPanel,
           JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
       header.getHorizontalScrollBar().setModel(table.getHorizontalScrollBar().getModel());
+      vScrollModel = table.getVerticalScrollBar().getModel();
 
       cPane.add(header, "North");
       cPane.add(table, "Center");
       cPane.add(new ButtonPanel(this), "South");
-      cPane.setPreferredSize(new Dimension(440, 300));
+      cPane.setPreferredSize(new Dimension(440, 360));
       setMinimumSize(new Dimension(300, 200));
+      setLocationRelativeTo(parent);
     }
 
     public void setValue(Object o) {
@@ -386,22 +395,24 @@ public class PLATable {
         return;
       oldTable = (PLATable)o;
       newTable = new PLATable(oldTable);
-      reset();
-      Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-      setLocation(dim.width/2-getWidth()/2, dim.height/3-getHeight()/2);
+      reset(true);
     }
 
     public Object getValue() {
       return oldTable;
     }
 
-    void reset() {
+    void reset(boolean resize) {
       hdrPanel.reset();
       ttPanel.reset();
-      Dimension d = hdrPanel.getPreferredSize();
-      repack(new Dimension(
-            Math.max(Math.min((int)d.getWidth()+50, 800), 300),
-            Math.max(Math.min((int)d.getHeight()+30*newTable.rows.size()+100, 500), 200)));
+      if (resize) {
+        Dimension d = hdrPanel.getPreferredSize();
+        int w = (int)d.getWidth()+50;
+        int h = (int)d.getHeight()+20*newTable.rows.size()+140;
+        int ww = Math.max(Math.min(w, 800), 300);
+        int hh = Math.max(Math.min(h, 500), 200);
+        repack(new Dimension(ww, hh));
+      }
     }
 
     void repack(Dimension prefSize) {
@@ -443,7 +454,7 @@ public class PLATable {
         try {
           PLATable loaded = parse(f);
           newTable.copyFrom(loaded);
-          reset();
+          reset(false);
         } catch (IOException e) {
           JOptionPane.showMessageDialog(null, e.getMessage(),
               S.get("plaLoadErrorTitle"),
@@ -529,8 +540,10 @@ public class PLATable {
       }
 
       void addRow() {
+        Dimension prevSize = EditorDialog.this.getSize();
         add(new RowPanel(newTable.addTableRow()), getComponentCount()-2);
-        repack(null);
+        repack(prevSize);
+        vScrollModel.setValue(vScrollModel.getMaximum());
       }
 
       void deleteRow(RowPanel rp) {
