@@ -91,10 +91,8 @@ class MenuProject extends Menu {
       LogisimMenuBar.EDIT_LAYOUT);
   private MenuItemImpl appearance = new MenuItemImpl(this,
       LogisimMenuBar.EDIT_APPEARANCE);
-  private MenuItemImpl viewToolbox = new MenuItemImpl(this,
-      LogisimMenuBar.VIEW_TOOLBOX);
-  private MenuItemImpl viewSimulation = new MenuItemImpl(this,
-      LogisimMenuBar.VIEW_SIMULATION);
+  private MenuItemImpl toggleLayoutAppearance = new MenuItemImpl(this,
+      LogisimMenuBar.TOGGLE_APPEARANCE);
   private MenuItemImpl analyze = new MenuItemImpl(this,
       LogisimMenuBar.ANALYZE_CIRCUIT);
   private MenuItemImpl stats = new MenuItemImpl(this,
@@ -118,8 +116,7 @@ class MenuProject extends Menu {
     menubar.registerItem(LogisimMenuBar.REVERT_APPEARANCE, revertAppearance);
     menubar.registerItem(LogisimMenuBar.EDIT_LAYOUT, layout);
     menubar.registerItem(LogisimMenuBar.EDIT_APPEARANCE, appearance);
-    menubar.registerItem(LogisimMenuBar.VIEW_TOOLBOX, viewToolbox);
-    menubar.registerItem(LogisimMenuBar.VIEW_SIMULATION, viewSimulation);
+    menubar.registerItem(LogisimMenuBar.TOGGLE_APPEARANCE, toggleLayoutAppearance);
     if (Main.ANALYZE) {
       menubar.registerItem(LogisimMenuBar.ANALYZE_CIRCUIT, analyze);
     }
@@ -142,8 +139,6 @@ class MenuProject extends Menu {
     add(remove);
     add(revertAppearance);
     addSeparator();
-    add(viewToolbox);
-    add(viewSimulation);
     add(layout);
     add(appearance);
     addSeparator();
@@ -171,8 +166,7 @@ class MenuProject extends Menu {
         || moveUp.hasListeners() || moveDown.hasListeners()
         || setAsMain.hasListeners() || remove.hasListeners()
         || layout.hasListeners() || revertAppearance.hasListeners()
-        || appearance.hasListeners() || viewToolbox.hasListeners()
-        || viewSimulation.hasListeners() || analyze.hasListeners()
+        || appearance.hasListeners() || analyze.hasListeners()
         || stats.hasListeners());
     menubar.fireEnableChanged();
   }
@@ -194,8 +188,6 @@ class MenuProject extends Menu {
     revertAppearance.setText(S.get("projectRevertAppearanceItem"));
     layout.setText(S.get("projectEditCircuitLayoutItem"));
     appearance.setText(S.get("projectEditCircuitAppearanceItem"));
-    viewToolbox.setText(S.get("projectViewToolboxItem"));
-    viewSimulation.setText(S.get("projectViewSimulationItem"));
     analyze.setText(S.get("projectAnalyzeCircuitItem"));
     stats.setText(S.get("projectGetCircuitStatisticsItem"));
     options.setText(S.get("projectOptionsItem"));

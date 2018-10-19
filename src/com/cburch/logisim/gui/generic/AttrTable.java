@@ -54,7 +54,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -517,7 +516,6 @@ public class AttrTable extends JPanel implements LocaleListener {
   private JTable table;
   private TableModelAdapter tableModel;
   private CellEditor editor = new CellEditor();
-  private JTabbedPane tabPane;
 
   public AttrTable(Window parent) {
     super(new BorderLayout());
@@ -546,15 +544,13 @@ public class AttrTable extends JPanel implements LocaleListener {
       ((JComponent) renderer).setBackground(Color.WHITE);
     }
 
-    tabPane = new JTabbedPane();
     JPanel propPanel = new JPanel(new BorderLayout(0, 0));
     JScrollPane tableScroll = new JScrollPane(table);
 
     propPanel.add(title, BorderLayout.PAGE_START);
     propPanel.add(tableScroll, BorderLayout.CENTER);
-    tabPane.addTab("Properties", propPanel);
 
-    this.add(tabPane, BorderLayout.CENTER);
+    this.add(propPanel, BorderLayout.CENTER);
 
     LocaleManager.addLocaleListener(this);
     localeChanged();
@@ -562,10 +558,6 @@ public class AttrTable extends JPanel implements LocaleListener {
 
   public AttrTableModel getAttrTableModel() {
     return tableModel.attrModel;
-  }
-
-  public JTabbedPane getTabPane() {
-    return tabPane;
   }
 
   public boolean getTitleEnabled() {

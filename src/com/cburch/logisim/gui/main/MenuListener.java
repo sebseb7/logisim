@@ -179,10 +179,9 @@ class MenuListener {
         frame.setEditorView(Frame.EDIT_LAYOUT);
       } else if (src == LogisimMenuBar.EDIT_APPEARANCE) {
         frame.setEditorView(Frame.EDIT_APPEARANCE);
-      } else if (src == LogisimMenuBar.VIEW_TOOLBOX) {
-        frame.setExplorerView(Frame.VIEW_TOOLBOX);
-      } else if (src == LogisimMenuBar.VIEW_SIMULATION) {
-        frame.setExplorerView(Frame.VIEW_SIMULATION);
+      } else if (src == LogisimMenuBar.TOGGLE_APPEARANCE) {
+        boolean viewAppearance = frame.getEditorView().equals(Frame.EDIT_APPEARANCE);
+        frame.setEditorView(viewAppearance ? Frame.EDIT_LAYOUT : Frame.EDIT_APPEARANCE);
       } else if (src == LogisimMenuBar.REVERT_APPEARANCE) {
         proj.doAction(new RevertAppearanceAction(cur));
       } else if (src == LogisimMenuBar.ANALYZE_CIRCUIT && Main.ANALYZE) {
@@ -199,7 +198,6 @@ class MenuListener {
       int curIndex = file == null ? -1 : file.indexOfCircuit(cur);
       boolean isProjectCircuit = curIndex >= 0;
       String editorView = frame == null ? "" : frame.getEditorView();
-      String explorerView = frame == null ? "" : frame.getExplorerView();
       boolean canSetMain = false;
       boolean canMoveUp = false;
       boolean canMoveDown = false;
@@ -207,8 +205,6 @@ class MenuListener {
       boolean canRevert = false;
       boolean viewAppearance = editorView.equals(Frame.EDIT_APPEARANCE);
       boolean viewLayout = editorView.equals(Frame.EDIT_LAYOUT);
-      boolean viewToolbox = explorerView.equals(Frame.VIEW_TOOLBOX);
-      boolean viewSimulation = explorerView.equals(Frame.VIEW_SIMULATION);
       if (isProjectCircuit) {
         List<?> tools = proj.getLogisimFile().getTools();
 
@@ -227,10 +223,9 @@ class MenuListener {
       menubar.setEnabled(LogisimMenuBar.MOVE_CIRCUIT_DOWN, canMoveDown);
       menubar.setEnabled(LogisimMenuBar.SET_MAIN_CIRCUIT, canSetMain);
       menubar.setEnabled(LogisimMenuBar.REMOVE_CIRCUIT, canRemove);
-      menubar.setEnabled(LogisimMenuBar.VIEW_TOOLBOX, !viewToolbox);
-      menubar.setEnabled(LogisimMenuBar.VIEW_SIMULATION, !viewSimulation);
       menubar.setEnabled(LogisimMenuBar.EDIT_LAYOUT, viewAppearance);
       menubar.setEnabled(LogisimMenuBar.EDIT_APPEARANCE, viewLayout);
+      menubar.setEnabled(LogisimMenuBar.TOGGLE_APPEARANCE, true);
       menubar.setEnabled(LogisimMenuBar.REVERT_APPEARANCE, canRevert);
       menubar.setEnabled(LogisimMenuBar.ANALYZE_CIRCUIT, true);
       menubar.setEnabled(LogisimMenuBar.CIRCUIT_STATS, true);
@@ -243,8 +238,7 @@ class MenuListener {
       LogisimFile file = proj.getLogisimFile();
       Circuit cur = proj.getCurrentCircuit();
       boolean isProjectCircuit = file.contains(cur);
-      boolean viewAppearance = frame.getEditorView().equals(
-          Frame.EDIT_APPEARANCE);
+      boolean viewAppearance = frame.getEditorView().equals(Frame.EDIT_APPEARANCE);
       boolean canRevert = isProjectCircuit && viewAppearance
           && !cur.getAppearance().isDefaultAppearance();
       boolean oldValue = menubar
@@ -308,8 +302,7 @@ class MenuListener {
       menubar.addActionListener(LogisimMenuBar.REMOVE_CIRCUIT, this);
       menubar.addActionListener(LogisimMenuBar.EDIT_LAYOUT, this);
       menubar.addActionListener(LogisimMenuBar.EDIT_APPEARANCE, this);
-      menubar.addActionListener(LogisimMenuBar.VIEW_TOOLBOX, this);
-      menubar.addActionListener(LogisimMenuBar.VIEW_SIMULATION, this);
+      menubar.addActionListener(LogisimMenuBar.TOGGLE_APPEARANCE, this);
       menubar.addActionListener(LogisimMenuBar.REVERT_APPEARANCE, this);
       menubar.addActionListener(LogisimMenuBar.ANALYZE_CIRCUIT, this);
       menubar.addActionListener(LogisimMenuBar.CIRCUIT_STATS, this);

@@ -102,10 +102,8 @@ public class LogisimMenuBar extends JMenuBar {
       "EditLayout");
   public static final LogisimMenuItem EDIT_APPEARANCE = new LogisimMenuItem(
       "EditAppearance");
-  public static final LogisimMenuItem VIEW_TOOLBOX = new LogisimMenuItem(
-      "ViewToolbox");
-  public static final LogisimMenuItem VIEW_SIMULATION = new LogisimMenuItem(
-      "ViewSimulation");
+  public static final LogisimMenuItem TOGGLE_APPEARANCE = new LogisimMenuItem(
+      "ToggleEditLayoutAppearance");
   public static final LogisimMenuItem REVERT_APPEARANCE = new LogisimMenuItem(
       "RevertAppearance");
   public static final LogisimMenuItem ANALYZE_CIRCUIT = new LogisimMenuItem(
