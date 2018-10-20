@@ -161,6 +161,12 @@ public class HexFrame extends LFrame {
     }
   }
 
+  public void closeAndDispose() {
+      WindowEvent e = new WindowEvent(this, WindowEvent.WINDOW_CLOSING);
+      processWindowEvent(e);
+      dispose();
+  }
+
   private class WindowMenuManager extends WindowMenuItemManager
     implements LocaleListener {
     WindowMenuManager() {
@@ -233,6 +239,8 @@ public class HexFrame extends LFrame {
     editor.getCaret().addChangeListener(editListener);
     editor.getCaret().setDot(0, false);
     editListener.register(menubar);
+
+    setLocationRelativeTo(proj.getFrame());
   }
 
   @Override

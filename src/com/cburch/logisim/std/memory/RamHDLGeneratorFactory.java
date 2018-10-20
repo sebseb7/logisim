@@ -88,7 +88,7 @@ public class RamHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   private ArrayList<String> MemInitData(AttributeSet attrs, int offset) {
     int skip = Mem.lineSize(attrs);
     int width = attrs.getValue(Mem.DATA_ATTR).getWidth();
-    MemContents c = attrs.getValue(Ram.CONTENTS_ATTR);
+    MemContents c = null; // attrs.getValue(Ram.CONTENTS_ATTR); FIXME, if possible ?!?!
     ArrayList<String> out = new ArrayList<String>();
     out.add("-- Memory initialization data line " + offset);
     int depth = (int)((c.getLastOffset() - c.getFirstOffset() + 1) / skip);

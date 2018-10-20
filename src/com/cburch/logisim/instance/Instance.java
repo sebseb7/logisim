@@ -42,6 +42,53 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.util.GraphicsUtil;
 
+// Tentative Notes: The relationship between Instances, InstanceState,
+// InstanceFactory, etc. can be very confusing. Ignoring logisim for a moment,
+// consider a blueprint that shows various wires, multiplexors, decoders,
+// registers, flip-flops, etc. A naive way of implementing a circuit simulator
+// that can model and edit such a blueprint would be:
+//   - [level 1] A java class for each type of component, e.g. a java Mux class,
+//     a java Decoder class, a java Register class. Maybe these could all extend
+//     some generic java Component class, so they could inherit some behaviors.
+//     Java static methods and variables of the Mux class would represent
+//     operations and data that are common to all instantiated multiplexors,
+//     i.e. to the entire concept of a multiplexor.
+//   - [level 2] Each multiplexor appearing in the blueprint would be
+//     represented by a java instance of java class Mux. Similarly each decoder
+//     appearing in the blueprint would be an instance of the java Decoder
+//     class. Java dynamic/member methods and variables of the Mux class would
+//     represent operations and data on individual multiplexors in the circuit.
+//
+// This is NOT AT ALL how Logisim does things. Instead, Logisim implemnts a meta
+// type system, one level up, essentially implementing an entire class-object
+// system within itself. In this scheme, there are three levels:
+//   - [level 2] a java object of type Instance represents an instantiated
+//     component (e.g. like a mux) that has been placed at a specifc spot in a
+//     circuit. Each Instance object is created by an InstanceFactory. For
+//     example, some Instance
+//   - [level 1] a java object of type InstanceFactory represents one type
+//     of component. For example, there will be one object (of type
+//     InstanceFactory) representing the multiplexor kind, another java object
+//     (of type InstanceFactory) will represent the decoder kind, and so on.
+//   - [level 0] various java classes that extend InstanceFactory. Each java
+//     instances of one of these class represents one kind of component.
+//
+// The reason for this is that it allows for meta-programming. There are lots of
+// "kinds" of components that are nearly identical, or entire categories of
+// "kinds" of components that vary in some programmatic way. So within Java, we
+// can dynamically generate an entire pool of InstanceFactory objects, each
+// representing a "kind" of components. Simple example:
+//     [level 0] java class Multiplexor
+//     [level 1] java object m, of type Multiplexor
+//     [level 2] java object i, of type Instance, which was created by m
+// Another example:
+//     [level 0] java class Pin
+//     [level 1] objects inPin and outPin, each of type Pin
+//     [level 2] java object i1, i2, i3, o1, o2, o3, each of type Instance,
+//     created by either inPin or outPin
+//
+// NOTE: the above may not be entirely accurate, especially for Pin. And we also
+// have things like class Component, InstanceComponent, and so on. Confusing!
 public class Instance {
   public static Component getComponentFor(Instance instance) {
     return instance.comp;

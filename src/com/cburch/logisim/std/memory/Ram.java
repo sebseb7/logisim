@@ -35,17 +35,14 @@ import java.awt.Graphics;
 import java.awt.Window;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.NoSuchElementException;
-import java.util.StringTokenizer;
+import java.util.WeakHashMap;
 
 import javax.swing.JLabel;
 
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -138,100 +135,6 @@ public class Ram extends Mem {
   // static final int CLK = MEM_INPUTS + 2; // always
   // static final int BE = MEM_INPUTS + 3;  // as many as needed
 
-  static class ContentsAttribute extends Attribute<MemContents> {
-
-    public ContentsAttribute() {
-      super("contents", S.getter("romContentsAttr"));
-    }
-
-    @Override
-    public java.awt.Component getCellEditor(Window source, MemContents value) {
-      ContentsCell ret = new ContentsCell(source, value);
-      ret.mouseClicked(null);
-      return ret;
-    }
-
-    public MemContents parse(String value) {
-      int lineBreak = value.indexOf('\n');
-      String first = lineBreak < 0 ? value : value
-          .substring(0, lineBreak);
-      String rest = lineBreak < 0 ? "" : value.substring(lineBreak + 1);
-      StringTokenizer toks = new StringTokenizer(first);
-      try {
-        String header = toks.nextToken();
-        if (!header.equals("addr/data:")) {
-          return null;
-        }
-        int addr = Integer.parseInt(toks.nextToken());
-        int data = Integer.parseInt(toks.nextToken());
-        MemContents ret = MemContents.create(addr, data);
-        HexFile.open(ret, new StringReader(rest));
-        return ret;
-      } catch (IOException e) {
-        return null;
-      } catch (NumberFormatException e) {
-        return null;
-      } catch (NoSuchElementException e) {
-        return null;
-      }
-    }
-
-    @Override
-    public String toDisplayString(MemContents value) {
-      return S.get("romContentsValue");
-    }
-
-    @Override
-    public String toStandardString(MemContents state) {
-      int addr = state.getLogLength();
-      int data = state.getWidth();
-      StringWriter ret = new StringWriter();
-      ret.write("addr/data: " + addr + " " + data + "\n");
-      try {
-        HexFile.save(ret, state);
-      } catch (IOException e) {
-      }
-      return ret.toString();
-    }
-  }
-
-  @SuppressWarnings("serial")
-  private static class ContentsCell extends JLabel implements MouseListener {
-
-    Window source;
-    MemContents contents;
-
-    ContentsCell(Window source, MemContents contents) {
-      super(S.get("romContentsValue"));
-      this.source = source;
-      this.contents = contents;
-      addMouseListener(this);
-    }
-
-    public void mouseClicked(MouseEvent e) {
-      if (contents == null) {
-        return;
-      }
-      Project proj = source instanceof Frame ? ((Frame) source)
-          .getProject() : null;
-      HexFrame frame = RamAttributes.getHexFrame(contents, proj);
-      frame.setVisible(true);
-      frame.toFront();
-    }
-
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mousePressed(MouseEvent e) {
-    }
-
-    public void mouseReleased(MouseEvent e) {
-    }
-  }
-
   public static class Logger extends InstanceLogger {
 
     @Override
@@ -274,8 +177,8 @@ public class Ram extends Mem {
       if (option instanceof Integer) {
         MemState s = (MemState) state.getData();
         int addr = ((Integer) option).intValue();
-        return Value.createKnown(BitWidth.create(s.getDataBits()), s
-            .getContents().get(addr));
+        return Value.createKnown(BitWidth.create(s.getDataBits()),
+            s.getContents().get(addr));
       } else {
         return Value.NIL;
       }
@@ -287,8 +190,6 @@ public class Ram extends Mem {
     if (dataLines == 1) return 0;
     else return dataLines;
   }
-
-  public static Attribute<MemContents> CONTENTS_ATTR = new ContentsAttribute();
 
   static final int AByEnBiDir = MEM_INPUTS + 2;
 
@@ -628,11 +529,53 @@ public class Ram extends Mem {
       return "RAMCONTENTS_" + Name;
   }
 
+  private static WeakHashMap<MemContents, HexFrame> windowRegistry = new WeakHashMap<MemContents, HexFrame>();
+  static HexFrame getHexFrame(MemContents value, Project proj) {
+    synchronized (windowRegistry) {
+      HexFrame ret = windowRegistry.get(value);
+      if (ret == null) {
+        ret = new HexFrame(proj, value);
+        windowRegistry.put(value, ret);
+      }
+      return ret;
+    }
+  }
+
+  public static void closeHexFrame(RamState state) {
+    MemContents contents = state.getContents();
+    HexFrame ret;
+    synchronized (windowRegistry) {
+      ret = windowRegistry.remove(contents);
+    }
+    if (ret == null)
+      return;
+    ret.closeAndDispose();
+  }
+
   @Override
   HexFrame getHexFrame(Project proj, Instance instance, CircuitState circState) {
-    return RamAttributes.getHexFrame(
-        instance.getAttributeValue(CONTENTS_ATTR), proj);
+    return getHexFrame(getState(instance, circState).getContents(), proj);
   }
+
+  public boolean reset(CircuitState state, Instance instance) {
+    RamState ret = (RamState) instance.getData(state);
+    if (ret == null)
+      return true;
+    MemContents contents = ret.getContents();
+
+
+    AttributeOption type = instance.getAttributeValue(RamAttributes.ATTR_TYPE);
+    if (type == RamAttributes.VOLATILE)
+      contents.clear();
+    // if no window, we could discard, but its also okay to just keep it around
+    // synchronized (windowRegistry) {
+    //   HexFrame win = windowRegistry.get(contents);
+    //   if (win != null) {
+    //     ...
+    //   }
+    // }
+    return false;
+   }
 
   @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {
@@ -649,24 +592,17 @@ public class Ram extends Mem {
 
   @Override
   MemState getState(Instance instance, CircuitState state) {
-    RamState ret = (RamState) instance.getData(state);
-    if (ret == null) {
-      MemContents contents = instance
-          .getAttributeValue(Ram.CONTENTS_ATTR);
-      ret = new RamState(instance, contents, new MemListener(instance));
-      instance.setData(state, ret);
-    } else {
-      ret.setRam(instance);
-    }
-    return ret;
+    return getState(state.getInstanceState(instance));
   }
 
   @Override
   MemState getState(InstanceState state) {
-    RamState ret = (RamState) state.getData();
+    RamState ret = (RamState)state.getData();
     if (ret == null) {
-      MemContents contents = state.getInstance().getAttributeValue(
-          Ram.CONTENTS_ATTR);
+      AttributeOption type = state.getInstance().getAttributeValue(RamAttributes.ATTR_TYPE);
+      int addrBits = state.getAttributeValue(ADDR_ATTR).getWidth();
+      int dataBits = state.getAttributeValue(DATA_ATTR).getWidth();
+      MemContents contents = MemContents.create(addrBits, dataBits);
       Instance instance = state.getInstance();
       ret = new RamState(instance, contents, new MemListener(instance));
       state.setData(ret);

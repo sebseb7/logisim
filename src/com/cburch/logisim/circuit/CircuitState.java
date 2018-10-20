@@ -53,6 +53,8 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.std.wiring.Pin;
+import com.cburch.logisim.std.memory.Ram;
+import com.cburch.logisim.std.memory.RamState;
 
 public class CircuitState implements InstanceData {
 
@@ -128,30 +130,33 @@ public class CircuitState implements InstanceData {
       } else if (action == CircuitEvent.ACTION_INVALIDATE) {
         Component comp = (Component) event.getData();
         markComponentAsDirty(comp);
-        // TODO detemine if this should really be missing if (base !=
-        // null) base.checkComponentEnds(CircuitState.this, comp);
+        // TODO detemine if this should really be missing
+        // if (base != null)
+        //   base.checkComponentEnds(CircuitState.this, comp);
       } else if (action == CircuitEvent.TRANSACTION_DONE) {
-        ReplacementMap map = event.getResult().getReplacementMap(
-            circuit);
-        if (map != null) {
-          for (Component comp : map.getReplacedComponents()) {
-            Object compState = componentData.remove(comp);
-            if (compState != null) {
-              Class<?> compFactory = comp.getFactory().getClass();
-              boolean found = false;
-              for (Component repl : map.get(comp)) {
-                if (repl.getFactory().getClass() == compFactory) {
-                  found = true;
-                  setData(repl, compState);
-                  break;
-                }
-              }
-              if (!found && compState instanceof CircuitState) {
-                CircuitState sub = (CircuitState) compState;
-                sub.parentState = null;
-                substates.remove(sub);
-              }
+        ReplacementMap map = event.getResult().getReplacementMap(circuit);
+        if (map == null)
+          return;
+        for (Component comp : map.getReplacedComponents()) {
+          Object compState = componentData.remove(comp);
+          if (compState == null)
+            continue;
+          Class<?> compFactory = comp.getFactory().getClass();
+          boolean found = false;
+          for (Component repl : map.get(comp)) {
+            if (repl.getFactory().getClass() == compFactory) {
+              found = true;
+              setData(repl, compState);
+              break;
             }
+          }
+          if (!found && compState instanceof RamState) {
+            Ram.closeHexFrame((RamState)compState);
+          }
+          if (!found && compState instanceof CircuitState) {
+            CircuitState sub = (CircuitState) compState;
+            sub.parentState = null;
+            substates.remove(sub);
           }
         }
       }
@@ -430,11 +435,16 @@ public class CircuitState implements InstanceData {
 
   void reset() {
     wireData = null;
-    for (Iterator<Component> it = componentData.keySet().iterator(); it
-        .hasNext();) {
+    for (Iterator<Component> it = componentData.keySet().iterator(); it.hasNext();) {
       Component comp = it.next();
-      if (!(comp.getFactory() instanceof SubcircuitFactory))
+      if (comp.getFactory() instanceof Ram) {
+        Ram ram = (Ram)comp.getFactory();
+        boolean remove = ram.reset(this, Instance.getInstanceFor(comp));
+        if (remove)
+          it.remove();
+      } else if (!(comp.getFactory() instanceof SubcircuitFactory)) {
         it.remove();
+      }
     }
     values.clear();
     dirtyComponents.clear();

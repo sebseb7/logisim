@@ -179,8 +179,7 @@ public class Propagator {
   public Propagator(CircuitState root) {
     this.root = root;
     Listener l = new Listener(this);
-    root.getProject().getOptions().getAttributeSet()
-        .addAttributeListener(l);
+    root.getProject().getOptions().getAttributeSet().addAttributeListener(l);
     updateRandomness();
   }
 
@@ -248,9 +247,6 @@ public class Propagator {
       oscPoints.draw(context);
   }
 
-  //
-  // public methods
-  //
   CircuitState getRootState() {
     return root;
   }

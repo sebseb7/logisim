@@ -591,6 +591,7 @@ public class Project {
     }
     file = value;
     stateMap.clear();
+    // todo: close and dispose of orphaned hex window instances.
     depends = new Dependencies(file);
     undoLog.clear();
     redoLog.clear();

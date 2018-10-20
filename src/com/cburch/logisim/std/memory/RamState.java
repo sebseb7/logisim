@@ -58,10 +58,7 @@ public class RamState extends MemState
   }
 
   @Override
-  public void attributeListChanged(AttributeEvent e) {
-    // TODO Auto-generated method stub
-
-  }
+  public void attributeListChanged(AttributeEvent e) { }
 
   @Override
   public void attributeValueChanged(AttributeEvent e) {
