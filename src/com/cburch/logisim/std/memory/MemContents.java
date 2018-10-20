@@ -57,9 +57,6 @@ class MemContents implements Cloneable, HexModel {
     setDimensions(addrBits, width);
   }
 
-  //
-  // HexModel methods
-  //
   public void addHexModelListener(HexModelListener l) {
     if (listeners == null)
       listeners = new EventSourceWeakSupport<HexModelListener>();
@@ -92,9 +89,6 @@ class MemContents implements Cloneable, HexModel {
     }
   }
 
-  //
-  // other methods
-  //
   @Override
   public MemContents clone() {
     try {
@@ -108,6 +102,7 @@ class MemContents implements Cloneable, HexModel {
       }
       return ret;
     } catch (CloneNotSupportedException ex) {
+      ex.printStackTrace();
       return this;
     }
   }

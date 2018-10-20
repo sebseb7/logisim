@@ -76,6 +76,7 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.std.wiring.Pin;
+import com.cburch.logisim.std.memory.Rom;
 import com.cburch.logisim.util.CollectionUtil;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
@@ -749,6 +750,8 @@ public class Circuit {
       ComponentFactory factory = c.getFactory();
       if (factory instanceof Clock) {
         clocks.remove(c);
+      } else if (factory instanceof Rom) {
+        Rom.closeHexFrame(c);
       } else if (factory instanceof SubcircuitFactory) {
         SubcircuitFactory subcirc = (SubcircuitFactory) factory;
         subcirc.getSubcircuit().circuitsUsingThis.remove(c);

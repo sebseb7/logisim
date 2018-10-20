@@ -55,6 +55,16 @@ class RomAttributes extends AbstractAttributeSet {
     }
   }
 
+  static void closeHexFrame(MemContents value) {
+    HexFrame ret;
+    synchronized (windowRegistry) {
+       ret = windowRegistry.remove(value);
+    }
+    if (ret != null) {
+      ret.closeAndDispose();
+    }
+  }
+
   static void register(MemContents value, Project proj) {
     if (proj == null || listenerRegistry.containsKey(value)) {
       return;

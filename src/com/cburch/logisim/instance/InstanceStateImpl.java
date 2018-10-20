@@ -123,6 +123,7 @@ public class InstanceStateImpl implements InstanceState {
   public void repurpose(CircuitState circuitState, Component component) {
     this.circuitState = circuitState;
     this.component = component;
+    // todo: seems sketchy, need to undo the setInstanceStateImpl() from before?
   }
 
   public void setData(InstanceData value) {

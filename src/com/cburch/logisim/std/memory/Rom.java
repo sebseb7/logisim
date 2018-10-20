@@ -60,6 +60,8 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.instance.InstanceComponent;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.GraphicsUtil;
 
@@ -174,10 +176,10 @@ public class Rom extends Mem {
   @Override
   protected void configureNewInstance(Instance instance) {
     super.configureNewInstance(instance);
-    MemContents contents = getMemContents(instance);
+    MemContents newContents = getMemContents(instance);
     MemListener listener = new MemListener(instance);
     memListeners.put(instance, listener);
-    contents.addHexModelListener(listener);
+    newContents.addHexModelListener(listener);
     instance.addAttributeListener();
   }
 
@@ -299,9 +301,15 @@ public class Rom extends Mem {
     return RomAttributes.getHexFrame(getMemContents(instance), proj);
   }
 
-  // TODO - maybe delete this method?
-  MemContents getMemContents(Instance instance) {
+  public static MemContents getMemContents(Instance instance) {
     return instance.getAttributeValue(CONTENTS_ATTR);
+  }
+
+  public static void closeHexFrame(Component c) {
+    if (!(c instanceof InstanceComponent))
+      return;
+    Instance instance = ((InstanceComponent)c).getInstance();
+    RomAttributes.closeHexFrame(getMemContents(instance));
   }
 
   @Override
