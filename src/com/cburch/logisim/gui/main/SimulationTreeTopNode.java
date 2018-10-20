@@ -30,59 +30,49 @@
 
 package com.cburch.logisim.gui.main;
 
-import java.util.Enumeration;
-import java.util.Collections;
-import java.util.ArrayList;
-
+import java.util.List;
+import java.util.HashMap;
 import javax.swing.tree.TreeNode;
 
-import com.cburch.logisim.comp.ComponentFactory;
+import com.cburch.logisim.circuit.CircuitState;
 
-public class SimulationTreeNode implements TreeNode {
+class SimulationTreeTopNode extends SimulationTreeNode {
 
-  protected SimulationTreeModel model;
-  protected SimulationTreeNode parent;
-  protected ArrayList<TreeNode> children;
-
-  public SimulationTreeNode(SimulationTreeModel model, SimulationTreeNode parent) {
-    this.model = model;
-    this.parent = parent;
-    this.children = new ArrayList<TreeNode>();
+  public SimulationTreeTopNode(SimulationTreeModel model,
+      List<CircuitState> allRootStates) {
+    super(model, null);
+    for (CircuitState state : allRootStates)
+      children.add(new SimulationTreeCircuitNode(model, null, state, null));
   }
 
-  public Enumeration<TreeNode> children() {
-    return Collections.enumeration(children);
+  public void updateSimulationList(List<CircuitState> allRootStates) {
+    boolean changed = false;
+    HashMap<CircuitState, TreeNode> old = new HashMap<>();
+    HashMap<CircuitState, Integer> oldPos = new HashMap<>();
+    int i = 0;
+    for (TreeNode node : children) {
+      CircuitState state = ((SimulationTreeCircuitNode)node).getCircuitState();
+      old.put(state, node);
+      oldPos.put(state, i++);
+    }
+    children.clear();
+    i = 0;
+    for (CircuitState state : allRootStates) {
+      TreeNode node = old.get(state);
+      if (node == null) {
+        changed = true;
+        node = new SimulationTreeCircuitNode(model, null, state, null);
+      } else if (oldPos.get(state) != i++) {
+        changed = true;
+      }
+      children.add(node);
+    }
+    if (changed)
+      model.fireStructureChanged(this);
   }
 
-  public boolean getAllowsChildren() {
-    return true;
-  }
-
-  public TreeNode getChildAt(int index) {
-    return children.get(index);
-  }
-
-  public int getChildCount() {
-    return children.size();
-  }
-
-  public ComponentFactory getComponentFactory() {
-    return null;
-  }
-
-  public int getIndex(TreeNode node) {
-    return children.indexOf(node);
-  }
-
-  public TreeNode getParent() {
-    return parent;
-  }
-
-  public boolean isCurrentView(SimulationTreeModel model) {
-    return false;
-  }
-
-  public boolean isLeaf() {
-    return false;
+  @Override
+  public String toString() {
+    return "Active Simulations";
   }
 }

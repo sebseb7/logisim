@@ -30,7 +30,9 @@
 
 package com.cburch.logisim.gui.main;
 
+import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
@@ -43,12 +45,12 @@ import com.cburch.logisim.comp.Component;
 
 public class SimulationTreeModel implements TreeModel {
   private ArrayList<TreeModelListener> listeners;
-  private SimulationTreeCircuitNode root;
+  private SimulationTreeTopNode root;
   private CircuitState currentView;
 
-  public SimulationTreeModel(CircuitState rootState) {
+  public SimulationTreeModel(List<CircuitState> allRootStates) {
     this.listeners = new ArrayList<TreeModelListener>();
-    this.root = new SimulationTreeCircuitNode(this, null, rootState, null);
+    this.root = new SimulationTreeTopNode(this, allRootStates);
     this.currentView = null;
   }
 
@@ -115,16 +117,16 @@ public class SimulationTreeModel implements TreeModel {
     return root;
   }
 
-  public CircuitState getRootState() {
-    return root.getCircuitState();
-  }
-
   public boolean isLeaf(Object node) {
     if (node instanceof TreeNode) {
       return ((TreeNode) node).getChildCount() == 0;
     } else {
       return true;
     }
+  }
+
+  public void updateSimulationList(List<CircuitState> allRootStates) {
+    root.updateSimulationList(allRootStates);
   }
 
   protected SimulationTreeNode mapComponentToNode(Component comp) {
@@ -151,16 +153,16 @@ public class SimulationTreeModel implements TreeModel {
       current = parent;
       parent = current.getParentState();
     }
+    path.add(current); // root state
 
     Object[] pathNodes = new Object[path.size() + 1];
     pathNodes[0] = root;
     int pathPos = 1;
-    SimulationTreeCircuitNode node = root;
+    SimulationTreeNode node = root;
     for (int i = path.size() - 1; i >= 0; i--) {
       current = path.get(i);
-      SimulationTreeCircuitNode oldNode = node;
-      for (int j = 0, n = node.getChildCount(); j < n; j++) {
-        Object child = node.getChildAt(j);
+      SimulationTreeNode oldNode = node;
+      for (TreeNode child : Collections.list(node.children())) {
         if (child instanceof SimulationTreeCircuitNode) {
           SimulationTreeCircuitNode circNode = (SimulationTreeCircuitNode) child;
           if (circNode.getCircuitState() == current) {

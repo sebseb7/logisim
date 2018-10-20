@@ -57,12 +57,11 @@ class SimulationExplorer extends JPanel
     super(new BorderLayout());
     this.project = proj;
 
-    SimulationToolbarModel toolbarModel = new SimulationToolbarModel(proj,
-        menu);
+    SimulationToolbarModel toolbarModel = new SimulationToolbarModel(proj, menu);
     Toolbar toolbar = new Toolbar(toolbarModel);
     add(toolbar, BorderLayout.NORTH);
 
-    model = new SimulationTreeModel(proj.getSimulator().getCircuitState());
+    model = new SimulationTreeModel(proj.getRootCircuitStates());
     model.setCurrentView(project.getCircuitState());
     tree = new JTree(model);
     tree.setCellRenderer(new SimulationTreeRenderer());
@@ -92,12 +91,6 @@ class SimulationExplorer extends JPanel
     }
   }
 
-  //
-  // MouseListener methods
-  //
-  //
-  // MouseListener methods
-  //
   public void mouseEntered(MouseEvent e) {
   }
 
@@ -113,22 +106,10 @@ class SimulationExplorer extends JPanel
     checkForPopup(e);
   }
 
-  //
-  // ProjectListener methods
-  //
   public void projectChanged(ProjectEvent event) {
     int action = event.getAction();
     if (action == ProjectEvent.ACTION_SET_STATE) {
-      Simulator sim = project.getSimulator();
-      CircuitState root = sim.getCircuitState();
-      if (root == null) {
-        tree.setModel(null);
-        return;
-      }
-      if (model.getRootState() != root) {
-        model = new SimulationTreeModel(root);
-        tree.setModel(model);
-      }
+      model.updateSimulationList(project.getRootCircuitStates());
       model.setCurrentView(project.getCircuitState());
       TreePath path = model.mapToPath(project.getCircuitState());
       if (path != null) {

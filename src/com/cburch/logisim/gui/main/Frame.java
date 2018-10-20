@@ -61,10 +61,11 @@ import javax.swing.event.ChangeListener;
 
 import com.cburch.draw.toolbar.Toolbar;
 import com.cburch.draw.toolbar.ToolbarModel;
-import com.cburch.logisim.Main; //for version name
+import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
+import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeSet;
@@ -137,6 +138,12 @@ public class Frame extends LFrame implements LocaleListener {
         computeTitle();
         proj.setTool(proj.getOptions().getToolbarData().getFirstTool());
         placeToolbar();
+      } else if (action == ProjectEvent.ACTION_SET_STATE) {
+        if (event.getData() instanceof CircuitState) {
+          CircuitState state = (CircuitState)event.getData();
+          if (state.getParentState() != null)
+            topTab.setSelectedIndex(1); // sim explorer view
+        }
       } else if (action == ProjectEvent.ACTION_SET_CURRENT) {
         if (event.getData() instanceof Circuit) {
           setEditorView(EDIT_LAYOUT);
@@ -330,6 +337,7 @@ public class Frame extends LFrame implements LocaleListener {
   private JPanel mainPanelSuper;
   private CardPanel mainPanel;
   // left-side elements
+  private JTabbedPane topTab, bottomTab;
   private Toolbox toolbox;
   private SimulationExplorer simExplorer;
   private AttrTable attrTable;
@@ -389,7 +397,7 @@ public class Frame extends LFrame implements LocaleListener {
     toolbox = new Toolbox(proj, this, menuListener);
     simExplorer = new SimulationExplorer(proj, menuListener);
 
-    JTabbedPane bottomTab = new JTabbedPane();
+    bottomTab = new JTabbedPane();
     bottomTab.setFont(new Font("Dialog", Font.BOLD, 9));
     bottomTab.addTab("Properties", attrTable = new AttrTable(this));
     bottomTab.addTab("State", regPanel = new RegTabContent(this));
@@ -419,10 +427,10 @@ public class Frame extends LFrame implements LocaleListener {
     // simPanel.add(new JButton("stuff"), BorderLayout.NORTH); 
     simPanel.add(simExplorer, BorderLayout.CENTER);
 
-    JTabbedPane topTab = new JTabbedPane();
+    topTab = new JTabbedPane();
     topTab.setFont(new Font("Dialog", Font.BOLD, 9));
-    topTab.add("Design", explPanel);
-    topTab.add("Simulate", simPanel);
+    topTab.add("Design", explPanel); // index=0 
+    topTab.add("Simulate", simPanel); // index=1 (see ACTION_SET_STATE below)
 
     JPanel attrFooter = new JPanel(new BorderLayout());
     attrFooter.add(zoom);
