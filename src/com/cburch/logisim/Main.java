@@ -44,22 +44,21 @@ import com.cburch.logisim.gui.start.Startup;
 public class Main {
   public static void main(String[] args) throws Exception {
     Startup startup = Startup.parseArgs(args);
-    if (startup == null) {
+    if (startup == null)
       System.exit(0);
-    } else {
-      // If the auto-updater actually performed an update, then quit the
-      // program, otherwise continue with the execution
-      if (!startup.autoUpdate()) {
-        try {
-          startup.run();
-        } catch (Throwable e) {
-          Writer result = new StringWriter();
-          PrintWriter printWriter = new PrintWriter(result);
-          e.printStackTrace(printWriter);
-          JOptionPane.showMessageDialog(null, result.toString());
-          System.exit(-1);
-        }
+    try {
+      startup.run();
+    } catch (Throwable e) {
+      if (headless) {
+        System.err.println(e);
+        e.printStackTrace(System.err);
+      } else {
+        Writer result = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(result);
+        e.printStackTrace(new PrintWriter(result));
+        JOptionPane.showMessageDialog(null, result.toString());
       }
+      System.exit(-1);
     }
   }
 
@@ -69,20 +68,7 @@ public class Main {
 
   public static final LogisimVersion VERSION = LogisimVersion.get(3, 1, 1, "HC");
   public static final String VERSION_NAME = VERSION.toString();
-  public static final int COPYRIGHT_YEAR = 2017;
+  public static final int COPYRIGHT_YEAR = 2018;
 
   public static boolean ANALYZE = true;
-  /**
-   * This flag enables auto-updates. It is true by default, so that users
-   * normally check for updates at startup. On the other hand, this might be
-   * annoying for developers, therefore we let them disable it from the
-   * command line with the '-noupdates' option.
-   */
-  public static boolean UPDATE = false;
-
-  /**
-   * URL for the automatic updater
-   */
-  public static final String UPDATE_URL = "http://reds-data.heig-vd.ch/logisim-evolution/logisim_evolution_version.xml";
-
 }

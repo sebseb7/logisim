@@ -357,21 +357,14 @@ class XmlReader {
       // strange in their
       // circuits...
       if (sourceVersion.compareTo(LogisimVersion.get(2, 7, 2)) < 0) {
-        JOptionPane.showMessageDialog(
-            null,
+        String msg = 
             "You are opening a file created with original Logisim code.\n"
-            + "You might encounter some problems in the execution, since some components evolved since then.\n"
-            + "Moreover, labels will be converted to match VHDL limitations for variable names.",
-            "Old file format -- compatibility mode",
-            JOptionPane.WARNING_MESSAGE);
-      }
-
-      if (versionString.contains("t") && !Main.VERSION.hasTracker()) {
-        JOptionPane.showMessageDialog(
-            null,
-            "The file you have opened contains tracked components.\nYou might encounter some problems in the execution.",
-            "No tracking system available",
-            JOptionPane.WARNING_MESSAGE);
+            + "You might encounter some problems in the execution, since many components\n"
+            + "have evolved since then. Some components and labels will be adjusted.";
+        if (Main.headless)
+          System.err.println("WARNING:\n" + msg);
+        else
+          JOptionPane.showMessageDialog(null, msg, "Warning: Legacy Circuit", JOptionPane.WARNING_MESSAGE);
       }
 
       // first, load the sublibraries

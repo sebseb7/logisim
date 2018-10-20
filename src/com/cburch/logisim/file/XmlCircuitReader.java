@@ -55,12 +55,14 @@ import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 
+import javax.swing.JOptionPane;
+
 public class XmlCircuitReader extends CircuitTransaction {
 
+  static boolean trackercomp_warned = false;
+
   /**
-   * Get a circuit's component from a read XML file. If the component has a
-   * non-null "trackercomp" field, it means that it is tracked, therefore it
-   * is skipped in the non-tracked version to avoid errors.
+   * Get a circuit's component from a read XML file. 
    *
    * @param elt
    *            XML element to parse
@@ -71,8 +73,24 @@ public class XmlCircuitReader extends CircuitTransaction {
    */
   static Component getComponent(Element elt, XmlReader.ReadContext reader)
       throws XmlReaderException {
-    if (elt.getAttribute("trackercomp") != "" && !Main.VERSION.hasTracker()) {
-      return (null);
+
+    // Someone (REDS-HEIG?) apparently has files containing this secret
+    // value and only shows these components in special "tracker" versions
+    // of logisim. 
+    if (!trackercomp_warned && elt.getAttribute("trackercomp") != "") {
+      trackercomp_warned = true;
+      String msg =
+          "WARNING: This file contains mysterious \"tracked\" components and may not\n"
+          + "work properly in this version of Logisim-Evolution. The file will be opened\n"
+          + "anyway, in the hope it might work. You may want to instead edit the \".circ\"\n"
+          + "file by hand, in a text editor, to remove the offending components with the\n"
+          + "\"trackercomp\" XML attrbute. Contact me at <kwalsh@holycross.edu> as\n"
+          + "well, since I'm curious what this is all about.";
+      if (Main.headless) {
+        System.err.println(msg);
+      } else {
+        JOptionPane.showMessageDialog(null, msg);
+      }
     }
 
     // Determine the factory that creates this element
