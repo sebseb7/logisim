@@ -427,7 +427,7 @@ public class Frame extends LFrame implements LocaleListener {
     JPanel attrFooter = new JPanel(new BorderLayout());
     attrFooter.add(zoom);
 
-    JPanel bottomTabAndZoom = new JPanel(new BorderLayout());
+    JPanel bottomTabAndZoom = new JPanel(new BorderLayout(0, 4));
     bottomTabAndZoom.add(bottomTab, BorderLayout.CENTER);
     bottomTabAndZoom.add(attrFooter, BorderLayout.SOUTH);
 
