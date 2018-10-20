@@ -348,7 +348,7 @@ public class PLATable {
     private BoundedRangeModel vScrollModel;
 
     public EditorDialog(Frame parent) {
-      super(parent, "", true);
+      super(parent, S.get("plaEditorTitle"), true);
       // setLocation(300, 200);
       setResizable(true);
       Container cPane = super.getContentPane();
