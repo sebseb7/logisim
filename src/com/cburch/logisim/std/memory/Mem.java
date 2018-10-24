@@ -222,7 +222,7 @@ abstract class Mem extends InstanceFactory {
   public void loadImage(InstanceState instanceState, File imageFile)
       throws IOException {
     MemState s = this.getState(instanceState);
-    HexFile.open(s.getContents(), imageFile);
+    HexFile.open((MemContents)s.getContents(), imageFile);
     this.setCurrentImage(instanceState.getInstance(), imageFile);
   }
 

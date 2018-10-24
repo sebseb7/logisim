@@ -120,6 +120,8 @@ public class JFileChoosers {
   public static JFileChooser createSelected(File selected) {
     if (selected == null) {
       return create();
+    } else if (selected.isDirectory()) {
+      return createAt(selected);
     } else {
       JFileChooser ret = createAt(selected.getParentFile());
       ret.setSelectedFile(selected);

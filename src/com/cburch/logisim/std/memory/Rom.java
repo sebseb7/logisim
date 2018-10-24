@@ -95,9 +95,7 @@ public class Rom extends Mem {
           return null;
         int addr = Integer.parseInt(toks.nextToken());
         int data = Integer.parseInt(toks.nextToken());
-        MemContents ret = MemContents.create(addr, data);
-        HexFile.open(ret, new StringReader(rest));
-        return ret;
+        return HexFile.parse(rest, "v2.0 raw", addr, data).model;
       } catch (IOException e) {
         return null;
       } catch (NumberFormatException e) {
@@ -116,13 +114,8 @@ public class Rom extends Mem {
     public String toStandardString(MemContents state) {
       int addr = state.getLogLength();
       int data = state.getWidth();
-      StringWriter ret = new StringWriter();
-      ret.write("addr/data: " + addr + " " + data + "\n");
-      try {
-        HexFile.save(ret, state);
-      } catch (IOException e) {
-      }
-      return ret.toString();
+      String contents = HexFile.saveToString(state, null, -1);
+      return "addr/data: " + addr + " " + data + "\n" + contents;
     }
   }
 

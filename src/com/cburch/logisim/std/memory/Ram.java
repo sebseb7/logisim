@@ -49,7 +49,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.data.Direction;
-import com.cburch.logisim.gui.hex.HexFile;
 import com.cburch.logisim.gui.hex.HexFrame;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.instance.Instance;

@@ -44,6 +44,7 @@ import javax.swing.JOptionPane;
 import com.cburch.hex.Caret;
 import com.cburch.hex.HexEditor;
 import com.cburch.hex.HexModel;
+import com.cburch.logisim.std.memory.MemContents;
 
 class Clip implements ClipboardOwner {
   private static class Data implements Transferable {
@@ -137,10 +138,16 @@ class Clip implements ClipboardOwner {
   public void paste() {
     Clipboard clip = editor.getToolkit().getSystemClipboard();
     Transferable xfer = clip.getContents(this);
-    int[] data;
+    MemContents model = (MemContents)editor.getModel();
+    MemContents pasted = null;
+    int numWords = 0;
     if (xfer.isDataFlavorSupported(binaryFlavor)) {
       try {
-        data = (int[]) xfer.getTransferData(binaryFlavor);
+        int[] data = (int[]) xfer.getTransferData(binaryFlavor);
+        numWords = data.length;
+        int addrBits = 32 - Integer.numberOfLeadingZeros(numWords);
+        pasted = MemContents.create(addrBits, model.getValueWidth());
+        pasted.set(0, data);
       } catch (UnsupportedFlavorException e) {
         return;
       } catch (IOException e) {
@@ -157,7 +164,9 @@ class Clip implements ClipboardOwner {
       }
 
       try {
-        data = HexFile.parse(new StringReader(buf));
+        HexFile.ParseResult r = HexFile.parse(buf, "v3.0 hex plain words", model.getLogLength(), model.getValueWidth());
+        pasted = r.model;
+        numWords = r.numWords;
       } catch (IOException e) {
         JOptionPane.showMessageDialog(editor.getRootPane(),
             e.getMessage(),
@@ -178,14 +187,14 @@ class Clip implements ClipboardOwner {
     long p0 = caret.getMark();
     long p1 = caret.getDot();
     if (p0 == p1) {
-      HexModel model = editor.getModel();
-      if (p0 + data.length - 1 <= model.getLastOffset()) {
-        model.set(p0, data);
+      if (p0 + numWords - 1 <= model.getLastOffset()) {
+        ((MemContents)model).copyFrom(p0, pasted, 0, numWords);
       } else {
-        JOptionPane.showMessageDialog(editor.getRootPane(),
-            S.get("hexPasteEndError"),
-            S.get("hexPasteErrorTitle"),
-            JOptionPane.ERROR_MESSAGE);
+        ((MemContents)model).copyFrom(p0, pasted, 0, (int)(model.getLastOffset() - p0 + 1));
+        // JOptionPane.showMessageDialog(editor.getRootPane(),
+        //     S.get("hexPasteEndError"),
+        //     S.get("hexPasteErrorTitle"),
+        //     JOptionPane.ERROR_MESSAGE);
       }
     } else {
       if (p0 < 0 || p1 < 0)
@@ -197,9 +206,8 @@ class Clip implements ClipboardOwner {
       }
       p1++;
 
-      HexModel model = editor.getModel();
-      if (p1 - p0 == data.length) {
-        model.set(p0, data);
+      if (p1 - p0 == numWords) {
+        ((MemContents)model).copyFrom(p0, pasted, 0, numWords);
       } else {
         JOptionPane.showMessageDialog(editor.getRootPane(),
             S.get("hexPasteSizeError"),
