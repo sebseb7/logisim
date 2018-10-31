@@ -95,7 +95,7 @@ public class Rom extends Mem {
           return null;
         int addr = Integer.parseInt(toks.nextToken());
         int data = Integer.parseInt(toks.nextToken());
-        return HexFile.parse(rest, "v2.0 raw", addr, data).model;
+        return HexFile.parseFromCircFile(rest, addr, data);
       } catch (IOException e) {
         return null;
       } catch (NumberFormatException e) {
@@ -114,7 +114,7 @@ public class Rom extends Mem {
     public String toStandardString(MemContents state) {
       int addr = state.getLogLength();
       int data = state.getWidth();
-      String contents = HexFile.saveToString(state, null, -1);
+      String contents = HexFile.saveToString(state);
       return "addr/data: " + addr + " " + data + "\n" + contents;
     }
   }
@@ -136,7 +136,7 @@ public class Rom extends Mem {
         return;
       Project proj = source instanceof Frame ? ((Frame) source)
           .getProject() : null;
-      HexFrame frame = RomAttributes.getHexFrame(contents, proj);
+      HexFrame frame = RomAttributes.getHexFrame(contents, proj, null);
       frame.setVisible(true);
       frame.toFront();
     }
@@ -291,7 +291,7 @@ public class Rom extends Mem {
 
   @Override
   HexFrame getHexFrame(Project proj, Instance instance, CircuitState state) {
-    return RomAttributes.getHexFrame(getMemContents(instance), proj);
+    return RomAttributes.getHexFrame(getMemContents(instance), proj, instance);
   }
 
   public static MemContents getMemContents(Instance instance) {

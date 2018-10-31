@@ -61,6 +61,8 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.io.Keyboard;
 import com.cburch.logisim.std.io.Tty;
 import com.cburch.logisim.std.memory.Ram;
+import com.cburch.logisim.std.memory.MemContents;
+import com.cburch.logisim.gui.hex.HexFile;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.util.UniquelyNamedThread;
@@ -261,7 +263,8 @@ public class TtyInterface {
       if (comp.getFactory() instanceof Ram) {
         Ram ramFactory = (Ram) comp.getFactory();
         InstanceState ramState = circState.getInstanceState(comp);
-        ramFactory.loadImage(ramState, loadFile);
+        MemContents m = ramFactory.getContents(ramState);
+        HexFile.open(m, loadFile);
         found = true;
       }
     }

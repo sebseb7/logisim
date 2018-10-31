@@ -61,7 +61,7 @@ import com.cburch.logisim.tools.key.JoinedConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringGetter;
 
-abstract class Mem extends InstanceFactory {
+public abstract class Mem extends InstanceFactory {
   // Note: The code is meant to be able to handle up to 32-bit addresses, but
   // it
   // hasn't been debugged thoroughly. There are two definite changes I would
@@ -188,7 +188,7 @@ abstract class Mem extends InstanceFactory {
 
   public abstract int getControlHeight(AttributeSet attrs);
 
-  File getCurrentImage(Instance instance) {
+  public File getCurrentImage(Instance instance) {
     return currentInstanceFiles.get(instance);
   }
 
@@ -219,17 +219,10 @@ abstract class Mem extends InstanceFactory {
 
   abstract MemState getState(InstanceState state);
 
-  public void loadImage(InstanceState instanceState, File imageFile)
-      throws IOException {
-    MemState s = this.getState(instanceState);
-    HexFile.open((MemContents)s.getContents(), imageFile);
-    this.setCurrentImage(instanceState.getInstance(), imageFile);
-  }
-
   @Override
   public abstract void propagate(InstanceState state);
 
-  void setCurrentImage(Instance instance, File value) {
+  public void setCurrentImage(Instance instance, File value) {
     currentInstanceFiles.put(instance, value);
   }
 

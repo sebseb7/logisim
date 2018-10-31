@@ -39,9 +39,7 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
-import com.cburch.logisim.gui.hex.HexFrame;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.proj.Project;
 
 public class RamAttributes extends AbstractAttributeSet {
 

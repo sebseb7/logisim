@@ -39,16 +39,17 @@ import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.gui.hex.HexFrame;
+import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 
 class RomAttributes extends AbstractAttributeSet {
 
-  static HexFrame getHexFrame(MemContents value, Project proj) {
+  static HexFrame getHexFrame(MemContents value, Project proj, Instance instance) {
     synchronized (windowRegistry) {
       HexFrame ret = windowRegistry.get(value);
       if (ret == null) {
-        ret = new HexFrame(proj, value);
+        ret = new HexFrame(proj, instance, value);
         windowRegistry.put(value, ret);
       }
       return ret;

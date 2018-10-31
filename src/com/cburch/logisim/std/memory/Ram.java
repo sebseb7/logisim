@@ -529,11 +529,11 @@ public class Ram extends Mem {
   }
 
   private static WeakHashMap<MemContents, HexFrame> windowRegistry = new WeakHashMap<MemContents, HexFrame>();
-  static HexFrame getHexFrame(MemContents value, Project proj) {
+  static HexFrame getHexFrame(MemContents value, Project proj, Instance instance) {
     synchronized (windowRegistry) {
       HexFrame ret = windowRegistry.get(value);
       if (ret == null) {
-        ret = new HexFrame(proj, value);
+        ret = new HexFrame(proj, instance, value);
         windowRegistry.put(value, ret);
       }
       return ret;
@@ -553,7 +553,7 @@ public class Ram extends Mem {
 
   @Override
   HexFrame getHexFrame(Project proj, Instance instance, CircuitState circState) {
-    return getHexFrame(getState(instance, circState).getContents(), proj);
+    return getHexFrame(getState(instance, circState).getContents(), proj, instance);
   }
 
   public boolean reset(CircuitState state, Instance instance) {
@@ -587,6 +587,10 @@ public class Ram extends Mem {
       return Bounds.create(0, 0, SymbolWidth + xoffset,
           getControlHeight(attrs) + 20 * len);
     }
+  }
+
+  public MemContents getContents(InstanceState ramState) {
+    return (MemContents)getState(ramState).getContents();
   }
 
   @Override
