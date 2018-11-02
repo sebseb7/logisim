@@ -169,7 +169,7 @@ public class MenuSimulate extends Menu {
           sim.setIsTicking(!sim.isTicking());
         }
       } else if (src == log) {
-        LogFrame frame = menubar.getProject().getLogFrame(true);
+        LogFrame frame = menubar.getProject().getLogFrame();
         frame.setVisible(true);
       } else if (src == assemblyWindow) {
         if (assWin == null || !assWin.isVisible()) {

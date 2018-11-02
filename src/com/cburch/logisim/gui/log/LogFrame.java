@@ -35,8 +35,8 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
+import java.awt.Font;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -52,7 +52,6 @@ import com.cburch.logisim.circuit.SimulatorListener;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
 import com.cburch.logisim.gui.generic.LFrame;
-import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
@@ -62,21 +61,8 @@ import com.cburch.logisim.util.WindowMenuItemManager;
 import com.hepia.logisim.chronodata.TimelineParam;
 
 public class LogFrame extends LFrame {
-  private class MyListener implements ActionListener, ProjectListener,
+  private class MyListener implements ProjectListener,
           LibraryListener, SimulatorListener, LocaleListener {
-    public void actionPerformed(ActionEvent event) {
-      Object src = event.getSource();
-      if (src == close) {
-        WindowEvent e = new WindowEvent(LogFrame.this,
-            WindowEvent.WINDOW_CLOSING);
-        LogFrame.this.processWindowEvent(e);
-      } else if (src == chronogramButton) {
-        project.getChronoFrame(true);
-        WindowEvent e = new WindowEvent(LogFrame.this,
-            WindowEvent.WINDOW_CLOSING);
-        LogFrame.this.processWindowEvent(e);
-      }
-    }
 
     public void libraryChanged(LibraryEvent event) {
       int action = event.getAction();
@@ -92,7 +78,6 @@ public class LogFrame extends LFrame {
         tabbedPane.setToolTipTextAt(i, panels[i].getToolTipText());
         panels[i].localeChanged();
       }
-      close.setText(S.get("closeButton"));
       windowManager.localeChanged();
     }
 
@@ -167,9 +152,6 @@ public class LogFrame extends LFrame {
   private WindowMenuManager windowManager;
   private LogPanel[] panels;
   private JTabbedPane tabbedPane;
-  private JButton close = new JButton();
-
-  private JButton chronogramButton;
 
   public LogFrame(Project project) {
     this.project = project;
@@ -177,32 +159,24 @@ public class LogFrame extends LFrame {
     project.addProjectListener(myListener);
     project.addLibraryListener(myListener);
     setDefaultCloseOperation(HIDE_ON_CLOSE);
-    setJMenuBar(new LogisimMenuBar(this, project));
     setSimulator(project.getSimulator(), project.getCircuitState());
 
     panels = new LogPanel[] { new SelectionPanel(this),
       new ScrollPanel(this),
       new FilePanel(this),
+      // chrono goes here
     };
     tabbedPane = new JTabbedPane();
+    tabbedPane.setFont(new Font("Dialog", Font.BOLD, 9));
     for (int index = 0; index < panels.length; index++) {
       LogPanel panel = panels[index];
       tabbedPane.addTab(panel.getTitle(), null, panel,
           panel.getToolTipText());
     }
 
-    JPanel buttonPanel = new JPanel();
-
-    chronogramButton = new JButton(S.get("startChronogram"));
-    chronogramButton.addActionListener(myListener);
-    buttonPanel.add(chronogramButton);
-    buttonPanel.add(close);
-    close.addActionListener(myListener);
-
     Container contents = getContentPane();
     tabbedPane.setPreferredSize(new Dimension(550, 300));
     contents.add(tabbedPane, BorderLayout.CENTER);
-    contents.add(buttonPanel, BorderLayout.SOUTH);
 
     LocaleManager.addLocaleListener(myListener);
     myListener.localeChanged();
@@ -232,9 +206,6 @@ public class LogFrame extends LFrame {
           || value.getCircuitState() == curModel.getCircuitState())
         return;
     }
-
-    LogisimMenuBar menubar = (LogisimMenuBar) getJMenuBar();
-    menubar.setCircuitState(value, state);
 
     if (curSimulator != null)
       curSimulator.removeSimulatorListener(myListener);

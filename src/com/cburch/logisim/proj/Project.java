@@ -390,17 +390,12 @@ public class Project {
       return redoLog.getLast().action;
   }
 
-  public LogFrame getLogFrame(boolean create) {
-    if (logFrame == null) {
-      if (create)
+  public LogFrame getLogFrame() {
+    if (logFrame == null)
         logFrame = new LogFrame(this);
-    }
     return logFrame;
   }
 
-  //
-  // access methods
-  //
   public LogisimFile getLogisimFile() {
     return file;
   }

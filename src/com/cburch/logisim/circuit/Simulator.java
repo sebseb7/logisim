@@ -145,7 +145,6 @@ public class Simulator {
               }
             } else if (stepsRequested > 0) {
               if (ticksRequested > 0 || (isTicking && !propagateRequested)) {
-                    ticksRequested, propagateRequested, isRunning, isTicking);
                 ticksRequested = 1;
                 doTick();
               }
