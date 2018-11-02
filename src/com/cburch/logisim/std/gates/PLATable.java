@@ -219,6 +219,8 @@ public class PLATable {
       try { in.close(); }
       catch (IOException e) { }
     }
+    if (tt == null)
+      throw new IOException("PLA file contained no data.");
     return tt;
   }
 
