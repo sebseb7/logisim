@@ -98,7 +98,7 @@ public class RightPanel extends ChronoPanelTemplate {
 
 	public void adjustmentValueChanged(int value) {
 		float posPercent = (float) value / (float) getSignalWidth();
-		int i = Math.round(mChronoFrame.getNbrOfTick() * posPercent);
+		int i = Math.round(/* mChronoFrame.getNbrOfTick()*/ 2 * posPercent);
 		i = i > 5 ? i - 5 : 0;
 		displayOffsetX = i * tickWidth;
 		for (SignalDraw sDraw : allSignalDraw) {
@@ -148,7 +148,7 @@ public class RightPanel extends ChronoPanelTemplate {
 	}
 
 	private void defineSizes() {
-		int totalWidth = tickWidth * mChronoFrame.getNbrOfTick();
+		int totalWidth = tickWidth * 2; // mChronoFrame.getNbrOfTick();
 		layeredPane.setPreferredSize(new Dimension(totalWidth, globalHeight));
 		rightBox.setBounds(0, mCommonPanelParam.getHeaderHeight(), totalWidth,
 				globalHeight);
@@ -182,7 +182,7 @@ public class RightPanel extends ChronoPanelTemplate {
 	}
 
 	public int getSignalWidth() {
-		return mChronoFrame.getNbrOfTick() * tickWidth;
+		return /* mChronoFrame.getNbrOfTick()*/ 2 * tickWidth;
 	}
 
 	public int getTickWidth() {
@@ -194,7 +194,7 @@ public class RightPanel extends ChronoPanelTemplate {
 	}
 
     public int getTotalWidth() {
-        return (mChronoFrame.getNbrOfTick() * tickWidth);
+        return (/*mChronoFrame.getNbrOfTick()*/ 2  * tickWidth);
     }
 
     public int getTotalHeight() {
@@ -255,7 +255,7 @@ public class RightPanel extends ChronoPanelTemplate {
 		}
 
 		// zoom on the timeline
-		mTimeLine.setTickWidth(tickWidth, mChronoFrame.getNbrOfTick());
+		mTimeLine.setTickWidth(tickWidth, 2 /* mChronoFrame.getNbrOfTick() */);
 
 		defineSizes();
 

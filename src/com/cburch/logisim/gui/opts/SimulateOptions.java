@@ -74,14 +74,6 @@ class SimulateOptions extends OptionsPanel {
               OptionsActions.setAttribute(attrs,
                 Options.ATTR_GATE_UNDEFINED, opt.getValue()));
         }
-      } else if (source == tickMainStep) {
-        ComboOption opt = (ComboOption) tickMainStep.getSelectedItem();
-        if (opt != null) {
-          AttributeSet attrs = getOptions().getAttributeSet();
-          getProject().doAction(
-              OptionsActions.setAttribute(attrs,
-                Options.ATTR_TICK_MAIN, opt.getValue()));
-        }
       }
     }
 
@@ -97,8 +89,6 @@ class SimulateOptions extends OptionsPanel {
         loadSimRandomness((Integer) val);
       } else if (attr == Options.ATTR_GATE_UNDEFINED) {
         loadGateUndefined(val);
-      } else if (attr == Options.ATTR_TICK_MAIN) {
-        loadTickMain(val);
       }
     }
 
@@ -121,10 +111,6 @@ class SimulateOptions extends OptionsPanel {
     private void loadSimRandomness(Integer val) {
       simRandomness.setSelected(val.intValue() > 0);
     }
-
-    private void loadTickMain(Object val) {
-      ComboOption.setSelected(tickMainStep, val);
-    }
   }
 
   private static final long serialVersionUID = 1L;
@@ -144,11 +130,6 @@ class SimulateOptions extends OptionsPanel {
   private JComboBox gateUndefined = new JComboBox(new Object[] {
       new ComboOption(Options.GATE_UNDEFINED_IGNORE),
       new ComboOption(Options.GATE_UNDEFINED_ERROR) });
-  private JLabel tickMainLabel = new JLabel();
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  private JComboBox tickMainStep = new JComboBox(new Object[] {
-      new ComboOption(Options.TICK_MAIN_HALF_PERIOD),
-      new ComboOption(Options.TICK_MAIN_PERIOD) });
 
   public SimulateOptions(OptionsFrame window) {
     super(window);
@@ -165,23 +146,16 @@ class SimulateOptions extends OptionsPanel {
 
     simRandomness.addActionListener(myListener);
 
-    JPanel tickMainPanel = new JPanel();
-    tickMainPanel.add(tickMainLabel);
-    tickMainPanel.add(tickMainStep);
-    tickMainStep.addActionListener(myListener);
-
     setLayout(new TableLayout(1));
     add(simLimitPanel);
     add(gateUndefinedPanel);
     add(simRandomness);
-    add(tickMainPanel);
 
     window.getOptions().getAttributeSet().addAttributeListener(myListener);
     AttributeSet attrs = getOptions().getAttributeSet();
     myListener.loadSimLimit(attrs.getValue(Options.ATTR_SIM_LIMIT));
     myListener.loadGateUndefined(attrs.getValue(Options.ATTR_GATE_UNDEFINED));
     myListener.loadSimRandomness(attrs.getValue(Options.ATTR_SIM_RAND));
-    myListener.loadTickMain(attrs.getValue(Options.ATTR_TICK_MAIN));
   }
 
   @Override
@@ -199,6 +173,5 @@ class SimulateOptions extends OptionsPanel {
     simLimitLabel.setText(S.get("simulateLimit"));
     gateUndefinedLabel.setText(S.get("gateUndefined"));
     simRandomness.setText(S.get("simulateRandomness"));
-    tickMainLabel.setText(S.get("mainTick"));
   }
 }

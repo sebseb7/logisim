@@ -58,7 +58,7 @@ public class TimelineDraw extends JPanel {
 			this.clk = chronoFrame.getChronoData().get(
 					timelineParam.getSignalClkName());
 
-		this.width = chronoFrame.getNbrOfTick() * tickWidth - tickWidth;
+		this.width = /*chronoFrame.getNbrOfTick()*/ 2 * tickWidth - tickWidth;
 		this.height = height;
 		this.tickWidth = tickWidth;
 		this.setMaximumSize(new Dimension(width, height));

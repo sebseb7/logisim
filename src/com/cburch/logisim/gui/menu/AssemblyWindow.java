@@ -290,32 +290,8 @@ public class AssemblyWindow implements ActionListener, WindowListener,
   public void keyReleased(KeyEvent ke) {
     int keyCode = ke.getKeyCode();
     if (keyCode == KeyEvent.VK_F2) {
-      int ticks = 0;
-      for (com.cburch.logisim.comp.Component clock : proj
-          .getLogisimFile().getMainCircuit().getClocks()) {
-        if (clock.getAttributeSet().getValue(StdAttr.LABEL)
-            .contentEquals("clk")) {
-          if (proj.getOptions().getAttributeSet()
-              .getValue(Options.ATTR_TICK_MAIN)
-              .equals(Options.TICK_MAIN_HALF_PERIOD)) {
-            if (proj.getCircuitState()
-                .getValue(clock.getLocation()).toIntValue() == 0) {
-              ticks = clock.getAttributeSet().getValue(
-                  Clock.ATTR_LOW);
-            } else {
-              ticks = clock.getAttributeSet().getValue(
-                  Clock.ATTR_HIGH);
-            }
-          } else {
-            ticks = clock.getAttributeSet()
-                .getValue(Clock.ATTR_LOW)
-                + clock.getAttributeSet().getValue(
-                    Clock.ATTR_HIGH);
-          }
-          break;
-        }
-      }
-      proj.getSimulator().tickMain(ticks);
+      if (proj.getSimulator() != null)
+        proj.getSimulator().tick(2);
     }
   }
 

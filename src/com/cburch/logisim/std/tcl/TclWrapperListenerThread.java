@@ -81,7 +81,7 @@ public class TclWrapperListenerThread extends UniquelyNamedThread {
 
       /* Stock the messages in temp buffer or tick simulation if asked */
       if (line.equals("run")) {
-        sim.tick();
+        sim.tick(1);
       } else {
         messages.add(line);
       }
