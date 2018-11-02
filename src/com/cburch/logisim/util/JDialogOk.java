@@ -40,6 +40,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.KeyboardFocusManager;
+import java.awt.Window;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -75,15 +77,25 @@ public abstract class JDialogOk extends JDialog {
   private JPanel contents = new JPanel(new BorderLayout());
   protected JButton ok = new JButton(S.get("dlogOkButton"));
   protected JButton cancel = new JButton(S.get("dlogCancelButton"));
+  protected Window parent;
+
+  public JDialogOk(String title, boolean model) {
+    super(KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow(),
+        title, Dialog.ModalityType.APPLICATION_MODAL);
+    parent = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
+    configure();
+  }
 
   public JDialogOk(Dialog parent, String title, boolean model) {
     super(parent, title, true);
     configure();
+    this.parent = parent;
   }
 
   public JDialogOk(Frame parent, String title, boolean model) {
     super(parent, title, true);
     configure();
+    this.parent = parent;
   }
 
   public void cancelClicked() {
@@ -117,6 +129,14 @@ public abstract class JDialogOk extends JDialog {
         e.getWindow().removeWindowListener(this);
       }
     });
+  }
+
+  public void pack() {
+    super.pack();
+    while (parent != null && !parent.isShowing())
+      parent = parent.getOwner();
+    setLocationRelativeTo(parent);
+    parent = null;
   }
 
   @Override

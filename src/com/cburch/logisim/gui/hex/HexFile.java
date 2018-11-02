@@ -265,12 +265,8 @@ public class HexFile {
     JTabbedPane tabs;
     HexReader r;
 
-    public HexFormatDialog(Dialog parent, String msg, HexReader reader) {
-      super(parent, S.get("hexFormatTitle"), true);
-      configure(msg, reader);
-    }
-    public HexFormatDialog(Frame parent, String msg, HexReader reader) {
-      super(parent, S.get("hexFormatTitle"), true);
+    public HexFormatDialog(String msg, HexReader reader) {
+      super(S.get("hexFormatTitle"), true);
       configure(msg, reader);
     }
 
@@ -783,7 +779,7 @@ public class HexFile {
         System.out.println("Warnings:\n" + warnings.toString());
         return null;
       }
-      HexFormatDialog d = new HexFormatDialog((Dialog)null, errmsg, this);
+      HexFormatDialog d = new HexFormatDialog(errmsg, this);
       d.setVisible(true);
       if (!d.ok())
         return null;
