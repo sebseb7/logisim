@@ -266,7 +266,7 @@ public class HexFile {
     HexReader r;
 
     public HexFormatDialog(String msg, HexReader reader) {
-      super(S.get("hexFormatTitle"), true);
+      super(S.get("hexFormatTitle"));
       configure(msg, reader);
     }
 

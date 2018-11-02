@@ -79,23 +79,11 @@ public abstract class JDialogOk extends JDialog {
   protected JButton cancel = new JButton(S.get("dlogCancelButton"));
   protected Window parent;
 
-  public JDialogOk(String title, boolean model) {
+  public JDialogOk(String title) {
     super(KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow(),
         title, Dialog.ModalityType.APPLICATION_MODAL);
     parent = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
     configure();
-  }
-
-  public JDialogOk(Dialog parent, String title, boolean model) {
-    super(parent, title, true);
-    configure();
-    this.parent = parent;
-  }
-
-  public JDialogOk(Frame parent, String title, boolean model) {
-    super(parent, title, true);
-    configure();
-    this.parent = parent;
   }
 
   public void cancelClicked() {
