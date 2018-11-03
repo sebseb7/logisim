@@ -205,6 +205,7 @@ public class ChronoFrame extends LFrame implements KeyListener, ActionListener,
 	 * Offline mode ChronoFrame constructor
 	 */
 	public ChronoFrame(Project prj) {
+    super(false, prj);
 		realTimeMode = false;
 		commonPanelParam = new CommonPanelParam(20, 38);
 		createMainStructure();
@@ -214,6 +215,7 @@ public class ChronoFrame extends LFrame implements KeyListener, ActionListener,
 	 * Real time mode ChronoFrame constructor
 	 */
 	public ChronoFrame(Project prj, LogFrame logFrame) {
+    super(false, prj);
 		realTimeMode = true;
 
 		this.logFrame = logFrame;

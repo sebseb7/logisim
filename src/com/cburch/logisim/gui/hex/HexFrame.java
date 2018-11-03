@@ -169,10 +169,7 @@ public class HexFrame extends LFrame {
   private Project proj;
 
   public HexFrame(Project proj, Instance instance, HexModel model) {
-    setDefaultCloseOperation(HIDE_ON_CLOSE);
-
-    LogisimMenuBar menubar = new LogisimMenuBar(this, proj);
-    setJMenuBar(menubar);
+    super(false, proj);
 
     this.model = model;
     this.editor = new HexEditor(model);

@@ -41,57 +41,59 @@ import com.apple.eawt.Application;
 import com.apple.eawt.ApplicationAdapter;
 import com.cburch.logisim.gui.prefs.PreferencesFrame;
 import com.cburch.logisim.proj.ProjectActions;
+import com.cburch.logisim.Main;
 
 class MacOsAdapter extends ApplicationAdapter {
 
-    private static class MyListener implements ActionListener {
-        public void actionPerformed(ActionEvent event) {
-            ApplicationEvent event2 = (ApplicationEvent) event;
-            int type = event2.getType();
-            switch (type) {
-            case ApplicationEvent.ABOUT:
-                About.showAboutDialog(null);
-                break;
-            case ApplicationEvent.QUIT_APPLICATION:
-                ProjectActions.doQuit();
-                break;
-            case ApplicationEvent.OPEN_DOCUMENT:
-                Startup.doOpen(event2.getFile());
-                break;
-            case ApplicationEvent.PRINT_DOCUMENT:
-                Startup.doPrint(event2.getFile());
-                break;
-            case ApplicationEvent.PREFERENCES:
-                PreferencesFrame.showPreferences();
-                break;
-            }
-        }
-    }
-
-    static void addListeners(boolean added) {
-        MyListener myListener = new MyListener();
-        if (!added)
-            MRJAdapter.addOpenDocumentListener(myListener);
-        if (!added)
-            MRJAdapter.addPrintDocumentListener(myListener);
-        MRJAdapter.addPreferencesListener(myListener);
-        MRJAdapter.addQuitApplicationListener(myListener);
-        MRJAdapter.addAboutListener(myListener);
-    }
-
-    public void handleOpenFile(com.apple.eawt.ApplicationEvent event) {
-        Startup.doOpen(new File(event.getFilename()));
-    }
-
-    public void handlePrintFile(com.apple.eawt.ApplicationEvent event) {
-        Startup.doPrint(new File(event.getFilename()));
-    }
-
-    public void handlePreferences(com.apple.eawt.ApplicationEvent event) {
+  private static class MyListener implements ActionListener {
+    public void actionPerformed(ActionEvent event) {
+      ApplicationEvent event2 = (ApplicationEvent) event;
+      int type = event2.getType();
+      switch (type) {
+      case ApplicationEvent.ABOUT:
+        About.showAboutDialog(null);
+        break;
+      case ApplicationEvent.QUIT_APPLICATION:
+        ProjectActions.doQuit();
+        break;
+      case ApplicationEvent.OPEN_DOCUMENT:
+        Startup.doOpen(event2.getFile());
+        break;
+      case ApplicationEvent.PRINT_DOCUMENT:
+        Startup.doPrint(event2.getFile());
+        break;
+      case ApplicationEvent.PREFERENCES:
         PreferencesFrame.showPreferences();
+        break;
+      }
     }
+  }
 
-    public static void register() {
-        Application.getApplication().addApplicationListener(new MacOsAdapter());
-    }
+  static void addListeners(boolean added) {
+    MyListener myListener = new MyListener();
+    if (!added)
+      MRJAdapter.addOpenDocumentListener(myListener);
+    if (!added)
+      MRJAdapter.addPrintDocumentListener(myListener);
+    MRJAdapter.addPreferencesListener(myListener);
+    MRJAdapter.addQuitApplicationListener(myListener);
+    MRJAdapter.addAboutListener(myListener);
+  }
+
+  public void handleOpenFile(com.apple.eawt.ApplicationEvent event) {
+    Startup.doOpen(new File(event.getFilename()));
+  }
+
+  public void handlePrintFile(com.apple.eawt.ApplicationEvent event) {
+    Startup.doPrint(new File(event.getFilename()));
+  }
+
+  public void handlePreferences(com.apple.eawt.ApplicationEvent event) {
+    PreferencesFrame.showPreferences();
+  }
+
+  public static void register() {
+    Application.getApplication().addApplicationListener(new MacOsAdapter());
+    Main.MacOS = true;
+  }
 }

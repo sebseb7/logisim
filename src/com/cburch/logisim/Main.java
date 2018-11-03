@@ -63,6 +63,7 @@ public class Main {
   }
 
   public static boolean headless = false;
+  public static boolean MacOS = false;
 
   final static Logger logger = LoggerFactory.getLogger(Main.class);
 

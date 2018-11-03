@@ -154,11 +154,11 @@ public class LogFrame extends LFrame {
   private JTabbedPane tabbedPane;
 
   public LogFrame(Project project) {
+    super(false, project);
     this.project = project;
     this.windowManager = new WindowMenuManager();
     project.addProjectListener(myListener);
     project.addLibraryListener(myListener);
-    setDefaultCloseOperation(HIDE_ON_CLOSE);
     setSimulator(project.getSimulator(), project.getCircuitState());
 
     panels = new LogPanel[] { new SelectionPanel(this),
@@ -167,7 +167,7 @@ public class LogFrame extends LFrame {
       // chrono goes here
     };
     tabbedPane = new JTabbedPane();
-    tabbedPane.setFont(new Font("Dialog", Font.BOLD, 9));
+    // tabbedPane.setFont(new Font("Dialog", Font.BOLD, 9));
     for (int index = 0; index < panels.length; index++) {
       LogPanel panel = panels[index];
       tabbedPane.addTab(panel.getTitle(), null, panel,

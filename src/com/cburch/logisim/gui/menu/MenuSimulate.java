@@ -171,13 +171,6 @@ public class MenuSimulate extends Menu {
       } else if (src == log) {
         LogFrame frame = menubar.getProject().getLogFrame();
         frame.setVisible(true);
-      } else if (src == assemblyWindow) {
-        if (assWin == null || !assWin.isVisible()) {
-          assWin = new AssemblyWindow(proj);
-          assWin.setVisible(true);
-        } else {
-          assWin.toFront();
-        }
       } else if (src == test) {
         TestFrame frame = menubar.getProject().getTestFrame(true);
         frame.setVisible(true);
@@ -306,9 +299,6 @@ public class MenuSimulate extends Menu {
   private ArrayList<CircuitStateMenuItem> upStateItems = new ArrayList<CircuitStateMenuItem>();
   private JMenuItem log = new JMenuItem();
   private JMenuItem test = new JMenuItem();
-  private JMenuItem assemblyWindow = new JMenuItem();
-
-  AssemblyWindow assWin = null;
 
   public MenuSimulate(LogisimMenuBar menubar) {
     this.menubar = menubar;
@@ -364,8 +354,6 @@ public class MenuSimulate extends Menu {
     addSeparator();
     add(log);
     add(test);
-    addSeparator();
-    add(assemblyWindow);
 
     setEnabled(false);
     runToggle.setEnabled(false);
@@ -396,7 +384,6 @@ public class MenuSimulate extends Menu {
     // ticksEnabled.addActionListener(myListener);
     log.addActionListener(myListener);
     test.addActionListener(myListener);
-    assemblyWindow.addActionListener(myListener);
 
     computeEnabled();
   }
@@ -446,7 +433,6 @@ public class MenuSimulate extends Menu {
     upStateMenu.setText(S.get("simulateUpStateMenu"));
     log.setText(S.get("simulateLogItem"));
     test.setText(S.get("simulateTestItem"));
-    assemblyWindow.setText("Assembly viewer");
   }
 
   private void recreateStateMenu(JMenu menu,

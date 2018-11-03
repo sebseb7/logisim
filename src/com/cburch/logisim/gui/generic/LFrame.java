@@ -42,6 +42,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
 import com.cburch.logisim.util.WindowClosable;
+import com.cburch.logisim.Main;
+import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.gui.menu.LogisimMenuBar;
 
 public class LFrame extends JFrame implements WindowClosable {
   public static void attachIcon(Window frame) {
@@ -85,8 +88,16 @@ public class LFrame extends JFrame implements WindowClosable {
 
   private static Image DEFAULT_ICON = null;
 
-  public LFrame() {
-    LFrame.attachIcon(this);
+  protected final LogisimMenuBar menubar;
+
+  public LFrame(boolean toplevel, Project proj) {
+    attachIcon(this);
+    if (toplevel || Main.MacOS) {
+      menubar = new LogisimMenuBar(this, proj);
+      setJMenuBar(menubar);
+    } else {
+      menubar = null;
+    }
   }
 
   @Override

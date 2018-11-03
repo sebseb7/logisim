@@ -165,13 +165,6 @@ public class Project {
     return frame.confirmClose(title);
   }
 
-  public JFileChooser createChooser() { // only used by AssemblyView ?
-    if (file == null)
-      return JFileChoosers.create();
-    Loader loader = file.getLoader();
-    return loader == null ? JFileChoosers.create() : loader.createChooser();
-  }
-
   public void doAction(Action act) {
     if (act == null) {
       return;
