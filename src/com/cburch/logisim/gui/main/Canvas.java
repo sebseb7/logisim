@@ -715,7 +715,6 @@ public class Canvas extends JPanel
   private static final Color DEFAULT_ERROR_COLOR = new Color(192, 0, 0);
   private static final Color TICK_RATE_COLOR = new Color(0, 0, 92, 92);
   private static final Font TICK_RATE_FONT = new Font("serif", Font.BOLD, 12);
-  // public static BufferedImage image;
   private Project proj;
   private Tool drag_tool;
   private Selection selection;
@@ -754,15 +753,6 @@ public class Canvas extends JPanel
     setFocusTraversalKeysEnabled(false);
     addKeyListener(myListener);
     addMouseWheelListener(myListener);
-
-    // YSY
-    // try {
-    // URL url =
-    // Canvas.class.getClassLoader().getResource("resources/logisim/img/HESSO.png");
-    // image = ImageIO.read(url);
-    // } catch (IOException e) {
-    // e.printStackTrace();
-    // }
 
     proj.addProjectListener(myProjectListener);
     proj.addLibraryListener(myProjectListener);
@@ -1026,15 +1016,6 @@ public class Canvas extends JPanel
 
   @Override
   public void paintComponent(Graphics g) {
-    // int i, j = 0;
-    // for (i = 0; i <= this.getParent().getWidth() / image.getWidth(); i++)
-    // {
-    // for (j = 0; j <= this.getParent().getHeight() / image.getHeight();
-    // j++) {
-    // g.drawImage(image, i * image.getWidth(), j * image.getHeight(),
-    // this);
-    // }
-    // }
     Graphics2D g2d = (Graphics2D) g;
     g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
         RenderingHints.VALUE_ANTIALIAS_ON);

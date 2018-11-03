@@ -196,6 +196,15 @@ public class LogisimVersion {
     }
   }
 
+  public String edition() {
+    if (variant != null && variant.equals("HC"))
+      return "Holy Cross Edition";
+    else if (variant == null || variant.equals(""))
+      return "";
+    else
+      return variant + " Edition";
+  }
+
   @Override
   public String toString() {
     String ret = repr;

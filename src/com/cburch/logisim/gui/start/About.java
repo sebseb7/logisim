@@ -38,6 +38,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
@@ -74,10 +75,8 @@ public class About {
     private final Font versionFont = new Font("Serif", Font.PLAIN
         | Font.ITALIC, 20);
     private final Font copyrightFont = new Font("Serif", Font.ITALIC, 12);
-    private Value upper = Value.FALSE;
-
-    private Value lower = Value.TRUE;
-
+    private boolean upper = false;
+    private boolean lower = true;
     private AboutCredits credits;
 
     private PanelThread thread = null;
@@ -85,14 +84,12 @@ public class About {
     public MyPanel() {
       setLayout(null);
 
-      int prefWidth = IMAGE_WIDTH + 2 * IMAGE_BORDER;
-      int prefHeight = IMAGE_HEIGHT + 2 * IMAGE_BORDER;
-      setPreferredSize(new Dimension(prefWidth, prefHeight));
+      setPreferredSize(new Dimension(ABOUT_WIDTH, ABOUT_HEIGHT));
       setBackground(Color.WHITE);
       addAncestorListener(this);
 
       credits = new AboutCredits();
-      credits.setBounds(0, prefHeight / 2, prefWidth, prefHeight / 2);
+      credits.setBounds(0, ABOUT_HEIGHT / 2, ABOUT_WIDTH, ABOUT_HEIGHT / 2);
       add(credits);
     }
 
@@ -168,42 +165,62 @@ public class About {
     }
 
     private void drawText(Graphics g, int x, int y) {
+      Graphics2D g2 = (Graphics2D)g;
+      g2.setRenderingHint(
+          RenderingHints.KEY_TEXT_ANTIALIASING,
+          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+      g2.setRenderingHint(
+          RenderingHints.KEY_ANTIALIASING,
+          RenderingHints.VALUE_ANTIALIAS_ON);
+
       FontMetrics fm;
       String str;
 
+      y += 12;
+
       g.setColor(headerColor);
       g.setFont(headerFont);
-      g.drawString("Logisim-evolution", x, y + 25);
+      g.drawString("Logisim-Evolution", x, y);
 
       g.setFont(copyrightFont);
       fm = g.getFontMetrics();
       str = "\u00a9 " + Main.COPYRIGHT_YEAR;
-      g.drawString(str, x + IMAGE_WIDTH - fm.stringWidth(str), y + 12);
-
-      str = "HES-SO";
-      g.drawString(str, x + IMAGE_WIDTH - fm.stringWidth(str), y + 26);
+      g.drawString(str, x + IMAGE_WIDTH - fm.stringWidth(str), y);
 
       g.setFont(versionFont);
       fm = g.getFontMetrics();
       str = "Version " + Main.VERSION.mainVersion();
-      g.drawString(str, x + IMAGE_WIDTH - fm.stringWidth(str), y + 50);
+      y += fm.getHeight() * 5/4;
+      g.drawString(str, x + IMAGE_WIDTH - fm.stringWidth(str), y);
 
       g.setFont(copyrightFont);
       fm = g.getFontMetrics();
       str = Main.VERSION.rev();
-      g.drawString(str, x + IMAGE_WIDTH - fm.stringWidth(str), y + 50);
+      if (str != null && !str.equals("")) {
+        y += fm.getHeight() * 5/4;
+        g.drawString(str, x + IMAGE_WIDTH - fm.stringWidth(str), y);
+      }
+      str = Main.VERSION.edition();
+      if (str != null && !str.equals("")) {
+        y += fm.getHeight() * 5/4;
+        g.drawString(str, x + IMAGE_WIDTH - fm.stringWidth(str), y);
+      }
+    }
+
+    static final Color color0 = Value.FALSE.getColor();
+    static final Color color1 = Value.TRUE.getColor();
+
+    private static void setColor(Graphics g, boolean b) {
+      g.setColor(b ? color1 : color0);
     }
 
     private void drawWires(Graphics g, int x0, int y0) {
-      Value upperNot = upper.not();
-      Value lowerNot = lower.not();
-      Value upperAnd = upperNot.and(lower);
-      Value lowerAnd = lowerNot.and(upper);
-      Value out = upperAnd.or(lowerAnd);
-      int x;
-      int y;
+      boolean upperAnd = (!upper) && lower;
+      boolean lowerAnd = (!lower) && upper;
+      boolean out = upperAnd || lowerAnd;
+      int x, y;
 
-      g.setColor(upper.getColor());
+      setColor(g, upper);
       x = toX(x0, 20);
       y = toY(y0, 10);
       g.fillOval(x - 7, y - 7, 14, 14);
@@ -211,11 +228,11 @@ public class About {
       g.drawLine(x, y, x, toY(y0, 70));
       y = toY(y0, 70);
       g.drawLine(x, y, toX(x0, 80), y);
-      g.setColor(upperNot.getColor());
+      setColor(g, !upper);
       y = toY(y0, 10);
       g.drawLine(toX(x0, 70), y, toX(x0, 80), y);
 
-      g.setColor(lower.getColor());
+      setColor(g, lower);
       x = toX(x0, 30);
       y = toY(y0, 110);
       g.fillOval(x - 7, y - 7, 14, 14);
@@ -223,25 +240,25 @@ public class About {
       g.drawLine(x, y, x, toY(y0, 50));
       y = toY(y0, 50);
       g.drawLine(x, y, toX(x0, 80), y);
-      g.setColor(lowerNot.getColor());
+      setColor(g, !lower);
       y = toY(y0, 110);
       g.drawLine(toX(x0, 70), y, toX(x0, 80), y);
 
-      g.setColor(upperAnd.getColor());
+      setColor(g, upperAnd);
       x = toX(x0, 150);
       y = toY(y0, 30);
       g.drawLine(toX(x0, 130), y, x, y);
       g.drawLine(x, y, x, toY(y0, 45));
       y = toY(y0, 45);
       g.drawLine(x, y, toX(x0, 174), y);
-      g.setColor(lowerAnd.getColor());
+      setColor(g, lowerAnd);
       y = toY(y0, 90);
       g.drawLine(toX(x0, 130), y, x, y);
       g.drawLine(x, y, x, toY(y0, 75));
       y = toY(y0, 75);
       g.drawLine(x, y, toX(x0, 174), y);
 
-      g.setColor(out.getColor());
+      setColor(g, out);
       y = toY(y0, 60);
       g.drawLine(toX(x0, 220), y, toX(x0, 240), y);
     }
@@ -249,7 +266,6 @@ public class About {
     @Override
     public void paintComponent(Graphics g) {
       super.paintComponent(g);
-
       try {
         int x = IMAGE_BORDER;
         int y = IMAGE_BORDER;
@@ -277,10 +293,8 @@ public class About {
       while (running) {
         long elapse = System.currentTimeMillis() - start;
         int count = (int) (elapse / 500) % 4;
-        panel.upper = (count == 2 || count == 3) ? Value.TRUE
-            : Value.FALSE;
-        panel.lower = (count == 1 || count == 2) ? Value.TRUE
-            : Value.FALSE;
+        panel.upper = (count == 2 || count == 3);
+        panel.lower = (count == 1 || count == 2);
         panel.credits.setScroll((int) elapse);
         panel.repaint();
         try {
@@ -306,10 +320,10 @@ public class About {
   }
 
   static final int IMAGE_BORDER = 30;
-
   static final int IMAGE_WIDTH = 430;
-
   static final int IMAGE_HEIGHT = 284;
+  static final int ABOUT_WIDTH = IMAGE_WIDTH + 2 * IMAGE_BORDER;
+  static final int ABOUT_HEIGHT = IMAGE_HEIGHT + 2 * IMAGE_BORDER;
 
   private About() {
   }
