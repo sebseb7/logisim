@@ -71,26 +71,14 @@ class MenuEdit extends Menu {
         undo.setEnabled(true);
       }
 
-      // If there is a project open...
-      if (proj != null)
-        // And you CAN redo an undo...
-        if (proj.getCanRedo()) {
-          // Get that action
-          Action lastRedo = proj.getLastRedoAction();
-
-          // Set the detailed, localized text
-
-          redo.setText(S.fmt("editRedoItem", lastRedo.getName()));
-
-          // Set it to enabled
-          redo.setEnabled(true);
-        } else { // If there is no project...
-          // Let them know they can't redo anything
-          redo.setText(S.get("editCantRedoItem"));
-
-          // And disable the button
-          redo.setEnabled(false);
-        }
+      Action next = (proj == null || !proj.getCanRedo()) ? null : proj.getLastRedoAction();
+      if (next != null) {
+        redo.setText(S.fmt("editRedoItem", next.getName()));
+        redo.setEnabled(true);
+      } else {
+        redo.setText(S.get("editCantRedoItem"));
+        redo.setEnabled(false);
+      }
     }
   }
 
@@ -104,18 +92,13 @@ class MenuEdit extends Menu {
   private MenuItemImpl paste = new MenuItemImpl(this, LogisimMenuBar.PASTE);
   private MenuItemImpl delete = new MenuItemImpl(this, LogisimMenuBar.DELETE);
   private MenuItemImpl dup = new MenuItemImpl(this, LogisimMenuBar.DUPLICATE);
-  private MenuItemImpl selall = new MenuItemImpl(this,
-      LogisimMenuBar.SELECT_ALL);
+  private MenuItemImpl selall = new MenuItemImpl(this, LogisimMenuBar.SELECT_ALL);
   private MenuItemImpl raise = new MenuItemImpl(this, LogisimMenuBar.RAISE);
   private MenuItemImpl lower = new MenuItemImpl(this, LogisimMenuBar.LOWER);
-  private MenuItemImpl raiseTop = new MenuItemImpl(this,
-      LogisimMenuBar.RAISE_TOP);
-  private MenuItemImpl lowerBottom = new MenuItemImpl(this,
-      LogisimMenuBar.LOWER_BOTTOM);
-  private MenuItemImpl addCtrl = new MenuItemImpl(this,
-      LogisimMenuBar.ADD_CONTROL);
-  private MenuItemImpl remCtrl = new MenuItemImpl(this,
-      LogisimMenuBar.REMOVE_CONTROL);
+  private MenuItemImpl raiseTop = new MenuItemImpl(this, LogisimMenuBar.RAISE_TOP);
+  private MenuItemImpl lowerBottom = new MenuItemImpl(this, LogisimMenuBar.LOWER_BOTTOM);
+  private MenuItemImpl addCtrl = new MenuItemImpl(this, LogisimMenuBar.ADD_CONTROL);
+  private MenuItemImpl remCtrl = new MenuItemImpl(this, LogisimMenuBar.REMOVE_CONTROL);
   private MyListener myListener = new MyListener();
 
   public MenuEdit(LogisimMenuBar menubar) {

@@ -76,15 +76,9 @@ public class ProjectCircuitActions {
       ArrayList<Var> inputVars, ArrayList<Var> outputVars) {
     analyzer.getModel().setVariables(inputVars, outputVars);
 
-    // If there are no inputs, we stop with that tab selected
-    if (inputVars.size() == 0) {
-      analyzer.setSelectedTab(Analyzer.INPUTS_TAB);
-      return;
-    }
-
-    // If there are no outputs, we stop with that tab selected
-    if (outputVars.size() == 0) {
-      analyzer.setSelectedTab(Analyzer.OUTPUTS_TAB);
+    // If there are no inputs or outputs, we stop with that tab selected
+    if (inputVars.size() == 0 || outputVars.size() == 0) {
+      analyzer.setSelectedTab(Analyzer.IO_TAB);
       return;
     }
 

@@ -33,7 +33,7 @@ package com.cburch.logisim.gui.appear;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cburch.logisim.gui.main.EditHandler;
+import com.cburch.logisim.gui.menu.EditHandler;
 import com.cburch.logisim.gui.menu.EditPopup;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.LogisimMenuItem;

@@ -37,6 +37,7 @@ import javax.swing.JScrollPane;
 
 import com.cburch.draw.toolbar.Toolbar;
 import com.cburch.logisim.gui.generic.ProjectExplorer;
+import com.cburch.logisim.gui.menu.MenuListener;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.Tool;
 

@@ -262,4 +262,14 @@ class MinimizedTab extends AnalyzerTab {
     setAsExpr.setEnabled(output != null
         && !outputExprs.isExpressionMinimal(output));
   }
+
+  
+  public void editCopy() {
+  }
+  public void editPaste() {
+  }
+  public void editDelete() {
+  }
+  public void editSelectAll() {
+  }
 }

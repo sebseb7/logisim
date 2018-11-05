@@ -37,6 +37,7 @@ import java.util.HashMap;
 
 import javax.swing.JFrame;
 import javax.swing.JMenuBar;
+import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -62,73 +63,51 @@ public class LogisimMenuBar extends JMenuBar {
   }
 
   public static final LogisimMenuItem PRINT = new LogisimMenuItem("Print");
-  public static final LogisimMenuItem EXPORT_IMAGE = new LogisimMenuItem(
-      "ExportImage");
+  public static final LogisimMenuItem EXPORT_IMAGE = new LogisimMenuItem( "ExportImage");
+ 
   public static final LogisimMenuItem CUT = new LogisimMenuItem("Cut");
   public static final LogisimMenuItem COPY = new LogisimMenuItem("Copy");
   public static final LogisimMenuItem PASTE = new LogisimMenuItem("Paste");
   public static final LogisimMenuItem DELETE = new LogisimMenuItem("Delete");
-  public static final LogisimMenuItem DUPLICATE = new LogisimMenuItem(
-      "Duplicate");
-  public static final LogisimMenuItem SELECT_ALL = new LogisimMenuItem(
-      "SelectAll");
+  public static final LogisimMenuItem DUPLICATE = new LogisimMenuItem("Duplicate");
+  public static final LogisimMenuItem SELECT_ALL = new LogisimMenuItem("SelectAll");
   public static final LogisimMenuItem RAISE = new LogisimMenuItem("Raise");
   public static final LogisimMenuItem LOWER = new LogisimMenuItem("Lower");
-  public static final LogisimMenuItem RAISE_TOP = new LogisimMenuItem(
-      "RaiseTop");
-  public static final LogisimMenuItem LOWER_BOTTOM = new LogisimMenuItem(
-      "LowerBottom");
-  public static final LogisimMenuItem ADD_CONTROL = new LogisimMenuItem(
-      "AddControl");
+  public static final LogisimMenuItem RAISE_TOP = new LogisimMenuItem("RaiseTop");
+  public static final LogisimMenuItem LOWER_BOTTOM = new LogisimMenuItem("LowerBottom");
+  public static final LogisimMenuItem ADD_CONTROL = new LogisimMenuItem("AddControl");
+  public static final LogisimMenuItem REMOVE_CONTROL = new LogisimMenuItem("RemoveControl");
+  public static final LogisimMenuItem[] EDIT_ITEMS = {
+    // UNDO, REDO,
+    CUT, COPY, PASTE,
+    DELETE, DUPLICATE, SELECT_ALL,
+    RAISE, LOWER, RAISE_TOP, LOWER_BOTTOM,
+    ADD_CONTROL, REMOVE_CONTROL,
+  };
 
-  public static final LogisimMenuItem ADD_VHDL = new LogisimMenuItem(
-      "AddVhdl");
-  public static final LogisimMenuItem IMPORT_VHDL = new LogisimMenuItem(
-      "ImportVhdl");
+  public static final LogisimMenuItem ADD_VHDL = new LogisimMenuItem("AddVhdl");
+  public static final LogisimMenuItem IMPORT_VHDL = new LogisimMenuItem("ImportVhdl");
+  public static final LogisimMenuItem ADD_CIRCUIT = new LogisimMenuItem("AddCircuit");
+  public static final LogisimMenuItem MOVE_CIRCUIT_UP = new LogisimMenuItem("MoveCircuitUp");
+  public static final LogisimMenuItem MOVE_CIRCUIT_DOWN = new LogisimMenuItem("MoveCircuitDown");
+  public static final LogisimMenuItem SET_MAIN_CIRCUIT = new LogisimMenuItem("SetMainCircuit");
+  public static final LogisimMenuItem REMOVE_CIRCUIT = new LogisimMenuItem("RemoveCircuit");
+  public static final LogisimMenuItem EDIT_LAYOUT = new LogisimMenuItem("EditLayout");
+  public static final LogisimMenuItem EDIT_APPEARANCE = new LogisimMenuItem("EditAppearance");
+  public static final LogisimMenuItem TOGGLE_APPEARANCE = new LogisimMenuItem("ToggleEditLayoutAppearance");
+  public static final LogisimMenuItem REVERT_APPEARANCE = new LogisimMenuItem("RevertAppearance");
+  public static final LogisimMenuItem ANALYZE_CIRCUIT = new LogisimMenuItem("AnalyzeCircuit");
 
-  public static final LogisimMenuItem REMOVE_CONTROL = new LogisimMenuItem(
-      "RemoveControl");
-  public static final LogisimMenuItem ADD_CIRCUIT = new LogisimMenuItem(
-      "AddCircuit");
-  public static final LogisimMenuItem MOVE_CIRCUIT_UP = new LogisimMenuItem(
-      "MoveCircuitUp");
-  public static final LogisimMenuItem MOVE_CIRCUIT_DOWN = new LogisimMenuItem(
-      "MoveCircuitDown");
-  public static final LogisimMenuItem SET_MAIN_CIRCUIT = new LogisimMenuItem(
-      "SetMainCircuit");
-  public static final LogisimMenuItem REMOVE_CIRCUIT = new LogisimMenuItem(
-      "RemoveCircuit");
-  public static final LogisimMenuItem EDIT_LAYOUT = new LogisimMenuItem(
-      "EditLayout");
-  public static final LogisimMenuItem EDIT_APPEARANCE = new LogisimMenuItem(
-      "EditAppearance");
-  public static final LogisimMenuItem TOGGLE_APPEARANCE = new LogisimMenuItem(
-      "ToggleEditLayoutAppearance");
-  public static final LogisimMenuItem REVERT_APPEARANCE = new LogisimMenuItem(
-      "RevertAppearance");
-  public static final LogisimMenuItem ANALYZE_CIRCUIT = new LogisimMenuItem(
-      "AnalyzeCircuit");
-
-  public static final LogisimMenuItem CIRCUIT_STATS = new LogisimMenuItem(
-      "GetCircuitStatistics");
-  public static final LogisimMenuItem SIMULATE_STOP = new LogisimMenuItem(
-      "SimulateStop");
-  public static final LogisimMenuItem SIMULATE_RUN = new LogisimMenuItem(
-      "SimulateRun");
-  public static final LogisimMenuItem SIMULATE_RUN_TOGGLE = new LogisimMenuItem(
-      "SimulateRun");
-  public static final LogisimMenuItem SIMULATE_STEP = new LogisimMenuItem(
-      "SimulateStep");
-  public static final LogisimMenuItem SIMULATE_VHDL_ENABLE = new LogisimMenuItem(
-      "SimulateVhdlEnable");
-  public static final LogisimMenuItem GENERATE_VHDL_SIM_FILES = new LogisimMenuItem(
-      "GenerateVhdlSimFiles");
-  public static final LogisimMenuItem TICK_ENABLE = new LogisimMenuItem(
-      "TickEnable");
-  public static final LogisimMenuItem TICK_HALF = new LogisimMenuItem(
-      "TickHalf");
-  public static final LogisimMenuItem TICK_FULL = new LogisimMenuItem(
-      "TickFull");
+  public static final LogisimMenuItem CIRCUIT_STATS = new LogisimMenuItem("GetCircuitStatistics");
+  public static final LogisimMenuItem SIMULATE_STOP = new LogisimMenuItem("SimulateStop");
+  public static final LogisimMenuItem SIMULATE_RUN = new LogisimMenuItem("SimulateRun");
+  public static final LogisimMenuItem SIMULATE_RUN_TOGGLE = new LogisimMenuItem("SimulateRun");
+  public static final LogisimMenuItem SIMULATE_STEP = new LogisimMenuItem("SimulateStep");
+  public static final LogisimMenuItem SIMULATE_VHDL_ENABLE = new LogisimMenuItem("SimulateVhdlEnable");
+  public static final LogisimMenuItem GENERATE_VHDL_SIM_FILES = new LogisimMenuItem("GenerateVhdlSimFiles");
+  public static final LogisimMenuItem TICK_ENABLE = new LogisimMenuItem("TickEnable");
+  public static final LogisimMenuItem TICK_HALF = new LogisimMenuItem("TickHalf");
+  public static final LogisimMenuItem TICK_FULL = new LogisimMenuItem("TickFull");
 
   private JFrame parent;
   private MyListener listener;
@@ -137,12 +116,12 @@ public class LogisimMenuBar extends JMenuBar {
   private HashMap<LogisimMenuItem, MenuItem> menuItems = new HashMap<LogisimMenuItem, MenuItem>();
   private ArrayList<ChangeListener> enableListeners;
 
-  private MenuFile file;
-  private MenuEdit edit;
-  private MenuProject project;
-  private MenuSimulate simulate;
-  private MenuHelp help;
-  private MenuFPGA fpga;
+  public final MenuFile file;
+  public final MenuEdit edit;
+  public final MenuProject project;
+  public final MenuSimulate simulate;
+  public final MenuHelp help;
+  public final MenuFPGA fpga;
 
   public LogisimMenuBar(JFrame parent, Project proj) {
     this.parent = parent;
@@ -175,6 +154,11 @@ public class LogisimMenuBar extends JMenuBar {
     MenuItem item = menuItems.get(which);
     item.actionPerformed(new ActionEvent(item,
           ActionEvent.ACTION_PERFORMED, which.toString()));
+  }
+
+  public KeyStroke getAccelerator(LogisimMenuItem which) {
+    MenuItem item = menuItems.get(which);
+    return item == null ? null : item.getAccelerator();
   }
 
   void fireEnableChanged() {

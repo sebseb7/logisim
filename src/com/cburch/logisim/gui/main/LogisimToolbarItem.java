@@ -42,6 +42,7 @@ import javax.swing.Icon;
 
 import com.cburch.draw.toolbar.ToolbarItem;
 import com.cburch.logisim.gui.menu.LogisimMenuItem;
+import com.cburch.logisim.gui.menu.MenuListener;
 import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.util.StringGetter;
 

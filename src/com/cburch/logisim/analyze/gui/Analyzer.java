@@ -58,60 +58,17 @@ import java.util.concurrent.TimeoutException;
 
 import com.cburch.logisim.analyze.model.AnalyzerModel;
 import com.cburch.logisim.gui.generic.LFrame;
+import com.cburch.logisim.gui.menu.EditHandler;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 
 public class Analyzer extends LFrame {
-  private class EditListener implements ActionListener, ChangeListener {
-    public void actionPerformed(ActionEvent e) {
-      Object src = e.getSource();
-      Component c = tabbedPane.getSelectedComponent();
-      if (c instanceof JScrollPane) {
-        c = ((JScrollPane) c).getViewport().getView();
-      }
-      if (!(c instanceof TabInterface))
-        return;
-      TabInterface tab = (TabInterface) c;
-      if (src == LogisimMenuBar.CUT) {
-        tab.copy();
-        tab.delete();
-      } else if (src == LogisimMenuBar.COPY) {
-        tab.copy();
-      } else if (src == LogisimMenuBar.PASTE) {
-        tab.paste();
-      } else if (src == LogisimMenuBar.DELETE) {
-        tab.delete();
-      } else if (src == LogisimMenuBar.SELECT_ALL) {
-        tab.selectAll();
-      }
-    }
+  private AnalyzerMenuListener menuListener;
 
-    private void enableItems(LogisimMenuBar menubar) {
-      Component c = tabbedPane.getSelectedComponent();
-      if (c instanceof JScrollPane) {
-        c = ((JScrollPane) c).getViewport().getView();
-      }
-      boolean support = c instanceof TabInterface;
-      menubar.setEnabled(LogisimMenuBar.CUT, support);
-      menubar.setEnabled(LogisimMenuBar.COPY, support);
-      menubar.setEnabled(LogisimMenuBar.PASTE, support);
-      menubar.setEnabled(LogisimMenuBar.DELETE, support);
-      menubar.setEnabled(LogisimMenuBar.SELECT_ALL, support);
-    }
-
-    private void register(LogisimMenuBar menubar) {
-      menubar.addActionListener(LogisimMenuBar.CUT, this);
-      menubar.addActionListener(LogisimMenuBar.COPY, this);
-      menubar.addActionListener(LogisimMenuBar.PASTE, this);
-      menubar.addActionListener(LogisimMenuBar.DELETE, this);
-      menubar.addActionListener(LogisimMenuBar.SELECT_ALL, this);
-      tabbedPane.addChangeListener(this);
-      enableItems(menubar);
-    }
-
+  private class MyChangeListener implements ChangeListener {
     public void stateChanged(ChangeEvent e) {
-      enableItems(menubar);
+      // enableItems(menubar);
 
       Object selected = tabbedPane.getSelectedComponent();
       if (selected instanceof JScrollPane) {
@@ -121,26 +78,24 @@ public class Analyzer extends LFrame {
         ((JPanel) selected).requestFocus();
       }
       if (selected instanceof AnalyzerTab) {
+        AnalyzerTab tab = (AnalyzerTab)selected;
+        menuListener.setEditHandler(tab.getEditHandler());
         model.getOutputExpressions().enableUpdates();
-        ((AnalyzerTab) selected).updateTab();
+        tab.updateTab();
       } else {
         model.getOutputExpressions().disableUpdates();
       }
     }
   }
 
-  private class MyListener implements LocaleListener {
+  private class MyLocaleListener implements LocaleListener {
     public void localeChanged() {
       Analyzer.this.setTitle(S.get("analyzerWindowTitle"));
-      tabbedPane.setTitleAt(INPUTS_TAB, S.get("inputsTab"));
-      tabbedPane.setTitleAt(OUTPUTS_TAB, S.get("outputsTab"));
+      tabbedPane.setTitleAt(IO_TAB, S.get("inputsOutputsTab"));
       tabbedPane.setTitleAt(TABLE_TAB, S.get("tableTab"));
       tabbedPane.setTitleAt(EXPRESSION_TAB, S.get("expressionTab"));
       tabbedPane.setTitleAt(MINIMIZED_TAB, S.get("minimizedTab"));
-      tabbedPane
-          .setToolTipTextAt(INPUTS_TAB, S.get("inputsTabTip"));
-      tabbedPane.setToolTipTextAt(OUTPUTS_TAB,
-          S.get("outputsTabTip"));
+      tabbedPane .setToolTipTextAt(IO_TAB, S.get("inputsOutputsTabTip"));
       tabbedPane.setToolTipTextAt(TABLE_TAB, S.get("tableTabTip"));
       tabbedPane.setToolTipTextAt(EXPRESSION_TAB,
           S.get("expressionTabTip"));
@@ -149,8 +104,7 @@ public class Analyzer extends LFrame {
       importTable.setText(S.get("importTableButton"));
       buildCircuit.setText(S.get("buildCircuitButton"));
       exportTable.setText(S.get("exportTableButton"));
-      inputsPanel.localeChanged();
-      outputsPanel.localeChanged();
+      ioPanel.localeChanged();
       truthTablePanel.localeChanged();
       expressionPanel.localeChanged();
       minimizedPanel.localeChanged();
@@ -169,21 +123,17 @@ public class Analyzer extends LFrame {
 
   private static final long serialVersionUID = 1L;
   // used by circuit analysis to select the relevant tab automatically.
-  public static final int INPUTS_TAB = 0;
-  public static final int OUTPUTS_TAB = 1;
+  public static final int IO_TAB = 0;
+  public static final int TABLE_TAB = 1;
+  public static final int EXPRESSION_TAB = 2;
+  public static final int MINIMIZED_TAB = 3;
 
-  public static final int TABLE_TAB = 2;
-
-  public static final int EXPRESSION_TAB = 3;
-
-  public static final int MINIMIZED_TAB = 4;
-  private MyListener myListener = new MyListener();
-  private EditListener editListener = new EditListener();
+  private MyLocaleListener myLocaleListener = new MyLocaleListener();
+  private MyChangeListener myChangeListener = new MyChangeListener();
   private AnalyzerModel model = new AnalyzerModel();
 
   private JTabbedPane tabbedPane = new JTabbedPane();
-  private VariableTab inputsPanel;
-  private VariableTab outputsPanel;
+  private VariableTab ioPanel;
   private TableTab truthTablePanel;
   private ExpressionTab expressionPanel;
   private MinimizedTab minimizedPanel;
@@ -194,8 +144,10 @@ public class Analyzer extends LFrame {
 
   Analyzer() {
     super(true, null);
-    inputsPanel = new VariableTab(model.getInputs(), AnalyzerModel.MAX_INPUTS);
-    outputsPanel = new VariableTab(model.getOutputs(), AnalyzerModel.MAX_OUTPUTS);
+
+    menuListener = new AnalyzerMenuListener(menubar);
+
+    ioPanel = new VariableTab(model.getInputs(), model.getOutputs(), menubar);
     truthTablePanel = new TableTab(model.getTruthTable());
     expressionPanel = new ExpressionTab(model);
     minimizedPanel = new MinimizedTab(model);
@@ -203,11 +155,15 @@ public class Analyzer extends LFrame {
     buildCircuit = new BuildCircuitButton(this, model);
     exportTable = new ExportTableButton(this, model);
 
+    // inputsPanel.setListener(editListener); // not needed
+    // truthTablePanel.setListener(editListener);
+    // expressionPanel.setListener(editListener);
+    // minimizedPanel.setListener(editListener); // does not support editing
+
     truthTablePanel.addMouseListener(new TruthTableMouseListener());
 
     tabbedPane = new JTabbedPane();
-    addTab(INPUTS_TAB, inputsPanel);
-    addTab(OUTPUTS_TAB, outputsPanel);
+    addTab(IO_TAB, ioPanel);
     addTab(TABLE_TAB, truthTablePanel);
     addTab(EXPRESSION_TAB, expressionPanel);
     addTab(MINIMIZED_TAB, minimizedPanel);
@@ -227,18 +183,18 @@ public class Analyzer extends LFrame {
     contents.add(buttonPanel, BorderLayout.SOUTH);
 
     DefaultRegistry registry = new DefaultRegistry(getRootPane());
-    inputsPanel.registerDefaultButtons(registry);
-    outputsPanel.registerDefaultButtons(registry);
+    // ioPanel.registerDefaultButtons(registry);
     expressionPanel.registerDefaultButtons(registry);
 
-    LocaleManager.addLocaleListener(myListener);
-    myListener.localeChanged();
-
-    editListener.register(menubar);
+    LocaleManager.addLocaleListener(myLocaleListener);
+    myLocaleListener.localeChanged();
+    tabbedPane.addChangeListener(myChangeListener);
+    setSelectedTab(0);
+    myChangeListener.stateChanged(null);
   }
 
   private void addTab(int index, final JComponent comp) {
-    if (comp instanceof TableTab) {
+    if (comp instanceof TableTab || comp instanceof VariableTab) {
       tabbedPane.insertTab("Untitled", null, comp, null, index);
       return;
     }

@@ -329,7 +329,7 @@ public class Frame extends LFrame implements LocaleListener {
   private Project proj;
   private MyProjectListener myProjectListener = new MyProjectListener();
   // GUI elements shared between views
-  private MenuListener menuListener;
+  private MainMenuListener menuListener;
   private Toolbar toolbar;
   private HorizontalSplitPane leftRegion, rightRegion, editRegion;
   private VerticalSplitPane mainRegion;
@@ -387,7 +387,7 @@ public class Frame extends LFrame implements LocaleListener {
     attrTableSelectionModel = new AttrTableSelectionModel(proj, this);
 
     // set up menu bar and toolbar
-    menuListener = new MenuListener(this, menubar);
+    menuListener = new MainMenuListener(this, menubar);
     menuListener.setEditHandler(layoutEditHandler);
     toolbar = new Toolbar(layoutToolbarModel);
 

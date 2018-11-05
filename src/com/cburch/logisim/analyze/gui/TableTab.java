@@ -64,7 +64,7 @@ import com.cburch.logisim.analyze.model.TruthTable;
 import com.cburch.logisim.analyze.model.TruthTableEvent;
 import com.cburch.logisim.analyze.model.TruthTableListener;
 
-class TableTab extends JPanel implements TruthTablePanel, TabInterface {
+class TableTab extends JPanel implements TruthTablePanel {
   private class MyListener implements TruthTableListener {
     public void rowsChanged(TruthTableEvent event) { updateTable(); }
     public void cellsChanged(TruthTableEvent event) { repaint(); }

@@ -33,6 +33,8 @@ package com.cburch.logisim.gui.menu;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.swing.KeyStroke;
+
 interface MenuItem {
   public void actionPerformed(ActionEvent event);
 
@@ -45,4 +47,6 @@ interface MenuItem {
   public void removeActionListener(ActionListener l);
 
   public void setEnabled(boolean value);
+
+  public KeyStroke getAccelerator();
 }

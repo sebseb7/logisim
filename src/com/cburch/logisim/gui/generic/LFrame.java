@@ -30,9 +30,12 @@
 
 package com.cburch.logisim.gui.generic;
 
+import java.awt.Component;
 import java.awt.Image;
 import java.awt.Window;
 import java.awt.event.WindowEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
@@ -89,6 +92,7 @@ public class LFrame extends JFrame implements WindowClosable {
   private static Image DEFAULT_ICON = null;
 
   protected final LogisimMenuBar menubar;
+
 
   public LFrame(boolean toplevel, Project proj) {
     attachIcon(this);
