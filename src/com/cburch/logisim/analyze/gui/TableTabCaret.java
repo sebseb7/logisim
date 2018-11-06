@@ -489,6 +489,19 @@ class TableTabCaret {
     }
   }
 
+  boolean hasSelection() {
+    return marked() || cursor.isValid();
+  }
+
+  boolean hadSelection = false;
+  void updateMenus() {
+    boolean sel = hasSelection();
+    if (hadSelection != sel) {
+      hadSelection = sel;
+      table.updateTab();
+    }
+  }
+
   void paintBackground(Graphics g) {
     if (hilightRows != null) {
       g.setColor(HIGHLIGHT_COLOR);
@@ -592,6 +605,7 @@ class TableTabCaret {
   }
 
   private void repaint(Pt... pts) {
+    updateMenus();
     if (cleanHilight) {
       cleanHilight = false;
       table.repaint();

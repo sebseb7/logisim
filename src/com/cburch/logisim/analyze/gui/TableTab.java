@@ -31,40 +31,42 @@
 package com.cburch.logisim.analyze.gui;
 import static com.cburch.logisim.analyze.model.Strings.S;
 
-import java.util.List;
-import java.util.ArrayList;
 import java.awt.Canvas;
 import java.awt.Color;
-import java.awt.Insets;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Rectangle;
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.GridBagLayout;
+import java.awt.Graphics;
 import java.awt.GridBagConstraints;
-import java.awt.FlowLayout;
-import java.awt.event.MouseEvent;
-import java.awt.event.ComponentListener;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
 
-import javax.swing.SwingConstants;
-import javax.swing.JPanel;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingConstants;
 
-import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.analyze.model.Entry;
 import com.cburch.logisim.analyze.model.TruthTable;
 import com.cburch.logisim.analyze.model.TruthTableEvent;
 import com.cburch.logisim.analyze.model.TruthTableListener;
+import com.cburch.logisim.analyze.model.Var;
+import com.cburch.logisim.gui.menu.EditHandler;
+import com.cburch.logisim.gui.menu.LogisimMenuBar;
 
-class TableTab extends JPanel implements TruthTablePanel {
+class TableTab extends AnalyzerTab implements TruthTablePanel {
   private class MyListener implements TruthTableListener {
     public void rowsChanged(TruthTableEvent event) { updateTable(); }
     public void cellsChanged(TruthTableEvent event) { repaint(); }
@@ -285,10 +287,7 @@ class TableTab extends JPanel implements TruthTablePanel {
     bodyPane = new JScrollPane(body,
         ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-    bodyPane.addComponentListener(new ComponentListener() {
-      public void componentHidden(ComponentEvent arg0) { }
-      public void componentMoved(ComponentEvent arg0) { }
-      public void componentShown(ComponentEvent arg0) { }
+    bodyPane.addComponentListener(new ComponentAdapter() {
       public void componentResized(ComponentEvent event) {
         int width = bodyPane.getViewport().getWidth();
         body.setSize(new Dimension(width, body.getHeight()));
@@ -298,10 +297,7 @@ class TableTab extends JPanel implements TruthTablePanel {
     headerPane = new JScrollPane(header,
         ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-    headerPane.addComponentListener(new ComponentListener() {
-      public void componentHidden(ComponentEvent arg0) { }
-      public void componentMoved(ComponentEvent arg0) { }
-      public void componentShown(ComponentEvent arg0) { }
+    headerPane.addComponentListener(new ComponentAdapter() {
       public void componentResized(ComponentEvent event) {
         int width = headerPane.getViewport().getWidth();
         header.setSize(new Dimension(width, header.getHeight()));
@@ -362,6 +358,8 @@ class TableTab extends JPanel implements TruthTablePanel {
     expand.addActionListener(caret.getListener());
     clip = new TableTabClip(this);
     computePreferredSize();
+
+    editHandler.computeEnabled();
   }
 
   public JPanel getBody() {
@@ -414,24 +412,6 @@ class TableTab extends JPanel implements TruthTablePanel {
     revalidate();
     repaint();
 
-  }
-
-  public void copy() {
-    requestFocus();
-    clip.copy();
-  }
-
-  public void delete() {
-    requestFocus();
-    Rectangle s = caret.getSelection();
-    int inputs = table.getInputColumnCount();
-    for (int c = s.x; c < s.x + s.width; c++) {
-      if (c < inputs)
-        continue; // todo: allow input row delete?
-      for (int r = s.y; r < s.y + s.height; r++) {
-        table.setVisibleOutputEntry(r, c - inputs, Entry.DONT_CARE);
-      }
-    }
   }
 
   TableTabCaret getCaret() {
@@ -597,6 +577,10 @@ class TableTab extends JPanel implements TruthTablePanel {
     repaint();
   }
 
+  void updateTab() {
+    editHandler.computeEnabled();
+  }
+
   private class TableBody extends JPanel {
     @Override
     public void paintComponent(Graphics g) {
@@ -673,15 +657,6 @@ class TableTab extends JPanel implements TruthTablePanel {
     }
   }
 
-  public void paste() {
-    requestFocus();
-    clip.paste();
-  }
-
-  public void selectAll() {
-    caret.selectAll();
-  }
-
   public void setEntryProvisional(int y, int x, Entry value) {
     provisionalY = y;
     provisionalX = x;
@@ -691,4 +666,60 @@ class TableTab extends JPanel implements TruthTablePanel {
         * cellHeight;
     repaint(0, top, body.getWidth(), cellHeight);
   }
+
+  @Override
+  EditHandler getEditHandler() {
+    return editHandler;
+  }
+
+  EditHandler editHandler = new EditHandler() {
+    @Override
+    public void computeEnabled() {
+      boolean sel = caret.hasSelection();
+      setEnabled(LogisimMenuBar.CUT, sel);
+      setEnabled(LogisimMenuBar.COPY, sel);
+      setEnabled(LogisimMenuBar.PASTE, sel);
+      setEnabled(LogisimMenuBar.DELETE, sel);
+      setEnabled(LogisimMenuBar.DUPLICATE, false);
+      setEnabled(LogisimMenuBar.SELECT_ALL, table.getRowCount() > 0);
+      setEnabled(LogisimMenuBar.RAISE, false);
+      setEnabled(LogisimMenuBar.LOWER, false);
+      setEnabled(LogisimMenuBar.RAISE_TOP, false);
+      setEnabled(LogisimMenuBar.LOWER_BOTTOM, false);
+      setEnabled(LogisimMenuBar.ADD_CONTROL, false);
+      setEnabled(LogisimMenuBar.REMOVE_CONTROL, false);
+    }
+
+    @Override
+    public void copy() {
+      requestFocus();
+      clip.copy();
+    }
+
+    @Override
+    public void paste() {
+      requestFocus();
+      clip.paste();
+    }
+
+    @Override
+    public void selectAll() {
+      caret.selectAll();
+    }
+
+    @Override
+    public void delete() {
+      requestFocus();
+      Rectangle s = caret.getSelection();
+      int inputs = table.getInputColumnCount();
+      for (int c = s.x; c < s.x + s.width; c++) {
+        if (c < inputs)
+          continue; // todo: allow input row delete?
+        for (int r = s.y; r < s.y + s.height; r++) {
+          table.setVisibleOutputEntry(r, c - inputs, Entry.DONT_CARE);
+        }
+      }
+    }
+
+  };
 }
