@@ -331,8 +331,6 @@ public class ExportImage {
     }
   }
 
-
-
   static void doExport(Project proj) {
     // First display circuit/parameter selection dialog
     Frame frame = proj.getFrame();
