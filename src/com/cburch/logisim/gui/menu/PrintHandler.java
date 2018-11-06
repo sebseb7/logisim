@@ -28,48 +28,20 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.cburch.logisim.analyze.gui;
+package com.cburch.logisim.gui.menu;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
-import com.cburch.logisim.gui.menu.LogisimMenuBar;
-import com.cburch.logisim.gui.menu.MenuListener;
-import com.cburch.logisim.gui.menu.PrintHandler;
+public abstract class PrintHandler {
 
-public class AnalyzerMenuListener extends MenuListener {
+  public void print() { }
+  public void exportImage() { }
 
-  protected class FileListener implements ActionListener {
-    public void actionPerformed(ActionEvent event) {
-      if (printer != null)
-        printer.actionPerformed(event);
-    }
-    boolean registered;
-    public void register(boolean en) {
-      if (registered == en)
-        return;
-      registered = en;
-      if (en) {
-        menubar.addActionListener(LogisimMenuBar.EXPORT_IMAGE, this);
-        menubar.addActionListener(LogisimMenuBar.PRINT, this);
-      } else {
-        menubar.removeActionListener(LogisimMenuBar.EXPORT_IMAGE, this);
-        menubar.removeActionListener(LogisimMenuBar.PRINT, this);
-      }
-    }
-  }
-
-  private FileListener fileListener = new FileListener();
-  private PrintHandler printer;
-
-  public AnalyzerMenuListener(LogisimMenuBar menubar) {
-    super(menubar);
-    fileListener.register(false);
-    editListener.register();
-  }
-
-  public void setPrintHandler(PrintHandler printer) {
-    this.printer = printer;
-    fileListener.register(printer != null);
+  public void actionPerformed(ActionEvent e) {
+    Object src = e.getSource();
+    if (src == LogisimMenuBar.PRINT)
+      print();
+    else if (src == LogisimMenuBar.EXPORT_IMAGE)
+      exportImage();
   }
 }

@@ -42,16 +42,22 @@ import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
@@ -59,14 +65,18 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 
 import com.cburch.logisim.analyze.model.Entry;
+import com.cburch.logisim.analyze.model.Entry;
 import com.cburch.logisim.analyze.model.TruthTable;
 import com.cburch.logisim.analyze.model.TruthTableEvent;
 import com.cburch.logisim.analyze.model.TruthTableListener;
 import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.gui.menu.EditHandler;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.gui.menu.PrintHandler;
+import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.util.LocaleManager;
 
-class TableTab extends AnalyzerTab implements TruthTablePanel {
+class TableTab extends AnalyzerTab implements TruthTablePanel, Printable {
   private class MyListener implements TruthTableListener {
     public void rowsChanged(TruthTableEvent event) { updateTable(); }
     public void cellsChanged(TruthTableEvent event) { repaint(); }
@@ -584,6 +594,13 @@ class TableTab extends AnalyzerTab implements TruthTablePanel {
   private class TableBody extends JPanel {
     @Override
     public void paintComponent(Graphics g) {
+      try {
+        paintComponent(g, false);
+      } catch (Exception e) {
+        // this can happen during transitions between circuits
+      }
+    }
+    public void paintComponent(Graphics g, boolean printView) {
       /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
       Graphics2D g2 = (Graphics2D)g;
       g2.setRenderingHint(
@@ -593,9 +610,10 @@ class TableTab extends AnalyzerTab implements TruthTablePanel {
           RenderingHints.KEY_ANTIALIASING,
           RenderingHints.VALUE_ANTIALIAS_ON);
 
-      super.paintComponent(g);
-
-      caret.paintBackground(g);
+      if (!printView) {
+        super.paintComponent(g);
+        caret.paintBackground(g);
+      }
 
       int top = 0;
       int left = Math.max(0, (getWidth() - tableWidth) / 2);
@@ -621,13 +639,17 @@ class TableTab extends AnalyzerTab implements TruthTablePanel {
         y += cellHeight;
       }
 
-      caret.paintForeground(g);
+      if (!printView)
+        caret.paintForeground(g);
     }
   }
 
   private class TableHeader extends JPanel {
     @Override
     public void paintComponent(Graphics g) {
+      paintComponent(g, false);
+    }
+    public void paintComponent(Graphics g, boolean printView) {
       /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
       Graphics2D g2 = (Graphics2D)g;
       g2.setRenderingHint(
@@ -637,7 +659,8 @@ class TableTab extends AnalyzerTab implements TruthTablePanel {
           RenderingHints.KEY_ANTIALIASING,
           RenderingHints.VALUE_ANTIALIAS_ON);
 
-      super.paintComponent(g);
+      if (!printView)
+        super.paintComponent(g);
 
       int top = getHeight() - cellHeight - HEADER_VSEP;
       int left = Math.max(0, (body.getWidth() - tableWidth) / 2);
@@ -666,7 +689,7 @@ class TableTab extends AnalyzerTab implements TruthTablePanel {
         * cellHeight;
     repaint(0, top, body.getWidth(), cellHeight);
   }
-
+  
   @Override
   EditHandler getEditHandler() {
     return editHandler;
@@ -722,4 +745,73 @@ class TableTab extends AnalyzerTab implements TruthTablePanel {
     }
 
   };
+
+  @Override
+  PrintHandler getPrintHandler() {
+    return printHandler;
+  }
+
+  PrintHandler printHandler = new PrintHandler() {
+    @Override
+    public void print() {
+      LocaleManager S = com.cburch.logisim.gui.main.Strings.S;
+      PageFormat format = new PageFormat();
+      PrinterJob job = PrinterJob.getPrinterJob();
+      job.setPrintable(TableTab.this, format);
+      if (!job.printDialog())
+        return;
+      try {
+        job.print();
+      } catch (PrinterException e) {
+
+        JOptionPane.showMessageDialog(
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow(),
+            S.fmt("printError", e.toString()),
+            S.get("printErrorTitle"), JOptionPane.ERROR_MESSAGE);
+      }
+    }
+    @Override
+    public void exportImage() {
+      System.out.println("export not yet implemented");
+    }
+  };
+
+  public int print(Graphics pg, PageFormat pf, int pageNum) {
+    double imWidth = pf.getImageableWidth();
+    double imHeight = pf.getImageableHeight();
+    Graphics2D g = (Graphics2D) pg;
+    FontMetrics fm = g.getFontMetrics();
+
+    // shrink horizontally to fit
+    double scale = 1.0;
+    if (tableWidth > imWidth)
+      scale = imWidth / tableWidth;
+    
+    // figure out how many pages we will need
+    int n = getRowCount();
+    double headHeight = (fm.getHeight() * 1.5 + header.getHeight() * scale);
+    int rowsPerPage = (int)((imHeight - headHeight) / (cellHeight * scale));
+    int numPages = (n + rowsPerPage - 1) / rowsPerPage;
+    if (pageNum >= numPages)
+      return Printable.NO_SUCH_PAGE;
+
+    g.translate(pf.getImageableX(), pf.getImageableY());
+    g.drawRect(0, 0, (int)imWidth-1, (int)imHeight-1);
+    GraphicsUtil.drawText(g,
+        String.format("Combinational Analysis (page %d of %d)", pageNum+1, numPages),
+        (int)(imWidth/2), 0, GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
+
+    g.translate(0, fm.getHeight() * 1.5);
+    g.scale(scale, scale);
+    header.paintComponent(g, true);
+    g.translate(0, header.getHeight());
+
+    int yHeight = cellHeight * rowsPerPage;
+    int yTop = pageNum * yHeight;
+    g.translate(0, -yTop);
+    g.setClip(new Rectangle(0, yTop, (int)(imWidth/scale), yHeight));
+    body.paintComponent(g, true);
+
+    return Printable.PAGE_EXISTS;
+  }
 }

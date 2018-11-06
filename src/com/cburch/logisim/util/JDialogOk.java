@@ -34,7 +34,6 @@ import static com.cburch.logisim.util.Strings.S;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dialog;
-import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
