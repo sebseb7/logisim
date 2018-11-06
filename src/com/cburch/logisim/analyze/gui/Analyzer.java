@@ -58,8 +58,6 @@ import java.util.concurrent.TimeoutException;
 
 import com.cburch.logisim.analyze.model.AnalyzerModel;
 import com.cburch.logisim.gui.generic.LFrame;
-import com.cburch.logisim.gui.menu.EditHandler;
-import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 
