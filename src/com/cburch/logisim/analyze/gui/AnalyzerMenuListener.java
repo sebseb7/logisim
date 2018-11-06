@@ -32,30 +32,9 @@ package com.cburch.logisim.analyze.gui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.util.ArrayList;
-import java.util.List;
 
-import com.cburch.draw.model.CanvasModelEvent;
-import com.cburch.draw.model.CanvasModelListener;
-import com.cburch.logisim.Main;
-import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.circuit.CircuitState;
-import com.cburch.logisim.circuit.Simulator;
-import com.cburch.logisim.file.LibraryEvent;
-import com.cburch.logisim.file.LibraryListener;
-import com.cburch.logisim.file.LogisimFile;
-import com.cburch.logisim.gui.appear.RevertAppearanceAction;
-import com.cburch.logisim.gui.generic.CardPanel;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
-import com.cburch.logisim.gui.menu.LogisimMenuItem;
-import com.cburch.logisim.gui.menu.ProjectCircuitActions;
-import com.cburch.logisim.gui.menu.SimulateListener;
 import com.cburch.logisim.gui.menu.MenuListener;
-import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.proj.ProjectEvent;
-import com.cburch.logisim.proj.ProjectListener;
 
 public class AnalyzerMenuListener extends MenuListener {
 
