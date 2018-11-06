@@ -181,12 +181,12 @@ public class ExportImage {
     return null;
   }
 
-  private static class ImageFileFilter extends FileFilter {
+  public static class ImageFileFilter extends FileFilter {
     private int type;
     private String[] extensions;
     private StringGetter desc;
 
-    private ImageFileFilter(int type, StringGetter desc, String[] exts) {
+    public ImageFileFilter(int type, StringGetter desc, String[] exts) {
       this.type = type;
       this.desc = desc;
       extensions = new String[exts.length];
@@ -313,6 +313,26 @@ public class ExportImage {
     }
   }
 
+  public static ImageFileFilter getFilter(int fmt) {
+    switch (fmt) {
+    case FORMAT_GIF:
+      return new ImageFileFilter(fmt,
+          S.getter("exportGifFilter"), new String[] { "gif" });
+    case FORMAT_PNG:
+      return new ImageFileFilter(fmt,
+          S.getter("exportPngFilter"), new String[] { "png" });
+    case FORMAT_JPG:
+      return new ImageFileFilter(fmt,
+          S.getter("exportJpgFilter"), new String[] { "jpg",
+            "jpeg", "jpe", "jfi", "jfif", "jfi" });
+    default:
+      logger.error("Unexpected image format; aborted!");
+      return null;
+    }
+  }
+
+
+
   static void doExport(Project proj) {
     // First display circuit/parameter selection dialog
     Frame frame = proj.getFrame();
@@ -336,30 +356,15 @@ public class ExportImage {
     if (circuits.isEmpty())
       return;
 
-    ImageFileFilter filter;
     int fmt = options.getImageFormat();
-    switch (fmt) {
-    case FORMAT_GIF:
-      filter = new ImageFileFilter(fmt,
-          S.getter("exportGifFilter"), new String[] { "gif" });
-      break;
-    case FORMAT_PNG:
-      filter = new ImageFileFilter(fmt,
-          S.getter("exportPngFilter"), new String[] { "png" });
-      break;
-    case FORMAT_JPG:
-      filter = new ImageFileFilter(fmt,
-          S.getter("exportJpgFilter"), new String[] { "jpg",
-            "jpeg", "jpe", "jfi", "jfif", "jfi" });
-      break;
-    default:
-      logger.error("Unexpected image format; aborted!");
+    ImageFileFilter filter = getFilter(fmt);
+    if (filter == null)
       return;
-    }
 
     // Then display file chooser
     Loader loader = proj.getLogisimFile().getLoader();
     JFileChooser chooser = loader.createChooser();
+    chooser.setAcceptAllFileFilterUsed(false);
     if (circuits.size() > 1) {
       chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
       chooser.setDialogTitle(S.get("exportImageDirectorySelect"));
@@ -374,8 +379,7 @@ public class ExportImage {
 
     // Determine whether destination is valid
     File dest = chooser.getSelectedFile();
-    chooser.setCurrentDirectory(dest.isDirectory() ? dest : dest
-        .getParentFile());
+    chooser.setCurrentDirectory(dest.isDirectory() ? dest : dest.getParentFile());
     if (dest.exists()) {
       if (!dest.isDirectory()) {
         int confirm = JOptionPane.showConfirmDialog(proj.getFrame(),
