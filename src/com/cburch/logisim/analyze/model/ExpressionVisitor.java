@@ -42,4 +42,6 @@ public interface ExpressionVisitor<T> {
   public T visitVariable(String name);
 
   public T visitXor(Expression a, Expression b);
+
+  public T visitEq(Expression a, Expression b);
 }

@@ -97,7 +97,7 @@ class VariableTab extends AnalyzerTab {
   private JTable ioTable(VariableList data, LogisimMenuBar menubar) {
     final TableCellEditor ed1 = new SingleClickVarEditor(data);
     final TableCellEditor ed2 = new DoubleClickVarEditor(data);
-    JTable table = new JTable(9, 1) {
+    JTable table = new JTable(1, 1) {
       public TableCellEditor getCellEditor(int row, int column) {
         return (row == getRowCount() - 1 ? ed1 : ed2);
       }
@@ -502,7 +502,6 @@ class VariableTab extends AnalyzerTab {
   public class SingleClickVarEditor extends AbstractCellEditor implements TableCellEditor {
     JTextField field = new JTextField();
     JComboBox<Integer> width;
-    JPanel p;
     Var editing;
     VariableList data;
     public SingleClickVarEditor(VariableList data) {

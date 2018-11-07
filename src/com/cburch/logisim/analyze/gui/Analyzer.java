@@ -35,8 +35,8 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 
 import javax.swing.SwingWorker;
 import javax.swing.JComponent;
@@ -179,10 +179,6 @@ public class Analyzer extends LFrame {
     contents.add(tabbedPane, BorderLayout.CENTER);
     contents.add(buttonPanel, BorderLayout.SOUTH);
 
-    DefaultRegistry registry = new DefaultRegistry(getRootPane());
-    // ioPanel.registerDefaultButtons(registry);
-    expressionPanel.registerDefaultButtons(registry);
-
     LocaleManager.addLocaleListener(myLocaleListener);
     myLocaleListener.localeChanged();
     tabbedPane.addChangeListener(myChangeListener);
@@ -191,17 +187,14 @@ public class Analyzer extends LFrame {
   }
 
   private void addTab(int index, final JComponent comp) {
-    if (comp instanceof TableTab || comp instanceof VariableTab) {
+    if (comp instanceof TableTab || comp instanceof VariableTab || comp instanceof ExpressionTab) {
       tabbedPane.insertTab("Untitled", null, comp, null, index);
       return;
     }
     final JScrollPane pane = new JScrollPane(comp,
         ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-    pane.addComponentListener(new ComponentListener() {
-      public void componentHidden(ComponentEvent arg0) { }
-      public void componentMoved(ComponentEvent arg0) { }
-      public void componentShown(ComponentEvent arg0) { }
+    pane.addComponentListener(new ComponentAdapter() {
       public void componentResized(ComponentEvent event) {
         int width = pane.getViewport().getWidth();
         comp.setSize(new Dimension(width, comp.getHeight()));

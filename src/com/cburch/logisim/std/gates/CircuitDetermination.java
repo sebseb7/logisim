@@ -116,6 +116,10 @@ abstract class CircuitDetermination {
     public CircuitDetermination visitXor(Expression a, Expression b) {
       return binary(a.visit(this), b.visit(this), XorGate.FACTORY);
     }
+
+    public CircuitDetermination visitEq(Expression a, Expression b) {
+      return binary(a.visit(this), b.visit(this), XnorGate.FACTORY);
+    }
   }
 
   //

@@ -31,26 +31,58 @@
 package com.cburch.logisim.analyze.gui;
 import static com.cburch.logisim.analyze.model.Strings.S;
 
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Rectangle;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.util.ArrayList;
 import java.text.AttributedString;
 import java.awt.font.TextAttribute;
 import java.awt.font.FontRenderContext;
 import java.awt.font.LineBreakMeasurer;
 import java.awt.font.TextLayout;
+import java.awt.image.BufferedImage;
 
 import javax.swing.JPanel;
 
 import com.cburch.logisim.analyze.model.Expression;
+import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.analyze.model.ExpressionVisitor;
 
-class ExpressionView extends JPanel {
+class ExpressionRenderer extends JPanel {
+
+  @Override
+  public void validate() { }
+  @Override
+  public void invalidate() { }
+  @Override
+  public void revalidate() { }
+  @Override
+  public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) { }
+  @Override
+  protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) { }
+  @Override
+  public void repaint(long tm, int x, int y, int width, int height) { }
+  @Override
+  public void repaint(Rectangle r) { }
+  @Override
+  public void repaint() { }
+  @Override
+  public boolean isOpaque() {
+    Color back = getBackground();
+    Component p = getParent();
+    if (p != null)
+      p = p.getParent();
+    boolean colorMatch = (back != null) && (p != null) &&
+        back.equals(p.getBackground()) && p.isOpaque();
+    return !colorMatch && super.isOpaque();
+  }
+
   private static class ExpressionData {
     String text;
     final ArrayList<Range> nots = new ArrayList<Range>();
@@ -188,7 +220,7 @@ class ExpressionView extends JPanel {
         }
 
         public Object visitXor(Expression a, Expression b) {
-          return binary(a, b, Expression.XOR_LEVEL, " ^ ");
+          return binary(a, b, Expression.XOR_LEVEL, " \u2295 "); // oplus
         }
 
         public Object visitEq(Expression a, Expression b) {
@@ -196,20 +228,6 @@ class ExpressionView extends JPanel {
         }
       });
       this.text = text.toString();
-    }
-  }
-
-  private class MyListener extends ComponentAdapter {
-    public void componentResized(ComponentEvent arg0) {
-      int width = getWidth();
-      if (renderData != null && Math.abs(renderData.width - width) > 2) {
-        Graphics g = getGraphics();
-        FontMetrics fm = g == null ? null : g.getFontMetrics();
-        renderData = new RenderData(renderData.exprData, width, fm);
-        setPreferredSize(renderData.getPreferredSize());
-        revalidate();
-        repaint();
-      }
     }
   }
 
@@ -248,7 +266,6 @@ class ExpressionView extends JPanel {
         computeNotDepths();
         lineY = new int[] { MINIMUM_HEIGHT };
       } else {
-        System.out.println("has font metrics");
         if (exprData.text.length() == 0) {
           lineStyled = null;
           lineText = new String[] { S.get("expressionEmpty") };
@@ -345,8 +362,7 @@ class ExpressionView extends JPanel {
         lineY[i] = curY + maxDepth * NOT_SEP;
         curY = lineY[i] + fm.getHeight() + EXTRA_LEADING;
       }
-      height = Math.max(MINIMUM_HEIGHT, curY - fm.getLeading()
-          - EXTRA_LEADING);
+      height = Math.max(MINIMUM_HEIGHT, curY - fm.getLeading() - EXTRA_LEADING);
     }
 
     private void computeNotDepths() {
@@ -380,6 +396,9 @@ class ExpressionView extends JPanel {
 
     private AttributedString style(String s, int end, ArrayList<Range> subs) {
       AttributedString as = new AttributedString(s.substring(0, end));
+      as.addAttribute(TextAttribute.FAMILY, EXPR_FONT_FAMILY);
+      as.addAttribute(TextAttribute.SIZE, EXPR_FONT_SIZE);
+      as.addAttribute(TextAttribute.POSTURE, EXPR_FONT_POSTURE);
       for (Range r : subs) {
         if (r.stopIndex <= end)
           as.addAttribute(TextAttribute.SUPERSCRIPT, TextAttribute.SUPERSCRIPT_SUB, r.startIndex, r.stopIndex);
@@ -407,7 +426,16 @@ class ExpressionView extends JPanel {
       return w - periodWidth;
     }
 
+    public static final String EXPR_FONT_FAMILY = "Serif";
+    public static final int EXPR_FONT_SIZE = 12;
+    public static final int EXPR_FONT_STYLE = Font.ITALIC;
+    public static final Float EXPR_FONT_POSTURE = TextAttribute.POSTURE_OBLIQUE;
+
+    public static final Font EXPR_FONT = new Font(
+        EXPR_FONT_FAMILY, EXPR_FONT_STYLE, EXPR_FONT_SIZE);
+
     public void paint(Graphics g, int x, int y) {
+      g.setFont(EXPR_FONT);
       FontMetrics fm = g.getFontMetrics();
       if (lineStyled == null) {
         FontRenderContext ctx = ((Graphics2D)g).getFontRenderContext();
@@ -460,23 +488,39 @@ class ExpressionView extends JPanel {
   private static final int EXTRA_LEADING = 4;
 
   private static final int MINIMUM_HEIGHT = 25;
+  private static final int LEFT_MARGIN = 10;
 
-  private MyListener myListener = new MyListener();
+  Expression expr = null;
 
-  private RenderData renderData;
+  public ExpressionRenderer() { }
 
-  public ExpressionView() {
-    addComponentListener(myListener);
-    setExpression(null);
+  public void setExpression(String name, Expression expr) {
+    this.expr = Expressions.eq(Expressions.variable(name), expr);
   }
 
-  void localeChanged() {
-    repaint();
+  public int getExpressionHeight(int w) {
+    BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+    Graphics gr = img.getGraphics().create();
+    if (!(gr instanceof Graphics2D))
+      return 50; // ??
+    Graphics2D g = (Graphics2D)gr;
+    g.setFont(RenderData.EXPR_FONT);
+    FontMetrics fm = g.getFontMetrics();
+    ExpressionData exprData = new ExpressionData(expr);
+    RenderData renderData = new RenderData(exprData, w - LEFT_MARGIN, fm);
+    return renderData.height;
   }
 
   @Override
   public void paintComponent(Graphics g) {
-    System.out.println("width = " + getWidth() + " height = " + getHeight());
+    g.setFont(RenderData.EXPR_FONT);
+    FontMetrics fm = g.getFontMetrics();
+
+    ExpressionData exprData = new ExpressionData(expr);
+    RenderData renderData = new RenderData(exprData, getWidth(), fm);
+    // System.out.println("width = " + getWidth() + " height = " + getHeight());
+    // System.out.println(expr + " --> " + renderData.getPreferredSize());
+
     /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
     Graphics2D g2 = (Graphics2D)g;
     g2.setRenderingHint(
@@ -489,20 +533,10 @@ class ExpressionView extends JPanel {
     super.paintComponent(g);
 
     if (renderData != null) {
-      int x = Math.max(0, (getWidth() - renderData.prefWidth) / 2);
+      int x = LEFT_MARGIN; // Math.max(0, (getWidth() - renderData.prefWidth) / 2);
       int y = Math.max(0, (getHeight() - renderData.height) / 2);
       renderData.paint(g, x, y);
     }
   }
 
-  public void setExpression(Expression expr) {
-    ExpressionData exprData = new ExpressionData(expr);
-    Graphics g = getGraphics();
-    FontMetrics fm = g == null ? null : g.getFontMetrics();
-    renderData = new RenderData(exprData, getWidth(), fm);
-    System.out.println(expr + " --> " + renderData.getPreferredSize());
-    // setPreferredSize(renderData.getPreferredSize());
-    revalidate();
-    repaint();
-  }
 }

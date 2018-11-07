@@ -258,6 +258,32 @@ public class Expressions {
     }
   }
 
+  private static class Eq extends Binary {
+    Eq(Expression a, Expression b) {
+      super(a, b);
+    }
+
+    @Override
+    public int getPrecedence() {
+      return Expression.EQ_LEVEL;
+    }
+
+    @Override
+    public <T> T visit(ExpressionVisitor<T> visitor) {
+      return visitor.visitEq(a, b);
+    }
+
+    @Override
+    int visit(IntVisitor visitor) {
+      return visitor.visitEq(a, b);
+    }
+
+    @Override
+    void visit(Visitor visitor) {
+      visitor.visitEq(a, b);
+    }
+  }
+
   public static Expression and(Expression a, Expression b) {
     if (a == null)
       return b;
@@ -284,16 +310,24 @@ public class Expressions {
     return new Or(a, b);
   }
 
-  public static Expression variable(String name) {
-    return new Variable(name);
-  }
-
   public static Expression xor(Expression a, Expression b) {
     if (a == null)
       return b;
     if (b == null)
       return a;
     return new Xor(a, b);
+  }
+
+  public static Expression eq(Expression a, Expression b) {
+    if (a == null)
+      return b;
+    if (b == null)
+      return a;
+    return new Eq(a, b);
+  }
+
+  public static Expression variable(String name) {
+    return new Variable(name);
   }
 
   private Expressions() {

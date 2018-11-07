@@ -45,6 +45,8 @@ public abstract class Expression {
     public int visitVariable(String name);
 
     public int visitXor(Expression a, Expression b);
+
+    public int visitEq(Expression a, Expression b);
   }
 
   static interface Visitor {
@@ -59,14 +61,15 @@ public abstract class Expression {
     public void visitVariable(String name);
 
     public void visitXor(Expression a, Expression b);
+
+    public void visitEq(Expression a, Expression b);
   }
 
-  public static final int OR_LEVEL = 0;
-  public static final int XOR_LEVEL = 1;
-
-  public static final int AND_LEVEL = 2;
-
-  public static final int NOT_LEVEL = 3;
+  public static final int EQ_LEVEL = 0;
+  public static final int OR_LEVEL = 1;
+  public static final int XOR_LEVEL = 2;
+  public static final int AND_LEVEL = 3;
+  public static final int NOT_LEVEL = 4;
 
   public boolean containsXor() {
     return 1 == visit(new IntVisitor() {
@@ -92,6 +95,10 @@ public abstract class Expression {
 
       public int visitXor(Expression a, Expression b) {
         return 1;
+      }
+
+      public int visitEq(Expression a, Expression b) {
+        return a.visit(this) == 1 || b.visit(this) == 1 ? 1 : 0;
       }
     });
   }
@@ -120,6 +127,10 @@ public abstract class Expression {
 
       public int visitXor(Expression a, Expression b) {
         return a.visit(this) ^ b.visit(this);
+      }
+
+      public int visitEq(Expression a, Expression b) {
+        return ~(a.visit(this) ^ b.visit(this)&1);
       }
     });
     return (ret & 1) != 0;
@@ -175,6 +186,10 @@ public abstract class Expression {
       public int visitXor(Expression a, Expression b) {
         return binary(a, b);
       }
+
+      public int visitEq(Expression a, Expression b) {
+        return binary(a, b);
+      }
     });
   }
 
@@ -217,6 +232,10 @@ public abstract class Expression {
       }
 
       public int visitXor(Expression a, Expression b) {
+        return 0;
+      }
+
+      public int visitEq(Expression a, Expression b) {
         return 0;
       }
     });
@@ -268,6 +287,16 @@ public abstract class Expression {
           return l;
         return Expressions.xor(l, r);
       }
+
+      public Expression visitEq(Expression a, Expression b) {
+        Expression l = a.visit(this);
+        Expression r = b.visit(this);
+        if (l == null)
+          return r;
+        if (r == null)
+          return l;
+        return Expressions.eq(l, r);
+      }
     });
   }
 
@@ -303,6 +332,12 @@ public abstract class Expression {
         Expression l = a.visit(this);
         Expression r = b.visit(this);
         return Expressions.xor(l, r);
+      }
+
+      public Expression visitEq(Expression a, Expression b) {
+        Expression l = a.visit(this);
+        Expression r = b.visit(this);
+        return Expressions.eq(l, r);
       }
     });
   }
@@ -358,6 +393,10 @@ public abstract class Expression {
 
       public void visitXor(Expression a, Expression b) {
         binary(a, b, XOR_LEVEL, " ^ ");
+      }
+
+      public void visitEq(Expression a, Expression b) {
+        binary(a, b, EQ_LEVEL, " = ");
       }
     });
     return text.toString();
