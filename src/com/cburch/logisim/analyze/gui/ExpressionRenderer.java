@@ -316,6 +316,8 @@ class ExpressionRenderer extends JPanel {
         return;
       }
 
+      int availWidth = width;
+
       int startPos = 0;
       ArrayList<String> lines = new ArrayList<String>();
       while (startPos < text.length()) {
@@ -327,15 +329,15 @@ class ExpressionRenderer extends JPanel {
         }
         int bestStopPos = stopPos;
         int lineWidth = fm.stringWidth(bestLine);
-        int bestBadness = badness[stopPos] + (width - lineWidth) * BADNESS_PER_PIXEL;
+        int bestBadness = badness[stopPos] + (availWidth - lineWidth) * BADNESS_PER_PIXEL;
         while (stopPos < text.length()) {
           ++stopPos;
           String line = text.substring(startPos, stopPos);
           lineWidth = fm.stringWidth(line);
-          if (lineWidth > width)
+          if (lineWidth > availWidth)
             break;
 
-          int lineBadness = badness[stopPos] + (width - lineWidth) * BADNESS_PER_PIXEL;
+          int lineBadness = badness[stopPos] + (availWidth - lineWidth) * BADNESS_PER_PIXEL;
           if (lineBadness < bestBadness) {
             bestBadness = lineBadness;
             bestStopPos = stopPos;
@@ -343,6 +345,8 @@ class ExpressionRenderer extends JPanel {
           }
         }
         lines.add(bestLine);
+        if (lines.size() == 1)
+          availWidth -= INDENT;
         startPos = bestStopPos;
       }
       lineStyled = null;
@@ -430,11 +434,20 @@ class ExpressionRenderer extends JPanel {
     public static final int EXPR_FONT_SIZE = 12;
     public static final int EXPR_FONT_STYLE = Font.ITALIC;
     public static final Float EXPR_FONT_POSTURE = TextAttribute.POSTURE_OBLIQUE;
+    
+    public static final int OVERBAR_ADJUST = 2; // 2 pixels adjust to right
 
     public static final Font EXPR_FONT = new Font(
         EXPR_FONT_FAMILY, EXPR_FONT_STYLE, EXPR_FONT_SIZE);
 
     public void paint(Graphics g, int x, int y) {
+      Graphics2D g2 = (Graphics2D)g;
+      g2.setRenderingHint(
+          RenderingHints.KEY_TEXT_ANTIALIASING,
+          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+      g2.setRenderingHint(
+          RenderingHints.KEY_ANTIALIASING,
+          RenderingHints.VALUE_ANTIALIAS_ON);
       g.setFont(EXPR_FONT);
       FontMetrics fm = g.getFontMetrics();
       if (lineStyled == null) {
@@ -450,13 +463,15 @@ class ExpressionRenderer extends JPanel {
           notStops[i] = new int[nots.size()];
           for (int j = 0; j < nots.size(); j++) {
             Range not = nots.get(j);
-            notStarts[i][j] = getWidth(ctx, line, not.startIndex, subs);
+            notStarts[i][j] = getWidth(ctx, line, not.startIndex, subs) + OVERBAR_ADJUST;
             notStops[i][j] = getWidth(ctx, line, not.stopIndex, subs);
           }
           lineStyled[i] = style(line, line.length(), subs);
         }
       }
       for (int i = 0; i < lineStyled.length; i++) {
+        if (i == 1)
+          x += INDENT;
         AttributedString as = lineStyled[i];
         g.drawString(as.getIterator(), x, y + lineY[i] + fm.getAscent());
 
@@ -489,13 +504,15 @@ class ExpressionRenderer extends JPanel {
 
   private static final int MINIMUM_HEIGHT = 25;
   private static final int LEFT_MARGIN = 10;
+  private static final int INDENT = 30; // for continuation lines
 
   Expression expr = null;
 
   public ExpressionRenderer() { }
 
   public void setExpression(String name, Expression expr) {
-    this.expr = Expressions.eq(Expressions.variable(name), expr);
+    // this.expr = Expressions.eq(Expressions.variable(name), expr);
+    this.expr = expr;
   }
 
   public int getExpressionHeight(int w) {
@@ -504,6 +521,12 @@ class ExpressionRenderer extends JPanel {
     if (!(gr instanceof Graphics2D))
       return 50; // ??
     Graphics2D g = (Graphics2D)gr;
+    g.setRenderingHint(
+        RenderingHints.KEY_TEXT_ANTIALIASING,
+        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+    g.setRenderingHint(
+        RenderingHints.KEY_ANTIALIASING,
+        RenderingHints.VALUE_ANTIALIAS_ON);
     g.setFont(RenderData.EXPR_FONT);
     FontMetrics fm = g.getFontMetrics();
     ExpressionData exprData = new ExpressionData(expr);
@@ -513,13 +536,6 @@ class ExpressionRenderer extends JPanel {
 
   @Override
   public void paintComponent(Graphics g) {
-    g.setFont(RenderData.EXPR_FONT);
-    FontMetrics fm = g.getFontMetrics();
-
-    ExpressionData exprData = new ExpressionData(expr);
-    RenderData renderData = new RenderData(exprData, getWidth(), fm);
-    // System.out.println("width = " + getWidth() + " height = " + getHeight());
-    // System.out.println(expr + " --> " + renderData.getPreferredSize());
 
     /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
     Graphics2D g2 = (Graphics2D)g;
@@ -529,6 +545,14 @@ class ExpressionRenderer extends JPanel {
     g2.setRenderingHint(
         RenderingHints.KEY_ANTIALIASING,
         RenderingHints.VALUE_ANTIALIAS_ON);
+    g.setFont(RenderData.EXPR_FONT);
+    FontMetrics fm = g.getFontMetrics();
+
+    ExpressionData exprData = new ExpressionData(expr);
+    RenderData renderData = new RenderData(exprData, getWidth(), fm);
+    // System.out.println("width = " + getWidth() + " height = " + getHeight());
+    // System.out.println(expr + " --> " + renderData.getPreferredSize());
+
 
     super.paintComponent(g);
 
