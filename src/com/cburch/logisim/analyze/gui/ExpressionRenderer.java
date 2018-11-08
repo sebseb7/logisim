@@ -94,6 +94,11 @@ class ExpressionRenderer extends JPanel {
   public static final FontMetrics TXT_FONT_METRICS;
   public static final FontMetrics VAR_FONT_METRICS;
   public static final FontMetrics SUB_FONT_METRICS;
+  public static final float OP_ASCENT, OP_DESCENT;
+  public static final float TXT_ASCENT, TXT_DESCENT;
+  public static final float VAR_ASCENT, VAR_DESCENT;
+  public static final float SUB_ASCENT, SUB_DESCENT;
+  public static final float TYP_ASCENT, TYP_DESCENT, TYP_HEIGHT;
   static {
     BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
     Graphics2D g = (Graphics2D)img.getGraphics().create();
@@ -111,6 +116,19 @@ class ExpressionRenderer extends JPanel {
     VAR_FONT_METRICS = g.getFontMetrics();
     g.setFont(SUB_FONT);
     SUB_FONT_METRICS = g.getFontMetrics();
+
+    OP_ASCENT = OP_FONT_METRICS.getAscent();
+    OP_DESCENT = OP_FONT_METRICS.getDescent();
+    TXT_ASCENT = TXT_FONT_METRICS.getAscent();
+    TXT_DESCENT = TXT_FONT_METRICS.getDescent();
+    VAR_ASCENT = VAR_FONT_METRICS.getAscent();
+    VAR_DESCENT = VAR_FONT_METRICS.getDescent();
+    SUB_ASCENT = SUB_FONT_METRICS.getAscent();
+    SUB_DESCENT = SUB_FONT_METRICS.getDescent();
+    TYP_ASCENT = VAR_ASCENT;
+    TYP_DESCENT = VAR_DESCENT + SUB_DESCENT;
+    TYP_HEIGHT = TYP_ASCENT + TYP_DESCENT;
+
     g.dispose();
   }
 
@@ -173,8 +191,8 @@ class ExpressionRenderer extends JPanel {
       this.s = s;
       this.precedence = precedence;
       w = OP_FONT_METRICS.stringWidth(s);
-      a = OP_FONT_METRICS.getAscent();
-      d = OP_FONT_METRICS.getDescent();
+      a = OP_ASCENT;
+      d = OP_DESCENT;
       h = a+d;
     }
     void layout(float x, float y, LineBreaker lines) {
@@ -188,28 +206,30 @@ class ExpressionRenderer extends JPanel {
     }
   }
 
-  static final float PAREN_GROWTH = 1.15f;
+  static final float PAREN_GROWTH = 1.18f; // each paren nesting grows 18% larger
+  static final float PAREN_SHIFT = 0.10f; // shift down 20% to make it look more balanced
   class ParenBox extends StringBox {
-    float scale = 1.0f;
+    float scale = PAREN_GROWTH;
     ParenBox(String s, int depth) {
       super(s, depth);
+      rescale(0);
     }
     void rescale(float innerHeight) {
-      scale = innerHeight / (OP_FONT_METRICS.getAscent() + OP_FONT_METRICS.getDescent());
-      a = scale*OP_FONT_METRICS.getAscent() * PAREN_GROWTH;
-      d = scale*OP_FONT_METRICS.getDescent() * PAREN_GROWTH;
+      scale = PAREN_GROWTH * Math.max(1.0f, innerHeight / TYP_HEIGHT);
+      w = scale*OP_FONT_METRICS.stringWidth(s);
+      a = scale*OP_ASCENT * PAREN_GROWTH;
+      d = scale*OP_DESCENT * PAREN_GROWTH;
       h = a+d;
+      float shift = h * PAREN_SHIFT;
+      a -= shift;
+      d += shift;
     }
     void paint(Graphics2D g) {
       g.setFont(OP_FONT);
-      AffineTransform xform = null;
-      if (scale != 1.0) {
-        xform = g.getTransform();
-        g.scale(scale, scale);
-      }
-      g.drawString(s, xx/scale, yy/scale);
-      if (xform != null)
-        g.setTransform(xform);
+      AffineTransform xform = g.getTransform();
+      g.scale(scale, scale);
+      g.drawString(s, xx/scale, (yy+h*PAREN_SHIFT)/scale);
+      g.setTransform(xform);
     }
   }
 
@@ -219,8 +239,8 @@ class ExpressionRenderer extends JPanel {
       super(depth);
       this.s = s;
       w = TXT_FONT_METRICS.stringWidth(s);
-      a = TXT_FONT_METRICS.getAscent();
-      d = TXT_FONT_METRICS.getDescent();
+      a = TXT_ASCENT;
+      d = TXT_DESCENT;
       h = a+d;
     }
     void layout(float x, float y, LineBreaker lines) {
@@ -247,11 +267,11 @@ class ExpressionRenderer extends JPanel {
         name = desc;
       }
       w = VAR_FONT_METRICS.stringWidth(name);
-      a = VAR_FONT_METRICS.getAscent();
-      d = VAR_FONT_METRICS.getDescent();
+      a = VAR_ASCENT;
+      d = VAR_DESCENT;
       if (sub != null) {
         float sw = SUB_FONT_METRICS.stringWidth(sub);
-        float sd = SUB_FONT_METRICS.getDescent();
+        float sd = SUB_DESCENT;
         sx = w;
         sy = d;
         w += sw;
@@ -314,7 +334,7 @@ class ExpressionRenderer extends JPanel {
   }
 
   class BoxMaker implements ExpressionVisitor<Box> {
-    int depth = 0;
+    int depth = 1;
     Box binary(Expression a, Expression b, int level, String op) {
       Box bb_a;
       if (a.getPrecedence() < level) {
@@ -331,6 +351,10 @@ class ExpressionRenderer extends JPanel {
       }
 
       StringBox mid = new StringBox(op, level, depth);
+
+      if (b == null)
+        return new BoundingBox(depth, mid, bb_a);
+
 
       Box bb_b;
       if (b.getPrecedence() < level) {
@@ -350,16 +374,16 @@ class ExpressionRenderer extends JPanel {
     }
 
     public Box visitAnd(Expression a, Expression b) {
-      return binary(a, b, Expression.AND_LEVEL, "\u22C5"); // dot operator
+      return binary(a, b, Expression.AND_LEVEL, OPS[notation][0]);
     }
     public Box visitOr(Expression a, Expression b) {
-      return binary(a, b, Expression.OR_LEVEL, " + ");
+      return binary(a, b, Expression.OR_LEVEL, OPS[notation][1]);
     }
     public Box visitXor(Expression a, Expression b) {
-      return binary(a, b, Expression.XOR_LEVEL, " \u2295 "); // oplus
+      return binary(a, b, Expression.XOR_LEVEL, OPS[notation][2]);
     }
     public Box visitEq(Expression a, Expression b) {
-      return binary(a, b, Expression.EQ_LEVEL, " = ");
+      return binary(a, b, Expression.EQ_LEVEL, OPS[notation][4]);
     }
     public Box visitConstant(int value) {
       return new ConstBox(Integer.toString(value, 16), depth);
@@ -368,12 +392,31 @@ class ExpressionRenderer extends JPanel {
       return new VarBox(desc, depth);
     }
     public Box visitNot(Expression a) {
-      depth++;
-      Box inner = a.visit(this);
-      depth--;
-      return new NotBox(inner, depth);
+      if (notation == ENGINEERING) {
+        depth++;
+        Box inner = a.visit(this);
+        depth--;
+        return new NotBox(inner, depth);
+      } else {
+        return binary(a, null, Expression.NOT_LEVEL, OPS[notation][3]);
+      }
     }
   }
+
+  int notation = ENGINEERING;
+  
+  // Notation choices:
+  //   "engineering": downvee, vee, oplus, overbar, =
+  //   "mathematics": dot, +, oplus, not, =
+  //   "programming": &, |, ^, ~, ==
+  static final int ENGINEERING = 0;
+  static final int MATHEMATICS = 1;
+  static final int PROGRAMMING = 2;
+  static final String[][] OPS = {
+    { " \u2227 ", " \u2228 ", " \u2295 ", null, " = " }, // { " \u22C0 ", " \u22C1 ", " \u2295 ", null, " = " },
+    { " \u22C5 ", " + ", "\u2295", "\u00AC", " = " },
+    { " && ", " || ", " ^ ", "!", " == " },
+  };
 
   static final Color[] BOX_SHADE = {
       new Color(200, 150, 100),
@@ -406,11 +449,10 @@ class ExpressionRenderer extends JPanel {
       boxes.clear();
       bboxes.clear();
       top.layout(x, y, this);
-      // System.out.println(top);
-      // System.out.printf("top = %f x %f\n", top.w, top.h);
     }
 
     void fitToWidth(float width) {
+      // why = null;
       int n = boxes.size();
       int end = n-1;
       if (n < 1) //  || totalWidth(0, end) <= width)
@@ -421,9 +463,9 @@ class ExpressionRenderer extends JPanel {
       // best[i] is either end (best is one line) or e<end (best is a linebreak after e)
       int[] best = new int[n];
 
-      // System.out.printf("There are %d boxes\n", n);
+     // System.out.printf("There are %d boxes\n", n);
       for (int start = end; start >= 0; start--) {
-        // System.out.printf("Penalties for laying out %d..%d\n", start, end);
+       // System.out.printf("Penalties for laying out %d..%d\n", start, end);
         float w = start == 0 ? width : (width - LEFT_INDENT);
         p[start][end] = penalty(start, end, w);
         // System.out.printf("  as one line %d..%d --> %f\n", start, end, p[start][end]);
@@ -431,17 +473,20 @@ class ExpressionRenderer extends JPanel {
         for (int endl = start; endl < end; endl++) {
           p[start][endl] = penalty(start, endl, w) + p[endl+1][best[endl+1]];
           // System.out.printf("  as multiline %d..%d, %d.. ..%s --> %f\n",
-          //    start, endl, endl+1, end, p[start][endl+1]);
+          //   start, endl, endl+1, end, p[start][endl]);
           if (p[start][endl] < p[start][best[start]])
             best[start] = endl;
         }
-        // System.out.printf("  best is %d..%d --> %f\n", start, best[start], p[start][best[start]]);
+       // System.out.printf("  best is %d..%d --> %f\n", start, best[start], p[start][best[start]]);
       }
 
       int startl = 0;
       int endl = best[startl];
 
-      // System.out.printf("  first line is %d..%d --> %f\n", startl, endl, p[startl][endl]);
+      // why = "";
+      // System.out.printf("  first line is %d..%d --> %f = %f + ...", startl, endl,
+      //     p[startl][endl], penalty(startl, endl, width));
+      // System.out.println(why);
 
       // first line stays at left margin, maybe moves up a little
       float xoff = 0;
@@ -453,7 +498,10 @@ class ExpressionRenderer extends JPanel {
       xoff = LEFT_INDENT;
       while (endl < end) {
         int next = best[endl+1];
-        // System.out.printf("  next line is %d..%d --> %f\n", endl+1, next, p[endl+1][next]);
+        // why = "";
+        // System.out.printf("  next line is %d..%d --> %f = %f + ... ",
+        //     endl+1, next, p[endl+1][next], penalty(endl+1, next, width-LEFT_INDENT));
+        // System.out.println(why);
         xoff -= totalWidth(startl, endl);
         yoff += maxDescent(startl, endl) + LEADING + maxAscent(endl+1, next);
         for (int i = endl+1; i <= next; i++) {
@@ -493,16 +541,20 @@ class ExpressionRenderer extends JPanel {
       return last.yy + last.d;
     }
 
+    // String why;
     double penalty(int s, int e, float width) {
       double p = 0;
       float w = totalWidth(s, e);
       // Overly-long lines get penalized harshly.
       // Short lines get penalized using square, so that two moderate lines is
       // preferred to one shorter and one longer line.
-      if (w > width)
-        p += 10000 + (w-width);
-      else
+      if (w > width) {
+        p += 10000 + Math.pow((w-width)/width, 2);
+        // if (why != null) why += String.format(" %f b/c overlong", p);
+      } else {
         p += 10 * Math.pow((width-w)/width, 2);
+        // if (why != null) why += String.format(" %f b/c too short", p);
+      }
       if (e == boxes.size()-1)
         return p; // no other penalties if this is the last line
       // Breaking after an operator is worse than just before it, and
@@ -510,12 +562,16 @@ class ExpressionRenderer extends JPanel {
       // operators.
       Box left = boxes.get(e);
       Box right = boxes.get(e+1);
-      if (left instanceof ParenBox || right instanceof ParenBox) // break near paren
-        p += (15 * left.depth);
-      else if (left instanceof StringBox) // break just after an operator
-        p += (10 + ((StringBox)left).precedence) * left.depth;
-      else if (right instanceof StringBox) // break just before an operator
-        p += (5 + ((StringBox)right).precedence) * left.depth;
+      if (left instanceof ParenBox || right instanceof ParenBox) { // break near paren
+        p += (150 * left.depth);
+        // if (why != null) why += String.format(" %f b/c near paren", p);
+      } else if (left instanceof StringBox) { // break just after an operator
+        p += (100 + ((StringBox)left).precedence) * left.depth;
+        // if (why != null) why += String.format(" %f b/c after op", p);
+      } else if (right instanceof StringBox) { // break just before an operator
+        p += (50 + ((StringBox)right).precedence) * left.depth;
+        // if (why != null) why += String.format(" %f b/c before op", p);
+      }
       return p;
     }
 
