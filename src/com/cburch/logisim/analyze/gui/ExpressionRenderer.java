@@ -404,6 +404,21 @@ class ExpressionRenderer extends JPanel {
   }
 
   int notation = ENGINEERING;
+  void setNotation(String s) {
+    switch (s) {
+    case "programming": notation = PROGRAMMING; break;
+    case "mathematics": notation = MATHEMATICS; break;
+    default: notation = ENGINEERING; break;
+    }
+  }
+
+  String getNotation() {
+    switch (notation) {
+    case PROGRAMMING: return "programming";
+    case MATHEMATICS: return "mathematics";
+    default: return "engineering";
+    }
+  }
   
   // Notation choices:
   //   "engineering": downvee, vee, oplus, overbar, =
