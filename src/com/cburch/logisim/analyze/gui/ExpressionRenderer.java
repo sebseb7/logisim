@@ -33,6 +33,8 @@ import static com.cburch.logisim.analyze.model.Strings.S;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.geom.Line2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.Rectangle;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
@@ -47,6 +49,7 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.LineBreakMeasurer;
 import java.awt.font.TextLayout;
 import java.awt.image.BufferedImage;
+import java.awt.geom.AffineTransform;
 
 import javax.swing.JPanel;
 
@@ -83,460 +86,492 @@ class ExpressionRenderer extends JPanel {
     return !colorMatch && super.isOpaque();
   }
 
-  private static class ExpressionData {
-    String text;
-    final ArrayList<Range> nots = new ArrayList<Range>();
-    final ArrayList<Range> subscripts = new ArrayList<Range>();
-    int[] badness;
-
-    ExpressionData(Expression expr) {
-      if (expr == null) {
-        text = "";
-        badness = new int[0];
-      } else {
-        computeText(expr);
-        computeBadnesses();
-      }
-    }
-
-    private void computeBadnesses() {
-      badness = new int[text.length() + 1];
-      badness[text.length()] = 0;
-      if (text.length() == 0)
-        return;
-
-      badness[0] = Integer.MAX_VALUE;
-      Range curNot = nots.isEmpty() ? null : (Range) nots.get(0);
-      int curNotIndex = 0;
-      char prev = text.charAt(0);
-      for (int i = 1; i < text.length(); i++) {
-        // invariant: curNot.stopIndex >= i (and is first such),
-        // or curNot == null if none such exists
-        char cur = text.charAt(i);
-        if (cur == ' ') {
-          badness[i] = BADNESS_BEFORE_SPACE;
-        } else if (Character.isJavaIdentifierPart(cur)) {
-          if (Character.isJavaIdentifierPart(prev)) {
-            badness[i] = BADNESS_IDENT_BREAK;
-          } else {
-            badness[i] = BADNESS_BEFORE_AND;
-          }
-        } else if (cur == '+') {
-          badness[i] = BADNESS_BEFORE_OR;
-        } else if (cur == '^') {
-          badness[i] = BADNESS_BEFORE_XOR;
-        } else if (cur == ')') {
-          badness[i] = BADNESS_BEFORE_SPACE;
-        } else { // cur == '('
-          badness[i] = BADNESS_BEFORE_AND;
-        }
-
-        while (curNot != null && curNot.stopIndex <= i) {
-          ++curNotIndex;
-          curNot = (curNotIndex >= nots.size() ? null
-              : (Range) nots.get(curNotIndex));
-        }
-
-        if (curNot != null && badness[i] < BADNESS_IDENT_BREAK) {
-          int depth = 0;
-          Range nd = curNot;
-          int ndi = curNotIndex;
-          while (nd != null && nd.startIndex < i) {
-            if (nd.stopIndex > i)
-              ++depth;
-            ++ndi;
-            nd = ndi < nots.size() ? (Range) nots.get(ndi) : null;
-          }
-          if (depth > 0) {
-            badness[i] += BADNESS_NOT_BREAK + (depth - 1)
-                * BADNESS_PER_NOT_BREAK;
-          }
-        }
-
-        prev = cur;
-      }
-    }
-
-    private void computeText(Expression expr) {
-      final StringBuilder text = new StringBuilder();
-      expr.visit(new ExpressionVisitor<Object>() {
-        private Object binary(Expression a, Expression b, int level,
-            String op) {
-          if (a.getPrecedence() < level) {
-            text.append("(");
-            a.visit(this);
-            text.append(")");
-          } else {
-            a.visit(this);
-          }
-          text.append(op);
-          if (b.getPrecedence() < level) {
-            text.append("(");
-            b.visit(this);
-            text.append(")");
-          } else {
-            b.visit(this);
-          }
-          return null;
-        }
-
-        public Object visitAnd(Expression a, Expression b) {
-          return binary(a, b, Expression.AND_LEVEL, " ");
-        }
-
-        public Object visitConstant(int value) {
-          text.append("" + Integer.toString(value, 16));
-          return null;
-        }
-
-        public Object visitNot(Expression a) {
-          Range notData = new Range();
-          notData.startIndex = text.length();
-          nots.add(notData);
-          a.visit(this);
-          notData.stopIndex = text.length();
-          return null;
-        }
-
-        public Object visitOr(Expression a, Expression b) {
-          return binary(a, b, Expression.OR_LEVEL, " + ");
-        }
-
-        public Object visitVariable(String name) {
-          int i = name.indexOf(':');
-          if (i >= 0) {
-            String sub = name.substring(i+1);
-            name = name.substring(0, i);
-            text.append(name);
-            Range subscript = new Range();
-            subscript.startIndex = text.length();
-            text.append(sub);
-            subscript.stopIndex = text.length();
-            subscripts.add(subscript);
-          } else {
-            text.append(name);
-          }
-          return null;
-        }
-
-        public Object visitXor(Expression a, Expression b) {
-          return binary(a, b, Expression.XOR_LEVEL, " \u2295 "); // oplus
-        }
-
-        public Object visitEq(Expression a, Expression b) {
-          return binary(a, b, Expression.EQ_LEVEL, " = ");
-        }
-      });
-      this.text = text.toString();
-    }
-  }
-
-  private static class Range {
-    int startIndex;
-    int stopIndex;
-    int depth;
-  }
-
-  private static class RenderData {
-    ExpressionData exprData;
-    int prefWidth;
-    int width;
-    int height;
-    String[] lineText;
-    ArrayList<ArrayList<Range>> lineNots;
-    ArrayList<ArrayList<Range>> lineSubscripts;
-    int[] lineY;
-
-    AttributedString[] lineStyled;
-    int[][] notStarts;
-    int[][] notStops;
-
-    RenderData(ExpressionData exprData, int width, FontMetrics fm) {
-      this.exprData = exprData;
-      this.width = width;
-      height = MINIMUM_HEIGHT;
-
-      if (fm == null) {
-        lineStyled = null;
-        lineText = new String[] { exprData.text };
-        lineSubscripts = new ArrayList<ArrayList<Range>>();
-        lineSubscripts.add(exprData.subscripts);
-        lineNots = new ArrayList<ArrayList<Range>>();
-        lineNots.add(exprData.nots);
-        computeNotDepths();
-        lineY = new int[] { MINIMUM_HEIGHT };
-      } else {
-        if (exprData.text.length() == 0) {
-          lineStyled = null;
-          lineText = new String[] { S.get("expressionEmpty") };
-          lineSubscripts = new ArrayList<ArrayList<Range>>();
-          lineSubscripts.add(new ArrayList<Range>());
-          lineNots = new ArrayList<ArrayList<Range>>();
-          lineNots.add(new ArrayList<Range>());
-        } else {
-          computeLineText(fm);
-          lineSubscripts = computeLineAttribs(exprData.subscripts);
-          lineNots = computeLineAttribs(exprData.nots);
-          computeNotDepths();
-        }
-        computeLineY(fm);
-        prefWidth = lineText.length > 1 ? width : fm.stringWidth(lineText[0]);
-      }
-    }
-
-    private ArrayList<ArrayList<Range>> computeLineAttribs(ArrayList<Range> attribs) {
-      ArrayList<ArrayList<Range>> attrs = new ArrayList<ArrayList<Range>>();
-      for (int i = 0; i < lineText.length; i++) {
-        attrs.add(new ArrayList<Range>());
-      }
-      for (Range nd : attribs) {
-        int pos = 0;
-        for (int j = 0; j < attrs.size() && pos < nd.stopIndex; j++) {
-          String line = lineText[j];
-          int nextPos = pos + line.length();
-          if (nextPos > nd.startIndex) {
-            Range toAdd = new Range();
-            toAdd.startIndex = Math.max(pos, nd.startIndex) - pos;
-            toAdd.stopIndex = Math.min(nextPos, nd.stopIndex) - pos;
-            attrs.get(j).add(toAdd);
-          }
-          pos = nextPos;
-        }
-      }
-      return attrs;
-    }
-
-    private void computeLineText(FontMetrics fm) {
-      String text = exprData.text;
-      int[] badness = exprData.badness;
-
-      if (fm.stringWidth(text) <= width) {
-        lineStyled = null;
-        lineText = new String[] { text };
-        return;
-      }
-
-      int availWidth = width;
-
-      int startPos = 0;
-      ArrayList<String> lines = new ArrayList<String>();
-      while (startPos < text.length()) {
-        int stopPos = startPos + 1;
-        String bestLine = text.substring(startPos, stopPos);
-        if (stopPos >= text.length()) {
-          lines.add(bestLine);
-          break;
-        }
-        int bestStopPos = stopPos;
-        int lineWidth = fm.stringWidth(bestLine);
-        int bestBadness = badness[stopPos] + (availWidth - lineWidth) * BADNESS_PER_PIXEL;
-        while (stopPos < text.length()) {
-          ++stopPos;
-          String line = text.substring(startPos, stopPos);
-          lineWidth = fm.stringWidth(line);
-          if (lineWidth > availWidth)
-            break;
-
-          int lineBadness = badness[stopPos] + (availWidth - lineWidth) * BADNESS_PER_PIXEL;
-          if (lineBadness < bestBadness) {
-            bestBadness = lineBadness;
-            bestStopPos = stopPos;
-            bestLine = line;
-          }
-        }
-        lines.add(bestLine);
-        if (lines.size() == 1)
-          availWidth -= INDENT;
-        startPos = bestStopPos;
-      }
-      lineStyled = null;
-      lineText = lines.toArray(new String[lines.size()]);
-    }
-
-    private void computeLineY(FontMetrics fm) {
-      lineY = new int[lineNots.size()];
-      int curY = 0;
-      for (int i = 0; i < lineY.length; i++) {
-        int maxDepth = -1;
-        ArrayList<Range> nots = lineNots.get(i);
-        for (Range nd : nots) {
-          if (nd.depth > maxDepth)
-            maxDepth = nd.depth;
-        }
-        lineY[i] = curY + maxDepth * NOT_SEP;
-        curY = lineY[i] + fm.getHeight() + EXTRA_LEADING;
-      }
-      height = Math.max(MINIMUM_HEIGHT, curY - fm.getLeading() - EXTRA_LEADING);
-    }
-
-    private void computeNotDepths() {
-      for (ArrayList<Range> nots : lineNots) {
-        int n = nots.size();
-        int[] stack = new int[n];
-        for (int i = 0; i < nots.size(); i++) {
-          Range nd = nots.get(i);
-          int depth = 0;
-          int top = 0;
-          stack[0] = nd.stopIndex;
-          for (int j = i + 1; j < nots.size(); j++) {
-            Range nd2 = nots.get(j);
-            if (nd2.startIndex >= nd.stopIndex)
-              break;
-            while (nd2.startIndex >= stack[top])
-              top--;
-            ++top;
-            stack[top] = nd2.stopIndex;
-            if (top > depth)
-              depth = top;
-          }
-          nd.depth = depth;
-        }
-      }
-    }
-
-    public Dimension getPreferredSize() {
-      return new Dimension(10, height);
-    }
-
-    private AttributedString style(String s, int end, ArrayList<Range> subs) {
-      AttributedString as = new AttributedString(s.substring(0, end));
-      as.addAttribute(TextAttribute.FAMILY, EXPR_FONT_FAMILY);
-      as.addAttribute(TextAttribute.SIZE, EXPR_FONT_SIZE);
-      as.addAttribute(TextAttribute.POSTURE, EXPR_FONT_POSTURE);
-      for (Range r : subs) {
-        if (r.stopIndex <= end)
-          as.addAttribute(TextAttribute.SUPERSCRIPT, TextAttribute.SUPERSCRIPT_SUB, r.startIndex, r.stopIndex);
-      }
-      return as;
-    }
-
-    private int getWidth(FontRenderContext ctx, String s, int end, ArrayList<Range> subs) {
-      // TextLayout seems to exclude trailing whitespace, so we need to
-      // account for it here.
-      if (end == 0)
-        return 0;
-      AttributedString as = new AttributedString(s.substring(0, end) + ".");
-      for (Range r : subs) {
-        if (r.stopIndex <= end)
-          as.addAttribute(TextAttribute.SUPERSCRIPT, TextAttribute.SUPERSCRIPT_SUB, r.startIndex, r.stopIndex);
-      }
-      LineBreakMeasurer m = new LineBreakMeasurer(as.getIterator(), ctx);
-      TextLayout layout = m.nextLayout(Integer.MAX_VALUE);
-      int w = (int)layout.getBounds().getWidth();
-      as = new AttributedString(".");
-      m = new LineBreakMeasurer(as.getIterator(), ctx);
-      layout = m.nextLayout(Integer.MAX_VALUE);
-      int periodWidth = (int)layout.getBounds().getWidth();
-      return w - periodWidth;
-    }
-
-    public static final String EXPR_FONT_FAMILY = "Serif";
-    public static final int EXPR_FONT_SIZE = 12;
-    public static final int EXPR_FONT_STYLE = Font.ITALIC;
-    public static final Float EXPR_FONT_POSTURE = TextAttribute.POSTURE_OBLIQUE;
-    
-    public static final int OVERBAR_ADJUST = 2; // 2 pixels adjust to right
-
-    public static final Font EXPR_FONT = new Font(
-        EXPR_FONT_FAMILY, EXPR_FONT_STYLE, EXPR_FONT_SIZE);
-
-    public void paint(Graphics g, int x, int y) {
-      Graphics2D g2 = (Graphics2D)g;
-      g2.setRenderingHint(
-          RenderingHints.KEY_TEXT_ANTIALIASING,
-          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-      g2.setRenderingHint(
-          RenderingHints.KEY_ANTIALIASING,
-          RenderingHints.VALUE_ANTIALIAS_ON);
-      g.setFont(EXPR_FONT);
-      FontMetrics fm = g.getFontMetrics();
-      if (lineStyled == null) {
-        FontRenderContext ctx = ((Graphics2D)g).getFontRenderContext();
-        lineStyled = new AttributedString[lineText.length];
-        notStarts = new int[lineText.length][];
-        notStops = new int[lineText.length][];
-        for (int i = 0; i < lineText.length; i++) {
-          String line = lineText[i];
-          ArrayList<Range> nots = lineNots.get(i);
-          ArrayList<Range> subs = lineSubscripts.get(i);
-          notStarts[i] = new int[nots.size()];
-          notStops[i] = new int[nots.size()];
-          for (int j = 0; j < nots.size(); j++) {
-            Range not = nots.get(j);
-            notStarts[i][j] = getWidth(ctx, line, not.startIndex, subs) + OVERBAR_ADJUST;
-            notStops[i][j] = getWidth(ctx, line, not.stopIndex, subs);
-          }
-          lineStyled[i] = style(line, line.length(), subs);
-        }
-      }
-      for (int i = 0; i < lineStyled.length; i++) {
-        if (i == 1)
-          x += INDENT;
-        AttributedString as = lineStyled[i];
-        g.drawString(as.getIterator(), x, y + lineY[i] + fm.getAscent());
-
-        ArrayList<Range> nots = lineNots.get(i);
-        for (int j = 0; j < nots.size(); j++) {
-          Range nd = nots.get(j);
-          int notY = y + lineY[i] - nd.depth * NOT_SEP;
-          int startX = x + notStarts[i][j];
-          int stopX = x + notStops[i][j];
-          g.drawLine(startX, notY, stopX, notY);
-        }
-      }
-    }
-  }
-
-  private static final long serialVersionUID = 1L;
-  private static final int BADNESS_IDENT_BREAK = 10000;
-  private static final int BADNESS_BEFORE_SPACE = 500;
-  private static final int BADNESS_BEFORE_AND = 50;
-  private static final int BADNESS_BEFORE_XOR = 30;
-
-  private static final int BADNESS_BEFORE_OR = 0;
-  private static final int BADNESS_NOT_BREAK = 100;
-  private static final int BADNESS_PER_NOT_BREAK = 30;
-
-  private static final int BADNESS_PER_PIXEL = 1;
-
-  private static final int NOT_SEP = 3;
-  private static final int EXTRA_LEADING = 4;
-
-  private static final int MINIMUM_HEIGHT = 25;
-  private static final int LEFT_MARGIN = 10;
-  private static final int INDENT = 30; // for continuation lines
-
-  Expression expr = null;
-
-  public ExpressionRenderer() { }
-
-  public void setExpression(String name, Expression expr) {
-    // this.expr = Expressions.eq(Expressions.variable(name), expr);
-    this.expr = expr;
-  }
-
-  public int getExpressionHeight(int w) {
+  public static final Font OP_FONT = new Font("Serif", Font.PLAIN, 14);
+  public static final Font TXT_FONT = new Font("Serif", Font.BOLD, 14);
+  public static final Font VAR_FONT = new Font("Serif", Font.BOLD | Font.ITALIC, 14);
+  public static final Font SUB_FONT = new Font("Serif", Font.ITALIC, 10);
+  public static final FontMetrics OP_FONT_METRICS;
+  public static final FontMetrics TXT_FONT_METRICS;
+  public static final FontMetrics VAR_FONT_METRICS;
+  public static final FontMetrics SUB_FONT_METRICS;
+  static {
     BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-    Graphics gr = img.getGraphics().create();
-    if (!(gr instanceof Graphics2D))
-      return 50; // ??
-    Graphics2D g = (Graphics2D)gr;
+    Graphics2D g = (Graphics2D)img.getGraphics().create();
     g.setRenderingHint(
         RenderingHints.KEY_TEXT_ANTIALIASING,
         RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
     g.setRenderingHint(
         RenderingHints.KEY_ANTIALIASING,
         RenderingHints.VALUE_ANTIALIAS_ON);
-    g.setFont(RenderData.EXPR_FONT);
-    FontMetrics fm = g.getFontMetrics();
-    ExpressionData exprData = new ExpressionData(expr);
-    RenderData renderData = new RenderData(exprData, w - LEFT_MARGIN, fm);
-    return renderData.height;
+    g.setFont(OP_FONT);
+    OP_FONT_METRICS = g.getFontMetrics();
+    g.setFont(TXT_FONT);
+    TXT_FONT_METRICS = g.getFontMetrics();
+    g.setFont(VAR_FONT);
+    VAR_FONT_METRICS = g.getFontMetrics();
+    g.setFont(SUB_FONT);
+    SUB_FONT_METRICS = g.getFontMetrics();
+    g.dispose();
+  }
+
+  abstract class Box {
+    //           ___________________
+    //     ^    |                   |   )
+    //     |    |                   |   ) ascent 
+    //  height  |                   |   )
+    //     |   -o-  -  -  -  -  -  -|-
+    //     v    |___________________|   ) descent
+    //           <----- width -----> 
+    
+    float w, h, a, d; // width, height, ascent, descent
+    float xx, yy;
+    int depth;
+
+    Box(int depth) { this.depth = depth; }
+    abstract void paint(Graphics2D g);
+    abstract void layout(float x, float y, LineBreaker lines);
+    void move(float dx, float dy) { xx += dx; yy += dy; }
+  }
+
+  class NotBox extends Box {
+    Box inner;
+    LineBreaker innerLines = new LineBreaker();
+
+    NotBox(Box inner, int depth) {
+      super(depth);
+      this.inner = inner;
+      w = inner.w + 2f;
+      a = inner.a + 3f;
+      d = inner.d;
+      h = a + d;
+    }
+    void layout(float x, float y, LineBreaker lines) {
+      lines.boxes.add(this);
+      xx = x;
+      yy = y;
+      innerLines.layout(inner, x+1, y);
+    }
+    void move(float dx, float dy) {
+      xx += dx; yy += dy; 
+      for (Box b: innerLines.boxes)
+        b.move(dx, dy);
+    }
+    void paint(Graphics2D g) {
+      g.draw(new Line2D.Float(xx+1, yy-a+1.5f, xx+w-1, yy-a+1.5f));
+      innerLines.paint(g);
+    }
+  }
+
+  class StringBox extends Box {
+    String s;
+    int precedence;
+    StringBox(String s, int depth) {
+      this(s, 0, depth);
+    }
+    StringBox(String s, int precedence, int depth) {
+      super(depth);
+      this.s = s;
+      this.precedence = precedence;
+      w = OP_FONT_METRICS.stringWidth(s);
+      a = OP_FONT_METRICS.getAscent();
+      d = OP_FONT_METRICS.getDescent();
+      h = a+d;
+    }
+    void layout(float x, float y, LineBreaker lines) {
+      lines.boxes.add(this);
+      xx = x;
+      yy = y;
+    }
+    void paint(Graphics2D g) {
+      g.setFont(OP_FONT);
+      g.drawString(s, xx, yy);
+    }
+  }
+
+  static final float PAREN_GROWTH = 1.15f;
+  class ParenBox extends StringBox {
+    float scale = 1.0f;
+    ParenBox(String s, int depth) {
+      super(s, depth);
+    }
+    void rescale(float innerHeight) {
+      scale = innerHeight / (OP_FONT_METRICS.getAscent() + OP_FONT_METRICS.getDescent());
+      a = scale*OP_FONT_METRICS.getAscent() * PAREN_GROWTH;
+      d = scale*OP_FONT_METRICS.getDescent() * PAREN_GROWTH;
+      h = a+d;
+    }
+    void paint(Graphics2D g) {
+      g.setFont(OP_FONT);
+      AffineTransform xform = null;
+      if (scale != 1.0) {
+        xform = g.getTransform();
+        g.scale(scale, scale);
+      }
+      g.drawString(s, xx/scale, yy/scale);
+      if (xform != null)
+        g.setTransform(xform);
+    }
+  }
+
+  class ConstBox extends Box {
+    String s;
+    ConstBox(String s, int depth) {
+      super(depth);
+      this.s = s;
+      w = TXT_FONT_METRICS.stringWidth(s);
+      a = TXT_FONT_METRICS.getAscent();
+      d = TXT_FONT_METRICS.getDescent();
+      h = a+d;
+    }
+    void layout(float x, float y, LineBreaker lines) {
+      lines.boxes.add(this);
+      xx = x;
+      yy = y;
+    }
+    void paint(Graphics2D g) {
+      g.setFont(TXT_FONT);
+      g.drawString(s, xx, yy);
+    }
+  }
+
+  class VarBox extends Box {
+    String name, sub;
+    float sx, sy;
+    VarBox(String desc, int depth) {
+      super(depth);
+      int i = desc.indexOf(':');
+      if (i >= 0) {
+        sub = desc.substring(i+1);
+        name = desc.substring(0, i);
+      } else {
+        name = desc;
+      }
+      w = VAR_FONT_METRICS.stringWidth(name);
+      a = VAR_FONT_METRICS.getAscent();
+      d = VAR_FONT_METRICS.getDescent();
+      if (sub != null) {
+        float sw = SUB_FONT_METRICS.stringWidth(sub);
+        float sd = SUB_FONT_METRICS.getDescent();
+        sx = w;
+        sy = d;
+        w += sw;
+        d += sd;
+      }
+      h = a+d;
+    }
+    void layout(float x, float y, LineBreaker lines) {
+      lines.boxes.add(this);
+      xx = x;
+      yy = y;
+    }
+    void paint(Graphics2D g) {
+      g.setFont(VAR_FONT);
+      g.drawString(name, xx, yy);
+      if (sub != null) {
+        g.setFont(SUB_FONT);
+        g.drawString(sub, xx+sx, yy+sy);
+      }
+    }
+  }
+
+  static final Color[] BBOX_SHADE = {
+      new Color(200, 100, 100),
+      new Color(100, 200, 100),
+      new Color(100, 100, 200),
+      new Color(200, 100, 200),
+  };
+
+  class BoundingBox extends Box {
+    int depth; // debug
+    Box[] insides;
+    BoundingBox(int depth, Box ...insides) {
+      super(depth);
+      this.insides = insides;
+      for (Box b : insides) {
+        a = Math.max(a, b.a);
+        d = Math.max(d, b.d);
+        w += b.w;
+        if (b instanceof BoundingBox) { // debug
+          int id = ((BoundingBox)b).depth;
+          if (id >= depth)
+            depth = id+1;
+        }
+      }
+      h = a + d;
+    }
+    void layout(float x, float y, LineBreaker lines) {
+      lines.bboxes.add(this);
+      xx = x;
+      yy = y;
+      for (Box b : insides) {
+        b.layout(x, y, lines);
+        x += b.w;
+      }
+    }
+    void paint(Graphics2D g) {
+      debugShade(g, this, BBOX_SHADE, depth); // debug
+    }
+  }
+
+  class BoxMaker implements ExpressionVisitor<Box> {
+    int depth = 0;
+    Box binary(Expression a, Expression b, int level, String op) {
+      Box bb_a;
+      if (a.getPrecedence() < level) {
+        ParenBox lparen = new ParenBox("(", depth);
+        ParenBox rparen = new ParenBox(")", depth);
+        depth++;
+        Box bb = a.visit(this);
+        depth--;
+        lparen.rescale(bb.h);
+        rparen.rescale(bb.h);
+        bb_a = new BoundingBox(depth, lparen, bb, rparen);
+      } else {
+        bb_a = a.visit(this);
+      }
+
+      StringBox mid = new StringBox(op, level, depth);
+
+      Box bb_b;
+      if (b.getPrecedence() < level) {
+        ParenBox lparen = new ParenBox("(", depth);
+        ParenBox rparen = new ParenBox(")", depth);
+        depth++;
+        Box bb = b.visit(this);
+        depth--;
+        lparen.rescale(bb.h);
+        rparen.rescale(bb.h);
+        bb_b = new BoundingBox(depth, lparen, bb, rparen);
+      } else {
+        bb_b = b.visit(this);
+      }
+
+      return new BoundingBox(depth, bb_a, mid, bb_b);
+    }
+
+    public Box visitAnd(Expression a, Expression b) {
+      return binary(a, b, Expression.AND_LEVEL, "\u22C5"); // dot operator
+    }
+    public Box visitOr(Expression a, Expression b) {
+      return binary(a, b, Expression.OR_LEVEL, " + ");
+    }
+    public Box visitXor(Expression a, Expression b) {
+      return binary(a, b, Expression.XOR_LEVEL, " \u2295 "); // oplus
+    }
+    public Box visitEq(Expression a, Expression b) {
+      return binary(a, b, Expression.EQ_LEVEL, " = ");
+    }
+    public Box visitConstant(int value) {
+      return new ConstBox(Integer.toString(value, 16), depth);
+    }
+    public Box visitVariable(String desc) {
+      return new VarBox(desc, depth);
+    }
+    public Box visitNot(Expression a) {
+      depth++;
+      Box inner = a.visit(this);
+      depth--;
+      return new NotBox(inner, depth);
+    }
+  }
+
+  static final Color[] BOX_SHADE = {
+      new Color(200, 150, 100),
+      new Color(100, 200, 120),
+      new Color(150, 150, 200),
+  };
+
+  static class LineBreaker {
+    final ArrayList<Box> boxes = new ArrayList<>();
+    final ArrayList<BoundingBox> bboxes = new ArrayList<>();
+
+    void paint(Graphics2D g) {
+      for (Box b : boxes)
+        b.paint(g);
+    }
+
+    void debugPaint(Graphics2D g) {
+      for (Box b : bboxes)
+        b.paint(g);
+      int i = 0;
+      for (Box b : boxes) {
+        debugShade(g, b, BOX_SHADE, i++);
+        b.paint(g);
+        g.setFont(SUB_FONT);
+        g.drawString(""+b.depth, b.xx, b.yy+b.d+5);
+      }
+    }
+
+    void layout(Box top, float x, float y) {
+      boxes.clear();
+      bboxes.clear();
+      top.layout(x, y, this);
+      // System.out.println(top);
+      // System.out.printf("top = %f x %f\n", top.w, top.h);
+    }
+
+    void fitToWidth(float width) {
+      int n = boxes.size();
+      int end = n-1;
+      if (n < 1) //  || totalWidth(0, end) <= width)
+        return;
+      // p[s][end] is total penalty for s..end as one line
+      // p[s][e] for e<end is penalty for a line s..e followed by other lines e+1.. ..end
+      double[][] p = new double[n][n];
+      // best[i] is either end (best is one line) or e<end (best is a linebreak after e)
+      int[] best = new int[n];
+
+      // System.out.printf("There are %d boxes\n", n);
+      for (int start = end; start >= 0; start--) {
+        // System.out.printf("Penalties for laying out %d..%d\n", start, end);
+        float w = start == 0 ? width : (width - LEFT_INDENT);
+        p[start][end] = penalty(start, end, w);
+        // System.out.printf("  as one line %d..%d --> %f\n", start, end, p[start][end]);
+        best[start] = end;
+        for (int endl = start; endl < end; endl++) {
+          p[start][endl] = penalty(start, endl, w) + p[endl+1][best[endl+1]];
+          // System.out.printf("  as multiline %d..%d, %d.. ..%s --> %f\n",
+          //    start, endl, endl+1, end, p[start][endl+1]);
+          if (p[start][endl] < p[start][best[start]])
+            best[start] = endl;
+        }
+        // System.out.printf("  best is %d..%d --> %f\n", start, best[start], p[start][best[start]]);
+      }
+
+      int startl = 0;
+      int endl = best[startl];
+
+      // System.out.printf("  first line is %d..%d --> %f\n", startl, endl, p[startl][endl]);
+
+      // first line stays at left margin, maybe moves up a little
+      float xoff = 0;
+      float yoff = -(maxAscent(0, end) - maxAscent(0, endl));
+      for (int i = startl; i <= endl; i++)
+        boxes.get(i).move(xoff, yoff);
+
+      // each next line moves down, move way left, and indents a bit
+      xoff = LEFT_INDENT;
+      while (endl < end) {
+        int next = best[endl+1];
+        // System.out.printf("  next line is %d..%d --> %f\n", endl+1, next, p[endl+1][next]);
+        xoff -= totalWidth(startl, endl);
+        yoff += maxDescent(startl, endl) + LEADING + maxAscent(endl+1, next);
+        for (int i = endl+1; i <= next; i++) {
+          boxes.get(i).move(xoff, yoff);
+        }
+        startl = endl+1;
+        endl = next;
+      }
+      // System.out.println("Layout fit into width " + width + " + and height " + getHeight());
+    }
+
+    float maxAscent(int s, int e) {
+      float a = 0;
+      for (int i = s; i <= e; i++)
+        a = Math.max(a, boxes.get(i).a);
+      return a;
+    }
+
+    float maxDescent(int s, int e) {
+      float d = 0;
+      for (int i = s; i <= e; i++)
+        d = Math.max(d, boxes.get(i).d);
+      return d;
+    }
+
+    float totalWidth(int s, int e) {
+      float w = 0;
+      for (int i = s; i <= e; i++)
+        w += boxes.get(i).w;
+      return w;
+    }
+
+    float getHeight() {
+      if (boxes.size() == 0)
+        return DEFAULT_HEIGHT;
+      Box last = boxes.get(boxes.size()-1);
+      return last.yy + last.d;
+    }
+
+    double penalty(int s, int e, float width) {
+      double p = 0;
+      float w = totalWidth(s, e);
+      // Overly-long lines get penalized harshly.
+      // Short lines get penalized using square, so that two moderate lines is
+      // preferred to one shorter and one longer line.
+      if (w > width)
+        p += 10000 + (w-width);
+      else
+        p += 10 * Math.pow((width-w)/width, 2);
+      if (e == boxes.size()-1)
+        return p; // no other penalties if this is the last line
+      // Breaking after an operator is worse than just before it, and
+      // penalties get somewhat worse at higher depths or with higher-precedence
+      // operators.
+      Box left = boxes.get(e);
+      Box right = boxes.get(e+1);
+      if (left instanceof ParenBox || right instanceof ParenBox) // break near paren
+        p += (15 * left.depth);
+      else if (left instanceof StringBox) // break just after an operator
+        p += (10 + ((StringBox)left).precedence) * left.depth;
+      else if (right instanceof StringBox) // break just before an operator
+        p += (5 + ((StringBox)right).precedence) * left.depth;
+      return p;
+    }
+
+  }
+
+  static void debugShade(Graphics2D g, Box b, Color[] colors, int idx) {
+    Color c = g.getColor();
+    g.setColor(colors[idx % colors.length]);
+    g.fill(new Rectangle2D.Float(b.xx, b.yy-b.a, b.w, b.h));
+    g.setColor(g.getColor().darker());
+    g.draw(new Rectangle2D.Float(b.xx, b.yy-b.a, b.w, b.h));
+    g.setColor(c);
+  }
+
+  static final int DEFAULT_HEIGHT = 35;
+  static final int LEADING = 6; // gap between lines
+  static final int LEFT_MARGIN = 15; // margin at left of every line
+  static final int LEFT_INDENT = 25; // extra margin for continuation lines
+
+  int width = 100;
+  LineBreaker lines = new LineBreaker();
+
+  public ExpressionRenderer() { }
+
+  public void setWidth(int w) {
+    width = w - LEFT_MARGIN;
+  }
+
+  public void setExpression(String name, Expression expr) {
+    expr = Expressions.eq(Expressions.variable(name), expr);
+    Box top = expr.visit(new BoxMaker());
+    // for now, just lay things out on one line, don't break any boxes
+    lines.layout(top, 0, top.a);
+    lines.fitToWidth(width);
+  }
+
+  public void setError(String name, String msg) {
+    ArrayList<Box> boxes = new ArrayList<>();
+    boxes.add(new VarBox(name, 0));
+    boxes.add(new StringBox(" = ", 0));
+    boxes.add(new StringBox("{", 0));
+    for (String word : msg.split("\\s+"))
+      boxes.add(new StringBox(" " + word, 1));
+    boxes.add(new StringBox(" }", 0));
+    Box[] a = boxes.toArray(new Box[boxes.size()]);
+    Box top = new BoundingBox(0, a);
+    lines.layout(top, 0, top.a);
+    lines.fitToWidth(width);
+  }
+
+  public int getExpressionHeight() {
+    return (int)Math.ceil(lines.getHeight());
   }
 
   @Override
   public void paintComponent(Graphics g) {
-
     /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
     Graphics2D g2 = (Graphics2D)g;
     g2.setRenderingHint(
@@ -545,22 +580,12 @@ class ExpressionRenderer extends JPanel {
     g2.setRenderingHint(
         RenderingHints.KEY_ANTIALIASING,
         RenderingHints.VALUE_ANTIALIAS_ON);
-    g.setFont(RenderData.EXPR_FONT);
-    FontMetrics fm = g.getFontMetrics();
-
-    ExpressionData exprData = new ExpressionData(expr);
-    RenderData renderData = new RenderData(exprData, getWidth(), fm);
-    // System.out.println("width = " + getWidth() + " height = " + getHeight());
-    // System.out.println(expr + " --> " + renderData.getPreferredSize());
-
-
     super.paintComponent(g);
 
-    if (renderData != null) {
-      int x = LEFT_MARGIN; // Math.max(0, (getWidth() - renderData.prefWidth) / 2);
-      int y = Math.max(0, (getHeight() - renderData.height) / 2);
-      renderData.paint(g, x, y);
-    }
+    AffineTransform xform = g2.getTransform();
+    g2.translate(LEFT_MARGIN, (getHeight() - lines.getHeight())/2);
+    lines.paint(g2);
+    g2.setTransform(xform);
   }
 
 }

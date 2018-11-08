@@ -209,13 +209,14 @@ class ExpressionTab extends AnalyzerTab {
       updateRowHeights();
     }
     void updateRowHeights() {
+      prettyView.setWidth(table.getColumnModel().getColumn(0).getWidth());
       for (int i = 0; i < listCopy.length; i++) {
         NamedExpression e = listCopy[i];
         int h = 40;
         int w = table.getColumnModel().getColumn(0).getWidth();
         if (e.expr != null) {
           prettyView.setExpression(e.name, e.expr);
-          h = prettyView.getExpressionHeight(w) + 15;
+          h = prettyView.getExpressionHeight() + 15;
         }
         if (table.getRowHeight(i) != h)
           table.setRowHeight(i, h);
@@ -226,7 +227,6 @@ class ExpressionTab extends AnalyzerTab {
   public class ExpressionTableCellRenderer extends DefaultTableCellRenderer {
 
     ExpressionRenderer prettyView = new ExpressionRenderer();
-    JLabel err = new JLabel();
 
     @Override
     public Component getTableCellRendererComponent(JTable table,
@@ -240,17 +240,14 @@ class ExpressionTab extends AnalyzerTab {
         fg = table.getForeground();
         bg = table.getBackground();
       }
-      if (e.expr != null) {
+      prettyView.setWidth(table.getColumnModel().getColumn(0).getWidth());
+      if (e.expr != null)
         prettyView.setExpression(e.name, e.expr);
-        prettyView.setForeground(fg);
-        prettyView.setBackground(bg);
-        return prettyView;
-      } else {
-        err.setText(e.name+"... "+(e.err != null ? e.err : ""));
-        err.setForeground(fg);
-        err.setBackground(bg);
-        return err;
-      }
+      else
+        prettyView.setError(e.name, e.err != null ? e.err : "unspecified");
+      prettyView.setForeground(fg);
+      prettyView.setBackground(bg);
+      return prettyView;
     }
 
   }
@@ -336,6 +333,7 @@ class ExpressionTab extends AnalyzerTab {
     tableModel = new ExpressionTableModel();
     table.setModel(tableModel);
     table.setShowGrid(false);
+    table.setTableHeader(null);
     table.setDefaultRenderer(NamedExpression.class, new ExpressionTableCellRenderer());
     table.setDefaultEditor(NamedExpression.class, new ExpressionEditor());
     table.addComponentListener(new ComponentAdapter() {
@@ -348,16 +346,22 @@ class ExpressionTab extends AnalyzerTab {
     GridBagConstraints gc = new GridBagConstraints();
     setLayout(gb);
     setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-    gc.weightx = gc.weighty = 1.0;
+    
+    gc.weightx = 1.0;
     gc.gridx = 0;
     gc.gridy = GridBagConstraints.RELATIVE;
-    gc.fill = GridBagConstraints.BOTH;
+
+    gc.weighty = 0.0;
+    JLabel label = new JLabel("Output Expressions (double-click to edit):");
+    gc.fill = GridBagConstraints.HORIZONTAL;
+    gb.setConstraints(label, gc);
+    add(label);
     
     JScrollPane scroll = new JScrollPane(table,
         ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
     scroll.setPreferredSize(new Dimension(60, 100));
+    gc.weighty = 1.0;
     gc.fill = GridBagConstraints.BOTH;
     gb.setConstraints(scroll, gc);
     add(scroll);

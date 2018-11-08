@@ -248,7 +248,7 @@ class ExpressionView extends JPanel {
         computeNotDepths();
         lineY = new int[] { MINIMUM_HEIGHT };
       } else {
-        System.out.println("has font metrics");
+        // System.out.println("has font metrics");
         if (exprData.text.length() == 0) {
           lineStyled = null;
           lineText = new String[] { S.get("expressionEmpty") };
@@ -476,7 +476,7 @@ class ExpressionView extends JPanel {
 
   @Override
   public void paintComponent(Graphics g) {
-    System.out.println("width = " + getWidth() + " height = " + getHeight());
+    // System.out.println("width = " + getWidth() + " height = " + getHeight());
     /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
     Graphics2D g2 = (Graphics2D)g;
     g2.setRenderingHint(
@@ -500,7 +500,7 @@ class ExpressionView extends JPanel {
     Graphics g = getGraphics();
     FontMetrics fm = g == null ? null : g.getFontMetrics();
     renderData = new RenderData(exprData, getWidth(), fm);
-    System.out.println(expr + " --> " + renderData.getPreferredSize());
+    // System.out.println(expr + " --> " + renderData.getPreferredSize());
     // setPreferredSize(renderData.getPreferredSize());
     revalidate();
     repaint();

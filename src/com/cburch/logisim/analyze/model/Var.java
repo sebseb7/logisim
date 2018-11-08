@@ -30,6 +30,7 @@
 
 package com.cburch.logisim.analyze.model;
 
+import java.text.ParseException;
 import java.util.Iterator;
 
 public class Var implements Iterable<String> {
@@ -61,6 +62,34 @@ public class Var implements Iterable<String> {
     else
       return name;
   }
+
+  public static Var parse(String s) throws ParseException {
+    s = s.trim();
+    int i = s.indexOf('[');
+    int j = s.lastIndexOf(']');
+    int w = 1;
+    if (0 < i && i < j && j == s.length()-1) {
+      String braces = s.substring(i+1, j);
+      if (!braces.endsWith("..0"))
+        throw new ParseException("Variables must be of the form 'name[N..0]'", i);
+      try {
+        w = 1+Integer.parseInt(braces.substring(0, braces.length()-3));
+      } catch (NumberFormatException e) {
+        throw new ParseException("Variables must be of the form 'name[N..0]'", i);
+      }
+      if (w < 1)
+        throw new ParseException("Variables must be of the form 'name[N..0]'", i);
+      else if (w > 32)
+        throw new ParseException("Variables can't be more than 32 bits wide", i);
+      s = s.substring(0, i).trim();
+    } else if (i >= 0 || j >= 0) {
+      throw new ParseException("Variables must be of the form 'name[N..0]'", i >= 0 ? i : j);
+    } else {
+      s = s.trim();
+    }
+    return new Var(s, w);
+  }
+
 
   public String bitName(int b) {
     if (b >= width) {

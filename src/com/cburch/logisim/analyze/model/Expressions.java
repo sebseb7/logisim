@@ -263,6 +263,9 @@ public class Expressions {
       super(a, b);
     }
 
+    public Expression getLeft() { return a; }
+    public Expression getRight() { return b; }
+
     @Override
     public int getPrecedence() {
       return Expression.EQ_LEVEL;

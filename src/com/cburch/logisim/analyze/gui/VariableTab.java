@@ -34,6 +34,7 @@ import static com.cburch.logisim.analyze.model.Strings.S;
 import java.util.EventObject;
 
 import java.awt.Color;
+import java.text.ParseException;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -596,35 +597,12 @@ class VariableTab extends AnalyzerTab {
   }
 
   Var parse(String s) {
-    s = s.trim();
-    int i = s.indexOf('[');
-    int j = s.lastIndexOf(']');
-    int w = 1;
-    if (0 < i && i < j && j == s.length()-1) {
-      String braces = s.substring(i+1, j);
-      if (!braces.endsWith("..0")) {
-        error.setText("Variables must be of the form 'name[N..0]'");
-        return null;
-      }
-      try {
-        w = 1+Integer.parseInt(braces.substring(0, braces.length()-3));
-      } catch (NumberFormatException e) {
-        w = -1;
-      }
-      if (w < 1) {
-        error.setText("Variables must be of the form 'name[N..0]'");
-        return null;
-      } else if (w > 32) {
-        error.setText("Variables can't be more than 32 bits wide");
-        return null;
-      }
-      s = s.substring(0, i).trim();
-    } else if (i >= 0 || j >= 0) {
-      error.setText("Variables must be of the form 'name[N..0]'");
+    try {
+      return Var.parse(s);
+    } catch (ParseException e) {
+      error.setText(e.getMessage());
       return null;
     }
-    s = s.trim();
-    return new Var(s, w);
   }
 
   private class VarTransferHandler extends TransferHandler {
