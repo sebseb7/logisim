@@ -363,6 +363,7 @@ class VariableTab extends AnalyzerTab {
   }
 
   EditHandler editHandler = new EditHandler() {
+    @Override
     public void computeEnabled() {
       int n = (focus == null || focus.isEditing()) ? -1 : (focus.getRowCount() - 1);
       int i = (focus == null || focus.isEditing()) ? -1 : focus.getSelectedRow();
@@ -379,6 +380,7 @@ class VariableTab extends AnalyzerTab {
       setEnabled(LogisimMenuBar.ADD_CONTROL, false);
       setEnabled(LogisimMenuBar.REMOVE_CONTROL, false);
     }
+    @Override
     public void actionPerformed(ActionEvent e) {
       Object action = e.getSource();
       if (focus != null) focus.getActionMap().get(action).actionPerformed(null);

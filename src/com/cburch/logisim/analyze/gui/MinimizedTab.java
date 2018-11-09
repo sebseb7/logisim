@@ -181,7 +181,6 @@ class MinimizedTab extends AnalyzerTab {
       if (expr != null)
         prettyView.setExpression(name, expr);
       d.height = prettyView.getExpressionHeight() + 15;
-      System.out.println("width is " + d.width);
       setSize(d);
       setPreferredSize(d);
       prettyView.setPreferredSize(d);

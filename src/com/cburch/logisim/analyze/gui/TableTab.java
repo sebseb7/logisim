@@ -100,7 +100,7 @@ class TableTab extends AnalyzerTab implements TruthTablePanel, Printable {
   }
 
   private static final long serialVersionUID = 1L;
-  private static final Font HEAD_FONT = new Font("Serif", Font.BOLD, 14);
+  private static final Font HEAD_FONT = new Font("Serif", Font.BOLD|Font.ITALIC, 14);
   private static final Font BODY_FONT = new Font("Serif", Font.PLAIN, 14);
 
   private static final int HEADER_PADDING = 10;
@@ -312,6 +312,7 @@ class TableTab extends AnalyzerTab implements TruthTablePanel, Printable {
       }
     });
     bodyPane.setVerticalScrollBar(getVerticalScrollBar());
+
     headerPane = new JScrollPane(header,
         ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -377,6 +378,24 @@ class TableTab extends AnalyzerTab implements TruthTablePanel, Printable {
     clip = new TableTabClip(this);
     computePreferredSize();
 
+    this.addComponentListener(new ComponentAdapter() {
+      boolean done;
+      public void componentShown(ComponentEvent e) {
+        TableTab.this.removeComponentListener(this);
+        if (done)
+          return;
+        done = true;
+        // account for missing scrollbar on header portion
+        int pad = bodyPane.getVerticalScrollBar().getWidth();
+        GridBagConstraints gc = layout.getConstraints(headerPane);
+        Insets i = gc.insets;
+        gc.insets.set(i.top, i.left, i.bottom, i.right + pad);
+        layout.setConstraints(headerPane, gc);
+        invalidate();
+        repaint();
+      }
+    });
+
     editHandler.computeEnabled();
   }
 
@@ -426,7 +445,7 @@ class TableTab extends AnalyzerTab implements TruthTablePanel, Printable {
     body.setPreferredSize(new Dimension(tableWidth, bodyHeight));
     bodyPane.setPreferredSize(new Dimension(tableWidth, 1));
 
-    setPreferredSize(new Dimension(tableWidth, tableHeight));
+    setPreferredSize(new Dimension(tableWidth+40, tableHeight));
     revalidate();
     repaint();
 

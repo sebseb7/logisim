@@ -32,16 +32,14 @@ package com.cburch.logisim.analyze.gui;
 import static com.cburch.logisim.analyze.model.Strings.S;
 
 import java.awt.Component;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.Color;
 import java.awt.event.MouseEvent;
@@ -49,28 +47,24 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.util.EventObject;
 
+import javax.swing.TransferHandler;
 import javax.swing.JList;
 import javax.swing.JComponent;
 import javax.swing.JComboBox;
 import javax.swing.DefaultListCellRenderer;
-import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.border.Border;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.AbstractCellEditor;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import javax.swing.JTextField;
+import javax.swing.DropMode;
+import javax.swing.ActionMap;
 import org.jdesktop.xswingx.BuddySupport;
 
 import com.cburch.logisim.analyze.model.AnalyzerModel;
@@ -95,6 +89,7 @@ class ExpressionTab extends AnalyzerTab {
 
   private JTable table = new JTable(1, 1);
   private JLabel error = new JLabel();
+  private JLabel label = new JLabel();
   private NotationSelector notation;
 
   private static class NamedExpression {
@@ -347,14 +342,21 @@ class ExpressionTab extends AnalyzerTab {
       }
     });
 
+    table.setDragEnabled(true);
+    TransferHandler ccp = new ExpressionTransferHandler();
+    table.setTransferHandler(ccp);
+    table.setDropMode(DropMode.ON);
+
+    ActionMap actionMap = table.getActionMap();
+    actionMap.put(LogisimMenuBar.COPY, ccp.getCopyAction());
+    actionMap.put(LogisimMenuBar.PASTE, ccp.getPasteAction());
+
     notation = new NotationSelector(prettyView) {
       @Override
       void updated() {
         tableModel.update();
       }
     };
-
-    JLabel label = new JLabel(S.get(outputExpressionLabel));
 
     GridBagLayout gb = new GridBagLayout();
     GridBagConstraints gc = new GridBagConstraints();
@@ -388,11 +390,12 @@ class ExpressionTab extends AnalyzerTab {
     add(error);
 
     setError(null);
+    localeChanged();
   }
 
   @Override
   void localeChanged() {
-    label.setText(S.("outputExpressionLabel"));
+    label.setText(S.get("outputExpressionLabel"));
     notation.localeChanged();
     if (errorMessage != null) {
       error.setText(errorMessage.toString());
@@ -448,6 +451,10 @@ class ExpressionTab extends AnalyzerTab {
       label.setText(S.get("notationSelectLabel"));
       select.invalidate();
     }
+
+    Expression.Notation getSelectedNotation() {
+      return (Expression.Notation)select.getSelectedItem();
+    }
   }
 
   @Override
@@ -456,12 +463,13 @@ class ExpressionTab extends AnalyzerTab {
   }
 
   EditHandler editHandler = new EditHandler() {
+    @Override
     public void computeEnabled() {
-      boolean canEdit = table.getRowCount() > 0;
+      boolean viewing = table.getRowCount() > 0;
       boolean editing = table.isEditing();
       setEnabled(LogisimMenuBar.CUT, editing);
-      setEnabled(LogisimMenuBar.COPY, canEdit);
-      setEnabled(LogisimMenuBar.PASTE, canEdit);
+      setEnabled(LogisimMenuBar.COPY, viewing);
+      setEnabled(LogisimMenuBar.PASTE, viewing);
       setEnabled(LogisimMenuBar.DELETE, editing);
       setEnabled(LogisimMenuBar.DUPLICATE, false);
       setEnabled(LogisimMenuBar.SELECT_ALL, editing);
@@ -472,22 +480,94 @@ class ExpressionTab extends AnalyzerTab {
       setEnabled(LogisimMenuBar.ADD_CONTROL, false);
       setEnabled(LogisimMenuBar.REMOVE_CONTROL, false);
     }
-
-    // todo, along with drag/drop transfer handling
-    public void cut() { }
-    public void copy() { }
-    public void paste() { }
-    public void delete() { }
-    public void duplicate() { }
-    public void selectAll() { }
-
-    public void raise() { }
-    public void lower() { }
-    public void raiseTop() { }
-    public void lowerBottom() { }
-
-    public void addControlPoint() { }
-    public void removeControlPoint() { }
+    @Override
+    public void actionPerformed(ActionEvent e) {
+      Object action = e.getSource();
+      table.getActionMap().get(action).actionPerformed(null);
+    }
   };
+
+  private class ExpressionTransferHandler extends TransferHandler {
+
+    public boolean importData(TransferHandler.TransferSupport info) {
+      String s;
+      try {
+        s = (String)info.getTransferable().getTransferData(DataFlavor.stringFlavor);
+      } catch (Exception e) {
+        return false;
+      }
+
+      Expression expr;
+      try {
+        expr = Parser.parse(s, model);
+        setError(null);
+      } catch (ParserException ex) {
+        setError(ex.getMessageGetter());
+        return false;
+      }
+      if (expr == null)
+        return false;
+
+      int idx = -1;
+      if (table.getRowCount() == 0) {
+          return false;
+      } if (table.getRowCount() == 1) {
+          idx = 0;
+      } else if (info.isDrop()) {
+        try {
+          JTable.DropLocation dl = (JTable.DropLocation)info.getDropLocation();
+          idx = dl.getRow();
+        } catch (ClassCastException e) {
+        }
+      } else {
+          idx = table.getSelectedRow();
+          if (idx < 0 && Expression.isAssignment(expr)) {
+            String v = Expression.getAssignmentVariable(expr);
+            for (idx = table.getRowCount()-1; idx >= 0; idx--) {
+              NamedExpression ne = (NamedExpression)table.getValueAt(idx, 0);
+              if (v.equals(ne.name))
+                break;
+            }
+          }
+      }
+      if (idx < 0 || idx >= table.getRowCount())
+        return false;
+
+      if (Expression.isAssignment(expr))
+        expr = Expression.getAssignmentExpression(expr);
+
+      NamedExpression ne = (NamedExpression)table.getValueAt(idx, 0);
+      ne.exprString = s;
+      ne.expr = expr;
+      ne.err = null;
+
+      table.changeSelection(idx, 0, false, false);
+      table.requestFocus();
+      tableModel.update();
+
+      return true;
+    }
+
+    protected Transferable createTransferable(JComponent c) {
+      int idx = table.getSelectedRow();
+      if (idx < 0)
+        return null;
+      NamedExpression ne = (NamedExpression)table.getValueAt(idx, 0);
+      Expression.Notation style = notation.getSelectedNotation();
+      String s = ne.expr != null ? ne.expr.toString(style) : ne.err;
+      return s == null ? null : new StringSelection(s);
+    }
+
+    public int getSourceActions(JComponent c) {
+      return COPY;
+    }
+
+    protected void exportDone(JComponent c, Transferable tdata, int action) { }
+
+    public boolean canImport(TransferHandler.TransferSupport support) {
+      return table.getRowCount() > 0
+          && support.isDataFlavorSupported(DataFlavor.stringFlavor);
+    }
+  }
 
 }

@@ -191,7 +191,7 @@ public class Expressions {
     }
   }
 
-  private static class Variable extends Expression {
+  protected static class Variable extends Expression {
     private String name;
 
     Variable(String name) {
@@ -258,13 +258,10 @@ public class Expressions {
     }
   }
 
-  private static class Eq extends Binary {
+  protected static class Eq extends Binary {
     Eq(Expression a, Expression b) {
       super(a, b);
     }
-
-    public Expression getLeft() { return a; }
-    public Expression getRight() { return b; }
 
     @Override
     public int getPrecedence() {
