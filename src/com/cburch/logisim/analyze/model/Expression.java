@@ -29,77 +29,46 @@
  */
 
 package com.cburch.logisim.analyze.model;
+import static com.cburch.logisim.analyze.model.Strings.S;
 
 import java.util.HashSet;
 
 public abstract class Expression {
-  static interface IntVisitor {
-    public int visitAnd(Expression a, Expression b);
 
-    public int visitConstant(int value);
+  public static interface Visitor<T> {
+    public default T visitVariable(String name) { return null; }
+    public default T visitConstant(int value) { return null; }
+    public default T visitNot(Expression a) { return null; }
+    public default T visitBinary(Expression a, Expression b, Op op) {
+      a.visit(this);
+      b.visit(this);
+      return null;
+    }
 
-    public int visitNot(Expression a);
-
-    public int visitOr(Expression a, Expression b);
-
-    public int visitVariable(String name);
-
-    public int visitXor(Expression a, Expression b);
-
-    public int visitEq(Expression a, Expression b);
+    public default T visitAnd(Expression a, Expression b) { return visitBinary(a, b, Op.AND); }
+    public default T visitOr(Expression a, Expression b) { return visitBinary(a, b, Op.OR); }
+    public default T visitXor(Expression a, Expression b) { return visitBinary(a, b, Op.XOR); }
+    public default T visitEq(Expression a, Expression b) { return visitBinary(a, b, Op.EQ); }
   }
 
-  static interface Visitor {
-    public void visitAnd(Expression a, Expression b);
+  // internal, just for fast eval
+  protected static interface IntVisitor {
+    public default int visitVariable(String name) { return 0; }
+    public default int visitConstant(int value) { return 0; }
+    public default int visitNot(Expression a) { return 0; }
 
-    public void visitConstant(int value);
-
-    public void visitNot(Expression a);
-
-    public void visitOr(Expression a, Expression b);
-
-    public void visitVariable(String name);
-
-    public void visitXor(Expression a, Expression b);
-
-    public void visitEq(Expression a, Expression b);
+    public default int visitAnd(Expression a, Expression b) { return 0; }
+    public default int visitOr(Expression a, Expression b) { return 0; }
+    public default int visitXor(Expression a, Expression b) { return 0; }
+    public default int visitEq(Expression a, Expression b) { return 0; }
   }
 
-  public static final int EQ_LEVEL = 0;
-  public static final int OR_LEVEL = 1;
-  public static final int XOR_LEVEL = 2;
-  public static final int AND_LEVEL = 3;
-  public static final int NOT_LEVEL = 4;
-
-  public boolean containsXor() {
-    return 1 == visit(new IntVisitor() {
-      public int visitAnd(Expression a, Expression b) {
-        return a.visit(this) == 1 || b.visit(this) == 1 ? 1 : 0;
+  public boolean contains(Op o) {
+    return o == visit(new Visitor<Op>() {
+      public Op visitBinary(Expression a, Expression b, Op op) {
+        return (op == o || a.visit(this) == o || b.visit(this) == o) ? o : null;
       }
-
-      public int visitConstant(int value) {
-        return 0;
-      }
-
-      public int visitNot(Expression a) {
-        return a.visit(this);
-      }
-
-      public int visitOr(Expression a, Expression b) {
-        return a.visit(this) == 1 || b.visit(this) == 1 ? 1 : 0;
-      }
-
-      public int visitVariable(String name) {
-        return 0;
-      }
-
-      public int visitXor(Expression a, Expression b) {
-        return 1;
-      }
-
-      public int visitEq(Expression a, Expression b) {
-        return a.visit(this) == 1 || b.visit(this) == 1 ? 1 : 0;
-      }
+      public Op visitNot(Expression a) { return a.visit(this); }
     });
   }
 
@@ -137,112 +106,91 @@ public abstract class Expression {
   }
 
   public abstract int getPrecedence();
+  public abstract Op getOp();
 
   public boolean isCircular() {
     final HashSet<Expression> visited = new HashSet<Expression>();
     visited.add(this);
-    return 1 == visit(new IntVisitor() {
-      private int binary(Expression a, Expression b) {
+    Object loop = new Object();
+    return loop == visit(new Visitor<Object>() {
+      public Object visitBinary(Expression a, Expression b) {
         if (!visited.add(a))
-          return 1;
-        if (a.visit(this) == 1)
-          return 1;
+          return loop;
+        if (a.visit(this) == loop)
+          return loop;
         visited.remove(a);
 
         if (!visited.add(b))
-          return 1;
-        if (b.visit(this) == 1)
-          return 1;
+          return loop;
+        if (b.visit(this) == loop)
+          return loop;
         visited.remove(b);
 
-        return 0;
+        return null;
       }
 
-      public int visitAnd(Expression a, Expression b) {
-        return binary(a, b);
-      }
-
-      public int visitConstant(int value) {
-        return 0;
-      }
-
-      public int visitNot(Expression a) {
+      public Object visitNot(Expression a) {
         if (!visited.add(a))
-          return 1;
-        if (a.visit(this) == 1)
-          return 1;
+          return loop;
+        if (a.visit(this) == loop)
+          return loop;
         visited.remove(a);
-        return 0;
-      }
-
-      public int visitOr(Expression a, Expression b) {
-        return binary(a, b);
-      }
-
-      public int visitVariable(String name) {
-        return 0;
-      }
-
-      public int visitXor(Expression a, Expression b) {
-        return binary(a, b);
-      }
-
-      public int visitEq(Expression a, Expression b) {
-        return binary(a, b);
+        return null;
       }
     });
   }
 
   public boolean isCnf() {
-    return 1 == visit(new IntVisitor() {
+    Object cnf = new Object();
+    return cnf == visit(new Visitor<Object>() {
       int level = 0;
 
-      public int visitAnd(Expression a, Expression b) {
+      public Object visitAnd(Expression a, Expression b) {
         if (level > 1)
-          return 0;
+          return null;
         int oldLevel = level;
         level = 1;
-        int ret = a.visit(this) == 1 && b.visit(this) == 1 ? 1 : 0;
+        Object ret = a.visit(this) == cnf && b.visit(this) == cnf ? cnf : null;
         level = oldLevel;
         return ret;
       }
 
-      public int visitConstant(int value) {
-        return 1;
+      public Object visitConstant(int value) {
+        return cnf;
       }
 
-      public int visitNot(Expression a) {
+      public Object visitNot(Expression a) {
         if (level == 2)
-          return 0;
+          return null;
         int oldLevel = level;
         level = 2;
-        int ret = a.visit(this);
+        Object ret = a.visit(this);
         level = oldLevel;
         return ret;
       }
 
-      public int visitOr(Expression a, Expression b) {
+      public Object visitOr(Expression a, Expression b) {
         if (level > 0)
-          return 0;
-        return a.visit(this) == 1 && b.visit(this) == 1 ? 1 : 0;
+          return null;
+        return a.visit(this) == cnf && b.visit(this) == cnf ? cnf : null;
       }
 
-      public int visitVariable(String name) {
-        return 1;
+      public Object visitVariable(String name) {
+        return cnf;
       }
 
-      public int visitXor(Expression a, Expression b) {
-        return 0;
+      public Object visitXor(Expression a, Expression b) {
+        return null;
       }
 
-      public int visitEq(Expression a, Expression b) {
-        return 0;
+      public Object visitEq(Expression a, Expression b) {
+        return null;
       }
     });
   }
 
   Expression removeVariable(final String input) {
-    return visit(new ExpressionVisitor<Expression>() {
+    return visit(new Visitor<Expression>() {
       public Expression visitAnd(Expression a, Expression b) {
         Expression l = a.visit(this);
         Expression r = b.visit(this);
@@ -301,7 +249,7 @@ public abstract class Expression {
   }
 
   Expression replaceVariable(final String oldName, final String newName) {
-    return visit(new ExpressionVisitor<Expression>() {
+    return visit(new Visitor<Expression>() {
       public Expression visitAnd(Expression a, Expression b) {
         Expression l = a.visit(this);
         Expression r = b.visit(this);
@@ -342,69 +290,95 @@ public abstract class Expression {
     });
   }
 
+  public static enum Notation {
+    ENGINEERING(0), MATHEMATICS(1), PROGRAMMING(2);
+
+    public final int Id;
+
+    private Notation(int id) { Id = id; }
+
+    public String toString() {
+      String key = name().toLowerCase() + "Notation";
+      return S.get(key);
+    }
+  }
+
+  public static enum Op {
+    EQ(0,2), OR(1,2), XOR(2,2), AND(3,2), NOT(4,1);
+
+    public final int Id, Level, Arity;
+    public final String[] Sym;
+
+    private Op(int id, int arity) {
+      Id = id;
+      Level = id; // so far, precedence level coincides with id
+      Arity = arity;
+      Sym = new String[] { OPSYM[0][Id], OPSYM[1][Id], OPSYM[2][Id] };
+    }
+  }
+
+  // Notation choices:
+  public static final String[][] OPSYM = {
+    { " = ", " \u2228 ", " \u2295 ", " \u2227 ", "~", }, // engineering
+    { " = ", " + ", "\u2295", " \u22C5 ", "\u00AC", }, // mathematics
+    { " == ", " || ", " ^ ", " && ", "!", }, // programming
+  };
+
   @Override
   public String toString() {
+    return toString(Notation.ENGINEERING);
+  }
+
+  public String toString(Notation notation) {
     final StringBuilder text = new StringBuilder();
-    visit(new Visitor() {
-      private void binary(Expression a, Expression b, int level, String op) {
-        if (a.getPrecedence() < level) {
+    visit(new Visitor<Void>() {
+      public Void visitBinary(Expression a, Expression b, Op op) {
+        if (a.getPrecedence() < op.Level) {
           text.append("(");
           a.visit(this);
           text.append(")");
         } else {
           a.visit(this);
         }
-        text.append(op);
-        if (b.getPrecedence() < level) {
+        text.append(op.Sym[notation.Id]);
+        if (b.getPrecedence() < op.Level) {
           text.append("(");
           b.visit(this);
           text.append(")");
         } else {
           b.visit(this);
         }
+        return null;
       }
 
-      public void visitAnd(Expression a, Expression b) {
-        binary(a, b, AND_LEVEL, " ");
+      public Void visitConstant(int value) {
+        text.append(Integer.toString(value, 16));
+        return null;
       }
 
-      public void visitConstant(int value) {
-        text.append("" + Integer.toString(value, 16));
-      }
-
-      public void visitNot(Expression a) {
-        text.append("~");
-        if (a.getPrecedence() < NOT_LEVEL) {
+      public Void visitNot(Expression a) {
+        text.append(Op.NOT.Sym[notation.Id]);
+        if (a.getPrecedence() < Op.NOT.Level) {
           text.append("(");
           a.visit(this);
           text.append(")");
         } else {
           a.visit(this);
         }
+        return null;
       }
 
-      public void visitOr(Expression a, Expression b) {
-        binary(a, b, OR_LEVEL, " + ");
-      }
-
-      public void visitVariable(String name) {
+      public Void visitVariable(String name) {
         text.append(name);
+        return null;
       }
 
-      public void visitXor(Expression a, Expression b) {
-        binary(a, b, XOR_LEVEL, " ^ ");
-      }
-
-      public void visitEq(Expression a, Expression b) {
-        binary(a, b, EQ_LEVEL, " = ");
-      }
     });
     return text.toString();
   }
 
-  public abstract <T> T visit(ExpressionVisitor<T> visitor);
+  public abstract <T> T visit(Visitor<T> visitor);
 
   abstract int visit(IntVisitor visitor);
 
-  abstract void visit(Visitor visitor);
 }

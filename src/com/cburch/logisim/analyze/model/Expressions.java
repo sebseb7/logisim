@@ -38,22 +38,22 @@ public class Expressions {
 
     @Override
     public int getPrecedence() {
-      return Expression.AND_LEVEL;
+      return Expression.Op.AND.Level;
     }
 
     @Override
-    public <T> T visit(ExpressionVisitor<T> visitor) {
+    public Op getOp() {
+      return Expression.Op.AND;
+    }
+
+    @Override
+    public <T> T visit(Visitor<T> visitor) {
       return visitor.visitAnd(a, b);
     }
 
     @Override
     int visit(IntVisitor visitor) {
       return visitor.visitAnd(a, b);
-    }
-
-    @Override
-    void visit(Visitor visitor) {
-      visitor.visitAnd(a, b);
     }
   }
 
@@ -104,23 +104,23 @@ public class Expressions {
     }
 
     @Override
+    public Op getOp() {
+      return null;
+    }
+
+    @Override
     public int hashCode() {
       return value;
     }
 
     @Override
-    public <T> T visit(ExpressionVisitor<T> visitor) {
+    public <T> T visit(Visitor<T> visitor) {
       return visitor.visitConstant(value);
     }
 
     @Override
     int visit(IntVisitor visitor) {
       return visitor.visitConstant(value);
-    }
-
-    @Override
-    void visit(Visitor visitor) {
-      visitor.visitConstant(value);
     }
   }
 
@@ -141,7 +141,12 @@ public class Expressions {
 
     @Override
     public int getPrecedence() {
-      return Expression.NOT_LEVEL;
+      return Expression.Op.NOT.Level;
+    }
+
+    @Override
+    public Op getOp() {
+      return Expression.Op.NOT;
     }
 
     @Override
@@ -150,18 +155,13 @@ public class Expressions {
     }
 
     @Override
-    public <T> T visit(ExpressionVisitor<T> visitor) {
+    public <T> T visit(Visitor<T> visitor) {
       return visitor.visitNot(a);
     }
 
     @Override
     int visit(IntVisitor visitor) {
       return visitor.visitNot(a);
-    }
-
-    @Override
-    void visit(Visitor visitor) {
-      visitor.visitNot(a);
     }
   }
 
@@ -172,22 +172,22 @@ public class Expressions {
 
     @Override
     public int getPrecedence() {
-      return Expression.OR_LEVEL;
+      return Expression.Op.OR.Level;
     }
 
     @Override
-    public <T> T visit(ExpressionVisitor<T> visitor) {
+    public Op getOp() {
+      return Expression.Op.OR;
+    }
+
+    @Override
+    public <T> T visit(Visitor<T> visitor) {
       return visitor.visitOr(a, b);
     }
 
     @Override
     int visit(IntVisitor visitor) {
       return visitor.visitOr(a, b);
-    }
-
-    @Override
-    void visit(Visitor visitor) {
-      visitor.visitOr(a, b);
     }
   }
 
@@ -212,23 +212,23 @@ public class Expressions {
     }
 
     @Override
+    public Op getOp() {
+      return null;
+    }
+
+    @Override
     public int hashCode() {
       return name.hashCode();
     }
 
     @Override
-    public <T> T visit(ExpressionVisitor<T> visitor) {
+    public <T> T visit(Visitor<T> visitor) {
       return visitor.visitVariable(name);
     }
 
     @Override
     int visit(IntVisitor visitor) {
       return visitor.visitVariable(name);
-    }
-
-    @Override
-    void visit(Visitor visitor) {
-      visitor.visitVariable(name);
     }
   }
 
@@ -239,22 +239,22 @@ public class Expressions {
 
     @Override
     public int getPrecedence() {
-      return Expression.XOR_LEVEL;
+      return Expression.Op.XOR.Level;
     }
 
     @Override
-    public <T> T visit(ExpressionVisitor<T> visitor) {
+    public Op getOp() {
+      return Expression.Op.XOR;
+    }
+
+    @Override
+    public <T> T visit(Visitor<T> visitor) {
       return visitor.visitXor(a, b);
     }
 
     @Override
     int visit(IntVisitor visitor) {
       return visitor.visitXor(a, b);
-    }
-
-    @Override
-    void visit(Visitor visitor) {
-      visitor.visitXor(a, b);
     }
   }
 
@@ -268,22 +268,22 @@ public class Expressions {
 
     @Override
     public int getPrecedence() {
-      return Expression.EQ_LEVEL;
+      return Expression.Op.EQ.Level;
     }
 
     @Override
-    public <T> T visit(ExpressionVisitor<T> visitor) {
+    public Op getOp() {
+      return Expression.Op.EQ;
+    }
+
+    @Override
+    public <T> T visit(Visitor<T> visitor) {
       return visitor.visitEq(a, b);
     }
 
     @Override
     int visit(IntVisitor visitor) {
       return visitor.visitEq(a, b);
-    }
-
-    @Override
-    void visit(Visitor visitor) {
-      visitor.visitEq(a, b);
     }
   }
 

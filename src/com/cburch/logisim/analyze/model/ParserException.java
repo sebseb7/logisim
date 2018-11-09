@@ -38,6 +38,10 @@ public class ParserException extends Exception {
   private int start;
   private int length;
 
+  public ParserException(StringGetter message, int start) {
+    this(message, start, 1);
+  }
+
   public ParserException(StringGetter message, int start, int length) {
     super(message.toString());
     this.message = message;

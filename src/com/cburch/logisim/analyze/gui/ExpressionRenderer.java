@@ -33,29 +33,24 @@ import static com.cburch.logisim.analyze.model.Strings.S;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.Graphics;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.Rectangle;
-import java.awt.Dimension;
-import java.awt.FontMetrics;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.util.ArrayList;
-import java.text.AttributedString;
-import java.awt.font.TextAttribute;
-import java.awt.font.FontRenderContext;
-import java.awt.font.LineBreakMeasurer;
-import java.awt.font.TextLayout;
 import java.awt.image.BufferedImage;
-import java.awt.geom.AffineTransform;
+import java.util.ArrayList;
 
 import javax.swing.JPanel;
 
+import com.cburch.logisim.analyze.model.Var;
+import com.cburch.logisim.analyze.model.ParserException;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
-import com.cburch.logisim.analyze.model.ExpressionVisitor;
 
 class ExpressionRenderer extends JPanel {
 
@@ -259,11 +254,12 @@ class ExpressionRenderer extends JPanel {
     float sx, sy;
     VarBox(String desc, int depth) {
       super(depth);
-      int i = desc.indexOf(':');
-      if (i >= 0) {
-        sub = desc.substring(i+1);
-        name = desc.substring(0, i);
-      } else {
+      try {
+        Var.Bit v = Var.Bit.parse(desc);
+        name = v.name;
+        if (v.b >= 0)
+          sub = "" + v.b;
+      } catch (ParserException e) {
         name = desc;
       }
       w = VAR_FONT_METRICS.stringWidth(name);
@@ -333,11 +329,11 @@ class ExpressionRenderer extends JPanel {
     }
   }
 
-  class BoxMaker implements ExpressionVisitor<Box> {
+  class BoxMaker implements Expression.Visitor<Box> {
     int depth = 1;
-    Box binary(Expression a, Expression b, int level, String op) {
+    public Box visitBinary(Expression a, Expression b, Expression.Op op) {
       Box bb_a;
-      if (a.getPrecedence() < level) {
+      if (a.getPrecedence() < op.Level) {
         ParenBox lparen = new ParenBox("(", depth);
         ParenBox rparen = new ParenBox(")", depth);
         depth++;
@@ -350,14 +346,14 @@ class ExpressionRenderer extends JPanel {
         bb_a = a.visit(this);
       }
 
-      StringBox mid = new StringBox(op, level, depth);
+      StringBox mid = new StringBox(op.Sym[notation.Id], op.Level, depth);
 
       if (b == null)
         return new BoundingBox(depth, mid, bb_a);
 
 
       Box bb_b;
-      if (b.getPrecedence() < level) {
+      if (b.getPrecedence() < op.Level) {
         ParenBox lparen = new ParenBox("(", depth);
         ParenBox rparen = new ParenBox(")", depth);
         depth++;
@@ -373,18 +369,6 @@ class ExpressionRenderer extends JPanel {
       return new BoundingBox(depth, bb_a, mid, bb_b);
     }
 
-    public Box visitAnd(Expression a, Expression b) {
-      return binary(a, b, Expression.AND_LEVEL, OPS[notation][0]);
-    }
-    public Box visitOr(Expression a, Expression b) {
-      return binary(a, b, Expression.OR_LEVEL, OPS[notation][1]);
-    }
-    public Box visitXor(Expression a, Expression b) {
-      return binary(a, b, Expression.XOR_LEVEL, OPS[notation][2]);
-    }
-    public Box visitEq(Expression a, Expression b) {
-      return binary(a, b, Expression.EQ_LEVEL, OPS[notation][4]);
-    }
     public Box visitConstant(int value) {
       return new ConstBox(Integer.toString(value, 16), depth);
     }
@@ -392,46 +376,25 @@ class ExpressionRenderer extends JPanel {
       return new VarBox(desc, depth);
     }
     public Box visitNot(Expression a) {
-      if (notation == ENGINEERING) {
+      if (notation == Expression.Notation.ENGINEERING) {
         depth++;
         Box inner = a.visit(this);
         depth--;
         return new NotBox(inner, depth);
       } else {
-        return binary(a, null, Expression.NOT_LEVEL, OPS[notation][3]);
+        return visitBinary(a, null, Expression.Op.NOT);
       }
     }
   }
 
-  int notation = ENGINEERING;
-  void setNotation(String s) {
-    switch (s) {
-    case "programming": notation = PROGRAMMING; break;
-    case "mathematics": notation = MATHEMATICS; break;
-    default: notation = ENGINEERING; break;
-    }
+  Expression.Notation notation = Expression.Notation.ENGINEERING;
+  void setNotation(Expression.Notation n) {
+    notation = n;
   }
 
-  String getNotation() {
-    switch (notation) {
-    case PROGRAMMING: return "programming";
-    case MATHEMATICS: return "mathematics";
-    default: return "engineering";
-    }
+  Expression.Notation getNotation() {
+    return notation;
   }
-  
-  // Notation choices:
-  //   "engineering": downvee, vee, oplus, overbar, =
-  //   "mathematics": dot, +, oplus, not, =
-  //   "programming": &, |, ^, ~, ==
-  static final int ENGINEERING = 0;
-  static final int MATHEMATICS = 1;
-  static final int PROGRAMMING = 2;
-  static final String[][] OPS = {
-    { " \u2227 ", " \u2228 ", " \u2295 ", null, " = " }, // { " \u22C0 ", " \u22C1 ", " \u2295 ", null, " = " },
-    { " \u22C5 ", " + ", "\u2295", "\u00AC", " = " },
-    { " && ", " || ", " ^ ", "!", " == " },
-  };
 
   static final Color[] BOX_SHADE = {
       new Color(200, 150, 100),

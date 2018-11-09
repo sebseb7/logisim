@@ -31,12 +31,18 @@
 package com.cburch.logisim.analyze.gui;
 import static com.cburch.logisim.analyze.model.Strings.S;
 
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 
@@ -48,6 +54,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import com.cburch.logisim.analyze.model.AnalyzerModel;
+import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.OutputExpressions;
 import com.cburch.logisim.analyze.model.OutputExpressionsEvent;
 import com.cburch.logisim.analyze.model.OutputExpressionsListener;
@@ -126,8 +133,8 @@ class MinimizedTab extends AnalyzerTab {
       String output = getCurrentVariable();
       if (event.getType() == OutputExpressionsEvent.OUTPUT_MINIMAL
           && event.getVariable().equals(output)) {
-        minimizedExpr.setExpression(outputExprs
-            .getMinimalExpression(output));
+        minimizedExpr.setExpression(
+            output, outputExprs.getMinimalExpression(output));
         MinimizedTab.this.validate();
       }
       setAsExpr.setEnabled(output != null
@@ -148,6 +155,47 @@ class MinimizedTab extends AnalyzerTab {
     }
   }
 
+  private static class ExpressionPanel extends JPanel {
+    String name;
+    Expression expr;
+    ExpressionRenderer prettyView = new ExpressionRenderer();
+
+    ExpressionPanel() {
+      setBackground(Color.WHITE);
+      prettyView.setBackground(Color.WHITE);
+      addComponentListener(new ComponentAdapter() {
+        @Override
+        public void componentResized(ComponentEvent e) {
+          update();
+        }
+      });
+    }
+    public void paintComponent(Graphics g) {
+      super.paintComponent(g);
+      if (expr != null)
+        prettyView.paintComponent((Graphics2D)g);
+    }
+    void update() {
+      Dimension d = getPreferredSize();
+      prettyView.setWidth(d.width);
+      if (expr != null)
+        prettyView.setExpression(name, expr);
+      d.height = prettyView.getExpressionHeight() + 15;
+      System.out.println("width is " + d.width);
+      setSize(d);
+      setPreferredSize(d);
+      prettyView.setPreferredSize(d);
+      prettyView.setSize(d);
+      repaint();
+    }
+    void setExpression(String name, Expression expr) {
+      this.name = name;
+      this.expr = expr;
+      update();
+    }
+
+  }
+
   private static final long serialVersionUID = 1L;
 
   private OutputSelector selector;
@@ -155,7 +203,8 @@ class MinimizedTab extends AnalyzerTab {
   private JLabel formatLabel = new JLabel();
   @SuppressWarnings({ "rawtypes", "unchecked" })
   private JComboBox formatChoice = new JComboBox<>(new FormatModel());
-  private ExpressionView minimizedExpr = new ExpressionView();
+  private ExpressionPanel minimizedExpr = new ExpressionPanel();
+  private ExpressionTab.NotationSelector notation;
   private JButton setAsExpr = new JButton();
 
   private MyListener myListener = new MyListener();
@@ -166,6 +215,13 @@ class MinimizedTab extends AnalyzerTab {
     this.model = model;
     this.outputExprs = model.getOutputExpressions();
     outputExprs.addOutputExpressionsListener(myListener);
+
+    notation = new ExpressionTab.NotationSelector(minimizedExpr.prettyView) {
+      @Override
+      void updated() {
+        minimizedExpr.update();
+      }
+    };
 
     selector = new OutputSelector(model);
     selector.addItemListener(myListener);
@@ -193,11 +249,15 @@ class MinimizedTab extends AnalyzerTab {
     gc.gridx = 0;
     gc.gridwidth = 2;
     gc.gridy = GridBagConstraints.RELATIVE;
-    gc.fill = GridBagConstraints.BOTH;
+    gc.fill = GridBagConstraints.HORIZONTAL;
     gc.anchor = GridBagConstraints.CENTER;
     gb.setConstraints(karnaughMap, gc);
     add(karnaughMap);
     Insets oldInsets = gc.insets;
+    gc.insets = new Insets(20, 0, 0, 0);
+    gb.setConstraints(notation, gc);
+    add(notation);
+    gc.fill = GridBagConstraints.BOTH;
     gc.insets = new Insets(20, 0, 0, 0);
     gb.setConstraints(minimizedExpr, gc);
     add(minimizedExpr);
@@ -237,7 +297,7 @@ class MinimizedTab extends AnalyzerTab {
   void localeChanged() {
     selector.localeChanged();
     karnaughMap.localeChanged();
-    minimizedExpr.localeChanged();
+    notation.localeChanged();
     setAsExpr.setText(S.get("minimizedSetButton"));
     formatLabel.setText(S.get("minimizedFormat"));
     ((FormatModel) formatChoice.getModel()).localeChanged();
@@ -258,7 +318,8 @@ class MinimizedTab extends AnalyzerTab {
     karnaughMap.setOutput(output);
     int format = outputExprs.getMinimizedFormat(output);
     formatChoice.setSelectedIndex(FormatModel.getFormatIndex(format));
-    minimizedExpr.setExpression(outputExprs.getMinimalExpression(output));
+    minimizedExpr.setExpression(
+        output, outputExprs.getMinimalExpression(output));
     setAsExpr.setEnabled(output != null
         && !outputExprs.isExpressionMinimal(output));
   }

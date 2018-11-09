@@ -91,6 +91,7 @@ class ExpressionTab extends AnalyzerTab {
   private AnalyzerModel model;
   private StringGetter errorMessage;
   private ExpressionTableModel tableModel;
+  private ExpressionRenderer prettyView;
 
   private JTable table = new JTable(1, 1);
   private JLabel error = new JLabel();
@@ -114,10 +115,8 @@ class ExpressionTab extends AnalyzerTab {
   public class ExpressionTableModel extends AbstractTableModel
     implements VariableListListener, OutputExpressionsListener {
     NamedExpression[] listCopy;
-    private ExpressionRenderer prettyView;
 
-    public ExpressionTableModel(ExpressionRenderer r) {
-      prettyView = r;
+    public ExpressionTableModel() {
       updateCopy();
       model.getOutputs().addVariableListListener(this);
       model.getOutputExpressions().addOutputExpressionsListener(this);
@@ -233,11 +232,6 @@ class ExpressionTab extends AnalyzerTab {
 
   public class ExpressionTableCellRenderer extends DefaultTableCellRenderer {
 
-    ExpressionRenderer prettyView;
-    ExpressionTableCellRenderer(ExpressionRenderer r) {
-      prettyView = r;
-    }
-
     @Override
     public Component getTableCellRendererComponent(JTable table,
         Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -287,7 +281,7 @@ class ExpressionTab extends AnalyzerTab {
       oldExpr = (NamedExpression)value;
       label.setText(" " + oldExpr.name + " = ");
       if (oldExpr.expr != null)
-        field.setText(oldExpr.expr.toString());
+        field.setText(oldExpr.expr.toString(prettyView.getNotation()));
       else
         field.setText("");
       return field;
@@ -340,12 +334,12 @@ class ExpressionTab extends AnalyzerTab {
   public ExpressionTab(AnalyzerModel model) {
     this.model = model;
 
-    ExpressionRenderer r = new ExpressionRenderer();
-    tableModel = new ExpressionTableModel(r);
+    prettyView = new ExpressionRenderer();
+    tableModel = new ExpressionTableModel();
     table.setModel(tableModel);
     table.setShowGrid(false);
     table.setTableHeader(null);
-    table.setDefaultRenderer(NamedExpression.class, new ExpressionTableCellRenderer(r));
+    table.setDefaultRenderer(NamedExpression.class, new ExpressionTableCellRenderer());
     table.setDefaultEditor(NamedExpression.class, new ExpressionEditor());
     table.addComponentListener(new ComponentAdapter() {
       public void componentResized(ComponentEvent e) {
@@ -353,9 +347,14 @@ class ExpressionTab extends AnalyzerTab {
       }
     });
 
-    notation = new NotationSelector(r, tableModel);
+    notation = new NotationSelector(prettyView) {
+      @Override
+      void updated() {
+        tableModel.update();
+      }
+    };
 
-    JLabel label = new JLabel("Output Expressions (double-click to edit):");
+    JLabel label = new JLabel(S.get(outputExpressionLabel));
 
     GridBagLayout gb = new GridBagLayout();
     GridBagConstraints gc = new GridBagConstraints();
@@ -393,6 +392,7 @@ class ExpressionTab extends AnalyzerTab {
 
   @Override
   void localeChanged() {
+    label.setText(S.("outputExpressionLabel"));
     notation.localeChanged();
     if (errorMessage != null) {
       error.setText(errorMessage.toString());
@@ -416,34 +416,33 @@ class ExpressionTab extends AnalyzerTab {
 
   static class NotationSelector extends JPanel {
     private ExpressionRenderer r;
-    private ExpressionTableModel m;
     private JLabel label = new JLabel();
-    private JComboBox<String> select = new JComboBox<String>();
-    NotationSelector(ExpressionRenderer r, ExpressionTableModel m) {
+    private JComboBox<Expression.Notation> select = new JComboBox<>();
+    NotationSelector(ExpressionRenderer r) {
       this.r = r;
-      this.m = m;
       // setLayout(FlowLayout());
       add(label);
       add(select);
-      select.addItem("engineering");
-      select.addItem("mathematics");
-      select.addItem("programming");
-      select.setRenderer(new DefaultListCellRenderer() {
+      select.addItem(Expression.Notation.ENGINEERING);
+      select.addItem(Expression.Notation.MATHEMATICS);
+      select.addItem(Expression.Notation.PROGRAMMING);
+      /* select.setRenderer(new DefaultListCellRenderer() {
         public Component getListCellRendererComponent(JList<?> list,
             Object value, int index, boolean isSelected, boolean cellHasFocus) {
           String s = S.get(value + "Notation");
           return super.getListCellRendererComponent(list,
               s, index, isSelected, cellHasFocus);
         }
-      });
+      }); */
       select.setSelectedItem(r.getNotation());
       select.addActionListener(new ActionListener() {
         public void actionPerformed(ActionEvent e) {
-          r.setNotation((String)select.getSelectedItem());
-          m.update();
+          r.setNotation((Expression.Notation)select.getSelectedItem());
+          updated();
         }
       });
     }
+    void updated() { };
 
     void localeChanged() {
       label.setText(S.get("notationSelectLabel"));

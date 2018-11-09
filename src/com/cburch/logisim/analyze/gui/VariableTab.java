@@ -34,7 +34,6 @@ import static com.cburch.logisim.analyze.model.Strings.S;
 import java.util.EventObject;
 
 import java.awt.Color;
-import java.text.ParseException;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -64,7 +63,6 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
@@ -84,6 +82,7 @@ import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.analyze.model.VariableList;
 import com.cburch.logisim.analyze.model.VariableListEvent;
 import com.cburch.logisim.analyze.model.VariableListListener;
+import com.cburch.logisim.analyze.model.ParserException;
 import com.cburch.logisim.gui.menu.EditHandler;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.LogisimMenuItem;
@@ -599,7 +598,7 @@ class VariableTab extends AnalyzerTab {
   Var parse(String s) {
     try {
       return Var.parse(s);
-    } catch (ParseException e) {
+    } catch (ParserException e) {
       error.setText(e.getMessage());
       return null;
     }

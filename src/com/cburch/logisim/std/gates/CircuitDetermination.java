@@ -33,7 +33,6 @@ package com.cburch.logisim.std.gates;
 import java.util.ArrayList;
 
 import com.cburch.logisim.analyze.model.Expression;
-import com.cburch.logisim.analyze.model.ExpressionVisitor;
 import com.cburch.logisim.comp.ComponentFactory;
 
 /**
@@ -44,7 +43,7 @@ import com.cburch.logisim.comp.ComponentFactory;
  */
 abstract class CircuitDetermination {
   private static class Determine
-    implements ExpressionVisitor<CircuitDetermination> {
+    implements Expression.Visitor<CircuitDetermination> {
     private Gate binary(CircuitDetermination aret,
         CircuitDetermination bret, ComponentFactory factory) {
       if (aret instanceof Gate) {

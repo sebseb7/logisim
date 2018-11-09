@@ -140,7 +140,7 @@ public class Analyze {
       if (Pin.FACTORY.isInputPin(pin)) {
         expressionMap.currentCause = Instance.getComponentFor(pin);
         for (int b = 0; b < width; b++) {
-          Expression e = Expressions.variable(width > 1 ? label + ":" + b : label);
+          Expression e = Expressions.variable(width > 1 ? label + "[" + b  + "]" : label);
           expressionMap.put(new LocationBit(pin.getLocation(), b), e);
         }
         inputVars.add(new Var(label, width));
@@ -177,7 +177,7 @@ public class Analyze {
       int width = pin.getAttributeValue(StdAttr.WIDTH).getWidth();
       for (int b = 0; b < width; b++) {
         LocationBit loc = new LocationBit(pin.getLocation(), b);
-        String name = (width > 1 ? label + ":" + b : label);
+        String name = (width > 1 ? label + "[" + b + "]" : label);
         model.getOutputExpressions().setExpression(name, expressionMap.get(loc));
       }
     }
