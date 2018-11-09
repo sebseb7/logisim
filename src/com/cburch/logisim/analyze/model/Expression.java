@@ -53,14 +53,14 @@ public abstract class Expression {
 
   // internal, just for fast eval
   protected static interface IntVisitor {
-    public default int visitVariable(String name) { return 0; }
-    public default int visitConstant(int value) { return 0; }
-    public default int visitNot(Expression a) { return 0; }
+    public int visitVariable(String name);
+    public int visitConstant(int value);
+    public int visitNot(Expression a);
 
-    public default int visitAnd(Expression a, Expression b) { return 0; }
-    public default int visitOr(Expression a, Expression b) { return 0; }
-    public default int visitXor(Expression a, Expression b) { return 0; }
-    public default int visitEq(Expression a, Expression b) { return 0; }
+    public int visitAnd(Expression a, Expression b);
+    public int visitOr(Expression a, Expression b);
+    public int visitXor(Expression a, Expression b);
+    public int visitEq(Expression a, Expression b);
   }
 
   public boolean contains(Op o) {

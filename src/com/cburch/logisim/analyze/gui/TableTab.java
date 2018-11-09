@@ -95,6 +95,7 @@ class TableTab extends AnalyzerTab implements TruthTablePanel, Printable {
       computePreferredSize();
       expand.setEnabled(getRowCount() < table.getRowCount());
       count.setText(String.format("%d of %d rows shown", getRowCount(), table.getRowCount()));
+      invalidate();
       repaint();
     }
   }

@@ -172,14 +172,26 @@ public class Parser {
     }
     return current;
   }
-
+  
   public static Expression parse(String in, AnalyzerModel model) throws ParserException {
+    return parse(in, model, false);
+  }
+
+  public static Expression parseMaybeAssignment(String in, AnalyzerModel model) throws ParserException {
+    return parse(in, model, true);
+  }
+  
+  private static Expression parse(String in, AnalyzerModel model,
+      boolean allowOutputAssignment) throws ParserException {
+
     ArrayList<Token> tokens = toTokens(in, false);
 
     if (tokens.size() == 0)
       return null;
 
+    int i = -1;
     for (Token token : tokens) {
+      i++;
       if (token.type == TOKEN_ERROR_BADCHAR) {
         throw token.error(S.getter("invalidCharacterError", token.text));
       } else if (token.type == TOKEN_ERROR_BRACE) {
@@ -204,6 +216,11 @@ public class Parser {
           } else if (opText.equals("EQUALS")) {
             token.type = TOKEN_EQ;
           } else {
+            if (i == 0 && allowOutputAssignment) {
+              index = model.getOutputs().bits.indexOf(token.text);
+              if (index >= 0 && tokens.size() >= 2 && tokens.get(1).type == TOKEN_EQ)
+                continue;
+            }
             throw token.error(S.getter("badVariableName", token.text));
           }
         }
