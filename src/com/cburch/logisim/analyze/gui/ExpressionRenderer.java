@@ -600,6 +600,29 @@ class ExpressionRenderer extends JPanel {
     lines.fitToWidth(width);
   }
 
+  public static class NamedExpression {
+    public String name;
+    public Expression expr; // can be null
+    public String exprString;
+    public String err;
+    NamedExpression(String n) {
+      name = n;
+    }
+    NamedExpression(String n, Expression e, String s) {
+      name = n;
+      expr = e;
+      exprString = s;
+    }
+  }
+
+  public void setExpression(NamedExpression e) {
+    if (e.expr != null)
+      setExpression(e.name, e.expr);
+    else
+      setError(e.name, e.err != null ? e.err : "unspecified");
+  }
+
+
   public int getExpressionHeight() {
     return (int)Math.ceil(lines.getHeight());
   }

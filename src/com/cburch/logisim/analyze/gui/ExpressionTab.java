@@ -31,42 +31,48 @@
 package com.cburch.logisim.analyze.gui;
 import static com.cburch.logisim.analyze.model.Strings.S;
 
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.Graphics;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.Color;
-import java.awt.event.MouseEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
 import java.util.EventObject;
 
-import javax.swing.TransferHandler;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
-import javax.swing.JList;
-import javax.swing.JComponent;
-import javax.swing.JComboBox;
-import javax.swing.DefaultListCellRenderer;
+import javax.swing.AbstractCellEditor;
+import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.DropMode;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.TransferHandler;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.AbstractCellEditor;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
-import javax.swing.JTextField;
-import javax.swing.DropMode;
-import javax.swing.ActionMap;
+import javax.swing.table.TableCellRenderer;
 import org.jdesktop.xswingx.BuddySupport;
 
 import com.cburch.logisim.analyze.model.AnalyzerModel;
@@ -80,7 +86,10 @@ import com.cburch.logisim.analyze.model.VariableListEvent;
 import com.cburch.logisim.analyze.model.VariableListListener;
 import com.cburch.logisim.gui.menu.EditHandler;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.gui.menu.PrintHandler;
 import com.cburch.logisim.util.StringGetter;
+
+import static com.cburch.logisim.analyze.gui.ExpressionRenderer.NamedExpression;
 
 class ExpressionTab extends AnalyzerTab {
 
@@ -93,21 +102,6 @@ class ExpressionTab extends AnalyzerTab {
   private JLabel error = new JLabel();
   private JLabel label = new JLabel();
   private NotationSelector notation;
-
-  private static class NamedExpression {
-    String name;
-    Expression expr; // can be null
-    String exprString;
-    String err;
-    NamedExpression(String n) {
-      name = n;
-    }
-    NamedExpression(String n, Expression e, String s) {
-      name = n;
-      expr = e;
-      exprString = s;
-    }
-  }
 
   public class ExpressionTableModel extends AbstractTableModel
     implements VariableListListener, OutputExpressionsListener {
@@ -225,6 +219,7 @@ class ExpressionTab extends AnalyzerTab {
         listCopy[i] = new NamedExpression(name);
         try {
           listCopy[i].expr = model.getOutputExpressions().getExpression(name);
+          listCopy[i].err = null;
         } catch (Exception e) {
           listCopy[i].err = e.getMessage();
         }
@@ -234,13 +229,8 @@ class ExpressionTab extends AnalyzerTab {
     void updateRowHeight(int idx) {
       int width = table.getColumnModel().getColumn(0).getWidth();
       prettyView.setWidth(width);
-      NamedExpression e = listCopy[idx];
-      int h = 40;
-      int w = width;
-      if (e.expr != null) {
-        prettyView.setExpression(e.name, e.expr);
-        h = prettyView.getExpressionHeight() + 15;
-      }
+      prettyView.setExpression(listCopy[idx]);
+      int h = prettyView.getExpressionHeight() + 14;
       if (table.getRowHeight(idx) != h)
         table.setRowHeight(idx, h);
     }
@@ -256,7 +246,6 @@ class ExpressionTab extends AnalyzerTab {
     @Override
     public Component getTableCellRendererComponent(JTable table,
         Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-      NamedExpression e = (NamedExpression)value;
       Color fg, bg;
       if (isSelected) {
         fg = table.getSelectionForeground();
@@ -266,10 +255,7 @@ class ExpressionTab extends AnalyzerTab {
         bg = table.getBackground();
       }
       prettyView.setWidth(table.getColumnModel().getColumn(0).getWidth());
-      if (e.expr != null)
-        prettyView.setExpression(e.name, e.expr);
-      else
-        prettyView.setError(e.name, e.err != null ? e.err : "unspecified");
+      prettyView.setExpression((NamedExpression)value);
       prettyView.setForeground(fg);
       prettyView.setBackground(bg);
       return prettyView;
@@ -595,5 +581,79 @@ class ExpressionTab extends AnalyzerTab {
           && support.isDataFlavorSupported(DataFlavor.stringFlavor);
     }
   }
+
+  @Override
+  PrintHandler getPrintHandler() {
+    return printHandler;
+  }
+
+  PrintHandler printHandler = new PrintHandler() {
+    @Override
+    public Dimension getExportImageSize() {
+      int width = table.getWidth();
+      int height = 14;
+      int n = table.getRowCount();
+      for (int i = 0; i < n; i++) {
+        NamedExpression ne = (NamedExpression)table.getValueAt(i, 0);
+        prettyView.setWidth(width);
+        prettyView.setExpression(ne);
+        height += prettyView.getExpressionHeight() + 14;
+      }
+      return new Dimension(width + 6, height);
+    }
+
+    @Override
+    public void paintExportImage(BufferedImage img, Graphics2D g) {
+      int width = img.getWidth();
+      int height = img.getHeight();
+      g.setClip(0, 0, width, height);
+      g.translate(6/2, 14);
+      int n = table.getRowCount();
+      for (int i = 0; i < n; i++) {
+        NamedExpression ne = (NamedExpression)table.getValueAt(i, 0);
+        prettyView.setForeground(Color.BLACK);
+        prettyView.setBackground(Color.WHITE);
+        prettyView.setWidth(width - 6);
+        prettyView.setExpression(ne);
+        int rh = prettyView.getExpressionHeight();
+        prettyView.setSize(new Dimension(width-6, rh));
+        prettyView.paintComponent(g);
+        g.translate(0, rh + 14);
+      }
+    }
+
+    @Override
+    public int print(Graphics2D g, PageFormat pf, int pageNum, double w, double h) {
+
+      int width = (int)Math.ceil(w);
+      g.translate(6/2, 14/2);
+
+      int n = table.getRowCount();
+      double y = 0;
+      int pg = 0;
+      for (int i = 0; i < n; i++) {
+        NamedExpression ne = (NamedExpression)table.getValueAt(i, 0);
+        prettyView.setWidth(width - 6);
+        prettyView.setForeground(Color.BLACK);
+        prettyView.setBackground(Color.WHITE);
+        prettyView.setExpression(ne);
+        int rh = prettyView.getExpressionHeight();
+        if (y > 0 && y + rh > h) {
+          // go to next page
+          y = 0;
+          pg++;
+          if (pg > pageNum)
+            return Printable.PAGE_EXISTS; // done the page we wanted
+        }
+        if (pg == pageNum) {
+          prettyView.setSize(new Dimension(width-6, rh));
+          prettyView.paintComponent(g);
+          g.translate(0, rh + 14);
+        }
+        y += rh + 14;
+      }
+      return (pg < pageNum ? Printable.NO_SUCH_PAGE : Printable.PAGE_EXISTS);
+    }
+  };
 
 }
