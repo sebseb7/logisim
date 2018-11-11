@@ -33,25 +33,35 @@ import static com.cburch.logisim.analyze.model.Strings.S;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
 
 import javax.swing.AbstractListModel;
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.ComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.UIManager;
 
 import com.cburch.logisim.analyze.model.AnalyzerModel;
 import com.cburch.logisim.analyze.model.Expression;
@@ -159,32 +169,85 @@ class MinimizedTab extends AnalyzerTab {
     String name;
     Expression expr;
     ExpressionRenderer prettyView = new ExpressionRenderer();
+    Color selColor;
+    boolean selected;
+    int lastWidth = -1;
+    Rectangle exprBounds;
+    static final int BW = 1, MARGIN = 9;
+    static final int VERTICAL_PAD = 20;
 
     ExpressionPanel() {
-      setBackground(Color.WHITE);
-      prettyView.setBackground(Color.WHITE);
+      selColor = UIManager.getDefaults().getColor("List.selectionBackground");
+
+      setFocusable(true);
+      prettyView.setBorder(BorderFactory.createLineBorder(Color.BLACK, BW));
+      // prettyView.setFocusable(true);
+      // setBackground(Color.WHITE);
+      // prettyView.setBackground(Color.WHITE);
+      prettyView.setCentered(true);
       addComponentListener(new ComponentAdapter() {
         @Override
         public void componentResized(ComponentEvent e) {
-          update();
+          if (lastWidth != getWidth())
+            update();
         }
       });
+      FocusListener f = new FocusListener() {
+        public void focusGained(FocusEvent e) {
+          selected = true;
+          repaint();
+        }
+        public void focusLost(FocusEvent e) {
+          selected = false;
+          repaint();
+        }
+      };
+      addFocusListener(f);
+      prettyView.addFocusListener(f);
+      MouseAdapter m = new MouseAdapter() {
+        public void mouseClicked(MouseEvent e) {
+          if (exprBounds != null && exprBounds.contains(e.getPoint()))
+            requestFocusInWindow();
+        }
+      };
+      addMouseListener(m);
     }
     public void paintComponent(Graphics g) {
-      super.paintComponent(g);
-      if (expr != null)
-        prettyView.paintComponent((Graphics2D)g);
+      Graphics2D g2 = (Graphics2D)g;
+      super.paintComponent(g2);
+      if (expr != null) {
+        AffineTransform xform = g2.getTransform();
+        g2.translate(prettyView.getX(), prettyView.getY());
+        prettyView.setBackground(selected ? selColor : Color.WHITE);
+        prettyView.paintComponent(g2);
+        g2.setTransform(xform);
+      }
     }
     void update() {
-      Dimension d = getPreferredSize();
-      prettyView.setWidth(d.width);
+      Dimension d = getSize();
+      lastWidth = d.width;
+
+      prettyView.setExpressionWidth(d.width - 2*BW);
       if (expr != null)
         prettyView.setExpression(name, expr);
-      d.height = prettyView.getExpressionHeight() + 15;
-      setSize(d);
-      setPreferredSize(d);
-      prettyView.setPreferredSize(d);
+
+      // make expr take up only what it needs, plus space for border,
+      // limited only by our own size
       prettyView.setSize(d);
+      Rectangle r = prettyView.getExpressionBounds();
+      r.grow(BW, BW+MARGIN);
+      Rectangle area = new Rectangle(0, 0, d.width, d.height);
+      exprBounds = r.intersection(area);
+      exprBounds.grow(-2, -2);
+      prettyView.setBounds(exprBounds);
+
+      // make our preferred size tall enough, but narrower than necessary to
+      // allow window to shrink
+      d.width = 100;
+      d.height = r.height;
+      setPreferredSize(d);
+
+      invalidate();
       repaint();
     }
     void setExpression(String name, Expression expr) {
@@ -215,7 +278,8 @@ class MinimizedTab extends AnalyzerTab {
     this.outputExprs = model.getOutputExpressions();
     outputExprs.addOutputExpressionsListener(myListener);
 
-    notation = new ExpressionTab.NotationSelector(minimizedExpr.prettyView) {
+    notation = new ExpressionTab.NotationSelector(
+        minimizedExpr.prettyView, BoxLayout.Y_AXIS) {
       @Override
       void updated() {
         minimizedExpr.update();
@@ -232,35 +296,49 @@ class MinimizedTab extends AnalyzerTab {
     JPanel buttons = new JPanel(new GridLayout(1, 1));
     buttons.add(setAsExpr);
 
-    JPanel formatPanel = new JPanel();
-    formatPanel.add(formatLabel);
-    formatPanel.add(formatChoice);
-
     GridBagLayout gb = new GridBagLayout();
     GridBagConstraints gc = new GridBagConstraints();
     setLayout(gb);
-    gc.gridx = 0;
-    gc.gridy = 0;
-    addRow(gb, gc, selector.getLabel(), selector.getComboBox());
-    addRow(gb, gc, formatLabel, formatChoice);
 
-    gc.weightx = 0.0;
     gc.gridx = 0;
-    gc.gridwidth = 2;
     gc.gridy = GridBagConstraints.RELATIVE;
+    gc.weightx = 1.0;
+    gc.weighty = 0.0;
+
+    JPanel outPanel = selector.createPanel();
+    JPanel fmtPanel = new JPanel();
+    fmtPanel.setLayout(new BoxLayout(fmtPanel, BoxLayout.Y_AXIS));
+    formatLabel.setAlignmentX(0.0f);
+    formatChoice.setAlignmentX(0.0f);
+    fmtPanel.add(formatLabel);
+    fmtPanel.add(formatChoice);
+    outPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+    fmtPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+    notation.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+    JPanel selectors = new JPanel();
+    selectors.setLayout(new BoxLayout(selectors, BoxLayout.X_AXIS));
+    selectors.add(outPanel);
+    selectors.add(fmtPanel);
+    selectors.add(notation);
+
+    gc.fill = GridBagConstraints.NONE;
+    gc.anchor = GridBagConstraints.CENTER;
+    gb.setConstraints(selectors, gc);
+    add(selectors);
+
     gc.fill = GridBagConstraints.HORIZONTAL;
     gc.anchor = GridBagConstraints.CENTER;
     gb.setConstraints(karnaughMap, gc);
     add(karnaughMap);
+
+    gc.fill = GridBagConstraints.HORIZONTAL;
     Insets oldInsets = gc.insets;
-    gc.insets = new Insets(20, 0, 0, 0);
-    gb.setConstraints(notation, gc);
-    add(notation);
-    gc.fill = GridBagConstraints.BOTH;
-    gc.insets = new Insets(20, 0, 0, 0);
+    gc.insets = new Insets(10, 5, 10, 5);
     gb.setConstraints(minimizedExpr, gc);
     add(minimizedExpr);
     gc.insets = oldInsets;
+
+    gc.weightx = 0.0;
     gc.fill = GridBagConstraints.NONE;
     gb.setConstraints(buttons, gc);
     add(buttons);
@@ -268,24 +346,6 @@ class MinimizedTab extends AnalyzerTab {
     String selected = selector.getSelectedOutput();
     setAsExpr.setEnabled(selected != null
         && !outputExprs.isExpressionMinimal(selected));
-  }
-
-  private void addRow(GridBagLayout gb, GridBagConstraints gc, JLabel label,
-      @SuppressWarnings("rawtypes") JComboBox choice) {
-    Insets oldInsets = gc.insets;
-    gc.weightx = 0.0;
-    gc.gridx = 0;
-    gc.fill = GridBagConstraints.HORIZONTAL;
-    gc.anchor = GridBagConstraints.LINE_START;
-    gc.insets = new Insets(5, 5, 5, 5);
-    gb.setConstraints(label, gc);
-    add(label);
-    gc.gridx = 1;
-    gc.fill = GridBagConstraints.VERTICAL;
-    gb.setConstraints(choice, gc);
-    add(choice);
-    gc.gridy++;
-    gc.insets = oldInsets;
   }
 
   private String getCurrentVariable() {

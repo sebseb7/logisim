@@ -519,6 +519,15 @@ class ExpressionRenderer extends JPanel {
       return last.yy + last.d;
     }
 
+    float getWidth() {
+      if (boxes.size() == 0)
+        return DEFAULT_WIDTH;
+      float w = 0;
+      for (Box b : boxes)
+        w = Math.max(w, b.xx + b.w);
+      return w;
+    }
+
     // String why;
     double penalty(int s, int e, float width) {
       double p = 0;
@@ -565,17 +574,26 @@ class ExpressionRenderer extends JPanel {
   }
 
   static final int DEFAULT_HEIGHT = 35;
+  static final int DEFAULT_WIDTH = 100;
   static final int LEADING = 6; // gap between lines
   static final int LEFT_MARGIN = 15; // margin at left of every line
   static final int LEFT_INDENT = 25; // extra margin for continuation lines
 
+  boolean centered = false;
   int width = 100;
   LineBreaker lines = new LineBreaker();
 
   public ExpressionRenderer() { }
 
-  public void setWidth(int w) {
-    width = w - LEFT_MARGIN;
+  public void setCentered(boolean b) {
+    centered = true;
+  }
+
+  public void setExpressionWidth(int w) {
+    if (centered)
+      width = w - 2*LEFT_MARGIN;
+    else
+      width = w - LEFT_MARGIN;
   }
 
   public void setExpression(String name, Expression expr) {
@@ -627,6 +645,18 @@ class ExpressionRenderer extends JPanel {
     return (int)Math.ceil(lines.getHeight());
   }
 
+  public int getExpressionWidth() {
+    return (int)Math.ceil(lines.getWidth() + (centered?1:2)*LEFT_MARGIN);
+  }
+
+  public Rectangle getExpressionBounds() {
+    int w = getExpressionWidth();
+    int h = getExpressionHeight();
+    int x = centered ? Math.max(0, (getWidth() - w)/2) : LEFT_MARGIN;
+    int y = (getHeight() - h)/2;
+    return new Rectangle(x, y, w, h);
+  }
+
   @Override
   public void paintComponent(Graphics g) {
     /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
@@ -637,10 +667,19 @@ class ExpressionRenderer extends JPanel {
     g2.setRenderingHint(
         RenderingHints.KEY_ANTIALIASING,
         RenderingHints.VALUE_ANTIALIAS_ON);
-    super.paintComponent(g);
 
     AffineTransform xform = g2.getTransform();
-    g2.translate(LEFT_MARGIN, (getHeight() - lines.getHeight())/2);
+
+    super.paintComponent(g);
+    paintBorder(g);
+
+    if (centered)
+      g2.translate(
+          Math.max(0, (getWidth() - lines.getWidth()) / 2),
+          (getHeight() - lines.getHeight())/2);
+    else
+      g2.translate(LEFT_MARGIN, (getHeight() - lines.getHeight())/2);
+    g2.setColor(getForeground());
     lines.paint(g2);
     g2.setTransform(xform);
   }

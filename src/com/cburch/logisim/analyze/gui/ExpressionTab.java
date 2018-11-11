@@ -35,7 +35,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.datatransfer.DataFlavor;
@@ -55,6 +54,7 @@ import java.util.EventObject;
 import javax.swing.AbstractCellEditor;
 import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DropMode;
 import javax.swing.JComboBox;
@@ -72,7 +72,6 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
 import org.jdesktop.xswingx.BuddySupport;
 
 import com.cburch.logisim.analyze.model.AnalyzerModel;
@@ -228,7 +227,7 @@ class ExpressionTab extends AnalyzerTab {
     }
     void updateRowHeight(int idx) {
       int width = table.getColumnModel().getColumn(0).getWidth();
-      prettyView.setWidth(width);
+      prettyView.setExpressionWidth(width);
       prettyView.setExpression(listCopy[idx]);
       int h = prettyView.getExpressionHeight() + 14;
       if (table.getRowHeight(idx) != h)
@@ -254,7 +253,7 @@ class ExpressionTab extends AnalyzerTab {
         fg = table.getForeground();
         bg = table.getBackground();
       }
-      prettyView.setWidth(table.getColumnModel().getColumn(0).getWidth());
+      prettyView.setExpressionWidth(table.getColumnModel().getColumn(0).getWidth());
       prettyView.setExpression((NamedExpression)value);
       prettyView.setForeground(fg);
       prettyView.setBackground(bg);
@@ -363,7 +362,7 @@ class ExpressionTab extends AnalyzerTab {
     actionMap.put(LogisimMenuBar.COPY, ccp.getCopyAction());
     actionMap.put(LogisimMenuBar.PASTE, ccp.getPasteAction());
 
-    notation = new NotationSelector(prettyView) {
+    notation = new NotationSelector(prettyView, BoxLayout.X_AXIS) {
       @Override
       void updated() {
         tableModel.update();
@@ -433,9 +432,11 @@ class ExpressionTab extends AnalyzerTab {
     private ExpressionRenderer r;
     private JLabel label = new JLabel();
     private JComboBox<Expression.Notation> select = new JComboBox<>();
-    NotationSelector(ExpressionRenderer r) {
+    NotationSelector(ExpressionRenderer r, int axis) {
       this.r = r;
-      // setLayout(FlowLayout());
+      setLayout(new BoxLayout(this, axis));
+      label.setAlignmentX(0.0f);
+      select.setAlignmentX(0.0f);
       add(label);
       add(select);
       select.addItem(Expression.Notation.ENGINEERING);
@@ -595,7 +596,7 @@ class ExpressionTab extends AnalyzerTab {
       int n = table.getRowCount();
       for (int i = 0; i < n; i++) {
         NamedExpression ne = (NamedExpression)table.getValueAt(i, 0);
-        prettyView.setWidth(width);
+        prettyView.setExpressionWidth(width);
         prettyView.setExpression(ne);
         height += prettyView.getExpressionHeight() + 14;
       }
@@ -613,7 +614,7 @@ class ExpressionTab extends AnalyzerTab {
         NamedExpression ne = (NamedExpression)table.getValueAt(i, 0);
         prettyView.setForeground(Color.BLACK);
         prettyView.setBackground(Color.WHITE);
-        prettyView.setWidth(width - 6);
+        prettyView.setExpressionWidth(width - 6);
         prettyView.setExpression(ne);
         int rh = prettyView.getExpressionHeight();
         prettyView.setSize(new Dimension(width-6, rh));
@@ -633,7 +634,7 @@ class ExpressionTab extends AnalyzerTab {
       int pg = 0;
       for (int i = 0; i < n; i++) {
         NamedExpression ne = (NamedExpression)table.getValueAt(i, 0);
-        prettyView.setWidth(width - 6);
+        prettyView.setExpressionWidth(width - 6);
         prettyView.setForeground(Color.BLACK);
         prettyView.setBackground(Color.WHITE);
         prettyView.setExpression(ne);

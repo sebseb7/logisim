@@ -38,6 +38,7 @@ import javax.swing.ComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.BoxLayout;
 
 import com.cburch.logisim.analyze.model.AnalyzerModel;
 import com.cburch.logisim.analyze.model.VariableList;
@@ -121,6 +122,9 @@ class OutputSelector {
 
   public JPanel createPanel() {
     JPanel ret = new JPanel();
+    ret.setLayout(new BoxLayout(ret, BoxLayout.Y_AXIS));
+    label.setAlignmentX(0.0f);
+    select.setAlignmentX(0.0f);
     ret.add(label);
     ret.add(select);
     return ret;
