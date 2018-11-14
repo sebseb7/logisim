@@ -31,6 +31,7 @@
 package com.cburch.logisim.analyze.gui;
 import static com.cburch.logisim.analyze.model.Strings.S;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -117,7 +118,8 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
   private static final int[] COL_VARS = { 0, 1, 1, 2, 2 };
   private static final int CELL_HORZ_SEP = 10;
   private static final int CELL_VERT_SEP = 10;
-  private static final int IMP_INSET = 4;
+  private static final int IMP_INSET = 3;
+  private static final int IMP_BORDER = 2;
 
   private static final int IMP_RADIUS = 6;
 
@@ -331,7 +333,21 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
       return null;
     int col = getOutputColumn(event);
     Entry entry = table.getOutputEntry(row, col);
-    return entry.getErrorMessage();
+    String s = entry.getErrorMessage();
+    if (s == null)
+      s = "";
+    else
+      s += "<br>";
+    s += output + " = " + entry.getDescription();
+    List<String> inputs = model.getInputs().bits;
+    if (inputs.size() == 0)
+      return "<html>"+s+"</html>";
+    s += "<br>When:";
+    int n = inputs.size();
+    for (int i = 0; i < MAX_VARS && i < inputs.size(); i++) {
+      s += "<br>&nbsp;&nbsp;&nbsp;&nbsp;" + inputs.get(i) + " = " + ((row>>(n-i-1)) & 1);
+    }
+    return "<html>"+s+"</html>";
   }
 
   void highlight(MouseEvent event) {
@@ -518,7 +534,8 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
 
     List<Implicant> implicants = model.getOutputExpressions().getMinimalImplicants(output);
     if (implicants != null) {
-      Graphics g2 = g.create(x, y, cellWidth * cols, cellHeight * rows);
+      Graphics2D g2 = (Graphics2D)g.create(x, y, cellWidth * cols, cellHeight * rows);
+      g2.setStroke(new BasicStroke(IMP_BORDER));
       int index = 0;
       for (Implicant imp : implicants) {
         g2.setColor(IMP_COLORS[index % IMP_COLORS.length]);
@@ -550,6 +567,14 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
             + i * cellHeight + dy);
       }
     }
+  }
+
+  private static void rounded(Graphics g, int x, int y, int w, int h, int dx, int dy) {
+    g.fillRoundRect(x, y, w, h, dx, dy);
+    Color c = g.getColor();
+    g.setColor(c.darker().darker());
+    g.drawRoundRect(x, y, w, h, dx, dy);
+    g.setColor(c);
   }
 
   private void paintImplicant(Graphics g, Implicant imp, int rows, int cols) {
@@ -589,7 +614,7 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
     int covered = numCols * numRows;
     int d = 2 * IMP_RADIUS;
     if (covered == count) {
-      g.fillRoundRect(colMin * cellWidth + IMP_INSET,
+      rounded(g, colMin * cellWidth + IMP_INSET,
           rowMin * cellHeight + IMP_INSET, numCols * cellWidth - 2
           * IMP_INSET, numRows * cellHeight - 2 * IMP_INSET, d, d);
     } else if (covered == 16) {
@@ -598,35 +623,35 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
         int h = cellHeight - IMP_INSET + d;
         int x1 = 3 * cellWidth + IMP_INSET;
         int y1 = 3 * cellHeight + IMP_INSET;
-        g.fillRoundRect(-d, -d, w, h, d, d);
-        g.fillRoundRect(x1, -d, w, h, d, d);
-        g.fillRoundRect(-d, y1, w, h, d, d);
-        g.fillRoundRect(x1, y1, w, h, d, d);
+        rounded(g, -d, -d, w, h, d, d);
+        rounded(g, x1, -d, w, h, d, d);
+        rounded(g, -d, y1, w, h, d, d);
+        rounded(g, x1, y1, w, h, d, d);
       } else if (oneRowFound) { // first and last columns
         int w = cellWidth - IMP_INSET + d;
         int h = 4 * cellHeight - 2 * IMP_INSET;
         int x1 = 3 * cellWidth + IMP_INSET;
-        g.fillRoundRect(-d, IMP_INSET, w, h, d, d);
-        g.fillRoundRect(x1, IMP_INSET, w, h, d, d);
+        rounded(g, -d, IMP_INSET, w, h, d, d);
+        rounded(g, x1, IMP_INSET, w, h, d, d);
       } else { // first and last rows
         int w = 4 * cellWidth - 2 * IMP_INSET;
         int h = cellHeight - IMP_INSET + d;
         int y1 = 3 * cellHeight + IMP_INSET;
-        g.fillRoundRect(IMP_INSET, -d, w, h, d, d);
-        g.fillRoundRect(IMP_INSET, y1, w, h, d, d);
+        rounded(g, IMP_INSET, -d, w, h, d, d);
+        rounded(g, IMP_INSET, y1, w, h, d, d);
       }
     } else if (numCols == 4) { // wrap around side
       int top = rowMin * cellHeight + IMP_INSET;
       int w = cellWidth - IMP_INSET + d;
       int h = numRows * cellHeight - 2 * IMP_INSET;
-      g.fillRoundRect(-d, top, w, h, d, d);
-      g.fillRoundRect(3 * cellWidth + IMP_INSET, top, w, h, d, d);
+      rounded(g, -d, top, w, h, d, d);
+      rounded(g, 3 * cellWidth + IMP_INSET, top, w, h, d, d);
     } else { // numRows == 4 // wrap around top and bottom
       int left = colMin * cellWidth + IMP_INSET;
       int w = numCols * cellWidth - 2 * IMP_INSET;
       int h = cellHeight - IMP_INSET + d;
-      g.fillRoundRect(left, -d, w, h, d, d);
-      g.fillRoundRect(left, 3 * cellHeight + IMP_INSET, w, h, d, d);
+      rounded(g, left, -d, w, h, d, d);
+      rounded(g, left, 3 * cellHeight + IMP_INSET, w, h, d, d);
     }
   }
 
