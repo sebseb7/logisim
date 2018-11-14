@@ -75,15 +75,18 @@ abstract class CircuitDetermination {
       return ret;
     }
 
-    public CircuitDetermination visitAnd(Expression a, Expression b) {
+    @Override
+    public CircuitDetermination visitAnd(Expression e, Expression a, Expression b) {
       return binary(a.visit(this), b.visit(this), AndGate.FACTORY);
     }
 
-    public CircuitDetermination visitConstant(int value) {
+    @Override
+    public CircuitDetermination visitConstant(Expression e, int value) {
       return new Value(value);
     }
 
-    public CircuitDetermination visitNot(Expression aBase) {
+    @Override
+    public CircuitDetermination visitNot(Expression e, Expression aBase) {
       CircuitDetermination aret = aBase.visit(this);
       if (aret instanceof Gate) {
         Gate a = (Gate) aret;
@@ -104,19 +107,23 @@ abstract class CircuitDetermination {
       return ret;
     }
 
-    public CircuitDetermination visitOr(Expression a, Expression b) {
+    @Override
+    public CircuitDetermination visitOr(Expression e, Expression a, Expression b) {
       return binary(a.visit(this), b.visit(this), OrGate.FACTORY);
     }
 
-    public CircuitDetermination visitVariable(String name) {
+    @Override
+    public CircuitDetermination visitVariable(Expression e, String name) {
       return new Input(name);
     }
 
-    public CircuitDetermination visitXor(Expression a, Expression b) {
+    @Override
+    public CircuitDetermination visitXor(Expression e, Expression a, Expression b) {
       return binary(a.visit(this), b.visit(this), XorGate.FACTORY);
     }
 
-    public CircuitDetermination visitEq(Expression a, Expression b) {
+    @Override
+    public CircuitDetermination visitEq(Expression e, Expression a, Expression b) {
       return binary(a.visit(this), b.visit(this), XnorGate.FACTORY);
     }
   }

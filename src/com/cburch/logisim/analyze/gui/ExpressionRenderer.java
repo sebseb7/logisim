@@ -139,36 +139,83 @@ class ExpressionRenderer extends JPanel {
     float w, h, a, d; // width, height, ascent, descent
     float xx, yy;
     int depth;
+    Color startColor, endColor;
+    Box endColorBox;
 
-    Box(int depth) { this.depth = depth; }
+    Box(Expression e, int depth) {
+      this.depth = depth;
+      this.startColor = (colorizer == null || e == null) ? null : colorizer.colorFor(e);
+      this.endColorBox = this;
+    }
+    void paintAndColor(Graphics2D g) {
+      if (startColor != null) {
+        endColorBox.endColor = g.getColor();
+        g.setColor(startColor);
+      }
+      paint(g);
+      if (endColor != null)
+        g.setColor(endColor);
+    }
     abstract void paint(Graphics2D g);
     abstract void layout(float x, float y, LineBreaker lines);
     void move(float dx, float dy) { xx += dx; yy += dy; }
   }
 
+  /*
+  class ColorBox extends Box {
+    Color color;
+    ColorBox partner;
+    ColorBox(Color c) {
+      super(null, -1);
+      this.color = c;
+      if (c != null)
+        partner = new ColorBox(null);
+    }
+    Box getRevertBox() {
+      return partner;
+    }
+    @Override
+    void paint(Graphics2D g) {
+      if (partner != null)
+        partner.color = (color == null ? null : g.getColor());
+      if (color != null) 
+        g.setColor(color);
+    }
+    @Override
+    void layout(float x, float y, LineBreaker lines) {
+      lines.boxes.add(this);
+      xx = x;
+      yy = y;
+    }
+  }
+  */
+
   class NotBox extends Box {
     Box inner;
     LineBreaker innerLines = new LineBreaker();
 
-    NotBox(Box inner, int depth) {
-      super(depth);
+    NotBox(Expression e, Box inner, int depth) {
+      super(e, depth);
       this.inner = inner;
       w = inner.w + 2f;
       a = inner.a + 3f;
       d = inner.d;
       h = a + d;
     }
+    @Override
     void layout(float x, float y, LineBreaker lines) {
       lines.boxes.add(this);
       xx = x;
       yy = y;
       innerLines.layout(inner, x+1, y);
     }
+    @Override
     void move(float dx, float dy) {
       xx += dx; yy += dy; 
       for (Box b: innerLines.boxes)
         b.move(dx, dy);
     }
+    @Override
     void paint(Graphics2D g) {
       g.draw(new Line2D.Float(xx+1, yy-a+1.5f, xx+w-1, yy-a+1.5f));
       innerLines.paint(g);
@@ -182,7 +229,7 @@ class ExpressionRenderer extends JPanel {
       this(s, 0, depth);
     }
     StringBox(String s, int precedence, int depth) {
-      super(depth);
+      super(null, depth);
       this.s = s;
       this.precedence = precedence;
       w = OP_FONT_METRICS.stringWidth(s);
@@ -190,11 +237,13 @@ class ExpressionRenderer extends JPanel {
       d = OP_DESCENT;
       h = a+d;
     }
+    @Override
     void layout(float x, float y, LineBreaker lines) {
       lines.boxes.add(this);
       xx = x;
       yy = y;
     }
+    @Override
     void paint(Graphics2D g) {
       g.setFont(OP_FONT);
       g.drawString(s, xx, yy);
@@ -219,6 +268,7 @@ class ExpressionRenderer extends JPanel {
       a -= shift;
       d += shift;
     }
+    @Override
     void paint(Graphics2D g) {
       g.setFont(OP_FONT);
       AffineTransform xform = g.getTransform();
@@ -230,19 +280,21 @@ class ExpressionRenderer extends JPanel {
 
   class ConstBox extends Box {
     String s;
-    ConstBox(String s, int depth) {
-      super(depth);
+    ConstBox(Expression e, String s, int depth) {
+      super(e, depth);
       this.s = s;
       w = TXT_FONT_METRICS.stringWidth(s);
       a = TXT_ASCENT;
       d = TXT_DESCENT;
       h = a+d;
     }
+    @Override
     void layout(float x, float y, LineBreaker lines) {
       lines.boxes.add(this);
       xx = x;
       yy = y;
     }
+    @Override
     void paint(Graphics2D g) {
       g.setFont(TXT_FONT);
       g.drawString(s, xx, yy);
@@ -252,14 +304,14 @@ class ExpressionRenderer extends JPanel {
   class VarBox extends Box {
     String name, sub;
     float sx, sy;
-    VarBox(String desc, int depth) {
-      super(depth);
+    VarBox(Expression e, String desc, int depth) {
+      super(e, depth);
       try {
         Var.Bit v = Var.Bit.parse(desc);
         name = v.name;
         if (v.b >= 0)
           sub = "" + v.b;
-      } catch (ParserException e) {
+      } catch (ParserException ex) {
         name = desc;
       }
       w = VAR_FONT_METRICS.stringWidth(name);
@@ -275,11 +327,13 @@ class ExpressionRenderer extends JPanel {
       }
       h = a+d;
     }
+    @Override
     void layout(float x, float y, LineBreaker lines) {
       lines.boxes.add(this);
       xx = x;
       yy = y;
     }
+    @Override
     void paint(Graphics2D g) {
       g.setFont(VAR_FONT);
       g.drawString(name, xx, yy);
@@ -300,8 +354,8 @@ class ExpressionRenderer extends JPanel {
   class BoundingBox extends Box {
     int depth; // debug
     Box[] insides;
-    BoundingBox(int depth, Box ...insides) {
-      super(depth);
+    BoundingBox(Expression e, int depth, Box ...insides) {
+      super(e, depth);
       this.insides = insides;
       for (Box b : insides) {
         a = Math.max(a, b.a);
@@ -315,14 +369,26 @@ class ExpressionRenderer extends JPanel {
       }
       h = a + d;
     }
+    @Override
     void layout(float x, float y, LineBreaker lines) {
       lines.bboxes.add(this);
       xx = x;
       yy = y;
+      // ColorBox c = (color == null ? null : new ColorBox(color));
+      // if (c != null)
+      //   c.layout(x, y, lines);
+      int n = lines.boxes.size();
       for (Box b : insides) {
         b.layout(x, y, lines);
         x += b.w;
       }
+      int m = lines.boxes.size();
+      if (startColor != null && n < m) {
+        lines.boxes.get(n).startColor = startColor;
+        lines.boxes.get(n).endColorBox = lines.boxes.get(m-1);
+      }
+      // if (c != null)
+      //   c.getRevertBox().layout(x, y, lines);
     }
     void paint(Graphics2D g) {
       debugShade(g, this, BBOX_SHADE, depth); // debug
@@ -331,7 +397,9 @@ class ExpressionRenderer extends JPanel {
 
   class BoxMaker implements Expression.Visitor<Box> {
     int depth = 1;
-    public Box visitBinary(Expression a, Expression b, Expression.Op op) {
+
+    @Override
+    public Box visitBinary(Expression e, Expression a, Expression b, Expression.Op op) {
       Box bb_a;
       if (a.getPrecedence() < op.Level) {
         ParenBox lparen = new ParenBox("(", depth);
@@ -341,16 +409,15 @@ class ExpressionRenderer extends JPanel {
         depth--;
         lparen.rescale(bb.h);
         rparen.rescale(bb.h);
-        bb_a = new BoundingBox(depth, lparen, bb, rparen);
+        bb_a = new BoundingBox(a, depth, lparen, bb, rparen);
       } else {
         bb_a = a.visit(this);
       }
 
-      StringBox mid = new StringBox(op.Sym[notation.Id], op.Level, depth);
+      Box mid = new StringBox(op.Sym[notation.Id], op.Level, depth);
 
       if (b == null)
-        return new BoundingBox(depth, mid, bb_a);
-
+        return new BoundingBox(e, depth, mid, bb_a);
 
       Box bb_b;
       if (b.getPrecedence() < op.Level) {
@@ -361,28 +428,31 @@ class ExpressionRenderer extends JPanel {
         depth--;
         lparen.rescale(bb.h);
         rparen.rescale(bb.h);
-        bb_b = new BoundingBox(depth, lparen, bb, rparen);
+        bb_b = new BoundingBox(b, depth, lparen, bb, rparen);
       } else {
         bb_b = b.visit(this);
       }
 
-      return new BoundingBox(depth, bb_a, mid, bb_b);
+      return new BoundingBox(e, depth, bb_a, mid, bb_b);
     }
 
-    public Box visitConstant(int value) {
-      return new ConstBox(Integer.toString(value, 16), depth);
+    @Override
+    public Box visitConstant(Expression e, int value) {
+      return new ConstBox(e, Integer.toString(value, 16), depth);
     }
-    public Box visitVariable(String desc) {
-      return new VarBox(desc, depth);
+    @Override
+    public Box visitVariable(Expression e, String desc) {
+      return new VarBox(e, desc, depth);
     }
-    public Box visitNot(Expression a) {
+    @Override
+    public Box visitNot(Expression e, Expression a) {
       if (notation == Expression.Notation.ENGINEERING) {
         depth++;
         Box inner = a.visit(this);
         depth--;
-        return new NotBox(inner, depth);
+        return new NotBox(e, inner, depth);
       } else {
-        return visitBinary(a, null, Expression.Op.NOT);
+        return visitBinary(e, a, null, Expression.Op.NOT);
       }
     }
   }
@@ -408,7 +478,7 @@ class ExpressionRenderer extends JPanel {
 
     void paint(Graphics2D g) {
       for (Box b : boxes)
-        b.paint(g);
+        b.paintAndColor(g);
     }
 
     void debugPaint(Graphics2D g) {
@@ -606,14 +676,14 @@ class ExpressionRenderer extends JPanel {
 
   public void setError(String name, String msg) {
     ArrayList<Box> boxes = new ArrayList<>();
-    boxes.add(new VarBox(name, 0));
+    boxes.add(new VarBox(null, name, 0));
     boxes.add(new StringBox(" = ", 0));
     boxes.add(new StringBox("{", 0));
     for (String word : msg.split("\\s+"))
       boxes.add(new StringBox(" " + word, 1));
     boxes.add(new StringBox(" }", 0));
     Box[] a = boxes.toArray(new Box[boxes.size()]);
-    Box top = new BoundingBox(0, a);
+    Box top = new BoundingBox(null, 0, a);
     lines.layout(top, 0, top.a);
     lines.fitToWidth(width);
   }
@@ -682,6 +752,17 @@ class ExpressionRenderer extends JPanel {
     g2.setColor(getForeground());
     lines.paint(g2);
     g2.setTransform(xform);
+  }
+
+  Colorizer colorizer;
+
+  public void setColorizer(Colorizer c) {
+    colorizer = c;
+  }
+
+  public interface Colorizer {
+    public Color colorFor(Expression e);
+    // public Color colorForTopLevel(int termNumber); 
   }
 
 }

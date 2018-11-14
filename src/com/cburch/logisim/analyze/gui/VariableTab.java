@@ -284,6 +284,7 @@ class VariableTab extends AnalyzerTab {
     }
  
     this.addComponentListener(new ComponentAdapter() {
+      @Override
       public void componentShown(ComponentEvent e) {
         if (focus != null)
           focus.requestFocusInWindow();

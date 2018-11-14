@@ -297,6 +297,7 @@ class ExpressionTab extends AnalyzerTab {
     public boolean stopCellEditing() {
       if (ok()) {
         super.stopCellEditing();
+        oldExpr = null;
         return true;
       } else {
         return false;
@@ -304,13 +305,11 @@ class ExpressionTab extends AnalyzerTab {
     }
 
     boolean ok() {
-      NamedExpression old = oldExpr;
-      oldExpr = null;
       String exprString = field.getText();
       try {
-        Expression expr = Parser.parse(field.getText(), model);
+        Expression expr = Parser.parse(exprString, model);
         setError(null);
-        newExpr = new NamedExpression(old.name, expr, exprString);
+        newExpr = new NamedExpression(oldExpr.name, expr, exprString);
         return true;
       } catch (ParserException ex) {
         setError(ex.getMessageGetter());

@@ -35,8 +35,6 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 
 import javax.swing.SwingWorker;
 import javax.swing.JComponent;
@@ -44,7 +42,6 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.Dialog.ModalityType;
@@ -57,7 +54,6 @@ import java.util.ArrayList;
 
 import com.cburch.logisim.analyze.model.AnalyzerModel;
 import com.cburch.logisim.analyze.model.Expression;
-import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.util.LocaleListener;
@@ -99,10 +95,8 @@ public class Analyzer extends LFrame {
       tabbedPane.setTitleAt(MINIMIZED_TAB, S.get("minimizedTab"));
       tabbedPane .setToolTipTextAt(IO_TAB, S.get("inputsOutputsTabTip"));
       tabbedPane.setToolTipTextAt(TABLE_TAB, S.get("tableTabTip"));
-      tabbedPane.setToolTipTextAt(EXPRESSION_TAB,
-          S.get("expressionTabTip"));
-      tabbedPane.setToolTipTextAt(MINIMIZED_TAB,
-          S.get("minimizedTabTip"));
+      tabbedPane.setToolTipTextAt(EXPRESSION_TAB, S.get("expressionTabTip"));
+      tabbedPane.setToolTipTextAt(MINIMIZED_TAB, S.get("minimizedTabTip"));
       importTable.setText(S.get("importTableButton"));
       buildCircuit.setText(S.get("buildCircuitButton"));
       exportTable.setText(S.get("exportTableButton"));
@@ -186,8 +180,6 @@ public class Analyzer extends LFrame {
     // expressionPanel.setListener(editListener);
     // minimizedPanel.setListener(editListener); // does not support editing
 
-    truthTablePanel.addMouseListener(new TruthTableMouseListener());
-
     tabbedPane = new JTabbedPane();
     addTab(IO_TAB, ioPanel);
     addTab(TABLE_TAB, truthTablePanel);
@@ -216,20 +208,7 @@ public class Analyzer extends LFrame {
   }
 
   private void addTab(int index, final JComponent comp) {
-    if (comp instanceof TableTab || comp instanceof VariableTab || comp instanceof ExpressionTab) {
-      tabbedPane.insertTab("Untitled", null, comp, null, index);
-      return;
-    }
-    final JScrollPane pane = new JScrollPane(comp,
-        ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
-        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-    pane.addComponentListener(new ComponentAdapter() {
-      public void componentResized(ComponentEvent event) {
-        int width = pane.getViewport().getWidth();
-        comp.setSize(new Dimension(width, comp.getHeight()));
-      }
-    });
-    tabbedPane.insertTab("Untitled", null, pane, null, index);
+    tabbedPane.insertTab("Untitled", null, comp, null, index);
   }
 
   public AnalyzerModel getModel() {

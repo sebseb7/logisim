@@ -31,6 +31,7 @@
 package com.cburch.logisim.analyze.gui;
 import static com.cburch.logisim.analyze.model.Strings.S;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -38,11 +39,12 @@ import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -59,8 +61,9 @@ import javax.swing.ComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
 
 import com.cburch.logisim.analyze.model.AnalyzerModel;
@@ -70,6 +73,7 @@ import com.cburch.logisim.analyze.model.OutputExpressionsEvent;
 import com.cburch.logisim.analyze.model.OutputExpressionsListener;
 
 class MinimizedTab extends AnalyzerTab {
+
   @SuppressWarnings("rawtypes")
   private static class FormatModel extends AbstractListModel
     implements ComboBoxModel {
@@ -289,16 +293,15 @@ class MinimizedTab extends AnalyzerTab {
     selector = new OutputSelector(model);
     selector.addItemListener(myListener);
     karnaughMap = new KarnaughMapPanel(model);
-    karnaughMap.addMouseListener(new TruthTableMouseListener());
     setAsExpr.addActionListener(myListener);
     formatChoice.addItemListener(myListener);
+    minimizedExpr.prettyView.setColorizer(karnaughMap);
 
-    JPanel buttons = new JPanel(new GridLayout(1, 1));
-    buttons.add(setAsExpr);
+    JPanel main = new JPanel();
 
     GridBagLayout gb = new GridBagLayout();
     GridBagConstraints gc = new GridBagConstraints();
-    setLayout(gb);
+    main.setLayout(gb);
 
     gc.gridx = 0;
     gc.gridy = GridBagConstraints.RELATIVE;
@@ -324,24 +327,43 @@ class MinimizedTab extends AnalyzerTab {
     gc.fill = GridBagConstraints.NONE;
     gc.anchor = GridBagConstraints.CENTER;
     gb.setConstraints(selectors, gc);
-    add(selectors);
+    main.add(selectors);
 
-    gc.fill = GridBagConstraints.HORIZONTAL;
+    gc.fill = GridBagConstraints.NONE;
+    gc.ipadx = gc.ipady = 10;
     gc.anchor = GridBagConstraints.CENTER;
     gb.setConstraints(karnaughMap, gc);
-    add(karnaughMap);
+    main.add(karnaughMap);
 
     gc.fill = GridBagConstraints.HORIZONTAL;
-    Insets oldInsets = gc.insets;
-    gc.insets = new Insets(10, 5, 10, 5);
+    gc.ipadx = gc.ipady = 10;
     gb.setConstraints(minimizedExpr, gc);
-    add(minimizedExpr);
-    gc.insets = oldInsets;
+    main.add(minimizedExpr);
+    
+    JPanel button = new JPanel(new GridLayout(1, 1));
+    button.add(setAsExpr);
 
     gc.weightx = 0.0;
+    gc.ipadx = gc.ipady = 0;
     gc.fill = GridBagConstraints.NONE;
-    gb.setConstraints(buttons, gc);
-    add(buttons);
+    gb.setConstraints(button, gc);
+    main.add(button);
+
+    JScrollPane pane = new JScrollPane(main,
+        ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
+        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+    setLayout(new BorderLayout());
+    add(pane, BorderLayout.CENTER);
+
+    addComponentListener(new ComponentAdapter() {
+      public void componentResized(ComponentEvent event) {
+        int width = pane.getViewport().getWidth();
+        main.setSize(new Dimension(width, main.getHeight()));
+      }
+      public void componentShown(ComponentEvent e) {
+        karnaughMap.computePreferredSize();
+      }
+    });
 
     String selected = selector.getSelectedOutput();
     setAsExpr.setEnabled(selected != null

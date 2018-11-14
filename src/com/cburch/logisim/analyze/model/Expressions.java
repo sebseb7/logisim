@@ -48,7 +48,7 @@ public class Expressions {
 
     @Override
     public <T> T visit(Visitor<T> visitor) {
-      return visitor.visitAnd(a, b);
+      return visitor.visitAnd(this, a, b);
     }
 
     @Override
@@ -115,7 +115,7 @@ public class Expressions {
 
     @Override
     public <T> T visit(Visitor<T> visitor) {
-      return visitor.visitConstant(value);
+      return visitor.visitConstant(this, value);
     }
 
     @Override
@@ -156,7 +156,7 @@ public class Expressions {
 
     @Override
     public <T> T visit(Visitor<T> visitor) {
-      return visitor.visitNot(a);
+      return visitor.visitNot(this, a);
     }
 
     @Override
@@ -182,7 +182,7 @@ public class Expressions {
 
     @Override
     public <T> T visit(Visitor<T> visitor) {
-      return visitor.visitOr(a, b);
+      return visitor.visitOr(this, a, b);
     }
 
     @Override
@@ -223,7 +223,7 @@ public class Expressions {
 
     @Override
     public <T> T visit(Visitor<T> visitor) {
-      return visitor.visitVariable(name);
+      return visitor.visitVariable(this, name);
     }
 
     @Override
@@ -249,7 +249,7 @@ public class Expressions {
 
     @Override
     public <T> T visit(Visitor<T> visitor) {
-      return visitor.visitXor(a, b);
+      return visitor.visitXor(this, a, b);
     }
 
     @Override
@@ -275,7 +275,7 @@ public class Expressions {
 
     @Override
     public <T> T visit(Visitor<T> visitor) {
-      return visitor.visitEq(a, b);
+      return visitor.visitEq(this, a, b);
     }
 
     @Override

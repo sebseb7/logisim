@@ -72,7 +72,9 @@ import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.PrintHandler;
 import com.cburch.logisim.util.GraphicsUtil;
 
-class TableTab extends AnalyzerTab implements TruthTablePanel {
+class TableTab extends AnalyzerTab {
+  public static final Color ERROR_COLOR = new Color(255, 128, 128);
+
   private class MyListener implements TruthTableListener {
     public void rowsChanged(TruthTableEvent event) { updateTable(); }
     public void cellsChanged(TruthTableEvent event) { repaint(); }
@@ -105,8 +107,6 @@ class TableTab extends AnalyzerTab implements TruthTablePanel {
   private int cellHeight;
   private int tableWidth, headerHeight, bodyHeight;
   private ColumnGroupDimensions inDim, outDim;
-  private int provisionalX, provisionalY;
-  private Entry provisionalValue = null;
   private TableTabCaret caret;
   private TableTabClip clip;
 
@@ -244,15 +244,7 @@ class TableTab extends AnalyzerTab implements TruthTablePanel {
               : entry == Entry.BUS_ERROR ? Color.RED : Color.BLACK);
           String label = entry.getDescription();
           int width = fm.stringWidth(label);
-          boolean provisional = false;
-          if (provisional) {
-            provisional = false;
-            g.setColor(Color.GREEN);
-            g.drawString(label, x + (cellWidth - width) / 2, cy);
-            g.setColor(Color.BLACK);
-          } else {
-            g.drawString(label, x + (cellWidth - width) / 2, cy);
-          }
+          g.drawString(label, x + (cellWidth - width) / 2, cy);
           x += cellWidth;
         }
         x += cellPadding;
@@ -518,6 +510,10 @@ class TableTab extends AnalyzerTab implements TruthTablePanel {
     return table.getOutputColumnCount();
   }
 
+  public TruthTable getTruthTable() {
+    return table;
+  }
+
   @Override
   public String getToolTipText(MouseEvent event) {
     int row = getRow(event);
@@ -528,10 +524,6 @@ class TableTab extends AnalyzerTab implements TruthTablePanel {
       return null;
     Entry entry = table.getVisibleOutputEntry(row, col);
     return entry.getErrorMessage();
-  }
-
-  public TruthTable getTruthTable() {
-    return table;
   }
 
   JScrollBar getVerticalScrollBar() {
@@ -694,16 +686,6 @@ class TableTab extends AnalyzerTab implements TruthTablePanel {
     }
   }
 
-  public void setEntryProvisional(int y, int x, Entry value) {
-    provisionalY = y;
-    provisionalX = x;
-    provisionalValue = value;
-
-    int top = (getHeight() - bodyHeight) / 2 + cellHeight + HEADER_VSEP + y
-        * cellHeight;
-    repaint(0, top, body.getWidth(), cellHeight);
-  }
-  
   @Override
   EditHandler getEditHandler() {
     return editHandler;

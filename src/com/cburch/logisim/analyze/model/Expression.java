@@ -36,19 +36,19 @@ import java.util.HashSet;
 public abstract class Expression {
 
   public static interface Visitor<T> {
-    public default T visitVariable(String name) { return null; }
-    public default T visitConstant(int value) { return null; }
-    public default T visitNot(Expression a) { return null; }
-    public default T visitBinary(Expression a, Expression b, Op op) {
+    public default T visitVariable(Expression e, String name) { return null; }
+    public default T visitConstant(Expression e, int value) { return null; }
+    public default T visitNot(Expression e, Expression a) { return null; }
+    public default T visitBinary(Expression e, Expression a, Expression b, Op op) {
       a.visit(this);
       b.visit(this);
       return null;
     }
 
-    public default T visitAnd(Expression a, Expression b) { return visitBinary(a, b, Op.AND); }
-    public default T visitOr(Expression a, Expression b) { return visitBinary(a, b, Op.OR); }
-    public default T visitXor(Expression a, Expression b) { return visitBinary(a, b, Op.XOR); }
-    public default T visitEq(Expression a, Expression b) { return visitBinary(a, b, Op.EQ); }
+    public default T visitAnd(Expression e, Expression a, Expression b) { return visitBinary(e, a, b, Op.AND); }
+    public default T visitOr(Expression e, Expression a, Expression b) { return visitBinary(e, a, b, Op.OR); }
+    public default T visitXor(Expression e, Expression a, Expression b) { return visitBinary(e, a, b, Op.XOR); }
+    public default T visitEq(Expression e, Expression a, Expression b) { return visitBinary(e, a, b, Op.EQ); }
   }
 
   // internal, just for fast eval
@@ -65,39 +65,48 @@ public abstract class Expression {
 
   public boolean contains(Op o) {
     return o == visit(new Visitor<Op>() {
-      public Op visitBinary(Expression a, Expression b, Op op) {
+      @Override
+      public Op visitBinary(Expression e, Expression a, Expression b, Op op) {
         return (op == o || a.visit(this) == o || b.visit(this) == o) ? o : null;
       }
-      public Op visitNot(Expression a) { return a.visit(this); }
+      @Override
+      public Op visitNot(Expression e, Expression a) { return a.visit(this); }
     });
   }
 
   public boolean evaluate(final Assignments assignments) {
     int ret = visit(new IntVisitor() {
+      @Override
       public int visitAnd(Expression a, Expression b) {
         return a.visit(this) & b.visit(this);
       }
 
+      @Override
       public int visitConstant(int value) {
         return value;
       }
 
+      @Override
       public int visitNot(Expression a) {
         return ~a.visit(this);
       }
 
+      @Override
       public int visitOr(Expression a, Expression b) {
         return a.visit(this) | b.visit(this);
       }
 
+      @Override
       public int visitVariable(String name) {
         return assignments.get(name) ? 1 : 0;
       }
 
+      @Override
       public int visitXor(Expression a, Expression b) {
         return a.visit(this) ^ b.visit(this);
       }
 
+      @Override
       public int visitEq(Expression a, Expression b) {
         return ~(a.visit(this) ^ b.visit(this)&1);
       }
@@ -113,7 +122,8 @@ public abstract class Expression {
     visited.add(this);
     Object loop = new Object();
     return loop == visit(new Visitor<Object>() {
-      public Object visitBinary(Expression a, Expression b) {
+      @Override
+      public Object visitBinary(Expression e, Expression a, Expression b, Op op) {
         if (!visited.add(a))
           return loop;
         if (a.visit(this) == loop)
@@ -129,7 +139,8 @@ public abstract class Expression {
         return null;
       }
 
-      public Object visitNot(Expression a) {
+      @Override
+      public Object visitNot(Expression e, Expression a) {
         if (!visited.add(a))
           return loop;
         if (a.visit(this) == loop)
@@ -145,7 +156,8 @@ public abstract class Expression {
     return cnf == visit(new Visitor<Object>() {
       int level = 0;
 
-      public Object visitAnd(Expression a, Expression b) {
+      @Override
+      public Object visitAnd(Expression e, Expression a, Expression b) {
         if (level > 1)
           return null;
         int oldLevel = level;
@@ -155,11 +167,13 @@ public abstract class Expression {
         return ret;
       }
 
-      public Object visitConstant(int value) {
+      @Override
+      public Object visitConstant(Expression e, int value) {
         return cnf;
       }
 
-      public Object visitNot(Expression a) {
+      @Override
+      public Object visitNot(Expression e, Expression a) {
         if (level == 2)
           return null;
         int oldLevel = level;
@@ -169,21 +183,25 @@ public abstract class Expression {
         return ret;
       }
 
-      public Object visitOr(Expression a, Expression b) {
+      @Override
+      public Object visitOr(Expression e, Expression a, Expression b) {
         if (level > 0)
           return null;
         return a.visit(this) == cnf && b.visit(this) == cnf ? cnf : null;
       }
 
-      public Object visitVariable(String name) {
+      @Override
+      public Object visitVariable(Expression e, String name) {
         return cnf;
       }
 
-      public Object visitXor(Expression a, Expression b) {
+      @Override
+      public Object visitXor(Expression e, Expression a, Expression b) {
         return null;
       }
 
-      public Object visitEq(Expression a, Expression b) {
+      @Override
+      public Object visitEq(Expression e, Expression a, Expression b) {
         return null;
       }
     });
@@ -191,7 +209,8 @@ public abstract class Expression {
 
   Expression removeVariable(final String input) {
     return visit(new Visitor<Expression>() {
-      public Expression visitAnd(Expression a, Expression b) {
+      @Override
+      public Expression visitAnd(Expression e, Expression a, Expression b) {
         Expression l = a.visit(this);
         Expression r = b.visit(this);
         if (l == null)
@@ -201,18 +220,21 @@ public abstract class Expression {
         return Expressions.and(l, r);
       }
 
-      public Expression visitConstant(int value) {
+      @Override
+      public Expression visitConstant(Expression e, int value) {
         return Expressions.constant(value);
       }
 
-      public Expression visitNot(Expression a) {
+      @Override
+      public Expression visitNot(Expression e, Expression a) {
         Expression l = a.visit(this);
         if (l == null)
           return null;
         return Expressions.not(l);
       }
 
-      public Expression visitOr(Expression a, Expression b) {
+      @Override
+      public Expression visitOr(Expression e, Expression a, Expression b) {
         Expression l = a.visit(this);
         Expression r = b.visit(this);
         if (l == null)
@@ -222,11 +244,13 @@ public abstract class Expression {
         return Expressions.or(l, r);
       }
 
-      public Expression visitVariable(String name) {
+      @Override
+      public Expression visitVariable(Expression e, String name) {
         return name.equals(input) ? null : Expressions.variable(name);
       }
 
-      public Expression visitXor(Expression a, Expression b) {
+      @Override
+      public Expression visitXor(Expression e, Expression a, Expression b) {
         Expression l = a.visit(this);
         Expression r = b.visit(this);
         if (l == null)
@@ -236,7 +260,8 @@ public abstract class Expression {
         return Expressions.xor(l, r);
       }
 
-      public Expression visitEq(Expression a, Expression b) {
+      @Override
+      public Expression visitEq(Expression e, Expression a, Expression b) {
         Expression l = a.visit(this);
         Expression r = b.visit(this);
         if (l == null)
@@ -250,39 +275,45 @@ public abstract class Expression {
 
   Expression replaceVariable(final String oldName, final String newName) {
     return visit(new Visitor<Expression>() {
-      public Expression visitAnd(Expression a, Expression b) {
+      @Override
+      public Expression visitAnd(Expression e, Expression a, Expression b) {
         Expression l = a.visit(this);
         Expression r = b.visit(this);
         return Expressions.and(l, r);
       }
 
-      public Expression visitConstant(int value) {
+      @Override
+      public Expression visitConstant(Expression e, int value) {
         return Expressions.constant(value);
       }
 
-      public Expression visitNot(Expression a) {
+      @Override
+      public Expression visitNot(Expression e, Expression a) {
         Expression l = a.visit(this);
         return Expressions.not(l);
       }
 
-      public Expression visitOr(Expression a, Expression b) {
+      @Override
+      public Expression visitOr(Expression e, Expression a, Expression b) {
         Expression l = a.visit(this);
         Expression r = b.visit(this);
         return Expressions.or(l, r);
       }
 
-      public Expression visitVariable(String name) {
-        return Expressions.variable(name.equals(oldName) ? newName
-            : name);
+      @Override
+      public Expression visitVariable(Expression e, String name) {
+        return Expressions.variable(name.equals(oldName) ? newName : name);
       }
 
-      public Expression visitXor(Expression a, Expression b) {
+      @Override
+      public Expression visitXor(Expression e, Expression a, Expression b) {
         Expression l = a.visit(this);
         Expression r = b.visit(this);
         return Expressions.xor(l, r);
       }
 
-      public Expression visitEq(Expression a, Expression b) {
+      @Override
+      public Expression visitEq(Expression e, Expression a, Expression b) {
         Expression l = a.visit(this);
         Expression r = b.visit(this);
         return Expressions.eq(l, r);
@@ -332,7 +363,8 @@ public abstract class Expression {
   public String toString(Notation notation) {
     final StringBuilder text = new StringBuilder();
     visit(new Visitor<Void>() {
-      public Void visitBinary(Expression a, Expression b, Op op) {
+      @Override
+      public Void visitBinary(Expression e, Expression a, Expression b, Op op) {
         if (a.getPrecedence() < op.Level) {
           text.append("(");
           a.visit(this);
@@ -351,12 +383,14 @@ public abstract class Expression {
         return null;
       }
 
-      public Void visitConstant(int value) {
+      @Override
+      public Void visitConstant(Expression e, int value) {
         text.append(Integer.toString(value, 16));
         return null;
       }
 
-      public Void visitNot(Expression a) {
+      @Override
+      public Void visitNot(Expression e, Expression a) {
         text.append(Op.NOT.Sym[notation.Id]);
         if (a.getPrecedence() < Op.NOT.Level) {
           text.append("(");
@@ -368,7 +402,8 @@ public abstract class Expression {
         return null;
       }
 
-      public Void visitVariable(String name) {
+      @Override
+      public Void visitVariable(Expression e, String name) {
         text.append(name);
         return null;
       }
