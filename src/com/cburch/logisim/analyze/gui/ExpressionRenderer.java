@@ -152,6 +152,7 @@ class ExpressionRenderer extends JPanel {
         endColorBox.endColor = g.getColor();
         g.setColor(startColor);
       }
+      // DEBUG paintDepth(g);
       paint(g);
       if (endColor != null)
         g.setColor(endColor);
@@ -159,6 +160,12 @@ class ExpressionRenderer extends JPanel {
     abstract void paint(Graphics2D g);
     abstract void layout(float x, float y, LineBreaker lines);
     void move(float dx, float dy) { xx += dx; yy += dy; }
+    // DEBUG void paintDepth(Graphics2D g) {
+    // DEBUG   Font f = g.getFont();
+    // DEBUG   g.setFont(SUB_FONT);
+    // DEBUG   g.drawString(""+depth, xx, yy-TYP_HEIGHT);
+    // DEBUG   g.setFont(f);
+    // DEBUG }
   }
 
   /*
@@ -224,14 +231,9 @@ class ExpressionRenderer extends JPanel {
 
   class StringBox extends Box {
     String s;
-    int precedence;
     StringBox(String s, int depth) {
-      this(s, 0, depth);
-    }
-    StringBox(String s, int precedence, int depth) {
       super(null, depth);
       this.s = s;
-      this.precedence = precedence;
       w = OP_FONT_METRICS.stringWidth(s);
       a = OP_ASCENT;
       d = OP_DESCENT;
@@ -247,6 +249,13 @@ class ExpressionRenderer extends JPanel {
     void paint(Graphics2D g) {
       g.setFont(OP_FONT);
       g.drawString(s, xx, yy);
+    }
+  }
+  class OpBox extends StringBox {
+    int precedence;
+    OpBox(String s, int precedence, int depth) {
+      super(s, depth);
+      this.precedence = precedence;
     }
   }
 
@@ -275,6 +284,16 @@ class ExpressionRenderer extends JPanel {
       g.scale(scale, scale);
       g.drawString(s, xx/scale, (yy+h*PAREN_SHIFT)/scale);
       g.setTransform(xform);
+    }
+  }
+  class LeftParenBox extends ParenBox {
+    LeftParenBox(int depth) {
+      super("(", depth);
+    }
+  }
+  class RightParenBox extends ParenBox {
+    RightParenBox(int depth) {
+      super(")", depth);
     }
   }
 
@@ -402,8 +421,8 @@ class ExpressionRenderer extends JPanel {
     public Box visitBinary(Expression e, Expression a, Expression b, Expression.Op op) {
       Box bb_a;
       if (a.getPrecedence() < op.Level) {
-        ParenBox lparen = new ParenBox("(", depth);
-        ParenBox rparen = new ParenBox(")", depth);
+        ParenBox lparen = new LeftParenBox(depth);
+        ParenBox rparen = new RightParenBox(depth);
         depth++;
         Box bb = a.visit(this);
         depth--;
@@ -414,15 +433,15 @@ class ExpressionRenderer extends JPanel {
         bb_a = a.visit(this);
       }
 
-      Box mid = new StringBox(op.Sym[notation.Id], op.Level, depth);
+      Box mid = new OpBox(op.Sym[notation.Id], op.Level, depth);
 
       if (b == null)
         return new BoundingBox(e, depth, mid, bb_a);
 
       Box bb_b;
       if (b.getPrecedence() < op.Level) {
-        ParenBox lparen = new ParenBox("(", depth);
-        ParenBox rparen = new ParenBox(")", depth);
+        ParenBox lparen = new LeftParenBox(depth);
+        ParenBox rparen = new RightParenBox(depth);
         depth++;
         Box bb = b.visit(this);
         depth--;
@@ -481,17 +500,17 @@ class ExpressionRenderer extends JPanel {
         b.paintAndColor(g);
     }
 
-    void debugPaint(Graphics2D g) {
-      for (Box b : bboxes)
-        b.paint(g);
-      int i = 0;
-      for (Box b : boxes) {
-        debugShade(g, b, BOX_SHADE, i++);
-        b.paint(g);
-        g.setFont(SUB_FONT);
-        g.drawString(""+b.depth, b.xx, b.yy+b.d+5);
-      }
-    }
+    // DEBUG void debugPaint(Graphics2D g) {
+    // DEBUG   for (Box b : bboxes)
+    // DEBUG     b.paint(g);
+    // DEBUG   int i = 0;
+    // DEBUG   for (Box b : boxes) {
+    // DEBUG     debugShade(g, b, BOX_SHADE, i++);
+    // DEBUG     b.paint(g);
+    // DEBUG     g.setFont(SUB_FONT);
+    // DEBUG     g.drawString(""+b.depth, b.xx, b.yy+b.d+5);
+    // DEBUG   }
+    // DEBUG }
 
     void layout(Box top, float x, float y) {
       boxes.clear();
@@ -500,7 +519,7 @@ class ExpressionRenderer extends JPanel {
     }
 
     void fitToWidth(float width) {
-      // why = null;
+      // DEBUG why = null;
       int n = boxes.size();
       int end = n-1;
       if (n < 1) //  || totalWidth(0, end) <= width)
@@ -511,30 +530,30 @@ class ExpressionRenderer extends JPanel {
       // best[i] is either end (best is one line) or e<end (best is a linebreak after e)
       int[] best = new int[n];
 
-     // System.out.printf("There are %d boxes\n", n);
+      // DEBUG System.out.printf("There are %d boxes\n", n);
       for (int start = end; start >= 0; start--) {
-       // System.out.printf("Penalties for laying out %d..%d\n", start, end);
+        // DEBUG System.out.printf("Penalties for laying out %d..%d\n", start, end);
         float w = start == 0 ? width : (width - LEFT_INDENT);
         p[start][end] = penalty(start, end, w);
-        // System.out.printf("  as one line %d..%d --> %f\n", start, end, p[start][end]);
+        // DEBUG System.out.printf("  as one line %d..%d --> %f\n", start, end, p[start][end]);
         best[start] = end;
         for (int endl = start; endl < end; endl++) {
           p[start][endl] = penalty(start, endl, w) + p[endl+1][best[endl+1]];
-          // System.out.printf("  as multiline %d..%d, %d.. ..%s --> %f\n",
-          //   start, endl, endl+1, end, p[start][endl]);
+          // DEBUG System.out.printf("  as multiline %d..%d, %d.. ..%s --> %f\n",
+          // DEBUG    start, endl, endl+1, end, p[start][endl]);
           if (p[start][endl] < p[start][best[start]])
             best[start] = endl;
         }
-       // System.out.printf("  best is %d..%d --> %f\n", start, best[start], p[start][best[start]]);
+        // DEBUG System.out.printf("  best is %d..%d --> %f\n", start, best[start], p[start][best[start]]);
       }
 
       int startl = 0;
       int endl = best[startl];
 
-      // why = "";
-      // System.out.printf("  first line is %d..%d --> %f = %f + ...", startl, endl,
-      //     p[startl][endl], penalty(startl, endl, width));
-      // System.out.println(why);
+      // DEBUG why = "";
+      // DEBUG System.out.printf("  first line is %d..%d --> %f = %f + ...", startl, endl,
+      // DEBUG    p[startl][endl], penalty(startl, endl, width));
+      // DEBUG System.out.println(why);
 
       // first line stays at left margin, maybe moves up a little
       float xoff = 0;
@@ -546,10 +565,10 @@ class ExpressionRenderer extends JPanel {
       xoff = LEFT_INDENT;
       while (endl < end) {
         int next = best[endl+1];
-        // why = "";
-        // System.out.printf("  next line is %d..%d --> %f = %f + ... ",
-        //     endl+1, next, p[endl+1][next], penalty(endl+1, next, width-LEFT_INDENT));
-        // System.out.println(why);
+        // DEBUG why = "";
+        // DEBUG System.out.printf("  next line is %d..%d --> %f = %f + ... ",
+        // DEBUG     endl+1, next, p[endl+1][next], penalty(endl+1, next, width-LEFT_INDENT));
+        // DEBUG System.out.println(why);
         xoff -= totalWidth(startl, endl);
         yoff += maxDescent(startl, endl) + LEADING + maxAscent(endl+1, next);
         for (int i = endl+1; i <= next; i++) {
@@ -558,7 +577,7 @@ class ExpressionRenderer extends JPanel {
         startl = endl+1;
         endl = next;
       }
-      // System.out.println("Layout fit into width " + width + " + and height " + getHeight());
+      // DEBUG System.out.println("Layout fit into width " + width + " + and height " + getHeight());
     }
 
     float maxAscent(int s, int e) {
@@ -598,7 +617,7 @@ class ExpressionRenderer extends JPanel {
       return w;
     }
 
-    // String why;
+    // DEBUG String why;
     double penalty(int s, int e, float width) {
       double p = 0;
       float w = totalWidth(s, e);
@@ -607,10 +626,10 @@ class ExpressionRenderer extends JPanel {
       // preferred to one shorter and one longer line.
       if (w > width) {
         p += 10000 + Math.pow((w-width)/width, 2);
-        // if (why != null) why += String.format(" %f b/c overlong", p);
+        // DEBUG if (why != null) why += String.format(" %f b/c overlong", p);
       } else {
         p += 10 * Math.pow((width-w)/width, 2);
-        // if (why != null) why += String.format(" %f b/c too short", p);
+        // DEBUG if (why != null) why += String.format(" %f b/c too short", p);
       }
       if (e == boxes.size()-1)
         return p; // no other penalties if this is the last line
@@ -619,15 +638,16 @@ class ExpressionRenderer extends JPanel {
       // operators.
       Box left = boxes.get(e);
       Box right = boxes.get(e+1);
-      if (left instanceof ParenBox || right instanceof ParenBox) { // break near paren
+      if (left instanceof LeftParenBox || right instanceof RightParenBox) { // break near wrong paren
         p += (150 * left.depth);
-        // if (why != null) why += String.format(" %f b/c near paren", p);
-      } else if (left instanceof StringBox) { // break just after an operator
-        p += (100 + ((StringBox)left).precedence) * left.depth;
-        // if (why != null) why += String.format(" %f b/c after op", p);
-      } else if (right instanceof StringBox) { // break just before an operator
-        p += (50 + ((StringBox)right).precedence) * left.depth;
-        // if (why != null) why += String.format(" %f b/c before op", p);
+        // DEBUG if (why != null) why += String.format(" %f b/c near paren", p);
+      }
+      if (left instanceof OpBox) { // break just after an operator
+        p += (100 + ((OpBox)left).precedence) * left.depth;
+        // DEBUG if (why != null) why += String.format(" %f b/c after op", p);
+      } else if (right instanceof OpBox) { // break just before an operator
+        p += (50 + ((OpBox)right).precedence) * left.depth;
+        // DEBUG if (why != null) why += String.format(" %f b/c before op", p);
       }
       return p;
     }
