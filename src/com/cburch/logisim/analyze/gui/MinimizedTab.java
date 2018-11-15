@@ -59,6 +59,8 @@ import java.awt.event.MouseMotionAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
 import java.io.IOException;
 
 import javax.swing.AbstractListModel;
@@ -601,5 +603,74 @@ class MinimizedTab extends AnalyzerTab {
       setImage(img);
     }
   }
+
+  @Override
+  PrintHandler getPrintHandler() {
+    return printHandler;
+  }
+
+  PrintHandler printHandler = new PrintHandler() {
+    @Override
+    public Dimension getExportImageSize() {
+      int kWidth = karnaughMap.getWidth();
+      int kHeight = karnaughMap.getHeight();
+      int eWidth = minimizedExpr.prettyView.getWidth();
+      int eHeight = minimizedExpr.prettyView.getHeight();
+      int width = Math.max(kWidth, eWidth);
+      int height = kHeight + 30 + eHeight;
+      return new Dimension(width, height);
+    }
+
+    @Override
+    public void paintExportImage(BufferedImage img, Graphics2D g) {
+      int width = img.getWidth();
+      int height = img.getHeight();
+      g.setClip(0, 0, width, height);
+
+      AffineTransform xform = g.getTransform();
+      g.translate((width - karnaughMap.getWidth())/2, 0);
+      g.setColor(Color.BLACK);
+      karnaughMap.paintKmap(g);
+      g.setTransform(xform);
+
+      ExpressionRenderer prettyView = new ExpressionRenderer();
+      prettyView.setCentered(true);
+      prettyView.setBackground(Color.WHITE);
+      prettyView.setExpressionWidth(minimizedExpr.prettyView.getWidth());
+      prettyView.setExpression(minimizedExpr.name, minimizedExpr.expr);
+      prettyView.setSize(new Dimension(
+            prettyView.getExpressionWidth(),
+            prettyView.getExpressionHeight()));
+
+      g.translate((width - prettyView.getWidth())/2, karnaughMap.getHeight() + 30);
+      g.setColor(Color.BLACK);
+      prettyView.paintComponent(g);
+    }
+
+    @Override
+    public int print(Graphics2D g, PageFormat pf, int pageNum, double w, double h) {
+      if (pageNum != 0)
+        return Printable.NO_SUCH_PAGE;
+
+      AffineTransform xform = g.getTransform();
+      g.translate((w - karnaughMap.getWidth())/2, 0);
+      g.setColor(Color.BLACK);
+      karnaughMap.paintKmap(g);
+      g.setTransform(xform);
+
+      ExpressionRenderer prettyView = new ExpressionRenderer();
+      prettyView.setCentered(true);
+      prettyView.setBackground(Color.WHITE);
+      prettyView.setExpressionWidth((int)w);
+      prettyView.setExpression(minimizedExpr.name, minimizedExpr.expr);
+      prettyView.setSize(new Dimension(
+            prettyView.getExpressionWidth(),
+            prettyView.getExpressionHeight()));
+
+      g.translate((w - prettyView.getWidth())/2, karnaughMap.getHeight() + 30);
+      prettyView.paintComponent(g);
+      return Printable.PAGE_EXISTS;
+    }
+  };
   
 }
