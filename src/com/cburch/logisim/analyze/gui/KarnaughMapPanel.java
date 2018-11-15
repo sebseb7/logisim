@@ -131,6 +131,11 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
   private int tableWidth, tableHeight;
   private Color selColor;
   private Point highlight;
+  private boolean selected;
+
+  boolean isSelected() {
+    return selected;
+  }
 
   public KarnaughMapPanel(AnalyzerModel model) {
     this.model = model;
@@ -150,9 +155,13 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
     });
     FocusListener f = new FocusListener() {
       public void focusGained(FocusEvent e) {
+        if (e.isTemporary()) return;
+        selected = true;
         repaint();
       }
       public void focusLost(FocusEvent e) {
+        if (e.isTemporary()) return;
+        selected = false;
         repaint();
       }
     };
@@ -401,6 +410,15 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
 
   @Override
   public void paintComponent(Graphics g) {
+    // super.paintComponent(g);
+    paintBorder(g);
+    g.setColor(selected ? selColor : getBackground());
+    g.fillRect(0, 0, getWidth(), getHeight());
+    g.setColor(Color.BLACK);
+    paintKmap(g);
+  }
+
+  public void paintKmap(Graphics g) {
     /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
     Graphics2D g2d = (Graphics2D)g;
     g2d.setRenderingHint(
@@ -409,12 +427,6 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
     g2d.setRenderingHint(
         RenderingHints.KEY_ANTIALIASING,
         RenderingHints.VALUE_ANTIALIAS_ON);
-
-    // super.paintComponent(g);
-    paintBorder(g);
-    g.setColor(isFocusOwner() ? selColor : getBackground());
-    g.fillRect(0, 0, getWidth(), getHeight());
-    g.setColor(Color.BLACK);
 
     TruthTable table = model.getTruthTable();
     int inputCount = table.getInputColumnCount();
@@ -698,8 +710,5 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
     }
     return null;
   }
-  /* public Color colorForTopLevel(int index) {
-    return IMP_COLORS[index % IMP_COLORS.length];
-  }*/
 
 }

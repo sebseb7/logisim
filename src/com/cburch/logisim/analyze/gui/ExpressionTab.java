@@ -44,6 +44,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -57,6 +59,7 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DropMode;
+import javax.swing.InputMap;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -65,6 +68,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.TransferHandler;
 import javax.swing.event.TableModelEvent;
@@ -85,6 +89,7 @@ import com.cburch.logisim.analyze.model.VariableListEvent;
 import com.cburch.logisim.analyze.model.VariableListListener;
 import com.cburch.logisim.gui.menu.EditHandler;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.gui.menu.LogisimMenuItem;
 import com.cburch.logisim.gui.menu.PrintHandler;
 import com.cburch.logisim.util.StringGetter;
 
@@ -336,7 +341,7 @@ class ExpressionTab extends AnalyzerTab {
 
   }
 
-  public ExpressionTab(AnalyzerModel model) {
+  public ExpressionTab(AnalyzerModel model, LogisimMenuBar menubar) {
     this.model = model;
 
     prettyView = new ExpressionRenderer();
@@ -356,6 +361,12 @@ class ExpressionTab extends AnalyzerTab {
     TransferHandler ccp = new ExpressionTransferHandler();
     table.setTransferHandler(ccp);
     table.setDropMode(DropMode.ON);
+
+    InputMap inputMap = table.getInputMap();
+    for (LogisimMenuItem item: LogisimMenuBar.EDIT_ITEMS) {
+      KeyStroke accel = menubar.getAccelerator(item);
+      inputMap.put(accel, item);
+    }
 
     ActionMap actionMap = table.getActionMap();
     actionMap.put(LogisimMenuBar.COPY, ccp.getCopyAction());
@@ -398,6 +409,21 @@ class ExpressionTab extends AnalyzerTab {
     gc.fill = GridBagConstraints.HORIZONTAL;
     gb.setConstraints(error, gc);
     add(error);
+
+
+    FocusListener f = new FocusListener() {
+      public void focusGained(FocusEvent e) {
+        if (e.isTemporary()) return;
+        editHandler.computeEnabled();
+      }
+      public void focusLost(FocusEvent e) {
+        if (e.isTemporary()) return;
+        editHandler.computeEnabled();
+      }
+    };
+    addFocusListener(f);
+    table.addFocusListener(f);
+
 
     setError(null);
     localeChanged();

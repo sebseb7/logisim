@@ -169,8 +169,8 @@ public class Analyzer extends LFrame {
 
     ioPanel = new VariableTab(model.getInputs(), model.getOutputs(), menubar);
     truthTablePanel = new TableTab(model.getTruthTable());
-    expressionPanel = new ExpressionTab(model);
-    minimizedPanel = new MinimizedTab(model);
+    expressionPanel = new ExpressionTab(model, menubar);
+    minimizedPanel = new MinimizedTab(model, menubar);
     importTable = new ImportTableButton(this, model);
     buildCircuit = new BuildCircuitButton(this, model);
     exportTable = new ExportTableButton(this, model);
