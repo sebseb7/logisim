@@ -36,7 +36,7 @@ import javax.swing.JPanel;
 
 import com.cburch.logisim.proj.Project;
 
-abstract class LogPanel extends JPanel {
+public abstract class LogPanel extends JPanel {
   private static final long serialVersionUID = 1L;
   private LogFrame logFrame;
 
@@ -52,19 +52,19 @@ abstract class LogPanel extends JPanel {
 
   public abstract String getHelpText();
 
-  LogFrame getLogFrame() {
+  protected LogFrame getLogFrame() {
     return logFrame;
   }
 
-  Model getModel() {
+  protected Model getModel() {
     return logFrame.getModel();
   }
 
-  Project getProject() {
+  protected Project getProject() {
     return logFrame.getProject();
   }
 
-  Selection getSelection() {
+  protected Selection getSelection() {
     return logFrame.getModel().getSelection();
   }
 

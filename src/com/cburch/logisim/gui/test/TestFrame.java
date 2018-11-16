@@ -41,7 +41,6 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -145,8 +144,8 @@ public class TestFrame extends LFrame {
     public void projectChanged(ProjectEvent event) {
       int action = event.getAction();
       if (action == ProjectEvent.ACTION_SET_STATE) {
-        setSimulator(event.getProject().getSimulator(), event
-            .getProject().getCircuitState().getCircuit());
+        setSimulator(event.getProject().getSimulator(),
+            event.getProject().getCircuitState().getCircuit());
       } else if (action == ProjectEvent.ACTION_SET_FILE) {
         setTitle(computeTitle(curModel, project));
       }
@@ -219,7 +218,6 @@ public class TestFrame extends LFrame {
   }
 
   private static final long serialVersionUID = 1L;
-  private Project project;
   private Simulator curSimulator = null;
   private Model curModel;
   private Map<Circuit, Model> modelMap = new HashMap<Circuit, Model>();
@@ -241,7 +239,6 @@ public class TestFrame extends LFrame {
 
   public TestFrame(Project project) {
     super(false, project);
-    this.project = project;
     this.windowManager = new WindowMenuManager();
     project.addProjectListener(myListener);
     setSimulator(project.getSimulator(), project.getCircuitState().getCircuit());
@@ -285,10 +282,6 @@ public class TestFrame extends LFrame {
 
   Model getModel() {
     return curModel;
-  }
-
-  public Project getProject() {
-    return project;
   }
 
   private void setSimulator(Simulator value, Circuit circuit) {

@@ -37,7 +37,7 @@ import com.cburch.logisim.util.UniquelyNamedThread;
 
 import com.cburch.logisim.data.Value;
 
-class LogThread extends UniquelyNamedThread implements ModelListener {
+class LogThread extends UniquelyNamedThread implements Model.Listener {
   // file will be flushed with at least this frequency
   private static final int FLUSH_FREQUENCY = 500;
 
@@ -85,10 +85,8 @@ class LogThread extends UniquelyNamedThread implements ModelListener {
     for (int i = 0; i < values.length; i++) {
       if (i > 0)
         buf.append("\t");
-      if (values[i] != null) {
-        int radix = sel.get(i).getRadix();
-        buf.append(values[i].toDisplayString(radix));
-      }
+      if (values[i] != null)
+        buf.append(sel.get(i).format(values[i]));
     }
     writer.println(buf.toString());
     lastWrite = System.currentTimeMillis();
@@ -104,14 +102,14 @@ class LogThread extends UniquelyNamedThread implements ModelListener {
     }
   }
 
-  public void entryAdded(ModelEvent event, Value[] values) {
+  public void entryAdded(Model.Event event, Value[] values) {
     synchronized (lock) {
       if (isFileEnabled())
         addEntry(values);
     }
   }
 
-  public void filePropertyChanged(ModelEvent event) {
+  public void filePropertyChanged(Model.Event event) {
     synchronized (lock) {
       if (isFileEnabled()) {
         if (writer == null) {
@@ -166,7 +164,7 @@ class LogThread extends UniquelyNamedThread implements ModelListener {
     }
   }
 
-  public void selectionChanged(ModelEvent event) {
+  public void selectionChanged(Model.Event event) {
     headerDirty = true;
   }
 }

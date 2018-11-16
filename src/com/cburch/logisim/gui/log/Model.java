@@ -37,11 +37,24 @@ import java.util.Iterator;
 import javax.swing.JFrame;
 
 import com.cburch.logisim.circuit.CircuitState;
+import com.cburch.logisim.circuit.SubcircuitFactory;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
 public class Model {
-  private EventSourceWeakSupport<ModelListener> listeners;
+
+  public static class Event {
+
+  }
+
+  public interface Listener {
+    public void entryAdded(Event event, Value[] values);
+    public void filePropertyChanged(Event event);
+    public void selectionChanged(Event event);
+  }
+
+  private EventSourceWeakSupport<Listener> listeners;
   private Selection selection;
   private HashMap<SelectionItem, ValueLog> log;
   private boolean fileEnabled = false;
@@ -51,28 +64,43 @@ public class Model {
   private LogThread logger = null;
 
   public Model(CircuitState circuitState) {
-    listeners = new EventSourceWeakSupport<ModelListener>();
+    listeners = new EventSourceWeakSupport<Listener>();
     selection = new Selection(circuitState, this);
     log = new HashMap<SelectionItem, ValueLog>();
+
+    // Add pins, clocks, and any other loggable component that doesn't
+    // have options (so we exclude Ram/Rom) and isn't a subcircuit.
+    for (Component comp : circuitState.getCircuit().getNonWires()) {
+      if (comp.getFactory() instanceof SubcircuitFactory)
+        continue;
+      Loggable log = (Loggable)comp.getFeature(Loggable.class);
+      if (log == null)
+        continue;
+      Object[] opts = log.getLogOptions(circuitState);
+      if (opts != null && opts.length > 0)
+        continue;
+      Component[] path = new Component[] { };
+      selection.add(new SelectionItem(this, path, comp, null));
+    }
   }
 
-  public void addModelListener(ModelListener l) {
+  public void addModelListener(Listener l) {
     listeners.add(l);
   }
 
-  private void fireEntryAdded(ModelEvent e, Value[] values) {
-    for (ModelListener l : listeners) {
+  private void fireEntryAdded(Event e, Value[] values) {
+    for (Listener l : listeners) {
       l.entryAdded(e, values);
     }
   }
 
-  private void fireFilePropertyChanged(ModelEvent e) {
-    for (ModelListener l : listeners) {
+  private void fireFilePropertyChanged(Event e) {
+    for (Listener l : listeners) {
       l.filePropertyChanged(e);
     }
   }
 
-  void fireSelectionChanged(ModelEvent e) {
+  void fireSelectionChanged(Event e) {
     for (Iterator<SelectionItem> it = log.keySet().iterator(); it.hasNext();) {
       SelectionItem i = it.next();
       if (selection.indexOf(i) < 0) {
@@ -80,7 +108,7 @@ public class Model {
       }
     }
 
-    for (ModelListener l : listeners) {
+    for (Listener l : listeners) {
       l.selectionChanged(e);
     }
   }
@@ -135,11 +163,11 @@ public class Model {
         SelectionItem item = selection.get(i);
         getValueLog(item).append(vals[i]);
       }
-      fireEntryAdded(new ModelEvent(), vals);
+      fireEntryAdded(new Event(), vals);
     }
   }
 
-  public void removeModelListener(ModelListener l) {
+  public void removeModelListener(Listener l) {
     listeners.remove(l);
   }
 
@@ -148,21 +176,21 @@ public class Model {
       return;
     file = value;
     fileEnabled = file != null;
-    fireFilePropertyChanged(new ModelEvent());
+    fireFilePropertyChanged(new Event());
   }
 
   public void setFileEnabled(boolean value) {
     if (fileEnabled == value)
       return;
     fileEnabled = value;
-    fireFilePropertyChanged(new ModelEvent());
+    fireFilePropertyChanged(new Event());
   }
 
   public void setFileHeader(boolean value) {
     if (fileHeader == value)
       return;
     fileHeader = value;
-    fireFilePropertyChanged(new ModelEvent());
+    fireFilePropertyChanged(new Event());
   }
 
   public void setSelected(JFrame frame, boolean value) {
@@ -178,6 +206,6 @@ public class Model {
       logger = null;
       fileEnabled = false;
     }
-    fireFilePropertyChanged(new ModelEvent());
+    fireFilePropertyChanged(new Event());
   }
 }

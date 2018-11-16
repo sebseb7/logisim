@@ -30,12 +30,9 @@
 
 package com.cburch.logisim.gui.generic;
 
-import java.awt.Component;
 import java.awt.Image;
 import java.awt.Window;
 import java.awt.event.WindowEvent;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
@@ -92,12 +89,14 @@ public class LFrame extends JFrame implements WindowClosable {
   private static Image DEFAULT_ICON = null;
 
   protected final LogisimMenuBar menubar;
+  protected final Project project;
 
 
-  public LFrame(boolean toplevel, Project proj) {
+  public LFrame(boolean toplevel, Project project) {
+    this.project = project;
     attachIcon(this);
     if (toplevel || Main.MacOS) {
-      menubar = new LogisimMenuBar(this, proj);
+      menubar = new LogisimMenuBar(this, project);
       setJMenuBar(menubar);
     } else {
       menubar = null;
@@ -108,5 +107,9 @@ public class LFrame extends JFrame implements WindowClosable {
   public void requestClose() {
     WindowEvent closing = new WindowEvent(this, WindowEvent.WINDOW_CLOSING);
     processWindowEvent(closing);
+  }
+
+  public Project getProject() {
+    return project;
   }
 }

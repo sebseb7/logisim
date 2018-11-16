@@ -47,7 +47,7 @@ import com.cburch.logisim.data.Value;
 import com.cburch.logisim.util.GraphicsUtil;
 
 class TablePanel extends LogPanel {
-  private class MyListener implements ModelListener {
+  private class MyListener implements Model.Listener {
     private void computeRowCount() {
       Model model = getModel();
       Selection sel = model.getSelection();
@@ -63,7 +63,7 @@ class TablePanel extends LogPanel {
       }
     }
 
-    public void entryAdded(ModelEvent event, Value[] values) {
+    public void entryAdded(Model.Event event, Value[] values) {
       int oldCount = rowCount;
       computeRowCount();
       if (oldCount == rowCount) {
@@ -77,10 +77,10 @@ class TablePanel extends LogPanel {
       }
     }
 
-    public void filePropertyChanged(ModelEvent event) {
+    public void filePropertyChanged(Model.Event event) {
     }
 
-    public void selectionChanged(ModelEvent event) {
+    public void selectionChanged(Model.Event event) {
       computeRowCount();
     }
   }
@@ -275,12 +275,11 @@ class TablePanel extends LogPanel {
     for (int col = 0; col < columns; col++) {
       SelectionItem item = sel.get(col);
       ValueLog log = model.getValueLog(item);
-      int radix = item.getRadix();
       int offs = rowCount - log.size();
       y = y0 + Math.max(offs, firstRow) * cellHeight;
       for (int row = Math.max(offs, firstRow); row < lastRow; row++) {
         Value val = log.get(row - offs);
-        String label = val.toDisplayString(radix);
+        String label = item.format(val);
         int width = bodyMetric.stringWidth(label);
         g.drawString(label, x + (cellWidth - width) / 2,
             y + bodyMetric.getAscent());

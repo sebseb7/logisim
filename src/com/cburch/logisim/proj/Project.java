@@ -34,8 +34,6 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import javax.swing.JFileChooser;
-
 import com.cburch.hdl.HdlModel;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitLocker;
@@ -45,7 +43,6 @@ import com.cburch.logisim.circuit.Simulator;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
-import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.file.Options;
 import com.cburch.logisim.gui.log.LogFrame;
@@ -61,8 +58,6 @@ import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.EventSourceWeakSupport;
-import com.cburch.logisim.util.JFileChoosers;
-import com.hepia.logisim.chronogui.ChronoFrame;
 
 public class Project {
   private static class ActionData {
@@ -120,7 +115,6 @@ public class Project {
   private OptionsFrame optionsFrame = null;
   private LogFrame logFrame = null;
   private TestFrame testFrame = null;
-  private ChronoFrame chronoFrame = null;
   private Tool tool = null;
   private LinkedList<ActionData> undoLog = new LinkedList<ActionData>();
   private int undoMods = 0;
@@ -262,16 +256,6 @@ public class Project {
   public boolean getCanRedo() {
     // If there's a redo option found, we can redo.
     return (redoLog.size() > 0);
-  }
-
-  public ChronoFrame getChronoFrame(boolean create) {
-    if (logFrame == null)
-      logFrame = new LogFrame(this);
-    if (chronoFrame != null)
-      chronoFrame.dispose();
-    if (create)
-      chronoFrame = new ChronoFrame(this, logFrame);
-    return chronoFrame;
   }
 
   public CircuitState getCircuitState() {

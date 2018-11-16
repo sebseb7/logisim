@@ -34,6 +34,7 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
 import com.cburch.logisim.circuit.CircuitState;
+import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.AttributeEvent;
@@ -46,12 +47,14 @@ public class SelectionItem implements AttributeListener, CircuitListener {
   private Component[] path;
   private Component comp;
   private Object option;
-  private int radix = 2;
+  private RadixOption radix = RadixOption.RADIX_2;
   private String shortDescriptor;
   private String longDescriptor;
 
-  public SelectionItem(Model model, Component[] path, Component comp,
-      Object option) {
+  // public static final SelectionItem NULL_ITEM = new SelectionItem();
+  // private SelectionItem() { }
+  //
+  public SelectionItem(Model model, Component[] path, Component comp, Object option) {
     this.model = model;
     this.path = path;
     this.comp = comp;
@@ -75,7 +78,7 @@ public class SelectionItem implements AttributeListener, CircuitListener {
 
   public void attributeValueChanged(AttributeEvent e) {
     if (computeDescriptors()) {
-      model.fireSelectionChanged(new ModelEvent());
+      model.fireSelectionChanged(new Model.Event());
     }
   }
 
@@ -190,13 +193,17 @@ public class SelectionItem implements AttributeListener, CircuitListener {
     return path;
   }
 
-  public int getRadix() {
+  public RadixOption getRadix() {
     return radix;
   }
 
-  public void setRadix(int value) {
+  public String format(Value v) {
+    return radix.toString(v);
+  }
+
+  public void setRadix(RadixOption value) {
     radix = value;
-    model.fireSelectionChanged(new ModelEvent());
+    model.fireSelectionChanged(new Model.Event());
   }
 
   public String toShortString() {

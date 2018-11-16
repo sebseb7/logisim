@@ -30,12 +30,42 @@
 
 package com.cburch.logisim.gui.log;
 
-import com.cburch.logisim.data.Value;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.util.ArrayList;
 
-public interface ModelListener {
-  public void entryAdded(ModelEvent event, Value[] values);
+// This class is mostly needed because drag-and-drop DataFlavor works easiest
+// with a regular class (not an inner or generic class).
+public class SelectionItems extends ArrayList<SelectionItem> implements Transferable
+{
+  public static final DataFlavor dataFlavor;
+  static {
+    DataFlavor f = null;
+    try {
+        f = new DataFlavor(
+            String.format("%s;class=\"%s\"",
+              DataFlavor.javaJVMLocalObjectMimeType,
+              SelectionItems.class.getName()));
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+    dataFlavor = f;
+  }
+  public static final DataFlavor[] dataFlavors = new DataFlavor[] { dataFlavor };
 
-  public void filePropertyChanged(ModelEvent event);
+  public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
+    if(!isDataFlavorSupported(flavor))
+      throw new UnsupportedFlavorException(flavor);
+    return this;
+  }
 
-  public void selectionChanged(ModelEvent event);
+  public DataFlavor[] getTransferDataFlavors() {
+    return dataFlavors;
+  }
+
+  public boolean isDataFlavorSupported(DataFlavor flavor) {
+    return dataFlavor.equals(flavor);
+  }
+
 }

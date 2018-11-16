@@ -31,8 +31,6 @@
 package com.cburch.logisim.analyze.gui;
 import static com.cburch.logisim.analyze.model.Strings.S;
 
-import java.util.EventObject;
-
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -51,6 +49,7 @@ import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.EventObject;
 
 import javax.swing.AbstractAction;
 import javax.swing.AbstractCellEditor;
@@ -403,10 +402,12 @@ class VariableTab extends AnalyzerTab {
       list.addVariableListListener(this);
     }
 
+    @Override
     public boolean isCellEditable(int row, int column) {
       return true;
     }
 
+    @Override
     public void setValueAt(Object o, int row, int column) {
       Var newVar = (Var)o;
       Var oldVar = (Var)getValueAt(row, column);
@@ -423,6 +424,7 @@ class VariableTab extends AnalyzerTab {
       }
     }
 
+    @Override
     public Object getValueAt(int row, int col) {
       if (row == listCopy.length)
         return empty;
@@ -432,11 +434,16 @@ class VariableTab extends AnalyzerTab {
         return null;
     }
       
+    @Override
     public int getColumnCount() { return 1; };
+    @Override
     public String getColumnName(int column) { return ""; }
+    @Override
     public Class<?> getColumnClass(int columnIndex) { return Var.class; }
+    @Override
     public int getRowCount() { return listCopy.length + 1; }
 
+    @Override
     public void listChanged(VariableListEvent event) {
       int oldSize = listCopy.length;
       updateCopy();

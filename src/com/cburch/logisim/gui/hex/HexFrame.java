@@ -37,13 +37,9 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
-import java.io.File;
-import java.io.IOException;
 
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.event.ChangeEvent;
@@ -56,7 +52,6 @@ import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.util.JFileChoosers;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
@@ -115,9 +110,9 @@ public class HexFrame extends LFrame {
     public void actionPerformed(ActionEvent event) {
       Object src = event.getSource();
       if (src == open) {
-        HexFile.open((MemContents)model, HexFrame.this, proj, instance);
+        HexFile.open((MemContents)model, HexFrame.this, project, instance);
       } else if (src == save) {
-        HexFile.save((MemContents)model, HexFrame.this, proj, instance);
+        HexFile.save((MemContents)model, HexFrame.this, project, instance);
       } else if (src == close) {
         WindowEvent e = new WindowEvent(HexFrame.this, WindowEvent.WINDOW_CLOSING);
         HexFrame.this.processWindowEvent(e);
@@ -166,15 +161,13 @@ public class HexFrame extends LFrame {
   private JButton save = new JButton();
   private JButton close = new JButton();
   private Instance instance;
-  private Project proj;
 
-  public HexFrame(Project proj, Instance instance, HexModel model) {
-    super(false, proj);
+  public HexFrame(Project project, Instance instance, HexModel model) {
+    super(false, project);
 
     this.model = model;
     this.editor = new HexEditor(model);
     this.instance = instance; // only for access to recent file
-    this.proj = proj; // only for access to recent file dir
 
     JPanel buttonPanel = new JPanel();
     buttonPanel.add(open);
@@ -212,7 +205,7 @@ public class HexFrame extends LFrame {
     editor.getCaret().setDot(0, false);
     editListener.register(menubar);
 
-    setLocationRelativeTo(proj.getFrame());
+    setLocationRelativeTo(project.getFrame());
   }
 
   @Override

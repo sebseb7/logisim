@@ -94,7 +94,7 @@ public class ImageExporter extends javax.swing.JFrame implements ActionListener 
     //for timeline
     private JPanel timePanel;
     private TimelineDraw td;
-    private ChronoFrame chronoFrame;
+    private ChronoPanel chronoPanel;
     //GUI, select image export options
     private JFrame frame;
     private javax.swing.ButtonGroup buttonGroup1;
@@ -112,9 +112,9 @@ public class ImageExporter extends javax.swing.JFrame implements ActionListener 
      * @param td
      * @param sdraw
      */
-    public ImageExporter(ChronoFrame cfp,/*, TimelineDraw td, ArrayList sdraw, ,*/ ChronoData chrdata, int heightp) {
+    public ImageExporter(ChronoPanel cfp,/*, TimelineDraw td, ArrayList sdraw, ,*/ ChronoData chrdata, int heightp) {
         this.chronoData = chrdata;
-        this.chronoFrame = cfp;
+        this.chronoPanel = cfp;
     }
 
     public void createImage(File file) {

@@ -35,7 +35,7 @@ import java.io.LineNumberReader;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
-import com.hepia.logisim.chronogui.ChronoFrame;
+import com.hepia.logisim.chronogui.ChronoPanel;
 
 /**
  * Contains all data to be plotted
@@ -53,7 +53,7 @@ public class ChronoData extends TreeMap<String, SignalData> {
 	 * 
 	 * @throws IOException
 	 */
-	public ChronoData(String logisimLogFile, ChronoFrame chronoFr)
+	public ChronoData(String logisimLogFile, ChronoPanel panel)
 			throws IOException, NoSysclkException {
 		LineNumberReader lineReader = null;
 		lineReader = new LineNumberReader(new FileReader(logisimLogFile));
@@ -81,9 +81,9 @@ public class ChronoData extends TreeMap<String, SignalData> {
 		// read the tick frequency
 		line = lineReader.readLine();
 		try {
-			chronoFr.setTimelineParam(new TimelineParam(line));
+			panel.setTimelineParam(new TimelineParam(line));
 		} catch (Exception e) {
-			chronoFr.setTimelineParam(null);
+			panel.setTimelineParam(null);
 		}
 
 		// read the rest of the file

@@ -36,27 +36,25 @@ import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.gui.log.Model;
-import com.cburch.logisim.gui.log.ModelEvent;
-import com.cburch.logisim.gui.log.ModelListener;
 import com.cburch.logisim.gui.log.Selection;
 import com.cburch.logisim.proj.Project;
-import com.hepia.logisim.chronogui.ChronoFrame;
+import com.hepia.logisim.chronogui.ChronoPanel;
 
-public class ChronoModelEventHandler implements ModelListener {
+public class ChronoModelEventHandler implements Model.Listener {
 
-	private ChronoFrame chronoFrame;
+	private ChronoPanel chronoPanel;
 	private ChronoData chronoData;
-	// contains the signals order, as they are stored in the ModelListener
+	// contains the signals order, as they are stored in the Model.Listener
 	private String[] signalNamesKeepOrder;
 
 	private String lastSysclk = "0";
 	private int sysclkPos = -1;
 
-	public ChronoModelEventHandler(ChronoFrame chronoFrame, Model model,
+	public ChronoModelEventHandler(ChronoPanel chronoPanel, Model model,
 			Project prj) throws NoSysclkException {
-		this.chronoFrame = chronoFrame;
+		this.chronoPanel = chronoPanel;
 
-		this.chronoData = chronoFrame.getChronoData();
+		this.chronoData = chronoPanel.getChronoData();
 		model.addModelListener(this);
 
 		Selection sel = model.getSelection();
@@ -98,8 +96,8 @@ public class ChronoModelEventHandler implements ModelListener {
 	}
 
 	@Override
-	public void entryAdded(ModelEvent event, Value[] values) {
-		if (chronoFrame.isRealTimeMode() && (sysclkPos >= 0)) {
+	public void entryAdded(Model.Event event, Value[] values) {
+		if (chronoPanel.isRealTimeMode() && (sysclkPos >= 0)) {
 			try {
 				// update gui only on sysclk change
 				if (!values[sysclkPos].toString().equals(lastSysclk)) {
@@ -110,8 +108,8 @@ public class ChronoModelEventHandler implements ModelListener {
 						chronoData.appendValueToSignal(
 								signalNamesKeepOrder[pos++], v.toString());
 					}
-					chronoFrame.getChronoData().updateRealTimeExpandedBus();
-					chronoFrame.repaintAll(false);
+					chronoPanel.getChronoData().updateRealTimeExpandedBus();
+					chronoPanel.repaintAll(false);
 				}
 			} catch (Exception ex) {
 				ex.printStackTrace();
@@ -120,10 +118,10 @@ public class ChronoModelEventHandler implements ModelListener {
 	}
 
 	@Override
-	public void filePropertyChanged(ModelEvent event) {
+	public void filePropertyChanged(Model.Event event) {
 	}
 
 	@Override
-	public void selectionChanged(ModelEvent event) {
+	public void selectionChanged(Model.Event event) {
 	}
 }

@@ -35,14 +35,19 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
-import java.util.List;
 
+import java.awt.datatransfer.Transferable;
+
+import javax.swing.DropMode;;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JTree;
+import javax.swing.TransferHandler;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
 import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
@@ -305,6 +310,10 @@ class ComponentSelector extends JTree {
     }
   }
 
+  // OptionNode really represents some internal state of a component, e.g. the
+  // value inside a shift register stage, or the value at a specific RAM location.
+  // Those are the only two components that have been outfitted for this, apparently.
+  // And for RAM, the current UI is unworkable unless there are only a few addresses.
   private class OptionNode implements TreeNode {
     private ComponentNode parent;
     private Object option;
@@ -359,14 +368,19 @@ class ComponentSelector extends JTree {
     setRootVisible(false);
     setLogModel(logModel);
     setCellRenderer(new MyCellRenderer());
+    setDragEnabled(true);
+    setDropMode(DropMode.ON_OR_INSERT);
+    setTransferHandler(new ComponentTransferHandler());
+    getSelectionModel().setSelectionMode(
+        TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
   }
 
-  public List<SelectionItem> getSelectedItems() {
+  public SelectionItems getSelectedItems() {
     TreePath[] sel = getSelectionPaths();
     if (sel == null || sel.length == 0)
-      return Collections.emptyList();
+      return new SelectionItems();
 
-    ArrayList<SelectionItem> ret = new ArrayList<SelectionItem>();
+    SelectionItems ret = new SelectionItems();
     for (int i = 0; i < sel.length; i++) {
       TreePath path = sel[i];
       Object last = path.getLastPathComponent();
@@ -436,4 +450,41 @@ class ComponentSelector extends JTree {
       model.setRoot(curRoot);
     }
   }
+
+  class ComponentTransferHandler extends TransferHandler {
+    boolean sending;
+
+    public ComponentTransferHandler() { }
+
+    @Override
+    public boolean canImport(TransferHandler.TransferSupport support) {
+      return !sending && support.isDataFlavorSupported(SelectionItems.dataFlavor);
+    }
+
+    @Override
+    protected Transferable createTransferable(JComponent c) {
+      sending = true;
+      ComponentSelector tree = (ComponentSelector)c;
+      SelectionItems items = tree.getSelectedItems();
+      return items.isEmpty() ? null : items;
+    }
+
+    @Override
+    protected void exportDone(JComponent source, Transferable data, int action) {
+      sending = false;
+    }
+
+    @Override
+    public int getSourceActions(JComponent c) {
+      return COPY;
+    }
+
+    @Override
+    public boolean importData(TransferHandler.TransferSupport support) { 
+      sending = false;
+      return false;
+    }
+
+  }
+
 }

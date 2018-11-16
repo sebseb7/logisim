@@ -38,10 +38,10 @@ import com.hepia.logisim.chronodata.SignalDataBus;
  */
 public class DrawAreaManager implements IDrawAreaEvents {
 
-	private ChronoFrame mChronoFrame;
+	private ChronoPanel mChronoPanel;
 
-	public DrawAreaManager(ChronoFrame chronoFrame) {
-		mChronoFrame = chronoFrame;
+	public DrawAreaManager(ChronoPanel chronoPanel) {
+		mChronoPanel = chronoPanel;
 	}
 
 	/**
@@ -49,8 +49,8 @@ public class DrawAreaManager implements IDrawAreaEvents {
 	 * the line at the same position
 	 */
 	public void drawVerticalMouseClicked() {
-		if (mChronoFrame.getRightPanel() != null) {
-			mChronoFrame.getRightPanel().drawVerticalMouseClicked();
+		if (mChronoPanel.getRightPanel() != null) {
+			mChronoPanel.getRightPanel().drawVerticalMouseClicked();
 		}
 	}
 
@@ -61,8 +61,8 @@ public class DrawAreaManager implements IDrawAreaEvents {
 	 *            position of the red vertical line
 	 */
 	public void drawVerticalMouseClicked(int posX) {
-		if (mChronoFrame.getRightPanel() != null) {
-			mChronoFrame.getRightPanel().drawVerticalMouseClicked(posX);
+		if (mChronoPanel.getRightPanel() != null) {
+			mChronoPanel.getRightPanel().drawVerticalMouseClicked(posX);
 		}
 	}
 
@@ -70,10 +70,10 @@ public class DrawAreaManager implements IDrawAreaEvents {
 	 * Highlight a signal in bold
 	 */
 	public void highlight(SignalData signalToHighlight) {
-		if (mChronoFrame.getRightPanel() != null
-				&& mChronoFrame.getLeftPanel() != null) {
-			mChronoFrame.getRightPanel().highlight(signalToHighlight);
-			mChronoFrame.getLeftPanel().highlight(signalToHighlight);
+		if (mChronoPanel.getRightPanel() != null
+				&& mChronoPanel.getLeftPanel() != null) {
+			mChronoPanel.getRightPanel().highlight(signalToHighlight);
+			mChronoPanel.getLeftPanel().highlight(signalToHighlight);
 		}
 	}
 
@@ -138,9 +138,9 @@ public class DrawAreaManager implements IDrawAreaEvents {
 	 * Refresh the display of each signal value in the left bar
 	 */
 	public void refreshSignalsValues() {
-		if (mChronoFrame.getLeftPanel() != null
-				&& mChronoFrame.getRightPanel() != null) {
-			mChronoFrame.getLeftPanel().refreshSignalsValues();
+		if (mChronoPanel.getLeftPanel() != null
+				&& mChronoPanel.getRightPanel() != null) {
+			mChronoPanel.getLeftPanel().refreshSignalsValues();
 		}
 	}
 
@@ -156,7 +156,7 @@ public class DrawAreaManager implements IDrawAreaEvents {
 	@Override
 	public void setCodingFormat(SignalDataBus signalDataSource, String format) {
 		signalDataSource.setFormat(format);
-		mChronoFrame.repaintAll(true);
+		mChronoPanel.repaintAll(true);
 	}
 
 	/**
@@ -166,11 +166,11 @@ public class DrawAreaManager implements IDrawAreaEvents {
 	 *            the position of the cursor. it defines the value to display
 	 */
 	public void setSignalsValues(int posX) {
-		if (mChronoFrame.getLeftPanel() != null
-				&& mChronoFrame.getRightPanel() != null) {
-			int tickWidth = mChronoFrame.getRightPanel().getTickWidth();
+		if (mChronoPanel.getLeftPanel() != null
+				&& mChronoPanel.getRightPanel() != null) {
+			int tickWidth = mChronoPanel.getRightPanel().getTickWidth();
 			int elementPosition = (posX + tickWidth) / tickWidth;
-			mChronoFrame.getLeftPanel().setSignalsValues(elementPosition);
+			mChronoPanel.getLeftPanel().setSignalsValues(elementPosition);
 		}
 	}
 
@@ -186,7 +186,7 @@ public class DrawAreaManager implements IDrawAreaEvents {
 	 */
 	@Override
 	public void toggleBusExpand(SignalDataBus signalDataSource, boolean expand) {
-		mChronoFrame.toggleBusExpand(signalDataSource, expand);
+		mChronoPanel.toggleBusExpand(signalDataSource, expand);
 	}
 
 	/**
@@ -194,8 +194,8 @@ public class DrawAreaManager implements IDrawAreaEvents {
 	 * (mousePosXClicked)
 	 */
 	public void zoom(int sens, int posX) {
-		if (mChronoFrame.getRightPanel() != null) {
-			mChronoFrame.getRightPanel().zoom(sens, posX);
+		if (mChronoPanel.getRightPanel() != null) {
+			mChronoPanel.getRightPanel().zoom(sens, posX);
 		}
 	}
 

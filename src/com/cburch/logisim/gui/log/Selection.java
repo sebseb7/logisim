@@ -30,6 +30,7 @@
 package com.cburch.logisim.gui.log;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.cburch.logisim.circuit.CircuitState;
 
@@ -47,10 +48,10 @@ public class Selection {
 
   public void add(SelectionItem item) {
     components.add(item);
-    model.fireSelectionChanged(new ModelEvent());
+    model.fireSelectionChanged(new Model.Event());
   }
 
-  public void addModelListener(ModelListener l) {
+  public void addModelListener(Model.Listener l) {
     model.addModelListener(l);
   }
 
@@ -70,21 +71,44 @@ public class Selection {
     return components.indexOf(value);
   }
 
-  public void move(int fromIndex, int toIndex) {
-    if (fromIndex == toIndex) {
-      return;
+  public void add(List<SelectionItem> items, int idx) {
+    for (SelectionItem item : items) {
+      int i = components.indexOf(item);
+      if (i < 0)
+        components.add(idx++, item); // put new item at idx
+      else if (i > idx)
+        components.add(idx++, components.remove(i)); // move later item up
+      else if (i < idx)
+        components.add(idx-1, components.remove(i)); // move earlier item down
     }
+    model.fireSelectionChanged(new Model.Event());
+  }
+
+  public int remove(List<SelectionItem> items) {
+    int count = 0;
+    for (SelectionItem item : items) {
+      if (components.remove(item))
+        count++;
+    }
+    if (count > 0)
+      model.fireSelectionChanged(new Model.Event());
+    return count;
+  }
+
+  public void move(int fromIndex, int toIndex) {
+    if (fromIndex == toIndex)
+      return;
     SelectionItem o = components.remove(fromIndex);
     components.add(toIndex, o);
-    model.fireSelectionChanged(new ModelEvent());
+    model.fireSelectionChanged(new Model.Event());
   }
 
   public void remove(int index) {
     components.remove(index);
-    model.fireSelectionChanged(new ModelEvent());
+    model.fireSelectionChanged(new Model.Event());
   }
 
-  public void removeModelListener(ModelListener l) {
+  public void removeModelListener(Model.Listener l) {
     model.removeModelListener(l);
   }
 

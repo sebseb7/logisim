@@ -36,7 +36,6 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -98,7 +97,6 @@ public class OptionsFrame extends LFrame {
   }
 
   private static final long serialVersionUID = 1L;
-  private Project project;
   private LogisimFile file;
   private MyListener myListener = new MyListener();
 
@@ -108,7 +106,6 @@ public class OptionsFrame extends LFrame {
 
   public OptionsFrame(Project project) {
     super(false, project);
-    this.project = project;
     this.file = project.getLogisimFile();
     file.addLibraryListener(myListener);
 
@@ -143,10 +140,6 @@ public class OptionsFrame extends LFrame {
 
   OptionsPanel[] getPrefPanels() {
     return panels;
-  }
-
-  public Project getProject() {
-    return project;
   }
 
   @Override

@@ -36,6 +36,7 @@ import java.util.ArrayList;
 
 import javax.swing.Box;
 import javax.swing.JLayeredPane;
+import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 import com.hepia.logisim.chronodata.SignalData;
@@ -44,10 +45,10 @@ import com.hepia.logisim.chronodata.SignalData;
  * Chronogram's right side Panel Composed of one TimeLine on top and multiple
  * SignalDraw
  */
-public class RightPanel extends ChronoPanelTemplate {
+public class RightPanel extends JPanel {
 
 	private static final long serialVersionUID = 1L;
-	private ChronoFrame mChronoFrame;
+	private ChronoPanel mChronoPanel;
 	private DrawAreaEventManager mDrawAreaEventManager;
 	private TimelineDraw mTimeLine;
 	private CommonPanelParam mCommonPanelParam;
@@ -67,13 +68,13 @@ public class RightPanel extends ChronoPanelTemplate {
 	/**
 	 * Standard constructor
 	 */
-	public RightPanel(ChronoFrame chronoFrame,
+	public RightPanel(ChronoPanel chronoPanel,
 			DrawAreaEventManager drawAreaEventManager) {
-		this.mChronoFrame = chronoFrame;
+		this.mChronoPanel = chronoPanel;
 		this.mDrawAreaEventManager = drawAreaEventManager;
-		this.mCommonPanelParam = chronoFrame.getCommonPanelParam();
+		this.mCommonPanelParam = chronoPanel.getCommonPanelParam();
 		this.globalHeight = mCommonPanelParam.getSignalHeight()
-				* chronoFrame.getChronoData().size();
+				* chronoPanel.getChronoData().size();
 		this.setLayout(new BorderLayout());
 		this.setBackground(Color.white);
 		createPanel();
@@ -83,11 +84,11 @@ public class RightPanel extends ChronoPanelTemplate {
 	 * Clone constructor
 	 */
 	public RightPanel(RightPanel oldPanel) {
-		this.mChronoFrame = oldPanel.mChronoFrame;
+		this.mChronoPanel = oldPanel.mChronoPanel;
 		this.mDrawAreaEventManager = oldPanel.mDrawAreaEventManager;
-		this.mCommonPanelParam = mChronoFrame.getCommonPanelParam();
+		this.mCommonPanelParam = mChronoPanel.getCommonPanelParam();
 		this.globalHeight = mCommonPanelParam.getSignalHeight()
-				* mChronoFrame.getChronoData().size();
+				* mChronoPanel.getChronoData().size();
 		this.tickWidth = oldPanel.tickWidth;
 		this.mousePosXClicked = oldPanel.mousePosXClicked;
 		this.displayOffsetX = oldPanel.displayOffsetX;
@@ -98,7 +99,7 @@ public class RightPanel extends ChronoPanelTemplate {
 
 	public void adjustmentValueChanged(int value) {
 		float posPercent = (float) value / (float) getSignalWidth();
-		int i = Math.round(/* mChronoFrame.getNbrOfTick()*/ 2 * posPercent);
+		int i = Math.round(/* mChronoPanel.getNbrOfTick()*/ 2 * posPercent);
 		i = i > 5 ? i - 5 : 0;
 		displayOffsetX = i * tickWidth;
 		for (SignalDraw sDraw : allSignalDraw) {
@@ -115,14 +116,14 @@ public class RightPanel extends ChronoPanelTemplate {
 		rightBox.setOpaque(true);
 
 		// Add the time line
-		mTimeLine = new TimelineDraw(mChronoFrame,
+		mTimeLine = new TimelineDraw(mChronoPanel,
 				mCommonPanelParam.getHeaderHeight(), tickWidth);
 
 		// creates the SignalDraw
-		for (String signalName : mChronoFrame.getChronoData().getSignalOrder()) {
+		for (String signalName : mChronoPanel.getChronoData().getSignalOrder()) {
 			if (!signalName.equals("sysclk"))
 				allSignalDraw.add(new SignalDraw(this, mDrawAreaEventManager,
-						mChronoFrame.getChronoData().get(signalName),
+						mChronoPanel.getChronoData().get(signalName),
 						mCommonPanelParam.getSignalHeight()));
 		}
 
@@ -148,7 +149,7 @@ public class RightPanel extends ChronoPanelTemplate {
 	}
 
 	private void defineSizes() {
-		int totalWidth = tickWidth * 2; // mChronoFrame.getNbrOfTick();
+		int totalWidth = tickWidth * 2; // mChronoPanel.getNbrOfTick();
 		layeredPane.setPreferredSize(new Dimension(totalWidth, globalHeight));
 		rightBox.setBounds(0, mCommonPanelParam.getHeaderHeight(), totalWidth,
 				globalHeight);
@@ -182,7 +183,7 @@ public class RightPanel extends ChronoPanelTemplate {
 	}
 
 	public int getSignalWidth() {
-		return /* mChronoFrame.getNbrOfTick()*/ 2 * tickWidth;
+		return /* mChronoPanel.getNbrOfTick()*/ 2 * tickWidth;
 	}
 
 	public int getTickWidth() {
@@ -190,11 +191,11 @@ public class RightPanel extends ChronoPanelTemplate {
 	}
 
 	public int getVisibleWidth() {
-		return mChronoFrame.getVisibleSignalsWidth();
+		return mChronoPanel.getVisibleSignalsWidth();
 	}
 
     public int getTotalWidth() {
-        return (/*mChronoFrame.getNbrOfTick()*/ 2  * tickWidth);
+        return (/*mChronoPanel.getNbrOfTick()*/ 2  * tickWidth);
     }
 
     public int getTotalHeight() {
@@ -222,7 +223,7 @@ public class RightPanel extends ChronoPanelTemplate {
 		for (SignalDraw sDraw : allSignalDraw) {
 			sDraw.setBufferObsolete();
 			sDraw.repaint();
-			if (mChronoFrame.isRealTimeMode()) {
+			if (mChronoPanel.isRealTimeMode()) {
 				width = getSignalWidth();
 				sDraw.setSignalDrawSize(width,
 						mCommonPanelParam.getSignalHeight());
@@ -247,7 +248,7 @@ public class RightPanel extends ChronoPanelTemplate {
 
 		// Scrollbar follow the zoom
 		int scrollBarCursorPos = mCursor.getPosition()
-				- (mChronoFrame.getVisibleSignalsWidth() / 2);
+				- (mChronoPanel.getVisibleSignalsWidth() / 2);
 
 		// zoom on every signals
 		for (SignalDraw sDraw : allSignalDraw) {
@@ -255,14 +256,14 @@ public class RightPanel extends ChronoPanelTemplate {
 		}
 
 		// zoom on the timeline
-		mTimeLine.setTickWidth(tickWidth, 2 /* mChronoFrame.getNbrOfTick() */);
+		mTimeLine.setTickWidth(tickWidth, 2 /* mChronoPanel.getNbrOfTick() */);
 
 		defineSizes();
 
 		// force redraw everything
-		SwingUtilities.updateComponentTreeUI(mChronoFrame);
+		SwingUtilities.updateComponentTreeUI(mChronoPanel);
 
 		// scrollbar position
-		mChronoFrame.setScrollbarPosition(scrollBarCursorPos);
+		mChronoPanel.setScrollbarPosition(scrollBarCursorPos);
 	}
 }

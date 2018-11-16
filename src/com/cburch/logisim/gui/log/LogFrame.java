@@ -34,15 +34,13 @@ import static com.cburch.logisim.gui.log.Strings.S;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.awt.event.WindowEvent;
-import java.awt.Font;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
 import com.cburch.logisim.circuit.CircuitState;
@@ -55,10 +53,12 @@ import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
+import com.cburch.logisim.util.JDialogOk;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
 import com.hepia.logisim.chronodata.TimelineParam;
+import com.hepia.logisim.chronogui.ChronoPanel;
 
 public class LogFrame extends LFrame {
   private class MyListener implements ProjectListener,
@@ -84,8 +84,8 @@ public class LogFrame extends LFrame {
     public void projectChanged(ProjectEvent event) {
       int action = event.getAction();
       if (action == ProjectEvent.ACTION_SET_STATE) {
-        setSimulator(event.getProject().getSimulator(), event
-            .getProject().getCircuitState());
+        setSimulator(event.getProject().getSimulator(),
+            event.getProject().getCircuitState());
       } else if (action == ProjectEvent.ACTION_SET_FILE) {
         setTitle(computeTitle(curModel, project));
       }
@@ -143,7 +143,6 @@ public class LogFrame extends LFrame {
   }
 
   private static final long serialVersionUID = 1L;
-  private Project project;
   private Simulator curSimulator = null;
   private Model curModel;
   private Map<CircuitState, Model> modelMap = new HashMap<CircuitState, Model>();
@@ -151,20 +150,57 @@ public class LogFrame extends LFrame {
 
   private WindowMenuManager windowManager;
   private LogPanel[] panels;
+  // private SelectionPanel selPanel;
   private JTabbedPane tabbedPane;
+
+  static class SelectionDialog extends JDialogOk {
+    SelectionPanel selPanel;
+    SelectionDialog(LogFrame logFrame) {
+      super("Signal Selection", false);
+      selPanel = new SelectionPanel(logFrame);
+      selPanel.localeChanged();
+      getContentPane().add(selPanel);
+      setMinimumSize(new Dimension(350, 300));
+      setSize(400, 400);
+      pack();
+      setVisible(true);
+    }
+    public void cancelClicked() { okClicked(); }
+    public void okClicked() { }
+  }
+
+  static class TempButtonPanel extends LogPanel {
+    TempButtonPanel(LogFrame frame) {
+      super(frame);
+      JButton button = new JButton("press m");
+      add(button);
+      button.addActionListener(new ActionListener() {
+        public void actionPerformed(ActionEvent event) {
+          SelectionDialog d = new SelectionDialog(getLogFrame());
+          d.setVisible(true);
+        }
+      });
+    }
+    public String getHelpText() { return "temp"; }
+    public String getTitle() { return "button"; }
+    public void localeChanged() { }
+    public void modelChanged(Model oldModel, Model newModel) { }
+  }
 
   public LogFrame(Project project) {
     super(false, project);
-    this.project = project;
     this.windowManager = new WindowMenuManager();
     project.addProjectListener(myListener);
     project.addLibraryListener(myListener);
     setSimulator(project.getSimulator(), project.getCircuitState());
 
-    panels = new LogPanel[] { new SelectionPanel(this),
+    // selPanel = new SelectionPanel(this);
+    panels = new LogPanel[] {
+      // selPanel,
+      new TempButtonPanel(this),
       new ScrollPanel(this),
       new FilePanel(this),
-      // chrono goes here
+      new ChronoPanel(this),
     };
     tabbedPane = new JTabbedPane();
     // tabbedPane.setFont(new Font("Dialog", Font.BOLD, 9));
@@ -181,6 +217,7 @@ public class LogFrame extends LFrame {
     LocaleManager.addLocaleListener(myListener);
     myListener.localeChanged();
     pack();
+    setLocationRelativeTo(project.getFrame());
   }
 
   public Model getModel() {
@@ -191,19 +228,14 @@ public class LogFrame extends LFrame {
     return panels;
   }
 
-  public Project getProject() {
-    return project;
-  }
-
   public TimelineParam getTimelineParam() {
-    SelectionPanel p = (SelectionPanel) panels[0];
-    return p.getTimelineParam();
+    return new TimelineParam("Hz", "clk", 10);
+    // return selPanel.getTimelineParam();
   }
 
   private void setSimulator(Simulator value, CircuitState state) {
     if ((value == null) == (curModel == null)) {
-      if (value == null
-          || value.getCircuitState() == curModel.getCircuitState())
+      if (value == null || value.getCircuitState() == curModel.getCircuitState())
         return;
     }
 

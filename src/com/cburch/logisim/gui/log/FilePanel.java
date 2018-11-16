@@ -53,7 +53,7 @@ import com.cburch.logisim.data.Value;
 import com.cburch.logisim.util.JFileChoosers;
 
 class FilePanel extends LogPanel {
-  private class Listener implements ActionListener, ModelListener {
+  private class Listener implements ActionListener, Model.Listener {
     public void actionPerformed(ActionEvent event) {
       Object src = event.getSource();
       if (src == enableButton) {
@@ -108,10 +108,10 @@ class FilePanel extends LogPanel {
       }
     }
 
-    public void entryAdded(ModelEvent event, Value[] values) {
+    public void entryAdded(Model.Event event, Value[] values) {
     }
 
-    public void filePropertyChanged(ModelEvent event) {
+    public void filePropertyChanged(Model.Event event) {
       Model model = getModel();
       computeEnableItems(model);
 
@@ -122,7 +122,7 @@ class FilePanel extends LogPanel {
       headerCheckBox.setSelected(model.getFileHeader());
     }
 
-    public void selectionChanged(ModelEvent event) {
+    public void selectionChanged(Model.Event event) {
     }
   }
 

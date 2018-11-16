@@ -50,12 +50,9 @@ import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.Simulator;
 import com.cburch.logisim.circuit.SimulatorEvent;
 import com.cburch.logisim.circuit.SimulatorListener;
-import com.cburch.logisim.file.Options;
 import com.cburch.logisim.gui.log.LogFrame;
 import com.cburch.logisim.gui.test.TestFrame;
-import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.std.wiring.Clock;
 
 @SuppressWarnings("serial")
 public class MenuSimulate extends Menu {

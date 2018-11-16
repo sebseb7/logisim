@@ -40,6 +40,7 @@ import java.awt.event.MouseMotionAdapter;
 import java.util.HashMap;
 
 import javax.swing.AbstractAction;
+import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
@@ -52,10 +53,10 @@ import com.hepia.logisim.chronodata.SignalData;
  * Chronogram's left side Panel Composed of one signalNameHead and multiple
  * SignalName
  */
-public class LeftPanel extends ChronoPanelTemplate {
+public class LeftPanel extends JPanel {
 
 	private static final long serialVersionUID = 1L;
-	private ChronoFrame mChronoFrame;
+	private ChronoPanel mChronoPanel;
 	private CommonPanelParam mCommonPanelParam;
 	private DrawAreaEventManager mDrawAreaEventManager;
 	private JTable table;
@@ -71,29 +72,29 @@ public class LeftPanel extends ChronoPanelTemplate {
 	private SignalData[] reverseSignalDataPositionInTable; // and the reverse
 															// access
 
-	public LeftPanel(ChronoFrame chronoFrame,
+	public LeftPanel(ChronoPanel chronoPanel,
 			DrawAreaEventManager drawAreaEventManager) {
-		this.mChronoFrame = chronoFrame;
-		this.mCommonPanelParam = chronoFrame.getCommonPanelParam();
+		this.mChronoPanel = chronoPanel;
+		this.mCommonPanelParam = chronoPanel.getCommonPanelParam();
 		this.mDrawAreaEventManager = drawAreaEventManager;
 		this.setLayout(new BorderLayout());
 		this.setBackground(Color.white);
 
-		if (mChronoFrame.getChronoData().size() <= 1)
+		if (mChronoPanel.getChronoData().size() <= 1)
 			return;
 
 		String[] names = { "", Strings.get("SignalNameName"),
 				Strings.get("SignalNameValue") };
-		tableData = new Object[mChronoFrame.getChronoData().size() - 1][3];
+		tableData = new Object[mChronoPanel.getChronoData().size() - 1][3];
 		signalDataPositionInTable = new HashMap<SignalData, Integer>();
-		reverseSignalDataPositionInTable = new SignalData[mChronoFrame
+		reverseSignalDataPositionInTable = new SignalData[mChronoPanel
 				.getChronoData().size() - 1];
 
 		// add the signal name rows
 		int pos = 0;
-		for (String signalName : mChronoFrame.getChronoData().getSignalOrder()) {
+		for (String signalName : mChronoPanel.getChronoData().getSignalOrder()) {
 			if (!signalName.equals("sysclk")) {
-				SignalData signalData = mChronoFrame.getChronoData().get(
+				SignalData signalData = mChronoPanel.getChronoData().get(
 						signalName);
 				signalDataPositionInTable.put(signalData, pos);
 				reverseSignalDataPositionInTable[pos] = signalData;
@@ -128,7 +129,7 @@ public class LeftPanel extends ChronoPanelTemplate {
 				;
 			}
 		});
-		table.addKeyListener(chronoFrame);
+		table.addKeyListener(chronoPanel);
 		table.setRowHeight(mCommonPanelParam.getSignalHeight());
 		table.getColumnModel().getColumn(0).setMaxWidth(10);
 
@@ -183,8 +184,8 @@ public class LeftPanel extends ChronoPanelTemplate {
 	 * Refresh the display of each signal value in the left bar
 	 */
 	public void refreshSignalsValues() {
-		int tickWidth = mChronoFrame.getRightPanel().getTickWidth();
-		int elementPosition = (mChronoFrame.getRightPanel()
+		int tickWidth = mChronoPanel.getRightPanel().getTickWidth();
+		int elementPosition = (mChronoPanel.getRightPanel()
 				.getMousePosXClicked() + tickWidth) / tickWidth;
 		setSignalsValues(elementPosition);
 	}
@@ -198,9 +199,9 @@ public class LeftPanel extends ChronoPanelTemplate {
 	 */
 	public void setSignalsValues(int elementPosition) {
 		int pos = 0;
-		for (String signalName : mChronoFrame.getChronoData().getSignalOrder()) {
+		for (String signalName : mChronoPanel.getChronoData().getSignalOrder()) {
 			if (!signalName.equals("sysclk")) {
-				SignalData signalData = mChronoFrame.getChronoData().get(
+				SignalData signalData = mChronoPanel.getChronoData().get(
 						signalName);
 				signalData.setSelectedValuePos(elementPosition);
 				table.setValueAt(signalData.getSelectedValue(), pos++, 2);
