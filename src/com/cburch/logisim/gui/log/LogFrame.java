@@ -53,7 +53,6 @@ import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
-import com.cburch.logisim.util.JDialogOk;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
@@ -153,31 +152,15 @@ public class LogFrame extends LFrame {
   // private SelectionPanel selPanel;
   private JTabbedPane tabbedPane;
 
-  static class SelectionDialog extends JDialogOk {
-    SelectionPanel selPanel;
-    SelectionDialog(LogFrame logFrame) {
-      super("Signal Selection", false);
-      selPanel = new SelectionPanel(logFrame);
-      selPanel.localeChanged();
-      getContentPane().add(selPanel);
-      setMinimumSize(new Dimension(350, 300));
-      setSize(400, 400);
-      pack();
-      setVisible(true);
-    }
-    public void cancelClicked() { okClicked(); }
-    public void okClicked() { }
-  }
 
   static class TempButtonPanel extends LogPanel {
     TempButtonPanel(LogFrame frame) {
       super(frame);
-      JButton button = new JButton("press m");
+      JButton button = new JButton("press me");
       add(button);
       button.addActionListener(new ActionListener() {
         public void actionPerformed(ActionEvent event) {
-          SelectionDialog d = new SelectionDialog(getLogFrame());
-          d.setVisible(true);
+          SelectionPanel.doDialog(getLogFrame());
         }
       });
     }
@@ -194,13 +177,11 @@ public class LogFrame extends LFrame {
     project.addLibraryListener(myListener);
     setSimulator(project.getSimulator(), project.getCircuitState());
 
-    // selPanel = new SelectionPanel(this);
     panels = new LogPanel[] {
-      // selPanel,
-      new TempButtonPanel(this),
+      new ChronoPanel(this),
       new ScrollPanel(this),
       new FilePanel(this),
-      new ChronoPanel(this),
+      new TempButtonPanel(this),
     };
     tabbedPane = new JTabbedPane();
     // tabbedPane.setFont(new Font("Dialog", Font.BOLD, 9));

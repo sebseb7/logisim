@@ -30,123 +30,21 @@
 package com.cburch.logisim.gui.log;
 import static com.cburch.logisim.gui.log.Strings.S;
 
-import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.List;
 
-// import javax.swing.event.TableSelectionEvent;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
-import javax.swing.tree.TreePath;
 
 import com.cburch.logisim.util.Icons;
+import com.cburch.logisim.util.JDialogOk;
 import com.hepia.logisim.chronodata.TimelineParam;
 
 class SelectionPanel extends LogPanel {
 
-  // private class Listener extends MouseAdapter {
-
-    // public void actionPerformed(ActionEvent event) {
-    //   Object src = event.getSource();
-    //   if (src == addTool) {
-    //     doAdd(selector.getSelectedItems());
-    //   } else if (src == changeBase) {
-    //     SelectionItem sel = (SelectionItem) list.getSelectedValue();
-    //     if (sel != null) {
-    //       int radix = sel.getRadix();
-    //       switch (radix) {
-    //       case 2:
-    //         sel.setRadix(10);
-    //         break;
-    //       case 10:
-    //         sel.setRadix(16);
-    //         break;
-    //       default:
-    //         sel.setRadix(2);
-    //       }
-    //     }
-    //   } else if (src == moveUp) {
-    //     doMove(-1);
-    //   } else if (src == moveDown) {
-    //     doMove(1);
-    //   } else if (src == remove) {
-    //     Selection sel = getSelection();
-    //     Object[] toRemove = list.getSelectedValuesList().toArray();
-    //     boolean changed = false;
-    //     for (int i = 0; i < toRemove.length; i++) {
-    //       int index = sel.indexOf((SelectionItem) toRemove[i]);
-    //       if (index >= 0) {
-    //         sel.remove(index);
-    //         changed = true;
-    //       }
-    //     }
-    //     if (changed) {
-    //       list.clearSelection();
-    //     }
-    //   }
-    // }
-
-    // private void doAdd(List<SelectionItem> selectedItems) {
-    //   if (selectedItems != null && selectedItems.size() > 0) {
-    //     SelectionItem last = null;
-    //     for (SelectionItem item : selectedItems) {
-    //       if (!getSelection().contains(item)) {
-    //         getSelection().add(item);
-    //         last = item;
-    //       }
-    //     }
-    //     list.setSelectedValue(last, true);
-    //   }
-    // }
-
-    // private void doMove(int delta) {
-    //   Selection sel = getSelection();
-    //   int oldIndex = list.getSelectedIndex();
-    //   int newIndex = oldIndex + delta;
-    //   if (oldIndex >= 0 && newIndex >= 0 && newIndex < sel.size()) {
-    //     sel.move(oldIndex, newIndex);
-    //     list.setSelectedIndex(newIndex);
-    //   }
-    // }
-
-    // @Override
-    // public void mouseClicked(MouseEvent e) {
-    //   if (e.getClickCount() == 2) {
-    //     TreePath path = selector.getPathForLocation(e.getX(), e.getY());
-    //     if (path != null && listener != null) {
-    //       doAdd(selector.getSelectedItems());
-    //     }
-    //   }
-    // }
-
-    // public void valueChanged(ListSelectionEvent event) { }
-
-    // public void valueChanged(TreeSelectionEvent event) { }
-  // }
-
-  // private Listener listener = new Listener();
   private ComponentSelector selector;
   private SelectionList list;
   private JLabel selectDesc, exploreLabel, listLabel;
@@ -157,18 +55,12 @@ class SelectionPanel extends LogPanel {
     list = new SelectionList();
     list.setSelection(getSelection());
 
-    // selector.addMouseListener(listener);
-    // selector.addTreeSelectionListener(listener);
-    // list.addTableSelectionListener(listener);
-
     JScrollPane explorerPane = new JScrollPane(selector,
         ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     JScrollPane listPane = new JScrollPane(list,
         ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-
-    // listPane.setTransferHandler(list.getTransferHandler());
 
     GridBagLayout gridbag = new GridBagLayout();
     GridBagConstraints gbc = new GridBagConstraints();
@@ -258,5 +150,26 @@ class SelectionPanel extends LogPanel {
       selector.setLogModel(newModel);
       list.setSelection(getSelection());
     }
+  }
+
+  static class SelectionDialog extends JDialogOk {
+    SelectionPanel selPanel;
+    SelectionDialog(LogFrame logFrame) {
+      super("Signal Selection", false);
+      selPanel = new SelectionPanel(logFrame);
+      selPanel.localeChanged();
+      getContentPane().add(selPanel);
+      setMinimumSize(new Dimension(350, 300));
+      setSize(400, 400);
+      pack();
+      setVisible(true);
+    }
+    public void cancelClicked() { okClicked(); }
+    public void okClicked() { }
+  }
+
+  public static void doDialog(LogFrame logFrame) {
+    SelectionDialog d = new SelectionDialog(logFrame);
+    d.setVisible(true);
   }
 }
