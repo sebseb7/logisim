@@ -38,15 +38,11 @@ import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.util.prefs.Preferences;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -68,8 +64,7 @@ import com.hepia.logisim.chronodata.SignalDataBus;
 import com.hepia.logisim.chronodata.TimelineParam;
 import java.io.File;
 
-public class ChronoPanel extends LogPanel
-  implements KeyListener, WindowListener {
+public class ChronoPanel extends LogPanel implements KeyListener {
 
   JFileChooser fc;
 
@@ -184,23 +179,8 @@ public class ChronoPanel extends LogPanel
   // graphical
   private int dividerLocation = 353;
   // mode
-  private boolean realTimeMode;
+  private boolean realTimeMode; // todo: delete, or fix
   private ChronoModelEventHandler chronoModelEventHandler;
-  // menu
-  private JMenuBar winMenuBar;
-  // private JCheckBoxMenuItem ontopItem;
-
-  private JMenuItem close;
-
-  /**
-   * Offline mode ChronoPanel constructor
-   */
-  // public ChronoPanel(Project prj) {
-  //   super(false, prj);
-  //   realTimeMode = false;
-  //   commonPanelParam = new CommonPanelParam(20, 38);
-  //   createMainStructure();
-  // }
 
   /**
    * Real time mode ChronoPanel constructor
@@ -232,17 +212,6 @@ public class ChronoPanel extends LogPanel
     }
   }
 
-  // @Override
-  // public void actionPerformed(ActionEvent ae) {
-  //   Object src = ae.getSource();
-  //   if (src == ontopItem) {
-  //     ae.paramString();
-  //     setAlwaysOnTop(ontopItem.getState());
-  //   } else if (src == close) {
-  //     setVisible(false);
-  //   }
-  // }
-
   /**
    * Creates the main panels for the chronogram
    */
@@ -255,23 +224,6 @@ public class ChronoPanel extends LogPanel
     setFocusable(true);
     requestFocus();
     addKeyListener(this);
-    // addWindowListener(this);
-
-    // menu bar
-    // winMenuBar = new JMenuBar();
-    // JMenu windowMenu = new JMenu("Window");
-    // windowMenu.setMnemonic('W');
-    // ontopItem = new JCheckBoxMenuItem("Set on top", true);
-    // ontopItem.addActionListener(this);
-    // close = new JMenuItem("Close");
-    // close.addActionListener(this);
-    // windowMenu.add(ontopItem);
-    // windowMenu.addSeparator();
-    // windowMenu.add(close);
-    // winMenuBar.add(windowMenu);
-    // winMenuBar.setFocusable(false);
-    // setJMenuBar(winMenuBar);
-    //setAlwaysOnTop(true);
 
     // top bar
     Dimension buttonSize = new Dimension(150, 25);
@@ -356,20 +308,6 @@ public class ChronoPanel extends LogPanel
     mainSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
     add(BorderLayout.CENTER, mainSplitPane);
 
-    // setTitle(Strings.get("ChronoTitle") + ": "
-    //     + project.getLogisimFile().getDisplayName());
-    // setResizable(true);
-    // setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-    // setSize(new Dimension(1024, 768));
-
-    // setContentPane(mainPanel);
-
-//     prefs = Preferences.userRoot().node(this.getClass().getName());
-//     setLocation(prefs.getInt("X", 0), prefs.getInt("Y", 0));
-//     setSize(prefs.getInt("W", getSize().width),
-//         prefs.getInt("H", getSize().height));
-// 
-//     setVisible(true);
   }
 
   /**
@@ -554,38 +492,6 @@ public class ChronoPanel extends LogPanel
       chronogramData.contractBus(choosenBus);
     }
     fillMainSplitPane();
-  }
-
-  @Override
-  public void windowActivated(WindowEvent we) {
-  }
-
-  @Override
-  public void windowClosed(WindowEvent we) {
-  }
-
-  @Override
-  public void windowClosing(WindowEvent we) {
-  }
-
-  @Override
-  public void windowDeactivated(WindowEvent e) {
-//     prefs.putInt("X", getX());
-//     prefs.putInt("Y", getY());
-//     prefs.putInt("W", getWidth());
-//     prefs.putInt("H", getHeight());
-  }
-
-  @Override
-  public void windowDeiconified(WindowEvent we) {
-  }
-
-  @Override
-  public void windowIconified(WindowEvent we) {
-  }
-
-  @Override
-  public void windowOpened(WindowEvent we) {
   }
 
   @Override
