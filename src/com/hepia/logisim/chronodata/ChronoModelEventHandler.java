@@ -29,92 +29,51 @@
  */
 package com.hepia.logisim.chronodata;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
-import com.cburch.logisim.circuit.SubcircuitFactory;
-import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.gui.log.Model;
 import com.cburch.logisim.gui.log.Selection;
-import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.gui.log.SelectionItem;
 import com.hepia.logisim.chronogui.ChronoPanel;
 
 public class ChronoModelEventHandler implements Model.Listener {
 
 	private ChronoPanel chronoPanel;
-	private ChronoData chronoData;
-	// contains the signals order, as they are stored in the Model.Listener
-	private String[] signalNamesKeepOrder;
+  private Model model;
 
-	private String lastSysclk = "0";
-	private int sysclkPos = -1;
-
-	public ChronoModelEventHandler(ChronoPanel chronoPanel, Model model,
-			Project prj) throws NoSysclkException {
+	public ChronoModelEventHandler(ChronoPanel chronoPanel, Model model) {
 		this.chronoPanel = chronoPanel;
+    this.model = model;
 
-		this.chronoData = chronoPanel.getChronoData();
-		model.addModelListener(this);
+    ChronoData data = chronoPanel.getChronoData();
+    setModel(model);
+  }
+
+  public void setModel(Model newModel) {
+    ChronoData data = chronoPanel.getChronoData();
+    if (model != null)
+      model.removeModelListener(this);
+    data.clear();
+    model = newModel;
+    if (model == null)
+      return;
 
 		Selection sel = model.getSelection();
 		int columns = sel.size();
-		signalNamesKeepOrder = new String[columns];
 		for (int i = 0; i < columns; i++) {
-			String name = "";
-			Component[] path = sel.get(i).getPath();
-			for (int k = 0; k < path.length; k++) {
-				SubcircuitFactory circFact = (SubcircuitFactory) path[k]
-						.getFactory();
-				name += circFact.getDisplayName() + "/";
-			}
-			name += sel.get(i).toShortString();
-			signalNamesKeepOrder[i] = name;
+      SelectionItem id = sel.get(i);
+			Value value = id.fetchValue(model.getCircuitState());
+      data.addSignal(id, value);
+    }
 
-			String value = sel.get(i).fetchValue(model.getCircuitState())
-					.toString();
-			// is the entry a bus?
-			if (value.length() > 1)
-				chronoData.put(name, new SignalDataBus(name,
-						new ArrayList<String>()));
-			else
-				chronoData.put(name, new SignalData(name,
-						new ArrayList<String>()));
-			// add initial data
-			chronoData.appendValueToSignal(name, value);
-			chronoData.appendValueToSignal(name, value);
-
-			// save sysclk position in signalNamesKeepOrder
-			if (name.equals("sysclk"))
-				sysclkPos = i;
-		}
-		if (sysclkPos == -1)
-			throw new NoSysclkException("No sysclk signal found");
-		// store signal order
-		chronoData.setSignalOrder(new ArrayList<String>(Arrays
-				.asList(signalNamesKeepOrder)));
+		model.addModelListener(this);
 	}
 
 	@Override
 	public void entryAdded(Model.Event event, Value[] values) {
-		if (chronoPanel.isRealTimeMode() && (sysclkPos >= 0)) {
-			try {
-				// update gui only on sysclk change
-				if (!values[sysclkPos].toString().equals(lastSysclk)) {
-					lastSysclk = values[sysclkPos].toString();
-					int pos = 0;
-
-					for (Value v : values) {
-						chronoData.appendValueToSignal(
-								signalNamesKeepOrder[pos++], v.toString());
-					}
-					chronoPanel.getChronoData().updateRealTimeExpandedBus();
-					chronoPanel.repaintAll(false);
-				}
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
-		}
+    ChronoData data = chronoPanel.getChronoData();
+    data.addSignalValues(values);
+    // data.updateRealTimeExpandedBus();
+    chronoPanel.repaintAll(false);
 	}
 
 	@Override
@@ -123,5 +82,6 @@ public class ChronoModelEventHandler implements Model.Listener {
 
 	@Override
 	public void selectionChanged(Model.Event event) {
+    // todo: update ChronoData and panel with new signals, removed signals
 	}
 }

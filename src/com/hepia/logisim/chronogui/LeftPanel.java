@@ -28,6 +28,8 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 package com.hepia.logisim.chronogui;
+import static com.hepia.logisim.chronogui.Strings.S;
+
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -37,9 +39,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
-import java.util.HashMap;
 
 import javax.swing.AbstractAction;
+import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
@@ -47,165 +49,109 @@ import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
-import com.hepia.logisim.chronodata.SignalData;
+import com.hepia.logisim.chronodata.ChronoData;
 
-/**
- * Chronogram's left side Panel Composed of one signalNameHead and multiple
- * SignalName
- */
+// Left panel containing signal names
 public class LeftPanel extends JPanel {
 
-	private static final long serialVersionUID = 1L;
-	private ChronoPanel mChronoPanel;
-	private CommonPanelParam mCommonPanelParam;
-	private DrawAreaEventManager mDrawAreaEventManager;
+	private ChronoPanel chronoPanel;
 	private JTable table;
 	private Object[][] tableData;
-	private HashMap<SignalData, Integer> signalDataPositionInTable; // to have
-																	// direct
-																	// access
-																	// from
-																	// signalData
-																	// to
-																	// position
-																	// in JTable
-	private SignalData[] reverseSignalDataPositionInTable; // and the reverse
-															// access
 
-	public LeftPanel(ChronoPanel chronoPanel,
-			DrawAreaEventManager drawAreaEventManager) {
-		this.mChronoPanel = chronoPanel;
-		this.mCommonPanelParam = chronoPanel.getCommonPanelParam();
-		this.mDrawAreaEventManager = drawAreaEventManager;
-		this.setLayout(new BorderLayout());
-		this.setBackground(Color.white);
+	public LeftPanel(ChronoPanel chronoPanel) {
+		this.chronoPanel = chronoPanel;
 
-		if (mChronoPanel.getChronoData().size() <= 1)
-			return;
+		setLayout(new BorderLayout());
+		setBackground(Color.WHITE);
 
-		String[] names = { "", Strings.get("SignalNameName"),
-				Strings.get("SignalNameValue") };
-		tableData = new Object[mChronoPanel.getChronoData().size() - 1][3];
-		signalDataPositionInTable = new HashMap<SignalData, Integer>();
-		reverseSignalDataPositionInTable = new SignalData[mChronoPanel
-				.getChronoData().size() - 1];
+    ChronoData data = chronoPanel.getChronoData();
+    int n = data.getSignalCount();
 
-		// add the signal name rows
-		int pos = 0;
-		for (String signalName : mChronoPanel.getChronoData().getSignalOrder()) {
-			if (!signalName.equals("sysclk")) {
-				SignalData signalData = mChronoPanel.getChronoData().get(
-						signalName);
-				signalDataPositionInTable.put(signalData, pos);
-				reverseSignalDataPositionInTable[pos] = signalData;
-				Object[] currentData = { signalData.getIcon(), signalName, "-" };
-				tableData[pos++] = currentData;
-			}
+    // icon, name, current_value
+		String[] colNames = { "" , S.get("SignalName"), S.get("SignalValue") };
+
+		tableData = new Object[n][3];
+    for (int i = 0; i < n; i++) {
+      ChronoData.Signal s = data.getSignal(i);
+      tableData[i] = new Object[] { s.getIcon(), s.getName(), "-" };
 		}
-		// creates the JTable
-		DefaultTableModel model = new DefaultTableModel(tableData, names);
-		table = new JTable(model) {
-			private static final long serialVersionUID = 1L;
 
-			@SuppressWarnings({ "unchecked", "rawtypes" })
-			public Class getColumnClass(int column) {
-				return getValueAt(0, column).getClass();
-			}
-
+		table = new JTable(new DefaultTableModel(tableData, colNames)) {
 			@Override
-			public boolean isCellEditable(int rowIndex, int colIndex) {
-				if (colIndex == 1) {
-					return true; // Disallow the editing of any cell
-				}
+			public Class getColumnClass(int column) {
+        return (column == 0) ? ImageIcon.class : String.class;
+			}
+			@Override
+			public boolean isCellEditable(int row, int col) {
 				return false;
 			}
 		};
-		table.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0),
-				"none");
-		table.getActionMap().put("none", new AbstractAction() {
-			private static final long serialVersionUID = 1L;
+    
 
+		table.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0), "tick");
+		table.getActionMap().put("tick", new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
-				;
+				// todo
 			}
 		});
-		table.addKeyListener(chronoPanel);
-		table.setRowHeight(mCommonPanelParam.getSignalHeight());
-		table.getColumnModel().getColumn(0).setMaxWidth(10);
 
-		// on mouse over
+		table.addKeyListener(chronoPanel);
+		table.setRowHeight(ChronoPanel.SIGNAL_HEIGHT);
+		table.getColumnModel().getColumn(0).setMaxWidth(10);
+    table.getColumnModel().getColumn(2).setPreferredWidth(50);
+
 		table.addMouseMotionListener(new MouseMotionAdapter() {
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				int row = table.rowAtPoint(e.getPoint());
-				if (row > -1 && e.getComponent() instanceof JTable) {
+				if (row >= 0 && e.getComponent() instanceof JTable) {
 					table.clearSelection();
 					table.setRowSelectionInterval(row, row);
-					mDrawAreaEventManager
-							.fireMouseEntered(reverseSignalDataPositionInTable[row]);
+          ChronoData.Signal s = chronoPanel.getChronoData().getSignal(row);
+					chronoPanel.mouseEntered(s);
 				}
 			}
 		});
 
-		// popup on right click on a row
 		table.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseReleased(MouseEvent e) {
 				int row = table.getSelectedRow();
-				if (row > -1 && SwingUtilities.isRightMouseButton(e)
+				if (row >= 0 && SwingUtilities.isRightMouseButton(e)
 						&& e.getComponent() instanceof JTable) {
-					PopupMenu pm = new PopupMenu(mDrawAreaEventManager,
-							reverseSignalDataPositionInTable[row]);
-					pm.doPop(e);
+          ChronoData.Signal s = chronoPanel.getChronoData().getSignal(row);
+					PopupMenu m = new PopupMenu(chronoPanel, s);
+					m.doPop(e);
 				}
 			}
 		});
 
-		// table header
 		JTableHeader header = table.getTableHeader();
 		Dimension d = header.getPreferredSize();
-		d.height = mCommonPanelParam.getHeaderHeight();
+		d.height = ChronoPanel.HEADER_HEIGHT;
 		header.setPreferredSize(d);
 
-		this.add(header, BorderLayout.NORTH);
-		this.add(table, BorderLayout.CENTER);
+		add(header, BorderLayout.NORTH);
+		add(table, BorderLayout.CENTER);
 	}
 
-	/**
-	 * Highlight a signal
-	 */
-	public void highlight(SignalData signalToHighlight) {
-		int pos = signalDataPositionInTable.get(signalToHighlight);
-		table.getSelectionModel().clearSelection();
-		table.getSelectionModel().addSelectionInterval(pos, pos);
+	public void highlight(ChronoData.Signal s) {
+		table.setRowSelectionInterval(s.idx, s.idx);
 	}
 
-	/**
-	 * Refresh the display of each signal value in the left bar
-	 */
 	public void refreshSignalsValues() {
-		int tickWidth = mChronoPanel.getRightPanel().getTickWidth();
-		int elementPosition = (mChronoPanel.getRightPanel()
-				.getMousePosXClicked() + tickWidth) / tickWidth;
-		setSignalsValues(elementPosition);
+		int t = chronoPanel.getRightPanel().getCurrentPosition();
+		setSignalsValues(t);
 	}
 
-	/**
-	 * Refresh the display of each signal value
-	 * 
-	 * @param elementPosition
-	 *            the element in chronoData that contains the data to be
-	 *            displayed
-	 */
-	public void setSignalsValues(int elementPosition) {
-		int pos = 0;
-		for (String signalName : mChronoPanel.getChronoData().getSignalOrder()) {
-			if (!signalName.equals("sysclk")) {
-				SignalData signalData = mChronoPanel.getChronoData().get(
-						signalName);
-				signalData.setSelectedValuePos(elementPosition);
-				table.setValueAt(signalData.getSelectedValue(), pos++, 2);
-			}
+	public void setSignalsValues(int t) {
+    ChronoData data = chronoPanel.getChronoData();
+    int n = data.getSignalCount();
+    for (int i = 0; i < n; i++) {
+      ChronoData.Signal s = data.getSignal(i);
+      String v = s.getFormattedValue(t);
+      table.setValueAt(v, i, 2);
 		}
 	}
+
 }

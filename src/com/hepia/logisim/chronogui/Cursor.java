@@ -36,14 +36,10 @@ import java.awt.Graphics2D;
 
 import javax.swing.JPanel;
 
-/**
- * Cursor is a Jpanel in front of all SignalDraw It displays a cursor by a red
- * vertical line
- */
+// An overlay JPanel that just draws a red cursor line.
 public class Cursor extends JPanel {
 
-	private static final long serialVersionUID = 1L;
-	private int cursorPosition = 0;
+	private int pos = 0;
 
 	public Cursor() {
 		this.setOpaque(false);
@@ -51,18 +47,19 @@ public class Cursor extends JPanel {
 	}
 
 	public int getPosition() {
-		return cursorPosition;
+		return pos;
+	}
+
+	public void setPosition(int x) {
+		pos = x;
 	}
 
 	public void paintComponent(Graphics g) {
-		super.paintComponent(g);
+		// super.paintComponent(g);
 		Graphics2D g2 = (Graphics2D) g;
 		g2.setStroke(new BasicStroke(1));
-		g2.setPaint(Color.red);
-		g2.drawLine(cursorPosition, getHeight(), cursorPosition, 0);
+		g2.setPaint(Color.RED);
+		g2.drawLine(pos, getHeight(), pos, 0);
 	}
 
-	public void setPosition(int posX) {
-		cursorPosition = posX;
-	}
 }

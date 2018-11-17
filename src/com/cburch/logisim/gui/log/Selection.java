@@ -38,16 +38,16 @@ public class Selection {
 
   private CircuitState root;
   private Model model;
-  private ArrayList<SelectionItem> components;
+  private ArrayList<SelectionItem> signalsts;
 
   public Selection(CircuitState root, Model model) {
     this.root = root;
     this.model = model;
-    components = new ArrayList<SelectionItem>();
+    signalsts = new ArrayList<SelectionItem>();
   }
 
   public void add(SelectionItem item) {
-    components.add(item);
+    signalsts.add(item);
     model.fireSelectionChanged(new Model.Event());
   }
 
@@ -56,11 +56,11 @@ public class Selection {
   }
 
   public boolean contains(SelectionItem item) {
-    return components.contains(item);
+    return signalsts.contains(item);
   }
 
   public SelectionItem get(int index) {
-    return components.get(index);
+    return signalsts.get(index);
   }
 
   public CircuitState getCircuitState() {
@@ -68,18 +68,18 @@ public class Selection {
   }
 
   public int indexOf(SelectionItem value) {
-    return components.indexOf(value);
+    return signalsts.indexOf(value);
   }
 
   public void add(List<SelectionItem> items, int idx) {
     for (SelectionItem item : items) {
-      int i = components.indexOf(item);
+      int i = signalsts.indexOf(item);
       if (i < 0)
-        components.add(idx++, item); // put new item at idx
+        signalsts.add(idx++, item); // put new item at idx
       else if (i > idx)
-        components.add(idx++, components.remove(i)); // move later item up
+        signalsts.add(idx++, signalsts.remove(i)); // move later item up
       else if (i < idx)
-        components.add(idx-1, components.remove(i)); // move earlier item down
+        signalsts.add(idx-1, signalsts.remove(i)); // move earlier item down
     }
     model.fireSelectionChanged(new Model.Event());
   }
@@ -87,7 +87,7 @@ public class Selection {
   public int remove(List<SelectionItem> items) {
     int count = 0;
     for (SelectionItem item : items) {
-      if (components.remove(item))
+      if (signalsts.remove(item))
         count++;
     }
     if (count > 0)
@@ -98,13 +98,13 @@ public class Selection {
   public void move(int fromIndex, int toIndex) {
     if (fromIndex == toIndex)
       return;
-    SelectionItem o = components.remove(fromIndex);
-    components.add(toIndex, o);
+    SelectionItem o = signalsts.remove(fromIndex);
+    signalsts.add(toIndex, o);
     model.fireSelectionChanged(new Model.Event());
   }
 
   public void remove(int index) {
-    components.remove(index);
+    signalsts.remove(index);
     model.fireSelectionChanged(new Model.Event());
   }
 
@@ -113,6 +113,6 @@ public class Selection {
   }
 
   public int size() {
-    return components.size();
+    return signalsts.size();
   }
 }

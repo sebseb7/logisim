@@ -35,6 +35,7 @@ import java.awt.LayoutManager;
 import javax.swing.JPanel;
 
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.gui.menu.LogisimMenuBar;
 
 public abstract class LogPanel extends JPanel {
   private static final long serialVersionUID = 1L;
@@ -54,6 +55,10 @@ public abstract class LogPanel extends JPanel {
 
   protected LogFrame getLogFrame() {
     return logFrame;
+  }
+
+  protected LogisimMenuBar getLogisimMenuBar() {
+    return logFrame.getLogisimMenuBar();
   }
 
   protected Model getModel() {

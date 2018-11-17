@@ -56,7 +56,6 @@ import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
-import com.hepia.logisim.chronodata.TimelineParam;
 import com.hepia.logisim.chronogui.ChronoPanel;
 
 public class LogFrame extends LFrame {
@@ -171,7 +170,7 @@ public class LogFrame extends LFrame {
   }
 
   public LogFrame(Project project) {
-    super(false, project);
+    super(true, project);
     this.windowManager = new WindowMenuManager();
     project.addProjectListener(myListener);
     project.addLibraryListener(myListener);
@@ -207,11 +206,6 @@ public class LogFrame extends LFrame {
 
   LogPanel[] getPrefPanels() {
     return panels;
-  }
-
-  public TimelineParam getTimelineParam() {
-    return new TimelineParam("Hz", "clk", 10);
-    // return selPanel.getTimelineParam();
   }
 
   private void setSimulator(Simulator value, CircuitState state) {

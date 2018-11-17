@@ -44,7 +44,7 @@ import com.cburch.logisim.gui.menu.MenuListener;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.UnmodifiableList;
 
-class SimulationToolbarModel extends AbstractToolbarModel
+public class SimulationToolbarModel extends AbstractToolbarModel
   implements ChangeListener {
   private Project project;
   private LogisimToolbarItem simRunToggle;

@@ -173,8 +173,7 @@ public class SelectionItem implements AttributeListener, CircuitListener {
   public Value fetchValue(CircuitState root) {
     CircuitState cur = root;
     for (int i = 0; i < path.length; i++) {
-      SubcircuitFactory circFact = (SubcircuitFactory) path[i]
-          .getFactory();
+      SubcircuitFactory circFact = (SubcircuitFactory) path[i].getFactory();
       cur = circFact.getSubstate(cur, path[i]);
     }
     Loggable log = (Loggable) comp.getFeature(Loggable.class);
@@ -213,5 +212,16 @@ public class SelectionItem implements AttributeListener, CircuitListener {
   @Override
   public String toString() {
     return longDescriptor;
+  }
+
+  // todo: chrono model uses this... reconcile with names above
+  public String getChronoDisplayName() {
+    String name = "";
+    for (int i = 0; i < path.length; i++) {
+      SubcircuitFactory circFact = (SubcircuitFactory)path[i].getFactory();
+      name += circFact.getDisplayName() + "/";
+    }
+    name += shortDescriptor;
+    return name;
   }
 }

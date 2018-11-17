@@ -41,7 +41,6 @@ import javax.swing.ScrollPaneConstants;
 
 import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.util.JDialogOk;
-import com.hepia.logisim.chronodata.TimelineParam;
 
 class SelectionPanel extends LogPanel {
 
@@ -121,10 +120,6 @@ class SelectionPanel extends LogPanel {
   @Override
   public String getHelpText() {
     return S.get("selectionHelp");
-  }
-
-  public TimelineParam getTimelineParam() {
-    return null; // fixme
   }
 
   @Override

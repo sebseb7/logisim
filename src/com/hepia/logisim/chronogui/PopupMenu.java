@@ -28,6 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 package com.hepia.logisim.chronogui;
+import static com.hepia.logisim.chronogui.Strings.S;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -39,84 +40,71 @@ import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
 
-import com.hepia.logisim.chronodata.SignalData;
-import com.hepia.logisim.chronodata.SignalDataBus;
+import com.hepia.logisim.chronodata.ChronoData;
 
-class PopupContents extends JPopupMenu implements ActionListener {
-	private static final long serialVersionUID = 1L;
-	private DrawAreaEventManager mDrawAreaEventManager;
-	private SignalDataBus signalDataBus;
-	private JRadioButtonMenuItem expandBus;
-
-	public PopupContents(DrawAreaEventManager drawAreaEventManager,
-			SignalData signalData) {
-		this.mDrawAreaEventManager = drawAreaEventManager;
-
-		// For buses only:
-		if (signalData instanceof SignalDataBus) {
-			JMenu dataFormat;
-			JRadioButtonMenuItem[] formats;
-			signalDataBus = (SignalDataBus) signalData;
-			// format choice
-			dataFormat = new JMenu(Strings.get("BusFormat"));
-			formats = new JRadioButtonMenuItem[5];
-			ButtonGroup group = new ButtonGroup();
-			for (int i = 0; i < SignalDataBus.signalFormat.length; ++i) {
-				formats[i] = new JRadioButtonMenuItem(
-						SignalDataBus.signalFormat[i]);
-				formats[i].setActionCommand(SignalDataBus.signalFormat[i]);
-				formats[i].addActionListener(this);
-				group.add(formats[i]);
-				dataFormat.add(formats[i]);
-			}
-
-			// default selection
-			for (int i = 0; i < SignalDataBus.signalFormat.length; ++i)
-				if (SignalDataBus.signalFormat[i].equals(signalDataBus
-						.getFormat()))
-					formats[i].setSelected(true);
-			add(dataFormat);
-
-			// expand
-			expandBus = new JRadioButtonMenuItem(Strings.get("BusExpand"));
-			expandBus.setSelected(signalDataBus.isExpanded());
-			expandBus.addActionListener(this);
-			add(expandBus);
-		}
-	}
-
-	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == expandBus) {
-			if (signalDataBus.getSignalValues().size() > 0) {
-				mDrawAreaEventManager.fireExpand(signalDataBus,
-						!signalDataBus.isExpanded());
-			}
-		} else {
-			if (signalDataBus != null) {
-				mDrawAreaEventManager.fireSetCodingFormat(signalDataBus,
-						e.getActionCommand());
-			}
-		}
-	}
-}
-
-/**
- * Popup that appears when right click on a Signal (only a bus for now)
- */
 public class PopupMenu extends MouseAdapter {
 
-	private SignalData signalData;
-	private DrawAreaEventManager mDrawAreaEventManager;
+  static class PopupContents extends JPopupMenu implements ActionListener {
+    private static final long serialVersionUID = 1L;
+    private ChronoPanel chronoPanel;
+    private ChronoData.Signal signal;
+    private JRadioButtonMenuItem expandBus;
 
-	public PopupMenu(DrawAreaEventManager drawAreaEventManager,
-			SignalData signalData) {
-		this.signalData = signalData;
-		this.mDrawAreaEventManager = drawAreaEventManager;
+    public PopupContents(ChronoPanel p, ChronoData.Signal s) {
+      chronoPanel = p;
+      signal = s;
+
+      // Only for buses, for now
+      if (signal.getWidth() > 1) {
+        // todo: later
+//        JMenu dataFormat;
+//        JRadioButtonMenuItem[] formats;
+//        // format choice
+//        dataFormat = new JMenu(S.get("BusFormat"));
+//        formats = new JRadioButtonMenuItem[5];
+//        ButtonGroup group = new ButtonGroup();
+//        for (int i = 0; i < SignalDataBus.signalFormat.length; ++i) {
+//          formats[i] = new JRadioButtonMenuItem(
+//              SignalDataBus.signalFormat[i]);
+//          formats[i].setActionCommand(SignalDataBus.signalFormat[i]);
+//          formats[i].addActionListener(this);
+//          group.add(formats[i]);
+//          dataFormat.add(formats[i]);
+//        }
+//
+//        // default selection
+//        for (int i = 0; i < SignalDataBus.signalFormat.length; ++i)
+//          if (SignalDataBus.signalFormat[i].equals(signalDataBus
+//                .getFormat()))
+//            formats[i].setSelected(true);
+//        add(dataFormat);
+//
+//        // expand
+//        expandBus = new JRadioButtonMenuItem(S.get("BusExpand"));
+//        expandBus.setSelected(signalDataBus.isExpanded());
+//        expandBus.addActionListener(this);
+//        add(expandBus);
+      }
+    }
+
+    public void actionPerformed(ActionEvent e) {
+      if (e.getSource() == expandBus)
+        signal.toggleExpanded();
+      // else
+        // chronoPanel.setCodingFormat(signalDataBus, e.getActionCommand());
+    }
+  }
+
+	private ChronoData.Signal signal;
+	private ChronoPanel chronoPanel;
+
+	public PopupMenu(ChronoPanel p, ChronoData.Signal s) {
+    chronoPanel = p;
+		signal = s;
 	}
 
 	public void doPop(MouseEvent e) {
-		PopupContents menu = new PopupContents(mDrawAreaEventManager,
-				signalData);
+		PopupContents menu = new PopupContents(chronoPanel, signal);
 		menu.show(e.getComponent(), e.getX(), e.getY());
 	}
 

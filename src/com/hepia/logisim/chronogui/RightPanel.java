@@ -39,151 +39,95 @@ import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import com.hepia.logisim.chronodata.SignalData;
+import com.hepia.logisim.chronodata.ChronoData;
 
-/**
- * Chronogram's right side Panel Composed of one TimeLine on top and multiple
- * SignalDraw
- */
+// Right panel has timeline on top and multiple SignalDraw components.
 public class RightPanel extends JPanel {
 
-	private static final long serialVersionUID = 1L;
-	private ChronoPanel mChronoPanel;
-	private DrawAreaEventManager mDrawAreaEventManager;
-	private TimelineDraw mTimeLine;
-	private CommonPanelParam mCommonPanelParam;
+	private ChronoPanel chronoPanel;
+	private TimelineDraw timeline;
 
-	private ArrayList<SignalDraw> allSignalDraw = new ArrayList<SignalDraw>();
-	private Box rightBox;
-	private JLayeredPane layeredPane;
-	private Cursor mCursor;
+	private ArrayList<SignalDraw> rows = new ArrayList<>();
+	private Box waveforms;
+	private JLayeredPane overlay;
+	private Cursor cursor;
 
-	private int mousePosXClicked = 0;
-	private static final int minTickWidth = 1;
+	private int curX = 0;
 	private int tickWidth = 20;
 	private int displayOffsetX = 0;
 
-	private int globalHeight;
+	private int height;
 
-	/**
-	 * Standard constructor
-	 */
-	public RightPanel(ChronoPanel chronoPanel,
-			DrawAreaEventManager drawAreaEventManager) {
-		this.mChronoPanel = chronoPanel;
-		this.mDrawAreaEventManager = drawAreaEventManager;
-		this.mCommonPanelParam = chronoPanel.getCommonPanelParam();
-		this.globalHeight = mCommonPanelParam.getSignalHeight()
-				* chronoPanel.getChronoData().size();
-		this.setLayout(new BorderLayout());
-		this.setBackground(Color.white);
-		createPanel();
+	public RightPanel(ChronoPanel chronoPanel) {
+		this.chronoPanel = chronoPanel;
+		configure();
 	}
 
-	/**
-	 * Clone constructor
-	 */
 	public RightPanel(RightPanel oldPanel) {
-		this.mChronoPanel = oldPanel.mChronoPanel;
-		this.mDrawAreaEventManager = oldPanel.mDrawAreaEventManager;
-		this.mCommonPanelParam = mChronoPanel.getCommonPanelParam();
-		this.globalHeight = mCommonPanelParam.getSignalHeight()
-				* mChronoPanel.getChronoData().size();
-		this.tickWidth = oldPanel.tickWidth;
-		this.mousePosXClicked = oldPanel.mousePosXClicked;
-		this.displayOffsetX = oldPanel.displayOffsetX;
-		this.setLayout(new BorderLayout());
-		this.setBackground(Color.white);
-		createPanel();
+		chronoPanel = oldPanel.chronoPanel;
+		tickWidth = oldPanel.tickWidth;
+		curX = oldPanel.curX;
+		displayOffsetX = oldPanel.displayOffsetX;
+		configure();
 	}
 
-	public void adjustmentValueChanged(int value) {
-		float posPercent = (float) value / (float) getSignalWidth();
-		int i = Math.round(/* mChronoPanel.getNbrOfTick()*/ 2 * posPercent);
-		i = i > 5 ? i - 5 : 0;
-		displayOffsetX = i * tickWidth;
-		for (SignalDraw sDraw : allSignalDraw) {
-			sDraw.setBufferObsolete();
-			sDraw.repaint();
-		}
-	}
+	private void configure() {
+    ChronoData data = chronoPanel.getChronoData();
+    int n = data.getSignalCount();
+		height = n * ChronoPanel.SIGNAL_HEIGHT;
 
-	/**
-	 * Creates and add all component: -timeline -all signalDraw -cursor
-	 */
-	private void createPanel() {
-		rightBox = Box.createVerticalBox();
-		rightBox.setOpaque(true);
+		setLayout(new BorderLayout());
+		setBackground(Color.WHITE);
 
-		// Add the time line
-		mTimeLine = new TimelineDraw(mChronoPanel,
-				mCommonPanelParam.getHeaderHeight(), tickWidth);
+		waveforms = Box.createVerticalBox();
+		waveforms.setOpaque(true);
 
-		// creates the SignalDraw
-		for (String signalName : mChronoPanel.getChronoData().getSignalOrder()) {
-			if (!signalName.equals("sysclk"))
-				allSignalDraw.add(new SignalDraw(this, mDrawAreaEventManager,
-						mChronoPanel.getChronoData().get(signalName),
-						mCommonPanelParam.getSignalHeight()));
+		timeline = new TimelineDraw(tickWidth);
+
+    for (int i = 0; i < n; i++) {
+      ChronoData.Signal s = data.getSignal(i);
+      SignalDraw w = new SignalDraw(chronoPanel, this, s);
+      rows.add(w);
+			waveforms.add(w);
 		}
 
-		// add the signals to the box
-		for (SignalDraw sDraw : allSignalDraw) {
-			rightBox.add(sDraw);
-		}
+		cursor = new Cursor();
 
-		// add the cursor
-		mCursor = new Cursor();
+		overlay = new JLayeredPane();
+		computeSize();
 
-		// creates a JLayeredPane, to put the Cursor in front of the SignalDraw
-		// and the timeline
-		layeredPane = new JLayeredPane();
+		overlay.add(cursor, new Integer(1));
+		overlay.add(timeline, new Integer(0));
+		overlay.add(waveforms, new Integer(0));
 
-		defineSizes();
-
-		layeredPane.add(mCursor, new Integer(1));
-		layeredPane.add(mTimeLine, new Integer(0));
-		layeredPane.add(rightBox, new Integer(0));
-
-		this.add(layeredPane, BorderLayout.WEST);
+		add(overlay, BorderLayout.WEST);
 	}
 
-	private void defineSizes() {
-		int totalWidth = tickWidth * 2; // mChronoPanel.getNbrOfTick();
-		layeredPane.setPreferredSize(new Dimension(totalWidth, globalHeight));
-		rightBox.setBounds(0, mCommonPanelParam.getHeaderHeight(), totalWidth,
-				globalHeight);
-		mTimeLine.setBounds(0, 0, totalWidth,
-				mCommonPanelParam.getHeaderHeight());
-		mCursor.setBounds(0, 0, totalWidth, globalHeight);
+	private void computeSize() {
+		int totalWidth = tickWidth * 2;
+		overlay.setPreferredSize(new Dimension(totalWidth, height));
+		waveforms.setBounds(0, ChronoPanel.HEADER_HEIGHT, totalWidth, height);
+		timeline.setBounds(0, 0, totalWidth, ChronoPanel.HEADER_HEIGHT);
+		cursor.setBounds(0, 0, totalWidth, height);
 	}
 
-	/**
-	 * Set the cursor position
-	 */
-	public void drawVerticalMouseClicked() {
-		drawVerticalMouseClicked(mousePosXClicked);
+	public void setSignalCursor(int posX) {
+		curX = posX;
+		cursor.setPosition(posX);
+		cursor.repaint();
 	}
 
-	/**
-	 * Set the cursor position
-	 */
-	public void drawVerticalMouseClicked(int posX) {
-		mCursor.setPosition(posX);
-		mCursor.repaint();
-		mousePosXClicked = posX;
-	}
+  public int getSignalCursor() {
+    return curX;
+  }
 
 	public int getDisplayOffsetX() {
 		return displayOffsetX;
 	}
 
-	public int getMousePosXClicked() {
-		return mousePosXClicked;
-	}
-
 	public int getSignalWidth() {
-		return /* mChronoPanel.getNbrOfTick()*/ 2 * tickWidth;
+    ChronoData data = chronoPanel.getChronoData();
+		return 2 * tickWidth * data.getValueCount();
 	}
 
 	public int getTickWidth() {
@@ -191,79 +135,80 @@ public class RightPanel extends JPanel {
 	}
 
 	public int getVisibleWidth() {
-		return mChronoPanel.getVisibleSignalsWidth();
+		return chronoPanel.getVisibleSignalsWidth();
 	}
 
-    public int getTotalWidth() {
-        return (/*mChronoPanel.getNbrOfTick()*/ 2  * tickWidth);
+  public int getTotalWidth() {
+    return 2 * tickWidth;
+  }
+
+  public int getTotalHeight() {
+    return height;
+  }
+
+  public void highlight(ChronoData.Signal s) {
+    for (SignalDraw w : rows)
+      w.highlight(w.getSignal() == s);
+  }
+
+  public void repaintAll() {
+    cursor.repaint();
+    int width = getTickWidth();
+    for (SignalDraw w : rows) {
+      w.setTickWidth(width);
+      w.repaint();
     }
+    computeSize(); // todo: why last?
+  }
 
-    public int getTotalHeight() {
-        return globalHeight;
-    }
-	/**
-	 * Highlight a signal in bold
-	 */
-	public void highlight(SignalData signalToHighlight) {
-		for (SignalDraw sDraw : allSignalDraw) {
-			sDraw.highlight(sDraw.getSignalData() == signalToHighlight);
-		}
-	}
+  public int getCurrentPosition() {
+    return (curX + tickWidth) / tickWidth; // todo: -1?
+  }
 
-    public ArrayList<SignalDraw> getAllSdraws() {
-        return allSignalDraw;
-    }
+  // todo: later
+  public void zoom(int sens, int posX) {
+//     int nbrOfTick = curX / tickWidth;
+// 
+//     tickWidth += sens;
+//     if (tickWidth <= 1)
+//       tickWidth = 1;
+// 
+//     // make the curX follow the zoom
+//     int newPosX = nbrOfTick * tickWidth;
+//     curX = newPosX;
+//     // set the cusor position
+//     cursor.setPosition(newPosX);
+// 
+//     // Scrollbar follow the zoom
+//     int scrollBarCursorPos = cursor.getPosition()
+//         - (chronoPanel.getVisibleSignalsWidth() / 2);
+// 
+//     // zoom on every signals
+//     for (SignalDraw sDraw : rows) {
+//       sDraw.setTickWidth(tickWidth);
+//     }
+// 
+//     // zoom on the timeline
+//     timeline.setTickWidth(tickWidth, 2 /* chronoPanel.getNbrOfTick() */);
+// 
+//     computeSize();
+// 
+//     // force redraw everything
+//     SwingUtilities.updateComponentTreeUI(chronoPanel);
+// 
+//     // scrollbar position
+//     chronoPanel.setScrollbarPosition(scrollBarCursorPos);
+  }
 
-	/**
-	 * Repaint the cursor and all signalDraw
-	 */
-	public void repaintAll() {
-		mCursor.repaint();
-		int width;
-		for (SignalDraw sDraw : allSignalDraw) {
-			sDraw.setBufferObsolete();
-			sDraw.repaint();
-			if (mChronoPanel.isRealTimeMode()) {
-				width = getSignalWidth();
-				sDraw.setSignalDrawSize(width,
-						mCommonPanelParam.getSignalHeight());
-				mTimeLine.setTimeLineSize(width);
-				defineSizes();
-			}
-		}
-	}
-
-	public void zoom(int sens, int posX) {
-		int nbrOfTick = mousePosXClicked / tickWidth;
-
-		tickWidth += sens;
-		if (tickWidth <= minTickWidth)
-			tickWidth = minTickWidth;
-
-		// make the mousePosXClicked follow the zoom
-		int newPosX = nbrOfTick * tickWidth;
-		mousePosXClicked = newPosX;
-		// set the cusor position
-		mCursor.setPosition(newPosX);
-
-		// Scrollbar follow the zoom
-		int scrollBarCursorPos = mCursor.getPosition()
-				- (mChronoPanel.getVisibleSignalsWidth() / 2);
-
-		// zoom on every signals
-		for (SignalDraw sDraw : allSignalDraw) {
-			sDraw.setTickWidth(tickWidth);
-		}
-
-		// zoom on the timeline
-		mTimeLine.setTickWidth(tickWidth, 2 /* mChronoPanel.getNbrOfTick() */);
-
-		defineSizes();
-
-		// force redraw everything
-		SwingUtilities.updateComponentTreeUI(mChronoPanel);
-
-		// scrollbar position
-		mChronoPanel.setScrollbarPosition(scrollBarCursorPos);
-	}
+    // todo: later
+  public void adjustmentValueChanged(int value) {
+//    float posPercent = (float) value / (float) getSignalWidth();
+//    int i = Math.round(/* chronoPanel.getNbrOfTick()*/ 2 * posPercent);
+//    i = i > 5 ? i - 5 : 0;
+//    displayOffsetX = i * tickWidth;
+//    for (SignalDraw sDraw : rows) {
+//      sDraw.flush();
+//      sDraw.repaint();
+//    }
+  }
 }

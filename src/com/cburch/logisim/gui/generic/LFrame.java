@@ -41,10 +41,10 @@ import java.util.List;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
-import com.cburch.logisim.util.WindowClosable;
 import com.cburch.logisim.Main;
-import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.util.WindowClosable;
 
 public class LFrame extends JFrame implements WindowClosable {
   public static void attachIcon(Window frame) {
@@ -91,7 +91,6 @@ public class LFrame extends JFrame implements WindowClosable {
   protected final LogisimMenuBar menubar;
   protected final Project project;
 
-
   public LFrame(boolean toplevel, Project project) {
     this.project = project;
     attachIcon(this);
@@ -111,5 +110,9 @@ public class LFrame extends JFrame implements WindowClosable {
 
   public Project getProject() {
     return project;
+  }
+
+  public LogisimMenuBar getLogisimMenuBar() {
+    return menubar;
   }
 }

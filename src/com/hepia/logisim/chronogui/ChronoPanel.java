@@ -28,6 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 package com.hepia.logisim.chronogui;
+import static com.hepia.logisim.chronogui.Strings.S;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -38,7 +39,7 @@ import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.util.prefs.Preferences;
+import java.io.File;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -46,343 +47,220 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.JSplitPane;
-import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 
+import com.cburch.draw.toolbar.Toolbar;
 import com.cburch.logisim.circuit.Simulator;
 import com.cburch.logisim.gui.log.LogFrame;
-import com.cburch.logisim.gui.log.Model;
 import com.cburch.logisim.gui.log.LogPanel;
-import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.util.Icons;
+import com.cburch.logisim.gui.log.Model;
+import com.cburch.logisim.gui.main.SimulationToolbarModel;
+import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.gui.menu.MenuListener;
+import com.cburch.logisim.gui.menu.PrintHandler;
 import com.hepia.logisim.chronodata.ChronoData;
-import com.hepia.logisim.chronodata.ChronoDataWriter;
 import com.hepia.logisim.chronodata.ChronoModelEventHandler;
-import com.hepia.logisim.chronodata.NoSysclkException;
-import com.hepia.logisim.chronodata.SignalDataBus;
-import com.hepia.logisim.chronodata.TimelineParam;
-import java.io.File;
 
 public class ChronoPanel extends LogPanel implements KeyListener {
 
-  JFileChooser fc;
-
-  /**
-   * Listener to the scrollbars and splitPane divider
-   */
   private class MyListener implements ActionListener, AdjustmentListener {
 
-    private ChronoPanel chronoFrame;
-
-    public MyListener(ChronoPanel cf) {
-      chronoFrame = cf;
-    }
-
-    /**
-     * Load or export button event handler
-     */
     @Override
     public void actionPerformed(ActionEvent e) {
-      // load a chronogram from a file
-      if ("load".equals(e.getActionCommand())) {
-        final JFileChooser fc = new JFileChooser();
-        int returnVal = fc.showOpenDialog(chronoFrame);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-          chronoFrame
-              .loadFile(fc.getSelectedFile().getAbsolutePath());
-        }
-
-        // export a chronogram to a file
-      } else if ("export".equals(e.getActionCommand())) {
-        final JFileChooser fc = new JFileChooser();
-        int returnVal = fc.showSaveDialog(chronoFrame);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-          chronoFrame.exportFile(fc.getSelectedFile().getAbsolutePath());
-        }
-
-      }
-      else if ("exportImg".equals(e.getActionCommand())) {
-        fc = new JFileChooser();
-        int returnVal = fc.showSaveDialog(ChronoPanel.this);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-          File file = fc.getSelectedFile();
-
-          //add .png to the filename if the user forgot
-          if (!fc.getSelectedFile().getAbsolutePath().endsWith(".png")) {
-            file = new File(fc.getSelectedFile() + ".png");
-          }
-          exportImage(file);
-        }
-
-      } else if ("play".equals(e.getActionCommand())) {
-        if (simulator.isRunning()) {
-          ((JButton) e.getSource()).setIcon(Icons
-          .getIcon("simplay.png"));
-        } else {
-          ((JButton) e.getSource()).setIcon(Icons
-          .getIcon("simstop.png"));
-        }
-        simulator.setIsRunning(!simulator.isRunning());
-      } else if ("step".equals(e.getActionCommand())) {
-        simulator.step();
-      } else if ("tplay".equals(e.getActionCommand())) {
-        if (simulator.isTicking()) {
-          ((JButton) e.getSource()).setIcon(Icons
-          .getIcon("simtplay.png"));
-        } else {
-          ((JButton) e.getSource()).setIcon(Icons
-          .getIcon("simtstop.png"));
-        }
-        simulator.setIsTicking(!simulator.isTicking());
-      } else if ("thalf".equals(e.getActionCommand())) {
-        simulator.tick(1);
-      } else if ("tfull".equals(e.getActionCommand())) {
-        simulator.tick(2);
-      }
+//       // load a chronogram from a file
+//       if ("load".equals(e.getActionCommand())) {
+//         final JFileChooser fc = new JFileChooser();
+//         int returnVal = fc.showOpenDialog(ChronoPanel.this);
+//         if (returnVal == JFileChooser.APPROVE_OPTION) {
+//           loadFile(fc.getSelectedFile().getAbsolutePath());
+//         }
+// 
+//         // export a chronogram to a file
+//       } else if ("export".equals(e.getActionCommand())) {
+//         final JFileChooser fc = new JFileChooser();
+//         int returnVal = fc.showSaveDialog(ChronoPanel.this);
+//         if (returnVal == JFileChooser.APPROVE_OPTION) {
+//           exportFile(fc.getSelectedFile().getAbsolutePath());
+//         }
+// 
+//       }
+//       else if ("exportImg".equals(e.getActionCommand())) {
+//         final JFileChooser fc = new JFileChooser();
+//         int returnVal = fc.showSaveDialog(ChronoPanel.this);
+//         if (returnVal == JFileChooser.APPROVE_OPTION) {
+//           File file = fc.getSelectedFile();
+// 
+//           //add .png to the filename if the user forgot
+//           if (!fc.getSelectedFile().getAbsolutePath().endsWith(".png")) {
+//             file = new File(fc.getSelectedFile() + ".png");
+//           }
+//           exportImage(file);
+//         }
+// 
+//       } else if ("play".equals(e.getActionCommand())) {
+//         if (simulator.isRunning()) {
+//           ((JButton) e.getSource()).setIcon(Icons
+//           .getIcon("simplay.png"));
+//         } else {
+//           ((JButton) e.getSource()).setIcon(Icons
+//           .getIcon("simstop.png"));
+//         }
+//         simulator.setIsRunning(!simulator.isRunning());
+//       } else if ("step".equals(e.getActionCommand())) {
+//         simulator.step();
+//       } else if ("tplay".equals(e.getActionCommand())) {
+//         if (simulator.isTicking()) {
+//           ((JButton) e.getSource()).setIcon(Icons
+//           .getIcon("simtplay.png"));
+//         } else {
+//           ((JButton) e.getSource()).setIcon(Icons
+//           .getIcon("simtstop.png"));
+//         }
+//         simulator.setIsTicking(!simulator.isTicking());
+//       } else if ("thalf".equals(e.getActionCommand())) {
+//         simulator.tick(1);
+//       } else if ("tfull".equals(e.getActionCommand())) {
+//         simulator.tick(2);
+//       }
     }
 
 
-    /**
-     * rightScroll horizontal movement
-     */
     @Override
     public void adjustmentValueChanged(AdjustmentEvent e) {
-      if (rightPanel != null) {
+      if (rightPanel != null)
         rightPanel.adjustmentValueChanged(e.getValue());
-      }
     }
   }
 
-  private static final long serialVersionUID = 1L;
+  public static final int HEADER_HEIGHT = 20;
+  public static final int SIGNAL_HEIGHT = 38;
+  public static final int INITIAL_SPLIT = 353;
+
+  // data
   private Simulator simulator;
-  private ChronoData chronogramData;
-  private Preferences prefs;
-  // top bar
-  private JPanel topBar;
-  private JButton chooseFileButton;
-  private JButton exportDataInFile;
-  private JButton exportDataToImage;
-  private JLabel statusLabel;
-  // split pane
+  private ChronoData chronoData = new ChronoData();
+
+  // button bar
+  private JPanel buttonBar = new JPanel();
+  private JButton chooseFileButton = new JButton();
+  private JButton exportDataInFile = new JButton();
+  private JButton exportDataToImage = new JButton();
+
+  // panels
   private RightPanel rightPanel;
   private LeftPanel leftPanel;
-  private CommonPanelParam commonPanelParam;
-  private JScrollPane leftScroll;
-  private JScrollPane rightScroll;
-  private JSplitPane mainSplitPane;
-  private TimelineParam timelineParam;
-  // event managers
-  private MyListener myListener = new MyListener(this);
-  private DrawAreaEventManager mDrawAreaEventManager;
-  private DrawAreaManager mDrawAreaManager;
-  // graphical
-  private int dividerLocation = 353;
-  // mode
-  private boolean realTimeMode; // todo: delete, or fix
-  private ChronoModelEventHandler chronoModelEventHandler;
+  private JScrollPane leftScroll, rightScroll;
+  private JSplitPane splitPane;
 
-  /**
-   * Real time mode ChronoPanel constructor
-   */
+  // listeners
+  private ChronoModelEventHandler modelListener;
+  private MyListener myListener = new MyListener();
+
   public ChronoPanel(LogFrame logFrame) {
     super(logFrame);
-    realTimeMode = true;
 
-    timelineParam = logFrame.getTimelineParam();
-    commonPanelParam = new CommonPanelParam(20, 38);
-    Project project = getProject();
-    simulator = project.getSimulator();
-    chronogramData = new ChronoData();
-    try {
-      chronoModelEventHandler = new ChronoModelEventHandler(this,
-          logFrame.getModel(), project);
-      createMainStructure();
-      fillMainSplitPane();
+    simulator = getProject().getSimulator();
+    modelListener = new ChronoModelEventHandler(this, logFrame.getModel());
 
-      if (chronogramData.size() == 0) {
-        statusLabel.setText(Strings.get("SimStatusNoSignal"));
-      } else {
-        statusLabel.setText(Strings.get("SimStatusCurrentScheme"));
-      }
+    configure();
+    resplit();
 
-    } catch (NoSysclkException ex) {
-      createMainStructure();
-      statusLabel.setText(Strings.get("SimStatusNoSysclk"));
-    }
+    if (chronoData.getSignalCount() == 0)
+      System.out.println("no signals"); // todo: show msg or button in left pane?
+
+    // todo: allow drag and delete in left pane
   }
 
-  /**
-   * Creates the main panels for the chronogram
-   */
-  private void createMainStructure() {
-    mDrawAreaEventManager = new DrawAreaEventManager();
-    mDrawAreaManager = new DrawAreaManager(this);
-    mDrawAreaEventManager.addDrawAreaListener(mDrawAreaManager);
-
+  private void configure() {
     setLayout(new BorderLayout());
     setFocusable(true);
-    requestFocus();
+    requestFocusInWindow();
     addKeyListener(this);
 
-    // top bar
+    // button bar
     Dimension buttonSize = new Dimension(150, 25);
-    topBar = new JPanel();
-    topBar.setLayout(new FlowLayout(FlowLayout.LEFT));
+    buttonBar.setLayout(new FlowLayout(FlowLayout.LEFT));
 
-    // external file
-    chooseFileButton = new JButton(Strings.get("ButtonLoad"));
     chooseFileButton.setActionCommand("load");
     chooseFileButton.addActionListener(myListener);
     chooseFileButton.setPreferredSize(buttonSize);
     chooseFileButton.setFocusable(false);
 
-    // export
-    exportDataInFile = new JButton(Strings.get("ButtonExport"));
     exportDataInFile.setActionCommand("export");
     exportDataInFile.addActionListener(myListener);
     exportDataInFile.setPreferredSize(buttonSize);
     exportDataInFile.setFocusable(false);
 
-    exportDataToImage = new JButton(Strings.get("Export as image"));
     exportDataToImage.setActionCommand("exportImg");
     exportDataToImage.addActionListener(myListener);
     exportDataToImage.setPreferredSize(buttonSize);
     exportDataToImage.setFocusable(false);
 
-    // Toolbar
-    JToolBar bar = new JToolBar();
-    bar.setFocusable(false);
-    JButton playButton;
-    if (simulator != null && simulator.isRunning()) {
-      playButton = new JButton(Icons.getIcon("simstop.png"));
-    } else {
-      playButton = new JButton(Icons.getIcon("simplay.png"));
-    }
-    playButton.setActionCommand("play");
-    playButton.addActionListener(myListener);
-    playButton.setToolTipText("Start/Stop simulation");
-    playButton.setFocusable(false);
-    bar.add(playButton);
-    JButton stepButton = new JButton(Icons.getIcon("simstep.png"));
-    stepButton.setActionCommand("step");
-    stepButton.addActionListener(myListener);
-    stepButton.setToolTipText("Simulate one step");
-    stepButton.setFocusable(false);
-    bar.add(stepButton);
-    JButton tplayButton;
-    if (simulator != null && simulator.isTicking()) {
-      tplayButton = new JButton(Icons.getIcon("simtstop.png"));
-    } else {
-      tplayButton = new JButton(Icons.getIcon("simtplay.png"));
-    }
-    tplayButton.setActionCommand("tplay");
-    tplayButton.addActionListener(myListener);
-    tplayButton.setToolTipText("Start/Stop 'sysclk' tick");
-    tplayButton.setFocusable(false);
-    bar.add(tplayButton);
-    JButton thalfButton = new JButton(Icons.getIcon("tickhalf.png"));
-    thalfButton.setActionCommand("thalf");
-    thalfButton.addActionListener(myListener);
-    thalfButton.setToolTipText("Tick half clock cycle");
-    thalfButton.setFocusable(false);
-    bar.add(thalfButton);
-    JButton tfullButton = new JButton(Icons.getIcon("tickfull.gif"));
-    tfullButton.setActionCommand("tfull");
-    tfullButton.addActionListener(myListener);
-    tfullButton.setToolTipText("Tick full clock cycle");
-    tfullButton.setFocusable(false);
-    bar.add(tfullButton);
+    // menu and simulation toolbar
+    MenuListener menu = new ChronoMenuListener(getLogisimMenuBar());
+    SimulationToolbarModel toolbarModel =
+        new SimulationToolbarModel(getProject(), menu);
+    Toolbar toolbar = new Toolbar(toolbarModel);
+    add(toolbar, BorderLayout.NORTH);
 
-    add(BorderLayout.NORTH, bar);
+    // statusLabel = new JLabel();
+    buttonBar.add(chooseFileButton);
+    buttonBar.add(exportDataInFile);
+    buttonBar.add(exportDataToImage);
+    add(BorderLayout.SOUTH, buttonBar);
 
-    statusLabel = new JLabel();
-    topBar.add(chooseFileButton);
-    topBar.add(exportDataInFile);
-    topBar.add(exportDataToImage);
-    topBar.add(new JLabel(Strings.get("SimStatusName")));
-    topBar.add(statusLabel);
-    add(BorderLayout.SOUTH, topBar);
-
-    // split pane
-    mainSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-    add(BorderLayout.CENTER, mainSplitPane);
-
+    // panels
+    splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+    splitPane.setDividerSize(5);
+    add(BorderLayout.CENTER, splitPane);
   }
 
-  /**
-   * Popup an error message
-   *
-   * @param err
-   *            Error message
-   */
-  public void errorMessage(String err) {
-    JOptionPane.showMessageDialog(null, err);
-  }
+//  public void exportFile(String file) {
+//    ChronoDataWriter.export(file, timelineParam, chronoData);
+//  }
+//  public void exportImage(File file) {
+//    ImageExporter ie = new ImageExporter(this, chronoData, HEADER_HEIGHT);
+//    ie.createImage(file);
+//  }
 
-  /**
-   * Export the current chronogram to file
-   */
-  public void exportFile(String file) {
-    ChronoDataWriter.export(file, timelineParam, chronogramData);
-  }
-  public void exportImage(File file) {
-    ImageExporter ie = new ImageExporter(this, chronogramData, this.getCommonPanelParam().getHeaderHeight());
-    ie.createImage(file);
-  }
+  private void resplit() {
+    // todo: why replace panels here?
+    leftPanel = new LeftPanel(this);
+    leftScroll = new JScrollPane(leftPanel,
+        ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
+        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 
-  /**
-   * Fill the splitPane with the two panels (SignalName and SignalDraw)
-   */
-  private void fillMainSplitPane() {
-    mainSplitPane.setDividerSize(5);
-
-    // ===Left Side===
-    leftPanel = new LeftPanel(this, mDrawAreaEventManager);
-    leftScroll = new JScrollPane(leftPanel);
-
-    // ===Right Side===
-    // keep scroolbar position
-    int scrollBarCursorPos = rightScroll == null ? 0 : rightScroll
-        .getHorizontalScrollBar().getValue();
-    if (rightPanel == null) {
-      rightPanel = new RightPanel(this, mDrawAreaEventManager);
-    } else {
+    int p = rightScroll == null ? 0 : rightScroll.getHorizontalScrollBar().getValue();
+    if (rightPanel == null)
+      rightPanel = new RightPanel(this);
+    else
       rightPanel = new RightPanel(rightPanel);
-    }
 
-    rightScroll = new JScrollPane(rightPanel);
+    rightScroll = new JScrollPane(rightPanel,
+        ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
+        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
     rightScroll.getHorizontalScrollBar().addAdjustmentListener(myListener);
 
     // Synchronize the two scrollbars
     leftScroll.getVerticalScrollBar().setModel(
         rightScroll.getVerticalScrollBar().getModel());
 
-    mainSplitPane.setLeftComponent(leftScroll);
-    mainSplitPane.setRightComponent(rightScroll);
+    splitPane.setLeftComponent(leftScroll);
+    splitPane.setRightComponent(rightScroll);
 
-    // right scrollbar position
-    rightScroll.getHorizontalScrollBar().setValue(scrollBarCursorPos);
-    mDrawAreaManager.drawVerticalMouseClicked();
-    rightScroll.getHorizontalScrollBar().setValue(scrollBarCursorPos);
+		setSignalCursor(rightPanel.getSignalCursor());
 
-    // keep leftpanel signal value up to date
-    mDrawAreaManager.refreshSignalsValues();
+    // put right scrollbar into same position
+    rightScroll.getHorizontalScrollBar().setValue(p);
+    rightScroll.getHorizontalScrollBar().setValue(p);
 
-    mainSplitPane.setDividerLocation(dividerLocation);
+    splitPane.setDividerLocation(INITIAL_SPLIT);
   }
 
-  // accessors
   public ChronoData getChronoData() {
-    return chronogramData;
-  }
-
-  public CommonPanelParam getCommonPanelParam() {
-    return commonPanelParam;
-  }
-
-  public int getDividerLocation() {
-    return dividerLocation;
+    return chronoData;
   }
 
   public LeftPanel getLeftPanel() {
@@ -393,126 +271,176 @@ public class ChronoPanel extends LogPanel implements KeyListener {
     return rightPanel;
   }
 
-  public TimelineParam getTimelineParam() {
-    return timelineParam;
-  }
-
   public int getVisibleSignalsWidth() {
-    return mainSplitPane.getRightComponent().getWidth();
-  }
-
-  public boolean isRealTimeMode() {
-    return realTimeMode;
+    return splitPane.getRightComponent().getWidth();
   }
 
   @Override
   public void keyPressed(KeyEvent ke) {
+    // todo: tick, half tick, etc.
     int keyCode = ke.getKeyCode();
     if (keyCode == KeyEvent.VK_F2) {
+      System.out.println("F2 tick");
       simulator.tick(2);
     }
   }
 
   @Override
-  public void keyReleased(KeyEvent ke) {
-    // throw new UnsupportedOperationException("Not supported yet.");
-  }
+  public void keyReleased(KeyEvent ke) { }
 
   @Override
-  public void keyTyped(KeyEvent ke) {
-    // throw new UnsupportedOperationException("Not supported yet.");
-  }
+  public void keyTyped(KeyEvent ke) { }
 
-  /**
-   * Load the chronogram from the log file
-   */
-  public void loadFile(String logFile) {
-    try {
-      ChronoData tmp = new ChronoData(logFile, this);
-      if (tmp != null) {
-        realTimeMode = false;
-        chronogramData = tmp;
-        fillMainSplitPane();
-        statusLabel.setText(Strings.get("InputFileLoaded") + logFile);
-      }
-    } catch (NoSysclkException ex) {
-      errorMessage(Strings.get("InputFileNoSysclk"));
-    } catch (Exception ex) {
-      errorMessage(ex.toString());
-    }
-  }
+//   /**
+//    * Load the chronogram from the log file
+//    */
+//   public void loadFile(String logFile) {
+//     try {
+//       ChronoData tmp = new ChronoData(logFile, this);
+//       if (tmp != null) {
+//         realTimeMode = false;
+//         chronoData = tmp;
+//         resplit();
+//         // statusLabel.setText(S.get("InputFileLoaded") + logFile);
+//         System.out.println("imported file");
+//       }
+//     } catch (NoSysclkException ex) {
+//       errorMessage(S.get("InputFileNoSysclk"));
+//     } catch (Exception ex) {
+//       errorMessage(ex.toString());
+//     }
+//   }
 
-  /**
-   * Repaint all signals
-   *
-   * @param force
-   *            If true, calls SwingUtilities.updateComponentTreeUI(this);
-   */
   public void repaintAll(boolean force) {
     rightPanel.repaintAll();
 
-    if (this.isRealTimeMode()) {
-      Runnable refreshScroll = new Runnable() {
-        @Override
-        public void run() {
-          // keeps the scrolling bar at the top right, to follow the
-          // last added data
-          rightScroll.getHorizontalScrollBar().setValue(
-              rightPanel.getSignalWidth());
-          SwingUtilities.updateComponentTreeUI(ChronoPanel.this);
-        }
-      };
-      SwingUtilities.invokeLater(refreshScroll);
-    }
-    if (force) {
+    SwingUtilities.invokeLater(new Runnable() {
+      @Override
+      public void run() {
+        // scroll right to follow most recent data
+        scrollTo(rightPanel.getSignalWidth());
+        SwingUtilities.updateComponentTreeUI(ChronoPanel.this);
+      }
+    });
+    if (force)
       SwingUtilities.updateComponentTreeUI(this);
-    }
   }
 
-  public void setScrollbarPosition(int pos) {
+  public void scrollTo(int pos) {
     rightScroll.getHorizontalScrollBar().setValue(pos);
   }
 
-  public void setTimelineParam(TimelineParam timelineParam) {
-    this.timelineParam = timelineParam;
-  }
-
-  /**
-   * Switch bus between signle bus view or detailed signals view
-   *
-   * @param choosenBus
-   *            Bus to expand or contract
-   * @param expand
-   *            true: expand, false:contract
-   */
-  public void toggleBusExpand(SignalDataBus choosenBus, boolean expand) {
-    if (expand) {
-      chronogramData.expandBus(choosenBus);
-    } else {
-      chronogramData.contractBus(choosenBus);
-    }
-    fillMainSplitPane();
-  }
+  // todo
+//   public void toggleBusExpand(SignalDataBus choosenBus, boolean expand) {
+//     if (expand) {
+//       chronoData.expandBus(choosenBus);
+//     } else {
+//       chronoData.contractBus(choosenBus);
+//     }
+//     resplit();
+//   }
 
   @Override
   public String getTitle() {
-    return Strings.get("ChronoTitle");
+    return S.get("ChronoTitle");
   }
 
   @Override
   public String getHelpText() {
-    return Strings.get("ChronoTitle");
+    return S.get("ChronoTitle");
   }
 
   @Override
   public void localeChanged() {
+    chooseFileButton.setText(S.get("ButtonLoad"));
+    exportDataInFile.setText(S.get("ButtonExport"));
+    exportDataToImage.setText(S.get("Export as image"));
   }
 
   @Override
   public void modelChanged(Model oldModel, Model newModel) {
-    if (oldModel != null)
-      oldModel.removeModelListener(chronoModelEventHandler);
-    if (newModel != null)
-      newModel.addModelListener(chronoModelEventHandler);
+    modelListener.setModel(newModel);
   }
+
+  class ChronoMenuListener extends MenuListener {
+
+    protected class FileListener implements ActionListener {
+      public void actionPerformed(ActionEvent event) {
+        if (printer != null)
+          printer.actionPerformed(event);
+      }
+      boolean registered;
+      public void register(boolean en) {
+        if (registered == en)
+          return;
+        registered = en;
+        if (en) {
+          menubar.addActionListener(LogisimMenuBar.EXPORT_IMAGE, this);
+          menubar.addActionListener(LogisimMenuBar.PRINT, this);
+        } else {
+          menubar.removeActionListener(LogisimMenuBar.EXPORT_IMAGE, this);
+          menubar.removeActionListener(LogisimMenuBar.PRINT, this);
+        }
+      }
+    }
+
+    private FileListener fileListener = new FileListener();
+    private PrintHandler printer;
+
+    public ChronoMenuListener(LogisimMenuBar menubar) {
+      super(menubar);
+      fileListener.register(false);
+      editListener.register();
+    }
+
+    public void setPrintHandler(PrintHandler printer) {
+      this.printer = printer;
+      fileListener.register(printer != null);
+    }
+  }
+
+  public void highlight(ChronoData.Signal s) {
+    rightPanel.highlight(s);
+    leftPanel.highlight(s);
+  }
+
+	public void mouseEntered(ChronoData.Signal s) {
+		highlight(s);
+	}
+
+	public void mousePressed(ChronoData.Signal s, int posX) {
+		setSignalCursor(posX);
+	}
+
+	public void mouseDragged(ChronoData.Signal s, int posX) {
+		setSignalCursor(posX);
+	}
+
+	public void mouseExited(ChronoData.Signal s) {
+	}
+
+	public void setCodingFormat(ChronoData.Signal s, String format) {
+    // todo later
+		// s.setFormat(format);
+		// repaintAll(true);
+	}
+
+  public void setSignalCursor(int posX) {
+		rightPanel.setSignalCursor(posX);
+    leftPanel.setSignalsValues(posX);
+  }
+
+	public void toggleBusExpand(ChronoData.Signal s, boolean expand) {
+    // todo: later
+		// mChronoPanel.toggleBusExpand(signalDataSource, expand);
+	}
+
+	public void zoom(int sens, int posX) {
+    rightPanel.zoom(sens, posX);
+	}
+
+	public void zoom(ChronoData.Signal s, int sens, int val) {
+		rightPanel.zoom(sens, val);
+	}
+
 }

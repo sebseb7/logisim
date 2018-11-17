@@ -36,276 +36,195 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 
 import javax.swing.JPanel;
 
-import com.hepia.logisim.chronodata.SignalData;
-import com.hepia.logisim.chronodata.SignalDataBus;
+import com.hepia.logisim.chronodata.ChronoData;
 
-/**
- * Draw a single signal or bus in the chronogram right area
- */
+// A single-bit or multi-bit waveform display
 public class SignalDraw extends JPanel {
 
-	private class MyListener implements MouseListener, MouseMotionListener,
-			MouseWheelListener {
-		@Override
-		public void mouseClicked(MouseEvent e) {
-		}
-
+	private class MyListener extends MouseAdapter {
 		@Override
 		public void mouseDragged(MouseEvent e) {
-			int posX = e.getX();
-			if (posX < 0)
-				posX = 0;
-			if (posX > getWidth())
-				posX = getWidth() - 1;
-			mDrawAreaEventManager.fireMouseDragged(mSignalData, posX);
+			int x = Math.min(getWidth() - 1, Math.max(0, e.getX()));
+			chronoPanel.mouseDragged(signal, x);
 		}
 
 		@Override
 		public void mouseEntered(MouseEvent e) {
-			mDrawAreaEventManager.fireMouseEntered(mSignalData);
+			chronoPanel.mouseEntered(signal);
 		}
 
 		@Override
 		public void mouseExited(MouseEvent e) {
-			mDrawAreaEventManager.fireMouseExited(mSignalData);
-		}
-
-		@Override
-		public void mouseMoved(MouseEvent e) {
+			chronoPanel.mouseExited(signal);
 		}
 
 		@Override
 		public void mousePressed(MouseEvent e) {
-			int posX = e.getX() >= 0 ? e.getX() : 0;
-			mDrawAreaEventManager.fireMousePressed(mSignalData, posX);
-		}
-
-		@Override
-		public void mouseReleased(MouseEvent e) {
+			int x = e.getX() >= 0 ? e.getX() : 0;
+			chronoPanel.mousePressed(signal, x);
 		}
 
 		@Override
 		public void mouseWheelMoved(MouseWheelEvent e) {
 			if (e.getWheelRotation() > 0)
-				mDrawAreaEventManager.fireZoom(mSignalData, -1, e.getPoint().x);
+				chronoPanel.zoom(signal, -1, e.getPoint().x);
 			else
-				mDrawAreaEventManager.fireZoom(mSignalData, 1, e.getPoint().x);
+				chronoPanel.zoom(signal, 1, e.getPoint().x);
 		}
 	}
 
-	private static final long serialVersionUID = 1L;
-	private int tickWidth;
-	private int busCrossingPosition;
-	private Color lightGray = new Color(180, 180, 180, 100);
+	private static final Color GRAY = new Color(180, 180, 180, 100);
+  private static final int HEIGHT = ChronoPanel.SIGNAL_HEIGHT;
+  private static final int HIGH = 6;
+  private static final int LOW = HEIGHT - 6;
+  private static final int MID = HEIGHT / 2;
 
-	private int lineTickness = 1;
-	private int lowPos;
-	private int highPos;
+	private boolean bold;
 	private int width = 10;
+	private int tickWidth;
+	private int slope;
 
-	private int height;
-	private BufferedImage signalDrawBuffered;
+	private BufferedImage buf;
 
-	private boolean isBufferObsolete = true;
-	private SignalData mSignalData;
-	private DrawAreaEventManager mDrawAreaEventManager;
-
-	private RightPanel mRightPanel;
+	private ChronoPanel chronoPanel;
+	private ChronoData data;
+	private RightPanel rightPanel;
+	private ChronoData.Signal signal;
 
 	private MyListener myListener = new MyListener();
 
-	public SignalDraw(RightPanel rightPanel,
-			DrawAreaEventManager drawAreaEventManager, SignalData signalData,
-			int height) {
-		this.mRightPanel = rightPanel;
-		this.mDrawAreaEventManager = drawAreaEventManager;
-		this.mSignalData = signalData;
-		this.tickWidth = rightPanel.getTickWidth();
-		this.width = tickWidth * signalData.getSignalValues().size();
-		if (this.width < 10)
-			this.width = 10;
+	public SignalDraw(ChronoPanel p, RightPanel r, ChronoData.Signal s) {
+		chronoPanel = p;
+		signal = s;
+		rightPanel = r;
+    data = chronoPanel.getChronoData();
 
-		this.height = height;
-		this.busCrossingPosition = computeBusCrossingPosition(tickWidth);
+		tickWidth = rightPanel.getTickWidth();
+		width = Math.max(10, tickWidth * data.getValueCount()); // fixme, even clock spacing
 
-		this.lowPos = height - 6;
-		this.highPos = 6;
+		slope = (tickWidth < 8) ? tickWidth / 3 : 5;
 
-		this.setBackground(Color.white);
-		this.setMaximumSize(new Dimension(width, height));
-		this.setPreferredSize(new Dimension(width, height));
-		this.setDoubleBuffered(true);
+		setBackground(Color.WHITE);
+		setMaximumSize(new Dimension(width, HEIGHT));
+		setPreferredSize(new Dimension(width, HEIGHT));
+		setDoubleBuffered(true);
 
-		this.addMouseListener(myListener);
-		this.addMouseMotionListener(myListener);
-		this.addMouseWheelListener(myListener);
-		this.addMouseListener(new PopupMenu(drawAreaEventManager, signalData));
+		addMouseListener(myListener);
+		addMouseMotionListener(myListener);
+		addMouseWheelListener(myListener);
+		addMouseListener(new PopupMenu(chronoPanel, s));
 	}
 
-	/**
-	 * Compute the size of the cross (when a bus value change)
-	 */
-	private int computeBusCrossingPosition(int tickWidth) {
-		return tickWidth - 5 < 1 ? 0 : 5;
-	}
+	private void drawSignal(Graphics2D g) {
+		g.setStroke(new BasicStroke(bold ? 2 : 1));
 
-	/**
-	 * Draw the signals and buses
-	 */
-	private void drawSignal(Graphics g) {
-		Graphics2D g2 = (Graphics2D) g;
-		g2.setStroke(new BasicStroke(lineTickness));
-		int middleHeight = getHeight() / 2;
+    float xOff = rightPanel.getCurrentPosition();
+    float f = xOff / rightPanel.getSignalWidth();
+    int tEnd = data.getValueCount();
+		int t = Math.round(tEnd * f);
 
-		int posX = 0;
-		String prec, suiv;
+    String max = signal.getFormattedMaxValue();
+    String min = signal.getFormattedMinValue();
+		String prec = signal.getFormattedValue(t++);
 
-		// get the index of data in SignalData that correspond to the display
-		float posPercent = (float) mRightPanel.getDisplayOffsetX()
-				/ (float) mRightPanel.getSignalWidth();
-		int i = Math.round(mSignalData.getSignalValues().size() * posPercent);
+		int x = 0;
+		while (t < tEnd && x < xOff + getVisibleRect().width + (10 * tickWidth)) {
+			String suiv = signal.getFormattedValue(t++);
 
-		// drawing
-		prec = mSignalData.getSignalValues().get(i++);
-		while (posX < mRightPanel.getDisplayOffsetX() + getVisibleRect().width
-				+ (10 * tickWidth)
-				&& i < mSignalData.getSignalValues().size()) {
-			suiv = mSignalData.getSignalValues().get(i++);
+      if (suiv.equals("-")) {
+        x += tickWidth;
+        continue;
+      }
 
-			String transi = prec + suiv;
 			if (suiv.contains("E")) {
 				g.setColor(Color.red);
-				g.drawLine(posX, highPos, posX + tickWidth, middleHeight);
-				g.drawLine(posX, middleHeight, posX + tickWidth, highPos);
-				g.drawLine(posX, middleHeight, posX + tickWidth, lowPos);
-				g.drawLine(posX, lowPos, posX + tickWidth, middleHeight);
+				g.drawLine(x, HIGH, x + tickWidth, MID);
+				g.drawLine(x, MID, x + tickWidth, HIGH);
+				g.drawLine(x, MID, x + tickWidth, LOW);
+				g.drawLine(x, LOW, x + tickWidth, MID);
 				g.setColor(Color.black);
 			} else if (suiv.contains("x")) {
 				g.setColor(Color.blue);
-				g.drawLine(posX, highPos, posX + tickWidth, middleHeight);
-				g.drawLine(posX, middleHeight, posX + tickWidth, highPos);
-				g.drawLine(posX, middleHeight, posX + tickWidth, lowPos);
-				g.drawLine(posX, lowPos, posX + tickWidth, middleHeight);
+				g.drawLine(x, HIGH, x + tickWidth, MID);
+				g.drawLine(x, MID, x + tickWidth, HIGH);
+				g.drawLine(x, MID, x + tickWidth, LOW);
+				g.drawLine(x, LOW, x + tickWidth, MID);
 				g.setColor(Color.black);
-			} else if (suiv.equals("0")) {
-				g.drawLine(posX, lowPos, posX + tickWidth, lowPos);
-			} else if (suiv.equals("1")) {
-				g.setColor(lightGray);
-				g.fillRect(posX + 1, highPos, tickWidth, lowPos - highPos);
+			} else if (suiv.equals(min)) {
+				g.drawLine(x, LOW, x + tickWidth, LOW);
+        if (!prec.equals(min))
+          g.drawLine(x, HIGH, x, LOW);
+			} else if (suiv.equals(max)) {
+				g.setColor(GRAY);
+				g.fillRect(x + 1, HIGH, tickWidth, LOW - HIGH);
 				g.setColor(Color.black);
-				g.drawLine(posX, highPos, posX + tickWidth, highPos);
-			}
-
-			else {
-				if (mSignalData instanceof SignalDataBus) {
-					SignalDataBus sdb = (SignalDataBus) mSignalData;
-					// first value
-					if (i == 2)
-						g.drawString(sdb.getValueInFormat(suiv), posX + 2,
-								getHeight() / 2);
-					// bus transition
-					if (!suiv.contains("x") && !suiv.contains("E")
-							&& !suiv.equals(prec)) {
-						g.drawLine(posX, lowPos, posX + busCrossingPosition,
-								highPos);
-						g.drawLine(posX, highPos, posX + busCrossingPosition,
-								lowPos);
-						g.drawLine(posX + busCrossingPosition, highPos, posX
-								+ tickWidth, highPos);
-						g.drawLine(posX + busCrossingPosition, lowPos, posX
-								+ tickWidth, lowPos);
-						g.drawString(sdb.getValueInFormat(suiv), posX
-								+ tickWidth, getHeight() / 2);
-					} else {
-						g.drawLine(posX, lowPos, posX + tickWidth, lowPos);
-						g.drawLine(posX, highPos, posX + tickWidth, highPos);
-					}
-				}
-			}
-
-			// transition
-			if (transi.equals("10")) {
-				g.drawLine(posX, highPos, posX, lowPos);
-			} else if (transi.equals("01")) {
-				g.drawLine(posX, lowPos, posX, highPos);
+				g.drawLine(x, HIGH, x + tickWidth, HIGH);
+        if (!prec.equals(max))
+          g.drawLine(x, LOW, x, HIGH);
+      } else {
+        if (t == 2) // first segment
+          g.drawString(suiv, x + 2, MID);
+        if (t == 2 || suiv.equals(prec)) {
+          g.drawLine(x, LOW, x + tickWidth, LOW);
+          g.drawLine(x, HIGH, x + tickWidth, HIGH);
+        } else {
+          g.drawLine(x, LOW, x + slope, HIGH);
+          g.drawLine(x, HIGH, x + slope, LOW);
+          g.drawLine(x + slope, HIGH, x + tickWidth, HIGH);
+          g.drawLine(x + slope, LOW, x + tickWidth, LOW);
+          g.drawString(suiv, x + tickWidth, MID);
+        }
 			}
 
 			prec = suiv;
-			posX += tickWidth;
-		}
-	}
-
-	public SignalData getSignalData() {
-		return mSignalData;
-	}
-
-	/**
-	 * if on, the signal is displayed thicker
-	 */
-	public void highlight(boolean on) {
-		if (lineTickness == 2) {
-			if (!on) {
-				isBufferObsolete = true;
-				lineTickness = 1;
-				this.repaint();
-			}
-		} else {
-			if (on) {
-				isBufferObsolete = true;
-				lineTickness = 2;
-				this.repaint();
-			}
+			x += tickWidth;
 		}
 	}
 
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
-		if (mSignalData.getSignalValues().size() > 1) {
-			Graphics2D g2 = (Graphics2D) g;
+    Graphics2D g2 = (Graphics2D) g;
 
-			// if scroll or zoom, redraw everything into buffer
-			if (isBufferObsolete) {
-				signalDrawBuffered = (BufferedImage) (this.createImage(
-						mRightPanel.getVisibleWidth() * 2, height));
-				Graphics2D g2a = signalDrawBuffered.createGraphics();
-				g2a.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
-						RenderingHints.VALUE_STROKE_DEFAULT);
-				drawSignal(g2a);
-				isBufferObsolete = false;
-			}
-			g2.drawImage(signalDrawBuffered, null,
-					mRightPanel.getDisplayOffsetX(), 0);
-		}
+    // todo: reallocating image each time seems silly
+    if (buf == null) {
+      buf = (BufferedImage)createImage(rightPanel.getVisibleWidth() * 2, HEIGHT);
+      Graphics2D gb = buf.createGraphics();
+      gb.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
+          RenderingHints.VALUE_STROKE_DEFAULT);
+      drawSignal(gb);
+      gb.dispose();
+    }
+    g2.drawImage(buf, null, rightPanel.getDisplayOffsetX(), 0);
 	}
 
-	/**
-	 * Call this function when the drawed signal is outdated ex: after zoom or
-	 * scroll.
-	 */
-	public void setBufferObsolete() {
-		isBufferObsolete = true;
+	public ChronoData.Signal getSignal() {
+		return signal;
 	}
 
-	public void setSignalDrawSize(int width, int height) {
-		this.width = width;
-		this.height = height;
-		this.setMaximumSize(new Dimension(width, height));
-		this.setPreferredSize(new Dimension(width, height));
+  public void highlight(boolean enable) {
+    if (bold != enable) {
+      flush();
+      bold = enable;
+      this.repaint();
+    }
 	}
 
-	public void setTickWidth(int tickWidth) {
-		isBufferObsolete = true;
-		this.tickWidth = tickWidth;
-		this.busCrossingPosition = computeBusCrossingPosition(tickWidth);
-		int width = tickWidth * mSignalData.getSignalValues().size();
-		setSignalDrawSize(width, height);
+	public void flush() {
+		buf = null;
+	}
+
+	public void setTickWidth(int w) {
+		flush();
+		tickWidth = w;
+		slope = (tickWidth < 8) ? tickWidth / 3 : 5;
+		width = Math.max(10, tickWidth * data.getValueCount()); // fixme, even clock spacing
+		setMaximumSize(new Dimension(width, HEIGHT));
+		setPreferredSize(new Dimension(width, HEIGHT));
 	}
 }

@@ -175,11 +175,6 @@ public class Analyzer extends LFrame {
     buildCircuit = new BuildCircuitButton(this, model);
     exportTable = new ExportTableButton(this, model);
 
-    // inputsPanel.setListener(editListener); // not needed
-    // truthTablePanel.setListener(editListener);
-    // expressionPanel.setListener(editListener);
-    // minimizedPanel.setListener(editListener); // does not support editing
-
     tabbedPane = new JTabbedPane();
     addTab(IO_TAB, ioPanel);
     addTab(TABLE_TAB, truthTablePanel);
