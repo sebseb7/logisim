@@ -181,13 +181,21 @@ public class RightPanel extends JPanel {
     return width;
   }
 
-  public void highlight(ChronoData.Signal s) {
-    for (Waveform w : rows)
-      w.highlight(w.getSignal() == s);
+  public void changeSpotlight(ChronoData.Signal oldSignal, ChronoData.Signal newSignal) {
+    if (oldSignal != null) {
+      Waveform w = rows.get(oldSignal.idx);
+      w.flush();
+      w.repaint();
+    }
+    if (newSignal != null) {
+      Waveform w = rows.get(newSignal.idx);
+      w.flush();
+      w.repaint();
+    }
   }
 
   public void repaintAll() {
-    System.out.println("repaint right panel");
+    System.out.println("repaint all right panel");
     computeSize();
     super.repaint();
     cursor.repaint();

@@ -34,75 +34,74 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.List;
+import java.util.HashMap;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
 
+import com.cburch.logisim.circuit.RadixOption;
+import com.cburch.logisim.gui.log.SelectionItems;
+
 public class PopupMenu extends MouseAdapter {
 
-  static class PopupContents extends JPopupMenu implements ActionListener {
-    private static final long serialVersionUID = 1L;
-    private ChronoPanel chronoPanel;
-    private ChronoData.Signal signal;
-    private JRadioButtonMenuItem expandBus;
+  private class PopupContents extends JPopupMenu {
+    public PopupContents() {
+      super("Options");
 
-    public PopupContents(ChronoPanel p, ChronoData.Signal s) {
-      chronoPanel = p;
-      signal = s;
+      RadixOption radix = signals.get(0).info.getRadix();
+      for (int i = 1; i < signals.size(); i++)
+        if (signals.get(i).info.getRadix() != radix)
+          radix = null;
 
-      // Only for buses, for now
-      if (signal.getWidth() > 1) {
-        // todo: later
-//        JMenu dataFormat;
-//        JRadioButtonMenuItem[] formats;
-//        // format choice
-//        dataFormat = new JMenu(S.get("BusFormat"));
-//        formats = new JRadioButtonMenuItem[5];
-//        ButtonGroup group = new ButtonGroup();
-//        for (int i = 0; i < SignalDataBus.signalFormat.length; ++i) {
-//          formats[i] = new JRadioButtonMenuItem(
-//              SignalDataBus.signalFormat[i]);
-//          formats[i].setActionCommand(SignalDataBus.signalFormat[i]);
-//          formats[i].addActionListener(this);
-//          group.add(formats[i]);
-//          dataFormat.add(formats[i]);
-//        }
-//
-//        // default selection
-//        for (int i = 0; i < SignalDataBus.signalFormat.length; ++i)
-//          if (SignalDataBus.signalFormat[i].equals(signalDataBus
-//                .getFormat()))
-//            formats[i].setSelected(true);
-//        add(dataFormat);
-//
-//        // expand
-//        expandBus = new JRadioButtonMenuItem(S.get("BusExpand"));
-//        expandBus.setSelected(signalDataBus.isExpanded());
-//        expandBus.addActionListener(this);
-//        add(expandBus);
+      ButtonGroup g = new ButtonGroup();
+      for (RadixOption r : RadixOption.OPTIONS) {
+        JRadioButtonMenuItem m = new JRadioButtonMenuItem(r.toDisplayString()); 
+        add(m);
+        g.add(m);
+        if (r == radix)
+          m.setSelected(true);
+        m.addActionListener(new ActionListener() {
+          @Override
+          public void actionPerformed(ActionEvent e) {              
+            for (ChronoData.Signal s : signals)
+              s.info.setRadix(r);
+          }
+        });
       }
-    }
 
-    public void actionPerformed(ActionEvent e) {
-      if (e.getSource() == expandBus)
-        signal.toggleExpanded();
-      // else
-        // chronoPanel.setCodingFormat(signalDataBus, e.getActionCommand());
+      // todo: option to expand/collapse bus signals
+
+      addSeparator();
+      JMenuItem m = new JMenuItem("Delete");
+      add(m);
+      m.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {              
+          SelectionItems items = new SelectionItems();
+          for (ChronoData.Signal s : signals)
+            items.add(s.info);
+          chronoPanel.getSelection().remove(items);
+        }
+      });
     }
   }
 
-	private ChronoData.Signal signal;
+	private List<ChronoData.Signal> signals;
 	private ChronoPanel chronoPanel;
 
-	public PopupMenu(ChronoPanel p, ChronoData.Signal s) {
+	public PopupMenu(ChronoPanel p, List<ChronoData.Signal> s) {
     chronoPanel = p;
-		signal = s;
+		signals = s;
 	}
 
 	public void doPop(MouseEvent e) {
-		PopupContents menu = new PopupContents(chronoPanel, signal);
+    if (signals.size() == 0)
+      return;
+		PopupContents menu = new PopupContents();
 		menu.show(e.getComponent(), e.getX(), e.getY());
 	}
 
@@ -111,8 +110,8 @@ public class PopupMenu extends MouseAdapter {
 			doPop(e);
 	}
 
-	public void mouseReleased(MouseEvent e) {
-		if (e.isPopupTrigger())
-			doPop(e);
-	}
+//	public void mouseReleased(MouseEvent e) {
+//		if (e.isPopupTrigger())
+//			doPop(e);
+//	}
 }

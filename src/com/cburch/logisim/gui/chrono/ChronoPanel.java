@@ -401,13 +401,16 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     }
   }
 
-  public void highlight(ChronoData.Signal s) {
-    rightPanel.highlight(s);
-    leftPanel.highlight(s);
+  private void changeSpotlight(ChronoData.Signal s) {
+    ChronoData.Signal old = data.setSpotlight(s);
+    if (old == s)
+      return;
+    rightPanel.changeSpotlight(old, s);
+    leftPanel.changeSpotlight(old, s);
   }
 
 	public void mouseEntered(ChronoData.Signal s) {
-		highlight(s);
+    changeSpotlight(s);
 	}
 
 	public void mousePressed(ChronoData.Signal s, int posX) {
@@ -419,6 +422,7 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
 	}
 
 	public void mouseExited(ChronoData.Signal s) {
+    changeSpotlight(null);
 	}
 
 	public void setCodingFormat(ChronoData.Signal s, String format) {

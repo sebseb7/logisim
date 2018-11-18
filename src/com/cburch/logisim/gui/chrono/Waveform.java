@@ -39,6 +39,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
+import java.util.Collections;
 
 import javax.swing.JPanel;
 
@@ -77,15 +78,16 @@ public class Waveform extends JPanel {
 		}
 	}
 
+	public static final Color LIGHTPINK = new Color(0xff, 0xcc, 0xe6);
+	public static final Color DARKPINK = new Color(0xff, 0x99, 0xcc);
 	private static final Color LIGHTGRAY = new Color(180, 180, 180);
 	private static final Color DARKGRAY = new Color(140, 140, 140);
   private static final int HEIGHT = ChronoPanel.SIGNAL_HEIGHT;
-  private static final int GAP = 6;
+  public static final int GAP = 6;
   private static final int HIGH = GAP;
   private static final int LOW = HEIGHT - GAP;
   private static final int MID = HEIGHT / 2;
 
-	private boolean bold;
 	private int tickWidth, numTicks, width;
 	private int slope;
 
@@ -112,7 +114,7 @@ public class Waveform extends JPanel {
 		addMouseListener(myListener);
 		addMouseMotionListener(myListener);
 		addMouseWheelListener(myListener);
-		addMouseListener(new PopupMenu(chronoPanel, s));
+		addMouseListener(new PopupMenu(chronoPanel, Collections.singletonList(s)));
 
     update(tickWidth, numTicks, width);
 	}
@@ -121,7 +123,7 @@ public class Waveform extends JPanel {
     return signal;
   }
 
-	private void drawSignal(Graphics2D g) {
+	private void drawSignal(Graphics2D g, boolean bold, Color bg, Color fg) {
 		g.setStroke(new BasicStroke(bold ? 2 : 1));
 
     // float xOff = rightPanel.getCurrentPosition();
@@ -147,23 +149,23 @@ public class Waveform extends JPanel {
 				g.drawLine(x, MID, x + tickWidth, HIGH);
 				g.drawLine(x, MID, x + tickWidth, LOW);
 				g.drawLine(x, LOW, x + tickWidth, MID);
-				g.setColor(Color.black);
+				g.setColor(Color.BLACK);
 			} else if (suiv.contains("x")) {
 				g.setColor(Color.blue);
 				g.drawLine(x, HIGH, x + tickWidth, MID);
 				g.drawLine(x, MID, x + tickWidth, HIGH);
 				g.drawLine(x, MID, x + tickWidth, LOW);
 				g.drawLine(x, LOW, x + tickWidth, MID);
-				g.setColor(Color.black);
+				g.setColor(Color.BLACK);
 			} else if (suiv.equals(min)) {
         if (!prec.equals(min)) {
           if (slope > 0) {
-            g.setColor(DARKGRAY);
+            g.setColor(fg);
             g.fillPolygon(
                 new int[] { x, x + slope, x },
                 new int[] { HIGH, LOW+1, LOW+1 },
                 3);
-            g.setColor(Color.black);
+            g.setColor(Color.BLACK);
           }
           g.drawLine(x, HIGH, x + slope, LOW);
           g.drawLine(x + slope, LOW, x + tickWidth, LOW);
@@ -172,18 +174,18 @@ public class Waveform extends JPanel {
         }
 			} else if (suiv.equals(max)) {
         if (!prec.equals(max)) {
-          g.setColor(DARKGRAY);
+          g.setColor(fg);
           g.fillPolygon(
               new int[] { x, x + slope, x + tickWidth + 1, x + tickWidth + 1},
               new int[] { LOW+1, HIGH, HIGH, LOW+1 },
               4);
-          g.setColor(Color.black);
+          g.setColor(Color.BLACK);
           g.drawLine(x, LOW, x + slope, HIGH);
           g.drawLine(x + slope, HIGH, x + tickWidth, HIGH);
         } else {
-          g.setColor(DARKGRAY);
+          g.setColor(fg);
           g.fillRect(x, HIGH, tickWidth + 1, LOW - HIGH + 1);
-          g.setColor(Color.black);
+          g.setColor(Color.BLACK);
           g.drawLine(x, HIGH, x + tickWidth, HIGH);
         }
       } else {
@@ -207,7 +209,6 @@ public class Waveform extends JPanel {
 	}
 
 	public void paintComponent(Graphics g) {
-    System.out.println("  waveform paint " + signal.idx);
 		super.paintComponent(g);
     Graphics2D g2 = (Graphics2D) g;
 
@@ -218,23 +219,18 @@ public class Waveform extends JPanel {
       gb.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
           RenderingHints.VALUE_STROKE_DEFAULT);
       gb.setColor(Color.WHITE);
+      boolean bold = data.getSpotlight() ==  signal;
+      Color bg = bold ? LIGHTPINK : LIGHTGRAY;
+      Color fg = bold ? DARKPINK : DARKGRAY;
       gb.fillRect(0, 0, width, GAP-1);
       gb.fillRect(0, LOW, width, GAP-1);
-      gb.setColor(LIGHTGRAY);
+      gb.setColor(bg);
       gb.fillRect(0, HIGH, width, LOW - HIGH);
       gb.setColor(Color.BLACK);
-      drawSignal(gb);
+      drawSignal(gb, bold, bg, fg);
       gb.dispose();
     }
     g2.drawImage(buf, null, rightPanel.getDisplayOffsetX(), 0); // always 0, 0 ?
-	}
-
-  public void highlight(boolean enable) {
-    if (bold != enable) {
-      flush();
-      bold = enable;
-      repaint();
-    }
 	}
 
 	public void flush() {

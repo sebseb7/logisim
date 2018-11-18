@@ -45,22 +45,23 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.EventObject;
+import java.util.HashMap;
 
 import javax.swing.AbstractAction;
 import javax.swing.AbstractCellEditor;
 import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.DropMode;
-import javax.swing.InputMap;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
@@ -75,27 +76,19 @@ import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.util.Icons;
 
-class SelectionList extends JTable {
+public class SelectionList extends JTable {
 
   private class SelectionListModel
     extends AbstractTableModel implements Model.Listener {
 
     @Override
-    public void entryAdded(Model.Event event, Value[] values) {
-    }
-
+    public void entryAdded(Model.Event event, Value[] values) { }
     @Override
-    public void resetEntries(Model.Event event, Value[] values) {
-    }
-
+    public void resetEntries(Model.Event event, Value[] values) { }
     @Override
-    public void filePropertyChanged(Model.Event event) {
-    }
-
+    public void filePropertyChanged(Model.Event event) { }
     @Override
-    public void selectionChanged(Model.Event event) {
-      fireTableDataChanged();
-    }
+    public void selectionChanged(Model.Event event) { fireTableDataChanged(); }
 
     @Override
     public int getColumnCount() { return 1; };
@@ -103,26 +96,18 @@ class SelectionList extends JTable {
     public String getColumnName(int column) { return ""; }
     @Override
     public Class<?> getColumnClass(int columnIndex) { return SelectionItem.class; }
+
     @Override
     public int getRowCount() { return selection == null ? 0 : selection.size(); }
+    @Override
+    public Object getValueAt(int row, int col) { return selection.get(row); }
+    @Override
+    public void setValueAt(Object o, int row, int column) { /* nothing to do */ }
 
     @Override
-    public Object getValueAt(int row, int col) {
-      return selection.get(row);
-    }
-
-    @Override
-    public void setValueAt(Object o, int row, int column) {
-      // nothing to do
-    }
-
-    @Override
-    public boolean isCellEditable(int row, int column) {
-      return true;
-    }
+    public boolean isCellEditable(int row, int column) { return true; }
 
   }
-
 
   private class SelectionItemRenderer extends DefaultTableCellRenderer {
     @Override
@@ -147,6 +132,7 @@ class SelectionList extends JTable {
     JPopupMenu popup = new JPopupMenu("Options");
     SelectionItem item;
     SelectionItems items;
+    HashMap<RadixOption, JRadioButtonMenuItem> radixMenuItems = new HashMap<>();
 
     public SelectionItemEditor() {
       panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
@@ -154,10 +140,12 @@ class SelectionList extends JTable {
       label.setFont(label.getFont().deriveFont(Font.PLAIN));
       button.setFont(button.getFont().deriveFont(9.0f));
 
-
+      ButtonGroup g = new ButtonGroup();
       for (RadixOption r : RadixOption.OPTIONS) {
-        JMenuItem m = new JMenuItem(r.toDisplayString()); 
+        JRadioButtonMenuItem m = new JRadioButtonMenuItem(r.toDisplayString()); 
+        radixMenuItems.put(r, m);
         popup.add(m);
+        g.add(m);
         m.addActionListener(new ActionListener() {
           @Override
           public void actionPerformed(ActionEvent e) {              
@@ -223,6 +211,7 @@ class SelectionList extends JTable {
         items.clear();
         items.add(item);
       }
+      radixMenuItems.get(item.getRadix()).setSelected(true);
       label.setIcon(new ComponentIcon(item.getComponent()));
       label.setText(item.toString() + " [" + item.getRadix().toDisplayString() + "]");
       //width.setSelectedItem(item.getRadix());
@@ -234,45 +223,10 @@ class SelectionList extends JTable {
        super.stopCellEditing();
        return true;
      }
-    //   if (ok()) {
-    //     super.stopCellEditing();
-    //     return true;
-    //   } else {
-    //     return false;
-    //   }
-    // }
-    @Override
-    public boolean isCellEditable(EventObject e) {
-      return true;
-    }
-    //
-    //
-    // boolean ok() {
-    //   Var oldVar = editing;
-    //   editing = null;
-    //   String name = field.getText().trim();
-    //   int w = (Integer)width.getSelectedItem();
-    //   if (oldVar == null || oldVar.name.equals("")) {
-    //     // validate new name and width
-    //     int err = validateInput(data, null, name, w);
-    //     if (err == EMPTY)
-    //       return true; // do nothing, empty Var will be ignored in setValueAt()
-    //     if (err == BAD_NAME || err == DUP_NAME || err == TOO_WIDE)
-    //       return false; // prevent loss of focus
-    //     if (err == OK)
-    //       return true; // new Var will be added in setValueAt()
-    //   } else {
-    //     // validate replacement name and width
-    //     int err = validateInput(data, oldVar, name, w);
-    //     if (err == EMPTY || err == BAD_NAME || err == DUP_NAME || err == TOO_WIDE)
-    //       return false; // prevent loss of focus
-    //     if (err == UNCHANGED)
-    //       return true; // do nothing, unchanged Var will be ignored in setValueAt()
-    //     if (err == OK || err == RESIZED)
-    //       return true; // modified Var will be created in setValueAt()
-    //   }
-    //   return false; // should never happen
-    // }
+     @Override
+     public boolean isCellEditable(EventObject e) {
+       return true;
+     }
   }
 
   private static final long serialVersionUID = 1L;

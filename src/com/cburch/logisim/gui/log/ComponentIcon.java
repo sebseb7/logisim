@@ -38,7 +38,7 @@ import javax.swing.Icon;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
 
-class ComponentIcon implements Icon {
+public class ComponentIcon implements Icon {
   public static final int TRIANGLE_NONE = 0;
   public static final int TRIANGLE_CLOSED = 1;
   public static final int TRIANGLE_OPEN = 2;
@@ -46,7 +46,7 @@ class ComponentIcon implements Icon {
   private Component comp;
   private int triangleState = TRIANGLE_NONE;
 
-  ComponentIcon(Component comp) {
+  public ComponentIcon(Component comp) {
     this.comp = comp;
   }
 

@@ -87,7 +87,7 @@ public class ChronoData {
     }
 
     public int idx;
-    private final SelectionItem info;
+    public final SelectionItem info;
     private final ArrayList<Value> vals;
     private int offset;
     private int width;
@@ -175,6 +175,7 @@ public class ChronoData {
   }
 
   public void clear() {
+    spotlight = null;
     count = 1;
     signals.clear();
   }
@@ -187,6 +188,8 @@ public class ChronoData {
 			Value value = id.fetchValue(circuitState);
       addSignal(id, value, i);
     }
+    if (spotlight != null && signals.indexOf(spotlight)  >= n)
+      spotlight = null;
     if (signals.size() > n)
       signals.subList(n, signals.size()).clear();
   }
@@ -210,11 +213,6 @@ public class ChronoData {
     signals.add(idx, s);
   }
 
-  // // todo: use Value
-	// public void addSignalValue(String signalName, String signalValue) {
-	// 	get(signalName).getSignalValues().add(signalValue.replaceAll("\\s", ""));
-	// }
-
 	public void addSignalValues(Value[] vals) {
     for (int i = 0; i < signals.size() && i < vals.length; i++)
       signals.get(i).extend(vals[i]);
@@ -228,10 +226,17 @@ public class ChronoData {
     count++;
 	}
 
-  // // todo: use Value
-  // public String getSignalValue(SelectionItem id, int row) {
-  //   get(signalName).getSignalValues().get(row);
-  // }
+  // The (at most one) signal under the mouse is highlighted.
+  // Multiple other rows can be selected by clicking.
+  private Signal spotlight;
+  public Signal getSpotlight() {
+    return spotlight;
+  }
+  public Signal setSpotlight(Signal s) {
+    Signal old = spotlight;
+    spotlight = s;
+    return old;
+  }
 
 	// /**
 	//  * Hide all signals that compose busName
