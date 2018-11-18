@@ -50,7 +50,6 @@ import java.util.EventObject;
 import java.util.List;
 
 import javax.swing.AbstractAction;
-import javax.swing.AbstractCellEditor;
 import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -73,7 +72,6 @@ import javax.swing.border.Border;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
@@ -160,108 +158,6 @@ public class LeftPanel extends JPanel {
     return table.getBackground();
   }
 
-  class SignalEditor extends AbstractCellEditor implements TableCellEditor {
-    JPanel panel = new JPanel();
-    JLabel label = new JLabel();
-    JButton button = new JButton(Icons.getIcon("dropdown.png"));
-    JPopupMenu popup = new JPopupMenu("Options");
-    ChronoData.Signal signal;
-    List<ChronoData.Signal> signals;
-
-    public SignalEditor() {
-      panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-
-      label.setFont(label.getFont().deriveFont(Font.PLAIN));
-      button.setFont(button.getFont().deriveFont(9.0f));
-
-      for (RadixOption r : RadixOption.OPTIONS) {
-        JMenuItem m = new JMenuItem(r.toDisplayString()); 
-        popup.add(m);
-        m.addActionListener(new ActionListener() {
-          @Override
-          public void actionPerformed(ActionEvent e) {              
-            for (ChronoData.Signal s : signals)
-              s.info.setRadix(r);
-            LeftPanel.this.repaint();
-          }
-        });
-      }
-
-      popup.addSeparator();
-      JMenuItem m = new JMenuItem("Delete");
-      popup.add(m);
-      m.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {              
-          cancelCellEditing();
-          removeSelected();
-        }
-      });
-
-      button.setMargin(new Insets(0, 0, 0, 0));
-      button.setHorizontalTextPosition(SwingConstants.LEFT);
-      button.setText("Options");
-      button.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          popup.show(panel, button.getX(), button.getY() + button.getHeight());
-        }
-      });
-      button.setMinimumSize(button.getPreferredSize());
-
-      label.setHorizontalAlignment(SwingConstants.LEFT);
-      label.setAlignmentX(0.0f);
-      label.setAlignmentY(0.5f);
-      button.setAlignmentX(1.0f);
-      button.setAlignmentY(0.5f);
-      panel.add(label);
-      panel.add(button);
-    }
-
-    @Override
-    public Object getCellEditorValue() {
-      return signal;
-    }
-
-    @Override
-    public Component getTableCellEditorComponent(JTable table,
-        Object value, boolean isSelected, int row, int col) {
-      int margin = table.getColumnModel().getColumnMargin();
-      label.setBorder(BorderFactory.createEmptyBorder(0, margin, 0, margin));
-
-      int w = table.getColumnModel().getTotalColumnWidth();
-      int h = table.getRowHeight() - 2 * Waveform.GAP;
-      Dimension d = new Dimension(w, h);
-      label.setMinimumSize(new Dimension(10, d.height));
-      label.setPreferredSize(new Dimension(d.width - button.getWidth(), d.height));
-      label.setMaximumSize(new Dimension(d.width - button.getWidth(), d.height));
-
-      signal = (ChronoData.Signal)value;
-      signals = getSelectedValuesList();
-
-      panel.setBackground(rowColor(signal.info, true));
-
-      if (!signals.contains(signal)) {
-        signals.clear();
-        signals.add(signal);
-      }
-      label.setIcon(new ComponentIcon(signal.info.getComponent()));
-      label.setText(signal.info.toString() + " [" + signal.info.getRadix().toDisplayString() + "]");
-      //width.setSelectedItem(item.getRadix());
-      return panel;
-    }
-
-     @Override
-     public boolean stopCellEditing() {
-       super.stopCellEditing();
-       return true;
-     }
-
-     @Override
-     public boolean isCellEditable(EventObject e) {
-       return true;
-     }
-  }
-
 
 	private ChronoPanel chronoPanel;
   private ChronoData data;
@@ -280,7 +176,6 @@ public class LeftPanel extends JPanel {
     table.setShowGrid(false);
     table.setDefaultRenderer(SelectionItem.class, new SignalRenderer());
     table.setDefaultRenderer(ChronoData.Signal.class, new ValueRenderer());
-    table.setDefaultEditor(ChronoData.Signal.class, new SignalEditor());
     table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
     table.setColumnSelectionAllowed(false);
@@ -309,7 +204,6 @@ public class LeftPanel extends JPanel {
 		table.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseReleased(MouseEvent e) {
-        System.out.println("release popup");
         if (!SwingUtilities.isRightMouseButton(e))
           return;
         if (!(e.getComponent() instanceof JTable))
@@ -389,9 +283,6 @@ public class LeftPanel extends JPanel {
       tableModel.fireTableRowsUpdated(oldSignal.idx, oldSignal.idx);
     if (newSignal != null)
       tableModel.fireTableRowsUpdated(newSignal.idx, newSignal.idx);
-    System.out.println("changed spotlight in left pane");
-    //tableModel.fireTableDataChanged();
-    //repaint();
 	}
 
 	public void updateSignals() {
@@ -462,6 +353,7 @@ public class LeftPanel extends JPanel {
     @Override
     public boolean importData(TransferHandler.TransferSupport support) {
       if (removing == null) {
+        // todo
         System.out.println("paste with no cut... maybe import name and restore waveform?");
         return false;
       }
@@ -479,6 +371,7 @@ public class LeftPanel extends JPanel {
           }
         }
         if (s2 != s) {
+          // todo
           System.out.println("paste with wrong cut... maybe remove, then import name and restore waveform?");
           return false;
         }
