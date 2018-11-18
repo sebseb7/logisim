@@ -32,8 +32,8 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.hepia.logisim.chronogui;
-import static com.hepia.logisim.chronogui.Strings.S;
+package com.cburch.logisim.gui.chrono;
+import static com.cburch.logisim.gui.chrono.Strings.S;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -63,8 +63,6 @@ import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
-
-import com.hepia.logisim.chronodata.ChronoData;
 
 public class ImageExporter { // extends JFrame implements ActionListener {
 

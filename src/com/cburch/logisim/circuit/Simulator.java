@@ -30,8 +30,6 @@
 package com.cburch.logisim.circuit;
 
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.prefs.AppPreferences;
@@ -104,7 +102,7 @@ public class Simulator {
             if (propagator != null) {
               propagator.reset();
             }
-            firePropagationCompleted();
+            fireSimulatorReset();
             propagateRequested |= isRunning;
           }
 
@@ -127,10 +125,6 @@ public class Simulator {
                   try {
                     exceptionEncountered = false;
                     propagator.propagate();
-                  } catch (UnsupportedOperationException thr) {
-                    thr.printStackTrace();
-                    exceptionEncountered = true;
-                    setIsRunning(false);
                   } catch (Exception thr) {
                     thr.printStackTrace();
                     exceptionEncountered = true;
@@ -205,8 +199,7 @@ public class Simulator {
     try {
       manager.setPriority(manager.getPriority() - 1);
       ticker.setPriority(ticker.getPriority() - 1);
-    } catch (SecurityException e) {
-    } catch (IllegalArgumentException e) {
+    } catch (IllegalArgumentException | SecurityException e) {
     }
 
     manager.start();
@@ -222,6 +215,13 @@ public class Simulator {
 
   public void drawStepPoints(ComponentDrawContext context) {
     manager.stepPoints.draw(context);
+  }
+
+  void fireSimulatorReset() {
+    SimulatorEvent e = new SimulatorEvent(this);
+    for (SimulatorListener l : new ArrayList<SimulatorListener>(listeners)) {
+      l.simulatorReset(e);
+    }
   }
 
   void firePropagationCompleted() {

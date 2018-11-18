@@ -108,9 +108,10 @@ public class FPGACommanderGui implements ActionListener {
 	}
 
 	private class MySimulatorListener implements SimulatorListener {
-            public void propagationCompleted(SimulatorEvent e) { }
-            public void simulatorStateChanged(SimulatorEvent e) { ChangeTickFrequency(); }
-            public void tickCompleted(SimulatorEvent e) { }
+    public void simulatorReset(SimulatorEvent e) { }
+    public void propagationCompleted(SimulatorEvent e) { }
+    public void simulatorStateChanged(SimulatorEvent e) { ChangeTickFrequency(); }
+    public void tickCompleted(SimulatorEvent e) { }
 	}
 
 	private JFrame panel;

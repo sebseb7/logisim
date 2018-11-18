@@ -54,16 +54,19 @@ public class SelectionItems extends ArrayList<SelectionItem> implements Transfer
   }
   public static final DataFlavor[] dataFlavors = new DataFlavor[] { dataFlavor };
 
+  @Override
   public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
     if(!isDataFlavorSupported(flavor))
       throw new UnsupportedFlavorException(flavor);
     return this;
   }
 
+  @Override
   public DataFlavor[] getTransferDataFlavors() {
     return dataFlavors;
   }
 
+  @Override
   public boolean isDataFlavorSupported(DataFlavor flavor) {
     return dataFlavor.equals(flavor);
   }

@@ -150,12 +150,23 @@ public class TestFrame extends LFrame {
         setTitle(computeTitle(curModel, project));
       }
     }
+    
+    @Override
+    public void simulatorReset(SimulatorEvent e) {
+      // ? curModel.propagationCompleted();
+    }
 
+    @Override
     public void propagationCompleted(SimulatorEvent e) {
       // curModel.propagationCompleted();
     }
 
+    @Override
     public void simulatorStateChanged(SimulatorEvent e) {
+    }
+
+    @Override
+    public void tickCompleted(SimulatorEvent e) {
     }
 
     public void testingChanged() {
@@ -176,9 +187,6 @@ public class TestFrame extends LFrame {
       pass.setText(S.fmt("passMessage", Integer.toString(numPass)));
       fail.setText(S.fmt("failMessage", Integer.toString(numFail)));
       finished = numPass + numFail;
-    }
-
-    public void tickCompleted(SimulatorEvent e) {
     }
 
     public void vectorChanged() {

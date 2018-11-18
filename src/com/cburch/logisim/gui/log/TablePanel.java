@@ -63,7 +63,7 @@ class TablePanel extends LogPanel {
       }
     }
 
-    public void entryAdded(Model.Event event, Value[] values) {
+    void update() {
       int oldCount = rowCount;
       computeRowCount();
       if (oldCount == rowCount) {
@@ -75,6 +75,14 @@ class TablePanel extends LogPanel {
           repaint();
         }
       }
+    }
+
+    public void entryAdded(Model.Event event, Value[] values) {
+      update();
+    }
+
+    public void resetEntries(Model.Event event, Value[] values) {
+      update();
     }
 
     public void filePropertyChanged(Model.Event event) {
@@ -184,6 +192,7 @@ class TablePanel extends LogPanel {
     tableHeight = cellHeight * (1 + rowCount) + HEADER_SEP;
     setPreferredSize(new Dimension(tableWidth, tableHeight));
     revalidate();
+    myListener.update();
     repaint();
   }
 

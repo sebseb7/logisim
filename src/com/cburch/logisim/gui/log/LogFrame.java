@@ -34,8 +34,10 @@ import static com.cburch.logisim.gui.log.Strings.S;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.event.ActionListener;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,6 +51,7 @@ import com.cburch.logisim.circuit.SimulatorEvent;
 import com.cburch.logisim.circuit.SimulatorListener;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
+import com.cburch.logisim.gui.chrono.ChronoPanel;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
@@ -56,7 +59,6 @@ import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
-import com.hepia.logisim.chronogui.ChronoPanel;
 
 public class LogFrame extends LFrame {
   private class MyListener implements ProjectListener,
@@ -89,13 +91,21 @@ public class LogFrame extends LFrame {
       }
     }
 
+    @Override
+    public void simulatorReset(SimulatorEvent e) {
+      curModel.simulatorReset();
+    }
+
+    @Override
     public void propagationCompleted(SimulatorEvent e) {
       curModel.propagationCompleted();
     }
 
+    @Override
     public void simulatorStateChanged(SimulatorEvent e) {
     }
 
+    @Override
     public void tickCompleted(SimulatorEvent e) {
     }
   }
@@ -191,13 +201,31 @@ public class LogFrame extends LFrame {
     }
 
     Container contents = getContentPane();
-    tabbedPane.setPreferredSize(new Dimension(550, 300));
+    int w = Math.max(550, project.getFrame().getWidth());
+    int h = 300;
+    tabbedPane.setPreferredSize(new Dimension(w, h));
     contents.add(tabbedPane, BorderLayout.CENTER);
 
     LocaleManager.addLocaleListener(myListener);
     myListener.localeChanged();
     pack();
-    setLocationRelativeTo(project.getFrame());
+    h = getSize().height;
+
+    // Try to place below circuit window, or at least near bottom of screen,
+    // using same width as circuit window.
+    Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
+    Rectangle r = project.getFrame().getBounds();
+    int x = r.x;
+    int y = r.y + r.height;
+    if (y + h > d.height) { // too small below circuit
+      if (r.y >= h) // plenty of room above circuit
+        y = r.y - h;
+      else if (r.y > d.height - h) // circuit is near bottom of screen
+        y = 0;
+      else // circuit is near top of screen
+        y = d.height - h;
+    }
+    setLocation(x, y);
   }
 
   public Model getModel() {

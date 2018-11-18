@@ -179,7 +179,16 @@ public class MenuSimulate extends Menu {
     }
 
     @Override
+    public void simulatorReset(SimulatorEvent e) {
+      updateSimulator(e);
+    }
+
+    @Override
     public void simulatorStateChanged(SimulatorEvent e) {
+      updateSimulator(e);
+    }
+
+    void updateSimulator(SimulatorEvent e) {
       Simulator sim = e.getSource();
       if (sim != currentSim) {
         return;

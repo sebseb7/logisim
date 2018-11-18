@@ -27,10 +27,32 @@
  * This version of the project is currently maintained by:
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
-package com.hepia.logisim.chronogui;
+package com.cburch.logisim.gui.chrono;
 
-import com.cburch.logisim.util.LocaleManager;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 
-public class Strings {
-  public static final LocaleManager S = new LocaleManager("resources/logisim", "chronogram");
+import javax.swing.JPanel;
+
+// An overlay JPanel that just draws a red cursor line.
+public class Cursor extends JPanel {
+
+  RightPanel rightPanel;
+
+	public Cursor(RightPanel r) {
+    rightPanel = r;
+		setOpaque(false);
+		setDoubleBuffered(true);
+	}
+
+	public void paintComponent(Graphics g) {
+    int pos = rightPanel.getSignalCursor();
+		Graphics2D g2 = (Graphics2D) g;
+		g2.setStroke(new BasicStroke(1));
+		g2.setPaint(Color.RED);
+		g2.drawLine(pos, getHeight(), pos, 0);
+	}
+
 }

@@ -102,6 +102,10 @@ class LogThread extends UniquelyNamedThread implements Model.Listener {
     }
   }
 
+  public void resetEntries(Model.Event event, Value[] values) {
+    entryAdded(event, values); // file doesn't reset, for now
+  }
+
   public void entryAdded(Model.Event event, Value[] values) {
     synchronized (lock) {
       if (isFileEnabled())

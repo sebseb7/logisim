@@ -27,8 +27,8 @@
  * This version of the project is currently maintained by:
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
-package com.hepia.logisim.chronogui;
-import static com.hepia.logisim.chronogui.Strings.S;
+package com.cburch.logisim.gui.chrono;
+import static com.cburch.logisim.gui.chrono.Strings.S;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -53,17 +53,18 @@ import javax.swing.SwingUtilities;
 
 import com.cburch.draw.toolbar.Toolbar;
 import com.cburch.logisim.circuit.Simulator;
+import com.cburch.logisim.data.Value;
 import com.cburch.logisim.gui.log.LogFrame;
 import com.cburch.logisim.gui.log.LogPanel;
 import com.cburch.logisim.gui.log.Model;
+import com.cburch.logisim.gui.log.Selection;
+import com.cburch.logisim.gui.log.SelectionItem;
 import com.cburch.logisim.gui.main.SimulationToolbarModel;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.MenuListener;
 import com.cburch.logisim.gui.menu.PrintHandler;
-import com.hepia.logisim.chronodata.ChronoData;
-import com.hepia.logisim.chronodata.ChronoModelEventHandler;
 
-public class ChronoPanel extends LogPanel implements KeyListener {
+public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener {
 
   private class MyListener implements ActionListener, AdjustmentListener {
 
@@ -136,11 +137,12 @@ public class ChronoPanel extends LogPanel implements KeyListener {
 
   public static final int HEADER_HEIGHT = 20;
   public static final int SIGNAL_HEIGHT = 38;
-  public static final int INITIAL_SPLIT = 353;
+  public static final int INITIAL_SPLIT = 150;
 
-  // data
+  // state
   private Simulator simulator;
-  private ChronoData chronoData = new ChronoData();
+  private ChronoData data = new ChronoData();
+  private Model model;
 
   // button bar
   private JPanel buttonBar = new JPanel();
@@ -155,19 +157,19 @@ public class ChronoPanel extends LogPanel implements KeyListener {
   private JSplitPane splitPane;
 
   // listeners
-  private ChronoModelEventHandler modelListener;
   private MyListener myListener = new MyListener();
 
   public ChronoPanel(LogFrame logFrame) {
     super(logFrame);
 
     simulator = getProject().getSimulator();
-    modelListener = new ChronoModelEventHandler(this, logFrame.getModel());
+
+    setModel(logFrame.getModel());
 
     configure();
     resplit();
 
-    if (chronoData.getSignalCount() == 0)
+    if (data.getSignalCount() == 0)
       System.out.println("no signals"); // todo: show msg or button in left pane?
 
     // todo: allow drag and delete in left pane
@@ -214,14 +216,15 @@ public class ChronoPanel extends LogPanel implements KeyListener {
     // panels
     splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
     splitPane.setDividerSize(5);
+    splitPane.setResizeWeight(0.0);
     add(BorderLayout.CENTER, splitPane);
   }
 
 //  public void exportFile(String file) {
-//    ChronoDataWriter.export(file, timelineParam, chronoData);
+//    ChronoDataWriter.export(file, timelineParam, data);
 //  }
 //  public void exportImage(File file) {
-//    ImageExporter ie = new ImageExporter(this, chronoData, HEADER_HEIGHT);
+//    ImageExporter ie = new ImageExporter(this, data, HEADER_HEIGHT);
 //    ie.createImage(file);
 //  }
 
@@ -256,11 +259,15 @@ public class ChronoPanel extends LogPanel implements KeyListener {
     rightScroll.getHorizontalScrollBar().setValue(p);
     rightScroll.getHorizontalScrollBar().setValue(p);
 
-    splitPane.setDividerLocation(INITIAL_SPLIT);
+    // splitPane.setDividerLocation(INITIAL_SPLIT);
   }
 
   public ChronoData getChronoData() {
-    return chronoData;
+    return data;
+  }
+
+  public Selection getSelection() {
+    return getLogFrame().getModel().getSelection();
   }
 
   public LeftPanel getLeftPanel() {
@@ -269,10 +276,6 @@ public class ChronoPanel extends LogPanel implements KeyListener {
 
   public RightPanel getRightPanel() {
     return rightPanel;
-  }
-
-  public int getVisibleSignalsWidth() {
-    return splitPane.getRightComponent().getWidth();
   }
 
   @Override
@@ -299,7 +302,7 @@ public class ChronoPanel extends LogPanel implements KeyListener {
 //       ChronoData tmp = new ChronoData(logFile, this);
 //       if (tmp != null) {
 //         realTimeMode = false;
-//         chronoData = tmp;
+//         data = tmp;
 //         resplit();
 //         // statusLabel.setText(S.get("InputFileLoaded") + logFile);
 //         System.out.println("imported file");
@@ -318,7 +321,8 @@ public class ChronoPanel extends LogPanel implements KeyListener {
       @Override
       public void run() {
         // scroll right to follow most recent data
-        scrollTo(rightPanel.getSignalWidth());
+        int x = rightPanel.getSignalWidth();
+        rightScroll.getHorizontalScrollBar().setValue(x);
         SwingUtilities.updateComponentTreeUI(ChronoPanel.this);
       }
     });
@@ -326,16 +330,12 @@ public class ChronoPanel extends LogPanel implements KeyListener {
       SwingUtilities.updateComponentTreeUI(this);
   }
 
-  public void scrollTo(int pos) {
-    rightScroll.getHorizontalScrollBar().setValue(pos);
-  }
-
   // todo
 //   public void toggleBusExpand(SignalDataBus choosenBus, boolean expand) {
 //     if (expand) {
-//       chronoData.expandBus(choosenBus);
+//       data.expandBus(choosenBus);
 //     } else {
-//       chronoData.contractBus(choosenBus);
+//       data.contractBus(choosenBus);
 //     }
 //     resplit();
 //   }
@@ -359,7 +359,9 @@ public class ChronoPanel extends LogPanel implements KeyListener {
 
   @Override
   public void modelChanged(Model oldModel, Model newModel) {
-    modelListener.setModel(newModel);
+    setModel(newModel);
+    setSignalCursor(Integer.MAX_VALUE);
+    repaintAll(false);
   }
 
   class ChronoMenuListener extends MenuListener {
@@ -426,21 +428,66 @@ public class ChronoPanel extends LogPanel implements KeyListener {
 	}
 
   public void setSignalCursor(int posX) {
+    rightPanel.computeSize();
 		rightPanel.setSignalCursor(posX);
-    leftPanel.setSignalsValues(posX);
+    leftPanel.updateSignalValues();
   }
 
+	@Override
+	public void entryAdded(Model.Event event, Value[] values) {
+    data.addSignalValues(values);
+    repaintAll(false);
+  }
+
+	@Override
+	public void resetEntries(Model.Event event, Value[] values) {
+    data.resetSignalValues(values);
+    setSignalCursor(Integer.MAX_VALUE);
+    repaintAll(false);
+  }
+
+	@Override
+	public void filePropertyChanged(Model.Event event) {
+    System.out.println("prop changed");
+	}
+
+	@Override
+	public void selectionChanged(Model.Event event) {
+    System.out.println("selection changed");
+    // todo: update ChronoData and panel with new signals, removed signals
+    data.setSignals(model.getSelection(), model.getCircuitState());
+    leftPanel.updateSignals();
+    rightPanel.updateSignals();
+	}
+
 	public void toggleBusExpand(ChronoData.Signal s, boolean expand) {
+    System.out.println("toggle bus");
     // todo: later
 		// mChronoPanel.toggleBusExpand(signalDataSource, expand);
 	}
 
 	public void zoom(int sens, int posX) {
+    System.out.println("zoom");
     rightPanel.zoom(sens, posX);
 	}
 
 	public void zoom(ChronoData.Signal s, int sens, int val) {
+    System.out.println("zoom");
 		rightPanel.zoom(sens, val);
+	}
+
+  public void setModel(Model newModel) {
+    System.out.println("set model");
+    if (model != null)
+      model.removeModelListener(this);
+    data.clear();
+    model = newModel;
+    if (model == null)
+      return;
+
+    data.setSignals(model.getSelection(), model.getCircuitState());
+
+		model.addModelListener(this);
 	}
 
 }

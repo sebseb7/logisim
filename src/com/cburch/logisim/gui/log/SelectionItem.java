@@ -92,8 +92,8 @@ public class SelectionItem implements AttributeListener, CircuitListener {
         circComp = path != null && path.length > 0 ? path[0] : comp;
       } else if (path != null) {
         for (int i = 0; i < path.length; i++) {
-          SubcircuitFactory circFact = (SubcircuitFactory) path[i]
-              .getFactory();
+          SubcircuitFactory circFact;
+          circFact = (SubcircuitFactory) path[i].getFactory();
           if (circ == circFact.getSubcircuit()) {
             circComp = i + 1 < path.length ? path[i + 1] : comp;
           }

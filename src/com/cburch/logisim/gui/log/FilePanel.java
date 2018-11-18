@@ -111,6 +111,9 @@ class FilePanel extends LogPanel {
     public void entryAdded(Model.Event event, Value[] values) {
     }
 
+    public void resetEntries(Model.Event event, Value[] values) {
+    }
+
     public void filePropertyChanged(Model.Event event) {
       Model model = getModel();
       computeEnableItems(model);

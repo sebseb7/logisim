@@ -251,18 +251,20 @@ public class RegTabContent extends JScrollPane
   }
 
   @Override
+  public void simulatorReset(SimulatorEvent e) {
+    fillArray();
+  }
+
+  @Override
   public void propagationCompleted(SimulatorEvent e) {
-    // throw new UnsupportedOperationException("Not supported yet.");
     fillArray();
   }
 
   @Override
   public void simulatorStateChanged(SimulatorEvent e) {
-    // throw new UnsupportedOperationException("Not supported yet.");
   }
 
   @Override
   public void tickCompleted(SimulatorEvent e) {
-    // throw new UnsupportedOperationException("Not supported yet.");
   }
 }

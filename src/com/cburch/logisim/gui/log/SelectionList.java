@@ -55,7 +55,6 @@ import javax.swing.DropMode;
 import javax.swing.InputMap;
 import javax.swing.InputMap;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -83,6 +82,10 @@ class SelectionList extends JTable {
 
     @Override
     public void entryAdded(Model.Event event, Value[] values) {
+    }
+
+    @Override
+    public void resetEntries(Model.Event event, Value[] values) {
     }
 
     @Override
@@ -384,7 +387,7 @@ class SelectionList extends JTable {
           } catch (ClassCastException e) {
           }
         }
-        add(items, newIdx);
+        addOrMove(items, newIdx);
         return true;
       } catch (UnsupportedFlavorException | IOException e) {
         e.printStackTrace();
@@ -393,8 +396,8 @@ class SelectionList extends JTable {
     }
   }
 
-  private void add(SelectionItems items, int idx) {
-    selection.add(items, idx);
+  private void addOrMove(SelectionItems items, int idx) {
+    selection.addOrMove(items, idx);
     clearSelection();
     for (SelectionItem item : items) {
       int i = selection.indexOf(item);

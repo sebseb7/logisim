@@ -27,7 +27,7 @@
  * This version of the project is currently maintained by:
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
-package com.hepia.logisim.chronogui;
+package com.cburch.logisim.gui.chrono;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -42,10 +42,8 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.JPanel;
 
-import com.hepia.logisim.chronodata.ChronoData;
-
 // A single-bit or multi-bit waveform display
-public class SignalDraw extends JPanel {
+public class Waveform extends JPanel {
 
 	private class MyListener extends MouseAdapter {
 		@Override
@@ -79,15 +77,16 @@ public class SignalDraw extends JPanel {
 		}
 	}
 
-	private static final Color GRAY = new Color(180, 180, 180, 100);
+	private static final Color LIGHTGRAY = new Color(180, 180, 180);
+	private static final Color DARKGRAY = new Color(140, 140, 140);
   private static final int HEIGHT = ChronoPanel.SIGNAL_HEIGHT;
-  private static final int HIGH = 6;
-  private static final int LOW = HEIGHT - 6;
+  private static final int GAP = 6;
+  private static final int HIGH = GAP;
+  private static final int LOW = HEIGHT - GAP;
   private static final int MID = HEIGHT / 2;
 
 	private boolean bold;
-	private int width = 10;
-	private int tickWidth;
+	private int tickWidth, numTicks, width;
 	private int slope;
 
 	private BufferedImage buf;
@@ -99,42 +98,42 @@ public class SignalDraw extends JPanel {
 
 	private MyListener myListener = new MyListener();
 
-	public SignalDraw(ChronoPanel p, RightPanel r, ChronoData.Signal s) {
+	public Waveform(ChronoPanel p, RightPanel r, ChronoData.Signal s,
+      int tickWidth, int numTicks, int width) {
 		chronoPanel = p;
 		signal = s;
 		rightPanel = r;
     data = chronoPanel.getChronoData();
 
-		tickWidth = rightPanel.getTickWidth();
-		width = Math.max(10, tickWidth * data.getValueCount()); // fixme, even clock spacing
-
-		slope = (tickWidth < 8) ? tickWidth / 3 : 5;
-
-		setBackground(Color.WHITE);
-		setMaximumSize(new Dimension(width, HEIGHT));
-		setPreferredSize(new Dimension(width, HEIGHT));
+    setOpaque(true);
+		setBackground(Color.MAGENTA);
 		setDoubleBuffered(true);
 
 		addMouseListener(myListener);
 		addMouseMotionListener(myListener);
 		addMouseWheelListener(myListener);
 		addMouseListener(new PopupMenu(chronoPanel, s));
+
+    update(tickWidth, numTicks, width);
 	}
+
+  public ChronoData.Signal getSignal() {
+    return signal;
+  }
 
 	private void drawSignal(Graphics2D g) {
 		g.setStroke(new BasicStroke(bold ? 2 : 1));
 
-    float xOff = rightPanel.getCurrentPosition();
-    float f = xOff / rightPanel.getSignalWidth();
-    int tEnd = data.getValueCount();
-		int t = Math.round(tEnd * f);
+    // float xOff = rightPanel.getCurrentPosition();
+    // float f = xOff / width;
+		int t = 0; // (int)Math.round(numTicks * f); // huh ?
 
     String max = signal.getFormattedMaxValue();
     String min = signal.getFormattedMinValue();
-		String prec = signal.getFormattedValue(t++);
+		String prec = signal.getFormattedValue(t);
 
 		int x = 0;
-		while (t < tEnd && x < xOff + getVisibleRect().width + (10 * tickWidth)) {
+		while (t < numTicks) { //  && x < xOff + getVisibleRect().width + (10 * tickWidth)) {
 			String suiv = signal.getFormattedValue(t++);
 
       if (suiv.equals("-")) {
@@ -157,22 +156,42 @@ public class SignalDraw extends JPanel {
 				g.drawLine(x, LOW, x + tickWidth, MID);
 				g.setColor(Color.black);
 			} else if (suiv.equals(min)) {
-				g.drawLine(x, LOW, x + tickWidth, LOW);
-        if (!prec.equals(min))
-          g.drawLine(x, HIGH, x, LOW);
+        if (!prec.equals(min)) {
+          if (slope > 0) {
+            g.setColor(DARKGRAY);
+            g.fillPolygon(
+                new int[] { x, x + slope, x },
+                new int[] { HIGH, LOW+1, LOW+1 },
+                3);
+            g.setColor(Color.black);
+          }
+          g.drawLine(x, HIGH, x + slope, LOW);
+          g.drawLine(x + slope, LOW, x + tickWidth, LOW);
+        } else {
+          g.drawLine(x, LOW, x + tickWidth, LOW);
+        }
 			} else if (suiv.equals(max)) {
-				g.setColor(GRAY);
-				g.fillRect(x + 1, HIGH, tickWidth, LOW - HIGH);
-				g.setColor(Color.black);
-				g.drawLine(x, HIGH, x + tickWidth, HIGH);
-        if (!prec.equals(max))
-          g.drawLine(x, LOW, x, HIGH);
+        if (!prec.equals(max)) {
+          g.setColor(DARKGRAY);
+          g.fillPolygon(
+              new int[] { x, x + slope, x + tickWidth + 1, x + tickWidth + 1},
+              new int[] { LOW+1, HIGH, HIGH, LOW+1 },
+              4);
+          g.setColor(Color.black);
+          g.drawLine(x, LOW, x + slope, HIGH);
+          g.drawLine(x + slope, HIGH, x + tickWidth, HIGH);
+        } else {
+          g.setColor(DARKGRAY);
+          g.fillRect(x, HIGH, tickWidth + 1, LOW - HIGH + 1);
+          g.setColor(Color.black);
+          g.drawLine(x, HIGH, x + tickWidth, HIGH);
+        }
       } else {
-        if (t == 2) // first segment
-          g.drawString(suiv, x + 2, MID);
-        if (t == 2 || suiv.equals(prec)) {
+        if (suiv.equals(prec)) {
           g.drawLine(x, LOW, x + tickWidth, LOW);
           g.drawLine(x, HIGH, x + tickWidth, HIGH);
+          if (t == 1) // first segment also gets a label
+            g.drawString(suiv, x + 2, MID);
         } else {
           g.drawLine(x, LOW, x + slope, HIGH);
           g.drawLine(x, HIGH, x + slope, LOW);
@@ -188,30 +207,33 @@ public class SignalDraw extends JPanel {
 	}
 
 	public void paintComponent(Graphics g) {
+    System.out.println("  waveform paint " + signal.idx);
 		super.paintComponent(g);
     Graphics2D g2 = (Graphics2D) g;
 
     // todo: reallocating image each time seems silly
     if (buf == null) {
-      buf = (BufferedImage)createImage(rightPanel.getVisibleWidth() * 2, HEIGHT);
+      buf = (BufferedImage)createImage(width, HEIGHT);
       Graphics2D gb = buf.createGraphics();
       gb.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
           RenderingHints.VALUE_STROKE_DEFAULT);
+      gb.setColor(Color.WHITE);
+      gb.fillRect(0, 0, width, GAP-1);
+      gb.fillRect(0, LOW, width, GAP-1);
+      gb.setColor(LIGHTGRAY);
+      gb.fillRect(0, HIGH, width, LOW - HIGH);
+      gb.setColor(Color.BLACK);
       drawSignal(gb);
       gb.dispose();
     }
-    g2.drawImage(buf, null, rightPanel.getDisplayOffsetX(), 0);
-	}
-
-	public ChronoData.Signal getSignal() {
-		return signal;
+    g2.drawImage(buf, null, rightPanel.getDisplayOffsetX(), 0); // always 0, 0 ?
 	}
 
   public void highlight(boolean enable) {
     if (bold != enable) {
       flush();
       bold = enable;
-      this.repaint();
+      repaint();
     }
 	}
 
@@ -219,12 +241,13 @@ public class SignalDraw extends JPanel {
 		buf = null;
 	}
 
-	public void setTickWidth(int w) {
-		flush();
-		tickWidth = w;
-		slope = (tickWidth < 8) ? tickWidth / 3 : 5;
-		width = Math.max(10, tickWidth * data.getValueCount()); // fixme, even clock spacing
+	public void update(int tickWidth, int numTicks, int width) {
+    this.tickWidth = tickWidth;
+    this.numTicks = numTicks;
+    this.width = width;
+		slope = (tickWidth < 12) ? tickWidth / 3 : 4;
 		setMaximumSize(new Dimension(width, HEIGHT));
 		setPreferredSize(new Dimension(width, HEIGHT));
+		flush();
 	}
 }

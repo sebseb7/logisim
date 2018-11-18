@@ -36,19 +36,23 @@ import java.util.Iterator;
 
 import javax.swing.JFrame;
 
+import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.CircuitEvent;
+import com.cburch.logisim.circuit.CircuitListener;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
-public class Model {
+public class Model implements CircuitListener {
 
   public static class Event {
 
   }
 
   public interface Listener {
+    public void resetEntries(Event event, Value[] values);
     public void entryAdded(Event event, Value[] values);
     public void filePropertyChanged(Event event);
     public void selectionChanged(Event event);
@@ -64,24 +68,50 @@ public class Model {
   private LogThread logger = null;
 
   public Model(CircuitState circuitState) {
-    listeners = new EventSourceWeakSupport<Listener>();
+    listeners = new EventSourceWeakSupport<>();
     selection = new Selection(circuitState, this);
-    log = new HashMap<SelectionItem, ValueLog>();
+    log = new HashMap<>();
 
-    // Add pins, clocks, and any other loggable component that doesn't
-    // have options (so we exclude Ram/Rom) and isn't a subcircuit.
-    for (Component comp : circuitState.getCircuit().getNonWires()) {
-      if (comp.getFactory() instanceof SubcircuitFactory)
-        continue;
-      Loggable log = (Loggable)comp.getFeature(Loggable.class);
-      if (log == null)
-        continue;
-      Object[] opts = log.getLogOptions(circuitState);
-      if (opts != null && opts.length > 0)
-        continue;
-      Component[] path = new Component[] { };
-      selection.add(new SelectionItem(this, path, comp, null));
+    // Add top-level pins, clocks, etc.
+    Circuit circ = circuitState.getCircuit();
+    for (Component comp : circ.getNonWires())
+      addIfDefaultComponent(circ, comp);
+
+    // Listen for new pins, clocks, etc.
+    circuitState.getCircuit().addCircuitListener(this);
+  }
+
+  @Override
+  public void circuitChanged(CircuitEvent event) {
+    int action = event.getAction();
+    // todo: gracefully handle pin width changes, other circuit changes
+    if (action == CircuitEvent.ACTION_ADD) {
+      Circuit circ = event.getCircuit();
+      Component comp = (Component)event.getData();
+      addIfDefaultComponent(circ, comp);
     }
+  }
+
+  // Add top-level pins, clocks, and any other loggable component that doesn't
+  // have options (so we exclude Ram/Rom) and isn't a subcircuit.
+  private void addIfDefaultComponent(Circuit circ, Component comp) {
+    CircuitState circuitState = getCircuitState();
+    if (circ != circuitState.getCircuit())
+      return;
+    if (comp.getFactory() instanceof SubcircuitFactory)
+      return;
+    Loggable log = (Loggable)comp.getFeature(Loggable.class);
+    if (log == null)
+      return;
+    Object[] opts = log.getLogOptions(circuitState);
+    if (opts != null && opts.length > 0) // exclude Ram, Rom, etc.
+      return;
+    Component[] path = new Component[] { };
+    SelectionItem item = new SelectionItem(this, path, comp, null);
+    selection.add(item);
+    // set an initial value
+    Value v = item.fetchValue(circuitState);
+    getValueLog(item).append(v);
   }
 
   public void addModelListener(Listener l) {
@@ -91,6 +121,12 @@ public class Model {
   private void fireEntryAdded(Event e, Value[] values) {
     for (Listener l : listeners) {
       l.entryAdded(e, values);
+    }
+  }
+
+  private void fireReset(Event e, Value[] values) {
+    for (Listener l : listeners) {
+      l.resetEntries(e, values);
     }
   }
 
@@ -165,6 +201,17 @@ public class Model {
       }
       fireEntryAdded(new Event(), vals);
     }
+  }
+
+  public void simulatorReset() {
+    CircuitState circuitState = getCircuitState();
+    Value[] vals = new Value[selection.size()];
+    for (int i = selection.size() - 1; i >= 0; i--) {
+      SelectionItem item = selection.get(i);
+      vals[i] = item.fetchValue(circuitState);
+      getValueLog(item).reset(vals[i]);
+    }
+    fireReset(new Event(), vals);
   }
 
   public void removeModelListener(Listener l) {

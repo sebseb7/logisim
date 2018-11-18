@@ -27,8 +27,11 @@
  * This version of the project is currently maintained by:
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
-package com.hepia.logisim.chronodata;
+package com.cburch.logisim.gui.chrono;
 
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
@@ -37,35 +40,75 @@ import java.util.List;
 
 import javax.swing.ImageIcon;
 
+import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Value;
+import com.cburch.logisim.gui.log.Selection;
 import com.cburch.logisim.gui.log.SelectionItem;
 import com.cburch.logisim.util.Icons;
-import com.hepia.logisim.chronogui.ChronoPanel;
 
 /**
  * Contains all data to be plotted
  */
 public class ChronoData {
 
-  public static class Signal {
-    public final int idx;
+  public static class Signal implements Transferable {
+
+    public static final DataFlavor dataFlavor;
+    static {
+      DataFlavor f = null;
+      try {
+        f = new DataFlavor(
+            String.format("%s;class=\"%s\"",
+              DataFlavor.javaJVMLocalObjectMimeType,
+              Signal.class.getName()));
+      } catch (ClassNotFoundException e) {
+        e.printStackTrace();
+      }
+      dataFlavor = f;
+    }
+    public static final DataFlavor[] dataFlavors = new DataFlavor[] { dataFlavor };
+
+    @Override
+    public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
+      if(!isDataFlavorSupported(flavor))
+        throw new UnsupportedFlavorException(flavor);
+      return this;
+    }
+
+    @Override
+    public DataFlavor[] getTransferDataFlavors() {
+      return dataFlavors;
+    }
+
+    @Override
+    public boolean isDataFlavorSupported(DataFlavor flavor) {
+      return dataFlavor.equals(flavor);
+    }
+
+    public int idx;
     private final SelectionItem info;
-    private final int offset;
     private final ArrayList<Value> vals;
+    private int offset;
     private int width;
 
-    private Signal(int idx, SelectionItem info, int offset) {
+    private Signal(int idx, SelectionItem info, int offset, Value initialValue) {
       this.idx = idx;
       this.info = info;
       this.offset = offset;
-      this.width = 1;
+      this.width = initialValue.getWidth();
       this.vals = new ArrayList<>();
+      vals.add(initialValue);
     }
 
     private void extend(Value v) {
       vals.add(v);
-      width = Math.max(width, v.getWidth());
+    }
+
+    private void reset(Value v) {
+      offset = 0;
+      vals.clear();
+      vals.add(v);
     }
 
     // todo: this doesn't belong here
@@ -114,7 +157,7 @@ public class ChronoData {
   }
 
   private ArrayList<Signal> signals = new ArrayList<>();
-  private int pos = 0, count = 0;
+  private int count = 1;
 
 	public ChronoData() {
 	}
@@ -123,7 +166,7 @@ public class ChronoData {
     return signals.size();
   }
 
-  public int getValueCount() {
+  public int getValueCount() { // todo: uniform spacing for clock ticks
     return count;
   }
 
@@ -132,21 +175,39 @@ public class ChronoData {
   }
 
   public void clear() {
-    pos = 0;
-    count = 0;
+    count = 1;
     signals.clear();
   }
 
-  public void addSignal(SelectionItem info, Value initialValue) {
-    for (Signal s : signals) {
-      if (s.info.equals(info))
-        return;
+  // really: add, remove, and/or move as needed
+  public void setSignals(Selection sel, CircuitState circuitState) {
+		int n = sel.size();
+		for (int i = 0; i < n; i++) {
+      SelectionItem id = sel.get(i);
+			Value value = id.fetchValue(circuitState);
+      addSignal(id, value, i);
     }
-    int missed = (initialValue == null && count > 0) ? pos+1 : pos;
-    Signal s = new Signal(signals.size(), info, missed);
-    signals.add(s);
-    if (initialValue != null)
-      s.extend(initialValue);
+    if (signals.size() > n)
+      signals.subList(n, signals.size()).clear();
+  }
+
+  // really: add or move
+  private void addSignal(SelectionItem info, Value initialValue, int idx) {
+    for (Signal s : signals) {
+      if (s.info.equals(info)) {
+        if (s.idx == idx)
+          return;
+        signals.remove(s.idx);
+        signals.add(idx, s);
+        int a = Math.min(idx, s.idx);
+        int b = Math.max(idx, s.idx);
+        for (int i = a; i <= b; i++)
+          signals.get(i).idx = i;
+        return;
+      }
+    }
+    Signal s = new Signal(idx, info, count - 1, initialValue);
+    signals.add(idx, s);
   }
 
   // // todo: use Value
@@ -154,10 +215,16 @@ public class ChronoData {
 	// 	get(signalName).getSignalValues().add(signalValue.replaceAll("\\s", ""));
 	// }
 
-  // todo: use Value
 	public void addSignalValues(Value[] vals) {
     for (int i = 0; i < signals.size() && i < vals.length; i++)
       signals.get(i).extend(vals[i]);
+    count++;
+	}
+
+	public void resetSignalValues(Value[] vals) {
+    count = 0;
+    for (int i = 0; i < signals.size() && i < vals.length; i++)
+      signals.get(i).reset(vals[i]);
     count++;
 	}
 

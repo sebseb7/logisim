@@ -38,16 +38,16 @@ public class Selection {
 
   private CircuitState root;
   private Model model;
-  private ArrayList<SelectionItem> signalsts;
+  private ArrayList<SelectionItem> signals;
 
   public Selection(CircuitState root, Model model) {
     this.root = root;
     this.model = model;
-    signalsts = new ArrayList<SelectionItem>();
+    signals = new ArrayList<SelectionItem>();
   }
 
   public void add(SelectionItem item) {
-    signalsts.add(item);
+    signals.add(item);
     model.fireSelectionChanged(new Model.Event());
   }
 
@@ -56,11 +56,11 @@ public class Selection {
   }
 
   public boolean contains(SelectionItem item) {
-    return signalsts.contains(item);
+    return signals.contains(item);
   }
 
   public SelectionItem get(int index) {
-    return signalsts.get(index);
+    return signals.get(index);
   }
 
   public CircuitState getCircuitState() {
@@ -68,26 +68,30 @@ public class Selection {
   }
 
   public int indexOf(SelectionItem value) {
-    return signalsts.indexOf(value);
+    return signals.indexOf(value);
   }
 
-  public void add(List<SelectionItem> items, int idx) {
+  public void addOrMove(List<SelectionItem> items, int idx) {
+    int changed = items.size();
     for (SelectionItem item : items) {
-      int i = signalsts.indexOf(item);
+      int i = signals.indexOf(item);
       if (i < 0)
-        signalsts.add(idx++, item); // put new item at idx
+        signals.add(idx++, item); // put new item at idx
       else if (i > idx)
-        signalsts.add(idx++, signalsts.remove(i)); // move later item up
+        signals.add(idx++, signals.remove(i)); // move later item up
       else if (i < idx)
-        signalsts.add(idx-1, signalsts.remove(i)); // move earlier item down
+        signals.add(idx-1, signals.remove(i)); // move earlier item down
+      else
+        changed--;
     }
-    model.fireSelectionChanged(new Model.Event());
+    if (changed > 0)
+      model.fireSelectionChanged(new Model.Event());
   }
 
   public int remove(List<SelectionItem> items) {
     int count = 0;
     for (SelectionItem item : items) {
-      if (signalsts.remove(item))
+      if (signals.remove(item))
         count++;
     }
     if (count > 0)
@@ -96,15 +100,19 @@ public class Selection {
   }
 
   public void move(int fromIndex, int toIndex) {
+    System.out.printf("move %d %d\n", fromIndex, toIndex);
     if (fromIndex == toIndex)
       return;
-    SelectionItem o = signalsts.remove(fromIndex);
-    signalsts.add(toIndex, o);
+    if (fromIndex < 0 || fromIndex >= signals.size()
+        || toIndex < 0 || toIndex >= signals.size())
+      throw new IllegalArgumentException("Can't move from " + fromIndex + " to " + toIndex);
+    SelectionItem o = signals.remove(fromIndex);
+    signals.add(toIndex, o);
     model.fireSelectionChanged(new Model.Event());
   }
 
   public void remove(int index) {
-    signalsts.remove(index);
+    signals.remove(index);
     model.fireSelectionChanged(new Model.Event());
   }
 
@@ -113,6 +121,6 @@ public class Selection {
   }
 
   public int size() {
-    return signalsts.size();
+    return signals.size();
   }
 }

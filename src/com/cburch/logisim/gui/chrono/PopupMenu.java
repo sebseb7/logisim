@@ -27,8 +27,8 @@
  * This version of the project is currently maintained by:
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
-package com.hepia.logisim.chronogui;
-import static com.hepia.logisim.chronogui.Strings.S;
+package com.cburch.logisim.gui.chrono;
+import static com.cburch.logisim.gui.chrono.Strings.S;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -39,8 +39,6 @@ import javax.swing.ButtonGroup;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
-
-import com.hepia.logisim.chronodata.ChronoData;
 
 public class PopupMenu extends MouseAdapter {
 

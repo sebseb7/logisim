@@ -27,7 +27,7 @@
  * This version of the project is currently maintained by:
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
-package com.hepia.logisim.chronogui;
+package com.cburch.logisim.gui.chrono;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -39,24 +39,23 @@ import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import com.hepia.logisim.chronodata.ChronoData;
-
-// Right panel has timeline on top and multiple SignalDraw components.
+// Right panel has timeline on top and multiple Waveform components.
 public class RightPanel extends JPanel {
 
 	private ChronoPanel chronoPanel;
-	private TimelineDraw timeline;
+	private Timeline timeline;
 
-	private ArrayList<SignalDraw> rows = new ArrayList<>();
+	private ArrayList<Waveform> rows = new ArrayList<>();
 	private Box waveforms;
 	private JLayeredPane overlay;
 	private Cursor cursor;
 
-	private int curX = 0;
-	private int tickWidth = 20;
+	private int curX = Integer.MAX_VALUE; // pixel coordinate of cursor, or MAX_INT to pin at right
+	private int curT = Integer.MAX_VALUE; // tick number of cursor, or MAX_INT to pin at right
+	private int tickWidth = 20; // display width of one time unit 
+  private int numTicks;
+  private int width, height;
 	private int displayOffsetX = 0;
-
-	private int height;
 
 	public RightPanel(ChronoPanel chronoPanel) {
 		this.chronoPanel = chronoPanel;
@@ -64,9 +63,12 @@ public class RightPanel extends JPanel {
 	}
 
 	public RightPanel(RightPanel oldPanel) {
+    try { throw new Exception(); }
+    catch (Exception e) { e.printStackTrace(); }
 		chronoPanel = oldPanel.chronoPanel;
 		tickWidth = oldPanel.tickWidth;
 		curX = oldPanel.curX;
+    curT = oldPanel.curT;
 		displayOffsetX = oldPanel.displayOffsetX;
 		configure();
 	}
@@ -74,95 +76,127 @@ public class RightPanel extends JPanel {
 	private void configure() {
     ChronoData data = chronoPanel.getChronoData();
     int n = data.getSignalCount();
-		height = n * ChronoPanel.SIGNAL_HEIGHT;
+		height = ChronoPanel.HEADER_HEIGHT + n * ChronoPanel.SIGNAL_HEIGHT;
 
 		setLayout(new BorderLayout());
 		setBackground(Color.WHITE);
 
 		waveforms = Box.createVerticalBox();
 		waveforms.setOpaque(true);
+    waveforms.setBackground(Color.WHITE);
 
-		timeline = new TimelineDraw(tickWidth);
+    numTicks = data.getValueCount();
+		width = tickWidth * numTicks + 1;
 
-    for (int i = 0; i < n; i++) {
-      ChronoData.Signal s = data.getSignal(i);
-      SignalDraw w = new SignalDraw(chronoPanel, this, s);
-      rows.add(w);
-			waveforms.add(w);
-		}
-
-		cursor = new Cursor();
-
+		timeline = new Timeline(tickWidth, numTicks, width);
+		cursor = new Cursor(this);
 		overlay = new JLayeredPane();
-		computeSize();
-
 		overlay.add(cursor, new Integer(1));
 		overlay.add(timeline, new Integer(0));
 		overlay.add(waveforms, new Integer(0));
 
-		add(overlay, BorderLayout.WEST);
+		add(overlay, BorderLayout.CENTER);
+
+    updateSignals();
 	}
 
-	private void computeSize() {
-		int totalWidth = tickWidth * 2;
-		overlay.setPreferredSize(new Dimension(totalWidth, height));
-		waveforms.setBounds(0, ChronoPanel.HEADER_HEIGHT, totalWidth, height);
-		timeline.setBounds(0, 0, totalWidth, ChronoPanel.HEADER_HEIGHT);
-		cursor.setBounds(0, 0, totalWidth, height);
+  int indexOf(ChronoData.Signal s) {
+    int n = rows.size();
+    for (int i = 0; i < n; i++) {
+      Waveform w = rows.get(i);
+      if (w.getSignal() == s)
+        return i;
+    }
+    return -1;
+  }
+
+  public void updateSignals() {
+    ChronoData data = chronoPanel.getChronoData();
+    int n = data.getSignalCount();
+    System.out.println("resetting waveforms");
+    waveforms.removeAll();
+    for (int i = 0; i < n; i++) {
+      ChronoData.Signal s = data.getSignal(i);
+      int idx = indexOf(s);
+      Waveform w;
+      if (idx < 0) {
+        // new signal, add in correct position
+        w = new Waveform(chronoPanel, this, s, tickWidth, numTicks, width);
+        rows.add(i, w);
+      } else if (idx != i) {
+        // existing signal, move to correct position
+        w = rows.remove(idx);
+        rows.add(i, w);
+      } else {
+        w = rows.get(idx);
+      }
+      waveforms.add(w);
+		}
+    // computeSize();
+    repaintAll();
+  }
+
+  void computeSize() {
+    ChronoData data = chronoPanel.getChronoData();
+    numTicks = data.getValueCount();
+		width = tickWidth * numTicks + 1; // fixme, even clock spacing
+
+    setPreferredSize(new Dimension(width, height)); // necessary for scrollbar
+
+    int hh = ChronoPanel.HEADER_HEIGHT;
+		// overlay.setPreferredSize(new Dimension(width, height));
+    overlay.setBounds(0, 0, width, height);
+		cursor.setBounds(0, 0, width, height);
+		timeline.setBounds(0, 0, width, hh);
+		waveforms.setBounds(0, hh, width, height - hh);
+    // invalidate();
+    // repaintAll();
 	}
 
 	public void setSignalCursor(int posX) {
-		curX = posX;
-		cursor.setPosition(posX);
+    if (posX >= width - 3) {
+      curX = Integer.MAX_VALUE; // pin to right side
+      curT = Integer.MAX_VALUE; // pin to right side
+    } else {
+      curX = Math.max(0, posX);
+      int slope = (tickWidth < 12) ? tickWidth / 3 : 4;
+      curT = Math.max(0, Math.min(numTicks-1, (curX - slope/2) / tickWidth));
+    }
 		cursor.repaint();
 	}
 
   public int getSignalCursor() {
-    return curX;
+    return curX == Integer.MAX_VALUE ? width-1 : curX;
+  }
+
+  public int getCurrentTick() {
+    return curT == Integer.MAX_VALUE ? numTicks-1 : curT;
   }
 
 	public int getDisplayOffsetX() {
 		return displayOffsetX;
 	}
 
-	public int getSignalWidth() {
-    ChronoData data = chronoPanel.getChronoData();
-		return 2 * tickWidth * data.getValueCount();
-	}
-
-	public int getTickWidth() {
-		return tickWidth;
-	}
-
-	public int getVisibleWidth() {
-		return chronoPanel.getVisibleSignalsWidth();
-	}
-
-  public int getTotalWidth() {
-    return 2 * tickWidth;
-  }
-
-  public int getTotalHeight() {
-    return height;
+  public int getSignalWidth() {
+    return width;
   }
 
   public void highlight(ChronoData.Signal s) {
-    for (SignalDraw w : rows)
+    for (Waveform w : rows)
       w.highlight(w.getSignal() == s);
   }
 
   public void repaintAll() {
+    System.out.println("repaint right panel");
+    computeSize();
+    super.repaint();
     cursor.repaint();
-    int width = getTickWidth();
-    for (SignalDraw w : rows) {
-      w.setTickWidth(width);
+    timeline.update(tickWidth, numTicks, width);
+    timeline.repaint();
+    for (Waveform w : rows) {
+      w.update(tickWidth, numTicks, width);
       w.repaint();
     }
-    computeSize(); // todo: why last?
-  }
-
-  public int getCurrentPosition() {
-    return (curX + tickWidth) / tickWidth; // todo: -1?
   }
 
   // todo: later
@@ -184,7 +218,7 @@ public class RightPanel extends JPanel {
 //         - (chronoPanel.getVisibleSignalsWidth() / 2);
 // 
 //     // zoom on every signals
-//     for (SignalDraw sDraw : rows) {
+//     for (Waveform sDraw : rows) {
 //       sDraw.setTickWidth(tickWidth);
 //     }
 // 
@@ -206,7 +240,7 @@ public class RightPanel extends JPanel {
 //    int i = Math.round(/* chronoPanel.getNbrOfTick()*/ 2 * posPercent);
 //    i = i > 5 ? i - 5 : 0;
 //    displayOffsetX = i * tickWidth;
-//    for (SignalDraw sDraw : rows) {
+//    for (Waveform sDraw : rows) {
 //      sDraw.flush();
 //      sDraw.repaint();
 //    }

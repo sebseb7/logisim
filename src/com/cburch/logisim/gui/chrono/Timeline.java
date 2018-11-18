@@ -27,7 +27,7 @@
  * This version of the project is currently maintained by:
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
-package com.hepia.logisim.chronogui;
+package com.cburch.logisim.gui.chrono;
 
 import java.awt.BasicStroke;
 import java.awt.Dimension;
@@ -38,17 +38,20 @@ import java.text.DecimalFormat;
 import javax.swing.JPanel;
 
 // Time scale at top of right panel
-public class TimelineDraw extends JPanel {
+public class Timeline extends JPanel {
 
-	private int tickWidth;
-	private int width;
+	private int tickWidth, numTicks, width;
 
-	public TimelineDraw(int tickWidth) {
+	public Timeline(int tickWidth, int numTicks, int width) {
+    update(tickWidth, numTicks, width);
+	}
+
+	public void update(int tickWidth, int numTicks, int width) {
 		this.tickWidth = tickWidth;
-    // todo: huh?
-		this.width = 2 * tickWidth - tickWidth;
-		this.setMaximumSize(new Dimension(width, ChronoPanel.HEADER_HEIGHT));
-		this.setPreferredSize(new Dimension(width, ChronoPanel.HEADER_HEIGHT));
+    this.numTicks = numTicks;
+		this.width = width;
+		setMaximumSize(new Dimension(width, ChronoPanel.HEADER_HEIGHT));
+		setPreferredSize(new Dimension(width, ChronoPanel.HEADER_HEIGHT));
 	}
 
 	private String getTimeString(int i) {
@@ -57,24 +60,13 @@ public class TimelineDraw extends JPanel {
 		return df.format(i/10.0) + " ms";
   }
 
-  // todo: huh?
-	public void setTickWidth(int tickWidth, int width) {
-		this.tickWidth = tickWidth;
-		this.width = tickWidth * width;
-		setTimeLineSize(this.width);
-	}
-
-  // todo: huh?
-	public void setTimeLineSize(int width) {
-		this.width = width - tickWidth;
-		this.setMaximumSize(new Dimension(width, ChronoPanel.HEADER_HEIGHT));
-		this.setPreferredSize(new Dimension(width, ChronoPanel.HEADER_HEIGHT));
-	}
-
   public void paintComponent(Graphics g) {
     super.paintComponent(g);
     Graphics2D g2 = (Graphics2D) g;
     g.drawLine(0, 5, width, 5);
+    for (int i = 0; i <= numTicks; i++)
+      g.drawLine(i*tickWidth, 2, i*tickWidth, 8);
+
     // later
     // int minimalWidthToDisp = 60;
     // int nbrTick = 0;
