@@ -52,8 +52,9 @@ import com.cburch.logisim.util.Icons;
  */
 public class ChronoData {
 
-  public static class Signal implements Transferable {
-
+  // This class is mostly needed because drag-and-drop DataFlavor works easiest
+  // with a regular class (not an inner or generic class).
+  public static class Signals extends ArrayList<Signal> implements Transferable {
     public static final DataFlavor dataFlavor;
     static {
       DataFlavor f = null;
@@ -61,7 +62,7 @@ public class ChronoData {
         f = new DataFlavor(
             String.format("%s;class=\"%s\"",
               DataFlavor.javaJVMLocalObjectMimeType,
-              Signal.class.getName()));
+              Signals.class.getName()));
       } catch (ClassNotFoundException e) {
         e.printStackTrace();
       }
@@ -86,6 +87,9 @@ public class ChronoData {
       return dataFlavor.equals(flavor);
     }
 
+  }
+
+  public static class Signal {
     public int idx;
     public final SelectionItem info;
     private final ArrayList<Value> vals;

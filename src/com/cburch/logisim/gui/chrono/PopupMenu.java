@@ -87,6 +87,8 @@ public class PopupMenu extends MouseAdapter {
           chronoPanel.getSelection().remove(items);
         }
       });
+
+      // todo: option to add/remove signals
     }
   }
 

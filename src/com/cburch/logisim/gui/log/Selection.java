@@ -30,6 +30,7 @@
 package com.cburch.logisim.gui.log;
 
 import java.util.ArrayList;
+import java.util.Arrays;;
 import java.util.List;
 
 import com.cburch.logisim.circuit.CircuitState;
@@ -99,15 +100,25 @@ public class Selection {
     return count;
   }
 
-  public void move(int fromIndex, int toIndex) {
-    System.out.printf("move %d %d\n", fromIndex, toIndex);
-    if (fromIndex == toIndex)
+  public void move(int[] fromIndex, int toIndex) {
+    int n = fromIndex.length;
+    if (n == 0)
       return;
-    if (fromIndex < 0 || fromIndex >= signals.size()
-        || toIndex < 0 || toIndex >= signals.size())
-      throw new IllegalArgumentException("Can't move from " + fromIndex + " to " + toIndex);
-    SelectionItem o = signals.remove(fromIndex);
-    signals.add(toIndex, o);
+    Arrays.sort(fromIndex);
+    int a = fromIndex[0];
+    int b = fromIndex[n-1];
+    if (a < 0 || b > signals.size())
+      return; // invalid selection
+    if (a <= toIndex && toIndex <= b && b-a+1 == n)
+      return; // no-op
+    ArrayList<SelectionItem> items = new ArrayList<>();
+    for (int i = n-1; i >= 0; i--) {
+      if (fromIndex[i] < toIndex)
+        toIndex--;
+      items.add(signals.remove(fromIndex[i]));
+    }
+    for (int i = n-1; i >= 0; i--)
+      signals.add(toIndex++, items.get(i));
     model.fireSelectionChanged(new Model.Event());
   }
 

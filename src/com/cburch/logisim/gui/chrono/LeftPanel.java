@@ -34,52 +34,41 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Insets;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.EventObject;
-import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
 import javax.swing.DropMode;
-import javax.swing.ImageIcon;
 import javax.swing.InputMap;
-import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
-import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 import javax.swing.border.Border;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
-import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.gui.log.ComponentIcon;
 import com.cburch.logisim.gui.log.SelectionItem;
 import com.cburch.logisim.gui.log.SelectionItems;
-import com.cburch.logisim.util.Icons;
 
 // Left panel containing signal names
 public class LeftPanel extends JPanel {
@@ -107,7 +96,7 @@ public class LeftPanel extends JPanel {
   }
 
   private static final Border rowInsets =
-      BorderFactory.createMatteBorder(Waveform.GAP, 0, Waveform.GAP, 0, Color.WHITE);
+      BorderFactory.createMatteBorder(ChronoPanel.GAP, 0, ChronoPanel.GAP, 0, Color.WHITE);
 
   private class SignalRenderer extends DefaultTableCellRenderer {
     @Override
@@ -121,7 +110,7 @@ public class LeftPanel extends JPanel {
         JLabel label = (JLabel)ret;
         label.setBorder(rowInsets);
         SelectionItem item = (SelectionItem)value;
-        label.setBackground(rowColor(item, isSelected));
+        label.setBackground(chronoPanel.rowColors(item, isSelected)[0]);
         label.setIcon(new ComponentIcon(item.getComponent()));
       }
       return ret;
@@ -142,20 +131,11 @@ public class LeftPanel extends JPanel {
         JLabel label = (JLabel) ret;
         label.setBorder(rowInsets);
         label.setIcon(null);
-        label.setBackground(rowColor(s.info, isSelected));
+        label.setBackground(chronoPanel.rowColors(s.info, isSelected)[0]);
         label.setHorizontalAlignment(JLabel.CENTER);
       }
       return ret;
     }
-  }
-
-  Color rowColor(SelectionItem item, boolean isSelected) {
-    if (isSelected)
-      return table.getSelectionBackground();
-    ChronoData.Signal spotlight = data.getSpotlight();
-    if (spotlight != null && spotlight.info == item)
-      return Waveform.LIGHTPINK;
-    return table.getBackground();
   }
 
 
@@ -184,6 +164,7 @@ public class LeftPanel extends JPanel {
 		table.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0), "tick");
 		table.getActionMap().put("tick", new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
+        System.out.println("tick in left");
 				// todo
 			}
 		});
@@ -194,32 +175,40 @@ public class LeftPanel extends JPanel {
 			public void mouseMoved(MouseEvent e) {
 				int row = table.rowAtPoint(e.getPoint());
 				if (row >= 0 && e.getComponent() instanceof JTable) {
-					chronoPanel.mouseEntered(data.getSignal(row));
+					chronoPanel.changeSpotlight(data.getSignal(row));
 				} else {
-					chronoPanel.mouseExited(null);
+					chronoPanel.changeSpotlight(null);
         }
 			}
 		});
     // popup on right click
 		table.addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseReleased(MouseEvent e) {
+			public void mouseClicked(MouseEvent e) {
         if (!SwingUtilities.isRightMouseButton(e))
           return;
         if (!(e.getComponent() instanceof JTable))
           return;
-				int row = table.getSelectedRow();
-        if (row < 0) {
-          row = table.rowAtPoint(e.getPoint());
-          if (row < 0)
+        ChronoData.Signals signals = getSelectedValuesList();
+        if (signals.size() == 0) {
+          int row = table.rowAtPoint(e.getPoint());
+          if (row < 0 || row >= data.getSignalCount())
             return;
-          table.setRowSelectionInterval(row, row);
+          signals.add(data.getSignal(row));
         }
-        List<ChronoData.Signal> signals = getSelectedValuesList();
         PopupMenu m = new PopupMenu(chronoPanel, signals);
         m.doPop(e);
 			}
 		});
+    // redraw waveforms in right panel when selection changes
+    table.getSelectionModel().addListSelectionListener(
+        new ListSelectionListener() {
+          public void valueChanged(ListSelectionEvent e) {
+            int a = e.getFirstIndex();
+            int b = e.getLastIndex();
+            chronoPanel.getRightPanel().updateSelected(a, b);
+          }
+        });
 
     table.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
     table.setDragEnabled(true);
@@ -294,8 +283,8 @@ public class LeftPanel extends JPanel {
       tableModel.fireTableCellUpdated(row, 1);
 	}
 
-  List<ChronoData.Signal> getSelectedValuesList() {
-    ArrayList<ChronoData.Signal> signals = new ArrayList<>();
+  ChronoData.Signals getSelectedValuesList() {
+    ChronoData.Signals signals = new ChronoData.Signals();
     int[] sel = table.getSelectedRows();
     for (int i : sel)
       signals.add(data.getSignal(i));
@@ -304,7 +293,7 @@ public class LeftPanel extends JPanel {
 
   void removeSelected() {
     int idx = 0;
-    List<ChronoData.Signal> signals = getSelectedValuesList();
+    ChronoData.Signals signals = getSelectedValuesList();
     SelectionItems items = new SelectionItems();
     for (ChronoData.Signal s : signals) {
       items.add(s.info);
@@ -318,8 +307,12 @@ public class LeftPanel extends JPanel {
     repaint();
   }
 
+  ListSelectionModel getSelectionModel() {
+    return table.getSelectionModel();
+  }
+
   private class SignalTransferHandler extends TransferHandler {
-    ChronoData.Signal removing = null;
+    ChronoData.Signals removing = null;
 
     @Override
     public int getSourceActions(JComponent comp) {
@@ -328,11 +321,9 @@ public class LeftPanel extends JPanel {
 
     @Override
     public Transferable createTransferable(JComponent comp) {
-      removing = null;
-      int idx = table.getSelectedRow();
-      if (idx < 0 || idx >= data.getSignalCount())
-        return null;
-      removing = data.getSignal(idx);
+      removing = getSelectedValuesList();
+      if (removing.size() == 0)
+        removing = null;
       return removing;
     }
 
@@ -340,14 +331,16 @@ public class LeftPanel extends JPanel {
     public void exportDone(JComponent comp, Transferable trans, int action) {
       if (removing == null)
         return;
-      ChronoData.Signal s = removing;
+      ArrayList<SelectionItem> items = new ArrayList<>();
+      for (ChronoData.Signal s : removing)
+        items.add(s.info);
       removing = null;
-      chronoPanel.getSelection().remove(s.idx);
+      chronoPanel.getSelection().remove(items);
     }
 
     @Override
     public boolean canImport(TransferHandler.TransferSupport support) {
-      return support.isDataFlavorSupported(ChronoData.Signal.dataFlavor);
+      return support.isDataFlavorSupported(ChronoData.Signals.dataFlavor);
     }
 
     @Override
@@ -357,11 +350,11 @@ public class LeftPanel extends JPanel {
         System.out.println("paste with no cut... maybe import name and restore waveform?");
         return false;
       }
-      ChronoData.Signal s = removing;
+      ChronoData.Signals signals = removing;
       removing = null;
       try {
-        ChronoData.Signal s2 =
-            (ChronoData.Signal)support.getTransferable().getTransferData(ChronoData.Signal.dataFlavor);
+        ChronoData.Signals s2 =
+            (ChronoData.Signals)support.getTransferable().getTransferData(ChronoData.Signals.dataFlavor);
         int newIdx = data.getSignalCount();
         if (support.isDrop()) {
           try {
@@ -370,14 +363,16 @@ public class LeftPanel extends JPanel {
           } catch (ClassCastException e) {
           }
         }
-        if (s2 != s) {
+        if (s2 != signals) {
           // todo
           System.out.println("paste with wrong cut... maybe remove, then import name and restore waveform?");
           return false;
         }
-        if (newIdx > s.idx)
-          newIdx--;
-        chronoPanel.getSelection().move(s.idx, newIdx);
+        int[] idx = new int[signals.size()];
+        int i = 0;
+        for (ChronoData.Signal s : signals)
+          idx[i++] = s.idx;
+        chronoPanel.getSelection().move(idx, newIdx);
         return true;
       } catch (UnsupportedFlavorException | IOException e) {
         e.printStackTrace();

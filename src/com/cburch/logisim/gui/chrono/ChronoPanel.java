@@ -31,6 +31,7 @@ package com.cburch.logisim.gui.chrono;
 import static com.cburch.logisim.gui.chrono.Strings.S;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -47,9 +48,10 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.ScrollPaneConstants;
 import javax.swing.JSplitPane;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import com.cburch.draw.toolbar.Toolbar;
 import com.cburch.logisim.circuit.Simulator;
@@ -136,7 +138,8 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
   }
 
   public static final int HEADER_HEIGHT = 20;
-  public static final int SIGNAL_HEIGHT = 38;
+  public static final int SIGNAL_HEIGHT = 30;
+  public static final int GAP = 2; // gap above and below each signal
   public static final int INITIAL_SPLIT = 150;
 
   // state
@@ -161,6 +164,10 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
 
   public ChronoPanel(LogFrame logFrame) {
     super(logFrame);
+
+    SELECT1 = UIManager.getDefaults().getColor("List.selectionBackground");
+    SELECT2 = darker(SELECT1);
+    SELECT = new Color[] { SELECT1, SELECT2 };
 
     simulator = getProject().getSimulator();
 
@@ -237,9 +244,9 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
 
     int p = rightScroll == null ? 0 : rightScroll.getHorizontalScrollBar().getValue();
     if (rightPanel == null)
-      rightPanel = new RightPanel(this);
+      rightPanel = new RightPanel(this, leftPanel.getSelectionModel());
     else
-      rightPanel = new RightPanel(rightPanel);
+      rightPanel = new RightPanel(rightPanel, leftPanel.getSelectionModel());
 
     rightScroll = new JScrollPane(rightPanel,
         ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
@@ -253,7 +260,7 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     splitPane.setLeftComponent(leftScroll);
     splitPane.setRightComponent(rightScroll);
 
-		setSignalCursor(rightPanel.getSignalCursor());
+		setSignalCursor(rightPanel.getSignalCursor()); // sets cursor in both panels
 
     // put right scrollbar into same position
     rightScroll.getHorizontalScrollBar().setValue(p);
@@ -314,21 +321,21 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
 //     }
 //   }
 
-  public void repaintAll(boolean force) {
-    rightPanel.repaintAll();
-
-    SwingUtilities.invokeLater(new Runnable() {
-      @Override
-      public void run() {
-        // scroll right to follow most recent data
-        int x = rightPanel.getSignalWidth();
-        rightScroll.getHorizontalScrollBar().setValue(x);
-        SwingUtilities.updateComponentTreeUI(ChronoPanel.this);
-      }
-    });
-    if (force)
-      SwingUtilities.updateComponentTreeUI(this);
-  }
+//  public void repaintAll(boolean force) {
+//    rightPanel.repaintAll();
+//
+//    SwingUtilities.invokeLater(new Runnable() {
+//      @Override
+//      public void run() {
+//        // scroll right to follow most recent data
+//        int x = rightPanel.getSignalWidth();
+//        rightScroll.getHorizontalScrollBar().setValue(x);
+//        // SwingUtilities.updateComponentTreeUI(ChronoPanel.this);
+//      }
+//    });
+//    //if (force)
+//    //  SwingUtilities.updateComponentTreeUI(this);
+//  }
 
   // todo
 //   public void toggleBusExpand(SignalDataBus choosenBus, boolean expand) {
@@ -361,7 +368,8 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
   public void modelChanged(Model oldModel, Model newModel) {
     setModel(newModel);
     setSignalCursor(Integer.MAX_VALUE);
-    repaintAll(false);
+    leftPanel.updateSignals();
+    rightPanel.updateSignals();
   }
 
   class ChronoMenuListener extends MenuListener {
@@ -401,7 +409,7 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     }
   }
 
-  private void changeSpotlight(ChronoData.Signal s) {
+  public void changeSpotlight(ChronoData.Signal s) {
     ChronoData.Signal old = data.setSpotlight(s);
     if (old == s)
       return;
@@ -409,30 +417,23 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     leftPanel.changeSpotlight(old, s);
   }
 
-	public void mouseEntered(ChronoData.Signal s) {
-    changeSpotlight(s);
-	}
-
-	public void mousePressed(ChronoData.Signal s, int posX) {
-		setSignalCursor(posX);
-	}
-
-	public void mouseDragged(ChronoData.Signal s, int posX) {
-		setSignalCursor(posX);
-	}
-
-	public void mouseExited(ChronoData.Signal s) {
-    changeSpotlight(null);
-	}
-
-	public void setCodingFormat(ChronoData.Signal s, String format) {
-    // todo later
-		// s.setFormat(format);
-		// repaintAll(true);
-	}
+//	public void mouseEntered(ChronoData.Signal s) {
+//    changeSpotlight(s);
+//	}
+//
+//	public void mousePressed(ChronoData.Signal s, int posX) {
+//		setSignalCursor(posX);
+//	}
+//
+//	public void mouseDragged(ChronoData.Signal s, int posX) {
+//		setSignalCursor(posX);
+//	}
+//
+//	public void mouseExited(ChronoData.Signal s) {
+//    changeSpotlight(null);
+//	}
 
   public void setSignalCursor(int posX) {
-    rightPanel.computeSize();
 		rightPanel.setSignalCursor(posX);
     leftPanel.updateSignalValues();
   }
@@ -440,25 +441,24 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
 	@Override
 	public void entryAdded(Model.Event event, Value[] values) {
     data.addSignalValues(values);
-    repaintAll(false);
+    leftPanel.updateSignalValues();
+    rightPanel.updateWaveforms();
   }
 
 	@Override
 	public void resetEntries(Model.Event event, Value[] values) {
     data.resetSignalValues(values);
     setSignalCursor(Integer.MAX_VALUE);
-    repaintAll(false);
+    rightPanel.updateWaveforms();
   }
 
 	@Override
 	public void filePropertyChanged(Model.Event event) {
-    System.out.println("prop changed");
+    // System.out.println("prop changed "  + event);
 	}
 
 	@Override
 	public void selectionChanged(Model.Event event) {
-    System.out.println("selection changed");
-    // todo: update ChronoData and panel with new signals, removed signals
     data.setSignals(model.getSelection(), model.getCircuitState());
     leftPanel.updateSignals();
     rightPanel.updateSignals();
@@ -470,15 +470,15 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
 		// mChronoPanel.toggleBusExpand(signalDataSource, expand);
 	}
 
-	public void zoom(int sens, int posX) {
-    System.out.println("zoom");
-    rightPanel.zoom(sens, posX);
-	}
+	// public void zoom(int sens, int posX) {
+  //   System.out.println("zoom");
+  //   rightPanel.zoom(sens, posX);
+	// }
 
-	public void zoom(ChronoData.Signal s, int sens, int val) {
-    System.out.println("zoom");
-		rightPanel.zoom(sens, val);
-	}
+	// public void zoom(ChronoData.Signal s, int sens, int val) {
+  //   System.out.println("zoom");
+	// 	rightPanel.zoom(sens, val);
+	// }
 
   public void setModel(Model newModel) {
     System.out.println("set model");
@@ -494,4 +494,31 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
 		model.addModelListener(this);
 	}
 
+	private static final Color SPOT1 = new Color(0xaa, 0xff, 0xaa);
+	private static final Color SPOT2 = darker(SPOT1);
+	private static final Color PLAIN1 = new Color(0xbb, 0xbb, 0xbb);
+	private static final Color PLAIN2 = darker(PLAIN1);
+  private final Color SELECT1; // set in constructor
+  private final Color SELECT2; // set in constructor
+  private static final Color[] SPOT = { SPOT1, SPOT2 };
+  private static final Color[] PLAIN = { PLAIN1, PLAIN2 };
+  private final Color[] SELECT; // set in constructor
+
+  public Color[] rowColors(SelectionItem item, boolean isSelected) {
+    if (isSelected)
+      return SELECT;
+    ChronoData.Signal spotlight = data.getSpotlight();
+    if (spotlight != null && spotlight.info == item)
+      return SPOT;
+    return PLAIN;
+  }
+
+  private static Color darker(Color c) {
+    float[] hsb = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null); 
+    float s = 0.8f;
+    if (hsb[1] == 0.0)
+      return Color.getHSBColor(hsb[0], hsb[1] + hsb[1], hsb[2]*s);
+    else
+      return Color.getHSBColor(hsb[0], 1.0f - (1.0f - hsb[1])*s, hsb[2]);
+  }
 }

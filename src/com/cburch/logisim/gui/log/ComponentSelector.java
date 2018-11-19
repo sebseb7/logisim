@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 
+import java.awt.Dimension;
 import java.awt.datatransfer.Transferable;
 
 import javax.swing.DropMode;;
@@ -304,7 +305,11 @@ class ComponentSelector extends JTree {
           icon.setTriangleState(expanded ? ComponentIcon.TRIANGLE_OPEN
               : ComponentIcon.TRIANGLE_CLOSED);
         }
-        ((JLabel) ret).setIcon(icon);
+        JLabel label = (JLabel)ret;
+        label.setIcon(icon);
+        Dimension d = label.getPreferredSize();
+        d.width = Math.max(d.width, tree.getWidth());
+        label.setPreferredSize(d);
       }
       return ret;
     }
