@@ -51,6 +51,10 @@ public class VariableList {
     bits = Collections.unmodifiableList(names);
   }
 
+  public int indexOf(Var v) {
+    return data.indexOf(v);
+  }
+
   public void add(Var v) {
     if (names.size() + v.width > maxSize) {
       throw new IllegalArgumentException("maximum size is " + maxSize);
