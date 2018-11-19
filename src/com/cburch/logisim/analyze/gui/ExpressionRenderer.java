@@ -708,6 +708,12 @@ class ExpressionRenderer extends JPanel {
     lines.fitToWidth(width);
   }
 
+  public void clear() {
+    Box top = new BoundingBox(null, 0, new Box[] { new StringBox(" ", 0) });
+    lines.layout(top, 0, top.a);
+    lines.fitToWidth(width);
+  }
+
   public static class NamedExpression {
     public String name;
     public Expression expr; // can be null

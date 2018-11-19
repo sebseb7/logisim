@@ -244,7 +244,7 @@ class MinimizedTab extends AnalyzerTab {
     public void paintComponent(Graphics g) {
       Graphics2D g2 = (Graphics2D)g;
       super.paintComponent(g2);
-      if (expr != null) {
+      if (name != null && expr != null) {
         AffineTransform xform = g2.getTransform();
         g2.translate(prettyView.getX(), prettyView.getY());
         prettyView.setBackground(selected ? selColor : Color.WHITE);
@@ -257,8 +257,10 @@ class MinimizedTab extends AnalyzerTab {
       lastWidth = d.width;
 
       prettyView.setExpressionWidth(d.width - 2*BW);
-      if (expr != null)
+      if (name != null && expr != null)
         prettyView.setExpression(name, expr);
+      else
+        prettyView.clear();
 
       // make expr take up only what it needs, plus space for border,
       // limited only by our own size
@@ -461,7 +463,7 @@ class MinimizedTab extends AnalyzerTab {
   @Override
   void updateTab() {
     final String output = getCurrentVariable();
-    if (model.getTruthTable().getRowCount() > 4096) {
+    if (output != null && model.getTruthTable().getRowCount() > 4096) {
       (new Analyzer.PleaseWait<Void>("Calculating Expression", this) {
         @Override
         public Void doInBackground() throws Exception {
