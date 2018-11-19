@@ -38,7 +38,7 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 
-public interface Component {
+public interface Component extends Location.At {
   // listener methods
   public void addComponentListener(ComponentListener l);
 
@@ -90,9 +90,6 @@ public interface Component {
    *         the feature.
    */
   public Object getFeature(Object key);
-
-  // location/extent methods
-  public Location getLocation();
 
   public void propagate(CircuitState state);
 

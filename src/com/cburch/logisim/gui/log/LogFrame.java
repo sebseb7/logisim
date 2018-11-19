@@ -144,10 +144,9 @@ public class LogFrame extends LFrame {
   }
 
   private static String computeTitle(Model data, Project proj) {
-    String name = data == null ? "???" : data.getCircuitState()
-        .getCircuit().getName();
-    return S.fmt("logFrameTitle", name, proj
-        .getLogisimFile().getDisplayName());
+    String name = data == null ? "???"
+        : data.getCircuitState().getCircuit().getName();
+    return S.fmt("logFrameTitle", name, proj.getLogisimFile().getDisplayName());
   }
 
   private static final long serialVersionUID = 1L;

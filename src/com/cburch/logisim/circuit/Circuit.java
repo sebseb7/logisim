@@ -34,7 +34,6 @@ import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -202,19 +201,6 @@ public class Circuit {
     }
   }
 
-  private class MyComparator implements Comparator<Component> {
-
-    @Override
-    public int compare(Component o1, Component o2) {
-      Location l1 = o1.getLocation();
-      Location l2 = o2.getLocation();
-      if (l2.getY() != l1.getY())
-        return l1.getY()-l2.getY();
-      return l1.getX()-l2.getX();
-    }
-
-  }
-
   public void Annotate(boolean ClearExistingLabels, FPGAReport reporter) {
     ArrayList<Integer> CompCount = new ArrayList<Integer>();
     ArrayList<String> CompName = new ArrayList<String>();
@@ -224,7 +210,7 @@ public class Circuit {
       reporter.AddInfo("Nothing to do !");
       return;
     }
-    SortedSet<Component> comps = new TreeSet<Component>(new MyComparator());
+    SortedSet<Component> comps = new TreeSet<Component>(Location.CompareVertical);
     comps.addAll(this.getNonWires());
     /* in case of label cleaning, we clear first all old labels */
     if (ClearExistingLabels) {

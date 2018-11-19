@@ -76,6 +76,7 @@ public class Model implements CircuitListener {
     Circuit circ = circuitState.getCircuit();
     for (Component comp : circ.getNonWires())
       addIfDefaultComponent(circ, comp);
+    selection.sort();
 
     // Listen for new pins, clocks, etc.
     circuitState.getCircuit().addCircuitListener(this);
@@ -86,10 +87,12 @@ public class Model implements CircuitListener {
     int action = event.getAction();
     // todo: gracefully handle pin width changes, other circuit changes
     if (action == CircuitEvent.ACTION_ADD) {
+      System.out.println("add " + event);
       Circuit circ = event.getCircuit();
       Component comp = (Component)event.getData();
       addIfDefaultComponent(circ, comp);
-    }
+    } else
+      System.out.println("non-add " + event);
   }
 
   // Add top-level pins, clocks, and any other loggable component that doesn't
@@ -108,10 +111,19 @@ public class Model implements CircuitListener {
       return;
     Component[] path = new Component[] { };
     SelectionItem item = new SelectionItem(this, path, comp, null);
-    selection.add(item);
-    // set an initial value
-    Value v = item.fetchValue(circuitState);
-    getValueLog(item).append(v);
+    if (!selection.contains(item)) {
+      System.out.println("selection is");
+      for (int i = 0; i < selection.size(); i++)
+        System.out.println(i + " "  + selection.get(i));
+      System.out.println("adding: " + item);
+      selection.add(item);
+      // set an initial value
+      Value v = item.fetchValue(circuitState);
+      getValueLog(item).append(v);
+      System.out.println("selection is now ");
+      for (int i = 0; i < selection.size(); i++)
+        System.out.println(i + " "  + selection.get(i));
+    }
   }
 
   public void addModelListener(Listener l) {

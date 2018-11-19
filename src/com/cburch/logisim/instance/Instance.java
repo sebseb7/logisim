@@ -89,7 +89,7 @@ import com.cburch.logisim.util.GraphicsUtil;
 //
 // NOTE: the above may not be entirely accurate, especially for Pin. And we also
 // have things like class Component, InstanceComponent, and so on. Confusing!
-public class Instance {
+public class Instance implements Location.At {
   public static Component getComponentFor(Instance instance) {
     return instance.comp;
   }

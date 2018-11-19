@@ -84,8 +84,7 @@ public class Selection extends SelectionBase {
     public void circuitChanged(CircuitEvent event) {
       if (event.getAction() == CircuitEvent.TRANSACTION_DONE) {
         Circuit circuit = event.getCircuit();
-        ReplacementMap repl = event.getResult().getReplacementMap(
-            circuit);
+        ReplacementMap repl = event.getResult().getReplacementMap(circuit);
         boolean change = false;
 
         ArrayList<Component> oldAnchored;

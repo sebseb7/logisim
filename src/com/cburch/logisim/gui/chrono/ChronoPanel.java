@@ -364,6 +364,7 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     exportDataToImage.setText(S.get("Export as image"));
   }
 
+  // todo merge SelectionItem and Signal to preserve waveforms?
   @Override
   public void modelChanged(Model oldModel, Model newModel) {
     setModel(newModel);

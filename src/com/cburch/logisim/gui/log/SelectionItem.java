@@ -30,6 +30,9 @@
 
 package com.cburch.logisim.gui.log;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
@@ -39,21 +42,19 @@ import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
+import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.StdAttr;
 
-public class SelectionItem implements AttributeListener, CircuitListener {
+public class SelectionItem implements AttributeListener, CircuitListener, Location.At {
   private Model model;
   private Component[] path;
   private Component comp;
-  private Object option;
+  private Object option; // may be null
   private RadixOption radix = RadixOption.RADIX_2;
   private String shortDescriptor;
   private String longDescriptor;
 
-  // public static final SelectionItem NULL_ITEM = new SelectionItem();
-  // private SelectionItem() { }
-  //
   public SelectionItem(Model model, Component[] path, Component comp, Object option) {
     this.model = model;
     this.path = path;
@@ -61,14 +62,12 @@ public class SelectionItem implements AttributeListener, CircuitListener {
     this.option = option;
     computeDescriptors();
 
-    if (path != null) {
-      model.getCircuitState().getCircuit().addCircuitListener(this);
-      for (int i = 0; i < path.length; i++) {
-        path[i].getAttributeSet().addAttributeListener(this);
-        SubcircuitFactory circFact = (SubcircuitFactory) path[i]
-            .getFactory();
-        circFact.getSubcircuit().addCircuitListener(this);
-      }
+    model.getCircuitState().getCircuit().addCircuitListener(this);
+    for (int i = 0; i < path.length; i++) {
+      path[i].getAttributeSet().addAttributeListener(this);
+      SubcircuitFactory circFact = (SubcircuitFactory) path[i]
+          .getFactory();
+      circFact.getSubcircuit().addCircuitListener(this);
     }
     comp.getAttributeSet().addAttributeListener(this);
   }
@@ -154,22 +153,6 @@ public class SelectionItem implements AttributeListener, CircuitListener {
     return changed;
   }
 
-  public int hashCode() {
-    return longDescriptor.hashCode();
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (obj == this) {
-      return true;
-    }
-    if (obj == null || obj.getClass() != this.getClass()) {
-      return false;
-    }
-    SelectionItem item = (SelectionItem) obj;
-    return this.longDescriptor.equals(item.longDescriptor);
-  }
-
   public Value fetchValue(CircuitState root) {
     CircuitState cur = root;
     for (int i = 0; i < path.length; i++) {
@@ -224,4 +207,27 @@ public class SelectionItem implements AttributeListener, CircuitListener {
     name += shortDescriptor;
     return name;
   }
+
+  public Location getLocation() {
+    return comp.getLocation();
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (other == this)
+      return true;
+    if (other == null || !(other instanceof SelectionItem))
+      return false;
+    SelectionItem o = (SelectionItem)other;
+    return model.equals(o.model)
+        && comp.equals(o.comp)
+        && Objects.equals(option, o.option)
+        && Arrays.equals(path, o.path);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(model, comp, option, Arrays.hashCode(path));
+  }
+
 }

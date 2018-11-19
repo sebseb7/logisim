@@ -33,7 +33,6 @@ import static com.cburch.logisim.circuit.Strings.S;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -77,8 +76,8 @@ public class Analyze {
   private static class ExpressionMap extends HashMap<LocationBit, Expression> implements ExpressionComputer.Map {
     private static final long serialVersionUID = 1L;
     private Circuit circuit;
-    private Set<LocationBit> dirtyPoints = new HashSet<LocationBit>();
-    private Map<LocationBit, Component> causes = new HashMap<LocationBit, Component>();
+    private Set<LocationBit> dirtyPoints = new HashSet<>();
+    private Map<LocationBit, Component> causes = new HashMap<>();
     private Component currentCause = null;
 
     ExpressionMap(Circuit circuit) {
@@ -130,9 +129,9 @@ public class Analyze {
       Map<Instance, String> pinNames) throws AnalyzeException {
     ExpressionMap expressionMap = new ExpressionMap(circuit);
 
-    ArrayList<Var> inputVars = new ArrayList<Var>();
-    ArrayList<Var> outputVars = new ArrayList<Var>();
-    ArrayList<Instance> outputPins = new ArrayList<Instance>();
+    ArrayList<Var> inputVars = new ArrayList<>();
+    ArrayList<Var> outputVars = new ArrayList<>();
+    ArrayList<Instance> outputPins = new ArrayList<>();
     for (Map.Entry<Instance, String> entry : pinNames.entrySet()) {
       Instance pin = entry.getKey();
       String label = entry.getValue();
@@ -157,7 +156,7 @@ public class Analyze {
         throw new AnalyzeException.Circular();
       }
 
-      propagateWires(expressionMap, new HashSet<LocationBit>(
+      propagateWires(expressionMap, new HashSet<>(
             expressionMap.dirtyPoints));
 
       HashSet<Component> dirtyComponents = getDirtyComponents(circuit,
@@ -189,12 +188,12 @@ public class Analyze {
   /** Returns a truth table corresponding to the circuit. */
   public static void computeTable(AnalyzerModel model, Project proj,
       Circuit circuit, Map<Instance, String> pinLabels) {
-    ArrayList<Instance> inputPins = new ArrayList<Instance>();
-    ArrayList<Var> inputVars = new ArrayList<Var>();
-    ArrayList<String> inputNames = new ArrayList<String>();
-    ArrayList<Instance> outputPins = new ArrayList<Instance>();
-    ArrayList<Var> outputVars = new ArrayList<Var>();
-    ArrayList<String> outputNames = new ArrayList<String>();
+    ArrayList<Instance> inputPins = new ArrayList<>();
+    ArrayList<Var> inputVars = new ArrayList<>();
+    ArrayList<String> inputNames = new ArrayList<>();
+    ArrayList<Instance> outputPins = new ArrayList<>();
+    ArrayList<Var> outputVars = new ArrayList<>();
+    ArrayList<String> outputNames = new ArrayList<>();
     for (Map.Entry<Instance, String> entry : pinLabels.entrySet()) {
       Instance pin = entry.getKey();
       int width = pin.getAttributeValue(StdAttr.WIDTH).getWidth();
@@ -275,7 +274,7 @@ public class Analyze {
   // computes outputs of affected components
   private static HashSet<Component> getDirtyComponents(Circuit circuit,
       Set<LocationBit> pointsToProcess) throws AnalyzeException {
-    HashSet<Component> dirtyComponents = new HashSet<Component>();
+    HashSet<Component> dirtyComponents = new HashSet<>();
     for (LocationBit point : pointsToProcess) {
       for (Component comp : circuit.getNonWires(point.loc)) {
         dirtyComponents.add(comp);
@@ -284,31 +283,10 @@ public class Analyze {
     return dirtyComponents;
   }
 
-  //
-  // getPinLabels
-  //
-  /**
-   * Returns a sorted map from Pin objects to String objects, listed in
-   * canonical order (top-down order, with ties broken left-right).
-   */
+  // Returns a sorted map from Pin objects to String objects, listed in
+  // canonical order (top-down order, with ties broken left-right).
   public static SortedMap<Instance, String> getPinLabels(Circuit circuit) {
-    Comparator<Instance> locOrder = new Comparator<Instance>() {
-      public int compare(Instance ac, Instance bc) {
-        Location a = ac.getLocation();
-        Location b = bc.getLocation();
-        if (a.getY() < b.getY())
-          return -1;
-        if (a.getY() > b.getY())
-          return 1;
-        if (a.getX() < b.getX())
-          return -1;
-        if (a.getX() > b.getX())
-          return 1;
-        return a.hashCode() - b.hashCode();
-      }
-    };
-    SortedMap<Instance, String> ret = new TreeMap<Instance, String>(
-        locOrder);
+    SortedMap<Instance, String> ret = new TreeMap<>(Location.CompareVertical);
 
     // Put the pins into the TreeMap, with null labels
     for (Instance pin : circuit.getAppearance()
@@ -317,8 +295,8 @@ public class Analyze {
     }
 
     // Process first the pins that the user has given labels.
-    ArrayList<Instance> pinList = new ArrayList<Instance>(ret.keySet());
-    HashSet<String> labelsTaken = new HashSet<String>();
+    ArrayList<Instance> pinList = new ArrayList<>(ret.keySet());
+    HashSet<String> labelsTaken = new HashSet<>();
     for (Instance pin : pinList) {
       String label = pin.getAttributeSet().getValue(StdAttr.LABEL);
       label = toValidLabel(label);

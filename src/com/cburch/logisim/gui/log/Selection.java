@@ -34,21 +34,26 @@ import java.util.Arrays;;
 import java.util.List;
 
 import com.cburch.logisim.circuit.CircuitState;
+import com.cburch.logisim.data.Location;
 
 public class Selection {
 
   private CircuitState root;
   private Model model;
-  private ArrayList<SelectionItem> signals;
+  private ArrayList<SelectionItem> signals = new ArrayList<>();
 
   public Selection(CircuitState root, Model model) {
     this.root = root;
     this.model = model;
-    signals = new ArrayList<SelectionItem>();
   }
 
   public void add(SelectionItem item) {
     signals.add(item);
+    model.fireSelectionChanged(new Model.Event());
+  }
+
+  public void sort() {
+    Location.sortHorizontal(signals);
     model.fireSelectionChanged(new Model.Event());
   }
 

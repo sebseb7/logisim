@@ -67,4 +67,20 @@ public class CircuitEvent {
   public CircuitTransactionResult getResult() {
     return (CircuitTransactionResult) data;
   }
+
+  public String toString() {
+    String s;
+    switch (action) {
+    case ACTION_SET_NAME : s = "ACTION_SET_NAME"; break;
+    case ACTION_ADD : s = "ACTION_ADD"; break;
+    case ACTION_REMOVE : s = "ACTION_REMOVE"; break;
+    case ACTION_CHANGE : s = "ACTION_CHANGE"; break;
+    case ACTION_INVALIDATE : s = "ACTION_INVALIDATE"; break;
+    case ACTION_CLEAR : s = "ACTION_CLEAR"; break;
+    case TRANSACTION_DONE : s = "TRANSACTION_DONE"; break;
+    case ACTION_DISPLAY_CHANGE : s = "ACTION_DISPLAY_CHANGE"; break;
+    default: s = "UNKNOWN_ACTION(" + action + ")"; break;
+    }
+    return s + " " + data;
+  }
 }

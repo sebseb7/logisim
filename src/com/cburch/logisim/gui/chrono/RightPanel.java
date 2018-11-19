@@ -202,7 +202,6 @@ public class RightPanel extends JPanel {
 
   @Override
   public void paintComponent(Graphics gr) {
-    System.out.println("paint with " + rows.size());
     Graphics2D g = (Graphics2D)gr;
     g.setColor(Color.WHITE);
     g.fillRect(0, 0, getWidth(), getHeight()); // entire viewport, not just (width, height)
