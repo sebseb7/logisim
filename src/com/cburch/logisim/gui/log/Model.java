@@ -40,6 +40,7 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
 import com.cburch.logisim.circuit.CircuitState;
+import com.cburch.logisim.circuit.ReplacementMap;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Value;
@@ -86,13 +87,91 @@ public class Model implements CircuitListener {
   public void circuitChanged(CircuitEvent event) {
     int action = event.getAction();
     // todo: gracefully handle pin width changes, other circuit changes
-    if (action == CircuitEvent.ACTION_ADD) {
-      System.out.println("add " + event);
-      Circuit circ = event.getCircuit();
-      Component comp = (Component)event.getData();
-      addIfDefaultComponent(circ, comp);
-    } else
-      System.out.println("non-add " + event);
+//     if (action == CircuitEvent.ACTION_ADD) {
+//       System.out.println("add " + event);
+//       Circuit circ = event.getCircuit();
+//       Component comp = (Component)event.getData();
+//       addIfDefaultComponent(circ, comp);
+//     } else {
+//       System.out.println("non-add " + event);
+//       if (action == CircuitEvent.TRANSACTION_DONE) {
+//         Circuit circuit = event.getCircuit();
+//         ReplacementMap repl = event.getResult().getReplacementMap(circuit);
+//         System.out.println(repl);
+//       }
+//    }
+    // if (action == CircuitEvent.ACTION_INVALIDATE); // todo width change handle in SelItem
+    if (action == CircuitEvent.TRANSACTION_DONE) {
+      CircuitState circuitState = getCircuitState();
+      // Circuit circuit = event.getCircuit();
+      Circuit circuit = circuitState.getCircuit();
+      ReplacementMap repl = event.getResult().getReplacementMap(circuit);
+      if (repl == null) {
+        System.out.println("no changes for top level circuit\n");
+        return;
+      }
+      System.out.println(repl);
+    }
+
+      // we are looking for new pins, etc., that are not replacing some old
+      // pin
+      //for (Component comp : repl.getReplacedComponents()) {
+
+      //    Object compState = componentData.remove(comp);
+      //    if (compState == null)
+      //      continue;
+      //    Class<?> compFactory = comp.getFactory().getClass();
+      //    boolean found = false;
+      //    for (Component repl : map.get(comp)) {
+      //      if (repl.getFactory().getClass() == compFactory) {
+      //        found = true;
+      //        setData(repl, compState);
+      //        break;
+      //      }
+      //    }
+
+
+      //HashSet<Instance> adds = new HashSet<>();
+      //HashSet<Instance> removes = new HashSet<>();
+      //HashMap<Instance, Instance> replaces = new HashMap<>();
+
+      //for (Component comp : repl.getAdditions()) {
+      //  addIfDefaultComponent(circ, comp);
+      //  if (comp.getFactory() instanceof Pin) {
+      //    Instance in = Instance.getInstanceFor(comp);
+      //    boolean added = pins.add(in);
+      //    if (added) {
+      //      comp.addComponentListener(myComponentListener);
+      //      in.getAttributeSet().addAttributeListener(
+      //          myComponentListener);
+      //      adds.add(in);
+      //    }
+      //  }
+      //}
+    // for (Component comp : repl.getRemovals()) {
+    //   if (comp.getFactory() instanceof Pin) {
+    //     Instance in = Instance.getInstanceFor(comp);
+    //     boolean removed = pins.remove(in);
+    //     if (removed) {
+    //       comp.removeComponentListener(myComponentListener);
+    //       in.getAttributeSet().removeAttributeListener(
+    //           myComponentListener);
+    //       Collection<Component> rs = repl
+    //           .getComponentsReplacing(comp);
+    //       if (rs.isEmpty()) {
+    //         removes.add(in);
+    //       } else {
+    //         Component r = rs.iterator().next();
+    //         Instance rin = Instance.getInstanceFor(r);
+    //         adds.remove(rin);
+    //         replaces.put(in, rin);
+    //       }
+    //     }
+    //   }
+    // }
+
+    // appearanceManager.updatePorts(adds, removes, replaces, getPins());
+    //}
   }
 
   // Add top-level pins, clocks, and any other loggable component that doesn't

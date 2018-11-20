@@ -234,7 +234,6 @@ class BuildCircuitButton extends JButton {
 
   private void performAction(Project dest, String name, boolean replace,
       final boolean twoInputs, final boolean useNands) {
-    System.out.println("building");
     if (replace) {
       final Circuit circuit = dest.getLogisimFile().getCircuit(name);
       if (circuit == null) {

@@ -137,13 +137,13 @@ public class CircuitState implements InstanceData {
         ReplacementMap map = event.getResult().getReplacementMap(circuit);
         if (map == null)
           return;
-        for (Component comp : map.getReplacedComponents()) {
+        for (Component comp : map.getRemovals()) {
           Object compState = componentData.remove(comp);
           if (compState == null)
             continue;
           Class<?> compFactory = comp.getFactory().getClass();
           boolean found = false;
-          for (Component repl : map.get(comp)) {
+          for (Component repl : map.getReplacementsFor(comp)) {
             if (repl.getFactory().getClass() == compFactory) {
               found = true;
               setData(repl, compState);

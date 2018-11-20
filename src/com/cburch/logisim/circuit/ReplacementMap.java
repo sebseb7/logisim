@@ -30,7 +30,10 @@
 
 package com.cburch.logisim.circuit;
 
+import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,19 +45,32 @@ import org.slf4j.LoggerFactory;
 
 import com.cburch.logisim.comp.Component;
 
+// When a circuit change is finished (CircuitEvent.TRANSACTION_DONE), the result
+// will contain a replacement map showing the new components added and/or
+// removed, and detailing which new components are replacing which old
+// components, and vice versa. This seems to support a many-to-many relation,
+// though in practice it might be that for every edge a-->b, either a has
+// multiple images, or b has multiple pre-images, but not both. Also, an item a
+// can have no images (meaning it was just deleted outright), and an item b can
+// have no pre-images (meaning it was added out of thin air).
 public class ReplacementMap {
 
   final static Logger logger = LoggerFactory.getLogger(ReplacementMap.class);
 
-  private boolean frozen;
+  private boolean frozen; // prevents further changes to mappings
   private HashMap<Component, HashSet<Component>> map;
   private HashMap<Component, HashSet<Component>> inverse;
 
+  // map: oldComponent --> {new components that replace oldComponent}
+  // inverse: newComponent --> {old components that newComponent replaced}
+
+  // empty relation
   public ReplacementMap() {
     this(new HashMap<Component, HashSet<Component>>(),
         new HashMap<Component, HashSet<Component>>());
   }
 
+  // one-to-one relation of a single old component for a single new one
   public ReplacementMap(Component oldComp, Component newComp) {
     this(new HashMap<Component, HashSet<Component>>(),
         new HashMap<Component, HashSet<Component>>());
@@ -66,19 +82,21 @@ public class ReplacementMap {
     inverse.put(newComp, oldSet);
   }
 
+  // private constructor with pre-built maps
   private ReplacementMap(HashMap<Component, HashSet<Component>> map,
       HashMap<Component, HashSet<Component>> inverse) {
     this.map = map;
     this.inverse = inverse;
   }
 
+  // makes relation for a new component, out of thin air, replacing nothing
   public void add(Component comp) {
-    if (frozen) {
+    if (frozen)
       throw new IllegalStateException("cannot change map after frozen");
-    }
     inverse.put(comp, new HashSet<Component>(3));
   }
 
+  // compose (math-style) two relations: a-->b  b-->c  becomes a-->c
   void append(ReplacementMap next) {
     for (Map.Entry<Component, HashSet<Component>> e : next.map.entrySet()) {
       Component b = e.getKey();
@@ -109,8 +127,7 @@ public class ReplacementMap {
       }
     }
 
-    for (Map.Entry<Component, HashSet<Component>> e : next.inverse
-        .entrySet()) {
+    for (Map.Entry<Component, HashSet<Component>> e : next.inverse.entrySet()) {
       Component c = e.getKey();
       if (!inverse.containsKey(c)) {
         HashSet<Component> bs = e.getValue();
@@ -126,29 +143,29 @@ public class ReplacementMap {
     frozen = true;
   }
 
-  public Collection<Component> get(Component prev) {
-    return map.get(prev);
-  }
-
+  // range of relation: _ --> {additions}
   public Collection<? extends Component> getAdditions() {
     return inverse.keySet();
   }
 
-  public Collection<Component> getComponentsReplacing(Component comp) {
-    return map.get(comp);
+  // apply relation: a --> {components replacing b}
+  public Collection<Component> getReplacementsFor(Component a) {
+    return map.get(a);
   }
 
+  // inverted relation
   ReplacementMap getInverseMap() {
     return new ReplacementMap(inverse, map);
   }
 
+  // domain of relation: {removals} --> _
   public Collection<? extends Component> getRemovals() {
     return map.keySet();
   }
 
-  public Collection<Component> getReplacedComponents() {
-    return map.keySet();
-  }
+  // public Collection<Component> getReplacedComponents() {
+  //   return map.keySet();
+  // }
 
   public boolean isEmpty() {
     return map.isEmpty() && inverse.isEmpty();
@@ -156,61 +173,76 @@ public class ReplacementMap {
 
   public void print(PrintStream out) {
     boolean found = false;
-    for (Component c : getRemovals()) {
+    for (Component a : getRemovals()) {
       if (!found)
         out.println("  removals:");
       found = true;
-      out.println("    " + c.toString());
+      out.println("    " + a.toString());
+      for (Component b : map.get(a))
+        out.println("     `--> " + b.toString());
     }
     if (!found)
       out.println("  removals: none");
 
     found = false;
-    for (Component c : getAdditions()) {
+    for (Component b : getAdditions()) {
       if (!found)
         out.println("  additions:");
       found = true;
-      out.println("    " + c.toString());
+      out.println("    " + b.toString());
+      for (Component a : inverse.get(b))
+        out.println("     ^-- " + a.toString());
     }
     if (!found)
       out.println("  additions: none");
   }
 
-  public void put(Component prev, Collection<? extends Component> next) {
-    if (frozen) {
+  // merge new edges a --> {bs} into this relation
+  public void put(Component a, Collection<? extends Component> bs) {
+    if (frozen)
       throw new IllegalStateException("cannot change map after frozen");
-    }
 
-    HashSet<Component> repl = map.get(prev);
-    if (repl == null) {
-      repl = new HashSet<Component>(next.size());
-      map.put(prev, repl);
+    HashSet<Component> oldBs = map.get(a);
+    if (oldBs == null) {
+      oldBs = new HashSet<Component>(bs.size());
+      map.put(a, oldBs);
     }
-    repl.addAll(next);
+    oldBs.addAll(bs);
 
-    for (Component n : next) {
-      repl = inverse.get(n);
-      if (repl == null) {
-        repl = new HashSet<Component>(3);
-        inverse.put(n, repl);
+    for (Component b : bs) {
+      HashSet<Component> oldAs = inverse.get(b);
+      if (oldAs == null) {
+        oldAs = new HashSet<Component>(3);
+        inverse.put(b, oldAs);
       }
-      repl.add(prev);
+      oldAs.add(a);
     }
   }
 
-  public void remove(Component comp) {
-    if (frozen) {
+  // makes relation for a deleted component, replaced by nothing
+  public void remove(Component a) {
+    if (frozen)
       throw new IllegalStateException("cannot change map after frozen");
-    }
-    map.put(comp, new HashSet<Component>(3));
+    map.put(a, new HashSet<Component>(3));
   }
 
-  public void replace(Component prev, Component next) {
-    put(prev, Collections.singleton(next));
+  // makes a relation for a one-to-one relation a-->b replacing a with b
+  public void replace(Component a, Component b) {
+    put(a, Collections.singleton(b));
   }
 
+  // clears relation
   public void reset() {
     map.clear();
     inverse.clear();
+  }
+
+  public String toString() {
+    final ByteArrayOutputStream out = new ByteArrayOutputStream();
+    try (PrintStream p = new PrintStream(out, true, "UTF-8")) {
+        print(p);
+    } catch (Exception e) {
+    }
+    return new String(out.toByteArray(), StandardCharsets.UTF_8);
   }
 }

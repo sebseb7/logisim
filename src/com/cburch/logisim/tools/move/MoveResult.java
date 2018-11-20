@@ -94,25 +94,10 @@ public class MoveResult {
   }
 
   public void print(PrintStream out) {
-    boolean printed = false;
-    for (Component w : replacements.getAdditions()) {
-      printed = true;
-      out.println("add " + w);
-    }
-    for (Component w : replacements.getRemovals()) {
-      printed = true;
-      out.println("del " + w);
-    }
-    for (Component w : replacements.getReplacedComponents()) {
-      printed = true;
-      out.print("repl " + w + " by");
-      for (Component w2 : replacements.getComponentsReplacing(w)) {
-        out.print(" " + w2);
-      }
-      out.println();
-    }
-    if (!printed) {
-      out.println("no replacements");
-    }
+    out.print("MoveResult: ");
+    replacements.print(out);
+  }
+  public String toString() {
+    return "MoveResult: " + replacements.toString();
   }
 }
