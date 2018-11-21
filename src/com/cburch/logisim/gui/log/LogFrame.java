@@ -157,25 +157,16 @@ public class LogFrame extends LFrame {
 
   private WindowMenuManager windowManager;
   private LogPanel[] panels;
-  // private SelectionPanel selPanel;
   private JTabbedPane tabbedPane;
 
-
-  static class TempButtonPanel extends LogPanel {
-    TempButtonPanel(LogFrame frame) {
-      super(frame);
-      JButton button = new JButton("press me");
-      add(button);
-      button.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent event) {
-          SelectionPanel.doDialog(getLogFrame());
-        }
-      });
-    }
-    public String getHelpText() { return "temp"; }
-    public String getTitle() { return "button"; }
-    public void localeChanged() { }
-    public void modelChanged(Model oldModel, Model newModel) { }
+  public JButton makeSelectionButton() {
+    JButton button = new JButton("Add or Remove Signals");
+    button.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent event) {
+        SelectionPanel.doDialog(LogFrame.this);
+      }
+    });
+    return button;
   }
 
   public LogFrame(Project project) {
@@ -189,7 +180,7 @@ public class LogFrame extends LFrame {
       new ChronoPanel(this),
       new ScrollPanel(this),
       new FilePanel(this),
-      new TempButtonPanel(this),
+      new OptionsPanel(this),
     };
     tabbedPane = new JTabbedPane();
     // tabbedPane.setFont(new Font("Dialog", Font.BOLD, 9));

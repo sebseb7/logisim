@@ -32,8 +32,11 @@ import static com.cburch.logisim.gui.chrono.Strings.S;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.AdjustmentEvent;
@@ -42,6 +45,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -212,7 +217,29 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     SimulationToolbarModel toolbarModel =
         new SimulationToolbarModel(getProject(), menu);
     Toolbar toolbar = new Toolbar(toolbarModel);
-    add(toolbar, BorderLayout.NORTH);
+
+    JPanel toolpanel = new JPanel();
+    GridBagLayout gb = new GridBagLayout();
+    GridBagConstraints gc = new GridBagConstraints();
+    toolpanel.setLayout(gb);
+    gc.fill = GridBagConstraints.NONE;
+    gc.weightx = gc.weighty = 0.0;
+    gc.gridx = gc.gridy = 0;
+    gb.setConstraints(toolbar, gc);
+    toolpanel.add(toolbar);
+
+    JButton b = getLogFrame().makeSelectionButton();
+    gc.gridx = 1;
+    gb.setConstraints(b, gc);
+    toolpanel.add(b);
+
+    Component filler = Box.createHorizontalGlue();
+    gc.fill = GridBagConstraints.HORIZONTAL;
+    gc.weightx = 1.0;
+    gc.gridx = 2;
+    gb.setConstraints(filler, gc);
+    toolpanel.add(filler);
+    add(toolpanel, BorderLayout.NORTH);
 
     // statusLabel = new JLabel();
     buttonBar.add(chooseFileButton);

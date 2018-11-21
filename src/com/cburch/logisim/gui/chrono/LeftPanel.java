@@ -138,7 +138,6 @@ public class LeftPanel extends JPanel {
     }
   }
 
-
 	private ChronoPanel chronoPanel;
   private ChronoData data;
 	private JTable table;
@@ -300,8 +299,8 @@ public class LeftPanel extends JPanel {
       idx = Math.max(idx, s.idx);
     }
     int count = chronoPanel.getSelection().remove(items);
-    if (count > 0 && items.size() > 0) {
-      idx = Math.min(idx+1-count, items.size()-1);
+    if (count > 0 && data.getSignalCount() > 0) {
+      idx = Math.min(idx+1-count, data.getSignalCount() - 1);
       table.setRowSelectionInterval(idx, idx);
     }
     repaint();

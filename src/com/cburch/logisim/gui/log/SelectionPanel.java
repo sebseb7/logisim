@@ -157,7 +157,6 @@ class SelectionPanel extends LogPanel {
       setMinimumSize(new Dimension(350, 300));
       setSize(400, 400);
       pack();
-      setVisible(true);
     }
     public void cancelClicked() { okClicked(); }
     public void okClicked() { }

@@ -28,12 +28,13 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 package com.cburch.logisim.gui.chrono;
+import static com.cburch.logisim.gui.chrono.Strings.S;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.Rectangle;
@@ -200,12 +201,26 @@ public class RightPanel extends JPanel {
       w.flush();
   }
 
+  private static final Font MSG_FONT = new Font("Serif", Font.ITALIC, 12);
+
   @Override
   public void paintComponent(Graphics gr) {
     Graphics2D g = (Graphics2D)gr;
     g.setColor(Color.WHITE);
     g.fillRect(0, 0, getWidth(), getHeight()); // entire viewport, not just (width, height)
     g.setColor(Color.BLACK);
+    if (rows.size() == 0) {
+      Font f = g.getFont();
+      g.setFont(MSG_FONT);
+      String lines = S.get("NoSignalsSelected");
+      int x = 15, y = 15;
+      for (String s : lines.split("\\|")) {
+        g.drawString(s.trim(), x, y);
+        y += 14;
+      }
+      g.setFont(f);
+      return;
+    }
     for (Waveform w : rows)
       w.paintWaveform(g);
     paintTimeline(g);
