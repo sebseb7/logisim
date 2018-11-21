@@ -38,7 +38,28 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 
+// Tentative Design Notes (3 of 3): There are only four known things that
+// implement the Component interface. One is InstanceComponent (with it's
+// matching twin helper Instance). Another is Wire. The other two are Slitter
+// and Video, which both descent from ManagedComponent, which descends from
+// AbstractComponent, which implements the Component interface. Seems a bit
+// overkill, no?
+//
+// To sum up:
+//
+//             interface Component
+//                     |
+//      _______________|___________________
+//     |               |                   |
+//    Wire     AbstractComponent   InstanceComponent <---> Instance
+//                     |
+//              _______|_______
+//             |               |
+//          Splitter         Video
+//
+
 public interface Component extends Location.At {
+
   // listener methods
   public void addComponentListener(ComponentListener l);
 

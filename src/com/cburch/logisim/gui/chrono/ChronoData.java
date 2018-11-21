@@ -100,32 +100,27 @@ public class ChronoData {
       this.idx = idx;
       this.info = info;
       this.offset = offset;
-      this.width = initialValue.getWidth();
+      this.width = info.getWidth();
       this.vals = new ArrayList<>();
-      vals.add(initialValue);
+      extend(initialValue);
     }
 
     private void extend(Value v) {
+      if (v.getWidth() != width)
+        System.out.println("*** notice: value width mismatch for " + info);
       vals.add(v);
     }
 
     private void reset(Value v) {
       offset = 0;
       vals.clear();
-      vals.add(v);
+      extend(v);
     }
 
-    // todo: this doesn't belong here
-    public ImageIcon getIcon() {
-      if (width > 1)
-        return (ImageIcon)Icons.getIcon("chronoBus.gif");
-      else
-        return (ImageIcon)Icons.getIcon("chronoSignal.gif");
-    }
-
-    public Value getValue(int t) {
+    public Value getValue(int t) { // always current width, even when width changes
       int idx = t - offset;
-      return (idx < 0 || idx >= vals.size()) ? null : vals.get(idx);
+      return (idx < 0 || idx >= vals.size()) ? null
+          : vals.get(idx).extendWidth(width, Value.FALSE);
     }
 
     public String getFormattedValue(int t) {
@@ -148,7 +143,7 @@ public class ChronoData {
     }
 
     public String getName() {
-      return info.getChronoDisplayName();
+      return info.getDisplayName();
     }
 
     public int getWidth() {

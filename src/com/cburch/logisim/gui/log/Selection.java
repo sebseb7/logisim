@@ -48,8 +48,10 @@ public class Selection {
   }
 
   public void add(SelectionItem item) {
-    signals.add(item);
-    model.fireSelectionChanged(new Model.Event());
+    if (!signals.contains(item)) {
+      signals.add(item);
+      model.fireSelectionChanged(new Model.Event());
+    }
   }
 
   public void sort() {
@@ -128,9 +130,15 @@ public class Selection {
   }
 
   public void remove(int index) {
-    signals.remove(index);
-    model.fireSelectionChanged(new Model.Event());
+    if (signals.remove(index) != null)
+      model.fireSelectionChanged(new Model.Event());
   }
+
+  public void remove(SelectionItem item) {
+    if (signals.remove(item))
+      model.fireSelectionChanged(new Model.Event());
+  }
+
 
   public void removeModelListener(Model.Listener l) {
     model.removeModelListener(l);

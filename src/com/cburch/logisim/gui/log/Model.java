@@ -86,123 +86,56 @@ public class Model implements CircuitListener {
   @Override
   public void circuitChanged(CircuitEvent event) {
     int action = event.getAction();
-    // todo: gracefully handle pin width changes, other circuit changes
-//     if (action == CircuitEvent.ACTION_ADD) {
-//       System.out.println("add " + event);
-//       Circuit circ = event.getCircuit();
-//       Component comp = (Component)event.getData();
-//       addIfDefaultComponent(circ, comp);
-//     } else {
-//       System.out.println("non-add " + event);
-//       if (action == CircuitEvent.TRANSACTION_DONE) {
-//         Circuit circuit = event.getCircuit();
-//         ReplacementMap repl = event.getResult().getReplacementMap(circuit);
-//         System.out.println(repl);
-//       }
-//    }
-    // if (action == CircuitEvent.ACTION_INVALIDATE); // todo width change handle in SelItem
     if (action == CircuitEvent.TRANSACTION_DONE) {
       CircuitState circuitState = getCircuitState();
-      // Circuit circuit = event.getCircuit();
-      Circuit circuit = circuitState.getCircuit();
-      ReplacementMap repl = event.getResult().getReplacementMap(circuit);
-      if (repl == null) {
-        System.out.println("no changes for top level circuit\n");
+      Circuit circ = circuitState.getCircuit();
+      ReplacementMap repl = event.getResult().getReplacementMap(circ);
+      if (repl == null || repl.isEmpty())
         return;
+      // look for new pins, etc., that are not simply replacing old pins
+      for (Component comp : repl.getAdditions()) {
+        if (!repl.getReplacedBy(comp).isEmpty())
+          continue;
+        SelectionItem item = makeIfDefaultComponent(circ, comp);
+        if (item == null)
+          continue;
+        addAndInitialize(item);
       }
-      System.out.println(repl);
     }
-
-      // we are looking for new pins, etc., that are not replacing some old
-      // pin
-      //for (Component comp : repl.getReplacedComponents()) {
-
-      //    Object compState = componentData.remove(comp);
-      //    if (compState == null)
-      //      continue;
-      //    Class<?> compFactory = comp.getFactory().getClass();
-      //    boolean found = false;
-      //    for (Component repl : map.get(comp)) {
-      //      if (repl.getFactory().getClass() == compFactory) {
-      //        found = true;
-      //        setData(repl, compState);
-      //        break;
-      //      }
-      //    }
-
-
-      //HashSet<Instance> adds = new HashSet<>();
-      //HashSet<Instance> removes = new HashSet<>();
-      //HashMap<Instance, Instance> replaces = new HashMap<>();
-
-      //for (Component comp : repl.getAdditions()) {
-      //  addIfDefaultComponent(circ, comp);
-      //  if (comp.getFactory() instanceof Pin) {
-      //    Instance in = Instance.getInstanceFor(comp);
-      //    boolean added = pins.add(in);
-      //    if (added) {
-      //      comp.addComponentListener(myComponentListener);
-      //      in.getAttributeSet().addAttributeListener(
-      //          myComponentListener);
-      //      adds.add(in);
-      //    }
-      //  }
-      //}
-    // for (Component comp : repl.getRemovals()) {
-    //   if (comp.getFactory() instanceof Pin) {
-    //     Instance in = Instance.getInstanceFor(comp);
-    //     boolean removed = pins.remove(in);
-    //     if (removed) {
-    //       comp.removeComponentListener(myComponentListener);
-    //       in.getAttributeSet().removeAttributeListener(
-    //           myComponentListener);
-    //       Collection<Component> rs = repl
-    //           .getComponentsReplacing(comp);
-    //       if (rs.isEmpty()) {
-    //         removes.add(in);
-    //       } else {
-    //         Component r = rs.iterator().next();
-    //         Instance rin = Instance.getInstanceFor(r);
-    //         adds.remove(rin);
-    //         replaces.put(in, rin);
-    //       }
-    //     }
-    //   }
-    // }
-
-    // appearanceManager.updatePorts(adds, removes, replaces, getPins());
-    //}
   }
 
-  // Add top-level pins, clocks, and any other loggable component that doesn't
+  // Make top-level pins, clocks, and any other loggable component that doesn't
   // have options (so we exclude Ram/Rom) and isn't a subcircuit.
-  private void addIfDefaultComponent(Circuit circ, Component comp) {
+  private SelectionItem makeIfDefaultComponent(Circuit circ, Component comp) {
     CircuitState circuitState = getCircuitState();
     if (circ != circuitState.getCircuit())
-      return;
+      return null;
     if (comp.getFactory() instanceof SubcircuitFactory)
-      return;
+      return null;
     Loggable log = (Loggable)comp.getFeature(Loggable.class);
     if (log == null)
-      return;
+      return null;
     Object[] opts = log.getLogOptions(circuitState);
     if (opts != null && opts.length > 0) // exclude Ram, Rom, etc.
+      return null;
+    Component[] path = new Component[] { comp };
+    return new SelectionItem(this, path, null);
+  }
+
+  // Add top-level pins, etc.
+  private void addIfDefaultComponent(Circuit circ, Component comp) {
+    SelectionItem item = makeIfDefaultComponent(circ, comp);
+    if (item == null || selection.contains(item))
       return;
-    Component[] path = new Component[] { };
-    SelectionItem item = new SelectionItem(this, path, comp, null);
-    if (!selection.contains(item)) {
-      System.out.println("selection is");
-      for (int i = 0; i < selection.size(); i++)
-        System.out.println(i + " "  + selection.get(i));
-      System.out.println("adding: " + item);
-      selection.add(item);
-      // set an initial value
-      Value v = item.fetchValue(circuitState);
-      getValueLog(item).append(v);
-      System.out.println("selection is now ");
-      for (int i = 0; i < selection.size(); i++)
-        System.out.println(i + " "  + selection.get(i));
-    }
+    addAndInitialize(item);
+  }
+
+  private void addAndInitialize(SelectionItem item) {
+    CircuitState circuitState = getCircuitState();
+    selection.add(item);
+    // set an initial value
+    Value v = item.fetchValue(circuitState);
+    getValueLog(item).append(v);
   }
 
   public void addModelListener(Listener l) {

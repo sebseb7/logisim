@@ -482,7 +482,6 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
 	// }
 
   public void setModel(Model newModel) {
-    System.out.println("set model");
     if (model != null)
       model.removeModelListener(this);
     data.clear();

@@ -60,6 +60,11 @@ public class Random extends InstanceFactory {
     }
 
     @Override
+    public BitWidth getBitWidth(InstanceState state, Object option) {
+      return state.getAttributeValue(StdAttr.WIDTH);
+    }
+
+    @Override
     public Value getLogValue(InstanceState state, Object option) {
       BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
       if (dataWidth == null)

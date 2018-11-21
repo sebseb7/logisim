@@ -36,7 +36,6 @@ import java.util.Collection;
 
 import com.cburch.logisim.circuit.ReplacementMap;
 import com.cburch.logisim.circuit.Wire;
-import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Location;
 
 public class MoveResult {
@@ -87,11 +86,12 @@ public class MoveResult {
     return ret;
   }
 
-  public Collection<Wire> getWiresToRemove() {
-    @SuppressWarnings("unchecked")
-    Collection<Wire> ret = (Collection<Wire>) replacements.getAdditions();
-    return ret;
-  }
+ //  public Collection<Wire> getWiresToRemove() {
+ //    ... this looks like a typo, and isn't used anywhere anyway
+ //    @SuppressWarnings("unchecked")
+ //    Collection<Wire> ret = (Collection<Wire>) replacements.getAdditions();
+ //    return ret;
+ //  }
 
   public void print(PrintStream out) {
     out.print("MoveResult: ");

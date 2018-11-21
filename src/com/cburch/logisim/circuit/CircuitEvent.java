@@ -31,15 +31,14 @@
 package com.cburch.logisim.circuit;
 
 public class CircuitEvent {
-  public final static int ACTION_SET_NAME = 0; // name changed
-  public final static int ACTION_ADD = 1; // component added
-  public final static int ACTION_REMOVE = 2; // component removed
-  public final static int ACTION_CHANGE = 3; // component changed
-  public final static int ACTION_INVALIDATE = 4; // component invalidated (pin types changed)
-  public final static int ACTION_CLEAR = 5; // entire circuit cleared
-  public final static int TRANSACTION_DONE = 6;
-
-  public final static int ACTION_DISPLAY_CHANGE = 7; // viewed/haloed status change
+  public final static int ACTION_SET_NAME = 0; // data=String name changed
+  public final static int ACTION_ADD = 1; // data=Component added
+  public final static int ACTION_REMOVE = 2; // data=Component removed
+  // public final static int ACTION_CHANGE = 3; // data=Component changed (unused)
+  public final static int ACTION_INVALIDATE = 4; // data=Component invalidated (pin types changed)
+  public final static int ACTION_CLEAR = 5; // data=Set<Compoonent> entire circuit cleared
+  public final static int TRANSACTION_DONE = 6; // data=ReplacementSet done series of add/remove 
+  public final static int ACTION_DISPLAY_CHANGE = 7; // data=null viewed/haloed status change
 
   private int action;
   private Circuit circuit;
@@ -74,13 +73,13 @@ public class CircuitEvent {
     case ACTION_SET_NAME : s = "ACTION_SET_NAME"; break;
     case ACTION_ADD : s = "ACTION_ADD"; break;
     case ACTION_REMOVE : s = "ACTION_REMOVE"; break;
-    case ACTION_CHANGE : s = "ACTION_CHANGE"; break;
+    // case ACTION_CHANGE : s = "ACTION_CHANGE"; break;
     case ACTION_INVALIDATE : s = "ACTION_INVALIDATE"; break;
     case ACTION_CLEAR : s = "ACTION_CLEAR"; break;
     case TRANSACTION_DONE : s = "TRANSACTION_DONE"; break;
     case ACTION_DISPLAY_CHANGE : s = "ACTION_DISPLAY_CHANGE"; break;
     default: s = "UNKNOWN_ACTION(" + action + ")"; break;
     }
-    return s + " " + data;
+    return s + "{\n  circuit=" +  circuit + "\n  data=" + data +"\n}";
   }
 }

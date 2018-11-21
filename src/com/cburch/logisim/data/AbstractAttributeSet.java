@@ -45,6 +45,10 @@ public abstract class AbstractAttributeSet implements Cloneable, AttributeSet {
     listeners.add(l);
   }
 
+  public boolean amIListening(AttributeListener l) {
+    return listeners.contains(l);
+  }
+
   @Override
   public Object clone() {
     AbstractAttributeSet ret;
@@ -53,6 +57,7 @@ public abstract class AbstractAttributeSet implements Cloneable, AttributeSet {
     } catch (CloneNotSupportedException ex) {
       throw new UnsupportedOperationException();
     }
+    // old listeners don't want to listen to clone instead?!?
     ret.listeners = new ArrayList<AttributeListener>();
     this.copyInto(ret);
     return ret;

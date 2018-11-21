@@ -110,24 +110,25 @@ public class CircuitState implements InstanceData {
       }
 
       /* Component changed */
-      else if (action == CircuitEvent.ACTION_CHANGE) {
-        Object data = event.getData();
-        if (data instanceof Collection) {
-          @SuppressWarnings("unchecked")
-          Collection<Component> comps = (Collection<Component>) data;
-          markComponentsDirty(comps);
-          if (base != null) {
-            for (Component comp : comps) {
-              base.checkComponentEnds(CircuitState.this, comp);
-            }
-          }
-        } else {
-          Component comp = (Component) event.getData();
-          markComponentAsDirty(comp);
-          if (base != null)
-            base.checkComponentEnds(CircuitState.this, comp);
-        }
-      } else if (action == CircuitEvent.ACTION_INVALIDATE) {
+//      else if (action == CircuitEvent.ACTION_CHANGE) {
+//        Object data = event.getData();
+//        if (data instanceof Collection) {
+//          @SuppressWarnings("unchecked")
+//          Collection<Component> comps = (Collection<Component>) data;
+//          markComponentsDirty(comps);
+//          if (base != null) {
+//            for (Component comp : comps) {
+//              base.checkComponentEnds(CircuitState.this, comp);
+//            }
+//          }
+//        } else {
+//          Component comp = (Component) event.getData();
+//          markComponentAsDirty(comp);
+//          if (base != null)
+//            base.checkComponentEnds(CircuitState.this, comp);
+//        }
+//      }
+      else if (action == CircuitEvent.ACTION_INVALIDATE) {
         Component comp = (Component) event.getData();
         markComponentAsDirty(comp);
         // TODO detemine if this should really be missing

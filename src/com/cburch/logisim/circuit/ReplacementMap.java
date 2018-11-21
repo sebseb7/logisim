@@ -153,6 +153,11 @@ public class ReplacementMap {
     return map.get(a);
   }
 
+  // preimage of relation: {components replaced by b} --> b
+  public Collection<Component> getReplacedBy(Component b) {
+    return inverse.get(b);
+  }
+
   // inverted relation
   ReplacementMap getInverseMap() {
     return new ReplacementMap(inverse, map);

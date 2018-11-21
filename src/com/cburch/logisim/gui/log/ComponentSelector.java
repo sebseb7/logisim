@@ -405,13 +405,14 @@ class ComponentSelector extends JTree {
         for (CircuitNode cur = n.parent; cur != null; cur = cur.parent) {
           count++;
         }
-        Component[] nPath = new Component[count - 1];
+        Component[] nPath = new Component[count];
+        nPath[nPath.length-1] = n.comp;
         CircuitNode cur = n.parent;
-        for (int j = nPath.length - 1; j >= 0; j--) {
+        for (int j = nPath.length - 2; j >= 0; j--) {
           nPath[j] = cur.subcircComp;
           cur = cur.parent;
         }
-        ret.add(new SelectionItem(logModel, nPath, n.comp, opt));
+        ret.add(new SelectionItem(logModel, nPath, opt));
       }
     }
     return ret.size() == 0 ? null : ret;

@@ -380,8 +380,7 @@ class SelectionBase {
   }
 
   void translateHelper(CircuitMutation xn, int dx, int dy) {
-    Map<Component, Component> selectedAfter = copyComponents(selected, dx,
-        dy);
+    Map<Component, Component> selectedAfter = copyComponents(selected, dx, dy);
     for (Map.Entry<Component, Component> entry : selectedAfter.entrySet()) {
       xn.replace(entry.getKey(), entry.getValue());
     }

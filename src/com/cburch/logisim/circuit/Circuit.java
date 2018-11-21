@@ -439,6 +439,8 @@ public class Circuit {
   }
 
   private void fireEvent(CircuitEvent event) {
+    // System.out.println("==== Firing CircuitEvent ====");
+    // System.out.println(event);
     for (CircuitListener l : listeners) {
       l.circuitChanged(event);
     }

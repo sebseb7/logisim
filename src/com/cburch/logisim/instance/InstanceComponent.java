@@ -58,8 +58,26 @@ import com.cburch.logisim.util.EventSourceWeakSupport;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.UnmodifiableList;
 
-public class InstanceComponent
+// Tentative Design Notes (2 of 3): InstanceComponent and Instance are two sides
+// of the same coin. Every java InstanceComponent object has exactly one java
+// Instance object as a member variable, and every java Instance object in turn
+// has that same java InstanceComponent object as a member variable. There are
+// no other uses for Instance or InstanceComponent anywhere in Logisim. Neither
+// is ever extended in any way. I'm not sure why the two java files aren't
+// simply merged into one. Perhaps historical? Perhaps plugins do something
+// different? Maybe some kind of java bytecode lazy loading optimization? For
+// now, I've marked these both as "final". If something breaks, maybe we'll find
+// out.
+// 
+// So, to sum up:
+//
+//    For every InstanceComponent c, we have: c.instance.comp == c
+//    For every Instance i, we have: i.comp.instance == i
+//    Thus i and c are essentially interchangeable.
+
+public final class InstanceComponent
   implements Component, AttributeListener, ToolTipMaker {
+
   private EventSourceWeakSupport<ComponentListener> listeners;
   private InstanceFactory factory;
   private Instance instance;
@@ -79,7 +97,7 @@ public class InstanceComponent
       AttributeSet attrs) {
     this.listeners = null;
     this.factory = factory;
-    this.instance = new Instance(this);
+    this.instance = Instance.makeFor(this); // new Instance(this);
     this.loc = loc;
     this.bounds = factory.getOffsetBounds(attrs).translate(loc.getX(),
         loc.getY());
@@ -393,6 +411,8 @@ public class InstanceComponent
   }
 
   public String toString() {
-    return "InstanceComponent{factory="+factory.getName()+",loc=("+loc+"),instance="+instance;
+    String label = attrs.getValue(StdAttr.LABEL);
+    return "InstanceComponent{factory="+factory.getName()
+        +",loc=("+loc+"),label="+label+"}@"+super.toString();
   }
 }

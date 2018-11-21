@@ -42,11 +42,11 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.util.GraphicsUtil;
 
-// Tentative Notes: The relationship between Instances, InstanceState,
-// InstanceFactory, etc. can be very confusing. Ignoring logisim for a moment,
-// consider a blueprint that shows various wires, multiplexors, decoders,
-// registers, flip-flops, etc. A naive way of implementing a circuit simulator
-// that can model and edit such a blueprint would be:
+// Tentative Design Notes (1 of 3): The relationship between Instances,
+// InstanceState, InstanceFactory, etc. can be very confusing. Ignoring logisim
+// for a moment, consider a blueprint that shows various wires, multiplexors,
+// decoders, registers, flip-flops, etc. A naive way of implementing a circuit
+// simulator that can model and edit such a blueprint would be:
 //   - [level 1] A java class for each type of component, e.g. a java Mux class,
 //     a java Decoder class, a java Register class. Maybe these could all extend
 //     some generic java Component class, so they could inherit some behaviors.
@@ -89,11 +89,13 @@ import com.cburch.logisim.util.GraphicsUtil;
 //
 // NOTE: the above may not be entirely accurate, especially for Pin. And we also
 // have things like class Component, InstanceComponent, and so on. Confusing!
-public class Instance implements Location.At {
-  public static Component getComponentFor(Instance instance) {
-    return instance.comp;
-  }
+public final class Instance implements Location.At {
 
+  // Not every Component that exists is an InstanceComponent. But for those
+  // Components that are, this function will get the matching Instance for it.
+  // For Components that are not InstanceComponents, this just returns null.
+  // If you already have InstanceComponent, just call geetInstance(). If you
+  // don't, but you are sure of the types, this saves a typecast, but that's it.
   public static Instance getInstanceFor(Component comp) {
     if (comp instanceof InstanceComponent) {
       return ((InstanceComponent) comp).getInstance();
@@ -102,11 +104,17 @@ public class Instance implements Location.At {
     }
   }
 
-  private InstanceComponent comp;
-
-  Instance(InstanceComponent comp) {
-    this.comp = comp;
+  // returns the matching InstanceComponent twin of an Instancee
+  public static InstanceComponent getComponentFor(Instance instance) {
+    return instance.comp;
   }
+
+
+  // Makes the twin for an InstanceComponent
+  static Instance makeFor(InstanceComponent comp) { return new Instance(comp); }
+  private Instance(InstanceComponent comp) { this.comp = comp; }
+
+  private InstanceComponent comp;
 
   public void addAttributeListener() {
     comp.addAttributeListener(this);

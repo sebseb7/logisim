@@ -183,7 +183,7 @@ class TablePanel extends LogPanel {
       cellHeight = fm.getHeight();
       cellWidth = 24;
       for (int i = 0; i < columns; i++) {
-        String header = sel.get(i).toShortString();
+        String header = sel.get(i).getShortName();
         cellWidth = Math.max(cellWidth, fm.stringWidth(header));
       }
     }
@@ -270,7 +270,7 @@ class TablePanel extends LogPanel {
     int x = left;
     int y = top + headerMetric.getAscent() + 1;
     for (int i = 0; i < columns; i++) {
-      x = paintHeader(sel.get(i).toShortString(), x, y, g, headerMetric);
+      x = paintHeader(sel.get(i).getShortName(), x, y, g, headerMetric);
     }
 
     g.setFont(BODY_FONT);
