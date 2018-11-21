@@ -85,7 +85,7 @@ class MenuHelp extends JMenu implements ActionListener {
     } else if (src == library) {
       showHelp("libs");
     } else if (src == about) {
-      About.showAboutDialog(menubar.getParentWindow());
+      About.showAboutDialog(menubar.getParentFrame());
     }
   }
 
@@ -106,7 +106,7 @@ class MenuHelp extends JMenu implements ActionListener {
         URL hsURL = HelpSet.findHelpSet(loader, helpUrl);
         if (hsURL == null) {
           disableHelp();
-          JOptionPane.showMessageDialog(menubar.getParentWindow(),
+          JOptionPane.showMessageDialog(menubar.getParentFrame(),
               S.get("helpNotFoundError"));
           return;
         }
@@ -114,7 +114,7 @@ class MenuHelp extends JMenu implements ActionListener {
         helpSet = new HelpSet(null, hsURL);
         helpComponent = new JHelp(helpSet);
         if (helpFrame == null) {
-          helpFrame = new LFrame(false, null);
+          helpFrame = new LFrame.Dialog(null);
           helpFrame.setTitle(S.get("helpWindowTitle"));
           helpFrame.getContentPane().add(helpComponent);
           helpFrame.pack();
@@ -126,7 +126,7 @@ class MenuHelp extends JMenu implements ActionListener {
       } catch (Exception e) {
         disableHelp();
         e.printStackTrace();
-        JOptionPane.showMessageDialog(menubar.getParentWindow(),
+        JOptionPane.showMessageDialog(menubar.getParentFrame(),
             S.get("helpUnavailableError"));
         return;
       }
@@ -157,7 +157,7 @@ class MenuHelp extends JMenu implements ActionListener {
     } catch (Exception e) {
       disableHelp();
       e.printStackTrace();
-      JOptionPane.showMessageDialog(menubar.getParentWindow(),
+      JOptionPane.showMessageDialog(menubar.getParentFrame(),
           S.get("helpDisplayError"));
     }
   }

@@ -43,7 +43,7 @@ import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
 
-public class PreferencesFrame extends LFrame {
+public class PreferencesFrame extends LFrame.Dialog {
   private class MyListener implements LocaleListener {
     public void localeChanged() {
       setTitle(S.get("preferencesFrameTitle"));
@@ -99,7 +99,7 @@ public class PreferencesFrame extends LFrame {
   private JTabbedPane tabbedPane;
 
   private PreferencesFrame() {
-    super(false, null);
+    super(null); // not associated with a project
 
     panels = new OptionsPanel[] { new TemplateOptions(this),
       new IntlOptions(this), new WindowOptions(this),

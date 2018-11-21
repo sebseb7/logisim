@@ -34,8 +34,11 @@ import java.awt.LayoutManager;
 
 import javax.swing.JPanel;
 
-import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.gui.menu.EditHandler;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.gui.menu.PrintHandler;
+// import com.cburch.logisim.gui.menu.SimulationHandler;
+import com.cburch.logisim.proj.Project;
 
 public abstract class LogPanel extends JPanel {
   private static final long serialVersionUID = 1L;
@@ -52,6 +55,27 @@ public abstract class LogPanel extends JPanel {
   }
 
   public abstract String getHelpText();
+
+  void updateTab() {
+    EditHandler h = getEditHandler();
+    if (h != null)
+      h.computeEnabled();
+    // SimulationHandler s = getSimulationHandler();
+    // if (s != null)
+    //   s.computeEnabled();
+  }
+
+  public EditHandler getEditHandler() {
+    return null;
+  }
+
+  public PrintHandler getPrintHandler() {
+    return null;
+  }
+
+  // SimulationHandler getSimulationHandler() {
+  //   return null;
+  // }
 
   protected LogFrame getLogFrame() {
     return logFrame;

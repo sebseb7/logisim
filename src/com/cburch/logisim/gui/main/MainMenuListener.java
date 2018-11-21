@@ -34,7 +34,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.cburch.draw.model.CanvasModelEvent;
@@ -49,7 +48,6 @@ import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.appear.RevertAppearanceAction;
 import com.cburch.logisim.gui.generic.CardPanel;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
-import com.cburch.logisim.gui.menu.LogisimMenuItem;
 import com.cburch.logisim.gui.menu.ProjectCircuitActions;
 import com.cburch.logisim.gui.menu.SimulateListener;
 import com.cburch.logisim.gui.menu.MenuListener;
@@ -105,7 +103,7 @@ public class MainMenuListener extends MenuListener {
         frame.setEditorView(viewAppearance ? Frame.EDIT_LAYOUT : Frame.EDIT_APPEARANCE);
       } else if (src == LogisimMenuBar.REVERT_APPEARANCE) {
         proj.doAction(new RevertAppearanceAction(cur));
-      } else if (src == LogisimMenuBar.ANALYZE_CIRCUIT && Main.ANALYZE) {
+      } else if (src == LogisimMenuBar.ANALYZE_CIRCUIT) {
         ProjectCircuitActions.doAnalyze(proj, cur);
       } else if (src == LogisimMenuBar.CIRCUIT_STATS) {
         StatisticsDialog.show(frame, proj.getLogisimFile(), cur);

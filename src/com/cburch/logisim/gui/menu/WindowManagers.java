@@ -110,11 +110,9 @@ public class WindowManagers {
   public static void initialize() {
     if (!initialized) {
       initialized = true;
-      if (Main.ANALYZE)
-        AnalyzerManager.initialize();
+      AnalyzerManager.initialize();
       PreferencesFrame.initializeManager();
-      Projects.addPropertyChangeListener(Projects.projectListProperty,
-          myListener);
+      Projects.addPropertyChangeListener(Projects.projectListProperty, myListener);
       computeListeners();
     }
   }

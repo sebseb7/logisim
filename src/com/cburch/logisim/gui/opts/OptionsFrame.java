@@ -54,7 +54,7 @@ import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
 import com.cburch.logisim.util.TableLayout;
 
-public class OptionsFrame extends LFrame {
+public class OptionsFrame extends LFrame.Dialog {
   private class MyListener implements LibraryListener, LocaleListener {
     public void libraryChanged(LibraryEvent event) {
       if (event.getAction() == LibraryEvent.SET_NAME) {
@@ -105,7 +105,7 @@ public class OptionsFrame extends LFrame {
   private JTabbedPane tabbedPane;
 
   public OptionsFrame(Project project) {
-    super(false, project);
+    super(project);
     this.file = project.getLogisimFile();
     file.addLibraryListener(myListener);
 

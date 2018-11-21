@@ -68,8 +68,8 @@ import com.cburch.logisim.gui.log.Selection;
 import com.cburch.logisim.gui.log.SelectionItem;
 import com.cburch.logisim.gui.main.SimulationToolbarModel;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
-import com.cburch.logisim.gui.menu.MenuListener;
 import com.cburch.logisim.gui.menu.PrintHandler;
+import com.cburch.logisim.gui.menu.EditHandler;
 
 public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener {
 
@@ -181,10 +181,8 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     configure();
     resplit();
 
-    if (data.getSignalCount() == 0)
-      System.out.println("no signals"); // todo: show msg or button in left pane?
-
-    // todo: allow drag and delete in left pane
+    editHandler.computeEnabled();
+    // simulationHandler.computeEnabled();
   }
 
   private void configure() {
@@ -212,11 +210,10 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     exportDataToImage.setPreferredSize(buttonSize);
     exportDataToImage.setFocusable(false);
 
-    // menu and simulation toolbar
-    MenuListener menu = new ChronoMenuListener(getLogisimMenuBar());
-    SimulationToolbarModel toolbarModel =
-        new SimulationToolbarModel(getProject(), menu);
-    Toolbar toolbar = new Toolbar(toolbarModel);
+    LogFrame logFrame = getLogFrame();
+    SimulationToolbarModel simTools;
+    simTools = new SimulationToolbarModel(getProject(), logFrame.getMenuListener());
+    Toolbar toolbar = new Toolbar(simTools);
 
     JPanel toolpanel = new JPanel();
     GridBagLayout gb = new GridBagLayout();
@@ -228,7 +225,7 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     gb.setConstraints(toolbar, gc);
     toolpanel.add(toolbar);
 
-    JButton b = getLogFrame().makeSelectionButton();
+    JButton b = logFrame.makeSelectionButton();
     gc.gridx = 1;
     gb.setConstraints(b, gc);
     toolpanel.add(b);
@@ -400,42 +397,42 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     rightPanel.updateSignals();
   }
 
-  class ChronoMenuListener extends MenuListener {
-
-    protected class FileListener implements ActionListener {
-      public void actionPerformed(ActionEvent event) {
-        if (printer != null)
-          printer.actionPerformed(event);
-      }
-      boolean registered;
-      public void register(boolean en) {
-        if (registered == en)
-          return;
-        registered = en;
-        if (en) {
-          menubar.addActionListener(LogisimMenuBar.EXPORT_IMAGE, this);
-          menubar.addActionListener(LogisimMenuBar.PRINT, this);
-        } else {
-          menubar.removeActionListener(LogisimMenuBar.EXPORT_IMAGE, this);
-          menubar.removeActionListener(LogisimMenuBar.PRINT, this);
-        }
-      }
-    }
-
-    private FileListener fileListener = new FileListener();
-    private PrintHandler printer;
-
-    public ChronoMenuListener(LogisimMenuBar menubar) {
-      super(menubar);
-      fileListener.register(false);
-      editListener.register();
-    }
-
-    public void setPrintHandler(PrintHandler printer) {
-      this.printer = printer;
-      fileListener.register(printer != null);
-    }
-  }
+//  class ChronoMenuListener extends MenuListener {
+//
+//    protected class FileListener implements ActionListener {
+//      public void actionPerformed(ActionEvent event) {
+//        if (printer != null)
+//          printer.actionPerformed(event);
+//      }
+//      boolean registered;
+//      public void register(boolean en) {
+//        if (registered == en)
+//          return;
+//        registered = en;
+//        if (en) {
+//          menubar.addActionListener(LogisimMenuBar.EXPORT_IMAGE, this);
+//          menubar.addActionListener(LogisimMenuBar.PRINT, this);
+//        } else {
+//          menubar.removeActionListener(LogisimMenuBar.EXPORT_IMAGE, this);
+//          menubar.removeActionListener(LogisimMenuBar.PRINT, this);
+//        }
+//      }
+//    }
+//
+//    private FileListener fileListener = new FileListener();
+//    private PrintHandler printer;
+//
+//    public ChronoMenuListener(LogisimMenuBar menubar) {
+//      super(menubar);
+//      fileListener.register(false);
+//      editListener.register();
+//    }
+//
+//    public void setPrintHandler(PrintHandler printer) {
+//      this.printer = printer;
+//      fileListener.register(printer != null);
+//    }
+//  }
 
   public void changeSpotlight(ChronoData.Signal s) {
     ChronoData.Signal old = data.setSpotlight(s);
@@ -548,4 +545,130 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     else
       return Color.getHSBColor(hsb[0], 1.0f - (1.0f - hsb[1])*s, hsb[2]);
   }
+
+  // @Override
+  // SimulationHandler getSimulationHandler() {
+  //   return simulationHandler;
+  // }
+
+  @Override
+  public EditHandler getEditHandler() {
+    return editHandler;
+  }
+
+  EditHandler editHandler = new EditHandler() {
+    @Override
+    public void computeEnabled() {
+      boolean empty = data.getSignalCount() == 0;
+      boolean sel = !empty && !leftPanel.getSelectionModel().isSelectionEmpty();
+      setEnabled(LogisimMenuBar.CUT, sel);
+      setEnabled(LogisimMenuBar.COPY, sel);
+      setEnabled(LogisimMenuBar.PASTE, true);
+      setEnabled(LogisimMenuBar.DELETE, sel);
+      setEnabled(LogisimMenuBar.DUPLICATE, false);
+      setEnabled(LogisimMenuBar.SELECT_ALL, !empty);
+      // todo: raise/lower handlers
+      setEnabled(LogisimMenuBar.RAISE, false);
+      setEnabled(LogisimMenuBar.LOWER, false);
+      setEnabled(LogisimMenuBar.RAISE_TOP, false);
+      setEnabled(LogisimMenuBar.LOWER_BOTTOM, false);
+      setEnabled(LogisimMenuBar.ADD_CONTROL, false);
+      setEnabled(LogisimMenuBar.REMOVE_CONTROL, false);
+    }
+
+    // todo
+
+    // @Override
+    // public void copy() {
+    //   requestFocus();
+    //   clip.copy();
+    // }
+
+    // @Override
+    // public void paste() {
+    //   requestFocus();
+    //   clip.paste();
+    // }
+
+    // @Override
+    // public void selectAll() {
+    //   caret.selectAll();
+    // }
+
+    // @Override
+    // public void delete() {
+    //   requestFocus();
+    //   Rectangle s = caret.getSelection();
+    //   int inputs = table.getInputColumnCount();
+    //   for (int c = s.x; c < s.x + s.width; c++) {
+    //     if (c < inputs)
+    //       continue; // todo: allow input row delete?
+    //     for (int r = s.y; r < s.y + s.height; r++) {
+    //       table.setVisibleOutputEntry(r, c - inputs, Entry.DONT_CARE);
+    //     }
+    //   }
+    // }
+
+  };
+
+  // todo
+//  @Override
+//  PrintHandler getPrintHandler() {
+//    return printHandler;
+//  }
+//
+//  PrintHandler printHandler = new PrintHandler() {
+//    @Override
+//    public Dimension getExportImageSize() {
+//      int width = tableWidth;
+//      int height = headerHeight + bodyHeight;
+//      return new Dimension(width, height);
+//    }
+//
+//    @Override
+//    public void paintExportImage(BufferedImage img, Graphics2D g) {
+//      int width = img.getWidth();
+//      int height = img.getHeight();
+//      g.setClip(0, 0, width, height);
+//      header.paintComponent(g, true, width, headerHeight);
+//      g.translate(0, headerHeight);
+//      body.paintComponent(g, true, width, bodyHeight);
+//    }
+//
+//    @Override
+//    public int print(Graphics2D g, PageFormat pf, int pageNum, double w, double h) {
+//      FontMetrics fm = g.getFontMetrics();
+//
+//      // shrink horizontally to fit
+//      double scale = 1.0;
+//      if (tableWidth > w)
+//        scale = w / tableWidth;
+//
+//      // figure out how many pages we will need
+//      int n = getRowCount();
+//      double headHeight = (fm.getHeight() * 1.5 + headerHeight * scale);
+//      int rowsPerPage = (int)((h - headHeight) / (cellHeight * scale));
+//      int numPages = (n + rowsPerPage - 1) / rowsPerPage;
+//      if (pageNum >= numPages)
+//        return Printable.NO_SUCH_PAGE;
+//
+//      // g.drawRect(0, 0, (int)w-1, (int)h-1); // bage border
+//      GraphicsUtil.drawText(g,
+//          String.format("Combinational Analysis (page %d of %d)", pageNum+1, numPages),
+//          (int)(w/2), 0, GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
+//
+//      g.translate(0, fm.getHeight() * 1.5);
+//      g.scale(scale, scale);
+//      header.paintComponent(g, true, (int)(w/scale), headerHeight);
+//      g.translate(0, headerHeight);
+//
+//      int yHeight = cellHeight * rowsPerPage;
+//      int yTop = pageNum * yHeight;
+//      g.translate(0, -yTop);
+//      g.setClip(0, yTop, (int)(w/scale), yHeight);
+//      body.paintComponent(g, true, (int)(w/scale), bodyHeight);
+//
+//      return Printable.PAGE_EXISTS;
+//    }
+//  };
 }

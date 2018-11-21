@@ -35,7 +35,6 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
@@ -44,6 +43,7 @@ import javax.swing.event.ChangeListener;
 import com.bfh.logisim.fpgamenu.MenuFPGA;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.Simulator;
+import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
@@ -109,9 +109,9 @@ public class LogisimMenuBar extends JMenuBar {
   public static final LogisimMenuItem TICK_HALF = new LogisimMenuItem("TickHalf");
   public static final LogisimMenuItem TICK_FULL = new LogisimMenuItem("TickFull");
 
-  private JFrame parent;
+  private LFrame parent;
   private MyListener listener;
-  private Project proj;
+  private Project saveProj, baseProj, simProj;
   private SimulateListener simulateListener = null;
   private HashMap<LogisimMenuItem, MenuItem> menuItems = new HashMap<LogisimMenuItem, MenuItem>();
   private ArrayList<ChangeListener> enableListeners;
@@ -123,16 +123,18 @@ public class LogisimMenuBar extends JMenuBar {
   public final MenuHelp help;
   public final MenuFPGA fpga;
 
-  public LogisimMenuBar(JFrame parent, Project proj) {
+  public LogisimMenuBar(LFrame parent, Project saveProj, Project baseProj, Project simProj) {
     this.parent = parent;
     this.listener = new MyListener();
-    this.proj = proj;
+    this.saveProj = saveProj;
+    this.baseProj = baseProj;
+    this.simProj = simProj;
     this.enableListeners = new ArrayList<ChangeListener>();
     add(file = new MenuFile(this));
     add(edit = new MenuEdit(this));
     add(project = new MenuProject(this));
     add(simulate = new MenuSimulate(this));
-    add(fpga = new MenuFPGA(parent, this, proj));
+    add(fpga = new MenuFPGA(parent, this, saveProj));
     add(new WindowMenu(parent));
     add(help = new MenuHelp(this));
 
@@ -174,12 +176,20 @@ public class LogisimMenuBar extends JMenuBar {
     }
   }
 
-  JFrame getParentWindow() {
+  LFrame getParentFrame() {
     return parent;
   }
 
-  public Project getProject() {
-    return proj;
+  public Project getSaveProject() {
+    return saveProj;
+  }
+
+  public Project getBaseProject() {
+    return baseProj;
+  }
+
+  public Project getSimulationProject() {
+    return simProj;
   }
 
   public boolean isEnabled(LogisimMenuItem item) {

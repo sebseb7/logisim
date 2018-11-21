@@ -61,12 +61,17 @@ class OpenRecent extends JMenu implements PropertyChangeListener {
     }
 
     public void actionPerformed(ActionEvent event) {
-      Project proj = menubar.getProject();
-      Component par = proj == null ? null : proj.getFrame().getCanvas();
-      ProjectActions.doOpen(par, proj, file);
-      /* This trick allows to open a single window, if the current project hasn't been touched */
-      if (!proj.isFileDirty()
-          && (proj == null || proj.getLogisimFile().getLoader().getMainFile() == null)) {
+      Project proj = menubar.getSaveProject();
+      Project baseProj = menubar.getBaseProject();
+      Component parent  = baseProj != null ? baseProj.getFrame().getCanvas() : menubar.getParentFrame();
+      Project newProj = ProjectActions.doOpen(parent, baseProj, file);
+      // If the current project hasn't been touched and has no file associated
+      // with it (i.e. is entirely blank), and the new file was opened
+      // successfully, then go ahead and close the old blank window.
+      // todo: and has no subwindows or dialogs open?
+      if (newProj != null && proj != null
+          && !proj.isFileDirty()
+          && proj.getLogisimFile().getLoader().getMainFile() == null) {
         proj.getFrame().dispose();
       }
     }

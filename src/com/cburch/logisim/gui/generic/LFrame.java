@@ -88,15 +88,56 @@ public class LFrame extends JFrame implements WindowClosable {
 
   private static Image DEFAULT_ICON = null;
 
+  // A main window holds a circuit, always has menubar with Close, Save, etc.
+  public static final int MAIN_WINDOW = 1;
+  // A sub-window is either standalone or is associated with a project, always
+  // has a menubar but without Close, Save, etc. If associated with a project,
+  // the window will close when the project closes.
+  public static final int SUB_WINDOW = 2;
+  // A dialog is either standalone or is associated with a project, and doesn't
+  // have a menubar except on MacOS where it is mostly empty. If associated with
+  // a project, the window will close when the project closes.
+  public static final int DIALOG = 3;
+
   protected final LogisimMenuBar menubar;
   protected final Project project;
+  protected final int type; 
 
-  public LFrame(boolean toplevel, Project project) {
-    this.project = project;
+  public static class MainWindow extends LFrame {
+    public MainWindow(Project p) {
+      super(MAIN_WINDOW, p, true);
+      if (p == null)
+        throw new IllegalArgumentException("project is null");
+    }
+  }
+  public static class SubWindow extends LFrame {
+    public SubWindow(Project p) { // may be null
+      super(SUB_WINDOW, p, false);
+    }
+  }
+  public static class SubWindowWithSimulation extends LFrame {
+    public SubWindowWithSimulation(Project p) { // may be null
+      super(SUB_WINDOW, p, true);
+    }
+  }
+  public static class Dialog extends LFrame {
+    public Dialog(Project p) { // may be null
+      super(DIALOG, p, false);
+    }
+  }
+
+  private LFrame(int t, Project p, boolean enableSim) {
+    project = p;
+    type = t;
     attachIcon(this);
-    if (toplevel || Main.MacOS) {
-      menubar = new LogisimMenuBar(this, project);
+    if (type == MAIN_WINDOW) {
+      menubar = new LogisimMenuBar(this, p, p, p);
       setJMenuBar(menubar);
+    } else if (type == SUB_WINDOW || Main.MacOS) {
+      // use null project so there will be no Close, Save, etc.
+      menubar = new LogisimMenuBar(this, null, p, enableSim ? p : null);
+      setJMenuBar(menubar);
+      // todo: listen for project close, if project exists
     } else {
       menubar = null;
     }
@@ -111,6 +152,10 @@ public class LFrame extends JFrame implements WindowClosable {
   public Project getProject() {
     return project;
   }
+
+  // public boolean isMainWindow() {
+  //   return type == MAIN_WINDOW;
+  // }
 
   public LogisimMenuBar getLogisimMenuBar() {
     return menubar;

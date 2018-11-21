@@ -258,8 +258,7 @@ public class ProjectActions {
       proj.setStartupScreen(false);
       loader = baseProject.getLogisimFile().getLoader();
     } else {
-      loader = new Loader(baseProject == null ? parent
-          : baseProject.getFrame());
+      loader = new Loader(baseProject == null ? parent : baseProject.getFrame());
     }
 
     try {

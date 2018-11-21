@@ -59,7 +59,6 @@ import com.cburch.logisim.circuit.SimulatorEvent;
 import com.cburch.logisim.circuit.SimulatorListener;
 import com.cburch.logisim.data.TestException;
 import com.cburch.logisim.data.TestVector;
-import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
@@ -68,7 +67,7 @@ import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
 
-public class TestFrame extends LFrame {
+public class TestFrame extends LFrame.SubWindowWithSimulation {
 
   private class MyListener implements ActionListener, ProjectListener,
           SimulatorListener, LocaleListener, ModelListener {
@@ -246,7 +245,7 @@ public class TestFrame extends LFrame {
   private JLabel fail = new JLabel();
 
   public TestFrame(Project project) {
-    super(false, project);
+    super(project);
     this.windowManager = new WindowMenuManager();
     project.addProjectListener(myListener);
     setSimulator(project.getSimulator(), project.getCircuitState().getCircuit());
@@ -299,8 +298,7 @@ public class TestFrame extends LFrame {
         return;
     }
 
-    // LogisimMenuBar menubar = (LogisimMenuBar) getJMenuBar();
-    // menubar.setCircuitState(value, state);
+    menubar.setCircuitState(value, value.getCircuitState());
 
     if (curSimulator != null)
       curSimulator.removeSimulatorListener(myListener);

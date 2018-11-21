@@ -31,17 +31,7 @@
 package com.cburch.logisim.gui.start;
 import static com.cburch.logisim.gui.start.Strings.S;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,14 +39,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 import javax.swing.UIDefaults;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.Main;
 import com.cburch.logisim.file.LoadFailedException;
 import com.cburch.logisim.file.Loader;
@@ -336,7 +324,7 @@ public class Startup {
       } else if (arg.equals("-clearprefs") || arg.equals("-clearprops")) {
         // already handled above
       } else if (arg.equals("-analyze")) {
-        Main.ANALYZE = true;
+        // Main.ANALYZE = true;
       } else if (arg.equals("-noupdates")) {
         // ignore
       } else if (arg.equals("-questa")) {
@@ -577,10 +565,9 @@ public class Startup {
     }
     WindowManagers.initialize();
     if (MacCompatibility.isSwingUsingScreenMenuBar()) {
-      MacCompatibility
-          .setFramelessJMenuBar(new LogisimMenuBar(null, null));
+      MacCompatibility.setFramelessJMenuBar(new LogisimMenuBar(null, null, null, null));
     } else {
-      new LogisimMenuBar(null, null);
+      new LogisimMenuBar(null, null, null, null);
       // most of the time occupied here will be in loading menus, which
       // will occur eventually anyway; we might as well do it when the
       // monitor says we are

@@ -60,7 +60,7 @@ import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.analyze.model.Parser;
 
-public class Analyzer extends LFrame {
+public class Analyzer extends LFrame.SubWindow {
   private AnalyzerMenuListener menuListener;
 
   private class MyChangeListener implements ChangeListener {
@@ -163,7 +163,7 @@ public class Analyzer extends LFrame {
   private ExportTableButton exportTable;
 
   Analyzer() {
-    super(true, null);
+    super(null); // not associated with a project
 
     menuListener = new AnalyzerMenuListener(menubar);
 

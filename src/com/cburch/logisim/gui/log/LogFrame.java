@@ -43,7 +43,11 @@ import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.Simulator;
@@ -60,7 +64,9 @@ import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
 
-public class LogFrame extends LFrame {
+public class LogFrame extends LFrame.SubWindowWithSimulation {
+  private LogMenuListener menuListener;
+
   private class MyListener implements ProjectListener,
           LibraryListener, SimulatorListener, LocaleListener {
 
@@ -103,6 +109,7 @@ public class LogFrame extends LFrame {
 
     @Override
     public void simulatorStateChanged(SimulatorEvent e) {
+      setSimulator(project.getSimulator(), project.getCircuitState());
     }
 
     @Override
@@ -114,10 +121,12 @@ public class LogFrame extends LFrame {
   // TODO ? moving a component using Select tool removes it from selection
   private class WindowMenuManager extends WindowMenuItemManager
     implements LocaleListener, ProjectListener, LibraryListener {
-    WindowMenuManager() {
+    Project proj;
+    WindowMenuManager(Project p) {
       super(S.get("logFrameMenuItem"), false);
-      project.addProjectListener(this);
-      project.addLibraryListener(this);
+      proj = p;
+      proj.addProjectListener(this);
+      proj.addLibraryListener(this);
     }
 
     @Override
@@ -132,7 +141,7 @@ public class LogFrame extends LFrame {
     }
 
     public void localeChanged() {
-      String title = project.getLogisimFile().getDisplayName();
+      String title = proj.getLogisimFile().getDisplayName();
       setText(S.fmt("logFrameMenuItem", title));
     }
 
@@ -154,6 +163,7 @@ public class LogFrame extends LFrame {
   private Model curModel;
   private Map<CircuitState, Model> modelMap = new HashMap<CircuitState, Model>();
   private MyListener myListener = new MyListener();
+  private MyChangeListener myChangeListener = new MyChangeListener();
 
   private WindowMenuManager windowManager;
   private LogPanel[] panels;
@@ -170,8 +180,9 @@ public class LogFrame extends LFrame {
   }
 
   public LogFrame(Project project) {
-    super(true, project);
-    this.windowManager = new WindowMenuManager();
+    super(project);
+    windowManager = new WindowMenuManager(project);
+    menuListener = new LogMenuListener(menubar);
     project.addProjectListener(myListener);
     project.addLibraryListener(myListener);
     setSimulator(project.getSimulator(), project.getCircuitState());
@@ -189,6 +200,9 @@ public class LogFrame extends LFrame {
       tabbedPane.addTab(panel.getTitle(), null, panel,
           panel.getToolTipText());
     }
+    tabbedPane.addChangeListener(myChangeListener);
+    myChangeListener.stateChanged(null);
+
 
     Container contents = getContentPane();
     int w = Math.max(550, project.getFrame().getWidth());
@@ -218,6 +232,10 @@ public class LogFrame extends LFrame {
     setLocation(x, y);
   }
 
+  public LogMenuListener getMenuListener() {
+    return menuListener;
+  }
+
   public Model getModel() {
     return curModel;
   }
@@ -231,6 +249,7 @@ public class LogFrame extends LFrame {
       if (value == null || value.getCircuitState() == curModel.getCircuitState())
         return;
     }
+    menubar.setCircuitState(value, state);
 
     if (curSimulator != null)
       curSimulator.removeSimulatorListener(myListener);
@@ -267,5 +286,24 @@ public class LogFrame extends LFrame {
       windowManager.frameOpened(this);
     }
     super.setVisible(value);
+  }
+
+  private class MyChangeListener implements ChangeListener {
+    public void stateChanged(ChangeEvent e) {
+      Object selected = tabbedPane.getSelectedComponent();
+      if (selected instanceof JScrollPane) {
+        selected = ((JScrollPane) selected).getViewport().getView();
+      }
+      if (selected instanceof JPanel) {
+        ((JPanel) selected).requestFocus();
+      }
+      if (selected instanceof LogPanel) {
+        LogPanel tab = (LogPanel)selected;
+        menuListener.setEditHandler(tab.getEditHandler());
+        menuListener.setPrintHandler(tab.getPrintHandler());
+        // menuListener.setSimulationHandler(tab.getSimulationHandler());
+        tab.updateTab();
+      }
+    }
   }
 }

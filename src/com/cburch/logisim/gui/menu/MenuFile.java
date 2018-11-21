@@ -31,6 +31,7 @@
 package com.cburch.logisim.gui.menu;
 import static com.cburch.logisim.gui.menu.Strings.S;
 
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
@@ -99,7 +100,7 @@ class MenuFile extends Menu implements ActionListener {
       add(quit);
     }
 
-    Project proj = menubar.getProject();
+    Project proj = menubar.getSaveProject();
     newi.addActionListener(this);
     open.addActionListener(this);
     if (proj == null) {
@@ -119,24 +120,24 @@ class MenuFile extends Menu implements ActionListener {
 
   public void actionPerformed(ActionEvent e) {
     Object src = e.getSource();
-    Project proj = menubar.getProject();
+    Project proj = menubar.getSaveProject();
+    Project baseProj = menubar.getBaseProject();
+    Frame frame  = baseProj == null ? null : baseProj.getFrame();
     if (src == newi) {
-      ProjectActions.doNew(proj == null ? null : proj.getFrame());
+      ProjectActions.doNew(frame);
     } else if (src == open) {
-      Project newProj = ProjectActions.doOpen(proj == null ? null : proj.getFrame().getCanvas(), proj);
-      /* If the current project hasn't been touched and has */
-      /* no file associated with it (i.e. is entirely blank), */
-      /* and the new file was opened successfully, then go */
-      /* ahead and close the old blank window. */
+      Project newProj = ProjectActions.doOpen(frame, baseProj);
+      // If the current project hasn't been touched and has no file associated
+      // with it (i.e. is entirely blank), and the new file was opened
+      // successfully, then go ahead and close the old blank window.
+      // todo: and has no subwindows or dialogs open?
       if (newProj != null && proj != null
           && !proj.isFileDirty()
           && proj.getLogisimFile().getLoader().getMainFile() == null) {
-        Frame frame = proj.getFrame();
-        frame.dispose();
+        proj.getFrame().dispose();
       }
-    } else if (src == close) {
+    } else if (src == close && proj != null) {
       int result = 0;
-      Frame frame = proj.getFrame();
       if (proj.isFileDirty()) {
         /* Must use hardcoded strings here, because the string management is rotten */
         String message = "What should happen to your unsaved changes to " + proj.getLogisimFile().getName();
@@ -162,13 +163,15 @@ class MenuFile extends Menu implements ActionListener {
 
         // Close the current project
         frame.dispose();
+        // todo: this next bit should be made automatic, along with other
+        // sub-windows
         OptionsFrame f = proj.getOptionsFrame(false);
         if (f != null)
           f.dispose();
       }
-    } else if (src == save) {
+    } else if (src == save && proj != null) {
       ProjectActions.doSave(proj);
-    } else if (src == saveAs) {
+    } else if (src == saveAs && proj != null) {
       ProjectActions.doSaveAs(proj);
     } else if (src == prefs) {
       PreferencesFrame.showPreferences();

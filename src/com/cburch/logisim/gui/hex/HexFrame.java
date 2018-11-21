@@ -56,7 +56,7 @@ import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
 
-public class HexFrame extends LFrame {
+public class HexFrame extends LFrame.SubWindow {
   private class EditListener implements ActionListener, ChangeListener {
     private Clip clip = null;
 
@@ -163,7 +163,7 @@ public class HexFrame extends LFrame {
   private Instance instance;
 
   public HexFrame(Project project, Instance instance, HexModel model) {
-    super(false, project);
+    super(project);
 
     this.model = model;
     this.editor = new HexEditor(model);
