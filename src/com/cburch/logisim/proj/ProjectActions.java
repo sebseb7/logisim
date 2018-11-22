@@ -252,8 +252,7 @@ public class ProjectActions {
       }
     }
 
-    if (proj == null && baseProject != null
-        && baseProject.isStartupScreen()) {
+    if (proj == null && baseProject != null && baseProject.isStartupScreen()) {
       proj = baseProject;
       proj.setStartupScreen(false);
       loader = baseProject.getLogisimFile().getLoader();

@@ -49,22 +49,24 @@ import com.cburch.logisim.file.LogisimFileActions;
 import com.cburch.logisim.file.Options;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.proj.ProjectEvent;
+import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
-import com.cburch.logisim.util.WindowMenuItemManager;
 import com.cburch.logisim.util.TableLayout;
+import com.cburch.logisim.util.WindowMenuItemManager;
 
 public class OptionsFrame extends LFrame.Dialog {
   private class MyListener implements LibraryListener, LocaleListener {
     public void libraryChanged(LibraryEvent event) {
       if (event.getAction() == LibraryEvent.SET_NAME) {
-        setTitle(computeTitle(file));
+        computeTitle();
         windowManager.localeChanged();
       }
     }
 
     public void localeChanged() {
-      setTitle(computeTitle(file));
+      computeTitle();
       for (int i = 0; i < panels.length; i++) {
         tabbedPane.setTitleAt(i, panels[i].getTitle());
         tabbedPane.setToolTipTextAt(i, panels[i].getToolTipText());
@@ -91,13 +93,15 @@ public class OptionsFrame extends LFrame.Dialog {
     }
   }
 
-  private static String computeTitle(LogisimFile file) {
+  private void computeTitle() {
+    LogisimFile file = project.getLogisimFile();
     String name = file == null ? "???" : file.getName();
-    return S.fmt("optionsFrameTitle", name);
+    String title = S.fmt("optionsFrameTitle", name);
+    setTitle(title);
   }
 
   private static final long serialVersionUID = 1L;
-  private LogisimFile file;
+  // private LogisimFile file;
   private MyListener myListener = new MyListener();
 
   private WindowMenuManager windowManager = new WindowMenuManager();
@@ -106,8 +110,18 @@ public class OptionsFrame extends LFrame.Dialog {
 
   public OptionsFrame(Project project) {
     super(project);
-    this.file = project.getLogisimFile();
-    file.addLibraryListener(myListener);
+    // this.file = project.getLogisimFile();
+    project.addLibraryListener(myListener);
+    project.addProjectListener(new ProjectListener() {
+      @Override
+      public void projectChanged(ProjectEvent event) {
+        int action = event.getAction();
+        if (action == ProjectEvent.ACTION_SET_STATE) {
+          // file = project.getLogisimFile();
+          computeTitle();
+        }
+      }
+    });
 
     panels = new OptionsPanel[] { new SimulateOptions(this),
       new ToolbarOptions(this), new MouseOptions(this),
@@ -130,12 +144,12 @@ public class OptionsFrame extends LFrame.Dialog {
     setLocationRelativeTo(project.getFrame());
   }
 
-  public LogisimFile getLogisimFile() {
-    return file;
-  }
+  // public LogisimFile getLogisimFile() {
+  //   return file;
+  // }
 
   public Options getOptions() {
-    return file.getOptions();
+    return project.getLogisimFile().getOptions();
   }
 
   OptionsPanel[] getPrefPanels() {

@@ -32,6 +32,7 @@ package com.cburch.logisim.gui.generic;
 
 import java.awt.Image;
 import java.awt.Window;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -137,9 +138,16 @@ public class LFrame extends JFrame implements WindowClosable {
       // use null project so there will be no Close, Save, etc.
       menubar = new LogisimMenuBar(this, null, p, enableSim ? p : null);
       setJMenuBar(menubar);
-      // todo: listen for project close, if project exists
     } else {
       menubar = null;
+    }
+    if (type != MAIN_WINDOW && project != null) {
+      project.getFrame().addWindowListener(new WindowAdapter() {
+        @Override
+        public void windowClosed(WindowEvent e) {
+          LFrame.this.dispose();
+        }
+      });
     }
   }
 

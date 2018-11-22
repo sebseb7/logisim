@@ -154,20 +154,15 @@ class MenuFile extends Menu implements ActionListener {
       if (result != 2) {
         // Get the list of open projects
         List<Project> pl = Projects.getOpenProjects();
-        if (pl.size() == 1) {
-          // Since we have a single window open, before closing the
-          // current
-          // project open a new empty one
+        if (pl.size() == 1) { //  && !Main.MacOS ?
+          // Since we have a single window open, before closing the current
+          // project open a new empty one, to avoid having no remaining windows.
+          // todo: maybe don't do this on mac?
           ProjectActions.doNew(frame);
         }
 
         // Close the current project
         frame.dispose();
-        // todo: this next bit should be made automatic, along with other
-        // sub-windows
-        OptionsFrame f = proj.getOptionsFrame(false);
-        if (f != null)
-          f.dispose();
       }
     } else if (src == save && proj != null) {
       ProjectActions.doSave(proj);

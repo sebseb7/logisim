@@ -107,7 +107,7 @@ public class MenuSimulate extends Menu {
       } else if (src == log) {
         proj.getLogFrame().setVisible(true);
       } else if (src == test) {
-        proj.getTestFrame(true).setVisible(true);
+        proj.getTestFrame().setVisible(true);
       }
 
       Simulator sim = proj.getSimulator();

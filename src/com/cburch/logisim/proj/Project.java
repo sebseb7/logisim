@@ -119,9 +119,9 @@ public class Project {
   private LinkedList<ActionData> undoLog = new LinkedList<ActionData>();
   private int undoMods = 0;
   private LinkedList<ActionData> redoLog = new LinkedList<ActionData>();
-  private EventSourceWeakSupport<ProjectListener> projectListeners = new EventSourceWeakSupport<ProjectListener>();
-  private EventSourceWeakSupport<LibraryListener> fileListeners = new EventSourceWeakSupport<LibraryListener>();
-  private EventSourceWeakSupport<CircuitListener> circuitListeners = new EventSourceWeakSupport<CircuitListener>();
+  private EventSourceWeakSupport<ProjectListener> projectListeners = new EventSourceWeakSupport<>();
+  private EventSourceWeakSupport<LibraryListener> fileListeners = new EventSourceWeakSupport<>();
+  private EventSourceWeakSupport<CircuitListener> circuitListeners = new EventSourceWeakSupport<>();
   private Dependencies depends;
   private MyListener myListener = new MyListener();
   private boolean startupScreen = false;
@@ -381,13 +381,9 @@ public class Project {
     return file.getOptions();
   }
 
-  public OptionsFrame getOptionsFrame(boolean create) {
-    if (optionsFrame == null || optionsFrame.getLogisimFile() != file) {
-      if (create)
-        optionsFrame = new OptionsFrame(this);
-      else
-        optionsFrame = null;
-    }
+  public OptionsFrame getOptionsFrame() {
+    if (optionsFrame == null)
+      optionsFrame = new OptionsFrame(this);
     return optionsFrame;
   }
 
@@ -404,11 +400,9 @@ public class Project {
     return simulator;
   }
 
-  public TestFrame getTestFrame(boolean create) {
-    if (testFrame == null) {
-      if (create)
-        testFrame = new TestFrame(this);
-    }
+  public TestFrame getTestFrame() {
+    if (testFrame == null)
+      testFrame = new TestFrame(this);
     return testFrame;
   }
 
@@ -576,6 +570,12 @@ public class Project {
         old.removeLibraryListener(l);
       }
     }
+    if (optionsFrame != null) {
+      // Options pane is too intertwined with current file. Someday it could
+      // be disentangled.
+      optionsFrame.dispose();
+      optionsFrame = null;
+    }
     file = value;
     recentRootState.clear();
     allRootStates.clear();
@@ -591,8 +591,7 @@ public class Project {
         file.addLibraryListener(l);
       }
     }
-    file.setDirty(true); // toggle it so that everybody hears the file is
-    // fresh
+    file.setDirty(true); // toggle it so everybody hears the file is fresh
     file.setDirty(false);
   }
 
