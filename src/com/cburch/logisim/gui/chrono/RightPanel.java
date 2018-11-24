@@ -46,9 +46,11 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JPanel;
-import javax.swing.ListSelectionModel;
 import javax.swing.DefaultListSelectionModel;
+import javax.swing.JPanel;
+import javax.swing.JScrollBar;
+import javax.swing.JViewport;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 
 // Right panel has timeline on top and multiple Waveform components.
@@ -56,6 +58,7 @@ public class RightPanel extends JPanel {
 
   private static final int WAVE_HEIGHT = ChronoPanel.SIGNAL_HEIGHT;
   private static final int EXTRA_SPACE = 40; // at right side, to allow for label overhang
+  private static final int CURSOR_GAP = 20; // don't put cursor too close to sides side
 
 	private ChronoPanel chronoPanel;
   DefaultListSelectionModel selectionModel;
@@ -138,18 +141,65 @@ public class RightPanel extends JPanel {
   public void updateWaveforms() {
     int n = data.getValueCount();
     if (n == numTicks)
-      return; // size has not changed
-
+      return; // display has not changed
     numTicks = n;
-		width = tickWidth * numTicks + EXTRA_SPACE; // todo: even clock spacing
-
-    int m = data.getSignalCount();
-		height = ChronoPanel.HEADER_HEIGHT + m * ChronoPanel.SIGNAL_HEIGHT;
-
-    setPreferredSize(new Dimension(width, height)); // necessary for scrollbar
-
+    updateSize();
     flushWaveforms();
     repaint();
+  }
+
+  private void updateSize() {
+    int m = data.getSignalCount();
+		height = ChronoPanel.HEADER_HEIGHT + m * ChronoPanel.SIGNAL_HEIGHT;
+		width = tickWidth * numTicks + EXTRA_SPACE; // todo: even clock spacing
+
+    Dimension d = getPreferredSize();
+    if (d.width == width && d.height == height)
+      return;
+
+    int oldWidth = d.width;
+    JViewport v = chronoPanel.getRightViewport();
+    JScrollBar sb = chronoPanel.getHorizontalScrollBar();
+    Rectangle oldR = v == null ? null : v.getViewRect();
+
+    d.width = width;
+    d.height = height;
+    setPreferredSize(d); // necessary for scrollbar
+    revalidate();
+
+    if (sb == null || v == null || sb.getValueIsAdjusting())
+      return;
+
+    // if cursor is off screen, but right edge was on screen, scroll to max position
+    // if cursor is on screen, scroll as far as possible while still keeping cursor on screen
+    // .....(.....|....... )
+    // .....(........|.... )
+    // ...(.|..........)..
+    // (.|..........).....
+    // (...|...     )     
+    // ^                   ^
+    // never go below left=0 (0%) or above right=width-1 (100%)
+    // try to not go above cursor-CURSOR_GAP
+
+    Rectangle r = v.getViewRect(); // has this updated yet?
+
+    if (oldR.x <= curX && curX <= oldR.x + oldR.width) {
+      // cursor was on screen, keep it on screen
+      r.x = Math.max(oldR.x, curX - CURSOR_GAP);
+      r.width = Math.max(r.width, width - r.x);
+      SwingUtilities.invokeLater(new Runnable() {
+        public void run() { scrollRectToVisible(r); }
+      });
+    } else if (oldWidth <= oldR.x + oldR.width) {
+      // right edge was on screen, keep it on screen
+      r.x = Math.max(0, width - r.width);
+      r.width = width - r.x;
+      SwingUtilities.invokeLater(new Runnable() {
+        public void run() { scrollRectToVisible(r); }
+      });
+    } else {
+      // do nothing ?
+    }
   }
 
 	public void setSignalCursor(int posX) {
@@ -223,14 +273,19 @@ public class RightPanel extends JPanel {
     }
     for (Waveform w : rows)
       w.paintWaveform(g);
-    paintTimeline(g);
+    int h = ChronoPanel.HEADER_HEIGHT;
+    g.setColor(Color.LIGHT_GRAY);
+    g.fillRect(0, 0, width, ChronoPanel.HEADER_HEIGHT);
     paintCursor(g);
+    paintTimeline(g);
   }
 
   public void paintTimeline(Graphics2D g) {
-    g.drawLine(0, 5, width, 5);
-    for (int i = 0; i <= numTicks; i++)
-      g.drawLine(i*tickWidth, 2, i*tickWidth, 8);
+    int h = ChronoPanel.HEADER_HEIGHT;
+    g.setColor(Color.BLACK);
+    g.drawLine(0, h, width, h);
+    for (int x = 0; x < width; x += tickWidth)
+      g.drawLine(x, h*2/3, x, h);
     // todo: later
     // int minimalWidthToDisp = 60;
     // int nbrTick = 0;

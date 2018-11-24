@@ -47,6 +47,15 @@ class OptionsPanel extends LogPanel {
   JButton selectionButton;
   JPanel selectionPanel = new JPanel();
 
+  // [ ] Stop-motion mode aka single-step
+  //     [ ] Coarse-grained summary  [time_scale: 5ms]
+  //     Signals are captured...
+  //
+  //
+  // [ ] Real-time mode aka continuous
+  // [ ] Clocked mode
+
+
   JRadioButton realTime = new JRadioButton();
   JRadioButton stepTime = new JRadioButton();
   JRadioButton clockedSimple = new JRadioButton();

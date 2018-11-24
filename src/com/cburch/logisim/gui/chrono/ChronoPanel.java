@@ -43,19 +43,15 @@ import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.io.File;
 
 import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JViewport;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import com.cburch.draw.toolbar.Toolbar;
@@ -307,6 +303,18 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
 
   public RightPanel getRightPanel() {
     return rightPanel;
+  }
+
+  public JScrollBar getVerticalScrollBar() {
+    return rightScroll == null ? null : rightScroll.getVerticalScrollBar();
+  }
+
+  public JScrollBar getHorizontalScrollBar() {
+    return rightScroll == null ? null : rightScroll.getHorizontalScrollBar();
+  }
+
+  public JViewport getRightViewport() {
+    return rightScroll == null ? null : rightScroll.getViewport();
   }
 
   @Override
