@@ -193,6 +193,7 @@ class OptionsPanel extends LogPanel implements ActionListener, ChangeListener {
     limit.setEditor(new JSpinner.NumberEditor(limit, "####"));
     JFormattedTextField txt = ((JSpinner.NumberEditor)limit.getEditor()).getTextField();
     ((NumberFormatter)txt.getFormatter()).setAllowsInvalid(false);
+    limit.setMaximumSize(limit.getPreferredSize());
     unlimited.setAlignmentX(0.0f);
     Box limitBox = new Box(BoxLayout.X_AXIS);
     limitBox.add(limitLabel);

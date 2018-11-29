@@ -240,6 +240,8 @@ public class Model implements CircuitListener {
     if (historyLimit == limit)
       return;
     historyLimit = limit;
+    for (Signal s : signals)
+      s.resize(historyLimit);
     fireHistoryLimitChanged(null);
   }
 

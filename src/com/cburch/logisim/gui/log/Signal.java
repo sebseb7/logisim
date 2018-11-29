@@ -31,7 +31,6 @@
 package com.cburch.logisim.gui.log;
 
 import java.util.ArrayList;
-import java.util.Collection;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -110,6 +109,81 @@ public class Signal {
       if (firstIndex >= maxSize)
         firstIndex = 0;
     }
+  }
+
+  private void retainOnly(int offset, int amt, int cap) {
+    // shift all values [from offset to offset+amt] left into new arrays
+    // of size appropriate for eventual capacity cap
+    int c = (amt + CHUNK - 1) / CHUNK;
+    int last = cap == 0 ? CHUNK : Math.min(CHUNK, cap - (c-1) * CHUNK);
+    Value[][] v = new Value[c][];
+    long[][] d = new long[c][];
+    for (int i = 0; i < c; i++) {
+      v[i] = new Value[i < c-1 ? CHUNK : last];
+      d[i] = new long[i < c-1 ? CHUNK : last];
+    }
+    for (int p = 0; p < amt; p++) {
+      int i = (firstIndex + offset + p) % curSize;
+      v[p/CHUNK][p%CHUNK] = val[i/CHUNK][i%CHUNK];
+      d[p/CHUNK][p%CHUNK] = dur[i/CHUNK][i%CHUNK];
+    }
+    val = v;
+    dur = d;
+    firstIndex = 0;
+    curSize = amt;
+  }
+
+  public void resize(int newMaxSize) {
+    if (newMaxSize == maxSize)
+      return;
+    if (newMaxSize == 0 || newMaxSize > maxSize) {
+      // growing
+      if (firstIndex != 0)
+        retainOnly(0, curSize, newMaxSize); // keeps all data, but shifts it left
+    } else {
+      // shrinking: newMaxSize < maxSize
+      if (curSize <= newMaxSize) {
+        // Mostly empty, keep all data, but maybe truncate last chunk if needed
+        // to get capacity below new max size.
+        // Note: firstIndex must be 0, since otherwize curSize==maxSize,
+        // and that would mean curSize > newMaxSize.
+        // There are two cases:
+        //  very unfull:
+        //    cap -----------------------------------------------|
+        //    curSize --------------------------|
+        //    [ 0+ full large-chunks ] [ partly full large-chunk ] [ not yet allocated... ]
+        //  nearly full:
+        //    cap ---------------------------------------------|
+        //    curSize -------------------------|
+        //    [ 0+ full large-chunks ] [ partly full end-chunk ]
+        // In the very unfull case, we may be able to do nothing at all
+        // (if cap <= newMaxSize), or we may have to shrink that last allocated
+        // chunk (if cap > newMaxSize).
+        // In the nearly full case, cap > newMaxSize and we need to shrink the
+        // last allocated chunk.
+        int c = val.length;
+        int cap = CHUNK*(c-1) + val[c-1].length;
+        if (cap > newMaxSize) {
+          // Note: # of existing chunks (c) must be equal to # of new chunks
+          int last = Math.min(CHUNK, newMaxSize - (c-1) * CHUNK);
+          Value[] v = new Value[last];
+          long[] d = new long[last];
+          System.arraycopy(val[c-1], 0, v, 0, last);
+          System.arraycopy(dur[c-1], 0, d, 0, last);
+          val[c-1] = v;
+          dur[c-1] = d;
+        }
+      } else { // curSize > newMaxSize
+        // too much data, keep only most recent data and shift it left
+        int discard = (maxSize - newMaxSize);
+        for (int p = 0; p < discard; p++) {
+          int i = (firstIndex + p) % curSize;
+          tStart += dur[i/CHUNK][i%CHUNK];
+        }
+        retainOnly(discard, newMaxSize, newMaxSize);
+      }
+    }
+    maxSize = newMaxSize;
   }
 
   public void reset(Value v, long duration) {
@@ -231,8 +305,8 @@ public class Signal {
   public void toggleExpanded() { expanded = !expanded; }
 
   // This class is mostly needed because drag-and-drop DataFlavor works easiest
-  // with a regular class (not an inner or generic class).
-  public static class Collection extends ArrayList<Signal> implements Transferable {
+  // with a non-generic non-anonymous class
+  public static class List extends ArrayList<Signal> implements Transferable {
     public static final DataFlavor dataFlavor;
     static {
       DataFlavor f = null;
@@ -240,7 +314,7 @@ public class Signal {
         f = new DataFlavor(
             String.format("%s;class=\"%s\"",
               DataFlavor.javaJVMLocalObjectMimeType,
-              Collection.class.getName()));
+              List.class.getName()));
       } catch (ClassNotFoundException e) {
         e.printStackTrace();
       }

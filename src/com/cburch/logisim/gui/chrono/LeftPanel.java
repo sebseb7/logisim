@@ -189,7 +189,7 @@ public class LeftPanel extends JPanel {
           return;
         if (!(e.getComponent() instanceof JTable))
           return;
-        Signal.Collection signals = getSelectedValuesList();
+        Signal.List signals = getSelectedValuesList();
         if (signals.size() == 0) {
           int row = table.rowAtPoint(e.getPoint());
           if (row < 0 || row >= model.getSignalCount())
@@ -283,8 +283,8 @@ public class LeftPanel extends JPanel {
       tableModel.fireTableCellUpdated(row, 1);
 	}
 
-  Signal.Collection getSelectedValuesList() {
-    Signal.Collection signals = new Signal.Collection();
+  Signal.List getSelectedValuesList() {
+    Signal.List signals = new Signal.List();
     int[] sel = table.getSelectedRows();
     for (int i : sel)
       signals.add(model.getSignal(i));
@@ -293,7 +293,7 @@ public class LeftPanel extends JPanel {
 
   void removeSelected() {
     int idx = 0;
-    Signal.Collection signals = getSelectedValuesList();
+    Signal.List signals = getSelectedValuesList();
     SignalInfo.List items = new SignalInfo.List();
     for (Signal s : signals) {
       items.add(s.info);
@@ -312,7 +312,7 @@ public class LeftPanel extends JPanel {
   }
 
   private class SignalTransferHandler extends TransferHandler {
-    Signal.Collection removing = null;
+    Signal.List removing = null;
 
     @Override
     public int getSourceActions(JComponent comp) {
@@ -340,7 +340,7 @@ public class LeftPanel extends JPanel {
 
     @Override
     public boolean canImport(TransferHandler.TransferSupport support) {
-      return support.isDataFlavorSupported(Signal.Collection.dataFlavor);
+      return support.isDataFlavorSupported(Signal.List.dataFlavor);
     }
 
     @Override
@@ -350,11 +350,11 @@ public class LeftPanel extends JPanel {
         System.out.println("paste with no cut... maybe import name and restore waveform?");
         return false;
       }
-      Signal.Collection signals = removing;
+      Signal.List signals = removing;
       removing = null;
       try {
-        Signal.Collection s2 =
-            (Signal.Collection)support.getTransferable().getTransferData(Signal.Collection.dataFlavor);
+        Signal.List s2 =
+            (Signal.List)support.getTransferable().getTransferData(Signal.List.dataFlavor);
         int newIdx = model.getSignalCount();
         if (support.isDrop()) {
           try {
