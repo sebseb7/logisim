@@ -70,6 +70,10 @@ public class Signal {
     extend(initialValue, duration);
   }
 
+  public long omittedDataTime() {
+    return curSize == maxSize ? tStart : 0;
+  }
+
   public void extend(Value v, long duration) {
     if (v.getWidth() != width)
       System.out.println("*** notice: value width mismatch for " + info);
@@ -218,7 +222,8 @@ public class Signal {
 
     public Iterator(long t) {
       this();
-      advance(t);
+      if (t > time)
+        advance(t-time);
     }
 
     public String getFormattedValue() {

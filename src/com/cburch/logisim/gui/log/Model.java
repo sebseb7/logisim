@@ -418,6 +418,15 @@ public class Model implements CircuitListener {
     return signals;
   }
 
+  public long getStartTime() {
+    // if any signals are full (due to history limit), don't show
+    // earlier data (it looks funny in histogram and table)
+    long t = 0;
+    for (Signal s: signals)
+      t = Math.max(t, s.omittedDataTime());
+    return t;
+  }
+
   public long getEndTime() {
     return tEnd;
   }

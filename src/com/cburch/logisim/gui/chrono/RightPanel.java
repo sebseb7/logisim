@@ -76,6 +76,7 @@ public class RightPanel extends JPanel {
 	private long curT = Long.MAX_VALUE; // time of cursor, or MAX_VALUE to pin at right
 	private int tickWidth = 20; // display width of one time unit (timeScale simulated nanoseconds)
   private int slope; // display width of transitions, when duration of signal permits
+  private long tStartDraw = 0; // drawing started at this time, inclusive
   private long tNextDraw = 0; // done drawing up to this time, exclusive 
   private int width, height;
   private MyListener myListener = new MyListener();
@@ -107,7 +108,7 @@ public class RightPanel extends JPanel {
 		setBackground(Color.WHITE);
 
     long timeScale = model.getTimeScale();
-    int numTicks = (int)((model.getEndTime() + timeScale - 1) / timeScale);
+    int numTicks = (int)(((model.getEndTime()-model.getStartTime()) + timeScale - 1) / timeScale);
 		width = tickWidth * numTicks + EXTRA_SPACE;
 
 		addMouseListener(myListener);
@@ -142,15 +143,17 @@ public class RightPanel extends JPanel {
 		}
     if (rows.size() > n)
       rows.subList(n, rows.size()).clear();
-    tNextDraw = 0; // forces updateWaveforms() to refresh waveforms
+    tStartDraw = tNextDraw = -1; // forces updateWaveforms() to refresh waveforms
     updateWaveforms();
   }
 
   public void updateWaveforms() {
-    long t = model.getEndTime();
-    if (t == tNextDraw)
+    long t0 = model.getStartTime();
+    long t1 = model.getEndTime();
+    if (t0 == tStartDraw && t1 == tNextDraw)
       return; // already drawn all signal values
-    tNextDraw = t;
+    tStartDraw = t0;
+    tNextDraw = t1;
     updateSize();
     flushWaveforms();
     repaint();
@@ -158,7 +161,7 @@ public class RightPanel extends JPanel {
 
   private void updateSize() {
     long timeScale = model.getTimeScale();
-    int numTicks = (int)((tNextDraw + timeScale - 1) / timeScale);
+    int numTicks = (int)(((tNextDraw-tStartDraw) + timeScale - 1) / timeScale);
 
     int m = model.getSignalCount();
 		height = ChronoPanel.HEADER_HEIGHT + m * ChronoPanel.SIGNAL_HEIGHT;
@@ -182,7 +185,7 @@ public class RightPanel extends JPanel {
       return;
 
     // if cursor is off screen, but right edge was on screen, scroll to max position
-    // if cursor is on screen, scroll as far as possible while still keeping cursor on screen
+    // if cursor is on screen and right edge was on screen, scroll as far as possible while still keeping cursor on screen
     // .....(.....|....... )
     // .....(........|.... )
     // ...(.|..........)..
@@ -194,14 +197,16 @@ public class RightPanel extends JPanel {
 
     Rectangle r = v.getViewRect(); // has this updated yet?
 
-    if (oldR.x <= curX && curX <= oldR.x + oldR.width) {
+    boolean edgeVisible = (oldWidth <= oldR.x + oldR.width);
+    boolean cursorVisible = (oldR.x <= curX && curX <= oldR.x + oldR.width);
+    if (cursorVisible && edgeVisible) {
       // cursor was on screen, keep it on screen
       r.x = Math.max(oldR.x, curX - CURSOR_GAP);
       r.width = Math.max(r.width, width - r.x);
       SwingUtilities.invokeLater(new Runnable() {
         public void run() { scrollRectToVisible(r); }
       });
-    } else if (oldWidth <= oldR.x + oldR.width) {
+    } else if (edgeVisible) {
       // right edge was on screen, keep it on screen
       r.x = Math.max(0, width - r.width);
       r.width = width - r.x;
@@ -209,10 +214,9 @@ public class RightPanel extends JPanel {
         public void run() { scrollRectToVisible(r); }
       });
     } else {
-      // do nothing ?
+      // do nothing
     }
   }
-
   
   static long snapToPixel(long delta, long t) {
     // Each pixel covers delta=timeScale/tickWidth amount of time, and
@@ -229,7 +233,8 @@ public class RightPanel extends JPanel {
     double f = model.getTimeScale() / (double)tickWidth;
     curX = Math.max(0, posX);
     // curT = Math.max(0L, (long)((curX - slope/2.0) * timeScale / tickWidth));
-    curT = Math.max(0L, snapToPixel((long)f, (long)(curX * f)));
+    long t0 = model.getStartTime();
+    curT = + Math.max(t0, snapToPixel((long)f, (long)(t0 + curX * f)));
     if (curT >= model.getEndTime()) {
       curX = Integer.MAX_VALUE; // pin to right side
       curT = Long.MAX_VALUE; // pin to right side
@@ -240,7 +245,7 @@ public class RightPanel extends JPanel {
   public int getSignalCursorX() {
     long timeScale = model.getTimeScale();
     return curX == Integer.MAX_VALUE
-        ? (int)((model.getEndTime()-1.0)*tickWidth/timeScale)
+        ? (int)((model.getEndTime()-model.getStartTime()-1.0)*tickWidth/timeScale)
         : curX;
   }
 
@@ -348,12 +353,16 @@ public class RightPanel extends JPanel {
     Font f = g.getFont();
     g.setFont(TIME_FONT);
 
+    long t0 = model.getStartTime();
+    long tL = (t0 / divMajor) * divMajor;
     int h = ChronoPanel.HEADER_HEIGHT - ChronoPanel.GAP;
     g.setColor(Color.BLACK);
     g.drawLine(0, h, width, h);
-    for (int i = 0; ; i++) {
-      long t = divMinor * i;
-      int x = (int)(t * pixelPerTime);
+    for (int i = 0; true; i++) {
+      long t = tL + divMinor * i;
+      if (t < t0)
+        continue;
+      int x = (int)((t-t0) * pixelPerTime);
       if (x >= width)
         break;
       if (i % numMinor == 0) {
@@ -369,7 +378,6 @@ public class RightPanel extends JPanel {
 
     g.setFont(f);
   }
-
 
 	private void paintCursor(Graphics2D g) {
     int x = getSignalCursorX();
@@ -523,7 +531,8 @@ public class RightPanel extends JPanel {
     private void drawSignal(Graphics2D g, boolean bold, Color[] colors) {
       g.setStroke(new BasicStroke(bold ? 2 : 1));
 
-      Signal.Iterator cur = signal.new Iterator();
+      long t0 = model.getStartTime();
+      Signal.Iterator cur = signal.new Iterator(t0);
 
       FontMetrics fm = g.getFontMetrics();
 
@@ -531,13 +540,13 @@ public class RightPanel extends JPanel {
       String min = signal.getFormattedMinValue();
       int labelWidth = Math.max(fm.stringWidth(max), fm.stringWidth(min));
 
-      double z =  tickWidth / (double)model.getTimeScale();
+      double z = tickWidth / (double)model.getTimeScale();
       boolean prevHi = false, prevLo = false;
       Color prevFill = null;
       while (cur.value != null) {
         String v = cur.getFormattedValue();
-        int x0 = (int)(z * cur.time);
-        int x1 = (int)(z * (cur.time + cur.duration));
+        int x0 = (int)(z * (cur.time - t0));
+        int x1 = (int)(z * (cur.time + cur.duration - t0));
     
         boolean hi = true, lo = true;
         Color lineColor, fillColor;
