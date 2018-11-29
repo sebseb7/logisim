@@ -56,15 +56,14 @@ import javax.swing.UIManager;
 
 import com.cburch.draw.toolbar.Toolbar;
 import com.cburch.logisim.circuit.Simulator;
-import com.cburch.logisim.data.Value;
 import com.cburch.logisim.gui.log.LogFrame;
 import com.cburch.logisim.gui.log.LogPanel;
 import com.cburch.logisim.gui.log.Model;
-import com.cburch.logisim.gui.log.Selection;
-import com.cburch.logisim.gui.log.SelectionItem;
+import com.cburch.logisim.gui.log.Signal;
+import com.cburch.logisim.gui.log.SignalInfo;
 import com.cburch.logisim.gui.main.SimulationToolbarModel;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
-import com.cburch.logisim.gui.menu.PrintHandler;
+// import com.cburch.logisim.gui.menu.PrintHandler;
 import com.cburch.logisim.gui.menu.EditHandler;
 
 public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener {
@@ -145,7 +144,6 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
 
   // state
   private Simulator simulator;
-  private ChronoData data = new ChronoData();
   private Model model;
 
   // button bar
@@ -166,9 +164,9 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
   public ChronoPanel(LogFrame logFrame) {
     super(logFrame);
 
-    SELECT1 = UIManager.getDefaults().getColor("List.selectionBackground");
-    SELECT2 = darker(SELECT1);
-    SELECT = new Color[] { SELECT1, SELECT2 };
+    SELECT_BG = UIManager.getDefaults().getColor("List.selectionBackground");
+    SELECT_HI = darker(SELECT_BG);
+    SELECT = new Color[] { SELECT_BG, SELECT_HI, SELECT_LINE, SELECT_ERR, SELECT_ERRLINE, SELECT_UNK, SELECT_UNKLINE };
 
     simulator = getProject().getSimulator();
 
@@ -265,8 +263,8 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     int p = rightScroll == null ? 0 : rightScroll.getHorizontalScrollBar().getValue();
     if (rightPanel == null)
       rightPanel = new RightPanel(this, leftPanel.getSelectionModel());
-    else
-      rightPanel = new RightPanel(rightPanel, leftPanel.getSelectionModel());
+    // else
+    //  rightPanel = new RightPanel(rightPanel, leftPanel.getSelectionModel());
 
     rightScroll = new JScrollPane(rightPanel,
         ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
@@ -280,21 +278,14 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     splitPane.setLeftComponent(leftScroll);
     splitPane.setRightComponent(rightScroll);
 
-		setSignalCursor(rightPanel.getSignalCursor()); // sets cursor in both panels
+		// setSignalCursorX(rightPanel.getSignalCursorX()); // sets cursor in both panels
+    setSignalCursorX(Integer.MAX_VALUE);
 
     // put right scrollbar into same position
     rightScroll.getHorizontalScrollBar().setValue(p);
     rightScroll.getHorizontalScrollBar().setValue(p);
 
     // splitPane.setDividerLocation(INITIAL_SPLIT);
-  }
-
-  public ChronoData getChronoData() {
-    return data;
-  }
-
-  public Selection getSelection() {
-    return getLogFrame().getModel().getSelection();
   }
 
   public LeftPanel getLeftPanel() {
@@ -396,11 +387,11 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     exportDataToImage.setText(S.get("Export as image"));
   }
 
-  // todo merge SelectionItem and Signal to preserve waveforms?
+  // todo merge SignalInfo and Signal to preserve waveforms?
   @Override
   public void modelChanged(Model oldModel, Model newModel) {
     setModel(newModel);
-    setSignalCursor(Integer.MAX_VALUE);
+    setSignalCursorX(Integer.MAX_VALUE);
     leftPanel.updateSignals();
     rightPanel.updateSignals();
   }
@@ -442,62 +433,69 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
 //    }
 //  }
 
-  public void changeSpotlight(ChronoData.Signal s) {
-    ChronoData.Signal old = data.setSpotlight(s);
+  public void changeSpotlight(Signal s) {
+    Signal old = model.setSpotlight(s);
     if (old == s)
       return;
     rightPanel.changeSpotlight(old, s);
     leftPanel.changeSpotlight(old, s);
   }
 
-//	public void mouseEntered(ChronoData.Signal s) {
+//	public void mouseEntered(Signal s) {
 //    changeSpotlight(s);
 //	}
 //
-//	public void mousePressed(ChronoData.Signal s, int posX) {
+//	public void mousePressed(Signal s, int posX) {
 //		setSignalCursor(posX);
 //	}
 //
-//	public void mouseDragged(ChronoData.Signal s, int posX) {
+//	public void mouseDragged(Signal s, int posX) {
 //		setSignalCursor(posX);
 //	}
 //
-//	public void mouseExited(ChronoData.Signal s) {
+//	public void mouseExited(Signal s) {
 //    changeSpotlight(null);
 //	}
 
-  public void setSignalCursor(int posX) {
-		rightPanel.setSignalCursor(posX);
+  public void setSignalCursorX(int posX) {
+		rightPanel.setSignalCursorX(posX);
     leftPanel.updateSignalValues();
   }
 
 	@Override
-	public void entryAdded(Model.Event event, Value[] values) {
-    data.addSignalValues(values);
+	public void modeChanged(Model.Event event) {
+    System.out.println("todo");
+  }
+
+	@Override
+	public void signalsExtended(Model.Event event) {
     leftPanel.updateSignalValues();
     rightPanel.updateWaveforms();
   }
 
 	@Override
-	public void resetEntries(Model.Event event, Value[] values) {
-    data.resetSignalValues(values);
-    setSignalCursor(Integer.MAX_VALUE);
+	public void signalsReset(Model.Event event) {
+    setSignalCursorX(Integer.MAX_VALUE);
     rightPanel.updateWaveforms();
   }
 
 	@Override
 	public void filePropertyChanged(Model.Event event) {
-    // System.out.println("prop changed "  + event);
+	}
+
+	@Override
+	public void historyLimitChanged(Model.Event event) {
+    setSignalCursorX(Integer.MAX_VALUE);
+    rightPanel.updateWaveforms();
 	}
 
 	@Override
 	public void selectionChanged(Model.Event event) {
-    data.setSignals(model.getSelection(), model.getCircuitState());
     leftPanel.updateSignals();
     rightPanel.updateSignals();
 	}
 
-	public void toggleBusExpand(ChronoData.Signal s, boolean expand) {
+	public void toggleBusExpand(Signal s, boolean expand) {
     System.out.println("toggle bus");
     // todo: later
 		// mChronoPanel.toggleBusExpand(signalDataSource, expand);
@@ -508,38 +506,56 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
   //   rightPanel.zoom(sens, posX);
 	// }
 
-	// public void zoom(ChronoData.Signal s, int sens, int val) {
+	// public void zoom(Signal s, int sens, int val) {
   //   System.out.println("zoom");
 	// 	rightPanel.zoom(sens, val);
 	// }
 
+  public Model getModel() {
+    return model;
+  }
+
   public void setModel(Model newModel) {
     if (model != null)
       model.removeModelListener(this);
-    data.clear();
     model = newModel;
     if (model == null)
       return;
-
-    data.setSignals(model.getSelection(), model.getCircuitState());
-
 		model.addModelListener(this);
 	}
 
-	private static final Color SPOT1 = new Color(0xaa, 0xff, 0xaa);
-	private static final Color SPOT2 = darker(SPOT1);
-	private static final Color PLAIN1 = new Color(0xbb, 0xbb, 0xbb);
-	private static final Color PLAIN2 = darker(PLAIN1);
-  private final Color SELECT1; // set in constructor
-  private final Color SELECT2; // set in constructor
-  private static final Color[] SPOT = { SPOT1, SPOT2 };
-  private static final Color[] PLAIN = { PLAIN1, PLAIN2 };
+	private static final Color PLAIN_BG = new Color(0xbb, 0xbb, 0xbb);
+	private static final Color PLAIN_HI = darker(PLAIN_BG);
+	private static final Color PLAIN_LINE = Color.BLACK;
+	private static final Color PLAIN_ERR = new Color(0xdb, 0x9d, 0x9d);
+	private static final Color PLAIN_ERRLINE = Color.BLACK;
+	private static final Color PLAIN_UNK = new Color(0xea, 0xaa, 0x6c);
+	private static final Color PLAIN_UNKLINE = Color.BLACK;
+
+	private static final Color SPOT_BG = new Color(0xaa, 0xff, 0xaa);
+	private static final Color SPOT_HI = darker(SPOT_BG);
+	private static final Color SPOT_LINE = Color.BLACK;
+	private static final Color SPOT_ERR = new Color(0xf9, 0x76, 0x76);
+	private static final Color SPOT_ERRLINE = Color.BLACK;
+	private static final Color SPOT_UNK = new Color(0xea, 0x98, 0x49);
+	private static final Color SPOT_UNKLINE = Color.BLACK;
+
+  private final Color SELECT_BG; // set in constructor
+  private final Color SELECT_HI; // set in constructor
+	private static final Color SELECT_LINE = Color.BLACK;
+	private static final Color SELECT_ERR = new Color(0xe5, 0x80, 0x80);
+	private static final Color SELECT_ERRLINE = Color.BLACK;
+	private static final Color SELECT_UNK = new Color(0xee, 0x99, 0x44);
+	private static final Color SELECT_UNKLINE = Color.BLACK;
+
+  private static final Color[] SPOT = { SPOT_BG, SPOT_HI, SPOT_LINE, SPOT_ERR, SPOT_ERRLINE, SPOT_UNK, SPOT_UNKLINE };
+  private static final Color[] PLAIN = { PLAIN_BG, PLAIN_HI, PLAIN_LINE, PLAIN_ERR, PLAIN_ERRLINE, PLAIN_UNK, PLAIN_UNKLINE };
   private final Color[] SELECT; // set in constructor
 
-  public Color[] rowColors(SelectionItem item, boolean isSelected) {
+  public Color[] rowColors(SignalInfo item, boolean isSelected) {
     if (isSelected)
       return SELECT;
-    ChronoData.Signal spotlight = data.getSpotlight();
+    Signal spotlight = model.getSpotlight();
     if (spotlight != null && spotlight.info == item)
       return SPOT;
     return PLAIN;
@@ -567,7 +583,7 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
   EditHandler editHandler = new EditHandler() {
     @Override
     public void computeEnabled() {
-      boolean empty = data.getSignalCount() == 0;
+      boolean empty = model.getSignalCount() == 0;
       boolean sel = !empty && !leftPanel.getSelectionModel().isSelectionEmpty();
       setEnabled(LogisimMenuBar.CUT, sel);
       setEnabled(LogisimMenuBar.COPY, sel);

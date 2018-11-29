@@ -67,8 +67,9 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import com.cburch.logisim.gui.log.ComponentIcon;
-import com.cburch.logisim.gui.log.SelectionItem;
-import com.cburch.logisim.gui.log.SelectionItems;
+import com.cburch.logisim.gui.log.Model;
+import com.cburch.logisim.gui.log.Signal;
+import com.cburch.logisim.gui.log.SignalInfo;
 
 // Left panel containing signal names
 public class LeftPanel extends JPanel {
@@ -82,12 +83,12 @@ public class LeftPanel extends JPanel {
     public int getColumnCount() { return 2; }
     @Override
     public Class getColumnClass(int col) {
-      return col == 0 ? SelectionItem.class : ChronoData.Signal.class; }
+      return col == 0 ? SignalInfo.class : Signal.class; }
     @Override
-    public int getRowCount() { return data.getSignalCount(); }
+    public int getRowCount() { return model.getSignalCount(); }
     @Override
     public Object getValueAt(int row, int col) {
-      return col  == 0 ? data.getSignal(row).info : data.getSignal(row);
+      return col  == 0 ? model.getSignal(row).info : model.getSignal(row);
     }
     @Override
     public boolean isCellEditable(int row, int col) {
@@ -102,14 +103,14 @@ public class LeftPanel extends JPanel {
     @Override
     public Component getTableCellRendererComponent(JTable table,
         Object value, boolean isSelected, boolean hasFocus, int row, int col) {
-      if (!(value instanceof SelectionItem))
+      if (!(value instanceof SignalInfo))
         return null;
       Component ret = super.getTableCellRendererComponent(table,
           value, false, false, row, col);
-      if (ret instanceof JLabel && value instanceof SelectionItem) {
+      if (ret instanceof JLabel && value instanceof SignalInfo) {
         JLabel label = (JLabel)ret;
         label.setBorder(rowInsets);
-        SelectionItem item = (SelectionItem)value;
+        SignalInfo item = (SignalInfo)value;
         label.setBackground(chronoPanel.rowColors(item, isSelected)[0]);
         label.setIcon(new ComponentIcon(item.getComponent()));
       }
@@ -121,10 +122,10 @@ public class LeftPanel extends JPanel {
     @Override
     public Component getTableCellRendererComponent(JTable table,
         Object value, boolean isSelected, boolean hasFocus, int row, int col) {
-      if (!(value instanceof ChronoData.Signal))
+      if (!(value instanceof Signal))
         return null;
-      ChronoData.Signal s = (ChronoData.Signal)value;
-      String txt = s.getFormattedValue(chronoPanel.getRightPanel().getCurrentTick());
+      Signal s = (Signal)value;
+      String txt = s.getFormattedValue(chronoPanel.getRightPanel().getCurrentTime());
       Component ret = super.getTableCellRendererComponent(table,
           txt, false, false, row, col);
       if (ret instanceof JLabel) {
@@ -139,13 +140,13 @@ public class LeftPanel extends JPanel {
   }
 
 	private ChronoPanel chronoPanel;
-  private ChronoData data;
+  private Model model;
 	private JTable table;
 	private SignalTableModel tableModel;
 
 	public LeftPanel(ChronoPanel chronoPanel) {
 		this.chronoPanel = chronoPanel;
-    data = chronoPanel.getChronoData();
+    model = chronoPanel.getModel();
 
 		setLayout(new BorderLayout());
 		setBackground(Color.WHITE);
@@ -153,8 +154,8 @@ public class LeftPanel extends JPanel {
     tableModel = new SignalTableModel();
 		table = new JTable(tableModel);
     table.setShowGrid(false);
-    table.setDefaultRenderer(SelectionItem.class, new SignalRenderer());
-    table.setDefaultRenderer(ChronoData.Signal.class, new ValueRenderer());
+    table.setDefaultRenderer(SignalInfo.class, new SignalRenderer());
+    table.setDefaultRenderer(Signal.class, new ValueRenderer());
     table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
     table.setColumnSelectionAllowed(false);
@@ -174,7 +175,7 @@ public class LeftPanel extends JPanel {
 			public void mouseMoved(MouseEvent e) {
 				int row = table.rowAtPoint(e.getPoint());
 				if (row >= 0 && e.getComponent() instanceof JTable) {
-					chronoPanel.changeSpotlight(data.getSignal(row));
+					chronoPanel.changeSpotlight(model.getSignal(row));
 				} else {
 					chronoPanel.changeSpotlight(null);
         }
@@ -188,12 +189,12 @@ public class LeftPanel extends JPanel {
           return;
         if (!(e.getComponent() instanceof JTable))
           return;
-        ChronoData.Signals signals = getSelectedValuesList();
+        Signal.Collection signals = getSelectedValuesList();
         if (signals.size() == 0) {
           int row = table.rowAtPoint(e.getPoint());
-          if (row < 0 || row >= data.getSignalCount())
+          if (row < 0 || row >= model.getSignalCount())
             return;
-          signals.add(data.getSignal(row));
+          signals.add(model.getSignal(row));
         }
         PopupMenu m = new PopupMenu(chronoPanel, signals);
         m.doPop(e);
@@ -226,14 +227,14 @@ public class LeftPanel extends JPanel {
     // calculate default sizes
     int nameWidth = 0, valueWidth = 0;
     TableCellRenderer render = table.getDefaultRenderer(String.class);
-    int n = data.getSignalCount();
+    int n = model.getSignalCount();
     for (int i = -1; i < n; i++) {
       String name, val;
       if (i < 0) {
         name = tableModel.getColumnName(0);
         val = tableModel.getColumnName(1);
       } else {
-        ChronoData.Signal s = data.getSignal(i);
+        Signal s = model.getSignal(i);
         name = s.getName();
         val = s.getFormattedMaxValue();
       }
@@ -266,7 +267,7 @@ public class LeftPanel extends JPanel {
 		add(table, BorderLayout.CENTER);
 	}
 
-	public void changeSpotlight(ChronoData.Signal oldSignal, ChronoData.Signal newSignal) {
+	public void changeSpotlight(Signal oldSignal, Signal newSignal) {
     if (oldSignal != null)
       tableModel.fireTableRowsUpdated(oldSignal.idx, oldSignal.idx);
     if (newSignal != null)
@@ -278,29 +279,29 @@ public class LeftPanel extends JPanel {
 	}
 
 	public void updateSignalValues() {
-    for (int row = 0; row < data.getSignalCount(); row++)
+    for (int row = 0; row < model.getSignalCount(); row++)
       tableModel.fireTableCellUpdated(row, 1);
 	}
 
-  ChronoData.Signals getSelectedValuesList() {
-    ChronoData.Signals signals = new ChronoData.Signals();
+  Signal.Collection getSelectedValuesList() {
+    Signal.Collection signals = new Signal.Collection();
     int[] sel = table.getSelectedRows();
     for (int i : sel)
-      signals.add(data.getSignal(i));
+      signals.add(model.getSignal(i));
     return signals;
   }
 
   void removeSelected() {
     int idx = 0;
-    ChronoData.Signals signals = getSelectedValuesList();
-    SelectionItems items = new SelectionItems();
-    for (ChronoData.Signal s : signals) {
+    Signal.Collection signals = getSelectedValuesList();
+    SignalInfo.List items = new SignalInfo.List();
+    for (Signal s : signals) {
       items.add(s.info);
       idx = Math.max(idx, s.idx);
     }
-    int count = chronoPanel.getSelection().remove(items);
-    if (count > 0 && data.getSignalCount() > 0) {
-      idx = Math.min(idx+1-count, data.getSignalCount() - 1);
+    int count = model.remove(items);
+    if (count > 0 && model.getSignalCount() > 0) {
+      idx = Math.min(idx+1-count, model.getSignalCount() - 1);
       table.setRowSelectionInterval(idx, idx);
     }
     repaint();
@@ -311,7 +312,7 @@ public class LeftPanel extends JPanel {
   }
 
   private class SignalTransferHandler extends TransferHandler {
-    ChronoData.Signals removing = null;
+    Signal.Collection removing = null;
 
     @Override
     public int getSourceActions(JComponent comp) {
@@ -330,16 +331,16 @@ public class LeftPanel extends JPanel {
     public void exportDone(JComponent comp, Transferable trans, int action) {
       if (removing == null)
         return;
-      ArrayList<SelectionItem> items = new ArrayList<>();
-      for (ChronoData.Signal s : removing)
+      ArrayList<SignalInfo> items = new ArrayList<>();
+      for (Signal s : removing)
         items.add(s.info);
       removing = null;
-      chronoPanel.getSelection().remove(items);
+      model.remove(items);
     }
 
     @Override
     public boolean canImport(TransferHandler.TransferSupport support) {
-      return support.isDataFlavorSupported(ChronoData.Signals.dataFlavor);
+      return support.isDataFlavorSupported(Signal.Collection.dataFlavor);
     }
 
     @Override
@@ -349,12 +350,12 @@ public class LeftPanel extends JPanel {
         System.out.println("paste with no cut... maybe import name and restore waveform?");
         return false;
       }
-      ChronoData.Signals signals = removing;
+      Signal.Collection signals = removing;
       removing = null;
       try {
-        ChronoData.Signals s2 =
-            (ChronoData.Signals)support.getTransferable().getTransferData(ChronoData.Signals.dataFlavor);
-        int newIdx = data.getSignalCount();
+        Signal.Collection s2 =
+            (Signal.Collection)support.getTransferable().getTransferData(Signal.Collection.dataFlavor);
+        int newIdx = model.getSignalCount();
         if (support.isDrop()) {
           try {
             JTable.DropLocation dl = (JTable.DropLocation)support.getDropLocation();
@@ -369,9 +370,9 @@ public class LeftPanel extends JPanel {
         }
         int[] idx = new int[signals.size()];
         int i = 0;
-        for (ChronoData.Signal s : signals)
+        for (Signal s : signals)
           idx[i++] = s.idx;
-        chronoPanel.getSelection().move(idx, newIdx);
+        model.move(idx, newIdx);
         return true;
       } catch (UnsupportedFlavorException | IOException e) {
         e.printStackTrace();

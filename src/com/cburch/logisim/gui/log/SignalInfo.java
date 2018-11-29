@@ -30,9 +30,14 @@
 
 package com.cburch.logisim.gui.log;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.Collection;
+import java.util.Objects;
+
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
@@ -49,8 +54,8 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.StdAttr;
 
-// Notes: The item belongs to a particular model, for a particular simulation
-// of a particular top-level circuit. Thus:
+// Notes: Each SignalInfo belongs to a particular model, for a particular
+// simulation of a particular top-level circuit. Thus:
 //     model --> circuitState --> top-level circuit
 //
 // The path[] must not be empty. If it contains one component (e.g. a Pin or
@@ -74,7 +79,7 @@ import com.cburch.logisim.instance.StdAttr;
 //    path[0]           path[1]          path[2]          path[3]
 //  (subcirc A)       (subcirc B)      (subcirc C)         (Pin)
 //
-public class SelectionItem implements AttributeListener, CircuitListener, Location.At {
+public class SignalInfo implements AttributeListener, CircuitListener, Location.At {
   private Model model;
   private int n;
   private Component[] path; // n-1 subcircuit Components, then a Loggable Component
@@ -86,7 +91,7 @@ public class SelectionItem implements AttributeListener, CircuitListener, Locati
   private String fullname; // a path-like name, with slashes, ending with the nickname
   private int width = -1; // stored here so we can monitor for changes
 
-  public SelectionItem(Model m, Component[] p, Object o) {
+  public SignalInfo(Model m, Component[] p, Object o) {
     model = m;
     path = p;
     option = o;
@@ -130,10 +135,10 @@ public class SelectionItem implements AttributeListener, CircuitListener, Locati
   public void circuitChanged(CircuitEvent event) {
     // System.out.println("*** Circuit changed, possibly affecting " + this);
 
-    int index = model.getSelection().indexOf(this);
+    int index = model.indexOf(this);
     if (index < 0) {
       // System.out.println("***************** we are dead " + this);
-      return; // this SelectionItem doesn't appear to be alive any more
+      return; // this SignalInfo doesn't appear to be alive any more
     }
 
     int action = event.getAction();
@@ -294,6 +299,11 @@ public class SelectionItem implements AttributeListener, CircuitListener, Locati
   public Component getComponent() {
     return path[n-1];
   }
+  
+  public boolean isInput(Object option) {
+    Loggable log = (Loggable) path[n-1].getFeature(Loggable.class);
+    return log != null && log.isInput(option);
+  }
 
 //  public Object getOption() {
 //    return option;
@@ -343,9 +353,9 @@ public class SelectionItem implements AttributeListener, CircuitListener, Locati
   public boolean equals(Object other) {
     if (other == this)
       return true;
-    if (other == null || !(other instanceof SelectionItem))
+    if (other == null || !(other instanceof SignalInfo))
       return false;
-    SelectionItem o = (SelectionItem)other;
+    SignalInfo o = (SignalInfo)other;
     return model.equals(o.model)
         && Arrays.equals(path, o.path)
         && Objects.equals(option, o.option);
@@ -358,11 +368,49 @@ public class SelectionItem implements AttributeListener, CircuitListener, Locati
 
   private void remove() {
     // System.out.println(">>>>>> removing selected component: " + this);
-    int index = model.getSelection().indexOf(this);
-    model.getSelection().remove(index);
+    int index = model.indexOf(this);
+    model.remove(index);
     for (Circuit t : circ)
       t.removeCircuitListener(this);
     for (Component c : path)
       c.getAttributeSet().removeAttributeListener(this);
   }
+
+  // This class is mostly needed because drag-and-drop DataFlavor works easiest
+  // with a non-generic non-anonymous class
+  public static class List extends ArrayList<SignalInfo> implements Transferable
+  {
+    public static final DataFlavor dataFlavor;
+    static {
+      DataFlavor f = null;
+      try {
+        f = new DataFlavor(
+            String.format("%s;class=\"%s\"",
+              DataFlavor.javaJVMLocalObjectMimeType,
+              SignalInfo.List.class.getName()));
+      } catch (ClassNotFoundException e) {
+        e.printStackTrace();
+      }
+      dataFlavor = f;
+    }
+    public static final DataFlavor[] dataFlavors = new DataFlavor[] { dataFlavor };
+
+    @Override
+    public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
+      if(!isDataFlavorSupported(flavor))
+        throw new UnsupportedFlavorException(flavor);
+      return this;
+    }
+
+    @Override
+    public DataFlavor[] getTransferDataFlavors() {
+      return dataFlavors;
+    }
+
+    @Override
+    public boolean isDataFlavorSupported(DataFlavor flavor) {
+      return dataFlavor.equals(flavor);
+    }
+  }
+
 }

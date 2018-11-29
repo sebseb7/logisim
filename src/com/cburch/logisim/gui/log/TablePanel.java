@@ -31,6 +31,7 @@
 package com.cburch.logisim.gui.log;
 import static com.cburch.logisim.gui.log.Strings.S;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -39,7 +40,9 @@ import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 
+import javax.swing.JPanel;
 import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -47,55 +50,70 @@ import com.cburch.logisim.data.Value;
 import com.cburch.logisim.util.GraphicsUtil;
 
 class TablePanel extends LogPanel {
+  // todo: need to rewrite this
   private class MyListener implements Model.Listener {
     private void computeRowCount() {
-      Model model = getModel();
-      Selection sel = model.getSelection();
-      int rows = 0;
-      for (int i = sel.size() - 1; i >= 0; i--) {
-        int x = model.getValueLog(sel.get(i)).size();
-        if (x > rows)
-          rows = x;
-      }
-      if (rowCount != rows) {
-        rowCount = rows;
-        computePreferredSize();
-      }
+  //     Model model = getModel();
+  //     Selection sel = model.getSelection();
+  //     int rows = 0;
+  //     for (int i = sel.size() - 1; i >= 0; i--) {
+  //       int x = model.getValueLog(sel.get(i)).size();
+  //       if (x > rows)
+  //         rows = x;
+  //     }
+  //     if (rowCount != rows) {
+  //       rowCount = rows;
+  //       tableview.computePreferredSize();
+  //     }
     }
 
     void update() {
-      int oldCount = rowCount;
-      computeRowCount();
-      if (oldCount == rowCount) {
-        int value = vsb.getValue();
-        if (value > vsb.getMinimum()
-            && value < vsb.getMaximum() - vsb.getVisibleAmount()) {
-          vsb.setValue(vsb.getValue() - vsb.getUnitIncrement(-1));
-        } else {
-          repaint();
-        }
-      }
+  //     int oldCount = rowCount;
+  //     computeRowCount();
+  //     if (oldCount == rowCount) {
+  //       int value = vsb.getValue();
+  //       if (value > vsb.getMinimum()
+  //           && value < vsb.getMaximum() - vsb.getVisibleAmount()) {
+  //         vsb.setValue(vsb.getValue() - vsb.getUnitIncrement(-1));
+  //       } else {
+  //         repaint();
+  //       }
+  //     }
     }
 
-    public void entryAdded(Model.Event event, Value[] values) {
+    @Override
+    public void modeChanged(Model.Event event) {
+      System.out.println("todo");
+    }
+
+    @Override
+    public void historyLimitChanged(Model.Event event) {
+      System.out.println("todo");
+     //  update(); maybe?
+    }
+
+    @Override
+    public void signalsExtended(Model.Event event) {
       update();
     }
 
-    public void resetEntries(Model.Event event, Value[] values) {
+    @Override
+    public void signalsReset(Model.Event event) {
       update();
     }
 
+    @Override
     public void filePropertyChanged(Model.Event event) {
     }
 
+    @Override
     public void selectionChanged(Model.Event event) {
-      computeRowCount();
+      computeRowCount(); // todo: why not update ??
     }
   }
 
   private class VerticalScrollBar extends JScrollBar
     implements ChangeListener {
-    private static final long serialVersionUID = 1L;
     private int oldMaximum = -1;
     private int oldExtent = -1;
 
@@ -158,51 +176,29 @@ class TablePanel extends LogPanel {
   private int tableWidth;
   private int tableHeight;
   private VerticalScrollBar vsb;
+  private TableView tableview;
 
   public TablePanel(LogFrame frame) {
     super(frame);
     vsb = new VerticalScrollBar();
+    tableview = new TableView();
+    JScrollPane pane = new JScrollPane(tableview,
+        JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+        JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+    pane.setVerticalScrollBar(vsb);
+    setLayout(new BorderLayout());
+    add(pane);
     modelChanged(null, getModel());
   }
 
-  private void computePreferredSize() {
-    Model model = getModel();
-    Selection sel = model.getSelection();
-    int columns = sel.size();
-    if (columns == 0) {
-      setPreferredSize(new Dimension(0, 0));
-      return;
-    }
-
-    Graphics g = getGraphics();
-    if (g == null) {
-      cellHeight = 16;
-      cellWidth = 24;
-    } else {
-      FontMetrics fm = g.getFontMetrics(HEAD_FONT);
-      cellHeight = fm.getHeight();
-      cellWidth = 24;
-      for (int i = 0; i < columns; i++) {
-        String header = sel.get(i).getShortName();
-        cellWidth = Math.max(cellWidth, fm.stringWidth(header));
-      }
-    }
-
-    tableWidth = (cellWidth + COLUMN_SEP) * columns - COLUMN_SEP;
-    tableHeight = cellHeight * (1 + rowCount) + HEADER_SEP;
-    setPreferredSize(new Dimension(tableWidth, tableHeight));
-    revalidate();
-    myListener.update();
-    repaint();
-  }
-
   public int getColumn(MouseEvent event) {
+    Model model = getModel();
+    // todo: spacing is terrible here.. use a JTable instead? Or see TruthTable?
     int x = event.getX() - (getWidth() - tableWidth) / 2;
     if (x < 0)
       return -1;
-    Selection sel = getModel().getSelection();
     int ret = (x + COLUMN_SEP / 2) / (cellWidth + COLUMN_SEP);
-    return ret >= 0 && ret < sel.size() ? ret : -1;
+    return ret >= 0 && ret < model.getSignalCount() ? ret : -1;
   }
 
   @Override
@@ -223,13 +219,9 @@ class TablePanel extends LogPanel {
     return S.get("tableTab");
   }
 
-  JScrollBar getVerticalScrollBar() {
-    return vsb;
-  }
-
   @Override
   public void localeChanged() {
-    computePreferredSize();
+    tableview.computePreferredSize();
     repaint();
   }
 
@@ -241,67 +233,102 @@ class TablePanel extends LogPanel {
       newModel.addModelListener(myListener);
   }
 
-  @Override
-  public void paintComponent(Graphics g) {
-    super.paintComponent(g);
+  class TableView extends JPanel {
 
-    Dimension sz = getSize();
-    int top = Math.max(0, (sz.height - tableHeight) / 2);
-    int left = Math.max(0, (sz.width - tableWidth) / 2);
-    Model model = getModel();
-    if (model == null)
-      return;
-    Selection sel = model.getSelection();
-    int columns = sel.size();
-    if (columns == 0) {
-      g.setFont(BODY_FONT);
-      GraphicsUtil.drawCenteredText(g, S.get("tableEmptyMessage"),
-          sz.width / 2, sz.height / 2);
-      return;
-    }
-
-    g.setColor(Color.GRAY);
-    int lineY = top + cellHeight + HEADER_SEP / 2;
-    g.drawLine(left, lineY, left + tableWidth, lineY);
-
-    g.setColor(Color.BLACK);
-    g.setFont(HEAD_FONT);
-    FontMetrics headerMetric = g.getFontMetrics();
-    int x = left;
-    int y = top + headerMetric.getAscent() + 1;
-    for (int i = 0; i < columns; i++) {
-      x = paintHeader(sel.get(i).getShortName(), x, y, g, headerMetric);
-    }
-
-    g.setFont(BODY_FONT);
-    FontMetrics bodyMetric = g.getFontMetrics();
-    Rectangle clip = g.getClipBounds();
-    int firstRow = Math.max(0, (clip.y - y) / cellHeight - 1);
-    int lastRow = Math.min(rowCount, 2 + (clip.y + clip.height - y)
-        / cellHeight);
-    int y0 = top + cellHeight + HEADER_SEP;
-    x = left;
-    for (int col = 0; col < columns; col++) {
-      SelectionItem item = sel.get(col);
-      ValueLog log = model.getValueLog(item);
-      int offs = rowCount - log.size();
-      y = y0 + Math.max(offs, firstRow) * cellHeight;
-      for (int row = Math.max(offs, firstRow); row < lastRow; row++) {
-        Value val = log.get(row - offs);
-        String label = item.format(val);
-        int width = bodyMetric.stringWidth(label);
-        g.drawString(label, x + (cellWidth - width) / 2,
-            y + bodyMetric.getAscent());
-        y += cellHeight;
+    private void computePreferredSize() {
+      // todo: sizing is terrible
+      Model model = getModel();
+      int columns = model.getSignalCount();
+      if (columns == 0) {
+        setPreferredSize(new Dimension(0, 0));
+        return;
       }
-      x += cellWidth + COLUMN_SEP;
+
+      Graphics g = getGraphics();
+      if (g == null) {
+        cellHeight = 16;
+        cellWidth = 24;
+      } else {
+        FontMetrics fm = g.getFontMetrics(HEAD_FONT);
+        cellHeight = fm.getHeight();
+        cellWidth = 24;
+        for (int i = 0; i < columns; i++) {
+          String header = model.getItem(i).getShortName();
+          cellWidth = Math.max(cellWidth, fm.stringWidth(header));
+        }
+      }
+
+      tableWidth = (cellWidth + COLUMN_SEP) * columns - COLUMN_SEP;
+      tableHeight = cellHeight * (1 + rowCount) + HEADER_SEP;
+      setPreferredSize(new Dimension(tableWidth, tableHeight));
+      revalidate();
+      myListener.update();
+      repaint();
     }
+
+    @Override
+    public void paintComponent(Graphics g) {
+      super.paintComponent(g);
+
+      Dimension sz = getSize();
+      int top = Math.max(0, (sz.height - tableHeight) / 2);
+      int left = Math.max(0, (sz.width - tableWidth) / 2);
+      Model model = getModel();
+      if (model == null)
+        return;
+      int columns = model.getSignalCount();
+      if (columns == 0) {
+        g.setFont(BODY_FONT);
+        GraphicsUtil.drawCenteredText(g, S.get("tableEmptyMessage"),
+            sz.width / 2, sz.height / 2);
+        return;
+      }
+
+      g.setColor(Color.GRAY);
+      int lineY = top + cellHeight + HEADER_SEP / 2;
+      g.drawLine(left, lineY, left + tableWidth, lineY);
+
+      g.setColor(Color.BLACK);
+      g.setFont(HEAD_FONT);
+      FontMetrics headerMetric = g.getFontMetrics();
+      int x = left;
+      int y = top + headerMetric.getAscent() + 1;
+      for (int i = 0; i < columns; i++) {
+        x = paintHeader(model.getItem(i).getShortName(), x, y, g, headerMetric);
+      }
+
+      g.setFont(BODY_FONT);
+      FontMetrics bodyMetric = g.getFontMetrics();
+      Rectangle clip = g.getClipBounds();
+      int firstRow = Math.max(0, (clip.y - y) / cellHeight - 1);
+      int lastRow = Math.min(rowCount, 2 + (clip.y + clip.height - y)
+          / cellHeight);
+      int y0 = top + cellHeight + HEADER_SEP;
+      x = left;
+      // for (int col = 0; col < columns; col++) {
+      //   SignalInfo item = sel.get(col);
+      //   ValueLog log = model.getValueLog(item);
+      //   int offs = rowCount - log.size();
+      //   y = y0 + Math.max(offs, firstRow) * cellHeight;
+      //   for (int row = Math.max(offs, firstRow); row < lastRow; row++) {
+      //     Value val = log.get(row - offs);
+      //     String label = item.format(val);
+      //     int width = bodyMetric.stringWidth(label);
+      //     g.drawString(label, x + (cellWidth - width) / 2,
+      //         y + bodyMetric.getAscent());
+      //     y += cellHeight;
+      //   }
+      //   x += cellWidth + COLUMN_SEP;
+      // }
+    }
+
+    private int paintHeader(String header, int x, int y, Graphics g,
+        FontMetrics fm) {
+      int width = fm.stringWidth(header);
+      g.drawString(header, x + (cellWidth - width) / 2, y);
+      return x + cellWidth + COLUMN_SEP;
+    }
+
   }
 
-  private int paintHeader(String header, int x, int y, Graphics g,
-      FontMetrics fm) {
-    int width = fm.stringWidth(header);
-    g.drawString(header, x + (cellWidth - width) / 2, y);
-    return x + cellWidth + COLUMN_SEP;
-  }
 }

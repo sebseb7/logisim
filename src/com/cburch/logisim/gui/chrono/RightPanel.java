@@ -35,6 +35,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.Rectangle;
@@ -53,6 +54,9 @@ import javax.swing.JViewport;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 
+import com.cburch.logisim.gui.log.Model;
+import com.cburch.logisim.gui.log.Signal;
+
 // Right panel has timeline on top and multiple Waveform components.
 public class RightPanel extends JPanel {
 
@@ -62,44 +66,46 @@ public class RightPanel extends JPanel {
 
 	private ChronoPanel chronoPanel;
   DefaultListSelectionModel selectionModel;
-  private ChronoData data;
+  private Model model;
 
 	private ArrayList<Waveform> rows = new ArrayList<>();
 
-	private int curX = Integer.MAX_VALUE; // pixel coordinate of cursor, or MAX_INT to pin at right
-	private int curT = Integer.MAX_VALUE; // tick number of cursor, or MAX_INT to pin at right
-	private int tickWidth = 20; // display width of one time unit 
-  private int numTicks, slope;
+	private int curX = Integer.MAX_VALUE; // pixel coordinate of cursor, or MAX_VALUE to pin at right
+	private long curT = Long.MAX_VALUE; // time of cursor, or MAX_VALUE to pin at right
+	private int tickWidth = 20; // display width of one time unit (timeScale simulated nanoseconds)
+  private int slope; // display width of transitions, when duration of signal permits
+  private long tNextDraw = 0; // done drawing up to this time, exclusive 
   private int width, height;
   private MyListener myListener = new MyListener();
 
 	public RightPanel(ChronoPanel p, ListSelectionModel m) {
 		chronoPanel = p;
     selectionModel = (DefaultListSelectionModel)m;
-    data = p.getChronoData();
+    model = p.getModel();
 		slope = (tickWidth < 12) ? tickWidth / 3 : 4;
 		configure();
 	}
 
-	public RightPanel(RightPanel oldPanel, ListSelectionModel m) {
-    try { throw new Exception(); }
-    catch (Exception e) { e.printStackTrace(); }
-		chronoPanel = oldPanel.chronoPanel;
-    selectionModel = (DefaultListSelectionModel)m;
-		tickWidth = oldPanel.tickWidth;
-		slope = (tickWidth < 12) ? tickWidth / 3 : 4;
-		curX = oldPanel.curX;
-    curT = oldPanel.curT;
-		configure();
-	}
+	// public RightPanel(RightPanel oldPanel, ListSelectionModel m) {
+  //   try { throw new Exception(); }
+  //   catch (Exception e) { e.printStackTrace(); }
+	// 	chronoPanel = oldPanel.chronoPanel;
+  //   selectionModel = (DefaultListSelectionModel)m;
+	// 	tickWidth = oldPanel.tickWidth;
+	// 	slope = (tickWidth < 12) ? tickWidth / 3 : 4;
+	// 	curX = oldPanel.curX;
+  //   curT = oldPanel.curT;
+	// 	configure();
+	// }
 
 	private void configure() {
-    int n = data.getSignalCount();
+    int n = model.getSignalCount();
 		height = ChronoPanel.HEADER_HEIGHT + n * ChronoPanel.SIGNAL_HEIGHT;
 
 		setBackground(Color.WHITE);
 
-    numTicks = data.getValueCount();
+    long timeScale = model.getTimeScale();
+    int numTicks = (int)((model.getEndTime() + timeScale - 1) / timeScale);
 		width = tickWidth * numTicks + EXTRA_SPACE;
 
 		addMouseListener(myListener);
@@ -109,7 +115,7 @@ public class RightPanel extends JPanel {
     updateSignals();
 	}
 
-  int indexOf(ChronoData.Signal s) {
+  int indexOf(Signal s) {
     int n = rows.size();
     for (int i = 0; i < n; i++) {
       Waveform w = rows.get(i);
@@ -120,9 +126,9 @@ public class RightPanel extends JPanel {
   }
 
   public void updateSignals() {
-    int n = data.getSignalCount();
+    int n = model.getSignalCount();
     for (int i = 0; i < n; i++) {
-      ChronoData.Signal s = data.getSignal(i);
+      Signal s = model.getSignal(i);
       int idx = indexOf(s);
       if (idx < 0) {
         // new signal, add in correct position
@@ -134,24 +140,27 @@ public class RightPanel extends JPanel {
 		}
     if (rows.size() > n)
       rows.subList(n, rows.size()).clear();
-    numTicks = -1; // forces updateWaveforms() to refresh waveforms
+    tNextDraw = 0; // forces updateWaveforms() to refresh waveforms
     updateWaveforms();
   }
 
   public void updateWaveforms() {
-    int n = data.getValueCount();
-    if (n == numTicks)
-      return; // display has not changed
-    numTicks = n;
+    long t = model.getEndTime();
+    if (t == tNextDraw)
+      return; // already drawn all signal values
+    tNextDraw = t;
     updateSize();
     flushWaveforms();
     repaint();
   }
 
   private void updateSize() {
-    int m = data.getSignalCount();
+    long timeScale = model.getTimeScale();
+    int numTicks = (int)((tNextDraw + timeScale - 1) / timeScale);
+
+    int m = model.getSignalCount();
 		height = ChronoPanel.HEADER_HEIGHT + m * ChronoPanel.SIGNAL_HEIGHT;
-		width = tickWidth * numTicks + EXTRA_SPACE; // todo: even clock spacing
+		width = tickWidth * numTicks + EXTRA_SPACE;
 
     Dimension d = getPreferredSize();
     if (d.width == width && d.height == height)
@@ -202,26 +211,29 @@ public class RightPanel extends JPanel {
     }
   }
 
-	public void setSignalCursor(int posX) {
-    if (posX >= width - EXTRA_SPACE - 2) {
+	public void setSignalCursorX(int posX) {
+    long timeScale = model.getTimeScale();
+    curX = Math.max(0, posX);
+    curT = Math.max(0L, (long)((curX - slope/2.0) * timeScale / tickWidth));
+    if (curT >= model.getEndTime()) {
       curX = Integer.MAX_VALUE; // pin to right side
-      curT = Integer.MAX_VALUE; // pin to right side
-    } else {
-      curX = Math.max(0, posX);
-      curT = Math.max(0, Math.min(numTicks-1, (curX - slope/2) / tickWidth));
+      curT = Long.MAX_VALUE; // pin to right side
     }
     repaint(); // todo: partial repaint
 	}
 
-  public int getSignalCursor() {
-    return curX == Integer.MAX_VALUE ? tickWidth * numTicks : curX;
+  public int getSignalCursorX() {
+    long timeScale = model.getTimeScale();
+    return curX == Integer.MAX_VALUE
+        ? (int)((model.getEndTime()-1.0)*tickWidth/timeScale)
+        : curX;
   }
 
-  public int getCurrentTick() {
-    return curT == Integer.MAX_VALUE ? numTicks-1 : curT;
+  public long getCurrentTime() {
+    return curT == Long.MAX_VALUE ? model.getEndTime()-1 : curT;
   }
 
-  public void changeSpotlight(ChronoData.Signal oldSignal, ChronoData.Signal newSignal) {
+  public void changeSpotlight(Signal oldSignal, Signal newSignal) {
     if (oldSignal != null) {
       Waveform w = rows.get(oldSignal.idx);
       w.flush();
@@ -252,10 +264,21 @@ public class RightPanel extends JPanel {
   }
 
   private static final Font MSG_FONT = new Font("Serif", Font.ITALIC, 12);
+  private static final Font TIME_FONT = new Font("Serif", Font.ITALIC, 9);
 
   @Override
   public void paintComponent(Graphics gr) {
     Graphics2D g = (Graphics2D)gr;
+
+    /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
+    Graphics2D g2 = (Graphics2D)g;
+    g2.setRenderingHint(
+        RenderingHints.KEY_TEXT_ANTIALIASING,
+        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+    g2.setRenderingHint(
+        RenderingHints.KEY_ANTIALIASING,
+        RenderingHints.VALUE_ANTIALIAS_ON);
+
     g.setColor(Color.WHITE);
     g.fillRect(0, 0, getWidth(), getHeight()); // entire viewport, not just (width, height)
     g.setColor(Color.BLACK);
@@ -281,42 +304,35 @@ public class RightPanel extends JPanel {
   }
 
   public void paintTimeline(Graphics2D g) {
-    int h = ChronoPanel.HEADER_HEIGHT;
+    int h = ChronoPanel.HEADER_HEIGHT - ChronoPanel.GAP;
     g.setColor(Color.BLACK);
     g.drawLine(0, h, width, h);
-    for (int x = 0; x < width; x += tickWidth)
+    for (int x = 0; x < width; x += tickWidth) {
       g.drawLine(x, h*2/3, x, h);
-    // todo: later
-    // int minimalWidthToDisp = 60;
-    // int nbrTick = 0;
-    // int lastDispPos = -minimalWidthToDisp;
+      g.drawLine(x+1*tickWidth/4, h-2, x+1*tickWidth/4, h);
+      g.drawLine(x+2*tickWidth/4, h-2, x+2*tickWidth/4, h);
+      g.drawLine(x+3*tickWidth/4, h-2, x+3*tickWidth/4, h);
+    }
 
-    // if (clk != null) {
-    //   for (int i = 1; i < clk.getSignalValues().size(); ++i) {
-    //     // is it a clk rising edge ?
-    //     if (clk.getSignalValues().get(i - 1).equals("0")
-    //         && clk.getSignalValues().get(i).equals("1")) {
+    Font f = g.getFont();
+    g.setFont(TIME_FONT);
+    FontMetrics fm = g.getFontMetrics();
 
-    //       // is there enough place to display the text?
-    //       if ((i - 1) * tickWidth - lastDispPos > minimalWidthToDisp) {
-    //         lastDispPos = (i - 1) * tickWidth;
-    //         g2.setStroke(new BasicStroke(2));
-    //         g2.drawLine(lastDispPos, 6, lastDispPos, 12);
-    //         g2.setStroke(new BasicStroke(1));
-		// DecimalFormat df = new DecimalFormat("#.##");
-		// return df.format(i/10.0) + " ms";
-    //         g.drawString(getTimeString(nbrTick), lastDispPos + 3,
-    //             20);
-    //       }
-    //       nbrTick++;
-    //     }
-    //   }
-    // }
+    // todo: in clock and step mode, show sensible divisions
+    double r = model.getTimeScale() / (double)tickWidth;
+    int sw = 0;
+    for (int x = 0; x < width; x += tickWidth * ((sw + tickWidth - 1)/tickWidth)) {
+      long t = (long)(x * r);
+      String s = Model.formatDuration(t);
+      g.drawString(s, x, h/2);
+      sw = fm.stringWidth(s) + 10;
+    }
+    g.setFont(f);
   }
 
 
 	private void paintCursor(Graphics2D g) {
-    int pos = getSignalCursor();
+    int pos = getSignalCursorX();
 		g.setStroke(new BasicStroke(1));
 		g.setPaint(Color.RED);
 		g.drawLine(pos, getHeight(), pos, 0);
@@ -325,14 +341,14 @@ public class RightPanel extends JPanel {
 	private class MyListener extends MouseAdapter {
     boolean shiftDrag, controlDrag, subtracting;
 
-    ChronoData.Signal getSignal(int y, boolean force) {
+    Signal getSignal(int y, boolean force) {
       int idx = (y - ChronoPanel.HEADER_HEIGHT) / WAVE_HEIGHT;
-      int n = data.getSignalCount();
+      int n = model.getSignalCount();
       if (idx < 0 && force)
         idx = 0;
       else if (idx >= n && force)
         idx = n - 1;
-      return (idx < 0 || idx >= n) ? null : data.getSignal(idx);
+      return (idx < 0 || idx >= n) ? null : model.getSignal(idx);
     }
 
 		@Override
@@ -353,8 +369,8 @@ public class RightPanel extends JPanel {
 		@Override
 		public void mousePressed(MouseEvent e) {
       if (SwingUtilities.isLeftMouseButton(e)) {
-        chronoPanel.setSignalCursor(e.getX());
-        ChronoData.Signal signal = getSignal(e.getY(), false);
+        chronoPanel.setSignalCursorX(e.getX());
+        Signal signal = getSignal(e.getY(), false);
         if (signal == null) {
           shiftDrag = controlDrag = subtracting = false;
           return;
@@ -382,10 +398,10 @@ public class RightPanel extends JPanel {
 		public void mouseDragged(MouseEvent e) {
       chronoPanel.changeSpotlight(getSignal(e.getY(), false));
       if (SwingUtilities.isLeftMouseButton(e)) {
-        chronoPanel.setSignalCursor(e.getX());
+        chronoPanel.setSignalCursorX(e.getX());
         if (!selectionModel.getValueIsAdjusting())
           return;
-        ChronoData.Signal signal = getSignal(e.getY(), false);
+        Signal signal = getSignal(e.getY(), false);
         if (signal == null)
           return;
         selectionModel.setLeadSelectionIndex(signal.idx);
@@ -397,7 +413,7 @@ public class RightPanel extends JPanel {
       if (SwingUtilities.isLeftMouseButton(e)) {
         if (!selectionModel.getValueIsAdjusting())
           return;
-        ChronoData.Signal signal = getSignal(e.getY(), true);
+        Signal signal = getSignal(e.getY(), true);
         if (signal == null)
           return;
         int idx = selectionModel.getAnchorSelectionIndex();
@@ -414,9 +430,9 @@ public class RightPanel extends JPanel {
 		@Override
 		public void mouseClicked(MouseEvent e) {
       if (SwingUtilities.isRightMouseButton(e)) {
-        List<ChronoData.Signal> signals = chronoPanel.getLeftPanel().getSelectedValuesList();
+        List<Signal> signals = chronoPanel.getLeftPanel().getSelectedValuesList();
         if (signals.size() == 0) {
-          ChronoData.Signal signal = getSignal(e.getY(), false);
+          Signal signal = getSignal(e.getY(), false);
           if (signal == null)
             return;
           signals.add(signal);
@@ -438,11 +454,11 @@ public class RightPanel extends JPanel {
     private static final int LOW = WAVE_HEIGHT - ChronoPanel.GAP;
     private static final int MID = WAVE_HEIGHT / 2;
 
-    final ChronoData.Signal signal;
+    final Signal signal;
     private BufferedImage buf;
     boolean selected;
 
-    public Waveform(ChronoData.Signal s) {
+    public Waveform(Signal s) {
       this.signal = s;
     }
 
@@ -451,86 +467,179 @@ public class RightPanel extends JPanel {
       return new Rectangle(0, y, width, WAVE_HEIGHT);
     }
 
-    private void drawSignal(Graphics2D g, boolean bold, Color bg, Color fg) {
+    private void drawSignal(Graphics2D g, boolean bold, Color[] colors) {
       g.setStroke(new BasicStroke(bold ? 2 : 1));
 
-      int t = 0;
+      Signal.Iterator cur = signal.new Iterator();
+
+      FontMetrics fm = g.getFontMetrics();
 
       String max = signal.getFormattedMaxValue();
       String min = signal.getFormattedMinValue();
-      String prec = signal.getFormattedValue(t);
+      int labelWidth = Math.max(fm.stringWidth(max), fm.stringWidth(min));
 
-      int x = 0;
-      while (t < numTicks) {
-        String suiv = signal.getFormattedValue(t++);
+      double z =  tickWidth / (double)model.getTimeScale();
+      boolean prevHi = false, prevLo = false;
+      Color prevFill = null;
+      while (cur.value != null) {
+        String v = cur.getFormattedValue();
+        int x0 = (int)(z * cur.time);
+        int x1 = (int)(z * (cur.time + cur.duration));
+    
+        boolean hi = true, lo = true;
+        Color lineColor, fillColor;
 
-        if (suiv.equals("-")) {
-          x += tickWidth;
-          continue;
+        if (v.contains("E")) {
+          fillColor = colors[3];
+          lineColor = colors[4];
+        } else if (v.contains("x")) {
+          fillColor = colors[5];
+          lineColor = colors[6];
+        } else if (v.equals(min)) {
+          hi = false;
+          fillColor = colors[1];
+          lineColor = colors[2];
+        } else if (v.equals(max)) {
+          lo = false;
+          fillColor = colors[1];
+          lineColor = colors[2];
+        } else {
+          fillColor = colors[1];
+          lineColor = colors[2];
         }
 
-        if (suiv.contains("E")) {
-          g.setColor(Color.red);
-          g.drawLine(x, HIGH, x + tickWidth, MID);
-          g.drawLine(x, MID, x + tickWidth, HIGH);
-          g.drawLine(x, MID, x + tickWidth, LOW);
-          g.drawLine(x, LOW, x + tickWidth, MID);
-          g.setColor(Color.BLACK);
-        } else if (suiv.contains("x")) {
-          g.setColor(Color.blue);
-          g.drawLine(x, HIGH, x + tickWidth, MID);
-          g.drawLine(x, MID, x + tickWidth, HIGH);
-          g.drawLine(x, MID, x + tickWidth, LOW);
-          g.drawLine(x, LOW, x + tickWidth, MID);
-          g.setColor(Color.BLACK);
-        } else if (suiv.equals(min)) {
-          if (!prec.equals(min)) {
-            if (slope > 0) {
-              g.setColor(fg);
+        // __________       _____ __________       ______
+        //     \_____\_____/_____X_____/    \_____/
+        //    |     |     |     |     |    |     |   
+
+        if (prevFill != null) {
+          // draw left transition
+          int xt = x0 + Math.min(slope, (x1 - x0)/2);
+          // if (xt <= x0 + 3)
+          //   xt = x0;
+          if (xt == x0) {
+            // not enough room for sloped transition
+            if (hi) {
+              g.setColor(fillColor);
+              g.fillRect(x0, HIGH, (x1-x0)+1, LOW - HIGH + 1);
+            }
+            g.setColor(lineColor);
+            g.drawLine(x0, HIGH, x0, LOW);
+            if (hi)
+              g.drawLine(x0, HIGH, x1, HIGH);
+            if (lo)
+              g.drawLine(x0, LOW, x1, LOW);
+          } else {
+            // draw sloped transition
+            if (prevHi && prevLo && hi && lo) {
+              //   ____ _____
+              //   ____X_____
+              //
+              g.setColor(prevFill);
               g.fillPolygon(
-                  new int[] { x, x + slope, x },
+                  new int[] { x0, x0 + (xt-x0)/2, x0 },
+                  new int[] { HIGH, MID, LOW+1 },
+                  3);
+              g.setColor(fillColor);
+              g.fillPolygon(
+                  new int[] { x0 + (xt-x0)/2, xt, x1, x1, xt },
+                  new int[] { MID, HIGH, HIGH, LOW+1, LOW+1 },
+                  5);
+              g.setColor(lineColor);
+              g.drawLine(x0, HIGH, xt, LOW);
+              g.drawLine(x0, LOW, xt, HIGH);
+              g.drawLine(xt, HIGH, x1, HIGH);
+              g.drawLine(xt, LOW, x1, LOW);
+            } else if (!hi) {
+              //   _____ 
+              //   _ _ _\_____
+              //
+              g.setColor(prevFill);
+              g.fillPolygon(
+                  new int[] { x0, xt, x0 },
                   new int[] { HIGH, LOW+1, LOW+1 },
                   3);
-              g.setColor(Color.BLACK);
+              g.setColor(lineColor);
+              g.drawLine(x0, HIGH, xt, LOW);
+              g.drawLine(prevLo ? x0 : xt, LOW, x1, LOW);
+            } else if (!lo) {
+              //   _ _ _ _____
+              //   _____/
+              //
+              if (prevHi) {
+                g.setColor(prevFill);
+                g.fillPolygon(
+                    new int[] { x0, xt, x0 },
+                    new int[] { HIGH, HIGH, LOW+1 },
+                    3);
+              }
+              g.setColor(fillColor);
+              g.fillPolygon(
+                  new int[] { x0, xt, x1, x1, x0 },
+                  new int[] { LOW+1, HIGH, HIGH, LOW+1 },
+                  4);
+              g.setColor(lineColor);
+              g.drawLine(x0, LOW, xt, HIGH);
+              g.drawLine(prevHi ? x0 : xt, HIGH, x1, HIGH);
+            } else if (!prevHi) {
+              //         _____
+              //   _____/_____
+              //
+              g.setColor(fillColor);
+              g.fillPolygon(
+                  new int[] { x0, xt, x1, x1, x0 },
+                  new int[] { LOW+1, HIGH, HIGH, LOW+1 },
+                  4);
+              g.setColor(lineColor);
+              g.drawLine(x0, LOW, x1, LOW);
+              g.drawLine(x0, LOW, xt, HIGH);
+              g.drawLine(xt, HIGH, x1, HIGH);
+            } else if (!prevLo) {
+              //   ___________
+              //        \_____
+              //
+              g.setColor(prevFill);
+              g.fillPolygon(
+                  new int[] { x0, xt, x0 },
+                  new int[] { HIGH, LOW+1, LOW+1 },
+                  3);
+              g.setColor(fillColor);
+              g.fillPolygon(
+                  new int[] { x0, x1, x1, xt},
+                  new int[] { HIGH, HIGH, LOW+1, LOW+1 },
+                  4);
+              g.setColor(lineColor);
+              g.drawLine(x0, HIGH, x1, HIGH);
+              g.drawLine(x0, HIGH, xt, LOW);
+              g.drawLine(xt, LOW, x1, LOW);
+            } else {
+              System.out.println("huh?");
             }
-            g.drawLine(x, HIGH, x + slope, LOW);
-            g.drawLine(x + slope, LOW, x + tickWidth, LOW);
-          } else {
-            g.drawLine(x, LOW, x + tickWidth, LOW);
-          }
-        } else if (suiv.equals(max)) {
-          if (!prec.equals(max)) {
-            g.setColor(fg);
-            g.fillPolygon(
-                new int[] { x, x + slope, x + tickWidth + 1, x + tickWidth + 1},
-                new int[] { LOW+1, HIGH, HIGH, LOW+1 },
-                4);
-            g.setColor(Color.BLACK);
-            g.drawLine(x, LOW, x + slope, HIGH);
-            g.drawLine(x + slope, HIGH, x + tickWidth, HIGH);
-          } else {
-            g.setColor(fg);
-            g.fillRect(x, HIGH, tickWidth + 1, LOW - HIGH + 1);
-            g.setColor(Color.BLACK);
-            g.drawLine(x, HIGH, x + tickWidth, HIGH);
           }
         } else {
-          if (suiv.equals(prec)) {
-            g.drawLine(x, LOW, x + tickWidth, LOW);
-            g.drawLine(x, HIGH, x + tickWidth, HIGH);
-            if (t == 1) // first segment also gets a label
-              g.drawString(suiv, x + 2, MID);
-          } else {
-            g.drawLine(x, LOW, x + slope, HIGH);
-            g.drawLine(x, HIGH, x + slope, LOW);
-            g.drawLine(x + slope, HIGH, x + tickWidth, HIGH);
-            g.drawLine(x + slope, LOW, x + tickWidth, LOW);
-            g.drawString(suiv, x + tickWidth, MID);
+          // first point, no left transition
+          if (hi) {
+            g.setColor(fillColor);
+            g.fillRect(x0, HIGH, (x1-x0)+1, LOW - HIGH + 1);
+            g.setColor(lineColor);
+            g.drawLine(x0, HIGH, x1, HIGH);
+          }
+          if (lo) {
+            g.setColor(lineColor);
+            g.drawLine(x0, LOW, x1, LOW);
           }
         }
 
-        prec = suiv;
-        x += tickWidth;
+        if (x1 - x0 > labelWidth) {
+          g.setColor(Color.BLACK);
+          g.drawString(v, x0 + 6, MID+5);
+        }
+
+        prevHi = hi;
+        prevLo = lo;
+        prevFill = fillColor;
+        if (!cur.advance())
+          break;
       }
     }
 
@@ -539,7 +648,15 @@ public class RightPanel extends JPanel {
       Graphics2D g = buf.createGraphics();
       g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
           RenderingHints.VALUE_STROKE_DEFAULT);
-      boolean bold = data.getSpotlight() ==  signal;
+      /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
+      Graphics2D g2 = (Graphics2D)g;
+      g2.setRenderingHint(
+          RenderingHints.KEY_TEXT_ANTIALIASING,
+          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+      g2.setRenderingHint(
+          RenderingHints.KEY_ANTIALIASING,
+          RenderingHints.VALUE_ANTIALIAS_ON);
+      boolean bold = model.getSpotlight() == signal;
       Color[] colors = chronoPanel.rowColors(signal.info, selected);
       g.setColor(Color.WHITE);
       g.fillRect(0, 0, width, ChronoPanel.GAP-1);
@@ -547,7 +664,7 @@ public class RightPanel extends JPanel {
       g.setColor(colors[0]);
       g.fillRect(0, HIGH, width, LOW - HIGH);
       g.setColor(Color.BLACK);
-      drawSignal(g, bold, colors[0], colors[1]);
+      drawSignal(g, bold, colors);
       g.dispose();
     }
 

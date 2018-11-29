@@ -42,4 +42,6 @@ public interface Loggable {
   public Object[] getLogOptions(CircuitState state);
 
   public Value getLogValue(CircuitState state, Object option);
+
+  public boolean isInput(Object option);
 }

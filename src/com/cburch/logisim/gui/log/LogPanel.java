@@ -93,10 +93,6 @@ public abstract class LogPanel extends JPanel {
     return logFrame.getProject();
   }
 
-  protected Selection getSelection() {
-    return logFrame.getModel().getSelection();
-  }
-
   public abstract String getTitle();
 
   public abstract void localeChanged();

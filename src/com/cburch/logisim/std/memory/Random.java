@@ -74,6 +74,11 @@ public class Random extends InstanceFactory {
         return Value.createKnown(dataWidth, 0);
       return Value.createKnown(dataWidth, data.value);
     }
+
+    @Override
+    public boolean isInput(InstanceState state, Object option) {
+      return true;
+    }
   }
 
   private static class StateData extends ClockState implements InstanceData {

@@ -189,7 +189,7 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
 
     panels = new LogPanel[] {
       new ChronoPanel(this),
-      new ScrollPanel(this),
+      new TablePanel(this),
       new FilePanel(this),
       new OptionsPanel(this),
     };
@@ -230,6 +230,7 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
         y = d.height - h;
     }
     setLocation(x, y);
+    setMinimumSize(new Dimension(300, 200));
   }
 
   public LogMenuListener getMenuListener() {
@@ -254,7 +255,7 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
     if (curSimulator != null)
       curSimulator.removeSimulatorListener(myListener);
     if (curModel != null)
-      curModel.setSelected(this, false);
+      curModel.setSelected(false);
 
     Model oldModel = curModel;
     Model data = null;
@@ -271,7 +272,7 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
     if (curSimulator != null)
       curSimulator.addSimulatorListener(myListener);
     if (curModel != null)
-      curModel.setSelected(this, true);
+      curModel.setSelected(true);
     setTitle(computeTitle(curModel, project));
     if (panels != null) {
       for (int i = 0; i < panels.length; i++) {

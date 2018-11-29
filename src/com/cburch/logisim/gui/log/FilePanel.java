@@ -108,12 +108,18 @@ class FilePanel extends LogPanel {
       }
     }
 
-    public void entryAdded(Model.Event event, Value[] values) {
-    }
+    @Override
+    public void modeChanged(Model.Event event) { }
+    @Override
+    public void historyLimitChanged(Model.Event event) { }
+    @Override
+    public void signalsExtended(Model.Event event) { }
+    @Override
+    public void signalsReset(Model.Event event) { }
+    @Override
+    public void selectionChanged(Model.Event event) { }
 
-    public void resetEntries(Model.Event event, Value[] values) {
-    }
-
+    @Override
     public void filePropertyChanged(Model.Event event) {
       Model model = getModel();
       computeEnableItems(model);
@@ -125,8 +131,6 @@ class FilePanel extends LogPanel {
       headerCheckBox.setSelected(model.getFileHeader());
     }
 
-    public void selectionChanged(Model.Event event) {
-    }
   }
 
   private static final long serialVersionUID = 1L;

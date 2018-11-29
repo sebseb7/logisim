@@ -76,6 +76,11 @@ public class Button extends InstanceFactory {
           .getData();
       return data == null ? Value.FALSE : (Value) data.getValue();
     }
+
+    @Override
+    public boolean isInput(InstanceState state, Object option) {
+      return true;
+    }
   }
 
   public static class Poker extends InstancePoker {

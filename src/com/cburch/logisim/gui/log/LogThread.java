@@ -33,23 +33,26 @@ package com.cburch.logisim.gui.log;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.HashMap;
+
 import com.cburch.logisim.util.UniquelyNamedThread;
 
-import com.cburch.logisim.data.Value;
-
 class LogThread extends UniquelyNamedThread implements Model.Listener {
-  // file will be flushed with at least this frequency
+  // file will be flushed with at least this frequency (ms)
   private static final int FLUSH_FREQUENCY = 500;
 
-  // file will be closed after waiting this many milliseconds between writes
+  // file will be closed after waiting this long between writes (ms)
   private static final int IDLE_UNTIL_CLOSE = 10000;
 
   private Model model;
   private boolean canceled = false;
   private Object lock = new Object();
   private PrintWriter writer = null;
-  private boolean headerDirty = true;
+  private boolean modeDirty = true, headerDirty = true;
   private long lastWrite = 0;
+  private long tNextWrite = 0; // done writing up to this time, exclusive
+
+  private HashMap<Signal, Signal.Iterator> cursors = new HashMap<>();
 
   public LogThread(Model model) {
     super("LogThread");
@@ -57,9 +60,8 @@ class LogThread extends UniquelyNamedThread implements Model.Listener {
     model.addModelListener(this);
   }
 
-  // Should hold lock and have verified that isFileEnabled() before
-  // entering this method.
-  private void addEntry(Value[] values) {
+  // precondition: lock held and writing()==true
+  private void writeSignals() {
     if (writer == null) {
       try {
         writer = new PrintWriter(new FileWriter(model.getFile(), true));
@@ -68,27 +70,54 @@ class LogThread extends UniquelyNamedThread implements Model.Listener {
         return;
       }
     }
-    Selection sel = model.getSelection();
+    if (modeDirty) {
+      String mode = model.isStepMode() ? "step"
+          : model.isRealMode() ? "real-time"
+          : "clocked";
+      String gran = model.isFine() ? "fine" : "coarse";
+      writer.println("# mode: " + mode + " granularity: " + gran);
+      modeDirty = false;
+    }
     if (headerDirty) {
       if (model.getFileHeader()) {
         StringBuilder buf = new StringBuilder();
-        for (int i = 0; i < sel.size(); i++) {
+
+        for (int i = 0; i < model.getSignalCount(); i++) {
           if (i > 0)
             buf.append("\t");
-          buf.append(sel.get(i).toString());
+          buf.append(model.getItem(i).getDisplayName());
         }
         writer.println(buf.toString());
       }
       headerDirty = false;
     }
-    StringBuilder buf = new StringBuilder();
-    for (int i = 0; i < values.length; i++) {
-      if (i > 0)
-        buf.append("\t");
-      if (values[i] != null)
-        buf.append(sel.get(i).format(values[i]));
+
+    Signal.Iterator[] cur = new Signal.Iterator[model.getSignalCount()];
+    for (int i = 0; i < model.getSignalCount(); i++) {
+      Signal s = model.getSignal(i);
+      cur[i] = cursors.get(s);
+      if (cur[i] == null) {
+        cur[i] = s.new Iterator(tNextWrite);
+        cursors.put(s, cur[i]);
+      }
     }
-    writer.println(buf.toString());
+    long tStop = model.getEndTime();
+    while (tNextWrite < tStop) {
+      long duration = tStop - tNextWrite;
+      StringBuilder buf = new StringBuilder();
+      for (int i = 0; i < cur.length; i++) {
+        if (i > 0)
+          buf.append("\t");
+        buf.append(cur[i].getFormattedValue());
+        if (cur[i].duration < duration)
+          duration = cur[i].duration;
+      }
+      // todo: only write duration if not in coarse-step or coarse-clock mode?
+      writer.println(buf.toString() + "\t# " + Model.formatDuration(duration));
+      for (Signal.Iterator c : cur)
+        c.advance(duration);
+      tNextWrite += duration;
+    }
     lastWrite = System.currentTimeMillis();
   }
 
@@ -102,31 +131,32 @@ class LogThread extends UniquelyNamedThread implements Model.Listener {
     }
   }
 
-  public void resetEntries(Model.Event event, Value[] values) {
-    entryAdded(event, values); // file doesn't reset, for now
-  }
-
-  public void entryAdded(Model.Event event, Value[] values) {
+  @Override
+  public void signalsReset(Model.Event event) {
     synchronized (lock) {
-      if (isFileEnabled())
-        addEntry(values);
+      if (writing()) {
+        tNextWrite = 0;
+        cursors.clear();
+        writeSignals();
+      }
     }
   }
 
+  @Override
+  public void signalsExtended(Model.Event event) {
+    synchronized (lock) {
+      if (writing())
+        writeSignals();
+    }
+  }
+
+  @Override
   public void filePropertyChanged(Model.Event event) {
     synchronized (lock) {
-      if (isFileEnabled()) {
+      if (writing()) {
         if (writer == null) {
-          Selection sel = model.getSelection();
-          Value[] values = new Value[sel.size()];
-          boolean found = false;
-          for (int i = 0; i < values.length; i++) {
-            values[i] = model.getValueLog(sel.get(i)).getLast();
-            if (values[i] != null)
-              found = true;
-          }
-          if (found)
-            addEntry(values);
+          // tNextWrite = 0; // maybe reset it?
+          writeSignals();
         }
       } else {
         if (writer != null) {
@@ -137,7 +167,7 @@ class LogThread extends UniquelyNamedThread implements Model.Listener {
     }
   }
 
-  private boolean isFileEnabled() {
+  private boolean writing() {
     return !canceled && model.isSelected() && model.isFileEnabled()
         && model.getFile() != null;
   }
@@ -168,7 +198,22 @@ class LogThread extends UniquelyNamedThread implements Model.Listener {
     }
   }
 
+  @Override
   public void selectionChanged(Model.Event event) {
-    headerDirty = true;
+    synchronized (lock) {
+      cursors.keySet().retainAll(model.getSignals()); // removes dead cursors
+      headerDirty = true;
+    }
+  }
+
+  @Override
+  public void modeChanged(Model.Event event) {
+    synchronized (lock) {
+      modeDirty = true;
+    }
+  }
+
+  @Override
+  public void historyLimitChanged(Model.Event event) {
   }
 }
