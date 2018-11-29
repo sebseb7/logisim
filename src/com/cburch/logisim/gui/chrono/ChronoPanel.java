@@ -39,8 +39,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.AdjustmentListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
@@ -68,7 +66,7 @@ import com.cburch.logisim.gui.menu.EditHandler;
 
 public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener {
 
-  private class MyListener implements ActionListener, AdjustmentListener {
+  private class MyListener implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -129,12 +127,6 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
 //       }
     }
 
-
-    @Override
-    public void adjustmentValueChanged(AdjustmentEvent e) {
-      if (rightPanel != null)
-        rightPanel.adjustmentValueChanged(e.getValue());
-    }
   }
 
   public static final int HEADER_HEIGHT = 20;
@@ -269,7 +261,6 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     rightScroll = new JScrollPane(rightPanel,
         ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-    rightScroll.getHorizontalScrollBar().addAdjustmentListener(myListener);
 
     // Synchronize the two scrollbars
     leftScroll.getVerticalScrollBar().setModel(
@@ -470,13 +461,13 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
 	@Override
 	public void signalsExtended(Model.Event event) {
     leftPanel.updateSignalValues();
-    rightPanel.updateWaveforms();
+    rightPanel.updateWaveforms(true);
   }
 
 	@Override
 	public void signalsReset(Model.Event event) {
     setSignalCursorX(Integer.MAX_VALUE);
-    rightPanel.updateWaveforms();
+    rightPanel.updateWaveforms(true);
   }
 
 	@Override
@@ -486,7 +477,7 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
 	@Override
 	public void historyLimitChanged(Model.Event event) {
     setSignalCursorX(Integer.MAX_VALUE);
-    rightPanel.updateWaveforms();
+    rightPanel.updateWaveforms(false);
 	}
 
 	@Override

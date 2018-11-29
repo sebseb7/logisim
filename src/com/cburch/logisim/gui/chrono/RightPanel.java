@@ -74,7 +74,8 @@ public class RightPanel extends JPanel {
 
 	private int curX = Integer.MAX_VALUE; // pixel coordinate of cursor, or MAX_VALUE to pin at right
 	private long curT = Long.MAX_VALUE; // time of cursor, or MAX_VALUE to pin at right
-	private int tickWidth = 20; // display width of one time unit (timeScale simulated nanoseconds)
+  private int zoom = 20;
+	private double tickWidth = 20.0; // display width of one time unit (timeScale simulated nanoseconds)
   private int slope; // display width of transitions, when duration of signal permits
   private long tStartDraw = 0; // drawing started at this time, inclusive
   private long tNextDraw = 0; // done drawing up to this time, exclusive 
@@ -85,7 +86,7 @@ public class RightPanel extends JPanel {
 		chronoPanel = p;
     selectionModel = (DefaultListSelectionModel)m;
     model = p.getModel();
-		slope = (tickWidth < 12) ? tickWidth / 3 : 4;
+		slope = (tickWidth < 12) ? (int)(tickWidth / 3) : 4;
 		configure();
 	}
 
@@ -108,8 +109,8 @@ public class RightPanel extends JPanel {
 		setBackground(Color.WHITE);
 
     long timeScale = model.getTimeScale();
-    int numTicks = (int)(((model.getEndTime()-model.getStartTime()) + timeScale - 1) / timeScale);
-		width = tickWidth * numTicks + EXTRA_SPACE;
+    long numTicks = ((model.getEndTime()-model.getStartTime()) + timeScale - 1) / timeScale;
+		width = (int)(tickWidth * numTicks + EXTRA_SPACE + 0.5);
 
 		addMouseListener(myListener);
 		addMouseMotionListener(myListener);
@@ -143,29 +144,28 @@ public class RightPanel extends JPanel {
 		}
     if (rows.size() > n)
       rows.subList(n, rows.size()).clear();
-    tStartDraw = tNextDraw = -1; // forces updateWaveforms() to refresh waveforms
-    updateWaveforms();
+    updateWaveforms(true);
   }
 
-  public void updateWaveforms() {
+  public void updateWaveforms(boolean force) {
     long t0 = model.getStartTime();
     long t1 = model.getEndTime();
-    if (t0 == tStartDraw && t1 == tNextDraw)
+    if (!force && t0 == tStartDraw && t1 == tNextDraw)
       return; // already drawn all signal values
     tStartDraw = t0;
     tNextDraw = t1;
-    updateSize();
+    updateSize(true);
     flushWaveforms();
     repaint();
   }
 
-  private void updateSize() {
+  private void updateSize(boolean scrollRight) {
     long timeScale = model.getTimeScale();
-    int numTicks = (int)(((tNextDraw-tStartDraw) + timeScale - 1) / timeScale);
+    long numTicks = ((tNextDraw-tStartDraw) + timeScale - 1) / timeScale;
 
     int m = model.getSignalCount();
 		height = ChronoPanel.HEADER_HEIGHT + m * ChronoPanel.SIGNAL_HEIGHT;
-		width = tickWidth * numTicks + EXTRA_SPACE;
+		width = (int)(tickWidth * numTicks + EXTRA_SPACE + 0.5);
 
     Dimension d = getPreferredSize();
     if (d.width == width && d.height == height)
@@ -181,7 +181,7 @@ public class RightPanel extends JPanel {
     setPreferredSize(d); // necessary for scrollbar
     revalidate();
 
-    if (sb == null || v == null || sb.getValueIsAdjusting())
+    if (!scrollRight || sb == null || v == null || sb.getValueIsAdjusting())
       return;
 
     // if cursor is off screen, but right edge was on screen, scroll to max position
@@ -230,7 +230,7 @@ public class RightPanel extends JPanel {
   }
 
 	public void setSignalCursorX(int posX) {
-    double f = model.getTimeScale() / (double)tickWidth;
+    double f = model.getTimeScale() / tickWidth;
     curX = Math.max(0, posX);
     // curT = Math.max(0L, (long)((curX - slope/2.0) * timeScale / tickWidth));
     long t0 = model.getStartTime();
@@ -239,13 +239,13 @@ public class RightPanel extends JPanel {
       curX = Integer.MAX_VALUE; // pin to right side
       curT = Long.MAX_VALUE; // pin to right side
     }
-    repaint(); // todo: partial repaint
+    repaint(); // todo: optimize: partial repaint
 	}
 
   public int getSignalCursorX() {
     long timeScale = model.getTimeScale();
     return curX == Integer.MAX_VALUE
-        ? (int)((model.getEndTime()-model.getStartTime()-1.0)*tickWidth/timeScale)
+        ? (int)((model.getEndTime()-model.getStartTime()-1)*tickWidth/timeScale)
         : curX;
   }
 
@@ -278,7 +278,7 @@ public class RightPanel extends JPanel {
     }
   }
 
-  public void flushWaveforms() {
+  private void flushWaveforms() {
     for (Waveform w : rows)
       w.flush();
   }
@@ -314,21 +314,28 @@ public class RightPanel extends JPanel {
       g.setFont(f);
       return;
     }
-    for (Waveform w : rows)
-      w.paintWaveform(g);
-    int h = ChronoPanel.HEADER_HEIGHT;
-    g.setColor(Color.LIGHT_GRAY);
-    g.fillRect(0, 0, width, ChronoPanel.HEADER_HEIGHT);
-    paintTimeline(g);
-    paintCursor(g);
+    if (width > 32000) {
+      g.setColor(Color.BLACK);
+      g.setFont(MSG_FONT);
+      g.drawString("Oops! Chronogram is too large to display.", 15, 15);
+      g.drawString("Try zooming out, or reset the simulation.", 15, 29);
+    } else {
+      for (Waveform w : rows)
+        w.paintWaveform(g);
+      int h = ChronoPanel.HEADER_HEIGHT;
+      g.setColor(Color.LIGHT_GRAY);
+      g.fillRect(0, 0, width, ChronoPanel.HEADER_HEIGHT);
+      paintTimeline(g);
+      paintCursor(g);
+    }
   }
 
   public static final long[] unit = new long[] { 10, 20, 25, 50 };
   public static final long[] subd = new long[] { 4, 4, 5, 5 };
   public void paintTimeline(Graphics2D g) {
     long timeScale = model.getTimeScale();
-    double timePerPixel = timeScale / (double)tickWidth;
-    double pixelPerTime = tickWidth / (double)timeScale;
+    double timePerPixel = timeScale / tickWidth;
+    double pixelPerTime = tickWidth / timeScale;
 
     // Pick the smallest unit among:
     //   10,  20,  25,  50
@@ -540,7 +547,7 @@ public class RightPanel extends JPanel {
       String min = signal.getFormattedMinValue();
       int labelWidth = Math.max(fm.stringWidth(max), fm.stringWidth(min));
 
-      double z = tickWidth / (double)model.getTimeScale();
+      double z = tickWidth / model.getTimeScale();
       boolean prevHi = false, prevLo = false;
       Color prevFill = null;
       while (cur.value != null) {
@@ -731,7 +738,7 @@ public class RightPanel extends JPanel {
     }
 
     public void paintWaveform(Graphics2D g) {
-      if (buf == null) // todo: reallocating image each time seems silly
+      if (buf == null) // todo: optimize: reallocating image each time seems silly
         createOffscreen();
       int y = ChronoPanel.HEADER_HEIGHT + WAVE_HEIGHT * signal.idx;
       g.drawImage(buf, null, 0, y);
@@ -743,49 +750,52 @@ public class RightPanel extends JPanel {
 
   }
 
-  // todo: later
   public void zoom(int sens, int posX) {
-    //     int nbrOfTick = curX / tickWidth;
-    // 
-    //     tickWidth += sens;
-    //     if (tickWidth <= 1)
-    //       tickWidth = 1;
-    // 
-    //     // make the curX follow the zoom
-    //     int newPosX = nbrOfTick * tickWidth;
-    //     curX = newPosX;
-    //     // set the cusor position
-    //     cursor.setPosition(newPosX);
-    // 
-    //     // Scrollbar follow the zoom
-    //     int scrollBarCursorPos = cursor.getPosition()
-    //         - (chronoPanel.getVisibleSignalsWidth() / 2);
-    // 
-    //     // zoom on every signals
-    //     for (Waveform sDraw : rows) {
-    //       sDraw.setTickWidth(tickWidth);
-    //     }
-    // 
-    //     // zoom on the timeline
-    //     timeline.setTickWidth(tickWidth, 2 /* chronoPanel.getNbrOfTick() */);
-    // 
-    //     computeSize();
-    // 
-    //     // force redraw everything
-    //     SwingUtilities.updateComponentTreeUI(chronoPanel);
-    // 
-    //     // scrollbar position
-    //     chronoPanel.setScrollbarPosition(scrollBarCursorPos);
+    if (zoom + sens < 1 || zoom + sens > 40)
+      return;
+
+    // fixme: Offscreen image can be max 32k pixels wide. We should not be
+    // making such huge offscreen images anyway.
+    long timeScale = model.getTimeScale();
+    long t0 = model.getStartTime();
+    long t1 = model.getEndTime();
+    long numTicks = (t1 - t0 + timeScale - 1) / timeScale;
+    double newTickWidth = 20 * Math.pow(1.15, zoom + sens - 20);
+		int newWidth = (int)(newTickWidth * numTicks + EXTRA_SPACE + 0.5);
+    if (newWidth > 32000)
+      return;
+
+    // find time under mouse posX, and its coordinate in our view
+    double f = timeScale / tickWidth;
+    double mouseT = t0 + posX * f;
+    JScrollBar sb = chronoPanel.getHorizontalScrollBar();
+    int vx = posX - sb.getValue();
+
+    // adjust pixel scale
+    zoom += sens;
+    tickWidth = 20 * Math.pow(1.15, zoom - 20);
+
+    // adjust cursor pixel coordinate to match cursor time
+    double q = tickWidth / timeScale;
+    if (curX != Integer.MAX_VALUE)
+      curX = (int)Math.max(0, (curT - t0) * q);
+
+    updateSize(false); // don't scroll right
+
+    // try to put time t back to being at coordinate vx in our view,
+    // but do it after the revalidation happens
+    SwingUtilities.invokeLater(new Runnable() {
+      @Override
+      public void run() {
+        int x = Math.max(0, (int)((mouseT - t0) * q));
+        int scrollPos = Math.min(sb.getMaximum(), Math.max(sb.getMinimum(), x - vx));
+        sb.setValue(scrollPos);
+      }
+    });
+
+    // repaint
+    flushWaveforms();
+    repaint();
   }
 
-  // todo: later
-  public void adjustmentValueChanged(int value) {
-    //    float posPercent = (float) value / (float) getSignalWidth();
-    //    int i = Math.round(/* chronoPanel.getNbrOfTick()*/ 2 * posPercent);
-    //    i = i > 5 ? i - 5 : 0;
-    //    for (Waveform sDraw : rows) {
-    //      sDraw.flush();
-    //      sDraw.repaint();
-    //    }
-  }
 }
