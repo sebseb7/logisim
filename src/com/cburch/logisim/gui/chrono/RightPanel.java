@@ -63,6 +63,7 @@ public class RightPanel extends JPanel {
   private static final int WAVE_HEIGHT = ChronoPanel.SIGNAL_HEIGHT;
   private static final int EXTRA_SPACE = 40; // at right side, to allow for label overhang
   private static final int CURSOR_GAP = 20; // don't put cursor too close to sides side
+  private static final int TIMELINE_SPACING = 80; // timeline marker pixel spacing
 
 	private ChronoPanel chronoPanel;
   DefaultListSelectionModel selectionModel;
@@ -303,30 +304,55 @@ public class RightPanel extends JPanel {
     paintTimeline(g);
   }
 
+  public static final long[] unit = new long[] { 10, 20, 25, 50 };
+  public static final long[] subd = new long[] { 4, 4, 5, 5 };
   public void paintTimeline(Graphics2D g) {
+    long timeScale = model.getTimeScale();
+    double timePerPixel = timeScale / (double)tickWidth;
+    double pixelPerTime = tickWidth / (double)timeScale;
+
+    // Pick the smallest unit among:
+    //   10,  20,  25,  50
+    //   100, 200, 250, 500
+    //   etc., such that labels are at least TIMELINE_SPACING pixels apart.
+
+    // todo: in clock and step mode, maybe use timeScale as unit?
+
+    long b = 1;
+    int j = 0;
+    while ((int)(unit[j]*b*pixelPerTime) < TIMELINE_SPACING) {
+      if (++j >= unit.length) {
+        b *= 10;
+        j = 0;
+      }
+    }
+
+    long divMajor = unit[j]*b;
+    long numMinor = subd[j];
+    long divMinor = divMajor / numMinor;
+    
+    Font f = g.getFont();
+    g.setFont(TIME_FONT);
+
     int h = ChronoPanel.HEADER_HEIGHT - ChronoPanel.GAP;
     g.setColor(Color.BLACK);
     g.drawLine(0, h, width, h);
-    for (int x = 0; x < width; x += tickWidth) {
-      g.drawLine(x, h*2/3, x, h);
-      g.drawLine(x+1*tickWidth/4, h-2, x+1*tickWidth/4, h);
-      g.drawLine(x+2*tickWidth/4, h-2, x+2*tickWidth/4, h);
-      g.drawLine(x+3*tickWidth/4, h-2, x+3*tickWidth/4, h);
+    for (int i = 0; ; i++) {
+      long t = divMinor * i;
+      int x = (int)(t * pixelPerTime);
+      if (x >= width)
+        break;
+      if (i % numMinor == 0) {
+        if (x + EXTRA_SPACE <= width) {
+          String s = Model.formatDuration(t);
+          g.drawString(s, x, h/2);
+        }
+        g.drawLine(x, h*2/3, x, h);
+      } else {
+        g.drawLine(x, h-2, x, h);
+      }
     }
 
-    Font f = g.getFont();
-    g.setFont(TIME_FONT);
-    FontMetrics fm = g.getFontMetrics();
-
-    // todo: in clock and step mode, show sensible divisions
-    double r = model.getTimeScale() / (double)tickWidth;
-    int sw = 0;
-    for (int x = 0; x < width; x += tickWidth * ((sw + tickWidth - 1)/tickWidth)) {
-      long t = (long)(x * r);
-      String s = Model.formatDuration(t);
-      g.drawString(s, x, h/2);
-      sw = fm.stringWidth(s) + 10;
-    }
     g.setFont(f);
   }
 
