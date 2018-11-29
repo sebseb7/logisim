@@ -75,7 +75,8 @@ public class Signal {
     if (v.getWidth() != width)
       System.out.println("*** notice: value width mismatch for " + info);
     if (last != null && last.equals(v)) {
-      int i = curSize - 1;
+      // firstIndex != 0 iff maxSize>0 && curSize == maxSize
+      int i = (firstIndex + curSize - 1) % curSize;
       dur[i/CHUNK][i%CHUNK] += duration;
       return;
     }
@@ -87,7 +88,7 @@ public class Signal {
       val[curSize/CHUNK][curSize%CHUNK] = v;
       dur[curSize/CHUNK][curSize%CHUNK] = duration;
       curSize++;
-    } else if (curSize < maxSize || maxSize == 0) {
+    } else if (curSize < maxSize || maxSize <= 0) {
       // allocate another chunk
       Value[][] val2 = new Value[c+1][];
       long[][] dur2 = new long[c+1][];
@@ -100,8 +101,9 @@ public class Signal {
       val[curSize/CHUNK][curSize%CHUNK] = v;
       dur[curSize/CHUNK][curSize%CHUNK] = duration;
       curSize++;
-    } else if (maxSize > 0) {
-      // limited size is filled, wrap around
+    } else { // if (maxSize > 0)
+      // limited size is filled, wrap around, and adjust start offset
+      tStart += dur[firstIndex/CHUNK][firstIndex%CHUNK];
       val[firstIndex/CHUNK][firstIndex%CHUNK] = v;
       dur[firstIndex/CHUNK][firstIndex%CHUNK] = duration;
       firstIndex++;
@@ -135,8 +137,9 @@ public class Signal {
     public Iterator() {
       position = 0;
       time = tStart;
-      value = val[0][0].extendWidth(width, Value.FALSE);
-      duration = dur[0][0];
+      int i = firstIndex;
+      value = val[i/CHUNK][i%CHUNK].extendWidth(width, Value.FALSE);
+      duration = dur[i/CHUNK][i%CHUNK];
     }
 
     public Iterator(long t) {
@@ -156,8 +159,9 @@ public class Signal {
       }
       position++;
       time += duration;
-      value = val[position/CHUNK][position%CHUNK].extendWidth(width, Value.FALSE);
-      duration = dur[position/CHUNK][position%CHUNK];
+      int i = (firstIndex + position) % curSize;
+      value = val[i/CHUNK][i%CHUNK].extendWidth(width, Value.FALSE);
+      duration = dur[i/CHUNK][i%CHUNK];
       return true;
     }
 
@@ -185,7 +189,8 @@ public class Signal {
     if (t < tStart)
       return null;
     long tt = tStart;
-    for (int i = 0; i < curSize; i++) {
+    for (int p = 0; p < curSize; p++) {
+      int i = (firstIndex + p) % curSize;
       long d = dur[i/CHUNK][i%CHUNK];
       if (t < tt + d)
         return val[i/CHUNK][i%CHUNK].extendWidth(width, Value.FALSE);
