@@ -43,6 +43,7 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -212,10 +213,23 @@ public class RightPanel extends JPanel {
     }
   }
 
+  
+  static long snapToPixel(long delta, long t) {
+    // Each pixel covers delta=timeScale/tickWidth amount of time, and
+    // rather than just truncating, we can try to find a good rounding.
+    // e.g. t = 1234567, delta = 100
+    // and the best point within range [1234567, 1234667) is 12345600
+    long s = 1;
+    while (s < t && ((t+10*s-1)/(10*s))*(10*s) < t+delta)
+      s *= 10;
+    return ((t+s-1)/s)*s;
+  }
+
 	public void setSignalCursorX(int posX) {
-    long timeScale = model.getTimeScale();
+    double f = model.getTimeScale() / (double)tickWidth;
     curX = Math.max(0, posX);
-    curT = Math.max(0L, (long)((curX - slope/2.0) * timeScale / tickWidth));
+    // curT = Math.max(0L, (long)((curX - slope/2.0) * timeScale / tickWidth));
+    curT = Math.max(0L, snapToPixel((long)f, (long)(curX * f)));
     if (curT >= model.getEndTime()) {
       curX = Integer.MAX_VALUE; // pin to right side
       curT = Long.MAX_VALUE; // pin to right side
@@ -300,8 +314,8 @@ public class RightPanel extends JPanel {
     int h = ChronoPanel.HEADER_HEIGHT;
     g.setColor(Color.LIGHT_GRAY);
     g.fillRect(0, 0, width, ChronoPanel.HEADER_HEIGHT);
-    paintCursor(g);
     paintTimeline(g);
+    paintCursor(g);
   }
 
   public static final long[] unit = new long[] { 10, 20, 25, 50 };
@@ -358,10 +372,23 @@ public class RightPanel extends JPanel {
 
 
 	private void paintCursor(Graphics2D g) {
-    int pos = getSignalCursorX();
+    int x = getSignalCursorX();
+    long t = getCurrentTime();
+
+    Font f = g.getFont();
+    g.setFont(TIME_FONT);
+
+    String s = Model.formatDuration(t);
+    FontMetrics fm = g.getFontMetrics();
+    Rectangle2D r = fm.getStringBounds(s, g);
+    //g.setColor(Color.LIGHT_GRAY);
+    g.setColor(Color.YELLOW);
+    int y = (ChronoPanel.HEADER_HEIGHT - ChronoPanel.GAP)/2;
+    g.fillRect(x+2 + (int)r.getX()-1, y + (int)r.getY()-1, (int)r.getWidth()+2, (int)r.getHeight()+2);
+    g.setColor(Color.RED);
+    g.drawString(s, x+2, y);
 		g.setStroke(new BasicStroke(1));
-		g.setPaint(Color.RED);
-		g.drawLine(pos, getHeight(), pos, 0);
+		g.drawLine(x, 0, x, getHeight());
 	}
 
 	private class MyListener extends MouseAdapter {
