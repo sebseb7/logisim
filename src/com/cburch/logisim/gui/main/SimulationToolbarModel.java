@@ -94,8 +94,8 @@ public class SimulationToolbarModel extends AbstractToolbarModel
 
   public void stateChanged(ChangeEvent e) {
     Simulator sim = project.getSimulator();
-    boolean running = sim != null && sim.isRunning();
-    boolean ticking = sim != null && sim.isTicking();
+    boolean running = sim != null && sim.isAutoPropagating();
+    boolean ticking = sim != null && sim.isAutoTicking();
     simRunToggle.setIcon(running ? "simstop.png" : "simrun.png");
     simRunToggle.setToolTip(S.getter(running ? "simulateStopTip" : "simulateRunTip"));
     tickEnable.setIcon(ticking ? "simtstop.png" : "simtplay.png");

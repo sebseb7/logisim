@@ -29,6 +29,7 @@
  */
 
 package com.cburch.logisim.circuit;
+import static com.cburch.logisim.circuit.Strings.S;
 
 import java.awt.Graphics;
 import java.util.HashMap;
@@ -41,13 +42,13 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.util.GraphicsUtil;
 
 class PropagationPoints {
-  private static class Entry {
+  private static class Entry<T> {
     private CircuitState state;
-    private Location loc;
+    private T item;
 
-    private Entry(CircuitState state, Location loc) {
+    private Entry(CircuitState state, T item) {
       this.state = state;
-      this.loc = loc;
+      this.item = item;
     }
 
     @Override
@@ -55,23 +56,26 @@ class PropagationPoints {
       if (!(other instanceof Entry))
         return false;
       Entry o = (Entry) other;
-      return state.equals(o.state) && loc.equals(o.loc);
+      return state.equals(o.state) && item.equals(o.item);
     }
 
     @Override
     public int hashCode() {
-      return state.hashCode() * 31 + loc.hashCode();
+      return state.hashCode() * 31 + item.hashCode();
     }
   }
 
-  private HashSet<Entry> data;
+  private HashSet<Entry<Location>> data =  new HashSet<>();
+  private HashSet<Entry<Component>> pendingInputs =  new HashSet<>();
 
-  PropagationPoints() {
-    this.data = new HashSet<Entry>();
+  PropagationPoints() { }
+
+  void addPendingInput(CircuitState state, Component comp) {
+    pendingInputs.add(new Entry<>(state, comp));
   }
 
   void add(CircuitState state, Location loc) {
-    data.add(new Entry(state, loc));
+    data.add(new Entry<>(state, loc));
   }
 
   private void addSubstates(HashMap<CircuitState, CircuitState> map,
@@ -84,6 +88,7 @@ class PropagationPoints {
 
   void clear() {
     data.clear();
+    pendingInputs.clear();
   }
 
   void draw(ComponentDrawContext context) {
@@ -91,16 +96,15 @@ class PropagationPoints {
       return;
 
     CircuitState state = context.getCircuitState();
-    HashMap<CircuitState, CircuitState> stateMap = new HashMap<CircuitState, CircuitState>();
-    for (CircuitState s : state.getSubstates()) {
+    HashMap<CircuitState, CircuitState> stateMap = new HashMap<>();
+    for (CircuitState s : state.getSubstates())
       addSubstates(stateMap, s, s);
-    }
 
     Graphics g = context.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
-    for (Entry e : data) {
+    for (Entry<Location> e : data) {
       if (e.state == state) {
-        Location p = e.loc;
+        Location p = e.item;
         g.drawOval(p.getX() - 4, p.getY() - 4, 8, 8);
       } else if (stateMap.containsKey(e.state)) {
         CircuitState substate = stateMap.get(e.state);
@@ -112,7 +116,35 @@ class PropagationPoints {
     GraphicsUtil.switchToWidth(g, 1);
   }
 
-  boolean isEmpty() {
-    return data.isEmpty();
+  void drawPendingInputs(ComponentDrawContext context) {
+    if (pendingInputs.isEmpty())
+      return;
+
+    CircuitState state = context.getCircuitState();
+    HashMap<CircuitState, CircuitState> stateMap = new HashMap<>();
+    for (CircuitState s : state.getSubstates())
+      addSubstates(stateMap, s, s);
+
+    Graphics g = context.getGraphics();
+    GraphicsUtil.switchToWidth(g, 2);
+    for (Entry<Component> e : pendingInputs) {
+      Component comp;
+      if (e.state == state)
+        comp = e.item;
+      else if (stateMap.containsKey(e.state))
+        comp = stateMap.get(e.state).getSubcircuit();
+      else
+        continue;
+      Bounds b = comp.getBounds();
+      g.drawRect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
+    }
+
+    GraphicsUtil.switchToWidth(g, 1);
+  }
+
+  String getSingleStepMessage() {
+    String n = data.isEmpty() ? "no" : ""+data.size();
+    String m = pendingInputs.isEmpty() ? "no" : ""+pendingInputs.size();
+    return S.fmt("singleStepMessage", n, m);
   }
 }

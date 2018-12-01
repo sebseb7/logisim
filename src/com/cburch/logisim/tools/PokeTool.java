@@ -73,7 +73,6 @@ public class PokeTool extends Tool {
   }
 
   private static class WireCaret extends AbstractCaret {
-    //
     Canvas canvas;
     Wire wire;
     int x;
@@ -269,6 +268,8 @@ public class PokeTool extends Tool {
     if (pokeCaret != null) {
       dirty = true;
       pokeCaret.mousePressed(e);
+
+      // 
     }
     if (dirty)
       canvas.getProject().repaintCanvas();

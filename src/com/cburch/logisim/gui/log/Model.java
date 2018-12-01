@@ -455,8 +455,15 @@ public class Model implements CircuitListener {
     return selected;
   }
 
-  public void propagationCompleted() {
-    long duration = timeScale; // todo: fixme, use correct duration based on mode
+  public void propagationCompleted(boolean ticked, boolean stepped, boolean propagated) {
+    long duration;
+    if (ticked || propagated)
+      duration = timeScale;
+    else if (stepped && isFine())
+      duration = gateDelay;
+    else
+      return;
+
     for (Signal s : signals) {
       Value v = s.info.fetchValue(circuitState);
       s.extend(v, duration);

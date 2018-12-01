@@ -46,8 +46,7 @@ import javax.swing.JScrollPane;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
-import com.cburch.logisim.circuit.SimulatorEvent;
-import com.cburch.logisim.circuit.SimulatorListener;
+import com.cburch.logisim.circuit.Simulator;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
@@ -64,7 +63,7 @@ import com.cburch.logisim.util.LocaleListener;
  * @author YSY
  */
 public class RegTabContent extends JScrollPane
-  implements LocaleListener, SimulatorListener {
+  implements LocaleListener, Simulator.Listener {
   private class MyLabel extends JLabel {
     private static final long serialVersionUID = 1L;
 
@@ -251,20 +250,17 @@ public class RegTabContent extends JScrollPane
   }
 
   @Override
-  public void simulatorReset(SimulatorEvent e) {
+  public void simulatorReset(Simulator.Event e) {
     fillArray();
   }
 
   @Override
-  public void propagationCompleted(SimulatorEvent e) {
+  public void propagationCompleted(Simulator.Event e) {
     fillArray();
   }
 
   @Override
-  public void simulatorStateChanged(SimulatorEvent e) {
+  public void simulatorStateChanged(Simulator.Event e) {
   }
 
-  @Override
-  public void tickCompleted(SimulatorEvent e) {
-  }
 }

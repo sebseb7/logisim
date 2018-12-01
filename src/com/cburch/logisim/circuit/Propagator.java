@@ -167,7 +167,7 @@ public class Propagator {
   private boolean isOscillating = false;
   private boolean oscAdding = false;
   private PropagationPoints oscPoints = new PropagationPoints();
-  private int ticks = 0;
+  private int halfClockCycles = 0;
   private Random noiseSource = new Random();
   private int noiseCount = 0;
 
@@ -234,14 +234,6 @@ public class Propagator {
     }
   }
 
-  private void clearDirtyComponents() {
-    root.processDirtyComponents();
-  }
-
-  private void clearDirtyPoints() {
-    root.processDirtyPoints();
-  }
-
   public void drawOscillatingPoints(ComponentDrawContext context) {
     if (isOscillating)
       oscPoints.draw(context);
@@ -252,7 +244,7 @@ public class Propagator {
   }
 
   public int getTickCount() {
-    return ticks;
+    return halfClockCycles / 2;
   }
 
   public boolean isOscillating() {
@@ -296,10 +288,10 @@ public class Propagator {
       oscPoints.add(state, loc);
   }
 
-  public void propagate() {
+  public boolean propagate() {
     oscPoints.clear();
-    clearDirtyPoints();
-    clearDirtyComponents();
+    root.processDirtyPoints();
+    root.processDirtyComponents();
 
     int oscThreshold = simLimit;
     int logThreshold = 3 * oscThreshold / 4;
@@ -315,12 +307,13 @@ public class Propagator {
       } else {
         isOscillating = true;
         oscAdding = false;
-        return;
+        return true;
       }
     }
     isOscillating = false;
     oscAdding = false;
     oscPoints.clear();
+    return iters > 0;
   }
 
   private SetData removeCause(CircuitState state, SetData head, Location loc,
@@ -381,18 +374,21 @@ public class Propagator {
     }
     toProcess.add(new SetData(clock + delay, setDataSerialNumber, state,
           pt, cause, val));
-    /*
-     * DEBUGGING - comment out Simulator.log(clock + ": set " + pt + " in "
-     * + state + " to " + val + " by " + cause + " after " + delay); //
-     */
+
+    // DEBUGGING
+    // System.printf("%s: set %s in %s to %s by %s after %s\n",
+    //     clock, pt, state, val, cause, delay);
 
     setDataSerialNumber++;
   }
 
-  void step(PropagationPoints changedPoints) {
+  boolean step(PropagationPoints changedPoints) {
     oscPoints.clear();
-    clearDirtyPoints();
-    clearDirtyComponents();
+    root.processDirtyPoints();
+    root.processDirtyComponents();
+
+    if (toProcess.isEmpty())
+      return false;
 
     PropagationPoints oldOsc = oscPoints;
     oscAdding = changedPoints != null;
@@ -400,6 +396,7 @@ public class Propagator {
     stepInternal(changedPoints);
     oscAdding = false;
     oscPoints = oldOsc;
+    return true;
   }
 
   private void stepInternal(PropagationPoints changedPoints) {
@@ -429,11 +426,9 @@ public class Propagator {
         handled.add(new ComponentPoint(data.cause, data.loc));
       }
 
-      /*
-       * DEBUGGING - comment out Simulator.log(data.time + ": proc " +
-       * data.loc + " in " + data.state + " to " + data.val + " by " +
-       * data.cause); //
-       */
+      // DEBUGGING
+      // System.out.printf("%s: proc %s in %s to %s by %s\n",
+      //     data.time, data.loc, data.state, data.val, data.cause);
 
       if (changedPoints != null)
         changedPoints.add(state, data.loc);
@@ -450,13 +445,13 @@ public class Propagator {
       }
     }
 
-    clearDirtyPoints();
-    clearDirtyComponents();
+    root.processDirtyPoints();
+    root.processDirtyComponents();
   }
 
-  public boolean tick() {
-    ticks++;
-    return root.tick(ticks);
+  public boolean toggleClocks() {
+    halfClockCycles++;
+    return root.toggleClocks(halfClockCycles);
   }
 
   @Override

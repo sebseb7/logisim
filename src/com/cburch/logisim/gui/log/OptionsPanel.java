@@ -56,7 +56,6 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
-import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -70,7 +69,6 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.basic.BasicComboBoxEditor;
-import javax.swing.text.NumberFormatter;
 
 class OptionsPanel extends LogPanel implements ActionListener, ChangeListener {
 
@@ -191,8 +189,6 @@ class OptionsPanel extends LogPanel implements ActionListener, ChangeListener {
     // right side has history options
     limit.setModel(new SpinnerNumberModel(400, 10, Integer.MAX_VALUE, 100));
     limit.setEditor(new JSpinner.NumberEditor(limit, "#####"));
-    // JFormattedTextField txt = ((JSpinner.NumberEditor)limit.getEditor()).getTextField();
-    // ((NumberFormatter)txt.getFormatter()).setAllowsInvalid(false);
     limit.setMaximumSize(limit.getPreferredSize());
     unlimited.setAlignmentX(0.0f);
     Box limitBox = new Box(BoxLayout.X_AXIS);

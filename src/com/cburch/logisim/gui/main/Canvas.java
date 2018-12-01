@@ -63,8 +63,7 @@ import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.Propagator;
-import com.cburch.logisim.circuit.SimulatorEvent;
-import com.cburch.logisim.circuit.SimulatorListener;
+import com.cburch.logisim.circuit.Simulator;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.circuit.WidthIncompatibilityData;
 import com.cburch.logisim.circuit.WireSet;
@@ -331,7 +330,7 @@ public class Canvas extends JPanel
 
   private class MyProjectListener implements ProjectListener,
           LibraryListener, CircuitListener, AttributeListener,
-          SimulatorListener, Selection.Listener {
+          Simulator.Listener, Selection.Listener {
 
     @Override
     public void attributeListChanged(AttributeEvent e) {
@@ -472,36 +471,23 @@ public class Canvas extends JPanel
     }
 
     @Override
-    public void propagationCompleted(SimulatorEvent e) {
-      /*
-       * This was a good idea for a while... but it leads to problems when
-       * a repaint is done just before a user action takes place. //
-       * repaint - but only if it's been a while since the last one long
-       * now = System.currentTimeMillis(); if (now > lastRepaint +
-       * repaintDuration) { lastRepaint = now; // (ensure that multiple
-       * requests aren't made repaintDuration = 15 + (int) (20 *
-       * Math.random()); // repaintDuration is for jittering the repaints
-       * to // reduce aliasing effects repaint(); }
-       */
-      paintThread.requestRepaint();
-    }
-
-    @Override
     public void selectionChanged(Selection.Event event) {
       repaint();
     }
 
     @Override
-    public void simulatorStateChanged(SimulatorEvent e) {
+    public void propagationCompleted(Simulator.Event e) {
+      paintThread.requestRepaint();
+      if (e.didTick())
+        waitForRepaintDone();
     }
 
     @Override
-    public void tickCompleted(SimulatorEvent e) {
-      waitForRepaintDone();
+    public void simulatorStateChanged(Simulator.Event e) {
     }
 
     @Override
-    public void simulatorReset(SimulatorEvent e) {
+    public void simulatorReset(Simulator.Event e) {
       waitForRepaintDone();
     }
   }
@@ -548,24 +534,22 @@ public class Canvas extends JPanel
        * fm = g.getFontMetrics(); g.drawString(speedStr, getWidth() - 10 -
        * fm.stringWidth(speedStr), getHeight() - 10);
        */
-
+      
+      int msgY = getHeight() - 23;
       StringGetter message = errorMessage;
       if (message != null) {
         g.setColor(errorColor);
-        paintString(g, message.toString());
-        return;
+        msgY = paintString(g, msgY, message.toString());
       }
 
       if (proj.getSimulator().isOscillating()) {
-        g.setColor(DEFAULT_ERROR_COLOR);
-        paintString(g, S.get("canvasOscillationError"));
-        return;
+        g.setColor(OSC_ERR_COLOR);
+        msgY = paintString(g, msgY, S.get("canvasOscillationError"));
       }
 
       if (proj.getSimulator().isExceptionEncountered()) {
-        g.setColor(DEFAULT_ERROR_COLOR);
-        paintString(g, S.get("canvasExceptionError"));
-        return;
+        g.setColor(SIM_EXCEPTION_COLOR);
+        msgY = paintString(g, msgY, S.get("canvasExceptionError"));
       }
 
       computeViewportContents();
@@ -573,7 +557,7 @@ public class Canvas extends JPanel
       g.setColor(Value.WIDTH_ERROR_COLOR);
 
       if (widthMessage != null) {
-        paintString(g, widthMessage);
+        msgY = paintString(g, msgY, widthMessage);
       }
 
       int w = sz.width;
@@ -611,20 +595,30 @@ public class Canvas extends JPanel
       }
 
       GraphicsUtil.switchToWidth(g, 1);
+
+      if (!proj.getSimulator().isAutoPropagating()) {
+        g.setColor(SINGLE_STEP_MSG_COLOR);
+        Font old = g.getFont();
+        g.setFont(SINGLE_STEP_MSG_FONT);
+        g.drawString(proj.getSimulator().getSingleStepMessage(), 10, 15);
+        g.setFont(old);
+      }
+
       g.setColor(Color.BLACK);
 
     }
 
-    private void paintString(Graphics g, String msg) {
+    private int paintString(Graphics g, int y, String msg) {
       Font old = g.getFont();
-      g.setFont(old.deriveFont(Font.BOLD).deriveFont(18.0f));
+      g.setFont(ERR_MSG_FONT);
       FontMetrics fm = g.getFontMetrics();
       int x = (getWidth() - fm.stringWidth(msg)) / 2;
       if (x < 0) {
         x = 0;
       }
-      g.drawString(msg, x, getHeight() - 23);
+      g.drawString(msg, x, y);
       g.setFont(old);
+      return y - 23;
     }
 
     void setEast(boolean value) {
@@ -718,8 +712,14 @@ public class Canvas extends JPanel
   private static final int BUTTONS_MASK = InputEvent.BUTTON1_DOWN_MASK
       | InputEvent.BUTTON2_DOWN_MASK | InputEvent.BUTTON3_DOWN_MASK;
   private static final Color DEFAULT_ERROR_COLOR = new Color(192, 0, 0);
+  private static final Color OSC_ERR_COLOR = DEFAULT_ERROR_COLOR;
+  private static final Color SIM_EXCEPTION_COLOR = DEFAULT_ERROR_COLOR;
+  private static final Font ERR_MSG_FONT = new Font("Sans Serif", Font.BOLD, 18);
   private static final Color TICK_RATE_COLOR = new Color(0, 0, 92, 92);
-  private static final Font TICK_RATE_FONT = new Font("serif", Font.BOLD, 12);
+  private static final Font TICK_RATE_FONT = new Font("Serif", Font.BOLD, 12);
+  private static final Color SINGLE_STEP_MSG_COLOR = Color.BLUE;
+  private static final Font SINGLE_STEP_MSG_FONT = new Font("Sans Serif", Font.BOLD, 12);
+
   private Project proj;
   private Tool drag_tool;
   private Selection selection;
@@ -783,9 +783,12 @@ public class Canvas extends JPanel
     if (proj.getCurrentCircuit() == null)
       return;
     computeSize(false);
-    // TODO for SimulatorPrototype: proj.getSimulator().releaseUserEvents();
-    proj.getSimulator().requestPropagate();
-    // repaint will occur after propagation completes
+    // After any interaction, nudge the simulator, which in autoPropagate mode
+    // will (if needed) eventually, fire a propagateCompleted event, which will
+    // cause a repaint. If not in autoPropagate mode, do the repaint here
+    // instead.
+    if (!proj.getSimulator().nudge())
+      paintThread.requestRepaint();
   }
 
   public void computeSize(boolean immediate) {

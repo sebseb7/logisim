@@ -31,19 +31,15 @@
 package com.bfh.logisim.fpgagui;
 
 import java.awt.EventQueue;
-import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
@@ -70,8 +66,7 @@ import com.bfh.logisim.hdlgenerator.TickComponentHDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGeneratorFactory;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.circuit.SimulatorEvent;
-import com.cburch.logisim.circuit.SimulatorListener;
+import com.cburch.logisim.circuit.Simulator;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
 import com.cburch.logisim.file.LogisimFile;
@@ -107,11 +102,10 @@ public class FPGACommanderGui implements ActionListener {
 		}
 	}
 
-	private class MySimulatorListener implements SimulatorListener {
-    public void simulatorReset(SimulatorEvent e) { }
-    public void propagationCompleted(SimulatorEvent e) { }
-    public void simulatorStateChanged(SimulatorEvent e) { ChangeTickFrequency(); }
-    public void tickCompleted(SimulatorEvent e) { }
+	private class MySimulatorListener implements Simulator.Listener {
+    public void simulatorReset(Simulator.Event e) { }
+    public void propagationCompleted(Simulator.Event e) { }
+    public void simulatorStateChanged(Simulator.Event e) { ChangeTickFrequency(); }
 	}
 
 	private JFrame panel;
@@ -317,8 +311,8 @@ public class FPGACommanderGui implements ActionListener {
 		c.gridheight = 1;
 		// c.gridwidth = 1;
 
-                populateClockDivOptions();
-                updateClockOptions();
+    populateClockDivOptions();
+    updateClockOptions();
 		MyProject.getSimulator().addSimulatorListener(mysimlistener);
 
 		// validate button

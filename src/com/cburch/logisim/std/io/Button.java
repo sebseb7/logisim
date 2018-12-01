@@ -95,8 +95,7 @@ public class Button extends InstanceFactory {
     }
 
     private void setValue(InstanceState state, Value val) {
-      InstanceDataSingleton data = (InstanceDataSingleton) state
-          .getData();
+      InstanceDataSingleton data = (InstanceDataSingleton) state.getData();
       if (data == null) {
         state.setData(new InstanceDataSingleton(val));
       } else {

@@ -131,6 +131,11 @@ public class CircuitState implements InstanceData {
       else if (action == CircuitEvent.ACTION_INVALIDATE) {
         Component comp = (Component) event.getData();
         markComponentAsDirty(comp);
+        // If simulator is in single step mode, we want to hilight the
+        // invalidated components (which are likely Pins, Buttons, or other
+        // inputs), so pass this component to the simulator for display.
+        proj.getSimulator().addPendingInput(CircuitState.this, comp);
+
         // TODO detemine if this should really be missing
         // if (base != null)
         //   base.checkComponentEnds(CircuitState.this, comp);
@@ -406,9 +411,11 @@ public class CircuitState implements InstanceData {
   }
 
   void processDirtyPoints() {
-    HashSet<Location> dirty = new HashSet<Location>(dirtyPoints);
+    HashSet<Location> dirty = new HashSet<>(dirtyPoints);
     dirtyPoints.clear();
     if (circuit.wires.isMapVoided()) {
+      // Note: this is a stopgap hack until we figure out the cause of the
+      // concurrent modification exception.
       for (int i = 3; i >= 0; i--) {
         try {
           dirty.addAll(circuit.wires.points.getSplitLocations());
@@ -418,6 +425,10 @@ public class CircuitState implements InstanceData {
           try {
             Thread.sleep(1);
           } catch (InterruptedException e2) {
+            // Yes, swallow the interrupt -- if simulator thread is interrupted
+            // while it is in here, we want to keep going. The simulator thread
+            // uses interrupts only for cancelling its own sleep/wait calls, not
+            // this sleep call.
           }
           if (i == 0)
             e.printStackTrace();
@@ -520,7 +531,7 @@ public class CircuitState implements InstanceData {
     wireData = data;
   }
 
-  boolean tick(int ticks) {
+  boolean toggleClocks(int ticks) {
     boolean ret = false;
     for (Component clock : circuit.getClocks()) {
       ret |= Clock.tick(this, ticks, clock);
@@ -528,7 +539,7 @@ public class CircuitState implements InstanceData {
 
     CircuitState[] subs = new CircuitState[substates.size()];
     for (CircuitState substate : substates.toArray(subs)) {
-      ret |= substate.tick(ticks);
+      ret |= substate.toggleClocks(ticks);
     }
     return ret;
   }

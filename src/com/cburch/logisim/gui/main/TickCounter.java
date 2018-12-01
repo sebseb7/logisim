@@ -32,10 +32,8 @@ package com.cburch.logisim.gui.main;
 import static com.cburch.logisim.gui.main.Strings.S;
 
 import com.cburch.logisim.circuit.Simulator;
-import com.cburch.logisim.circuit.SimulatorEvent;
-import com.cburch.logisim.circuit.SimulatorListener;
 
-class TickCounter implements SimulatorListener {
+class TickCounter implements Simulator.Listener {
   private static final int QUEUE_LENGTH = 1000;
 
   private long[] queueTimes;
@@ -101,6 +99,10 @@ class TickCounter implements SimulatorListener {
         if (min < 0.9 * rate)
           min = rate;
 
+        // report the full-cycle frequency, not the half-cycle tick rate
+        min /= 2;
+        rate /= 2;
+
         if (min >= 1000.0) {
           return S.fmt("tickRateKHz", roundString(rate / 1000.0, min / 1000.0));
         } else {
@@ -110,11 +112,10 @@ class TickCounter implements SimulatorListener {
     }
   }
 
-  public void updateSimulator(SimulatorEvent e) {
+  public void updateSimulator(Simulator.Event e) {
     Simulator sim = e.getSource();
-    if (!sim.isTicking()) {
+    if (!sim.isAutoTicking())
       queueSize = 0;
-    }
   }
 
   private String roundString(double val, double min) {
@@ -151,60 +152,58 @@ class TickCounter implements SimulatorListener {
   }
 
   @Override
-  public void simulatorStateChanged(SimulatorEvent e) {
+  public void simulatorStateChanged(Simulator.Event e) {
     updateSimulator(e);
   }
 
   @Override
-  public void simulatorReset(SimulatorEvent e) {
+  public void simulatorReset(Simulator.Event e) {
     updateSimulator(e);
   }
 
   @Override
-  public void propagationCompleted(SimulatorEvent e) {
-  }
-
-  @Override
-  public void tickCompleted(SimulatorEvent e) {
-    Simulator sim = e.getSource();
-    if (!sim.isTicking()) {
-      queueSize = 0;
-    } else {
-      double freq = sim.getTickFrequency();
-      if (freq != tickFrequency) {
+  public void propagationCompleted(Simulator.Event e) {
+    if (e.didTick()) {
+      Simulator sim = e.getSource();
+      if (!sim.isAutoTicking()) {
         queueSize = 0;
-        tickFrequency = freq;
-      }
-
-      int curSize = queueSize;
-      int maxSize = queueTimes.length;
-      int start = queueStart;
-      int end;
-      if (curSize < maxSize) { // new sample is added into queue
-        end = start + curSize;
-        if (end >= maxSize) {
-          end -= maxSize;
-        }
-        curSize++;
-        queueSize = curSize;
-      } else { // new sample replaces oldest value in queue
-        end = queueStart;
-        if (end + 1 >= maxSize) {
-          queueStart = 0;
-        } else {
-          queueStart = end + 1;
-        }
-      }
-      long startTime = queueTimes[start];
-      long endTime = System.currentTimeMillis();
-      double rate;
-      if (startTime == endTime || curSize <= 1) {
-        rate = Double.MAX_VALUE;
       } else {
-        rate = 1000.0 * (curSize - 1) / (endTime - startTime);
+        double freq = sim.getTickFrequency();
+        if (freq != tickFrequency) {
+          queueSize = 0;
+          tickFrequency = freq;
+        }
+
+        int curSize = queueSize;
+        int maxSize = queueTimes.length;
+        int start = queueStart;
+        int end;
+        if (curSize < maxSize) { // new sample is added into queue
+          end = start + curSize;
+          if (end >= maxSize) {
+            end -= maxSize;
+          }
+          curSize++;
+          queueSize = curSize;
+        } else { // new sample replaces oldest value in queue
+          end = queueStart;
+          if (end + 1 >= maxSize) {
+            queueStart = 0;
+          } else {
+            queueStart = end + 1;
+          }
+        }
+        long startTime = queueTimes[start];
+        long endTime = System.currentTimeMillis();
+        double rate;
+        if (startTime == endTime || curSize <= 1) {
+          rate = Double.MAX_VALUE;
+        } else {
+          rate = 1000.0 * (curSize - 1) / (endTime - startTime);
+        }
+        queueTimes[end] = endTime;
+        queueRates[end] = rate;
       }
-      queueTimes[end] = endTime;
-      queueRates[end] = rate;
     }
   }
 }

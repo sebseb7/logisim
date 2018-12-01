@@ -51,8 +51,6 @@ import javax.swing.event.ChangeListener;
 
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.Simulator;
-import com.cburch.logisim.circuit.SimulatorEvent;
-import com.cburch.logisim.circuit.SimulatorListener;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
 import com.cburch.logisim.gui.chrono.ChronoPanel;
@@ -68,7 +66,7 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
   private LogMenuListener menuListener;
 
   private class MyListener implements ProjectListener,
-          LibraryListener, SimulatorListener, LocaleListener {
+          LibraryListener, Simulator.Listener, LocaleListener {
 
     public void libraryChanged(LibraryEvent event) {
       int action = event.getAction();
@@ -98,23 +96,20 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
     }
 
     @Override
-    public void simulatorReset(SimulatorEvent e) {
+    public void simulatorReset(Simulator.Event e) {
       curModel.simulatorReset();
     }
 
     @Override
-    public void propagationCompleted(SimulatorEvent e) {
-      curModel.propagationCompleted();
+    public void propagationCompleted(Simulator.Event e) {
+      curModel.propagationCompleted(e.didTick(), e.didSingleStep(), e.didPropagate());
     }
 
     @Override
-    public void simulatorStateChanged(SimulatorEvent e) {
+    public void simulatorStateChanged(Simulator.Event e) {
       setSimulator(project.getSimulator(), project.getCircuitState());
     }
 
-    @Override
-    public void tickCompleted(SimulatorEvent e) {
-    }
   }
 
   // TODO should automatically repaint icons when component attr change

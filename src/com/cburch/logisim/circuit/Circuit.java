@@ -372,7 +372,7 @@ public class Circuit {
     }
 
     if (prop.isOscillating())
-      throw new TestException("oscilation detected");
+      throw new TestException("oscillation detected");
 
     FailException err = null;
 
