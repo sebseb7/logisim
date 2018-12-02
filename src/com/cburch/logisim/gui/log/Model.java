@@ -73,7 +73,7 @@ public class Model implements CircuitListener {
 
   private ArrayList<SignalInfo> info = new ArrayList<>();
   private ArrayList<Signal> signals = new ArrayList<>();
-  private long tEnd = 1; // signals go from 0 <= t < tEnd
+  private long tEnd = -1; // signals go from 0 <= t < tEnd
   private Signal spotlight;
 
   private EventSourceWeakSupport<Listener> listeners = new EventSourceWeakSupport<>();
@@ -113,11 +113,13 @@ public class Model implements CircuitListener {
     }
 
     // set up initial signal values (after sorting)
+    long duration = isFine() ? gateDelay : timeScale;
     for (int i = 0; i < info.size(); i++) {
       SignalInfo item = info.get(i);
       signals.add(new Signal(i, item, item.fetchValue(circuitState),
-            1, tEnd - 1, historyLimit));
+            duration, 0, historyLimit));
     }
+    tEnd = duration;
 
     if (containsAnyClock(circ))
       mode = CLOCK;
@@ -456,6 +458,25 @@ public class Model implements CircuitListener {
   }
 
   public void propagationCompleted(boolean ticked, boolean stepped, boolean propagated) {
+    if (isClockMode() && !isFine()) {
+      long duration = timeScale;
+      if (ticked) {
+        for (Signal s : signals) {
+          Value v = s.info.fetchValue(circuitState);
+          s.extend(v, duration);
+        }
+        tEnd += duration;
+        fireSignalsExtended(null);
+      } else {
+        // back-date transient changes to the start of the most recent tick
+        for (Signal s : signals) {
+          Value v = s.info.fetchValue(circuitState);
+          s.replaceRecent(v, duration);
+        }
+        fireSignalsExtended(null); // not really "extended", but works fine
+      }
+      return;
+    }
     long duration;
     if (ticked || propagated)
       duration = timeScale;
@@ -473,8 +494,8 @@ public class Model implements CircuitListener {
   }
 
   public void simulatorReset() {
-    // long duration = isFine() ? gateDelay : timeScale;
-    long duration = 1;
+    long duration = isFine() ? gateDelay : timeScale;
+    // long duration = 1;
     for (Signal s: signals) {
       Value v = s.info.fetchValue(circuitState);
       s.reset(v, duration);

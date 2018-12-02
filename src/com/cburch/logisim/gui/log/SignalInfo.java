@@ -305,9 +305,9 @@ public class SignalInfo implements AttributeListener, CircuitListener, Location.
     return log != null && log.isInput(option);
   }
 
-//  public Object getOption() {
-//    return option;
-//  }
+  public Object getOption() {
+    return option;
+  }
 
 //  public Component[] getPath() {
 //    return path;

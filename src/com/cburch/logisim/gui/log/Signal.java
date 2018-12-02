@@ -115,6 +115,21 @@ public class Signal {
     }
   }
 
+  public void replaceRecent(Value v, long duration) {
+    if (last == null || curSize == 0)
+      throw new IllegalStateException("signal should have at least "+duration+" ns of data");
+    int i = (firstIndex + curSize - 1) % curSize;
+    if (dur[i/CHUNK][i%CHUNK] == duration) {
+      val[i/CHUNK][i%CHUNK] = v;
+      last = v;
+    } else if (dur[i/CHUNK][i%CHUNK] > duration) {
+      dur[i/CHUNK][i%CHUNK] -= duration;
+      extend(v, duration);
+    } else {
+      throw new IllegalStateException("signal data should be at least "+duration+" ns in duration");
+    }
+  }
+
   private void retainOnly(int offset, int amt, int cap) {
     // shift all values [from offset to offset+amt] left into new arrays
     // of size appropriate for eventual capacity cap

@@ -54,6 +54,7 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.DropMode;
+import javax.swing.Icon;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -73,7 +74,7 @@ import javax.swing.table.TableCellEditor;
 
 import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.comp.Component;
-import com.cburch.logisim.data.Value;
+import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.util.Icons;
 
 public class SelectionList extends JTable {
@@ -116,7 +117,9 @@ public class SelectionList extends JTable {
 
   }
 
-  private class SignalInfoRenderer extends DefaultTableCellRenderer {
+  private class SignalInfoRenderer extends DefaultTableCellRenderer implements Icon {
+    Component comp;
+    Object opt;
     @Override
     public java.awt.Component getTableCellRendererComponent(JTable table,
         Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -125,11 +128,35 @@ public class SelectionList extends JTable {
       if (ret instanceof JLabel && value instanceof SignalInfo) {
         JLabel label = (JLabel) ret;
         SignalInfo item = (SignalInfo) value;
-        label.setIcon(new ComponentIcon(item.getComponent()));
+        comp = item.getComponent();
+        opt = item.getOption();
+        label.setIcon(this);
         label.setText(item.toString() + " [" + item.getRadix().toDisplayString() + "]");
       }
       return ret;
     }
+
+    @Override
+    public int getIconHeight() { return 20; }
+    @Override
+    public int getIconWidth() { return 20; }
+
+    @Override
+    public void paintIcon(java.awt.Component c, Graphics g, int x, int y) {
+      if (comp == null)
+        return;
+      if (opt != null) {
+        // todo
+        g.setColor(Color.MAGENTA);
+        g.fillRect(x+3, x+3, 15, 15);
+      } else {
+        Graphics g2 = g.create();
+        ComponentDrawContext context = new ComponentDrawContext(c, null, null, g, g2);
+        comp.getFactory().paintIcon(context, x, y, comp.getAttributeSet());
+        g2.dispose();
+      }
+    }
+
   }
 
   class SignalInfoEditor extends AbstractCellEditor implements TableCellEditor {
