@@ -70,7 +70,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.basic.BasicComboBoxEditor;
 
-class OptionsPanel extends LogPanel implements ActionListener, ChangeListener {
+class OptionsPanel extends LogPanel
+  implements ActionListener, ChangeListener, Model.Listener {
 
   // [ ] Stop-motion mode [ time_scale: 5ms ]
   //   [ ] Coarse-grained summary
@@ -120,6 +121,8 @@ class OptionsPanel extends LogPanel implements ActionListener, ChangeListener {
   TimeSelector clockScale = new TimeSelector("timeScale", 5000, "perTick");
   TickSelector clockTicks = new TickSelector("cycleLength", 2);
   TimeSelector clockGate = new TimeSelector("gateDelay", 10);
+  JLabel clockSrcLabel = new JLabel();
+  JButton clockSrcButton = new JButton();
 
   JCheckBox unlimited = new JCheckBox();
   JSpinner limit = new JSpinner();
@@ -180,6 +183,13 @@ class OptionsPanel extends LogPanel implements ActionListener, ChangeListener {
     clockOptionsPanel.add(clockTicks.getPanel());
     clockOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
     clockOptionsPanel.add(clockGate.getPanel());
+    clockOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    Box clockSrcBox = new Box(BoxLayout.X_AXIS);
+    clockSrcBox.setAlignmentX(0.0f); 
+    clockSrcBox.add(clockSrcLabel);
+    clockSrcBox.add(Box.createRigidArea(new Dimension(6, 0)));
+    clockSrcBox.add(clockSrcButton);
+    clockOptionsPanel.add(clockSrcBox);
     clockOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
    
     optionsPanel.add(stepOptionsPanel, "stepTime");
@@ -265,6 +275,8 @@ class OptionsPanel extends LogPanel implements ActionListener, ChangeListener {
     clockTicks.addActionListener(this);
     clockGate.addActionListener(this);
 
+    clockSrcButton.addActionListener(this);
+
     stepTime.setSelected(false);
     realTime.setSelected(false);
     clockTime.setSelected(false);
@@ -320,19 +332,30 @@ class OptionsPanel extends LogPanel implements ActionListener, ChangeListener {
     }
   }
 
+  private void doClockSourceDialog() {
+    Model m = getLogFrame().getModel();
+    SignalInfo item = ClockSource.doClockObserverDialog(m.getCircuit());
+    if (item == null)
+      return;
+    m.setClockSourceInfo(item);
+  }
+
   @Override
   public void actionPerformed(ActionEvent e) {              
     Model m = getLogFrame().getModel();
     if (e.getSource() == unlimited) {
       stateChanged(null);
+    } else if (e.getSource() == clockSrcButton) {
+      doClockSourceDialog();
     } else {
-      if (stepTime.isSelected())
+      if (stepTime.isSelected()) {
         m.setStepMode(stepScale.getValue(), stepFine.isSelected() ? stepGate.getValue() : 0);
-      else if (realTime.isSelected())
+      } else if (realTime.isSelected()) {
         m.setRealMode(realScale.getValue(), realFine.isSelected());
-      else
+      } else {
         m.setClockMode(clockScale.getValue(), clockTicks.getValue(),
             clockFine.isSelected() ? clockGate.getValue() : 0);
+      }
       updateDescription();
     }
   }
@@ -506,6 +529,8 @@ class OptionsPanel extends LogPanel implements ActionListener, ChangeListener {
     unlimited.setText(S.get("historyUnlimited"));
     limitLabel.setText(S.get("historyLimit"));
 
+    clockSrcLabel.setText(S.get("clockSourceLabel"));
+
     stepScale.localeChanged();
     stepGate.localeChanged();
     realScale.localeChanged();
@@ -567,10 +592,25 @@ class OptionsPanel extends LogPanel implements ActionListener, ChangeListener {
     optionsPanel.setBorder(BorderFactory.createTitledBorder(
           S.get("timingLabel") + ": " + S.get(mode)));
     description.setText("<html>"+d+"</html>"); // html to enable line wrapping
+
+    Model m = getLogFrame().getModel();
+    SignalInfo clockSource = m.getClockSourceInfo();
+    if (clockSource == null) {
+      clockSrcButton.setIcon(null);
+      clockSrcButton.setText(S.get("clockSourceNone"));
+    } else {
+      clockSrcButton.setIcon(clockSource.icon);
+      clockSrcButton.setText(clockSource.getDisplayName());
+    }
   }
 
   @Override
   public void modelChanged(Model oldModel, Model newModel) {
+    if (oldModel != null)
+      oldModel.removeModelListener(this);
+    if (newModel != null)
+      newModel.addModelListener(this);
+    modeChanged(null);
     stepScale.setSelectedItem(newModel.getTimeScale());
     realScale.setSelectedItem(newModel.getTimeScale());
     clockScale.setSelectedItem(newModel.getTimeScale());
@@ -580,17 +620,41 @@ class OptionsPanel extends LogPanel implements ActionListener, ChangeListener {
     stepFine.setSelected(newModel.isFine());
     realFine.setSelected(newModel.isFine());
     clockFine.setSelected(newModel.isFine());
-    if (newModel.isStepMode())
-      stepTime.setSelected(true);
-    else if (newModel.isRealMode())
-      realTime.setSelected(true);
-    else
-      clockTime.setSelected(true);
     updateDescription();
     int n = newModel.getHistoryLimit();
     unlimited.setSelected(n == 0);
     if (n > 0)
       limit.setValue(n);
+    SignalInfo clockSource = newModel.getClockSourceInfo();
+    if (clockSource == null) {
+      clockSrcButton.setIcon(null);
+      clockSrcButton.setText(S.get("clockSourceNone"));
+    } else {
+      clockSrcButton.setIcon(clockSource.icon);
+      clockSrcButton.setText(clockSource.getDisplayName());
+    }
   }
 
+  // Other than mode, which can spontaneously move from CLOCK to STEP, we don't
+  // care about any other changes to the model.
+  @Override
+  public void signalsReset(Model.Event event) { }
+  @Override
+  public void signalsExtended(Model.Event event) { }
+  @Override
+  public void filePropertyChanged(Model.Event event) { }
+  @Override
+  public void selectionChanged(Model.Event event) { }
+  @Override
+  public void modeChanged(Model.Event event) {
+    Model m = getLogFrame().getModel();
+    if (m.isStepMode())
+      stepTime.setSelected(true);
+    else if (m.isRealMode())
+      realTime.setSelected(true);
+    else
+      clockTime.setSelected(true);
+  }
+  @Override
+  public void historyLimitChanged(Model.Event event) { }
 }

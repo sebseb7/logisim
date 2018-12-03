@@ -50,7 +50,7 @@ class SelectionPanel extends LogPanel {
 
   public SelectionPanel(LogFrame window) {
     super(window);
-    selector = new ComponentSelector(getModel());
+    selector = new ComponentSelector(getModel().getCircuit(), ComponentSelector.ANY_SIGNAL);
     list = new SelectionList();
     list.setLogModel(getModel());
 
@@ -138,7 +138,7 @@ class SelectionPanel extends LogPanel {
 
   @Override
   public void modelChanged(Model oldModel, Model newModel) {
-    selector.setLogModel(newModel);
+    selector.setRootCircuit(newModel.getCircuit());
     list.setLogModel(newModel);
   }
 

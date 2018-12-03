@@ -32,12 +32,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.Window;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.WeakHashMap;
-
-import javax.swing.JLabel;
 
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.circuit.CircuitState;
@@ -50,7 +45,6 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.gui.hex.HexFrame;
-import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;

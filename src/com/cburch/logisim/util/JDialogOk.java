@@ -90,9 +90,6 @@ public abstract class JDialogOk extends JDialog {
     configure(withCancel);
   }
 
-  public void cancelClicked() {
-  }
-
   private void configure(boolean withCancel) {
     MyListener listener = new MyListener();
     this.addWindowListener(listener);
@@ -138,6 +135,8 @@ public abstract class JDialogOk extends JDialog {
     return contents;
   }
 
+  public void cancelClicked() { }
+  
   public abstract void okClicked();
 
 }

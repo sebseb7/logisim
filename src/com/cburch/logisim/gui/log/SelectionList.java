@@ -117,9 +117,7 @@ public class SelectionList extends JTable {
 
   }
 
-  private class SignalInfoRenderer extends DefaultTableCellRenderer implements Icon {
-    Component comp;
-    Object opt;
+  private class SignalInfoRenderer extends DefaultTableCellRenderer {
     @Override
     public java.awt.Component getTableCellRendererComponent(JTable table,
         Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -127,36 +125,12 @@ public class SelectionList extends JTable {
           value, isSelected, hasFocus, row, column);
       if (ret instanceof JLabel && value instanceof SignalInfo) {
         JLabel label = (JLabel) ret;
-        SignalInfo item = (SignalInfo) value;
-        comp = item.getComponent();
-        opt = item.getOption();
-        label.setIcon(this);
+        SignalInfo item = (SignalInfo)value;
+        label.setIcon(item.icon);
         label.setText(item.toString() + " [" + item.getRadix().toDisplayString() + "]");
       }
       return ret;
     }
-
-    @Override
-    public int getIconHeight() { return 20; }
-    @Override
-    public int getIconWidth() { return 20; }
-
-    @Override
-    public void paintIcon(java.awt.Component c, Graphics g, int x, int y) {
-      if (comp == null)
-        return;
-      if (opt != null) {
-        // todo
-        g.setColor(Color.MAGENTA);
-        g.fillRect(x+3, x+3, 15, 15);
-      } else {
-        Graphics g2 = g.create();
-        ComponentDrawContext context = new ComponentDrawContext(c, null, null, g, g2);
-        comp.getFactory().paintIcon(context, x, y, comp.getAttributeSet());
-        g2.dispose();
-      }
-    }
-
   }
 
   class SignalInfoEditor extends AbstractCellEditor implements TableCellEditor {
@@ -184,7 +158,7 @@ public class SelectionList extends JTable {
           @Override
           public void actionPerformed(ActionEvent e) {              
             for (SignalInfo s : items)
-              s.setRadix(r);
+              logModel.setRadix(s, r);
             if (item != null)
               label.setText(item.toString() + " [" + item.getRadix().toDisplayString() + "]");
             SelectionList.this.repaint();

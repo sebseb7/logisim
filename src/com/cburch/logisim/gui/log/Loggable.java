@@ -39,7 +39,7 @@ public interface Loggable {
 
   public BitWidth getBitWidth(Object option); // { return null; }
 
-  public Object[] getLogOptions(CircuitState state);
+  public Object[] getLogOptions();
 
   public Value getLogValue(CircuitState state, Object option);
 
