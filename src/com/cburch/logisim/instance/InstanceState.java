@@ -54,7 +54,7 @@ public interface InstanceState {
 
   public Project getProject();
 
-  public long getTickCount();
+  public int getTickCount();
 
   public boolean isCircuitRoot();
 

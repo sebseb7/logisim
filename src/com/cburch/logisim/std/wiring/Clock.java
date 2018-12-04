@@ -99,19 +99,32 @@ public class Clock extends InstanceFactory {
 
     @Override
     public void mouseReleased(InstanceState state, MouseEvent e) {
-      if (isPressed && isInside(state, e)) {
-        ClockState myState = (ClockState) state.getData();
-        myState.sending = myState.sending.not();
-        myState.clicks++;
-        state.fireInvalidated();
-      }
+      if (isPressed && isInside(state, e))
+        state.getProject().getSimulator().tick(1); // all clocks tick together
       isPressed = false;
     }
   }
 
   private static class ClockState implements InstanceData, Cloneable {
-    Value sending = Value.FALSE;
-    int clicks = 0;
+    Value sending = Value.UNKNOWN;
+    int currentTick;
+
+    ClockState(int curTick, AttributeSet attrs) {
+      updateTick(curTick, attrs);
+    }
+
+    boolean updateTick(int ticks, AttributeSet attrs) {
+      int durationHigh = attrs.getValue(ATTR_HIGH).intValue();
+      int durationLow = attrs.getValue(ATTR_LOW).intValue();
+      int cycle = durationHigh + durationLow;
+      int phase = ((attrs.getValue(ATTR_PHASE).intValue() % cycle) + cycle) % cycle;
+      boolean isLow = ((ticks + phase) % cycle) < durationLow;
+      Value desired = (isLow ? Value.FALSE : Value.TRUE);
+      if (sending.equals(desired))
+        return false;
+      sending = desired;
+      return true;
+    }
 
     @Override
     public ClockState clone() {
@@ -126,36 +139,26 @@ public class Clock extends InstanceFactory {
   private static ClockState getState(InstanceState state) {
     ClockState ret = (ClockState) state.getData();
     if (ret == null) {
-      ret = new ClockState();
+      ret = new ClockState(state.getTickCount(), state.getAttributeSet());
       state.setData(ret);
     }
     return ret;
   }
 
-  //
-  // package methods
-  //
   public static boolean tick(CircuitState circState, int ticks, Component comp) {
     AttributeSet attrs = comp.getAttributeSet();
-    int durationHigh = attrs.getValue(ATTR_HIGH).intValue();
-    int durationLow = attrs.getValue(ATTR_LOW).intValue();
     ClockState state = (ClockState) circState.getData(comp);
+    boolean dirty = false;
     if (state == null) {
-      state = new ClockState();
+      state = new ClockState(ticks, attrs);
       circState.setData(comp, state);
-    }
-    boolean curValue = ticks % (durationHigh + durationLow) < durationLow;
-    if (state.clicks % 2 == 1) {
-      curValue = !curValue;
-    }
-    Value desired = (curValue ? Value.FALSE : Value.TRUE);
-    if (!state.sending.equals(desired)) {
-      state.sending = desired;
-      Instance.getInstanceFor(comp).fireInvalidated();
-      return true;
+      dirty = true;
     } else {
-      return false;
+      dirty = state.updateTick(ticks, attrs);
     }
+    if (dirty)
+      Instance.getInstanceFor(comp).fireInvalidated();
+    return true;
   }
 
   public static final Attribute<Integer> ATTR_HIGH = new DurationAttribute(
@@ -165,6 +168,9 @@ public class Clock extends InstanceFactory {
   public static final Attribute<Integer> ATTR_LOW = new DurationAttribute(
       "lowDuration", S.getter("clockLowAttr"), 1, Integer.MAX_VALUE);
 
+  public static final Attribute<Integer> ATTR_PHASE = new DurationAttribute(
+      "phaseOffset", S.getter("clockPhaseAttr"), 0, Integer.MAX_VALUE);
+
   public static final Clock FACTORY = new Clock();
 
   private static final Icon toolIcon = Icons.getIcon("clock.gif");
@@ -172,10 +178,10 @@ public class Clock extends InstanceFactory {
   public Clock() {
     super("Clock", S.getter("clockComponent"));
     setAttributes(
-        new Attribute[] { StdAttr.FACING, ATTR_HIGH, ATTR_LOW,
+        new Attribute[] { StdAttr.FACING, ATTR_HIGH, ATTR_LOW, ATTR_PHASE, 
           StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT },
           new Object[] { Direction.EAST, Integer.valueOf(1),
-            Integer.valueOf(1), "", Direction.WEST,
+            Integer.valueOf(1), Integer.valueOf(0), "", Direction.WEST,
             StdAttr.DEFAULT_LABEL_FONT });
     setFacingAttribute(StdAttr.FACING);
     setInstanceLogger(ClockLogger.class);
@@ -278,6 +284,7 @@ public class Clock extends InstanceFactory {
     y += 10;
     int[] xs = { x - 6, x - 6, x, x, x + 6, x + 6 };
     int[] ys;
+    // todo: also draw current phase as a number, if cycle != 2
     if (drawUp) {
       ys = new int[] { y, y - 4, y - 4, y + 4, y + 4, y };
     } else {

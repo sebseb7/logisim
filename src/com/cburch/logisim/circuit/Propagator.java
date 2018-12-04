@@ -244,7 +244,7 @@ public class Propagator {
   }
 
   public int getTickCount() {
-    return halfClockCycles / 2;
+    return halfClockCycles;
   }
 
   public boolean isOscillating() {
@@ -343,6 +343,7 @@ public class Propagator {
   }
 
   void reset() {
+    halfClockCycles = 0;
     toProcess.clear();
     root.reset();
     isOscillating = false;

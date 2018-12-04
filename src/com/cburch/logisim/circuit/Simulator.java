@@ -313,7 +313,7 @@ public class Simulator {
         lastTick = now;
         ticked = true;
         if (prop != null)
-          prop.toggleClocks();
+          prop.toggleClocks(); // ignore return value for now
       }
 
       if (doProp || doNudge) try {

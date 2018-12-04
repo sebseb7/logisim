@@ -106,7 +106,7 @@ public class InstanceStateImpl implements InstanceState {
     return circuitState.getProject();
   }
 
-  public long getTickCount() {
+  public int getTickCount() {
     return circuitState.getPropagator().getTickCount();
   }
 
