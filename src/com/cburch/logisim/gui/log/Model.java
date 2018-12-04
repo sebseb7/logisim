@@ -120,9 +120,7 @@ public class Model implements CircuitListener, SignalInfo.Listener {
       clockSource = clocks.get(0);
     } else if (clocks != null && clocks.size() > 1) {
       // If multiple are present, ask user to select, with STEP as fallback.
-      System.out.println("1 making model");
       clockSource = ClockSource.doClockMultipleObserverDialog(circ);
-      System.out.println("1 " + clockSource);
     }
     if (clockSource != null) {
       if (!info.contains(clockSource))
@@ -314,11 +312,7 @@ public class Model implements CircuitListener, SignalInfo.Listener {
         clockSource = clocks.get(0);
       } else if (clocks != null && clocks.size() > 1) {
         // If multiple are present, ask user to select
-      try  { throw new Exception(); }
-      catch (Exception e) { e.printStackTrace(); }
-      System.out.println("2 setting mode from " + mode);
         clockSource = ClockSource.doClockMultipleObserverDialog(circ);
-      System.out.println("2 " + clockSource);
       } else if (clocks != null) {
         // No clocks, but other suitable things, ask user to select
         clockSource = ClockSource.doClockMissingObserverDialog(circ);
