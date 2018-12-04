@@ -267,6 +267,11 @@ public class LeftPanel extends JPanel {
 		add(table, BorderLayout.CENTER);
 	}
 
+  public void setModel(Model m) {
+    model = m;
+    updateSignals();
+  }
+
 	public void changeSpotlight(Signal oldSignal, Signal newSignal) {
     if (oldSignal != null)
       tableModel.fireTableRowsUpdated(oldSignal.idx, oldSignal.idx);

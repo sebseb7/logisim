@@ -118,6 +118,12 @@ public class RightPanel extends JPanel {
 
     updateSignals();
 	}
+  
+  public void setModel(Model m) {
+    model = m;
+    setSignalCursorX(Integer.MAX_VALUE);
+    updateSignals();
+  }
 
   int indexOf(Signal s) {
     int n = rows.size();

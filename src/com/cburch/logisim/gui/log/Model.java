@@ -47,14 +47,18 @@ import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
 public class Model implements CircuitListener, SignalInfo.Listener {
 
   public static final int STEP = 10;
   public static final int REAL = 20;
-  public static final int CLOCK = 30;
+  private static final int CLOCKED = 30; // above this are all clocked modes
+  public static final int CLOCK_DUAL = 30;
+  public static final int CLOCK_RISING = 40;
+  public static final int CLOCK_FALLING = 50;
+  public static final int CLOCK_HIGH = 60;
+  public static final int CLOCK_LOW = 70;
 
   public static final int COARSE = 1;
   public static final int FINE = 2;
@@ -77,6 +81,7 @@ public class Model implements CircuitListener, SignalInfo.Listener {
   private long tEnd = -1; // signals go from 0 <= t < tEnd
   private Signal spotlight;
   private SignalInfo clockSource;
+  private Value curClockVal;
 
   private EventSourceWeakSupport<Listener> listeners = new EventSourceWeakSupport<>();
   private boolean fileEnabled = false;
@@ -85,9 +90,10 @@ public class Model implements CircuitListener, SignalInfo.Listener {
   private boolean selected = false;
   private LogThread logger = null;
   private int mode = STEP, granularity = COARSE;
-  private long timeScale = 5000, gateDelay = 10;
-  private int cycleLength = 2;
+  private long timeScale = 5000, gateDelay = 200;
   private int historyLimit = 400;
+  private long elapsedSinceTrigger;
+  private long lastRealtimeUpdate;
 
   public Model(CircuitState root) {
     circuitState = root;
@@ -125,11 +131,14 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     if (clockSource != null) {
       if (!info.contains(clockSource))
         info.add(0, clockSource); // put it at the top of the list
-      mode = CLOCK;
+      else
+        info.add(0, info.remove(info.indexOf(clockSource)));
+      mode = CLOCK_DUAL;
+      curClockVal = clockSource.fetchValue(circuitState);
     }
 
     // set up initial signal values (after sorting and adding clock source)
-    long duration = isFine() ? gateDelay : timeScale;
+    long duration = captureContinuous() ? gateDelay : timeScale;
     for (int i = 0; i < info.size(); i++) {
       SignalInfo item = info.get(i);
       signals.add(new Signal(i, item, item.fetchValue(circuitState),
@@ -186,8 +195,8 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     if (s == clockSource) {
       clockSource.setListener(null); // redundant if info contains s
       clockSource = null;
-      if (mode == CLOCK)
-        setStepMode(timeScale, gateDelay);
+      if (mode >= CLOCKED)
+        setStepMode(isFine(), timeScale, gateDelay);
     }
     remove(s);
   }
@@ -261,14 +270,21 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     return gateDelay;
   }
 
-  public int getCycleLength() {
-    return cycleLength;
-  }
-
   public boolean isStepMode() { return mode == STEP; }
   public boolean isRealMode() { return mode == REAL; }
-  public boolean isClockMode() { return mode == CLOCK; }
+  public boolean isClockMode() { return mode >= CLOCKED; }
+  public int getClockDiscipline() { return mode >= CLOCKED ? mode : 0; }
   public boolean isFine() { return granularity == FINE; }
+  public boolean isCoarse() { return granularity != FINE; }
+
+  private static final Value HI = Value.TRUE;
+  private static final Value LO = Value.FALSE;
+
+  private boolean captureContinuous() {
+    return isFine()
+      || (mode == CLOCK_HIGH && curClockVal.equals(HI))
+      || (mode == CLOCK_LOW && curClockVal.equals(LO));
+  }
 
   public int getHistoryLimit() {
     return historyLimit;
@@ -282,8 +298,8 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     fireHistoryLimitChanged(null);
   }
 
-  public void setStepMode(long t, long d) {
-    int g = d > 0 ? FINE : COARSE;
+  public void setStepMode(boolean fine, long t, long d) {
+    int g = fine ? FINE : COARSE;
     if (mode == STEP && granularity == g && timeScale == t && gateDelay == d)
       return;
     timeScale = t;
@@ -299,9 +315,9 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     setMode(REAL, g);
   }
 
-  public void setClockMode(long t, int n, long d) {
-    int g = d > 0 ? FINE : COARSE;
-    if (mode == CLOCK && granularity == g && timeScale == t && cycleLength == n && gateDelay == d)
+  public void setClockMode(boolean fine, int discipline, long t, long d) {
+    int g = fine ? FINE : COARSE;
+    if (mode == discipline && granularity == g && timeScale == t && gateDelay == d)
       return;
     if (clockSource == null) {
       Circuit circ = circuitState.getCircuit();
@@ -333,14 +349,15 @@ public class Model implements CircuitListener, SignalInfo.Listener {
       }
     }
     timeScale = t;
-    cycleLength = n;
     gateDelay = d;
-    setMode(CLOCK, g);
+    setMode(discipline, g);
   }
 
   private void setMode(int m, int g) {
     mode = m;
     granularity = g;
+    simulatorReset();
+    fireSignalsExtended(null); // reset, not extended, but works fine for now
     fireModeChanged(null);
   }
 
@@ -501,49 +518,167 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     return selected;
   }
 
-  public void propagationCompleted(boolean ticked, boolean stepped, boolean propagated) {
-    if (isClockMode() && !isFine()) {
-      long duration = timeScale;
-      if (ticked) {
-        for (Signal s : signals) {
-          Value v = s.info.fetchValue(circuitState);
-          s.extend(v, duration);
-        }
-        tEnd += duration;
-        fireSignalsExtended(null);
-      } else {
-        // back-date transient changes to the start of the most recent tick
-        for (Signal s : signals) {
-          Value v = s.info.fetchValue(circuitState);
-          s.replaceRecent(v, duration);
-        }
-        fireSignalsExtended(null); // not really "extended", but works fine
-      }
-      return;
-    }
-    long duration;
-    if (ticked || propagated)
-      duration = timeScale;
-    else if (stepped && isFine())
-      duration = gateDelay;
-    else
-      return;
-
+  private void extendWithOldValues(long duration) {
     for (Signal s : signals) {
       Value v = s.info.fetchValue(circuitState);
-      s.extend(v, duration);
+      s.extend(duration);
     }
+    elapsedSinceTrigger += duration;
     tEnd += duration;
     fireSignalsExtended(null);
   }
 
+  private void extendWithNewValues(long duration) {
+    for (Signal s : signals) {
+      Value v = s.info.fetchValue(circuitState);
+      s.extend(v, duration);
+    }
+    elapsedSinceTrigger += duration;
+    tEnd += duration;
+    fireSignalsExtended(null);
+  }
+
+  private void replaceWithNewValues(long duration) {
+    for (Signal s : signals) {
+      Value v = s.info.fetchValue(circuitState);
+      s.replaceRecent(v, duration);
+    }
+    fireSignalsExtended(null); // changed, not extended, but works fine for now
+  }
+
+  public void propagationCompleted(boolean ticked, boolean stepped, boolean propagated) {
+    if (!stepped && !propagated) {
+      // No signals have changed. This was a nudge that resulted in no signal
+      // changes, or a tick in single-step mode that hasn't yet propagated
+      // anywhere. There is nothing to record.
+      return;
+    }
+    if (isCoarse() && !propagated) {
+      // This is a transient fluctuation that can be entirely ignored.
+      return;
+    }
+    if (mode == STEP)
+      updateSignalsStepMode(propagated);
+    else if (mode == REAL)
+      updateSignalsRealMode();
+    else if (mode >= CLOCKED)
+      updateSignalsClockMode();
+  }
+
+  private void updateSignalsStepMode(boolean stable) {
+    long duration = stable ? timeScale : gateDelay;
+    extendWithNewValues(duration);
+  }
+
+  private void updateSignalsRealMode() {
+    long now = System.nanoTime();
+    double duration = (lastRealtimeUpdate - now) * (double)timeScale / 1000000000;
+    extendWithNewValues(Math.min((long)duration, 1));
+    lastRealtimeUpdate = now;
+  }
+
+  private void updateSignalsClockMode() {
+    // We ignore the simulator's notion of ticked, relying instead on looking
+    // at specific transitions or levels of the chosen clockSource.
+    Value v = clockSource.fetchValue(circuitState);
+    ClockSource.CycleInfo cc = ClockSource.getCycleInfo(clockSource);
+    if (mode == CLOCK_HIGH && v.equals(HI) || mode == CLOCK_LOW && v.equals(LO)) {
+      // Active level-senstive clock, either fine or coarse. Finish out
+      // previous stable period, then start a new active period counting as
+      // gate-delay.
+      long activeDuration = (mode == CLOCK_HIGH ? cc.hi : cc.lo);
+      long stableDuration = (mode == CLOCK_HIGH ? cc.lo : cc.hi);
+      if (!v.equals(curClockVal)) {
+        if (elapsedSinceTrigger < activeDuration)
+          extendWithOldValues(stableDuration - elapsedSinceTrigger);
+        elapsedSinceTrigger = 0;
+        curClockVal = v;
+      }
+      long duration = gateDelay;
+      extendWithNewValues(duration);
+    } else if (mode == CLOCK_HIGH || mode == CLOCK_LOW) {
+      // Inactive level-sensitive clock, either fine or coarse.
+      long activeDuration = (mode == CLOCK_HIGH ? cc.hi : cc.lo);
+      long stableDuration = (mode == CLOCK_HIGH ? cc.lo : cc.hi);
+      if (!v.equals(curClockVal)) {
+        // just went inactive, so finish out the active period
+        // then start a new stable period
+        if (elapsedSinceTrigger < activeDuration)
+          extendWithOldValues(activeDuration - elapsedSinceTrigger);
+        elapsedSinceTrigger = 0;
+        curClockVal = v;
+        long duration = isFine() ? gateDelay : stableDuration;
+        extendWithNewValues(duration);
+      } else if (isCoarse()) {
+        // back-date transient changes to the start of current stable period
+        replaceWithNewValues(stableDuration);
+      } else {
+        // fine-grained, but still inactive
+        long duration = gateDelay;
+        extendWithNewValues(duration);
+      }
+    } else {
+      // Edge-triggered clock, fine or coarse.
+      int ticks = (mode == CLOCK_DUAL)
+          ? (v.equals(Value.FALSE) ? cc.lo : cc.hi)
+          : cc.ticks;
+      int prevTicks = (mode == CLOCK_DUAL)
+          ? (v.equals(Value.FALSE) ? cc.hi : cc.lo)
+          : cc.ticks;
+      long stableDuration = timeScale * ticks;
+      long prevDuration = timeScale * prevTicks;
+      long duration = isFine() ? gateDelay : stableDuration;
+      boolean triggered = (mode == CLOCK_DUAL && !v.equals(curClockVal))
+          || (mode == CLOCK_RISING && v.equals(HI) && !curClockVal.equals(HI))
+          || (mode == CLOCK_FALLING && v.equals(LO) && !curClockVal.equals(LO));
+      curClockVal = v;
+      if (triggered) {
+        // Finish out previous stable period, then start a new one.
+        if (isFine() && elapsedSinceTrigger < prevDuration)
+          extendWithOldValues(prevDuration - elapsedSinceTrigger);
+        elapsedSinceTrigger = 0;
+        extendWithNewValues(duration);
+      } else if (isCoarse()) {
+        // back-date transient changes to the start of current stable period
+        replaceWithNewValues(stableDuration);
+      } else {
+        // fine-grained, transient changes
+        extendWithNewValues(duration);
+      }
+    }
+  }
+    
   public void simulatorReset() {
-    long duration = isFine() ? gateDelay : timeScale;
-    // long duration = 1;
+    long duration;
+    if (mode >= CLOCKED) {
+      curClockVal = clockSource.fetchValue(circuitState);
+      ClockSource.CycleInfo cc = ClockSource.getCycleInfo(clockSource);
+      if (captureContinuous()) { // fine-grained, or active level-sensitive clock
+          duration = gateDelay;
+      } else if (mode == CLOCK_HIGH || mode == CLOCK_LOW) { // inactive level-sensitive
+        long activeDuration = (mode == CLOCK_HIGH ? cc.hi : cc.lo);
+        long stableDuration = (mode == CLOCK_HIGH ? cc.lo : cc.hi);
+        duration = isFine() ? gateDelay : stableDuration;
+      } else { // edge-triggered clock, fine or coarse
+        int ticks = (mode == CLOCK_DUAL)
+            ? (curClockVal.equals(Value.FALSE) ? cc.lo : cc.hi)
+            : cc.ticks;
+        long stableDuration = timeScale * ticks;
+        duration = isFine() ? gateDelay : stableDuration;
+      }
+    } else if (mode == STEP) {
+      duration = timeScale;
+    } else { // mode == REAL
+      duration = gateDelay;
+    }
+    if (mode == REAL)
+      lastRealtimeUpdate = System.nanoTime();
+    elapsedSinceTrigger = 0;
     for (Signal s: signals) {
       Value v = s.info.fetchValue(circuitState);
       s.reset(v, duration);
     }
+    elapsedSinceTrigger += duration;
     tEnd = duration;
 	}
 

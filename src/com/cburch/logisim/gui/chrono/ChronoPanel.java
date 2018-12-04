@@ -381,10 +381,10 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
   // todo merge SignalInfo and Signal to preserve waveforms?
   @Override
   public void modelChanged(Model oldModel, Model newModel) {
+    System.out.println("chrono setmodel: " + newModel);
     setModel(newModel);
-    setSignalCursorX(Integer.MAX_VALUE);
-    leftPanel.updateSignals();
-    rightPanel.updateSignals();
+    rightPanel.setModel(newModel);
+    leftPanel.setModel(newModel);
   }
 
 //  class ChronoMenuListener extends MenuListener {

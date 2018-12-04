@@ -39,6 +39,8 @@ import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.util.JDialogOk;
 import com.cburch.logisim.util.StringGetter;
 
@@ -121,4 +123,27 @@ public class ClockSource extends JDialogOk {
     dialog.show();
     return dialog.item;
   }
+
+  public static class CycleInfo {
+    public int hi, lo, phase, ticks;
+    public CycleInfo(int h, int l, int p) {
+      hi = h;
+      lo = l;
+      phase = p;
+      ticks = hi + lo;
+    }
+  }
+  public static final CycleInfo DEFAULT_CYCLE_INFO = new CycleInfo(1, 1, 0);
+
+  public static CycleInfo getCycleInfo(SignalInfo clockSource) {
+    Component clk = clockSource.getComponent();
+    if (clk.getFactory() instanceof Clock) {
+      int hi = clk.getAttributeSet().getValue(Clock.ATTR_HIGH);
+      int lo = clk.getAttributeSet().getValue(Clock.ATTR_LOW);
+      int phase = clk.getAttributeSet().getValue(Clock.ATTR_PHASE);
+      return new CycleInfo(hi, lo, phase);
+    }
+    return DEFAULT_CYCLE_INFO;
+  }
+
 }

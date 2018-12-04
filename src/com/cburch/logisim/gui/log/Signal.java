@@ -46,7 +46,6 @@ public class Signal {
   // Signal position in list, name, etc.
   public int idx;
   public final SignalInfo info;
-  private int width;
 
   // Signal data
   private long tStart;
@@ -60,7 +59,6 @@ public class Signal {
   public Signal(int idx, SignalInfo info, Value initialValue, long duration, long tStart, int maxSize) {
     this.idx = idx;
     this.info = info;
-    this.width = info.getWidth();
     this.tStart = tStart;
     this.maxSize = maxSize;
     this.val = new Value[1][maxSize == 0 || maxSize > CHUNK ? CHUNK : maxSize];
@@ -74,9 +72,19 @@ public class Signal {
     return curSize == maxSize ? tStart : 0;
   }
 
+  public void extend(long duration) {
+    if (last == null) {
+      tStart += duration;
+    } else {
+      int i = (firstIndex + curSize - 1) % curSize;
+      dur[i/CHUNK][i%CHUNK] += duration;
+    }
+  }
+
   public void extend(Value v, long duration) {
-    if (v.getWidth() != width)
-      System.out.println("*** notice: value width mismatch for " + info);
+    if (v.getWidth() != info.getWidth())
+      System.out.printf("*** notice: value width mismatch for %s: width=%d bits, newVal=%s (%d bits)\n",
+          info, info.getWidth(), v, v.getWidth());
     if (last != null && last.equals(v)) {
       // firstIndex != 0 iff maxSize>0 && curSize == maxSize
       int i = (firstIndex + curSize - 1) % curSize;
@@ -119,14 +127,36 @@ public class Signal {
     if (last == null || curSize == 0)
       throw new IllegalStateException("signal should have at least "+duration+" ns of data");
     int i = (firstIndex + curSize - 1) % curSize;
+    boolean checkMerge = true;
     if (dur[i/CHUNK][i%CHUNK] == duration) {
       val[i/CHUNK][i%CHUNK] = v;
       last = v;
+      int j = (i + curSize - 1) % curSize;
+      if (curSize > 1 && val[j/CHUNK][j%CHUNK].equals(v)) {
+        dur[j/CHUNK][j%CHUNK] += duration;
+        curSize--;
+        // special case: last chunk is now entirely empty, must be removed
+        if (i%CHUNK == 0) {
+          int c = val.length - 1;
+          Value[][] vNew = new Value[c][];
+          long[][] dNew = new long[c][];
+          System.arraycopy(val, 0, vNew, 0, c);
+          System.arraycopy(dur, 0, dNew, 0, c);
+          val = vNew;
+          dur = dNew;
+        }
+      }
     } else if (dur[i/CHUNK][i%CHUNK] > duration) {
       dur[i/CHUNK][i%CHUNK] -= duration;
       extend(v, duration);
+    } else if (curSize == 1 && dur[i/CHUNK][i%CHUNK] + tStart >= duration) {
+      tStart -= (duration - dur[i/CHUNK][i%CHUNK]);
+      val[i/CHUNK][i%CHUNK] = v;
+      dur[i/CHUNK][i%CHUNK] = duration;
+      last = v;
     } else {
-      throw new IllegalStateException("signal data should be at least "+duration+" ns in duration");
+      throw new IllegalStateException("signal data should be at least "+duration+" ns in duration,"
+          + " but only " + dur[i/CHUNK][i%CHUNK] + " in last signal");
     }
   }
 
@@ -231,6 +261,7 @@ public class Signal {
       position = 0;
       time = tStart;
       int i = firstIndex;
+      int width = info.getWidth();
       value = val[i/CHUNK][i%CHUNK].extendWidth(width, Value.FALSE);
       duration = dur[i/CHUNK][i%CHUNK];
     }
@@ -254,6 +285,7 @@ public class Signal {
       position++;
       time += duration;
       int i = (firstIndex + position) % curSize;
+      int width = info.getWidth();
       value = val[i/CHUNK][i%CHUNK].extendWidth(width, Value.FALSE);
       duration = dur[i/CHUNK][i%CHUNK];
       return true;
@@ -282,6 +314,7 @@ public class Signal {
   public Value getValue(long t) { // always current width, even when width changes
     if (t < tStart)
       return null;
+    int width = info.getWidth();
     long tt = tStart;
     for (int p = 0; p < curSize; p++) {
       int i = (firstIndex + p) % curSize;
@@ -303,11 +336,13 @@ public class Signal {
   }
 
   public String getFormattedMaxValue() {
+    int width = info.getWidth();
     // todo: signed decimal should maybe use a large positive value?
     return format(Value.createKnown(BitWidth.create(width), -1));
   }
 
   public String getFormattedMinValue() {
+    int width = info.getWidth();
     // todo: signed decimal should maybe use a large negative value?
     return format(Value.createKnown(BitWidth.create(width), 0));
   }
@@ -317,7 +352,7 @@ public class Signal {
   }
 
   public int getWidth() {
-    return width;
+    return info.getWidth();
   }
 
   private boolean expanded; // todo: this doesn't belong here
