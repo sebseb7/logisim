@@ -50,12 +50,15 @@ public class ClockHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   public static final int PositiveEdgeTickIndex = 2;
   public static final int NegativeEdgeTickIndex = 3;
   public static final int GlobalClockIndex = 4;
+
   private static final String HighTickStr = "HighTicks";
   private static final int HighTickId = -1;
   private static final String LowTickStr = "LowTicks";
   private static final int LowTickId = -2;
+  private static final String PhaseStr = "Phase";
+  private static final int PhaseId = -3;
   private static final String NrOfBitsStr = "NrOfBits";
-  private static final int NrOfBitsId = -3;
+  private static final int NrOfBitsId = -4;
 
   private String GetClockNetName(Component comp, Netlist TheNets) {
     StringBuffer Contents = new StringBuffer();
@@ -87,10 +90,16 @@ public class ClockHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     Contents.addAll(MakeRemarkBlock(
           "Here the output signals are defines; we synchronize them all on the main clock",
           3, HDLType));
+    int HighTicks = attrs.getValue(Clock.ATTR_HIGH).intValue();
+    int LowTicks = attrs.getValue(Clock.ATTR_LOW).intValue();
+    int Phase = attrs.getValue(Clock.ATTR_PHASE).intValue();
+    if (Phase != 0) {
+      Reporter.AddFatalError("Clock component detected with " +Phase+ " tick phase offset,"
+          + " but currently only 0 tick phase offset is supported for FPGA synthesis.");
+    }
+
     if (TheNetlist.RawFPGAClock()) {
-      int HighTicks = attrs.getValue(Clock.ATTR_HIGH).intValue();
-      int LowTicks = attrs.getValue(Clock.ATTR_LOW).intValue();
-      if (HighTicks != 1 || LowTicks != 1) {
+      if (HighTicks != LowTicks) {
         Reporter.AddFatalError("Clock component detected with " +HighTicks+":"+LowTicks+ " hi:lo duty cycle,"
             + " but maximum clock speed was selected. Only 1:1 duty cycle is supported with "
             + " maximum clock speed.");
@@ -129,8 +138,8 @@ public class ClockHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       Contents.add("   end");
     }
     Contents.add("");
-    Contents.addAll(MakeRemarkBlock("Here the control signals are defined",
-          3, HDLType));
+    Contents.addAll(MakeRemarkBlock("Here the control signals are defined", 3, HDLType));
+
     if (HDLType.equals(Settings.VHDL)) {
       Contents.add("   s_counter_is_zero <= '1' WHEN s_counter_reg = std_logic_vector(to_unsigned(0,"
           + NrOfBitsStr + ")) ELSE '0';");
@@ -220,6 +229,7 @@ public class ClockHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     SortedMap<Integer, String> Parameters = new TreeMap<Integer, String>();
     Parameters.put(HighTickId, HighTickStr);
     Parameters.put(LowTickId, LowTickStr);
+    Parameters.put(PhaseId, PhaseStr);
     Parameters.put(NrOfBitsId, NrOfBitsStr);
     return Parameters;
   }
@@ -232,6 +242,9 @@ public class ClockHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
         .getValue(Clock.ATTR_HIGH).intValue();
     int LowTicks = ComponentInfo.GetComponent().getAttributeSet()
         .getValue(Clock.ATTR_LOW).intValue();
+    int Phase = ComponentInfo.GetComponent().getAttributeSet()
+        .getValue(Clock.ATTR_PHASE).intValue();
+    Phase = Phase % (HighTicks + LowTicks);
     int MaxValue = (HighTicks > LowTicks) ? HighTicks : LowTicks;
     int nr_of_bits = 0;
     while (MaxValue != 0) {
@@ -240,6 +253,7 @@ public class ClockHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     }
     ParameterMap.put(HighTickStr, HighTicks);
     ParameterMap.put(LowTickStr, LowTicks);
+    ParameterMap.put(PhaseStr, Phase);
     ParameterMap.put(NrOfBitsStr, nr_of_bits);
     return ParameterMap;
   }
