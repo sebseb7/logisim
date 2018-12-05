@@ -92,7 +92,7 @@ public class LeftPanel extends JTable {
     }
     @Override
     public boolean isCellEditable(int row, int col) {
-      return col == 1;
+      return false;
     }
   }
 
@@ -200,7 +200,6 @@ public class LeftPanel extends JTable {
           }
         });
 
-    putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
     setDragEnabled(true);
     setDropMode(DropMode.INSERT_ROWS);
     TransferHandler ccp = new SignalTransferHandler();

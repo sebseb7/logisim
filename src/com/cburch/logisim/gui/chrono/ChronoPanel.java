@@ -35,6 +35,8 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -43,9 +45,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseWheelEvent;
+import java.awt.image.BufferedImage;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
 
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.Box;
 import javax.swing.InputMap;
@@ -69,9 +73,10 @@ import com.cburch.logisim.gui.log.Model;
 import com.cburch.logisim.gui.log.Signal;
 import com.cburch.logisim.gui.log.SignalInfo;
 import com.cburch.logisim.gui.main.SimulationToolbarModel;
-import com.cburch.logisim.gui.menu.LogisimMenuBar;
-// import com.cburch.logisim.gui.menu.PrintHandler;
 import com.cburch.logisim.gui.menu.EditHandler;
+import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.gui.menu.PrintHandler;
+import com.cburch.logisim.util.GraphicsUtil;
 
 public class ChronoPanel extends LogPanel implements Model.Listener {
 
@@ -622,97 +627,71 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
       leftPanel.getActionMap().get(action).actionPerformed(e);
     }
 
-    // @Override
-    // public void cut() {
-    //   ActionEvent e = new ActionEvent(leftPanel, ActionEvent.ACTION_PERFORMED, "cut");
-    //   Action a = leftPanel.getTransferHandler().getCutAction();
-    //   a.actionPerformed(e);
-    // }
-
-    // @Override
-    // public void copy() {
-    //   ActionEvent e = new ActionEvent(leftPanel, ActionEvent.ACTION_PERFORMED, "copy");
-    //   Action a = leftPanel.getTransferHandler().getCopyAction();
-    //   a.actionPerformed(e);
-    // }
-
-    // @Override
-    // public void paste() {
-    //   ActionEvent e = new ActionEvent(leftPanel, ActionEvent.ACTION_PERFORMED, "paste");
-    //   Action a = leftPanel.getTransferHandler().getPasteAction();
-    //   a.actionPerformed(e);
-    // }
-
-    // @Override
-    // public void selectAll() {
-    //   leftPanel.selectAll();
-    // }
-
-    // @Override
-    // public void delete() {
-    //   leftPanel.removeSelected();
-    // }
-
   };
 
-  // todo
-//  @Override
-//  PrintHandler getPrintHandler() {
-//    return printHandler;
-//  }
-//
-//  PrintHandler printHandler = new PrintHandler() {
-//    @Override
-//    public Dimension getExportImageSize() {
-//      int width = tableWidth;
-//      int height = headerHeight + bodyHeight;
-//      return new Dimension(width, height);
-//    }
-//
-//    @Override
-//    public void paintExportImage(BufferedImage img, Graphics2D g) {
-//      int width = img.getWidth();
-//      int height = img.getHeight();
-//      g.setClip(0, 0, width, height);
-//      header.paintComponent(g, true, width, headerHeight);
-//      g.translate(0, headerHeight);
-//      body.paintComponent(g, true, width, bodyHeight);
-//    }
-//
-//    @Override
-//    public int print(Graphics2D g, PageFormat pf, int pageNum, double w, double h) {
-//      FontMetrics fm = g.getFontMetrics();
-//
-//      // shrink horizontally to fit
-//      double scale = 1.0;
-//      if (tableWidth > w)
-//        scale = w / tableWidth;
-//
-//      // figure out how many pages we will need
-//      int n = getRowCount();
-//      double headHeight = (fm.getHeight() * 1.5 + headerHeight * scale);
-//      int rowsPerPage = (int)((h - headHeight) / (cellHeight * scale));
-//      int numPages = (n + rowsPerPage - 1) / rowsPerPage;
-//      if (pageNum >= numPages)
-//        return Printable.NO_SUCH_PAGE;
-//
-//      // g.drawRect(0, 0, (int)w-1, (int)h-1); // bage border
-//      GraphicsUtil.drawText(g,
-//          String.format("Combinational Analysis (page %d of %d)", pageNum+1, numPages),
-//          (int)(w/2), 0, GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
-//
-//      g.translate(0, fm.getHeight() * 1.5);
-//      g.scale(scale, scale);
-//      header.paintComponent(g, true, (int)(w/scale), headerHeight);
-//      g.translate(0, headerHeight);
-//
-//      int yHeight = cellHeight * rowsPerPage;
-//      int yTop = pageNum * yHeight;
-//      g.translate(0, -yTop);
-//      g.setClip(0, yTop, (int)(w/scale), yHeight);
-//      body.paintComponent(g, true, (int)(w/scale), bodyHeight);
-//
-//      return Printable.PAGE_EXISTS;
-//    }
-//  };
+  @Override
+  public PrintHandler getPrintHandler() {
+    return printHandler;
+  }
+
+  PrintHandler printHandler = new PrintHandler() {
+    @Override
+    public Dimension getExportImageSize() {
+      Dimension l = leftPanel.getPreferredSize();
+      Dimension r = rightPanel.getPreferredSize();
+      int width = l.width + 3 + r.width;
+      int height = HEADER_HEIGHT + l.height;
+      return new Dimension(width, height);
+    }
+
+    @Override
+    public void paintExportImage(BufferedImage img, Graphics2D g) {
+      Dimension l = leftPanel.getPreferredSize();
+      Dimension r = rightPanel.getPreferredSize();
+
+      g.setClip(0, 0, l.width, HEADER_HEIGHT);
+      leftPanel.getTableHeader().print(g); 
+
+      g.setClip(l.width + 3, 0, r.width, HEADER_HEIGHT);
+      g.translate(l.width + 3, 0);
+      rightPanel.getTimelineHeader().print(g);
+      g.translate(-(l.width + 3), 0);
+
+      g.setClip(0, HEADER_HEIGHT, l.width, l.height);
+      g.translate(0, HEADER_HEIGHT);
+      leftPanel.print(g);
+      g.translate(0, -HEADER_HEIGHT);
+
+      g.setClip(l.width + 3, HEADER_HEIGHT, r.width, l.height);
+      g.translate(l.width + 3, HEADER_HEIGHT);
+      rightPanel.print(g);
+      g.translate(-(l.width + 3), -HEADER_HEIGHT);
+    }
+
+    @Override
+    public int print(Graphics2D g, PageFormat pf, int pageNum, double w, double h) {
+      if (pageNum != 0)
+        return Printable.NO_SUCH_PAGE;
+
+      // shrink horizontally to fit
+      FontMetrics fm = g.getFontMetrics();
+      Dimension d = getExportImageSize();
+      double headerHeight = fm.getHeight() * 1.5;
+      double scale = 1.0;
+      if (d.width > w || d.height > (h-headerHeight))
+        scale = Math.min(w / d.width, (h-headerHeight) / d.height);
+
+      GraphicsUtil.drawText(g,
+          S.fmt("ChronoPrintTitle",
+              model.getCircuit().getName(),
+              getProject().getLogisimFile().getDisplayName()),
+          (int)(w/2), 0, GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
+
+      g.translate(0, fm.getHeight() * 1.5);
+      g.scale(scale, scale);
+      paintExportImage(null, g);
+
+      return Printable.PAGE_EXISTS;
+    }
+  };
 }
