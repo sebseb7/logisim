@@ -197,8 +197,8 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
 
     panels = new LogPanel[] {
       new ChronoPanel(this),
-      new TablePanel(this),
-      new FilePanel(this),
+      // new TablePanel(this), // todo: fix table panel
+      // new FilePanel(this), // todo: rethink file writer in light of signal rewriting
       new OptionsPanel(this),
     };
     tabbedPane = new JTabbedPane();
