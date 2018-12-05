@@ -608,45 +608,50 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
       setEnabled(LogisimMenuBar.DELETE, sel);
       setEnabled(LogisimMenuBar.DUPLICATE, false);
       setEnabled(LogisimMenuBar.SELECT_ALL, !empty);
-      // todo: raise/lower handlers
-      setEnabled(LogisimMenuBar.RAISE, false);
-      setEnabled(LogisimMenuBar.LOWER, false);
-      setEnabled(LogisimMenuBar.RAISE_TOP, false);
-      setEnabled(LogisimMenuBar.LOWER_BOTTOM, false);
+      setEnabled(LogisimMenuBar.RAISE, sel);
+      setEnabled(LogisimMenuBar.LOWER, sel);
+      setEnabled(LogisimMenuBar.RAISE_TOP, sel);
+      setEnabled(LogisimMenuBar.LOWER_BOTTOM, sel);
       setEnabled(LogisimMenuBar.ADD_CONTROL, false);
       setEnabled(LogisimMenuBar.REMOVE_CONTROL, false);
     }
 
     @Override
-    public void cut() {
-      ActionEvent e = new ActionEvent(leftPanel, ActionEvent.ACTION_PERFORMED, "cut");
-      Action a = leftPanel.getTransferHandler().getCutAction();
-      a.actionPerformed(e);
+    public void actionPerformed(ActionEvent e) {
+      Object action = e.getSource();
+      leftPanel.getActionMap().get(action).actionPerformed(e);
     }
 
-    @Override
-    public void copy() {
-      ActionEvent e = new ActionEvent(leftPanel, ActionEvent.ACTION_PERFORMED, "copy");
-      Action a = leftPanel.getTransferHandler().getCopyAction();
-      a.actionPerformed(e);
-    }
+    // @Override
+    // public void cut() {
+    //   ActionEvent e = new ActionEvent(leftPanel, ActionEvent.ACTION_PERFORMED, "cut");
+    //   Action a = leftPanel.getTransferHandler().getCutAction();
+    //   a.actionPerformed(e);
+    // }
 
-    @Override
-    public void paste() {
-      ActionEvent e = new ActionEvent(leftPanel, ActionEvent.ACTION_PERFORMED, "paste");
-      Action a = leftPanel.getTransferHandler().getPasteAction();
-      a.actionPerformed(e);
-    }
+    // @Override
+    // public void copy() {
+    //   ActionEvent e = new ActionEvent(leftPanel, ActionEvent.ACTION_PERFORMED, "copy");
+    //   Action a = leftPanel.getTransferHandler().getCopyAction();
+    //   a.actionPerformed(e);
+    // }
 
-    @Override
-    public void selectAll() {
-      leftPanel.selectAll();
-    }
+    // @Override
+    // public void paste() {
+    //   ActionEvent e = new ActionEvent(leftPanel, ActionEvent.ACTION_PERFORMED, "paste");
+    //   Action a = leftPanel.getTransferHandler().getPasteAction();
+    //   a.actionPerformed(e);
+    // }
 
-    @Override
-    public void delete() {
-      leftPanel.removeSelected();
-    }
+    // @Override
+    // public void selectAll() {
+    //   leftPanel.selectAll();
+    // }
+
+    // @Override
+    // public void delete() {
+    //   leftPanel.removeSelected();
+    // }
 
   };
 

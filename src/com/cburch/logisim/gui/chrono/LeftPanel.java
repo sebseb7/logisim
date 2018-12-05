@@ -68,6 +68,8 @@ import javax.swing.table.TableColumn;
 import com.cburch.logisim.gui.log.Model;
 import com.cburch.logisim.gui.log.Signal;
 import com.cburch.logisim.gui.log.SignalInfo;
+import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.gui.menu.LogisimMenuItem;
 
 // Left panel containing signal names
 public class LeftPanel extends JTable {
@@ -201,20 +203,53 @@ public class LeftPanel extends JTable {
     putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
     setDragEnabled(true);
     setDropMode(DropMode.INSERT_ROWS);
-    setTransferHandler(new SignalTransferHandler());
+    TransferHandler ccp = new SignalTransferHandler();
+    setTransferHandler(ccp);
 
     InputMap inputMap = getInputMap();
+    for (LogisimMenuItem item: LogisimMenuBar.EDIT_ITEMS) {
+      KeyStroke accel = chronoPanel.getLogFrame().getLogisimMenuBar().getAccelerator(item);
+      inputMap.put(accel, item);
+    }
+    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "ClearSelection");
+
     ActionMap actionMap = getActionMap();
-    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "Delete");
-    actionMap.put("Delete", new AbstractAction() {
+    actionMap.put("ClearSelection", new AbstractAction() {
+      public void actionPerformed(ActionEvent e) {
+        clearSelection();
+      }
+    });
+    actionMap.put(LogisimMenuBar.DELETE, new AbstractAction() {
       public void actionPerformed(ActionEvent e) {
         removeSelected();
       }
     });
-    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "ClearSelection");
-    actionMap.put("ClearSelection", new AbstractAction() {
+    actionMap.put(LogisimMenuBar.SELECT_ALL, new AbstractAction() {
       public void actionPerformed(ActionEvent e) {
-        clearSelection();
+        selectAll();
+      }
+    });
+    actionMap.put(LogisimMenuBar.CUT, ccp.getCutAction());
+    actionMap.put(LogisimMenuBar.COPY, ccp.getCopyAction());
+    actionMap.put(LogisimMenuBar.PASTE, ccp.getPasteAction());
+    actionMap.put(LogisimMenuBar.RAISE, new AbstractAction() {
+      public void actionPerformed(ActionEvent e) {
+        raiseOrLower(-1);
+      }
+    });
+    actionMap.put(LogisimMenuBar.LOWER, new AbstractAction() {
+      public void actionPerformed(ActionEvent e) {
+        raiseOrLower(+1);
+      }
+    });
+    actionMap.put(LogisimMenuBar.RAISE_TOP, new AbstractAction() {
+      public void actionPerformed(ActionEvent e) {
+        raiseOrLower(-2);
+      }
+    });
+    actionMap.put(LogisimMenuBar.LOWER_BOTTOM, new AbstractAction() {
+      public void actionPerformed(ActionEvent e) {
+        raiseOrLower(+2);
       }
     });
 
@@ -291,6 +326,35 @@ public class LeftPanel extends JTable {
     return signals;
   }
 
+  void setSelectedRows(Signal.List signals) {
+    clearSelection();
+    for (Signal s : signals) {
+      int i = model.indexOf(s.info);
+      if (i >= 0)
+        addRowSelectionInterval(i, i);
+    }
+  }
+
+  void raiseOrLower(int d) {
+    Signal.List sel = getSelectedValuesList();
+    int first = Integer.MAX_VALUE, last = -1;
+    for (Signal s : sel) {
+      first = Math.min(first, s.idx);
+      last = Math.max(last, s.idx);
+    }
+    if (last == -1)
+      return;
+    else if (d == -2)
+      model.addOrMoveSignals(sel, 0);
+    else if (d == -1)
+      model.addOrMoveSignals(sel, Math.max(0, first-1));
+    else if (d == +1)
+      model.addOrMoveSignals(sel, Math.min(model.getSignalCount(), last+2));
+    else
+      model.addOrMoveSignals(sel, model.getSignalCount());
+    setSelectedRows(sel);
+  }
+
   void removeSelected() {
     int idx = 0;
     Signal.List signals = getSelectedValuesList();
@@ -361,14 +425,8 @@ public class LeftPanel extends JTable {
           }
         }
         boolean change = model.addOrMoveSignals(incoming, newIdx);
-        if (change) {
-          clearSelection();
-          for (Signal s : incoming) {
-            int i = model.indexOf(s.info);
-            if (i >= 0)
-              addRowSelectionInterval(i, i);
-          }
-        }
+        if (change)
+          setSelectedRows(incoming);
         return change;
       } catch (UnsupportedFlavorException | IOException e) {
         e.printStackTrace();

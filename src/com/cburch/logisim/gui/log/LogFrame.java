@@ -57,6 +57,7 @@ import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
 import com.cburch.logisim.gui.chrono.ChronoPanel;
 import com.cburch.logisim.gui.generic.LFrame;
+import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
@@ -247,6 +248,10 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
         myChangeListener.stateChanged(null);
       }
     });
+  }
+
+  public LogisimMenuBar getLogisimMenuBar() {
+    return menubar;
   }
 
   public LogMenuListener getMenuListener() {

@@ -354,6 +354,7 @@ public class RightPanel extends JPanel {
 
 	private void paintCursor(Graphics2D g) {
     int x = getSignalCursorX();
+    g.setColor(Color.RED);
 		g.setStroke(new BasicStroke(1));
 		g.drawLine(x, 0, x, getHeight());
 	}
