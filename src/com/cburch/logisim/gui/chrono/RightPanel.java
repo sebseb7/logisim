@@ -114,7 +114,7 @@ public class RightPanel extends JPanel {
 
 		addMouseListener(myListener);
 		addMouseMotionListener(myListener);
-		addMouseWheelListener(myListener);
+		// addMouseWheelListener(myListener);
 
     updateSignals();
 	}
@@ -518,7 +518,10 @@ public class RightPanel extends JPanel {
 
 		@Override
 		public void mouseWheelMoved(MouseWheelEvent e) {
-      zoom(e.getWheelRotation() > 0 ? -1 : +1, e.getPoint().x);
+      if (e.isControlDown())
+        zoom(e.getWheelRotation() > 0 ? -1 : +1, e.getPoint().x);
+      else
+        e.getComponent().getParent().dispatchEvent(e);
 		}
 	}
 

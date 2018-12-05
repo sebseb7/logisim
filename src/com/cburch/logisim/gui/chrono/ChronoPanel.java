@@ -171,8 +171,6 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
 
   private void configure() {
     setLayout(new BorderLayout());
-    setFocusable(true);
-    requestFocusInWindow();
 
     // button bar
     Dimension buttonSize = new Dimension(150, 25);
@@ -246,7 +244,7 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
     // todo: why replace panels here?
     leftPanel = new LeftPanel(this);
     leftScroll = new JScrollPane(leftPanel,
-        ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
+        ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 
     int p = rightScroll == null ? 0 : rightScroll.getHorizontalScrollBar().getValue();
@@ -259,18 +257,21 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
         ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 
-    // Synchronize the two scrollbars
+    // Synchronize the two vertical scrollbars (and make left one invisible)
+    leftScroll.getVerticalScrollBar().setUI(null);
     leftScroll.getVerticalScrollBar().setModel(
         rightScroll.getVerticalScrollBar().getModel());
 
     splitPane.setLeftComponent(leftScroll);
     splitPane.setRightComponent(rightScroll);
 
+    leftScroll.setWheelScrollingEnabled(true);
+    rightScroll.setWheelScrollingEnabled(true);
+
 		// setSignalCursorX(rightPanel.getSignalCursorX()); // sets cursor in both panels
     setSignalCursorX(Integer.MAX_VALUE);
 
     // put right scrollbar into same position
-    rightScroll.getHorizontalScrollBar().setValue(p);
     rightScroll.getHorizontalScrollBar().setValue(p);
 
     // splitPane.setDividerLocation(INITIAL_SPLIT);

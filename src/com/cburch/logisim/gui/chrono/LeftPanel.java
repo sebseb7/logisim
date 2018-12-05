@@ -41,6 +41,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.awt.event.MouseWheelEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -72,7 +73,7 @@ import com.cburch.logisim.gui.log.Signal;
 import com.cburch.logisim.gui.log.SignalInfo;
 
 // Left panel containing signal names
-public class LeftPanel extends JPanel {
+public class LeftPanel extends JTable {
 
   private class SignalTableModel extends AbstractTableModel {
     @Override
@@ -141,7 +142,6 @@ public class LeftPanel extends JPanel {
 
 	private ChronoPanel chronoPanel;
   private Model model;
-	private JTable table;
 	private SignalTableModel tableModel;
 
 	public LeftPanel(ChronoPanel chronoPanel) {
@@ -152,20 +152,20 @@ public class LeftPanel extends JPanel {
 		setBackground(Color.WHITE);
 
     tableModel = new SignalTableModel();
-		table = new JTable(tableModel);
-    table.setShowGrid(false);
-    table.setDefaultRenderer(SignalInfo.class, new SignalRenderer());
-    table.setDefaultRenderer(Signal.class, new ValueRenderer());
-    table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+    setModel(tableModel);
+    setShowGrid(false);
+    setDefaultRenderer(SignalInfo.class, new SignalRenderer());
+    setDefaultRenderer(Signal.class, new ValueRenderer());
+    setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-    table.setColumnSelectionAllowed(false);
-    table.setRowSelectionAllowed(true);
+    setColumnSelectionAllowed(false);
+    setRowSelectionAllowed(true);
 
     // highlight on mouse over
-		table.addMouseMotionListener(new MouseMotionAdapter() {
+		addMouseMotionListener(new MouseMotionAdapter() {
 			@Override
 			public void mouseMoved(MouseEvent e) {
-				int row = table.rowAtPoint(e.getPoint());
+				int row = rowAtPoint(e.getPoint());
 				if (row >= 0 && e.getComponent() instanceof JTable) {
 					chronoPanel.changeSpotlight(model.getSignal(row));
 				} else {
@@ -174,7 +174,7 @@ public class LeftPanel extends JPanel {
 			}
 		});
     // popup on right click
-		table.addMouseListener(new MouseAdapter() {
+		addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
         if (!SwingUtilities.isRightMouseButton(e))
@@ -183,7 +183,7 @@ public class LeftPanel extends JPanel {
           return;
         Signal.List signals = getSelectedValuesList();
         if (signals.size() == 0) {
-          int row = table.rowAtPoint(e.getPoint());
+          int row = rowAtPoint(e.getPoint());
           if (row < 0 || row >= model.getSignalCount())
             return;
           signals.add(model.getSignal(row));
@@ -192,8 +192,18 @@ public class LeftPanel extends JPanel {
         m.doPop(e);
 			}
 		});
+    // scroll or zoom on wheel
+    addMouseWheelListener(new MouseAdapter() {
+      public void mouseWheelMoved(MouseWheelEvent e) {
+        if (e.isControlDown())
+          chronoPanel.getRightPanel().zoom(
+              e.getWheelRotation() > 0 ? -1 : +1, e.getPoint().x);
+        else
+          e.getComponent().getParent().dispatchEvent(e);
+      }
+    });
     // redraw waveforms in right panel when selection changes
-    table.getSelectionModel().addListSelectionListener(
+    getSelectionModel().addListSelectionListener(
         new ListSelectionListener() {
           public void valueChanged(ListSelectionEvent e) {
             int a = e.getFirstIndex();
@@ -202,14 +212,14 @@ public class LeftPanel extends JPanel {
           }
         });
 
-    table.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
-    table.setDragEnabled(true);
-    table.setDropMode(DropMode.INSERT_ROWS);
-    table.setTransferHandler(new SignalTransferHandler());
+    putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+    setDragEnabled(true);
+    setDropMode(DropMode.INSERT_ROWS);
+    setTransferHandler(new SignalTransferHandler());
 
-    InputMap inputMap = table.getInputMap();
+    InputMap inputMap = getInputMap();
     inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "Delete");
-    ActionMap actionMap = table.getActionMap();
+    ActionMap actionMap = getActionMap();
     actionMap.put("Delete", new AbstractAction() {
       public void actionPerformed(ActionEvent e) {
         removeSelected();
@@ -218,7 +228,7 @@ public class LeftPanel extends JPanel {
 
     // calculate default sizes
     int nameWidth = 0, valueWidth = 0;
-    TableCellRenderer render = table.getDefaultRenderer(String.class);
+    TableCellRenderer render = getDefaultRenderer(String.class);
     int n = model.getSignalCount();
     for (int i = -1; i < n; i++) {
       String name, val;
@@ -231,33 +241,33 @@ public class LeftPanel extends JPanel {
         val = s.getFormattedMaxValue();
       }
       Component c;
-      c = render.getTableCellRendererComponent(table, name, false, false, i, 0);
+      c = render.getTableCellRendererComponent(this, name, false, false, i, 0);
       nameWidth = Math.max(nameWidth, c.getPreferredSize().width);
-      c = render.getTableCellRendererComponent(table, val, false, false, i, 1);
+      c = render.getTableCellRendererComponent(this, val, false, false, i, 1);
       valueWidth = Math.max(valueWidth, c.getPreferredSize().width);
     }
 
-    table.setFillsViewportHeight(true);
-		table.setRowHeight(ChronoPanel.SIGNAL_HEIGHT);
+		setRowHeight(ChronoPanel.SIGNAL_HEIGHT);
     // table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
     TableColumn col;
 
-    col = table.getColumnModel().getColumn(0);
+    col = getColumnModel().getColumn(0);
 		col.setMinWidth(20);
 		col.setPreferredWidth(nameWidth + 10);
 
-    col = table.getColumnModel().getColumn(1);
+    col = getColumnModel().getColumn(1);
 		col.setMinWidth(20);
 		col.setPreferredWidth(valueWidth + 10);
 
-		JTableHeader header = table.getTableHeader();
+    setFillsViewportHeight(true);
+    setPreferredScrollableViewportSize(getPreferredSize());
+
+		JTableHeader header = getTableHeader();
 		Dimension d = header.getPreferredSize();
 		d.height = ChronoPanel.HEADER_HEIGHT;
 		header.setPreferredSize(d);
 
-		add(header, BorderLayout.NORTH);
-		add(table, BorderLayout.CENTER);
-
+    requestFocusInWindow();
 	}
 
   public void setModel(Model m) {
@@ -283,7 +293,7 @@ public class LeftPanel extends JPanel {
 
   Signal.List getSelectedValuesList() {
     Signal.List signals = new Signal.List();
-    int[] sel = table.getSelectedRows();
+    int[] sel = getSelectedRows();
     for (int i : sel)
       signals.add(model.getSignal(i));
     return signals;
@@ -300,13 +310,9 @@ public class LeftPanel extends JPanel {
     int count = model.remove(items);
     if (count > 0 && model.getSignalCount() > 0) {
       idx = Math.min(idx+1-count, model.getSignalCount() - 1);
-      table.setRowSelectionInterval(idx, idx);
+      setRowSelectionInterval(idx, idx);
     }
     repaint();
-  }
-
-  ListSelectionModel getSelectionModel() {
-    return table.getSelectionModel();
   }
 
   private class SignalTransferHandler extends TransferHandler {
