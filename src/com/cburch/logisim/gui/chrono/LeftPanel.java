@@ -341,16 +341,10 @@ public class LeftPanel extends JTable {
 
     @Override
     public boolean importData(TransferHandler.TransferSupport support) {
-      if (removing == null) {
-        // todo
-        System.out.println("paste with no cut... maybe import name and restore waveform?");
-        return false;
-      }
-      Signal.List signals = removing;
       removing = null;
       try {
-        Signal.List s2 =
-            (Signal.List)support.getTransferable().getTransferData(Signal.List.dataFlavor);
+        Signal.List incoming;
+        incoming = (Signal.List)support.getTransferable().getTransferData(Signal.List.dataFlavor);
         int newIdx = model.getSignalCount();
         if (support.isDrop()) {
           try {
@@ -358,18 +352,24 @@ public class LeftPanel extends JTable {
             newIdx = Math.min(newIdx, dl.getRow());
           } catch (ClassCastException e) {
           }
+        } else {
+          int[] sel = getSelectedRows();
+          if (sel != null && sel.length > 0) {
+            newIdx = 0;
+            for (int i : sel)
+              newIdx = Math.max(newIdx, i+1);
+          }
         }
-        if (s2 != signals) {
-          // todo
-          System.out.println("paste with wrong cut... maybe remove, then import name and restore waveform?");
-          return false;
+        boolean change = model.addOrMoveSignals(incoming, newIdx);
+        if (change) {
+          clearSelection();
+          for (Signal s : incoming) {
+            int i = model.indexOf(s.info);
+            if (i >= 0)
+              addRowSelectionInterval(i, i);
+          }
         }
-        int[] idx = new int[signals.size()];
-        int i = 0;
-        for (Signal s : signals)
-          idx[i++] = s.idx;
-        model.move(idx, newIdx);
-        return true;
+        return change;
       } catch (UnsupportedFlavorException | IOException e) {
         e.printStackTrace();
         return false;

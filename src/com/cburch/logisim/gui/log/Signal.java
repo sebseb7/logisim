@@ -72,6 +72,15 @@ public class Signal {
     return curSize == maxSize ? tStart : 0;
   }
 
+  public long getEndTime() {
+    long t = tStart;
+    for (int p = 0; p < curSize; p++) {
+      int i = (firstIndex + p) % curSize;
+      t += dur[i/CHUNK][i%CHUNK];
+    }
+    return t;
+  }
+
   public void extend(long duration) {
     if (last == null) {
       tStart += duration;

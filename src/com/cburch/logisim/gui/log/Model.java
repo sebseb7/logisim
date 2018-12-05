@@ -185,6 +185,49 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     }
   }
 
+  public boolean addOrMoveSignals(List<Signal> items, int idx) {
+    int changed = items.size();
+    long newEnd = tEnd;
+    for (Signal item : items) {
+      if (item.info.getTopLevelCircuit() != getCircuit()) {
+        changed--; // attempt to paste component from wrong circuit
+        continue;
+      }
+      int i = info.indexOf(item.info);
+      if (i < 0) {
+        info.add(idx, item.info); // put new item at idx
+        // bring signal into sync with others
+        item.resize(historyLimit);
+        long d = item.getEndTime();
+        if (d < newEnd) {
+          item.extend(newEnd - d);
+        } else if (d > newEnd) {
+          for (Signal s : signals)
+            s.extend(d - newEnd);
+          newEnd = d;
+        }
+        signals.add(idx, item);
+        idx++;
+        item.info.setListener(this);
+      } else if (i > idx) {
+        info.add(idx, info.remove(i)); // move later item up
+        signals.add(idx, signals.remove(i));
+        idx++;
+      } else if (i < idx-1) {
+        info.add(idx-1, info.remove(i)); // move earlier item down
+        signals.add(idx-1, signals.remove(i));
+      } else {
+        changed--; // no change to existing item
+      }
+    }
+    if (changed == 0 && newEnd == tEnd)
+      return false;
+    tEnd = newEnd;
+    renumberSignals();
+    fireSelectionChanged(null);
+    return true;
+  }
+
   @Override
   public void signalInfoNameChanged(SignalInfo s) {
     fireSelectionChanged(null);
@@ -413,11 +456,11 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     return s;
   }
 
-	public void addSignalValues(Value[] vals, long duration) {
-    for (int i = 0; i < signals.size() && i < vals.length; i++)
-      signals.get(i).extend(vals[i], duration);
-    tEnd += duration;
-	}
+	// public void addSignalValues(Value[] vals, long duration) {
+  //   for (int i = 0; i < signals.size() && i < vals.length; i++)
+  //     signals.get(i).extend(vals[i], duration);
+  //   tEnd += duration;
+	// }
 
   public void addModelListener(Listener l) {
     listeners.add(l);

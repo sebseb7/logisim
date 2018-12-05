@@ -45,6 +45,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseWheelEvent;
 
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.Box;
 import javax.swing.InputMap;
@@ -57,6 +58,8 @@ import javax.swing.JViewport;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import com.cburch.draw.toolbar.Toolbar;
 import com.cburch.logisim.circuit.Simulator;
@@ -319,6 +322,13 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
     rightScroll.getHorizontalScrollBar().setValue(p);
 
     // splitPane.setDividerLocation(INITIAL_SPLIT);
+    
+    leftPanel.getSelectionModel().addListSelectionListener(
+        new ListSelectionListener() {
+          public void valueChanged(ListSelectionEvent e) {
+            editHandler.computeEnabled();
+          }
+        });
   }
 
   public LeftPanel getLeftPanel() {
@@ -409,6 +419,7 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
     setModel(newModel);
     rightPanel.setModel(newModel);
     leftPanel.setModel(newModel);
+    editHandler.computeEnabled();
   }
 
 //  class ChronoMenuListener extends MenuListener {
@@ -508,6 +519,7 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
 	public void selectionChanged(Model.Event event) {
     leftPanel.updateSignals();
     rightPanel.updateSignals();
+    editHandler.computeEnabled();
 	}
 
 	public void toggleBusExpand(Signal s, boolean expand) {
@@ -605,38 +617,36 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
       setEnabled(LogisimMenuBar.REMOVE_CONTROL, false);
     }
 
-    // todo
+    @Override
+    public void cut() {
+      ActionEvent e = new ActionEvent(leftPanel, ActionEvent.ACTION_PERFORMED, "cut");
+      Action a = leftPanel.getTransferHandler().getCutAction();
+      a.actionPerformed(e);
+    }
 
-    // @Override
-    // public void copy() {
-    //   requestFocus();
-    //   clip.copy();
-    // }
+    @Override
+    public void copy() {
+      ActionEvent e = new ActionEvent(leftPanel, ActionEvent.ACTION_PERFORMED, "copy");
+      Action a = leftPanel.getTransferHandler().getCopyAction();
+      a.actionPerformed(e);
+    }
 
-    // @Override
-    // public void paste() {
-    //   requestFocus();
-    //   clip.paste();
-    // }
+    @Override
+    public void paste() {
+      ActionEvent e = new ActionEvent(leftPanel, ActionEvent.ACTION_PERFORMED, "paste");
+      Action a = leftPanel.getTransferHandler().getPasteAction();
+      a.actionPerformed(e);
+    }
 
-    // @Override
-    // public void selectAll() {
-    //   caret.selectAll();
-    // }
+    @Override
+    public void selectAll() {
+      leftPanel.selectAll();
+    }
 
-    // @Override
-    // public void delete() {
-    //   requestFocus();
-    //   Rectangle s = caret.getSelection();
-    //   int inputs = table.getInputColumnCount();
-    //   for (int c = s.x; c < s.x + s.width; c++) {
-    //     if (c < inputs)
-    //       continue; // todo: allow input row delete?
-    //     for (int r = s.y; r < s.y + s.height; r++) {
-    //       table.setVisibleOutputEntry(r, c - inputs, Entry.DONT_CARE);
-    //     }
-    //   }
-    // }
+    @Override
+    public void delete() {
+      leftPanel.removeSelected();
+    }
 
   };
 

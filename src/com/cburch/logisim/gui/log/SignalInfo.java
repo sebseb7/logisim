@@ -134,8 +134,8 @@ public class SignalInfo implements AttributeListener, CircuitListener, Location.
   }
 
   public void setListener(Listener l) {
-    if (listener != null && l != null)
-      throw new IllegalStateException("already have a listener");
+    if (listener != null && l != null && l != listener)
+      throw new IllegalStateException("already have a different listener");
     listener = l;
   }
 
@@ -316,6 +316,10 @@ public class SignalInfo implements AttributeListener, CircuitListener, Location.
 
   public Component getComponent() {
     return path[n-1];
+  }
+
+  public Circuit getTopLevelCircuit() {
+    return circ[0];
   }
   
   public boolean isInput(Object option) {
