@@ -34,14 +34,12 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseWheelEvent;
@@ -80,69 +78,6 @@ import com.cburch.logisim.util.GraphicsUtil;
 
 public class ChronoPanel extends LogPanel implements Model.Listener {
 
-  private class MyListener implements ActionListener {
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-//       // load a chronogram from a file
-//       if ("load".equals(e.getActionCommand())) {
-//         final JFileChooser fc = new JFileChooser();
-//         int returnVal = fc.showOpenDialog(ChronoPanel.this);
-//         if (returnVal == JFileChooser.APPROVE_OPTION) {
-//           loadFile(fc.getSelectedFile().getAbsolutePath());
-//         }
-// 
-//         // export a chronogram to a file
-//       } else if ("export".equals(e.getActionCommand())) {
-//         final JFileChooser fc = new JFileChooser();
-//         int returnVal = fc.showSaveDialog(ChronoPanel.this);
-//         if (returnVal == JFileChooser.APPROVE_OPTION) {
-//           exportFile(fc.getSelectedFile().getAbsolutePath());
-//         }
-// 
-//       }
-//       else if ("exportImg".equals(e.getActionCommand())) {
-//         final JFileChooser fc = new JFileChooser();
-//         int returnVal = fc.showSaveDialog(ChronoPanel.this);
-//         if (returnVal == JFileChooser.APPROVE_OPTION) {
-//           File file = fc.getSelectedFile();
-// 
-//           //add .png to the filename if the user forgot
-//           if (!fc.getSelectedFile().getAbsolutePath().endsWith(".png")) {
-//             file = new File(fc.getSelectedFile() + ".png");
-//           }
-//           exportImage(file);
-//         }
-// 
-//       } else if ("play".equals(e.getActionCommand())) {
-//         if (simulator.isRunning()) {
-//           ((JButton) e.getSource()).setIcon(Icons
-//           .getIcon("simplay.png"));
-//         } else {
-//           ((JButton) e.getSource()).setIcon(Icons
-//           .getIcon("simstop.png"));
-//         }
-//         simulator.setIsRunning(!simulator.isRunning());
-//       } else if ("step".equals(e.getActionCommand())) {
-//         simulator.step();
-//       } else if ("tplay".equals(e.getActionCommand())) {
-//         if (simulator.isTicking()) {
-//           ((JButton) e.getSource()).setIcon(Icons
-//           .getIcon("simtplay.png"));
-//         } else {
-//           ((JButton) e.getSource()).setIcon(Icons
-//           .getIcon("simtstop.png"));
-//         }
-//         simulator.setIsTicking(!simulator.isTicking());
-//       } else if ("thalf".equals(e.getActionCommand())) {
-//         simulator.tick(1);
-//       } else if ("tfull".equals(e.getActionCommand())) {
-//         simulator.tick(2);
-//       }
-    }
-
-  }
-
   public static final int HEADER_HEIGHT = 20;
   public static final int SIGNAL_HEIGHT = 30;
   public static final int GAP = 2; // gap above and below each signal
@@ -152,20 +87,11 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
   private Simulator simulator;
   private Model model;
 
-  // button bar
-  private JPanel buttonBar = new JPanel();
-  private JButton chooseFileButton = new JButton();
-  private JButton exportDataInFile = new JButton();
-  private JButton exportDataToImage = new JButton();
-
   // panels
   private RightPanel rightPanel;
   private LeftPanel leftPanel;
   private JScrollPane leftScroll, rightScroll;
   private JSplitPane splitPane;
-
-  // listeners
-  private MyListener myListener = new MyListener();
 
   public ChronoPanel(LogFrame logFrame) {
     super(logFrame);
@@ -182,30 +108,10 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
     resplit();
 
     editHandler.computeEnabled();
-    // simulationHandler.computeEnabled();
   }
 
   private void configure() {
     setLayout(new BorderLayout());
-
-    // button bar
-    Dimension buttonSize = new Dimension(150, 25);
-    buttonBar.setLayout(new FlowLayout(FlowLayout.LEFT));
-
-    chooseFileButton.setActionCommand("load");
-    chooseFileButton.addActionListener(myListener);
-    chooseFileButton.setPreferredSize(buttonSize);
-    chooseFileButton.setFocusable(false);
-
-    exportDataInFile.setActionCommand("export");
-    exportDataInFile.addActionListener(myListener);
-    exportDataInFile.setPreferredSize(buttonSize);
-    exportDataInFile.setFocusable(false);
-
-    exportDataToImage.setActionCommand("exportImg");
-    exportDataToImage.addActionListener(myListener);
-    exportDataToImage.setPreferredSize(buttonSize);
-    exportDataToImage.setFocusable(false);
 
     LogFrame logFrame = getLogFrame();
     SimulationToolbarModel simTools;
@@ -239,12 +145,6 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
     toolpanel.add(filler);
     add(toolpanel, BorderLayout.NORTH);
 
-    // statusLabel = new JLabel();
-    buttonBar.add(chooseFileButton);
-    buttonBar.add(exportDataInFile);
-    buttonBar.add(exportDataToImage);
-    add(BorderLayout.SOUTH, buttonBar);
-
     // panels
     splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
     splitPane.setDividerSize(5);
@@ -262,14 +162,6 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
     });
 
   }
-
-//  public void exportFile(String file) {
-//    ChronoDataWriter.export(file, timelineParam, data);
-//  }
-//  public void exportImage(File file) {
-//    ImageExporter ie = new ImageExporter(this, data, HEADER_HEIGHT);
-//    ie.createImage(file);
-//  }
 
   private void resplit() {
     // todo: why replace panels here?
@@ -356,52 +248,6 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
     return rightScroll == null ? null : rightScroll.getViewport();
   }
 
-//   /**
-//    * Load the chronogram from the log file
-//    */
-//   public void loadFile(String logFile) {
-//     try {
-//       ChronoData tmp = new ChronoData(logFile, this);
-//       if (tmp != null) {
-//         realTimeMode = false;
-//         data = tmp;
-//         resplit();
-//         // statusLabel.setText(S.get("InputFileLoaded") + logFile);
-//         System.out.println("imported file");
-//       }
-//     } catch (NoSysclkException ex) {
-//       errorMessage(S.get("InputFileNoSysclk"));
-//     } catch (Exception ex) {
-//       errorMessage(ex.toString());
-//     }
-//   }
-
-//  public void repaintAll(boolean force) {
-//    rightPanel.repaintAll();
-//
-//    SwingUtilities.invokeLater(new Runnable() {
-//      @Override
-//      public void run() {
-//        // scroll right to follow most recent data
-//        int x = rightPanel.getSignalWidth();
-//        rightScroll.getHorizontalScrollBar().setValue(x);
-//        // SwingUtilities.updateComponentTreeUI(ChronoPanel.this);
-//      }
-//    });
-//    //if (force)
-//    //  SwingUtilities.updateComponentTreeUI(this);
-//  }
-
-  // todo
-//   public void toggleBusExpand(SignalDataBus choosenBus, boolean expand) {
-//     if (expand) {
-//       data.expandBus(choosenBus);
-//     } else {
-//       data.contractBus(choosenBus);
-//     }
-//     resplit();
-//   }
-
   @Override
   public String getTitle() {
     return S.get("ChronoTitle");
@@ -413,11 +259,7 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
   }
 
   @Override
-  public void localeChanged() {
-    chooseFileButton.setText(S.get("ButtonLoad"));
-    exportDataInFile.setText(S.get("ButtonExport"));
-    exportDataToImage.setText(S.get("Export as image"));
-  }
+  public void localeChanged() { }
 
   @Override
   public void modelChanged(Model oldModel, Model newModel) {
@@ -427,43 +269,6 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
     editHandler.computeEnabled();
   }
 
-//  class ChronoMenuListener extends MenuListener {
-//
-//    protected class FileListener implements ActionListener {
-//      public void actionPerformed(ActionEvent event) {
-//        if (printer != null)
-//          printer.actionPerformed(event);
-//      }
-//      boolean registered;
-//      public void register(boolean en) {
-//        if (registered == en)
-//          return;
-//        registered = en;
-//        if (en) {
-//          menubar.addActionListener(LogisimMenuBar.EXPORT_IMAGE, this);
-//          menubar.addActionListener(LogisimMenuBar.PRINT, this);
-//        } else {
-//          menubar.removeActionListener(LogisimMenuBar.EXPORT_IMAGE, this);
-//          menubar.removeActionListener(LogisimMenuBar.PRINT, this);
-//        }
-//      }
-//    }
-//
-//    private FileListener fileListener = new FileListener();
-//    private PrintHandler printer;
-//
-//    public ChronoMenuListener(LogisimMenuBar menubar) {
-//      super(menubar);
-//      fileListener.register(false);
-//      editListener.register();
-//    }
-//
-//    public void setPrintHandler(PrintHandler printer) {
-//      this.printer = printer;
-//      fileListener.register(printer != null);
-//    }
-//  }
-
   public void changeSpotlight(Signal s) {
     Signal old = model.setSpotlight(s);
     if (old == s)
@@ -471,22 +276,6 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
     rightPanel.changeSpotlight(old, s);
     leftPanel.changeSpotlight(old, s);
   }
-
-//	public void mouseEntered(Signal s) {
-//    changeSpotlight(s);
-//	}
-//
-//	public void mousePressed(Signal s, int posX) {
-//		setSignalCursor(posX);
-//	}
-//
-//	public void mouseDragged(Signal s, int posX) {
-//		setSignalCursor(posX);
-//	}
-//
-//	public void mouseExited(Signal s) {
-//    changeSpotlight(null);
-//	}
 
   public void setSignalCursorX(int posX) {
 		rightPanel.setSignalCursorX(posX);
@@ -525,12 +314,6 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
     leftPanel.updateSignals();
     rightPanel.updateSignals();
     editHandler.computeEnabled();
-	}
-
-	public void toggleBusExpand(Signal s, boolean expand) {
-    System.out.println("toggle bus");
-    // todo: later
-		// mChronoPanel.toggleBusExpand(signalDataSource, expand);
 	}
 
   public Model getModel() {
@@ -591,11 +374,6 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
     else
       return Color.getHSBColor(hsb[0], 1.0f - (1.0f - hsb[1])*s, hsb[2]);
   }
-
-  // @Override
-  // SimulationHandler getSimulationHandler() {
-  //   return simulationHandler;
-  // }
 
   @Override
   public EditHandler getEditHandler() {
