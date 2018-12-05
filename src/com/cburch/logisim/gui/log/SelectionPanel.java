@@ -34,10 +34,18 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.util.JDialogOk;
@@ -98,14 +106,45 @@ public class SelectionPanel extends LogPanel {
     add(explorerPane);
     explorerPane.setPreferredSize(new Dimension(120, 200));
 
+    JButton addArrow = new JButton(Icons.getIcon("rightarrow.png"));
+    JButton delArrow = new JButton(Icons.getIcon("leftarrow.png"));
+    addArrow.setBorder(BorderFactory.createEmptyBorder());
+    delArrow.setBorder(BorderFactory.createEmptyBorder());
+    addArrow.setContentAreaFilled(false);
+    delArrow.setContentAreaFilled(false);
+    addArrow.setEnabled(false);
+    delArrow.setEnabled(false);
+    selector.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+      public void valueChanged(ListSelectionEvent e) {
+        addArrow.setEnabled(!selector.getSelectionModel().isSelectionEmpty());
+      }
+    });
+    list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+      public void valueChanged(ListSelectionEvent e) {
+        delArrow.setEnabled(!list.getSelectionModel().isSelectionEmpty());
+      }
+    });
+    addArrow.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        list.add(selector.getSelectedItems());
+      }
+    });
+    delArrow.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        list.removeSelected();
+      }
+    });
+
+    Box arrowBox = new Box(BoxLayout.Y_AXIS);
+    arrowBox.add(addArrow);
+    arrowBox.add(delArrow);
     gbc.fill = GridBagConstraints.NONE;
     gbc.weightx = gbc.weighty = 0.0;
     gbc.insets = new Insets(0, 0, 0, 0);
     gbc.gridx = 1;
     gbc.gridy = 2;
-    JLabel arrow = new JLabel(Icons.getIcon("rightarrow.png"));
-    gridbag.setConstraints(arrow, gbc);
-    add(arrow);
+    gridbag.setConstraints(arrowBox, gbc);
+    add(arrowBox);
 
     gbc.fill = GridBagConstraints.BOTH;
     gbc.weightx = gbc.weighty = 1.0;

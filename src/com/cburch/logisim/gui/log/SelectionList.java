@@ -54,7 +54,6 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.DropMode;
-import javax.swing.Icon;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -74,7 +73,6 @@ import javax.swing.table.TableCellEditor;
 
 import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.comp.Component;
-import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.util.Icons;
 
 public class SelectionList extends JTable {
@@ -358,12 +356,18 @@ public class SelectionList extends JTable {
   }
 
   private void addOrMove(SignalInfo.List items, int idx) {
+    if (items == null || items.size() == 0)
+      return;
     logModel.addOrMove(items, idx);
     clearSelection();
     for (SignalInfo item : items) {
       int i = logModel.indexOf(item);
       addRowSelectionInterval(i, i);
     }
+  }
+
+  public void add(SignalInfo.List items) {
+    addOrMove(items, logModel.getSignalCount());
   }
 
   private static final Font MSG_FONT = new Font("Sans Serif", Font.ITALIC, 12);
