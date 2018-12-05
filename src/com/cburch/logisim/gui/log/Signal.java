@@ -364,10 +364,6 @@ public class Signal {
     return info.getWidth();
   }
 
-  private boolean expanded; // todo: this doesn't belong here
-  public boolean isExpanded() { return expanded; }
-  public void toggleExpanded() { expanded = !expanded; }
-
   // This class is mostly needed because drag-and-drop DataFlavor works easiest
   // with a non-generic non-anonymous class
   public static class List extends ArrayList<Signal> implements Transferable {
