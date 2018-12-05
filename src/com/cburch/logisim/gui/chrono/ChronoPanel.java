@@ -37,6 +37,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -209,9 +210,13 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
     toolpanel.add(toolbar);
 
     JButton b = logFrame.makeSelectionButton();
+    b.setFont(b.getFont().deriveFont(10.0f));
+    Insets insets = gc.insets;
+    gc.insets = new Insets(2, 0, 2, 0);
     gc.gridx = 1;
     gb.setConstraints(b, gc);
     toolpanel.add(b);
+    gc.insets = insets;
 
     Component filler = Box.createHorizontalGlue();
     gc.fill = GridBagConstraints.HORIZONTAL;
@@ -383,7 +388,6 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
     exportDataToImage.setText(S.get("Export as image"));
   }
 
-  // todo merge SignalInfo and Signal to preserve waveforms?
   @Override
   public void modelChanged(Model oldModel, Model newModel) {
     setModel(newModel);
@@ -495,16 +499,6 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
     // todo: later
 		// mChronoPanel.toggleBusExpand(signalDataSource, expand);
 	}
-
-	// public void zoom(int sens, int posX) {
-  //   System.out.println("zoom");
-  //   rightPanel.zoom(sens, posX);
-	// }
-
-	// public void zoom(Signal s, int sens, int val) {
-  //   System.out.println("zoom");
-	// 	rightPanel.zoom(sens, val);
-	// }
 
   public Model getModel() {
     return model;
