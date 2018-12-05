@@ -39,6 +39,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseWheelEvent;
 
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -261,6 +263,27 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
     leftScroll.getVerticalScrollBar().setUI(null);
     leftScroll.getVerticalScrollBar().setModel(
         rightScroll.getVerticalScrollBar().getModel());
+
+    // zoom on control+scrollwheel
+    MouseAdapter zoomer = new MouseAdapter() {
+      public void mouseWheelMoved(MouseWheelEvent e) {
+        if (e.isControlDown()) {
+          e.consume();
+          rightPanel.zoom(e.getWheelRotation() > 0 ? -1 : +1, e.getPoint().x);
+        }
+        else
+          e.getComponent().getParent().dispatchEvent(e);
+      }
+    };
+    // We can't put it on the scroll pane, because ordering of listeners isn's
+    // specified and we need to be first to prevent default scroll behavior
+    // when control is down.
+    // leftScroll.addMouseWheelListener(zoomer);
+    // rightScroll.addMouseWheelListener(zoomer);
+    leftPanel.addMouseWheelListener(zoomer);
+    rightPanel.addMouseWheelListener(zoomer);
+    leftPanel.getTableHeader().addMouseWheelListener(zoomer);
+    rightPanel.getTimelineHeader().addMouseWheelListener(zoomer);
 
     splitPane.setLeftComponent(leftScroll);
     splitPane.setRightComponent(rightScroll);

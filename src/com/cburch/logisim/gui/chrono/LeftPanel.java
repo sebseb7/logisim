@@ -41,7 +41,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
-import java.awt.event.MouseWheelEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -52,7 +51,6 @@ import javax.swing.DropMode;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
@@ -192,16 +190,6 @@ public class LeftPanel extends JTable {
         m.doPop(e);
 			}
 		});
-    // scroll or zoom on wheel
-    addMouseWheelListener(new MouseAdapter() {
-      public void mouseWheelMoved(MouseWheelEvent e) {
-        if (e.isControlDown())
-          chronoPanel.getRightPanel().zoom(
-              e.getWheelRotation() > 0 ? -1 : +1, e.getPoint().x);
-        else
-          e.getComponent().getParent().dispatchEvent(e);
-      }
-    });
     // redraw waveforms in right panel when selection changes
     getSelectionModel().addListSelectionListener(
         new ListSelectionListener() {

@@ -42,7 +42,6 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -51,9 +50,11 @@ import java.util.List;
 import javax.swing.DefaultListSelectionModel;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
 import javax.swing.JViewport;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import com.cburch.logisim.gui.log.Model;
 import com.cburch.logisim.gui.log.Signal;
@@ -81,6 +82,7 @@ public class RightPanel extends JPanel {
   private long tNextDraw = 0; // done drawing up to this time, exclusive 
   private int width, height;
   private MyListener myListener = new MyListener();
+  private Timeline header;
 
 	public RightPanel(ChronoPanel p, ListSelectionModel m) {
 		chronoPanel = p;
@@ -104,7 +106,7 @@ public class RightPanel extends JPanel {
 
 	private void configure() {
     int n = model.getSignalCount();
-		height = ChronoPanel.HEADER_HEIGHT + n * ChronoPanel.SIGNAL_HEIGHT;
+		height = n * ChronoPanel.SIGNAL_HEIGHT;
 
 		setBackground(Color.WHITE);
 
@@ -112,9 +114,24 @@ public class RightPanel extends JPanel {
     long numTicks = ((model.getEndTime()-model.getStartTime()) + timeScale - 1) / timeScale;
 		width = (int)(tickWidth * numTicks + EXTRA_SPACE + 0.5);
 
+    header = new Timeline();
+    header.setPreferredSize(new Dimension(width, ChronoPanel.HEADER_HEIGHT));
+    // figure out appropriate color for 
+
 		addMouseListener(myListener);
 		addMouseMotionListener(myListener);
-		// addMouseWheelListener(myListener);
+		MouseAdapter tracker = new MouseAdapter() {
+      void track(MouseEvent e) {
+        if (SwingUtilities.isLeftMouseButton(e))
+          chronoPanel.setSignalCursorX(e.getX());
+      }
+      @Override
+      public void mousePressed(MouseEvent e) { track(e); }
+      @Override
+      public void mouseDragged(MouseEvent e) { track(e); }
+    };
+    header.addMouseListener(tracker);
+    header.addMouseMotionListener(tracker);
 
     updateSignals();
 	}
@@ -162,6 +179,7 @@ public class RightPanel extends JPanel {
     tNextDraw = t1;
     updateSize(true);
     flushWaveforms();
+    header.repaint();
     repaint();
   }
 
@@ -170,7 +188,7 @@ public class RightPanel extends JPanel {
     long numTicks = ((tNextDraw-tStartDraw) + timeScale - 1) / timeScale;
 
     int m = model.getSignalCount();
-		height = ChronoPanel.HEADER_HEIGHT + m * ChronoPanel.SIGNAL_HEIGHT;
+		height = m * ChronoPanel.SIGNAL_HEIGHT;
 		width = (int)(tickWidth * numTicks + EXTRA_SPACE + 0.5);
 
     Dimension d = getPreferredSize();
@@ -184,6 +202,7 @@ public class RightPanel extends JPanel {
 
     d.width = width;
     d.height = height;
+    header.setPreferredSize(new Dimension(width, ChronoPanel.HEADER_HEIGHT));
     setPreferredSize(d); // necessary for scrollbar
     revalidate();
 
@@ -245,6 +264,7 @@ public class RightPanel extends JPanel {
       curX = Integer.MAX_VALUE; // pin to right side
       curT = Long.MAX_VALUE; // pin to right side
     }
+    header.repaint();
     repaint(); // todo: optimize: partial repaint
 	}
 
@@ -328,86 +348,12 @@ public class RightPanel extends JPanel {
     } else {
       for (Waveform w : rows)
         w.paintWaveform(g);
-      int h = ChronoPanel.HEADER_HEIGHT;
-      g.setColor(Color.LIGHT_GRAY);
-      g.fillRect(0, 0, width, ChronoPanel.HEADER_HEIGHT);
-      paintTimeline(g);
       paintCursor(g);
     }
   }
 
-  public static final long[] unit = new long[] { 10, 20, 25, 50 };
-  public static final long[] subd = new long[] { 4, 4, 5, 5 };
-  public void paintTimeline(Graphics2D g) {
-    long timeScale = model.getTimeScale();
-    double timePerPixel = timeScale / tickWidth;
-    double pixelPerTime = tickWidth / timeScale;
-
-    // Pick the smallest unit among:
-    //   10,  20,  25,  50
-    //   100, 200, 250, 500
-    //   etc., such that labels are at least TIMELINE_SPACING pixels apart.
-
-    // todo: in clock and step mode, maybe use timeScale as unit?
-
-    long b = 1;
-    int j = 0;
-    while ((int)(unit[j]*b*pixelPerTime) < TIMELINE_SPACING) {
-      if (++j >= unit.length) {
-        b *= 10;
-        j = 0;
-      }
-    }
-
-    long divMajor = unit[j]*b;
-    long numMinor = subd[j];
-    long divMinor = divMajor / numMinor;
-    
-    Font f = g.getFont();
-    g.setFont(TIME_FONT);
-
-    long t0 = model.getStartTime();
-    long tL = (t0 / divMajor) * divMajor;
-    int h = ChronoPanel.HEADER_HEIGHT - ChronoPanel.GAP;
-    g.setColor(Color.BLACK);
-    g.drawLine(0, h, width, h);
-    for (int i = 0; true; i++) {
-      long t = tL + divMinor * i;
-      if (t < t0)
-        continue;
-      int x = (int)((t-t0) * pixelPerTime);
-      if (x >= width)
-        break;
-      if (i % numMinor == 0) {
-        if (x + EXTRA_SPACE <= width) {
-          String s = Model.formatDuration(t);
-          g.drawString(s, x, h/2);
-        }
-        g.drawLine(x, h*2/3, x, h);
-      } else {
-        g.drawLine(x, h-2, x, h);
-      }
-    }
-
-    g.setFont(f);
-  }
-
 	private void paintCursor(Graphics2D g) {
     int x = getSignalCursorX();
-    long t = getCurrentTime();
-
-    Font f = g.getFont();
-    g.setFont(TIME_FONT);
-
-    String s = Model.formatDuration(t);
-    FontMetrics fm = g.getFontMetrics();
-    Rectangle2D r = fm.getStringBounds(s, g);
-    //g.setColor(Color.LIGHT_GRAY);
-    g.setColor(Color.YELLOW);
-    int y = (ChronoPanel.HEADER_HEIGHT - ChronoPanel.GAP)/2;
-    g.fillRect(x+2 + (int)r.getX()-1, y + (int)r.getY()-1, (int)r.getWidth()+2, (int)r.getHeight()+2);
-    g.setColor(Color.RED);
-    g.drawString(s, x+2, y);
 		g.setStroke(new BasicStroke(1));
 		g.drawLine(x, 0, x, getHeight());
 	}
@@ -416,7 +362,7 @@ public class RightPanel extends JPanel {
     boolean shiftDrag, controlDrag, subtracting;
 
     Signal getSignal(int y, boolean force) {
-      int idx = (y - ChronoPanel.HEADER_HEIGHT) / WAVE_HEIGHT;
+      int idx = y / WAVE_HEIGHT;
       int n = model.getSignalCount();
       if (idx < 0 && force)
         idx = 0;
@@ -515,14 +461,6 @@ public class RightPanel extends JPanel {
         }
       }
 		}
-
-		@Override
-		public void mouseWheelMoved(MouseWheelEvent e) {
-      if (e.isControlDown())
-        zoom(e.getWheelRotation() > 0 ? -1 : +1, e.getPoint().x);
-      else
-        e.getComponent().getParent().dispatchEvent(e);
-		}
 	}
 
   private class Waveform {
@@ -540,7 +478,7 @@ public class RightPanel extends JPanel {
     }
 
     Rectangle getBounds() {
-      int y = ChronoPanel.HEADER_HEIGHT + WAVE_HEIGHT * signal.idx;
+      int y = WAVE_HEIGHT * signal.idx;
       return new Rectangle(0, y, width, WAVE_HEIGHT);
     }
 
@@ -749,7 +687,7 @@ public class RightPanel extends JPanel {
     public void paintWaveform(Graphics2D g) {
       if (buf == null) // todo: optimize: reallocating image each time seems silly
         createOffscreen();
-      int y = ChronoPanel.HEADER_HEIGHT + WAVE_HEIGHT * signal.idx;
+      int y = WAVE_HEIGHT * signal.idx;
       g.drawImage(buf, null, 0, y);
     }
 
@@ -804,7 +742,124 @@ public class RightPanel extends JPanel {
 
     // repaint
     flushWaveforms();
+    header.repaint();
     repaint();
+  }
+
+  static final long[] unit = new long[] { 10, 20, 25, 50 };
+  static final long[] subd = new long[] { 4, 4, 5, 5 };
+
+  private class Timeline extends JPanel {
+    final Color borderColor = 
+         UIManager.getDefaults().getColor("InternalFrame.borderDarkShadow");
+    final int height = ChronoPanel.HEADER_HEIGHT;
+
+    @Override
+    public void paintComponent(Graphics gr) {
+      Graphics2D g = (Graphics2D)gr;
+      /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
+      Graphics2D g2 = (Graphics2D)g;
+      g2.setRenderingHint(
+          RenderingHints.KEY_TEXT_ANTIALIASING,
+          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+      g2.setRenderingHint(
+          RenderingHints.KEY_ANTIALIASING,
+          RenderingHints.VALUE_ANTIALIAS_ON);
+      g.setColor(getBackground());
+      g.fillRect(0, 0, getWidth()-1, height-1);
+      g.setColor(borderColor);
+      g.drawLine(0, height-1, getWidth()-1, height-1);
+      paintScale(g);
+      paintCursorWithLabel(g);
+    }
+
+    void paintCursorWithLabel(Graphics2D g) {
+      int x = getSignalCursorX();
+      long t = getCurrentTime();
+
+      Font f = g.getFont();
+      g.setFont(TIME_FONT);
+
+      String s = Model.formatDuration(t);
+      FontMetrics fm = g.getFontMetrics();
+      Rectangle2D r = fm.getStringBounds(s, g);
+      g.setColor(Color.YELLOW);
+      int y = (height - ChronoPanel.GAP)/2;
+      g.fillRect(x+2 + (int)r.getX()-1, y + (int)r.getY()-1, (int)r.getWidth()+2, (int)r.getHeight()+2);
+      g.setColor(Color.RED);
+      g.drawString(s, x+2, y);
+      g.setStroke(new BasicStroke(1));
+      g.drawLine(x, 0, x, height);
+    }
+
+    void paintScale(Graphics2D g)  {
+      long timeScale = model.getTimeScale();
+      double timePerPixel = timeScale / tickWidth;
+      double pixelPerTime = tickWidth / timeScale;
+
+      // Pick the smallest unit among:
+      //   10,  20,  25,  50
+      //   100, 200, 250, 500
+      //   etc., such that labels are at least TIMELINE_SPACING pixels apart.
+      // todo: in clock and step mode, maybe use timeScale as unit?
+      long b = 1;
+      int j = 0;
+      while ((int)(unit[j]*b*pixelPerTime) < TIMELINE_SPACING) {
+        if (++j >= unit.length) {
+          b *= 10;
+          j = 0;
+        }
+      }
+      long divMajor = unit[j]*b;
+      long numMinor = subd[j];
+      long divMinor = divMajor / numMinor;
+
+      Font f = g.getFont();
+      g.setFont(TIME_FONT);
+      long t0 = model.getStartTime();
+      long tL = (t0 / divMajor) * divMajor;
+      int h = ChronoPanel.HEADER_HEIGHT - ChronoPanel.GAP;
+      g.setColor(Color.BLACK);
+      g.drawLine(0, height-2, width, height-2);
+      for (int i = 0; true; i++) {
+        long t = tL + divMinor * i;
+        if (t < t0)
+          continue;
+        int x = (int)((t-t0) * pixelPerTime);
+        if (x >= width)
+          break;
+        if (i % numMinor == 0) {
+          if (x + EXTRA_SPACE <= width) {
+            String s = Model.formatDuration(t);
+            g.drawString(s, x, h/2);
+          }
+          g.drawLine(x, h*2/3, x, h);
+        } else {
+          g.drawLine(x, h-2, x, h);
+        }
+      }
+      g.setFont(f);
+    }
+  }
+
+  @Override
+  public void addNotify() {
+    super.addNotify();
+    JScrollPane jsp = (JScrollPane)SwingUtilities.getAncestorOfClass(JScrollPane.class, this);
+    if (jsp != null && header != null)
+      jsp.setColumnHeaderView(header);
+  }
+
+  @Override
+  public void removeNotify() {
+    super.addNotify();
+    JScrollPane jsp = (JScrollPane)SwingUtilities.getAncestorOfClass(JScrollPane.class, this);
+    if (jsp != null)
+      jsp.setColumnHeaderView(null);
+  }
+
+  public JPanel getTimelineHeader() {
+    return header;
   }
 
 }
