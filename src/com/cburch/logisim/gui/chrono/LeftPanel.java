@@ -65,7 +65,6 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
-import com.cburch.logisim.gui.log.ComponentIcon;
 import com.cburch.logisim.gui.log.Model;
 import com.cburch.logisim.gui.log.Signal;
 import com.cburch.logisim.gui.log.SignalInfo;
@@ -111,7 +110,7 @@ public class LeftPanel extends JTable {
         label.setBorder(rowInsets);
         SignalInfo item = (SignalInfo)value;
         label.setBackground(chronoPanel.rowColors(item, isSelected)[0]);
-        label.setIcon(new ComponentIcon(item.getComponent()));
+        label.setIcon(item.icon);
       }
       return ret;
     }
@@ -182,9 +181,8 @@ public class LeftPanel extends JTable {
         Signal.List signals = getSelectedValuesList();
         if (signals.size() == 0) {
           int row = rowAtPoint(e.getPoint());
-          if (row < 0 || row >= model.getSignalCount())
-            return;
-          signals.add(model.getSignal(row));
+          if (row >= 0 && row < model.getSignalCount())
+            signals.add(model.getSignal(row));
         }
         PopupMenu m = new PopupMenu(chronoPanel, signals);
         m.doPop(e);
@@ -206,11 +204,17 @@ public class LeftPanel extends JTable {
     setTransferHandler(new SignalTransferHandler());
 
     InputMap inputMap = getInputMap();
-    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "Delete");
     ActionMap actionMap = getActionMap();
+    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "Delete");
     actionMap.put("Delete", new AbstractAction() {
       public void actionPerformed(ActionEvent e) {
         removeSelected();
+      }
+    });
+    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "ClearSelection");
+    actionMap.put("ClearSelection", new AbstractAction() {
+      public void actionPerformed(ActionEvent e) {
+        clearSelection();
       }
     });
 

@@ -220,7 +220,7 @@ public class SelectionList extends JTable {
         items.add(item);
       }
       radixMenuItems.get(item.getRadix()).setSelected(true);
-      label.setIcon(new ComponentIcon(item.getComponent()));
+      label.setIcon(item.icon);
       label.setText(item.toString() + " [" + item.getRadix().toDisplayString() + "]");
       //width.setSelectedItem(item.getRadix());
       return panel;

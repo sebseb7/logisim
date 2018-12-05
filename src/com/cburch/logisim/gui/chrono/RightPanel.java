@@ -449,17 +449,16 @@ public class RightPanel extends JPanel {
 
 		@Override
 		public void mouseClicked(MouseEvent e) {
-      if (SwingUtilities.isRightMouseButton(e)) {
-        List<Signal> signals = chronoPanel.getLeftPanel().getSelectedValuesList();
-        if (signals.size() == 0) {
-          Signal signal = getSignal(e.getY(), false);
-          if (signal == null)
-            return;
+      if (!SwingUtilities.isRightMouseButton(e))
+        return;
+      List<Signal> signals = chronoPanel.getLeftPanel().getSelectedValuesList();
+      if (signals.size() == 0) {
+        Signal signal = getSignal(e.getY(), false);
+        if (signal != null)
           signals.add(signal);
-          PopupMenu m = new PopupMenu(chronoPanel, signals);
-          m.doPop(e);
-        }
       }
+      PopupMenu m = new PopupMenu(chronoPanel, signals);
+      m.doPop(e);
 		}
 	}
 

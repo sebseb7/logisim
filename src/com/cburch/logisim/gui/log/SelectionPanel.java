@@ -42,7 +42,7 @@ import javax.swing.ScrollPaneConstants;
 import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.util.JDialogOk;
 
-class SelectionPanel extends LogPanel {
+public class SelectionPanel extends LogPanel {
 
   private ComponentSelector selector;
   private SelectionList list;

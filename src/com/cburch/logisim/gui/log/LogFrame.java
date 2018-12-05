@@ -177,7 +177,7 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
   private JTabbedPane tabbedPane;
 
   public JButton makeSelectionButton() {
-    JButton button = new JButton("Add or Remove Signals");
+    JButton button = new JButton(S.get("addRemoveSignals"));
     button.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent event) {
         SelectionPanel.doDialog(LogFrame.this);
