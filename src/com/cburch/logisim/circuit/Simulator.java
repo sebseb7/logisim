@@ -60,6 +60,8 @@ public class Simulator {
 
   public static interface Listener {
     public void simulatorReset(Event e);
+    default public boolean wantProgressEvents() { return false; }
+    default public void propagationInProgress(Event e) { };
     public void propagationCompleted(Event e);
     public void simulatorStateChanged(Event e);
   }
@@ -318,9 +320,12 @@ public class Simulator {
 
       if (doProp || doNudge) try {
         propagated = doProp;
+        // todo: need to fire events in here for chrono fine grained
+        Listener p = sim.getPropagationListener();
+        Event evt = p == null ? null : new Event(sim, false, false, false);
         stepPoints.clear();
         if (prop != null)
-          propagated |= prop.propagate(); // todo: need to fire events in here for chrono fine grained
+          propagated |= prop.propagate(p, evt);
       } catch (Exception err) {
         oops = true;
         err.printStackTrace();
@@ -460,6 +465,26 @@ public class Simulator {
     Event e = new Event(this, t, s, p);
     for (Listener l : copyListeners())
       l.propagationCompleted(e);
+  }
+
+  // called from simThread (via Propagator.propagate()), but probably should not be
+  // void _firePropagationInProgress() {
+  //   Event e = new Event(this, false, false, false);
+  //   for (Listener l : copyListeners())
+  //     l.propagationInProgress(e);
+  // }
+  // called from simThread, but probably should not be
+  private Listener getPropagationListener() {
+    Listener p = null;
+    for (Listener l : copyListeners()) {
+      if (l.wantProgressEvents()) {
+        if (p != null)
+          throw new IllegalStateException("only one chronogram listener supported");
+        else
+          p = l;
+      }
+    }
+    return p;
   }
 
   // called only from gui thread, but need copy here anyway because listeners

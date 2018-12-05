@@ -572,8 +572,8 @@ public class Model implements CircuitListener, SignalInfo.Listener {
 
   private void updateSignalsRealMode() {
     long now = System.nanoTime();
-    double duration = (lastRealtimeUpdate - now) * (double)timeScale / 1000000000;
-    extendWithNewValues(Math.min((long)duration, 1));
+    double duration = (now - lastRealtimeUpdate) * (double)timeScale / 1000000000;
+    extendWithNewValues(Math.max((long)duration, 1));
     lastRealtimeUpdate = now;
   }
 
@@ -582,33 +582,40 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     // at specific transitions or levels of the chosen clockSource.
     Value v = clockSource.fetchValue(circuitState);
     ClockSource.CycleInfo cc = ClockSource.getCycleInfo(clockSource);
-    if (mode == CLOCK_HIGH && v.equals(HI) || mode == CLOCK_LOW && v.equals(LO)) {
+    System.out.printf("%s -> %s (elapsed %d)\n", curClockVal, v, elapsedSinceTrigger);
+    if ((mode == CLOCK_HIGH && v.equals(HI)) || (mode == CLOCK_LOW && v.equals(LO))) {
       // Active level-senstive clock, either fine or coarse. Finish out
       // previous stable period, then start a new active period counting as
       // gate-delay.
-      long activeDuration = (mode == CLOCK_HIGH ? cc.hi : cc.lo);
-      long stableDuration = (mode == CLOCK_HIGH ? cc.lo : cc.hi);
+      long activeDuration = (mode == CLOCK_HIGH ? cc.hi : cc.lo) * timeScale;
+      long stableDuration = (mode == CLOCK_HIGH ? cc.lo : cc.hi) * timeScale;
       if (!v.equals(curClockVal)) {
-        if (elapsedSinceTrigger < activeDuration)
+        if (elapsedSinceTrigger < activeDuration) {
           extendWithOldValues(stableDuration - elapsedSinceTrigger);
+          System.out.printf("active, extended old %d\n", stableDuration - elapsedSinceTrigger);
+        }
         elapsedSinceTrigger = 0;
         curClockVal = v;
       }
       long duration = gateDelay;
       extendWithNewValues(duration);
+      System.out.printf("active, extended new %d\n", duration);
     } else if (mode == CLOCK_HIGH || mode == CLOCK_LOW) {
       // Inactive level-sensitive clock, either fine or coarse.
-      long activeDuration = (mode == CLOCK_HIGH ? cc.hi : cc.lo);
-      long stableDuration = (mode == CLOCK_HIGH ? cc.lo : cc.hi);
+      long activeDuration = (mode == CLOCK_HIGH ? cc.hi : cc.lo) * timeScale;
+      long stableDuration = (mode == CLOCK_HIGH ? cc.lo : cc.hi) * timeScale;
       if (!v.equals(curClockVal)) {
         // just went inactive, so finish out the active period
         // then start a new stable period
-        if (elapsedSinceTrigger < activeDuration)
+        if (elapsedSinceTrigger < activeDuration) {
           extendWithOldValues(activeDuration - elapsedSinceTrigger);
+          System.out.printf("inactive, extended old %d\n", activeDuration - elapsedSinceTrigger);
+        }
         elapsedSinceTrigger = 0;
         curClockVal = v;
         long duration = isFine() ? gateDelay : stableDuration;
         extendWithNewValues(duration);
+        System.out.printf("inactive, extended new %d\n", duration);
       } else if (isCoarse()) {
         // back-date transient changes to the start of current stable period
         replaceWithNewValues(stableDuration);
@@ -656,8 +663,8 @@ public class Model implements CircuitListener, SignalInfo.Listener {
       if (captureContinuous()) { // fine-grained, or active level-sensitive clock
           duration = gateDelay;
       } else if (mode == CLOCK_HIGH || mode == CLOCK_LOW) { // inactive level-sensitive
-        long activeDuration = (mode == CLOCK_HIGH ? cc.hi : cc.lo);
-        long stableDuration = (mode == CLOCK_HIGH ? cc.lo : cc.hi);
+        long activeDuration = (mode == CLOCK_HIGH ? cc.hi : cc.lo) * timeScale;
+        long stableDuration = (mode == CLOCK_HIGH ? cc.lo : cc.hi) * timeScale;
         duration = isFine() ? gateDelay : stableDuration;
       } else { // edge-triggered clock, fine or coarse
         int ticks = (mode == CLOCK_DUAL)

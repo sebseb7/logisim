@@ -36,7 +36,6 @@ import java.awt.event.ActionListener;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.MenuListener;
 import com.cburch.logisim.gui.menu.PrintHandler;
-import com.cburch.logisim.gui.menu.SimulateListener;
 
 public class LogMenuListener extends MenuListener {
 

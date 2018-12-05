@@ -106,6 +106,16 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
     }
 
     @Override
+    public boolean wantProgressEvents() {
+      return curModel.isFine();
+    }
+
+    @Override
+    public void propagationInProgress(Simulator.Event e) {
+      curModel.propagationCompleted(false, true, false); // treat as a single-step
+    }
+
+    @Override
     public void simulatorStateChanged(Simulator.Event e) {
       setSimulator(project.getSimulator(), project.getCircuitState());
     }

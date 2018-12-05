@@ -289,6 +289,10 @@ public class Propagator {
   }
 
   public boolean propagate() {
+    return propagate(null, null);
+  }
+
+  public boolean propagate(Simulator.Listener propListener, Simulator.Event propEvent) {
     oscPoints.clear();
     root.processDirtyPoints();
     root.processDirtyComponents();
@@ -297,6 +301,8 @@ public class Propagator {
     int logThreshold = 3 * oscThreshold / 4;
     int iters = 0;
     while (!toProcess.isEmpty()) {
+      if (iters > 0 && propListener != null)
+        propListener.propagationInProgress(propEvent);
       iters++;
 
       if (iters < logThreshold) {

@@ -381,7 +381,6 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
   // todo merge SignalInfo and Signal to preserve waveforms?
   @Override
   public void modelChanged(Model oldModel, Model newModel) {
-    System.out.println("chrono setmodel: " + newModel);
     setModel(newModel);
     rightPanel.setModel(newModel);
     leftPanel.setModel(newModel);
@@ -455,7 +454,7 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
 
 	@Override
 	public void modeChanged(Model.Event event) {
-    System.out.println("todo");
+    // nothing to do, signals will be reset anyway
   }
 
 	@Override
