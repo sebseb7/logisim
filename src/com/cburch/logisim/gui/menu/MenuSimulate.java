@@ -302,7 +302,7 @@ public class MenuSimulate extends Menu {
     reset.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, menuMask));
     step.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, menuMask));
     tickHalf.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, menuMask));
-    tickFull.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0));
+    tickFull.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F9, 0)); // like "compile/run" in many IDEs
     ticksEnabled.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_K, menuMask));
 
     ButtonGroup bgroup = new ButtonGroup();

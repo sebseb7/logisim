@@ -161,14 +161,6 @@ public class LeftPanel extends JPanel {
     table.setColumnSelectionAllowed(false);
     table.setRowSelectionAllowed(true);
 
-		table.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0), "tick");
-		table.getActionMap().put("tick", new AbstractAction() {
-			public void actionPerformed(ActionEvent e) {
-        System.out.println("tick in left");
-				// todo
-			}
-		});
-		table.addKeyListener(chronoPanel);
     // highlight on mouse over
 		table.addMouseMotionListener(new MouseMotionAdapter() {
 			@Override
@@ -265,6 +257,7 @@ public class LeftPanel extends JPanel {
 
 		add(header, BorderLayout.NORTH);
 		add(table, BorderLayout.CENTER);
+
 	}
 
   public void setModel(Model m) {

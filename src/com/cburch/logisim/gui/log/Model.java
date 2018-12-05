@@ -582,7 +582,6 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     // at specific transitions or levels of the chosen clockSource.
     Value v = clockSource.fetchValue(circuitState);
     ClockSource.CycleInfo cc = ClockSource.getCycleInfo(clockSource);
-    System.out.printf("%s -> %s (elapsed %d)\n", curClockVal, v, elapsedSinceTrigger);
     if ((mode == CLOCK_HIGH && v.equals(HI)) || (mode == CLOCK_LOW && v.equals(LO))) {
       // Active level-senstive clock, either fine or coarse. Finish out
       // previous stable period, then start a new active period counting as
@@ -592,14 +591,12 @@ public class Model implements CircuitListener, SignalInfo.Listener {
       if (!v.equals(curClockVal)) {
         if (elapsedSinceTrigger < activeDuration) {
           extendWithOldValues(stableDuration - elapsedSinceTrigger);
-          System.out.printf("active, extended old %d\n", stableDuration - elapsedSinceTrigger);
         }
         elapsedSinceTrigger = 0;
         curClockVal = v;
       }
       long duration = gateDelay;
       extendWithNewValues(duration);
-      System.out.printf("active, extended new %d\n", duration);
     } else if (mode == CLOCK_HIGH || mode == CLOCK_LOW) {
       // Inactive level-sensitive clock, either fine or coarse.
       long activeDuration = (mode == CLOCK_HIGH ? cc.hi : cc.lo) * timeScale;
@@ -609,13 +606,11 @@ public class Model implements CircuitListener, SignalInfo.Listener {
         // then start a new stable period
         if (elapsedSinceTrigger < activeDuration) {
           extendWithOldValues(activeDuration - elapsedSinceTrigger);
-          System.out.printf("inactive, extended old %d\n", activeDuration - elapsedSinceTrigger);
         }
         elapsedSinceTrigger = 0;
         curClockVal = v;
         long duration = isFine() ? gateDelay : stableDuration;
         extendWithNewValues(duration);
-        System.out.printf("inactive, extended new %d\n", duration);
       } else if (isCoarse()) {
         // back-date transient changes to the start of current stable period
         replaceWithNewValues(stableDuration);

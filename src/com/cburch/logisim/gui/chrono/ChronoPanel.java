@@ -39,8 +39,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -64,7 +62,7 @@ import com.cburch.logisim.gui.menu.LogisimMenuBar;
 // import com.cburch.logisim.gui.menu.PrintHandler;
 import com.cburch.logisim.gui.menu.EditHandler;
 
-public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener {
+public class ChronoPanel extends LogPanel implements Model.Listener {
 
   private class MyListener implements ActionListener {
 
@@ -175,7 +173,6 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
     setLayout(new BorderLayout());
     setFocusable(true);
     requestFocusInWindow();
-    addKeyListener(this);
 
     // button bar
     Dimension buttonSize = new Dimension(150, 25);
@@ -298,22 +295,6 @@ public class ChronoPanel extends LogPanel implements KeyListener, Model.Listener
   public JViewport getRightViewport() {
     return rightScroll == null ? null : rightScroll.getViewport();
   }
-
-  @Override
-  public void keyPressed(KeyEvent ke) {
-    // todo: tick, half tick, etc.
-    int keyCode = ke.getKeyCode();
-    if (keyCode == KeyEvent.VK_F2) {
-      System.out.println("F2 tick");
-      simulator.tick(2);
-    }
-  }
-
-  @Override
-  public void keyReleased(KeyEvent ke) { }
-
-  @Override
-  public void keyTyped(KeyEvent ke) { }
 
 //   /**
 //    * Load the chronogram from the log file
