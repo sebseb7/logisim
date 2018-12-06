@@ -596,7 +596,9 @@ public class Simulator {
     Component clk = ClockSource.doClockDriverDialog(circ);
     if (clk == null)
       return false;
-    cs.setTemporaryClock(clk);
+    if (!cs.setTemporaryClock(clk))
+      return false;
+    fireSimulatorStateChanged();
     return true;
   }
 

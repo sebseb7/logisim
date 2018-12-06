@@ -321,6 +321,10 @@ public class SignalInfo implements AttributeListener, CircuitListener, Location.
   public Circuit getTopLevelCircuit() {
     return circ[0];
   }
+
+  public int getDepth() {
+    return n;
+  }
   
   public boolean isInput(Object option) {
     Loggable log = (Loggable)path[n-1].getFeature(Loggable.class);

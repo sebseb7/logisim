@@ -120,7 +120,10 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
 
     @Override
     public void simulatorStateChanged(Simulator.Event e) {
-      setSimulator(project.getSimulator(), project.getCircuitState());
+      if (setSimulator(project.getSimulator(), project.getCircuitState()))
+        return;
+      if (curModel != null)
+        curModel.checkForClocks();
     }
 
   }
@@ -266,10 +269,10 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
     return panels;
   }
 
-  private void setSimulator(Simulator value, CircuitState state) {
+  private boolean setSimulator(Simulator value, CircuitState state) {
     if ((value == null) == (curModel == null)) {
       if (value == null || value.getCircuitState() == curModel.getCircuitState())
-        return;
+        return false;
     }
     menubar.setCircuitState(value, state);
 
@@ -300,6 +303,7 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
         panels[i].modelChanged(oldModel, curModel);
       }
     }
+    return true;
   }
 
   @Override

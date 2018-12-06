@@ -47,6 +47,7 @@ import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
+import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
 public class Model implements CircuitListener, SignalInfo.Listener {
@@ -125,8 +126,17 @@ public class Model implements CircuitListener, SignalInfo.Listener {
       // If one clock is present, we use CLOCK mode with that as the source.
       clockSource = clocks.get(0);
     } else if (clocks != null && clocks.size() > 1) {
-      // If multiple are present, ask user to select, with STEP as fallback.
+      // If multiple are present, ask user to select one, with STEP as fallback.
       clockSource = ClockSource.doClockMultipleObserverDialog(circ);
+      if (clockSource != null
+          && (clockSource.getComponent().getFactory() instanceof Pin)
+          && (clockSource.getDepth() == 1))
+        circuitState.setTemporaryClock(clockSource.getComponent());
+    }
+    if (clockSource == null) {
+      Component clk = circuitState.getTemporaryClock();
+      if (clk != null)
+        clockSource = new SignalInfo(circ, new Component[] { clk }, null);
     }
     if (clockSource != null) {
       if (!info.contains(clockSource))
@@ -360,10 +370,12 @@ public class Model implements CircuitListener, SignalInfo.Listener {
 
   public void setClockMode(boolean fine, int discipline, long t, long d) {
     int g = fine ? FINE : COARSE;
-    if (mode == discipline && granularity == g && timeScale == t && gateDelay == d)
+    if (clockSource != null
+        && mode == discipline && granularity == g && timeScale == t && gateDelay == d)
       return;
     if (clockSource == null) {
       Circuit circ = circuitState.getCircuit();
+      Component tmpClk = circuitState.getTemporaryClock();
       // select a clock source now
       ArrayList<SignalInfo> clocks = ComponentSelector.findClocks(circ);
       if (clocks != null && clocks.size() == 1) {
@@ -372,8 +384,11 @@ public class Model implements CircuitListener, SignalInfo.Listener {
       } else if (clocks != null && clocks.size() > 1) {
         // If multiple are present, ask user to select
         clockSource = ClockSource.doClockMultipleObserverDialog(circ);
+      } else if (tmpClk != null) {
+        // No clocks, but user already chose a temporary clock.
+        clockSource = new SignalInfo(circ, new Component[] { tmpClk }, null);
       } else if (clocks != null) {
-        // No clocks, but other suitable things, ask user to select
+        // No actual or temporary clocks, but other suitable things, ask user to select
         clockSource = ClockSource.doClockMissingObserverDialog(circ);
       }
       if (clockSource == null) {
@@ -381,7 +396,10 @@ public class Model implements CircuitListener, SignalInfo.Listener {
         setMode(mode, granularity);
         return;
       }
-      // Add the clock as a courtesy, though it is optional.
+      if ((clockSource.getComponent().getFactory() instanceof Pin)
+          && (clockSource.getDepth() == 1))
+        circuitState.setTemporaryClock(clockSource.getComponent());
+      // Add the clock as a courtesy, even though this is not required.
       if (!info.contains(clockSource)) {
         info.add(0, clockSource); // put it at the top of the list
         signals.add(0,
@@ -805,4 +823,16 @@ public class Model implements CircuitListener, SignalInfo.Listener {
       fireSelectionChanged(null);
   }
 
+  public void checkForClocks() {
+    Component clk = circuitState.getTemporaryClock();
+    if (clk != null && (clockSource == null || clockSource.getComponent() != clk)) {
+      // User requested manual tick, there were no actual or temporary clocks,
+      // so user selected a temporary clock, so we should now use it.
+      if (clockSource != null && !info.contains(clockSource))
+        clockSource.setListener(null);
+      clockSource = null;
+      setStepMode(isFine(), timeScale, gateDelay); // serves as fallback
+      setClockMode(isFine(), CLOCK_DUAL, timeScale, gateDelay);
+    }
+  }
 }

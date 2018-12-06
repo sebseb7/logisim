@@ -546,7 +546,7 @@ public class CircuitState implements InstanceData {
     boolean ret = false;
 
     if (temporaryClock != null)
-      ret |= temporaryClockTick(ticks);
+      ret |= temporaryClockValidateOrTick(ticks);
 
     for (Component clock : circuit.getClocks())
       ret |= Clock.tick(this, ticks, clock);
@@ -558,12 +558,13 @@ public class CircuitState implements InstanceData {
     return ret;
   }
 
-  private boolean temporaryClockTick(int ticks) {
+  private boolean temporaryClockValidateOrTick(int ticks) {
     // temporaryClock.getFactory() will be Pin, normally a 1 bit input
     Pin pin;
     try {
       pin = (Pin)temporaryClock.getFactory();
     } catch (ClassCastException e) {
+      temporaryClock = null;
       return false;
     }
     Instance i = Instance.getInstanceFor(temporaryClock);
@@ -571,10 +572,12 @@ public class CircuitState implements InstanceData {
       temporaryClock = null;
       return false;
     }
-    InstanceState state = getInstanceState(i);
-    // Value v = pin.getValue(state);
-    pin.setValue(state, ticks%2==0 ? Value.FALSE : Value.TRUE);
-    state.fireInvalidated();
+    if (ticks >= 0) {
+      InstanceState state = getInstanceState(i);
+      // Value v = pin.getValue(state);
+      pin.setValue(state, ticks%2==0 ? Value.FALSE : Value.TRUE);
+      state.fireInvalidated();
+    }
     return true;
   }
 
@@ -589,8 +592,13 @@ public class CircuitState implements InstanceData {
     knownClocks = true;
   }
 
-  public void setTemporaryClock(Component clk) {
+  public boolean setTemporaryClock(Component clk) {
     temporaryClock = clk;
+    return clk == null ? true : temporaryClockValidateOrTick(-1);
+  }
+  
+  public Component getTemporaryClock() {
+    return temporaryClock;
   }
 
   @Override
