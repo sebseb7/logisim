@@ -34,6 +34,9 @@ import static com.cburch.logisim.tools.Strings.S;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
@@ -66,15 +69,11 @@ import com.cburch.logisim.tools.key.KeyConfigurationEvent;
 import com.cburch.logisim.tools.key.KeyConfigurationResult;
 import com.cburch.logisim.tools.key.KeyConfigurator;
 
-public class AddTool extends Tool {
-  private class MyAttributeListener implements AttributeListener {
-    public void attributeListChanged(AttributeEvent e) {
-      bounds = null;
-    }
+public class AddTool extends Tool implements Transferable {
 
-    public void attributeValueChanged(AttributeEvent e) {
-      bounds = null;
-    }
+  private class MyAttributeListener implements AttributeListener {
+    public void attributeListChanged(AttributeEvent e) { bounds = null; }
+    public void attributeValueChanged(AttributeEvent e) { bounds = null; }
   }
 
   private static int INVALID_COORD = Integer.MIN_VALUE;
@@ -564,5 +563,37 @@ public class AddTool extends Tool {
     } else {
       return this.description.equals(o.description);
     }
+  }
+
+  public static final DataFlavor dataFlavor;
+  static {
+    DataFlavor f = null;
+    try {
+      f = new DataFlavor(
+          String.format("%s;class=\"%s\"",
+            DataFlavor.javaJVMLocalObjectMimeType,
+            AddTool.class.getName()));
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+    dataFlavor = f;
+  }
+  public static final DataFlavor[] dataFlavors = new DataFlavor[] { dataFlavor };
+
+  @Override
+  public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
+    if(!isDataFlavorSupported(flavor))
+      throw new UnsupportedFlavorException(flavor);
+    return this;
+  }
+
+  @Override
+  public DataFlavor[] getTransferDataFlavors() {
+    return dataFlavors;
+  }
+
+  @Override
+  public boolean isDataFlavorSupported(DataFlavor flavor) {
+    return dataFlavor.equals(flavor);
   }
 }
