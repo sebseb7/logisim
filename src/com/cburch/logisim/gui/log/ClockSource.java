@@ -87,7 +87,7 @@ public class ClockSource extends JDialogOk {
 
   public void okClicked() {
     SignalInfo.List list = selector.getSelectedItems();
-    if (list.size() != 1)
+    if (list == null || list.size() != 1)
       return;
     item = list.get(0);
   }

@@ -314,6 +314,12 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
     super.setVisible(value);
   }
 
+  @Override
+  public void requestClose() {
+    super.requestClose();
+    dispose();
+  }
+
   private class MyChangeListener implements ChangeListener {
     public void stateChanged(ChangeEvent e) {
       Object selected = tabbedPane.getSelectedComponent();
