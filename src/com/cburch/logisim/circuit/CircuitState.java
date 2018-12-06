@@ -51,10 +51,11 @@ import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.std.wiring.Clock;
-import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.std.memory.Ram;
 import com.cburch.logisim.std.memory.RamState;
+import com.cburch.logisim.std.wiring.Clock;
+import com.cburch.logisim.std.wiring.Pin;
+import com.cburch.logisim.std.wiring.Pin;
 
 public class CircuitState implements InstanceData {
 
@@ -77,7 +78,14 @@ public class CircuitState implements InstanceData {
       /* Component was removed */
       else if (action == CircuitEvent.ACTION_REMOVE) {
         Component comp = (Component) event.getData();
+        if (comp == temporaryClock)
+          temporaryClock = null;
+        if (comp.getFactory() instanceof Clock) {
+          knownClocks = false; // just in case, will be recomputed by simulator
+        }
+
         if (comp.getFactory() instanceof SubcircuitFactory) {
+          knownClocks = false; // just in case, will be recomputed by simulator
           // disconnect from tree
           CircuitState substate = (CircuitState) getData(comp);
           if (substate != null && substate.parentComp == comp) {
@@ -100,6 +108,8 @@ public class CircuitState implements InstanceData {
 
       /* Whole circuit was cleared */
       else if (action == CircuitEvent.ACTION_CLEAR) {
+        temporaryClock = null;
+        knownClocks = false;
         substates.clear();
         wireData = null;
         componentData.clear();
@@ -446,6 +456,7 @@ public class CircuitState implements InstanceData {
   }
 
   void reset() {
+    temporaryClock = null;
     wireData = null;
     for (Iterator<Component> it = componentData.keySet().iterator(); it.hasNext();) {
       Component comp = it.next();
@@ -533,15 +544,53 @@ public class CircuitState implements InstanceData {
 
   boolean toggleClocks(int ticks) {
     boolean ret = false;
-    for (Component clock : circuit.getClocks()) {
+
+    if (temporaryClock != null)
+      ret |= temporaryClockTick(ticks);
+
+    for (Component clock : circuit.getClocks())
       ret |= Clock.tick(this, ticks, clock);
-    }
 
     CircuitState[] subs = new CircuitState[substates.size()];
-    for (CircuitState substate : substates.toArray(subs)) {
+    for (CircuitState substate : substates.toArray(subs))
       ret |= substate.toggleClocks(ticks);
-    }
+
     return ret;
+  }
+
+  private boolean temporaryClockTick(int ticks) {
+    // temporaryClock.getFactory() will be Pin, normally a 1 bit input
+    Pin pin;
+    try {
+      pin = (Pin)temporaryClock.getFactory();
+    } catch (ClassCastException e) {
+      return false;
+    }
+    Instance i = Instance.getInstanceFor(temporaryClock);
+    if (i == null || !pin.isInputPin(i) || pin.getWidth(i).getWidth() != 1) {
+      temporaryClock = null;
+      return false;
+    }
+    InstanceState state = getInstanceState(i);
+    // Value v = pin.getValue(state);
+    pin.setValue(state, ticks%2==0 ? Value.FALSE : Value.TRUE);
+    state.fireInvalidated();
+    return true;
+  }
+
+  private boolean knownClocks;
+  private Component temporaryClock;
+
+  public boolean hasKnownClocks() {
+    return knownClocks || temporaryClock != null;
+  }
+
+  public void markKnownClocks() {
+    knownClocks = true;
+  }
+
+  public void setTemporaryClock(Component clk) {
+    temporaryClock = clk;
   }
 
   @Override

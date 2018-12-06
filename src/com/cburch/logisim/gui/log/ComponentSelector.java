@@ -61,7 +61,7 @@ import com.cburch.logisim.std.wiring.Clock;
 
 // This is more like a JTree, but wedged into a JTable because it looks more
 // reasonable sitting next to the SelectionList JTable .
-class ComponentSelector extends JTable {
+public class ComponentSelector extends JTable {
 
   static final Comparator<Component> compareComponents = new Comparator<Component>() {
     @Override

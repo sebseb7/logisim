@@ -92,12 +92,12 @@ public class ClockSource extends JDialogOk {
     item = list.get(0);
   }
 
-  public static SignalInfo doClockDriverDialog(Circuit circ) {
+  public static Component doClockDriverDialog(Circuit circ) {
     ClockSource dialog = new ClockSource(
         S.getter("selectClockDriverMessage"),
         circ, true);
     dialog.show();
-    return dialog.item;
+    return dialog.item == null ? null : dialog.item.getComponent(); // always top-level
   }
 
   public static SignalInfo doClockMissingObserverDialog(Circuit circ) {

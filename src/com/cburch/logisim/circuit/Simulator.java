@@ -36,6 +36,9 @@ import javax.swing.SwingUtilities;
 
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
+import com.cburch.logisim.gui.log.ClockSource;
+import com.cburch.logisim.gui.log.ComponentSelector;
+import com.cburch.logisim.gui.log.SignalInfo;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.UniquelyNamedThread;
 
@@ -300,6 +303,7 @@ public class Simulator {
       boolean ticked = false;
       boolean stepped = false;
       boolean propagated = false;
+      boolean hasClocks = true;
 
       if (doReset) try {
         stepPoints.clear();
@@ -315,7 +319,7 @@ public class Simulator {
         lastTick = now;
         ticked = true;
         if (prop != null)
-          prop.toggleClocks(); // ignore return value for now
+          hasClocks = prop.toggleClocks();
       }
 
       if (doProp || doNudge) try {
@@ -345,6 +349,7 @@ public class Simulator {
      
       osc = prop != null && prop.isOscillating();
 
+      boolean clockDied = false;
       synchronized (this) {
         _oops = oops;
         if (osc) {
@@ -353,6 +358,10 @@ public class Simulator {
         }
         if (ticked && _manualTicksRequested > 0)
           _manualTicksRequested--;
+        if (_autoTicking && !hasClocks) {
+          _autoTicking = false;
+          clockDied = true;
+        }
       }
    
       // We report nudges, but we report them as no-ops, unless they were
@@ -360,6 +369,8 @@ public class Simulator {
       // some components.
       if (ticked || stepped || propagated || doNudge)
         sim._firePropagationCompleted(ticked, stepped && !propagated, propagated); // todo: fixme: ack, wrong thread!
+      if (clockDied)
+        sim.fireSimulatorStateChanged(); ; // todo: fixme: ack, wrong thread!
 
       return true;
     }
@@ -532,6 +543,8 @@ public class Simulator {
   }
 
   public void setAutoTicking(boolean value) {
+    if (value && !ensureClocks())
+      return;
     if (simThread.setAutoTicking(value))
       fireSimulatorStateChanged();
   }
@@ -548,6 +561,8 @@ public class Simulator {
 
   // User/GUI manually requests some ticks happen as soon as possible.
   public void tick(int count) {
+    if (!ensureClocks())
+      return;
     simThread.requestTick(count);
   }
 
@@ -563,6 +578,26 @@ public class Simulator {
 
   public void shutDown() {
     simThread.requestShutDown();
+  }
+
+  private boolean ensureClocks() {
+    CircuitState cs = getCircuitState();
+    if (cs == null)
+      return false;
+    if (cs.hasKnownClocks())
+      return true;
+    Circuit circ = cs.getCircuit();
+    ArrayList<SignalInfo> clocks = ComponentSelector.findClocks(circ);
+    if (clocks != null && clocks.size() >= 1) {
+      cs.markKnownClocks();
+      return true;
+    }
+
+    Component clk = ClockSource.doClockDriverDialog(circ);
+    if (clk == null)
+      return false;
+    cs.setTemporaryClock(clk);
+    return true;
   }
 
 }
