@@ -61,13 +61,14 @@ import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.appear.AppearanceSvgReader;
-import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.std.base.Base;
+import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
@@ -396,8 +397,7 @@ class XmlReader {
           if (name == null || name.equals("")) {
             addError(S.get("circNameMissingError"), "C??");
           }
-          CircuitData circData = new CircuitData(circElt, new Circuit(
-                name, file));
+          CircuitData circData = new CircuitData(circElt, new Circuit(name, file));
           file.addCircuit(circData.circuit);
           circData.knownComponents = loadKnownComponents(circElt);
           for (Element appearElt : XmlIterator.forChildElements(circElt, "appear")) {
@@ -1064,6 +1064,54 @@ class XmlReader {
         }
       }
     }
+    if (version.compareTo(LogisimVersion.get(4, 0, 0)) < 0) {
+      // Pre 4.0.0, the #Base library had some useless tools. These are gone.
+      removeDeprecatedBaseTools(doc, root);
+    }
+  }
+
+  private void removeDeprecatedTools(Base baseLib, String baseName, Element section) {
+    ArrayList<Element> toRemove = new ArrayList<>();
+    for (Element elt : XmlIterator.forChildElements(section, "tool")) {
+      String toolName = elt.getAttribute("name");
+      String toolLib = elt.getAttribute("lib");
+      if ((baseName == null || baseName.equals(toolLib))
+          && baseLib.isDeprecatedTool(toolName))
+        toRemove.add(elt);
+    }
+    for (Element elt : toRemove)
+      section.removeChild(elt);
+  }
+
+  private void removeDeprecatedBaseTools(Document doc, Element root) {
+    Base baseLib = null;
+    for (Library lib : ((Loader)loader).getBuiltin().getLibraries()) {
+      if (lib.getName().equals("Base")) {
+        baseLib = (Base)lib;
+        break;
+      }
+    }
+    // remove #Base lib references to deprecated tools
+    Element baseElt = null;
+    String baseName = null;
+    for (Element libElt : XmlIterator.forChildElements(root, "lib")) {
+      String desc = libElt.getAttribute("desc");
+      String name = libElt.getAttribute("name");
+      if (desc != null && desc.equals("#Base")) {
+        baseElt = libElt;
+        baseName = name;
+        // remove all references to deprecated tools within #Base lib element
+        removeDeprecatedTools(baseLib, null, libElt);
+      }
+    }
+
+    // remove mapping references to deprecated tools
+    for (Element mapElt : XmlIterator.forChildElements(root, "mappings"))
+      removeDeprecatedTools(baseLib, baseName, mapElt);
+
+    // remove toolbar references to deprecated tools
+    for (Element mapElt : XmlIterator.forChildElements(root, "toolbar"))
+      removeDeprecatedTools(baseLib, baseName, mapElt);
   }
 
   private void addBuiltinLibrariesIfMissing(Document doc, Element root) {
@@ -1253,6 +1301,14 @@ class XmlReader {
     }
   }
 
+  // Before version 2.6.3, #Base contained a lot of stuff, including a mix of
+  // component-like things (Pin, splitters, transistors, constants, etc.), and
+  // the standard tools (edit, poke, wiring-tool text, menu-tool, etc.). At
+  // version 2.6.3, this was split into two libraries, one called #Wiring for
+  // all the component-like things, and another called #Base with the standard
+  // tools. After 3.1.1-HC (maybe 4.0.0-HC?), #Base is hidden, except in the
+  // toolbar and the toolbar options explorer. It does not appear in the project
+  // explorer at in the left panel. The file format remains the same.
   private void repairForWiringLibrary(Document doc, Element root) {
     Element oldBaseElt = null;
     String oldBaseLabel = null;

@@ -118,8 +118,7 @@ class ToolbarOptions extends OptionsPanel {
       return null;
     }
 
-    public void moveRequested(ProjectExplorer.Event event, AddTool dragged,
-        AddTool target) {
+    public void moveRequested(ProjectExplorer.Event event, AddTool dragged, int newIdx) {
     }
 
     public void selectionChanged(ProjectExplorer.Event event) {
@@ -145,7 +144,7 @@ class ToolbarOptions extends OptionsPanel {
 
   public ToolbarOptions(OptionsFrame window) {
     super(window);
-    explorer = new ProjectExplorer(getProject());
+    explorer = new ProjectExplorer(getProject(), true /* show all */);
     addTool = new JButton();
     addSeparator = new JButton();
     moveUp = new JButton();

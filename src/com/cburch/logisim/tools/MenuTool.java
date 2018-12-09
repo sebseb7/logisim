@@ -39,7 +39,6 @@ import java.awt.event.MouseEvent;
 import java.util.Collection;
 
 import javax.swing.JMenuItem;
-//import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
 
 import com.cburch.logisim.circuit.Circuit;
@@ -54,8 +53,8 @@ import com.cburch.logisim.gui.main.SelectionActions;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 
-public class MenuTool extends Tool {
-  private class MenuComponent extends JPopupMenu implements ActionListener {
+public final class MenuTool extends Tool {
+  private static class MenuComponent extends JPopupMenu implements ActionListener {
     private static final long serialVersionUID = 1L;
     Project proj;
     Circuit circ;
@@ -105,7 +104,7 @@ public class MenuTool extends Tool {
     }
   }
 
-  private class MenuSelection extends JPopupMenu implements ActionListener {
+  private static class MenuSelection extends JPopupMenu implements ActionListener {
     private static final long serialVersionUID = 1L;
     Project proj;
     JMenuItem del = new JMenuItem(S.get("selDeleteItem"));
@@ -138,19 +137,14 @@ public class MenuTool extends Tool {
       }
     }
 
-    /*
-     * public void show(JComponent parent, int x, int y) { super.show(this,
-     * x, y); }
-     */
   }
 
-  public MenuTool() {
-  }
+  private MenuTool() { }
+
+  public static final MenuTool SINGLETON = new MenuTool();
 
   @Override
-  public boolean equals(Object other) {
-    return other instanceof MenuTool;
-  }
+  public boolean isBuiltin() { return true; }
 
   @Override
   public String getDescription() {
@@ -165,11 +159,6 @@ public class MenuTool extends Tool {
   @Override
   public String getName() {
     return "Menu Tool";
-  }
-
-  @Override
-  public int hashCode() {
-    return MenuTool.class.hashCode();
   }
 
   @Override

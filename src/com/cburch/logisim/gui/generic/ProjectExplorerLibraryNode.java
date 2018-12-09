@@ -1,4 +1,4 @@
-/**
+/* ProjectExplorerFalseRootNode
  * This file is part of Logisim-evolution.
  *
  * Logisim-evolution is free software: you can redistribute it and/or modify
@@ -44,12 +44,20 @@ import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.std.base.Base;
 
 public class ProjectExplorerLibraryNode
   extends ProjectExplorerModel.Node<Library> implements LibraryListener {
 
   private static final long serialVersionUID = 1L;
   private LogisimFile file;
+
+  private static Base getBaseLib(Library projLib) {
+    for (Library lib : projLib.getLibraries())
+      if (lib instanceof Base)
+        return (Base)lib;
+    return null;
+  }
 
   ProjectExplorerLibraryNode(ProjectExplorerModel model, Library lib) {
     super(model, lib);
@@ -97,11 +105,13 @@ public class ProjectExplorerLibraryNode
     int insertionCount = 0;
     oldPos = startIndex;
 
-    for (T tool : items) {
-      ProjectExplorerModel.Node<T> node = nodeMap.get(tool);
+    for (T item : items) {
+      if (item instanceof Base)
+        continue;
+      ProjectExplorerModel.Node<T> node = nodeMap.get(item);
 
       if (node == null) {
-        node = factory.create(tool);
+        node = factory.create(item);
         node.oldIndex = -1;
         node.newIndex = actualPos;
         nodeList.add(node);

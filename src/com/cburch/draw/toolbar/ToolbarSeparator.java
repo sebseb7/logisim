@@ -55,23 +55,16 @@ public class ToolbarSeparator implements ToolbarItem {
 	}
 
 	public void paintIcon(Component destination, Graphics g) {
+    int margin = ToolbarButton.BORDER * 2; // toolbar adds border on all sides
 		Dimension dim = destination.getSize();
+    int w = dim.width, h = dim.height, s = size;
 		g.setColor(Color.GRAY);
-		int x = 0;
-		int y = 0;
-		int w = dim.width;
-		int h = dim.height;
-		if (h >= w) { // separator is a vertical line in horizontal toolbar
-			h -= 8;
-			y = 2;
-			x = (w - 2) / 2;
-			w = 2;
-		} else { // separator is a horizontal line in vertical toolbar
-			w -= 8;
-			x = 2;
-			y = (h - 2) / 2;
-			h = 2;
+		if (h >= w) { // vertical line in horizontal toolbar
+      g.drawLine(s/2-1, 2, s/2-1, h-4-margin);
+      g.drawLine(s/2+1, 2, s/2+1, h-4-margin);
+		} else { // horizontal lines in vertical toolbar
+      g.drawLine(2, s/2-1, w-4-margin, s/2-1);
+      g.drawLine(2, s/2+1, w-4-margin, s/2+1);
 		}
-		g.fillRect(x, y, w, h);
 	}
 }

@@ -42,16 +42,20 @@ public class Gates extends Library {
   private List<Tool> tools = null;
 
   public Gates() {
-    tools = Arrays.asList(new Tool[] { new AddTool(NotGate.FACTORY),
-      new AddTool(Buffer.FACTORY), new AddTool(AndGate.FACTORY),
-      new AddTool(OrGate.FACTORY), new AddTool(NandGate.FACTORY),
-      new AddTool(NorGate.FACTORY), new AddTool(XorGate.FACTORY),
-      new AddTool(XnorGate.FACTORY),
-      new AddTool(OddParityGate.FACTORY),
-      new AddTool(EvenParityGate.FACTORY),
-      new AddTool(ControlledBuffer.FACTORY_BUFFER),
-      new AddTool(ControlledBuffer.FACTORY_INVERTER),
-      new AddTool(PLA.FACTORY),
+    tools = Arrays.asList(new Tool[] {
+      new AddTool(Gates.class, NotGate.FACTORY),
+      new AddTool(Gates.class, Buffer.FACTORY),
+      new AddTool(Gates.class, AndGate.FACTORY),
+      new AddTool(Gates.class, OrGate.FACTORY),
+      new AddTool(Gates.class, NandGate.FACTORY),
+      new AddTool(Gates.class, NorGate.FACTORY),
+      new AddTool(Gates.class, XorGate.FACTORY),
+      new AddTool(Gates.class, XnorGate.FACTORY),
+      new AddTool(Gates.class, OddParityGate.FACTORY),
+      new AddTool(Gates.class, EvenParityGate.FACTORY),
+      new AddTool(Gates.class, ControlledBuffer.FACTORY_BUFFER),
+      new AddTool(Gates.class, ControlledBuffer.FACTORY_INVERTER),
+      new AddTool(Gates.class, PLA.FACTORY),
     });
   }
 

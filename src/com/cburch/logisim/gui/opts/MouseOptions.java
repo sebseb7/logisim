@@ -231,8 +231,7 @@ class MouseOptions extends OptionsPanel {
     public void mouseReleased(MouseEvent e) {
     }
 
-    public void moveRequested(ProjectExplorer.Event event, AddTool dragged,
-        AddTool target) {
+    public void moveRequested(ProjectExplorer.Event event, AddTool dragged, int newIdx) {
     }
 
     //
@@ -286,7 +285,7 @@ class MouseOptions extends OptionsPanel {
   public MouseOptions(OptionsFrame window) {
     super(window, new GridLayout(1, 3));
 
-    explorer = new ProjectExplorer(getProject());
+    explorer = new ProjectExplorer(getProject(), true /* show all */);
     explorer.setListener(listener);
 
     // Area for adding mappings

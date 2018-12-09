@@ -103,4 +103,8 @@ public abstract class Library {
     return getName();
   }
 
+  public boolean displayInToolbox() {
+    return true;
+  }
+
 }

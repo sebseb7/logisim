@@ -34,6 +34,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.datatransfer.DataFlavor;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
@@ -43,34 +44,38 @@ import java.util.List;
 import com.cburch.draw.toolbar.AbstractToolbarModel;
 import com.cburch.draw.toolbar.ToolbarItem;
 import com.cburch.draw.toolbar.ToolbarSeparator;
+import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.ComponentDrawContext;
+import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.file.LogisimFile;
+import com.cburch.logisim.file.Options;
 import com.cburch.logisim.file.ToolbarData;
+import com.cburch.logisim.gui.opts.ToolbarActions;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
+import com.cburch.logisim.std.hdl.VhdlEntity;
+import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.InputEventUtil;
 
 class LayoutToolbarModel extends AbstractToolbarModel {
   private class MyListener implements ProjectListener, AttributeListener,
           ToolbarData.ToolbarListener, PropertyChangeListener {
-    //
-    // AttributeListener methods
-    //
+    
+    @Override
     public void attributeListChanged(AttributeEvent e) {
     }
 
+    @Override
     public void attributeValueChanged(AttributeEvent e) {
       fireToolbarAppearanceChanged();
     }
 
-    //
-    // ProjectListener methods
-    //
+    @Override
     public void projectChanged(ProjectEvent e) {
       int act = e.getAction();
       if (act == ProjectEvent.ACTION_SET_TOOL) {
@@ -92,18 +97,14 @@ class LayoutToolbarModel extends AbstractToolbarModel {
       }
     }
 
-    //
-    // PropertyChangeListener method
-    //
+    @Override
     public void propertyChange(PropertyChangeEvent event) {
       if (AppPreferences.GATE_SHAPE.isSource(event)) {
         fireToolbarAppearanceChanged();
       }
     }
 
-    //
-    // ToolbarListener methods
-    //
+    @Override
     public void toolbarChanged() {
       buildContents();
     }
@@ -120,6 +121,7 @@ class LayoutToolbarModel extends AbstractToolbarModel {
       return new Dimension(24, 24);
     }
 
+    @Override
     public String getToolTip() {
       String ret = tool.getDescription();
       int index = 1;
@@ -139,10 +141,12 @@ class LayoutToolbarModel extends AbstractToolbarModel {
       return ret;
     }
 
+    @Override
     public boolean isSelectable() {
       return true;
     }
 
+    @Override
     public void paintIcon(Component destination, Graphics g) {
       // draw halo
       if (tool == haloedTool
@@ -201,7 +205,7 @@ class LayoutToolbarModel extends AbstractToolbarModel {
     ToolbarData data = proj.getLogisimFile().getOptions().getToolbarData();
     for (Tool tool : data.getContents()) {
       if (tool == null) {
-        newItems.add(new ToolbarSeparator(4));
+        newItems.add(new ToolbarSeparator(5));
       } else {
         ToolbarItem i = findItem(oldItems, tool);
         if (i == null) {
@@ -244,4 +248,54 @@ class LayoutToolbarModel extends AbstractToolbarModel {
       fireToolbarAppearanceChanged();
     }
   }
+
+  @Override
+  public DataFlavor getAcceptedDataFlavor() {
+    // return com.cburch.logisim.tools.MenuTool.dnd.dataFlavor;
+    return Tool.dnd.dataFlavor;
+  }
+
+  @Override
+  public boolean isSameProject(Object incoming) {
+    if (incoming instanceof Tool && ((Tool)incoming).isBuiltin())
+      return true;
+    if (!(incoming instanceof AddTool))
+      return false;
+    AddTool tool = (AddTool)incoming;
+    ComponentFactory factory = tool.getFactory();
+    if (factory == null)
+      return false;
+    if (factory instanceof SubcircuitFactory || factory instanceof VhdlEntity) {
+      // LogisimFile f = ((SubcircuitFactory)factory).getCircuit().getLogisimFile(); 
+      // if (proj.getLogisimFile() == f)
+      //   return true;
+      // Search our file to see if we have the same AddTool, either as an
+      // AddTool for one our circuits, or an AddTool for some jar library we
+      // loaded, or an AddTool for some circuit inside (perhaps even nested
+      // multiple levels deep) inside a Logisim library.
+      System.out.println("subcirc..." + factory);
+      System.out.println("found: " +  proj.getLogisimFile().findTool(tool));
+      return proj.getLogisimFile().getTools().contains(tool)
+          || proj.getLogisimFile().findTool(tool) != null;
+    }
+    return false;
+  }
+
+  @Override
+  public boolean handleDrop(Object incoming, int pos) {
+    Tool tool = (Tool)incoming;
+    if (!tool.isBuiltin() && !isSameProject(incoming))
+      return false;
+    Options opts = proj.getLogisimFile().getOptions();
+    proj.doAction(ToolbarActions.addTool(opts.getToolbarData(), tool.cloneTool(), pos));
+    return true;
+  }
+
+  @Override
+  public boolean handleDragDrop(int oldPos, int newPos) {
+    Options opts = proj.getLogisimFile().getOptions();
+    proj.doAction(ToolbarActions.moveTool(opts.getToolbarData(), oldPos, newPos));
+    return true;
+  }
+
 }

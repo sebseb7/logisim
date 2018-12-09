@@ -31,21 +31,175 @@
 package com.cburch.draw.toolbar;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDragEvent;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.dnd.DropTargetEvent;
+import java.awt.dnd.DropTargetListener;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
+import javax.swing.UIManager;
 
 public class Toolbar extends JPanel {
-	private class MyListener implements ToolbarModelListener {
+
+  static final Color DROP_CURSOR_COLOR =
+      UIManager.getDefaults().getColor("Table.dropLineColor");
+
+  private class JPanelWithCursor extends JPanel {
+    int cursorPos = -1; // 1 or higher is valid (ignores filler and glue at ends)
+
+    protected void paintComponent(Graphics g) {
+      super.paintComponent(g);
+      if (cursorPos >= 1) {
+        Component c = getComponent(cursorPos);
+        g.setColor(DROP_CURSOR_COLOR);
+        Point p = c.getLocation();
+        if (orientation == HORIZONTAL)
+          g.fillRect(p.x-1, 2, 3, getHeight()-4);
+        else
+          g.fillRect(2, p.y-1, getWidth()-4, 3);
+      }
+    }
+
+    int setDropCursor(Point p) {
+      int newPos = -1;
+      if (p != null && getComponentCount() > 1) {
+        Component[] children = getComponents();
+        int end = children.length - 2; // ignore filler and glue at ends
+        for (newPos = 1; newPos < end; newPos++) {
+          Component c = getComponent(newPos);
+          Rectangle r = c.getBounds();
+          if (orientation == HORIZONTAL && p.x < r.x + r.width/2)
+            break;
+          if (orientation == VERTICAL && p.y < r.y + r.height/2)
+            break;
+        }
+      }
+      if (newPos != cursorPos) {
+        cursorPos = newPos;
+        repaint();
+      }
+      return cursorPos - 1; // minus one for filler at end
+    }
+
+  }
+
+	private class MyListener implements ToolbarModelListener, DropTargetListener {
+    @Override
 		public void toolbarAppearanceChanged(ToolbarModelEvent event) {
 			repaint();
 		}
 
+    @Override
 		public void toolbarContentsChanged(ToolbarModelEvent event) {
 			computeContents();
 		}
-	}
+
+    boolean checkIntraToolbarMove(DropTargetDragEvent e) throws Exception {
+      DataFlavor flavor = ToolbarButton.dnd.dataFlavor;
+      int action = DnDConstants.ACTION_MOVE;
+      if ((e.getSourceActions() & action) == 0 || !e.isDataFlavorSupported(flavor))
+        return false;
+      e.acceptDrag(action);
+      ToolbarButton incoming;
+      incoming = (ToolbarButton)e.getTransferable().getTransferData(flavor);
+      return (incoming != null && incoming.getToolbar() == Toolbar.this);
+    }
+
+    boolean checkIntraProjectAddition(DropTargetDragEvent e) throws Exception {
+      DataFlavor flavor = model.getAcceptedDataFlavor();
+      int action = DnDConstants.ACTION_LINK;
+      // System.out.printf("checking proj flavor %d %s\n", action, flavor);
+      // System.out.printf("%s %s\n",
+      // (e.getSourceActions() & action) != 0,  e.isDataFlavorSupported(flavor));
+      // for (DataFlavor f : e.getCurrentDataFlavorsAsList()) {
+      //   System.out.println("> " + f);
+      // }
+      if ((e.getSourceActions() & action) == 0 || !e.isDataFlavorSupported(flavor))
+        return false;
+      e.acceptDrag(action);
+      Object incoming = e.getTransferable().getTransferData(flavor);
+      // System.out.println("checking for same project");
+      return (incoming != null && model.isSameProject(incoming));
+    }
+
+    void checkDrag(DropTargetDragEvent e) {
+      // todo: be careful about drag and drop between projects
+      try {
+        // System.out.println("checking drag" + model.supportsDragDrop());
+        if (model.supportsDragDrop()
+            && (checkIntraToolbarMove(e) || checkIntraProjectAddition(e))) {
+          subpanel.setDropCursor(e.getLocation());
+          return;
+        }
+      } catch (Throwable t) { t.printStackTrace(); }
+      subpanel.setDropCursor(null);
+      e.rejectDrag();
+    }
+
+    @Override
+    public void dragEnter(DropTargetDragEvent e) { checkDrag(e); }
+    @Override
+    public void dragOver(DropTargetDragEvent e) { checkDrag(e); }
+    @Override
+    public void dropActionChanged(DropTargetDragEvent e) { checkDrag(e); }
+    @Override
+    public void dragExit(DropTargetEvent e)  { subpanel.setDropCursor(null); }
+
+    boolean tryIntraToolbarMove(DropTargetDropEvent e, int pos) throws Exception {
+      DataFlavor flavor = ToolbarButton.dnd.dataFlavor;
+      int action = DnDConstants.ACTION_MOVE;
+      if ((e.getSourceActions() & action) == 0 || !e.isDataFlavorSupported(flavor))
+        return false;
+      e.acceptDrop(action);
+      ToolbarButton incoming;
+      incoming = (ToolbarButton)e.getTransferable().getTransferData(flavor);
+      if (!(incoming != null && incoming.getToolbar() == Toolbar.this))
+        return false;
+      int oldPos = indexOf(incoming);
+      if (oldPos < 0)
+        return false;
+      int newPos = (oldPos < pos) ? pos - 1 : pos;
+      return (newPos == oldPos || model.handleDragDrop(oldPos, newPos));
+    }
+
+    boolean tryIntraProjectAddition(DropTargetDropEvent e, int pos) throws Exception {
+      DataFlavor flavor = model.getAcceptedDataFlavor();
+      int action = DnDConstants.ACTION_LINK;
+      if ((e.getSourceActions() & action) == 0 || !e.isDataFlavorSupported(flavor))
+        return false;
+      e.acceptDrop(action);
+      Object incoming = e.getTransferable().getTransferData(flavor);
+      if (!(incoming != null && model.isSameProject(incoming)))
+        return false;
+      return model.handleDrop(incoming, pos);
+    }
+
+    @Override
+    public void drop(DropTargetDropEvent e) {
+      int pos = subpanel.setDropCursor(e.getLocation());
+      subpanel.setDropCursor(null);
+      try {
+        if (pos >= 0 && model.supportsDragDrop()
+            && (tryIntraToolbarMove(e, pos) || tryIntraProjectAddition(e, pos))) {
+          e.dropComplete(true);
+          return;
+        }
+      } catch (Throwable t) { t.printStackTrace(); }
+      e.dropComplete(false);
+      e.rejectDrop();
+    }
+  }
 
 	private static final long serialVersionUID = 1L;
 	public static final Object VERTICAL = new Object();
@@ -53,18 +207,21 @@ public class Toolbar extends JPanel {
 	public static final Object HORIZONTAL = new Object();
 
 	private ToolbarModel model;
-	private JPanel subpanel;
+	private JPanelWithCursor subpanel;
 	private Object orientation;
 	private MyListener myListener;
 	private ToolbarButton curPressed;
+  private DropTarget dropTarget;
 
 	public Toolbar(ToolbarModel model) {
 		super(new BorderLayout());
-		this.subpanel = new JPanel();
+		this.subpanel = new JPanelWithCursor();
 		this.model = model;
 		this.orientation = HORIZONTAL;
 		this.myListener = new MyListener();
 		this.curPressed = null;
+    // this.flavorMap = new FlavorMap();
+    this.dropTarget = new DropTarget(this, DnDConstants.ACTION_LINK, myListener, true /* , flavorMap */);
 
 		this.add(new JPanel(), BorderLayout.CENTER);
 		setOrientation(HORIZONTAL);
@@ -78,9 +235,11 @@ public class Toolbar extends JPanel {
 		subpanel.removeAll();
 		ToolbarModel m = model;
 		if (m != null) {
+      subpanel.add(Box.createRigidArea(new Dimension(2, 2))); // for drop cursor
 			for (ToolbarItem item : m.getItems()) {
 				subpanel.add(new ToolbarButton(this, item));
 			}
+      subpanel.add(Box.createRigidArea(new Dimension(2, 2))); // for drop cursor
 			subpanel.add(Box.createGlue());
 		}
 		revalidate();
@@ -138,4 +297,15 @@ public class Toolbar extends JPanel {
 			computeContents();
 		}
 	}
+
+  int indexOf(ToolbarButton b) {
+    Component[] children = subpanel.getComponents();
+    for (int i = 1; i < children.length - 2; i++) {
+      if (subpanel.getComponent(i) == b) {
+        return i - 1; // ignore glue at ends
+      }
+    }
+    return -1;
+  }
+
 }

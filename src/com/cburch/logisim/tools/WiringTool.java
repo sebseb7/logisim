@@ -55,7 +55,7 @@ import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.util.StringGetter;
 
-public class WiringTool extends Tool {
+public final class WiringTool extends Tool {
   private static Cursor cursor = Cursor
       .getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
   private static final Icon toolIcon = Icons.getIcon("wiring.gif");
@@ -73,8 +73,25 @@ public class WiringTool extends Tool {
   private Action lastAction = null;
   private int direction = 0;
 
-  public WiringTool() {
-    super.select(null);
+  public WiringTool() { }
+
+  @Override
+  public boolean isBuiltin() { return true; }
+
+  @Override
+  public Tool cloneTool() {
+    return new WiringTool();
+  }
+
+  // All instances considered equal, so it is unique per toolbar, etc.
+  @Override
+  public boolean equals(Object other) {
+    return other instanceof WiringTool;
+  }
+
+  @Override
+  public int hashCode() {
+    return WiringTool.class.hashCode();
   }
 
   private Wire checkForRepairs(Canvas canvas, Wire w, Location end) {
@@ -170,11 +187,6 @@ public class WiringTool extends Tool {
   }
 
   @Override
-  public boolean equals(Object other) {
-    return other instanceof WiringTool;
-  }
-
-  @Override
   public Cursor getCursor() {
     return cursor;
   }
@@ -221,11 +233,6 @@ public class WiringTool extends Tool {
       }
       return e0.equals(e1) ? null : Wire.create(e0, e1);
     }
-  }
-
-  @Override
-  public int hashCode() {
-    return WiringTool.class.hashCode();
   }
 
   @Override

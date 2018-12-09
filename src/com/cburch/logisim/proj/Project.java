@@ -127,7 +127,7 @@ public class Project {
   private boolean startupScreen = false;
 
   public Project(LogisimFile file) {
-    addLibraryListener(myListener);
+    fileListeners.add(myListener);
     setLogisimFile(file);
 
     this.vhdlSimulator = new VhdlSimulator(this);
@@ -144,13 +144,9 @@ public class Project {
 
   public void addLibraryListener(LibraryListener value) {
     fileListeners.add(value);
-    if (file != null)
-      file.addLibraryListener(value);
+    file.addLibraryListener(value);
   }
 
-  //
-  // Listener methods
-  //
   public void addProjectListener(ProjectListener what) {
     projectListeners.add(what);
   }
@@ -224,8 +220,7 @@ public class Project {
   }
 
   public int doTestVector(String vectorname, String name) {
-    Circuit circuit = (name == null ? file.getMainCircuit() : file
-        .getCircuit(name));
+    Circuit circuit = (name == null ? file.getMainCircuit() : file.getCircuit(name));
     if (circuit == null) {
       System.err.println("Circuit '" + name + "' not found.");
       return -1;
@@ -468,8 +463,7 @@ public class Project {
 
   public void removeLibraryListener(LibraryListener value) {
     fileListeners.remove(value);
-    if (file != null)
-      file.removeLibraryListener(value);
+    file.removeLibraryListener(value);
   }
 
   public void removeProjectListener(ProjectListener what) {
@@ -564,7 +558,7 @@ public class Project {
   }
 
   public void setLogisimFile(LogisimFile value) {
-    LogisimFile old = this.file;
+    LogisimFile old = this.file; // old is only null during constructor
     if (old != null) {
       for (LibraryListener l : fileListeners) {
         old.removeLibraryListener(l);
@@ -586,10 +580,8 @@ public class Project {
     undoMods = 0;
     fireEvent(ProjectEvent.ACTION_SET_FILE, old, file);
     setCurrentCircuit(file.getMainCircuit());
-    if (file != null) {
-      for (LibraryListener l : fileListeners) {
-        file.addLibraryListener(l);
-      }
+    for (LibraryListener l : fileListeners) {
+      file.addLibraryListener(l);
     }
     file.setDirty(true); // toggle it so everybody hears the file is fresh
     file.setDirty(false);

@@ -53,11 +53,6 @@ public class Wiring extends Library {
       "gate", S.getter("wiringGateAttr"), new AttributeOption[] {
         GATE_TOP_LEFT, GATE_BOTTOM_RIGHT });
 
-  private static Tool[] ADD_TOOLS = { new AddTool(SplitterFactory.instance),
-    new AddTool(Pin.FACTORY), new AddTool(Probe.FACTORY),
-    new AddTool(Tunnel.FACTORY), new AddTool(PullResistor.FACTORY),
-    new AddTool(Clock.FACTORY), new AddTool(Constant.FACTORY), };
-
   private static FactoryDescription[] DESCRIPTIONS = {
     new FactoryDescription("Power", S.getter("powerComponent"),
         "power.gif", "Power"),
@@ -91,11 +86,14 @@ public class Wiring extends Library {
   @Override
   public List<Tool> getTools() {
     if (tools == null) {
-      List<Tool> ret = new ArrayList<Tool>(ADD_TOOLS.length
-          + DESCRIPTIONS.length);
-      for (Tool a : ADD_TOOLS) {
-        ret.add(a);
-      }
+      List<Tool> ret = new ArrayList<>(7 + DESCRIPTIONS.length);
+      ret.add(new AddTool(Wiring.class, SplitterFactory.instance));
+      ret.add(new AddTool(Wiring.class, Pin.FACTORY));
+      ret.add(new AddTool(Wiring.class, Probe.FACTORY));
+      ret.add(new AddTool(Wiring.class, Tunnel.FACTORY));
+      ret.add(new AddTool(Wiring.class, PullResistor.FACTORY));
+      ret.add(new AddTool(Wiring.class, Clock.FACTORY));
+      ret.add(new AddTool(Wiring.class, Constant.FACTORY));
       ret.addAll(FactoryDescription.getTools(Wiring.class, DESCRIPTIONS));
       tools = ret;
     }

@@ -56,6 +56,18 @@ public class Builtin extends Library {
       new Io(),  new Tcl(), new BFHPraktika(), });
   }
 
+  public static boolean isBuiltinLibrary(Class<? extends Library> libClass) {
+    return libClass == Base.class
+        || libClass == Gates.class
+        || libClass == Wiring.class
+        || libClass == Plexers.class
+        || libClass == Arithmetic.class
+        || libClass == Memory.class
+        || libClass == Io.class
+        || libClass == Tcl.class
+        || libClass == BFHPraktika.class;
+  }
+
   @Override
   public String getDisplayName() {
     return S.get("builtinLibrary");

@@ -33,17 +33,19 @@ package com.cburch.draw.toolbar;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
 import javax.swing.JComponent;
 
+import com.cburch.logisim.util.DragDrop;
 import com.cburch.logisim.util.GraphicsUtil;
 
-class ToolbarButton extends JComponent implements MouseListener {
+class ToolbarButton extends JComponent implements MouseListener, DragDrop.Support, DragDrop.Ghost {
 	private static final long serialVersionUID = 1L;
 
-	private static final int BORDER = 2;
+	public static final int BORDER = 2;
 
 	private Toolbar toolbar;
 	private ToolbarItem item;
@@ -54,11 +56,16 @@ class ToolbarButton extends JComponent implements MouseListener {
 		addMouseListener(this);
 		setFocusable(true);
 		setToolTipText("");
+    DragDrop.enable(this, DragDrop.MOVE);
 	}
 
 	public ToolbarItem getItem() {
 		return item;
 	}
+
+  public Toolbar getToolbar() {
+    return toolbar;
+  }
 
 	@Override
 	public Dimension getMinimumSize() {
@@ -78,11 +85,9 @@ class ToolbarButton extends JComponent implements MouseListener {
 		return item.getToolTip();
 	}
 
-	public void mouseClicked(MouseEvent e) {
-	}
+	public void mouseClicked(MouseEvent e) { }
 
-	public void mouseEntered(MouseEvent e) {
-	}
+	public void mouseEntered(MouseEvent e) { }
 
 	public void mouseExited(MouseEvent e) {
 		toolbar.setPressed(null);
@@ -138,4 +143,21 @@ class ToolbarButton extends JComponent implements MouseListener {
 			GraphicsUtil.switchToWidth(g, 1);
 		}
 	}
+
+  public static final DragDrop dnd = new DragDrop(ToolbarButton.class);
+  public DragDrop getDragDrop() { return dnd; }
+
+  public void paintDragImage(JComponent dest, Graphics g, Dimension dim) {
+    ((Graphics2D)g).setComposite(java.awt.AlphaComposite.SrcOver.derive(0.75f));
+    g.setColor(Color.WHITE);
+    g.fillRect(0, 0, dim.width, dim.height);
+    g.setColor(Color.BLACK);
+    g.drawRect(0, 0, dim.width-1, dim.height-1);
+		Graphics g2 = g.create();
+		g.translate(BORDER, BORDER);
+		item.paintIcon(ToolbarButton.this, g);
+    ((Graphics2D)g).setComposite(java.awt.AlphaComposite.SrcOver);
+		g2.dispose();
+	}
+
 }

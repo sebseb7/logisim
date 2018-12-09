@@ -1,4 +1,4 @@
-/**
+/* ProjectExplorerFalseRootNode
  * This file is part of Logisim-evolution.
  *
  * Logisim-evolution is free software: you can redistribute it and/or modify
@@ -28,47 +28,42 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.cburch.logisim;
+package com.cburch.logisim.gui.generic;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.util.Enumeration;
 
-import javax.swing.JOptionPane;
+import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.std.base.Base;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+public class ProjectExplorerRootNode extends ProjectExplorerModel.Node<Library> {
 
-import com.cburch.logisim.gui.start.Startup;
+  private static final long serialVersionUID = 1L;
 
-public class Main {
-  public static void main(String[] args) throws Exception {
-    Startup startup = Startup.parseArgs(args);
-    if (startup == null)
-      System.exit(0);
-    try {
-      startup.run();
-    } catch (Throwable e) {
-      if (headless) {
-        System.err.println(e);
-        e.printStackTrace(System.err);
-      } else {
-        Writer result = new StringWriter();
-        PrintWriter printWriter = new PrintWriter(result);
-        e.printStackTrace(new PrintWriter(result));
-        JOptionPane.showMessageDialog(null, result.toString());
-      }
-      System.exit(-1);
-    }
+  private static Base getBaseLib(Library projLib) {
+    for (Library lib : projLib.getLibraries())
+      if (lib instanceof Base)
+        return (Base)lib;
+    return null;
   }
 
-  public static boolean headless = false;
-  public static boolean MacOS = false;
+  ProjectExplorerRootNode(ProjectExplorerModel model, Library lib) {
+    super(model, lib);
+    add(new ProjectExplorerLibraryNode(model, getBaseLib(lib)));
+    add(new ProjectExplorerLibraryNode(model, lib));
+  }
 
-  final static Logger logger = LoggerFactory.getLogger(Main.class);
+  @Override
+  ProjectExplorerRootNode create(Library userObject) {
+    return new ProjectExplorerRootNode(getModel(), userObject);
+  }
 
-  public static final LogisimVersion VERSION = LogisimVersion.get(4, 0, 0, "HC"); // candidate
-  public static final String VERSION_NAME = VERSION.toString();
-  public static final int COPYRIGHT_YEAR = 2018;
+  @Override
+  void decommission() {
+    for (Enumeration<?> en = children(); en.hasMoreElements();) {
+      Object n = en.nextElement();
+      if (n instanceof ProjectExplorerModel.Node<?>)
+        ((ProjectExplorerModel.Node<?>) n).decommission();
+    }
+  }
 
 }

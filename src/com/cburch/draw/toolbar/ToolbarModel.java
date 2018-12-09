@@ -31,6 +31,7 @@
 package com.cburch.draw.toolbar;
 
 import java.util.List;
+import java.awt.datatransfer.DataFlavor;
 
 public interface ToolbarModel {
 	public void addToolbarModelListener(ToolbarModelListener listener);
@@ -42,4 +43,10 @@ public interface ToolbarModel {
 	public void itemSelected(ToolbarItem item);
 
 	public void removeToolbarModelListener(ToolbarModelListener listener);
+
+  default public boolean supportsDragDrop() { return getAcceptedDataFlavor() != null; }
+  default public DataFlavor getAcceptedDataFlavor() { return null; }
+  default public boolean handleDrop(Object incoming, int pos) { return false; }
+  default public boolean handleDragDrop(int oldPos, int newP) { return false; }
+  default public boolean isSameProject(Object incoming) { return false; }
 }

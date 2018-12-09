@@ -34,7 +34,6 @@ import java.awt.LayoutManager;
 
 import javax.swing.JPanel;
 
-import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.file.Options;
 import com.cburch.logisim.proj.Project;
 
@@ -53,10 +52,6 @@ abstract class OptionsPanel extends JPanel {
   }
 
   public abstract String getHelpText();
-
-  // LogisimFile getLogisimFile() {
-  //   return optionsFrame.getLogisimFile();
-  // }
 
   Options getOptions() {
     return optionsFrame.getOptions();

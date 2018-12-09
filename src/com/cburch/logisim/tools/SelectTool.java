@@ -74,7 +74,7 @@ import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.util.StringGetter;
 
-public class SelectTool extends Tool {
+public final class SelectTool extends Tool {
   private static class ComputingMessage implements StringGetter {
     private int dx;
     private int dy;
@@ -135,26 +135,39 @@ public class SelectTool extends Tool {
   private static final Color COLOR_COMPUTING = new Color(96, 192, 96);
 
   private static final Color COLOR_RECT_SELECT = new Color(0, 64, 128, 255);
-  private static final Color BACKGROUND_RECT_SELECT = new Color(192, 192,
-      255, 192);
+  private static final Color BACKGROUND_RECT_SELECT = new Color(192, 192, 255, 192);
+
   private Location start;
-  private int state;
+  private int state = IDLE;
   private int curDx;
   private int curDy;
   private boolean drawConnections;
   private MoveGesture moveGesture;
   private HashMap<Component, KeyConfigurator> keyHandlers;
 
-  private HashSet<Selection> selectionsAdded;
+  private HashSet<Selection> selectionsAdded = new HashSet<>();
 
-  private Listener selListener;
+  private Listener selListener = new Listener();
 
-  public SelectTool() {
-    start = null;
-    state = IDLE;
-    selectionsAdded = new HashSet<Selection>();
-    selListener = new Listener();
-    keyHandlers = null;
+  public SelectTool() { }
+
+  @Override
+  public boolean isBuiltin() { return true; }
+
+  @Override
+  public Tool cloneTool() {
+    return new SelectTool();
+  }
+
+  // All instances considered equal, so it is unique per toolbar, etc.
+  @Override
+  public boolean equals(Object other) {
+    return other instanceof SelectTool;
+  }
+
+  @Override
+  public int hashCode() {
+    return SelectTool.class.hashCode();
   }
 
   private void computeDxDy(Project proj, MouseEvent e, Graphics g) {
@@ -261,11 +274,6 @@ public class SelectTool extends Tool {
   }
 
   @Override
-  public boolean equals(Object other) {
-    return other instanceof SelectTool;
-  }
-
-  @Override
   public AttributeSet getAttributeSet(Canvas canvas) {
     return canvas.getSelection().getAttributeSet();
   }
@@ -342,11 +350,6 @@ public class SelectTool extends Tool {
       }
     }
     canvas.repaint();
-  }
-
-  @Override
-  public int hashCode() {
-    return SelectTool.class.hashCode();
   }
 
   @Override

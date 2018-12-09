@@ -36,7 +36,7 @@ import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.Tool;
 
-class ToolbarActions {
+public class ToolbarActions {
   private static class AddSeparator extends Action {
     ToolbarData toolbar;
     int pos;
@@ -62,20 +62,25 @@ class ToolbarActions {
     }
   }
 
-  private static class AddTool extends Action {
+  private static class AddToolAction extends Action {
     ToolbarData toolbar;
     Tool tool;
-    int pos;
+    int requestedPos, insertedPos;
 
-    AddTool(ToolbarData toolbar, Tool tool) {
+    AddToolAction(ToolbarData toolbar, Tool tool, int pos) {
       this.toolbar = toolbar;
       this.tool = tool;
+      this.requestedPos = pos;
     }
 
     @Override
     public void doIt(Project proj) {
-      pos = toolbar.getContents().size();
-      toolbar.addTool(pos, tool);
+      int n = toolbar.getContents().size();
+      if (requestedPos < 0 || requestedPos > n)
+        insertedPos = n;
+      else
+        insertedPos = requestedPos;
+      toolbar.addTool(insertedPos, tool);
     }
 
     @Override
@@ -85,7 +90,7 @@ class ToolbarActions {
 
     @Override
     public void undo(Project proj) {
-      toolbar.remove(pos);
+      toolbar.remove(insertedPos);
     }
   }
 
@@ -198,7 +203,11 @@ class ToolbarActions {
   }
 
   public static Action addTool(ToolbarData toolbar, Tool tool) {
-    return new AddTool(toolbar, tool);
+    return new AddToolAction(toolbar, tool, -1);
+  }
+
+  public static Action addTool(ToolbarData toolbar, Tool tool, int pos) {
+    return new AddToolAction(toolbar, tool, pos);
   }
 
   public static Action moveTool(ToolbarData toolbar, int src, int dest) {

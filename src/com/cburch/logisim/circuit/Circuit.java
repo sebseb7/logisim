@@ -188,9 +188,10 @@ public class Circuit {
     logiFile = file;
   }
 
-  //
-  // Listener methods
-  //
+  public LogisimFile getLogisimFile() {
+    return logiFile;
+  }
+
   public void addCircuitListener(CircuitListener what) {
     listeners.add(what);
   }
@@ -608,7 +609,7 @@ public class Circuit {
   }
 
   public String getProjName() {
-    return logiFile == null ? "" : logiFile.getName();
+    return logiFile.getName();
   }
 
   public Collection<? extends Component> getSplitCauses(Location loc) {

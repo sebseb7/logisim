@@ -230,13 +230,14 @@ class ToolboxManip implements ProjectExplorer.Listener {
     }
   }
 
-  public void moveRequested(ProjectExplorer.Event event, AddTool dragged,
-      AddTool target) {
+  public void moveRequested(ProjectExplorer.Event event, AddTool dragged, int newIdx) {
     LogisimFile file = proj.getLogisimFile();
     int draggedIndex = file.getTools().indexOf(dragged);
-    int targetIndex = file.getTools().indexOf(target);
+    int targetIndex = newIdx;
     if (targetIndex > draggedIndex)
-      targetIndex++;
+      targetIndex--;
+    if (targetIndex == draggedIndex)
+      return;
     proj.doAction(LogisimFileActions.moveCircuit(dragged, targetIndex));
   }
 

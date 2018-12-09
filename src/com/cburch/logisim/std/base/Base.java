@@ -46,22 +46,24 @@ import com.cburch.logisim.tools.WiringTool;
 
 public class Base extends Library {
   private final List<Tool> tools;
-  private final AddTool textAdder = new AddTool(Text.FACTORY);
-  private final SelectTool selectTool = new SelectTool();
+  private final AddTool textAdder = new AddTool(Base.class, Text.FACTORY);
 
   public Base() {
     WiringTool wiring = new WiringTool();
+    SelectTool select = new SelectTool();
 
     tools = Arrays.asList(new Tool[] {
-      new PokeTool(),
-      new EditTool(selectTool, wiring),
+      PokeTool.SINGLETON,
+      new EditTool(select, wiring),
       // Select by itself is kind of useless. It can select and move things, or
       // click to edit attributes. But it can't modify wires like EditTool can.
-      /* select, */
+      // Leave it in, maybe useful for custom keyboard/mouse mappings.
+      select,
       wiring,
-      new TextTool(),
-      new MenuTool(),
-      // TextTool uses internall Text.FACTORY, but also supports click-to-edit,
+      new TextTool(), 
+      // MenuTool is kind of useless, but necessary for custom keyboard/mouse mappings.
+      MenuTool.SINGLETON,
+      // TextTool internally uses Text.FACTORY, but also supports click-to-edit,
       // custom cursor, etc. A dedicated "add text tool" is useless.
       /* new AddTool(Text.FACTORY), */
     });
@@ -72,11 +74,13 @@ public class Base extends Library {
     Tool t = super.getTool(name);
     if (t == null) {
       if (name.equals("Text"))
-        return textAdder; // needed by XmlCircuitReader
-      if (name.equals("Select Tool"))
-        return selectTool; // not sure if this is necessary
+        return textAdder; // needed by XmlCircuitReader to re-construct circuits
     }
     return t;
+  }
+
+  public boolean isDeprecatedTool(String name) {
+    return name.equals("Text");
   }
 
   @Override
@@ -92,5 +96,10 @@ public class Base extends Library {
   @Override
   public List<Tool> getTools() {
     return tools;
+  }
+
+  @Override
+  public boolean displayInToolbox() {
+    return false;
   }
 }

@@ -53,11 +53,11 @@ import com.cburch.logisim.util.StringGetter;
  */
 public class FactoryDescription {
 
-  public static List<Tool> getTools(Class<? extends Library> base,
+  public static List<Tool> getTools(Class<? extends Library> libClass,
       FactoryDescription[] descriptions) {
     Tool[] tools = new Tool[descriptions.length];
     for (int i = 0; i < tools.length; i++) {
-      tools[i] = new AddTool(base, descriptions[i]);
+      tools[i] = new AddTool(libClass, descriptions[i]);
     }
     return Arrays.asList(tools);
   }
@@ -108,7 +108,7 @@ public class FactoryDescription {
     return displayName.toString();
   }
 
-  public ComponentFactory getFactory(Class<? extends Library> libraryClass) {
+  public ComponentFactory getFactoryFromLibrary(Class<? extends Library> libClass) {
     ComponentFactory ret = factory;
     if (factory != null || factoryLoadAttempted) {
       return ret;
@@ -116,10 +116,10 @@ public class FactoryDescription {
       String msg = "";
       try {
         msg = "getting class loader";
-        ClassLoader loader = libraryClass.getClassLoader();
+        ClassLoader loader = libClass.getClassLoader();
         msg = "getting package name";
         String name;
-        Package pack = libraryClass.getPackage();
+        Package pack = libClass.getPackage();
         if (pack == null) {
           name = factoryClassName;
         } else {

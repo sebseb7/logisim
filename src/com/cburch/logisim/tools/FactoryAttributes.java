@@ -41,15 +41,15 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeSets;
 
 public class FactoryAttributes implements AttributeSet, AttributeListener, Cloneable {
-  private Class<? extends Library> descBase;
+  private Class<? extends Library> libraryClass;
   private FactoryDescription desc;
   private ComponentFactory factory;
   private AttributeSet baseAttrs;
   private ArrayList<AttributeListener> listeners;
 
-  public FactoryAttributes(Class<? extends Library> descBase,
+  public FactoryAttributes(Class<? extends Library> libClass,
       FactoryDescription desc) {
-    this.descBase = descBase;
+    this.libraryClass = libClass;
     this.desc = desc;
     this.factory = null;
     this.baseAttrs = null;
@@ -57,7 +57,7 @@ public class FactoryAttributes implements AttributeSet, AttributeListener, Clone
   }
 
   public FactoryAttributes(ComponentFactory factory) {
-    this.descBase = null;
+    this.libraryClass = null; // not needed b/c factory already loaded
     this.desc = null;
     this.factory = factory;
     this.baseAttrs = null;
@@ -108,10 +108,7 @@ public class FactoryAttributes implements AttributeSet, AttributeListener, Clone
   }
 
   public ComponentFactory getFactory() {
-    if (factory != null)
-      return factory;
-    else
-      return desc.getFactory(descBase);
+    return factory != null ? factory : desc.getFactoryFromLibrary(libraryClass);
   }
 
   public AttributeSet getBase() {
@@ -119,7 +116,7 @@ public class FactoryAttributes implements AttributeSet, AttributeListener, Clone
     if (ret == null) {
       ComponentFactory fact = factory;
       if (fact == null) {
-        fact = desc.getFactory(descBase);
+        fact = desc.getFactoryFromLibrary(libraryClass);
         factory = fact;
       }
       if (fact == null) {

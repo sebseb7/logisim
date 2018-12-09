@@ -34,9 +34,6 @@ import static com.cburch.logisim.tools.Strings.S;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
@@ -65,11 +62,13 @@ import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Dependencies;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.std.Builtin;
+import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.key.KeyConfigurationEvent;
 import com.cburch.logisim.tools.key.KeyConfigurationResult;
 import com.cburch.logisim.tools.key.KeyConfigurator;
 
-public class AddTool extends Tool implements Transferable {
+public class AddTool extends Tool {
 
   private class MyAttributeListener implements AttributeListener {
     public void attributeListChanged(AttributeEvent e) { bounds = null; }
@@ -86,7 +85,7 @@ public class AddTool extends Tool implements Transferable {
   private static Cursor cursor = Cursor
       .getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
 
-  private Class<? extends Library> descriptionBase;
+  private Class<? extends Library> libraryClass;
   private FactoryDescription description;
   private boolean sourceLoadAttempted;
   private ComponentFactory factory;
@@ -101,7 +100,7 @@ public class AddTool extends Tool implements Transferable {
   private KeyConfigurator keyHandler;
 
   private AddTool(AddTool base) {
-    this.descriptionBase = base.descriptionBase;
+    this.libraryClass = base.libraryClass;
     this.description = base.description;
     this.sourceLoadAttempted = base.sourceLoadAttempted;
     this.factory = base.factory;
@@ -111,17 +110,18 @@ public class AddTool extends Tool implements Transferable {
     attrs.addAttributeListener(new MyAttributeListener());
   }
 
-  public AddTool(Class<? extends Library> base, FactoryDescription description) {
-    this.descriptionBase = base;
+  public AddTool(Class<? extends Library> libClass, FactoryDescription description) {
+    this.libraryClass = libClass;
     this.description = description;
     this.sourceLoadAttempted = false;
     this.shouldSnap = true;
-    this.attrs = new FactoryAttributes(base, description);
+    this.attrs = new FactoryAttributes(libClass, description);
     attrs.addAttributeListener(new MyAttributeListener());
     this.keyHandlerTried = false;
   }
 
-  public AddTool(ComponentFactory source) {
+  public AddTool(Class<? extends Library> libClass, ComponentFactory source) {
+    this.libraryClass = libClass;
     this.description = null;
     this.sourceLoadAttempted = true;
     this.factory = source;
@@ -139,6 +139,25 @@ public class AddTool extends Tool implements Transferable {
   @Override
   public Tool cloneTool() {
     return new AddTool(this);
+  }
+
+  @Override
+  public int hashCode() {
+    FactoryDescription desc = description;
+    return desc != null ? desc.hashCode() : factory.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (!(other instanceof AddTool))
+      return false;
+    AddTool o = (AddTool) other;
+    if (this.description != null) {
+      return this.libraryClass == o.libraryClass
+          && this.description.equals(o.description);
+    } else {
+      return this.factory.equals(o.factory);
+    }
   }
 
   @Override
@@ -178,19 +197,6 @@ public class AddTool extends Tool implements Transferable {
       source.drawGhost(context, Color.GRAY, x, y, getBaseAttributes());
     } else if (state == SHOW_ADD) {
       source.drawGhost(context, Color.BLACK, x, y, getBaseAttributes());
-    }
-  }
-
-  @Override
-  public boolean equals(Object other) {
-    if (!(other instanceof AddTool))
-      return false;
-    AddTool o = (AddTool) other;
-    if (this.description != null) {
-      return this.descriptionBase == o.descriptionBase
-          && this.description.equals(o.description);
-    } else {
-      return this.factory.equals(o.factory);
     }
   }
 
@@ -270,7 +276,7 @@ public class AddTool extends Tool implements Transferable {
     if (ret != null || sourceLoadAttempted) {
       return ret;
     } else {
-      ret = description.getFactory(descriptionBase);
+      ret = description.getFactoryFromLibrary(libraryClass);
       if (ret != null) {
         AttributeSet base = getBaseAttributes();
         Boolean value = (Boolean) ret.getFeature(
@@ -291,12 +297,6 @@ public class AddTool extends Tool implements Transferable {
   public String getName() {
     FactoryDescription desc = description;
     return desc == null ? factory.getName() : desc.getName();
-  }
-
-  @Override
-  public int hashCode() {
-    FactoryDescription desc = description;
-    return desc != null ? desc.hashCode() : factory.hashCode();
   }
 
   @Override
@@ -565,35 +565,11 @@ public class AddTool extends Tool implements Transferable {
     }
   }
 
-  public static final DataFlavor dataFlavor;
-  static {
-    DataFlavor f = null;
-    try {
-      f = new DataFlavor(
-          String.format("%s;class=\"%s\"",
-            DataFlavor.javaJVMLocalObjectMimeType,
-            AddTool.class.getName()));
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    }
-    dataFlavor = f;
-  }
-  public static final DataFlavor[] dataFlavors = new DataFlavor[] { dataFlavor };
-
-  @Override
-  public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
-    if(!isDataFlavorSupported(flavor))
-      throw new UnsupportedFlavorException(flavor);
-    return this;
-  }
-
-  @Override
-  public DataFlavor[] getTransferDataFlavors() {
-    return dataFlavors;
-  }
-
-  @Override
-  public boolean isDataFlavorSupported(DataFlavor flavor) {
-    return dataFlavor.equals(flavor);
+  public boolean isBuiltin() {
+    if (factory instanceof SubcircuitFactory ||
+        factory instanceof VhdlEntity)
+      return false; // these have a null libraryClass, b/c they belong to project itself
+    // All AddTool() items are now required to have a libraryClass.
+    return Builtin.isBuiltinLibrary(libraryClass);
   }
 }

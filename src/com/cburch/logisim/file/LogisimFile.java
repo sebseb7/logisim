@@ -98,7 +98,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
     LogisimFile ret = new LogisimFile(loader);
     ret.main = new Circuit("main", ret);
     // The name will be changed in LogisimPreferences
-    ret.tools.add(new AddTool(ret.main.getSubcircuitFactory()));
+    ret.tools.add(new AddTool(null, ret.main.getSubcircuitFactory()));
     return ret;
   }
 
@@ -218,7 +218,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
   }
 
   public void addCircuit(Circuit circuit, int index) {
-    AddTool tool = new AddTool(circuit.getSubcircuitFactory());
+    AddTool tool = new AddTool(null, circuit.getSubcircuitFactory());
     tools.add(index, tool);
     if (tools.size() == 1)
       setMainCircuit(circuit);
@@ -230,7 +230,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
   }
 
   public void addVhdlContent(VhdlContent content, int index) {
-    AddTool tool = new AddTool(new VhdlEntity(content));
+    AddTool tool = new AddTool(null, new VhdlEntity(content));
     tools.add(index, tool);
     fireEvent(LibraryEvent.ADD_TOOL, tool);
     com.cburch.logisim.tools.FactoryAttributes s =
@@ -325,7 +325,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
     return null;
   }
 
-  Tool findTool(Tool query) {
+  public Tool findTool(Tool query) {
     for (Library lib : getLibraries()) {
       Tool ret = findTool(lib, query);
       if (ret != null)

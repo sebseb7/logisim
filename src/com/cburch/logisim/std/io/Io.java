@@ -109,7 +109,7 @@ public class Io extends Library {
     if (tools == null) {
       tools = new ArrayList<>();
       tools.addAll(FactoryDescription.getTools(Io.class, DESCRIPTIONS));
-      tools.add(new AddTool(Video.factory));
+      tools.add(new AddTool(Io.class, Video.factory));
     }
     return tools;
   }

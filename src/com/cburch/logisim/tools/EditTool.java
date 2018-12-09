@@ -62,7 +62,7 @@ import com.cburch.logisim.gui.main.SelectionActions;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.util.GraphicsUtil;
 
-public class EditTool extends Tool {
+public final class EditTool extends Tool {
   private class Listener implements CircuitListener, Selection.Listener {
     public void circuitChanged(CircuitEvent event) {
       if (event.getAction() != CircuitEvent.ACTION_INVALIDATE) {
@@ -108,6 +108,22 @@ public class EditTool extends Tool {
     this.lastX = -1;
     this.wireLoc = NULL_LOCATION;
     this.pressX = -1;
+  }
+
+  @Override
+  public Tool cloneTool() {
+    return new EditTool((SelectTool)select.cloneTool(), (WiringTool)wiring.cloneTool());
+  }
+
+  // All instances considered equal, so it is unique per toolbar, etc.
+  @Override
+  public boolean equals(Object other) {
+    return other instanceof EditTool;
+  }
+
+  @Override
+  public int hashCode() {
+    return EditTool.class.hashCode();
   }
 
   private void attemptReface(Canvas canvas, final Direction facing, KeyEvent e) {
@@ -157,11 +173,6 @@ public class EditTool extends Tool {
   }
 
   @Override
-  public boolean equals(Object other) {
-    return other instanceof EditTool;
-  }
-
-  @Override
   public AttributeSet getAttributeSet() {
     return select.getAttributeSet();
   }
@@ -204,11 +215,6 @@ public class EditTool extends Tool {
   @Override
   public String getName() {
     return "Edit Tool";
-  }
-
-  @Override
-  public int hashCode() {
-    return EditTool.class.hashCode();
   }
 
   @Override
@@ -495,4 +501,6 @@ public class EditTool extends Tool {
   private boolean updateLocation(Canvas canvas, MouseEvent e) {
     return updateLocation(canvas, e.getX(), e.getY(), e.getModifiersEx());
   }
+
+  public boolean isBuiltin() { return true; }
 }

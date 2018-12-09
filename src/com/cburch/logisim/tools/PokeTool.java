@@ -58,7 +58,7 @@ import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.Icons;
 
-public class PokeTool extends Tool {
+public final class PokeTool extends Tool {
   private class Listener implements CircuitListener {
     public void circuitChanged(CircuitEvent event) {
       Circuit circ = pokedCircuit;
@@ -142,17 +142,19 @@ public class PokeTool extends Tool {
 
   private static final Color caretColor = new Color(255, 255, 150);
 
-  private static Cursor cursor = Cursor
-      .getPredefinedCursor(Cursor.HAND_CURSOR);
+  private static Cursor cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
 
-  private Listener listener;
+  private Listener listener = new Listener();
   private Circuit pokedCircuit;
   private Component pokedComponent;
   private Caret pokeCaret;
 
-  public PokeTool() {
-    this.listener = new Listener();
-  }
+  private PokeTool() { }
+
+  public static final PokeTool SINGLETON = new PokeTool();
+
+  @Override
+  public boolean isBuiltin() { return true; }
 
   @Override
   public void deselect(Canvas canvas) {
@@ -164,11 +166,6 @@ public class PokeTool extends Tool {
   public void draw(Canvas canvas, ComponentDrawContext context) {
     if (pokeCaret != null)
       pokeCaret.draw(context.getGraphics());
-  }
-
-  @Override
-  public boolean equals(Object other) {
-    return other instanceof PokeTool;
   }
 
   @Override
@@ -189,11 +186,6 @@ public class PokeTool extends Tool {
   @Override
   public String getName() {
     return "Poke Tool";
-  }
-
-  @Override
-  public int hashCode() {
-    return PokeTool.class.hashCode();
   }
 
   @Override

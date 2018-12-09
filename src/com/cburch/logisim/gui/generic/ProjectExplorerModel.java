@@ -88,8 +88,7 @@ class ProjectExplorerModel extends DefaultTreeModel implements ProjectListener {
       } else {
         int[] indices = new int[] { parent.getIndex(this) };
         Object[] items = new Object[] { this.getUserObject() };
-        model.fireTreeNodesChanged(this, parent.getPath(), indices,
-            items);
+        model.fireTreeNodesChanged(this, parent.getPath(), indices, items);
       }
     }
 
@@ -98,8 +97,7 @@ class ProjectExplorerModel extends DefaultTreeModel implements ProjectListener {
     }
 
     void fireNodesInserted(int[] indices, Node<?>[] children) {
-      model.fireTreeNodesInserted(model, this.getPath(), indices,
-          children);
+      model.fireTreeNodesInserted(model, this.getPath(), indices, children);
     }
 
     void fireNodesRemoved(int[] indices, Node<?>[] children) {
@@ -125,11 +123,16 @@ class ProjectExplorerModel extends DefaultTreeModel implements ProjectListener {
   private static final long serialVersionUID = 1L;
 
   private Project proj;
+  private boolean showAll;
 
-  ProjectExplorerModel(Project proj) {
+  ProjectExplorerModel(Project proj, boolean showAll) {
     super(null);
     this.proj = proj;
-    setRoot(new ProjectExplorerLibraryNode(this, proj.getLogisimFile()));
+    this.showAll = showAll;
+    if (showAll)
+      setRoot(new ProjectExplorerRootNode(this, proj.getLogisimFile()));
+    else
+      setRoot(new ProjectExplorerLibraryNode(this, proj.getLogisimFile()));
     proj.addProjectListener(this);
   }
 
@@ -180,11 +183,12 @@ class ProjectExplorerModel extends DefaultTreeModel implements ProjectListener {
     Node<?> oldRoot = (Node<?>) getRoot();
     oldRoot.decommission();
 
-    if (file == null) {
+    if (file == null)
       setRoot(null);
-    } else {
-      setRoot(new ProjectExplorerLibraryNode(this, file));
-    }
+    else if (showAll)
+      setRoot(new ProjectExplorerRootNode(this, proj.getLogisimFile()));
+    else
+      setRoot(new ProjectExplorerLibraryNode(this, proj.getLogisimFile()));
 
     fireStructureChanged();
   }

@@ -31,10 +31,15 @@
 package com.cburch.logisim.tools;
 
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.Set;
+
+import javax.swing.Icon;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
 
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.comp.Component;
@@ -43,19 +48,13 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.gui.main.Canvas;
+import com.cburch.logisim.util.DragDrop;
 
-//
-// DRAWING TOOLS
-//
-public abstract class Tool implements AttributeDefaultProvider {
-  private static Cursor dflt_cursor = Cursor
-      .getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
+public abstract class Tool implements AttributeDefaultProvider, DragDrop.Support, DragDrop.Ghost {
+  private static Cursor dflt_cursor = Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
 
   public Tool cloneTool() {
     return this;
-  }
-
-  public void deselect(Canvas canvas) {
   }
 
   public void draw(Canvas canvas, ComponentDrawContext context) {
@@ -64,8 +63,8 @@ public abstract class Tool implements AttributeDefaultProvider {
 
   // This was the draw method until 2.0.4 - As of 2.0.5, you should
   // use the other draw method.
-  public void draw(ComponentDrawContext context) {
-  }
+  // todo: remove and delete this obsolete code
+  public void draw(ComponentDrawContext context) { }
 
   public AttributeSet getAttributeSet() {
     return null;
@@ -84,7 +83,6 @@ public abstract class Tool implements AttributeDefaultProvider {
   }
 
   public abstract String getDescription();
-
   public abstract String getDisplayName();
 
   public Set<Component> getHiddenComponents(Canvas canvas) {
@@ -97,49 +95,72 @@ public abstract class Tool implements AttributeDefaultProvider {
     return false;
   }
 
-  public void keyPressed(Canvas canvas, KeyEvent e) {
-  }
+  public void keyPressed(Canvas canvas, KeyEvent e) { }
+  public void keyReleased(Canvas canvas, KeyEvent e) { }
+  public void keyTyped(Canvas canvas, KeyEvent e) { }
 
-  public void keyReleased(Canvas canvas, KeyEvent e) {
-  }
+  public void mouseDragged(Canvas canvas, Graphics g, MouseEvent e) { }
+  public void mouseEntered(Canvas canvas, Graphics g, MouseEvent e) { }
+  public void mouseExited(Canvas canvas, Graphics g, MouseEvent e) { }
+  public void mouseMoved(Canvas canvas, Graphics g, MouseEvent e) { }
+  public void mousePressed(Canvas canvas, Graphics g, MouseEvent e) { }
+  public void mouseReleased(Canvas canvas, Graphics g, MouseEvent e) { }
 
-  public void keyTyped(Canvas canvas, KeyEvent e) {
-  }
+  public void paintIcon(ComponentDrawContext c, int x, int y) { }
 
-  public void mouseDragged(Canvas canvas, Graphics g, MouseEvent e) {
-  }
+  public void select(Canvas canvas) { }
+  public void deselect(Canvas canvas) { }
 
-  public void mouseEntered(Canvas canvas, Graphics g, MouseEvent e) {
-  }
-
-  public void mouseExited(Canvas canvas, Graphics g, MouseEvent e) {
-  }
-
-  public void mouseMoved(Canvas canvas, Graphics g, MouseEvent e) {
-  }
-
-  public void mousePressed(Canvas canvas, Graphics g, MouseEvent e) {
-  }
-
-  public void mouseReleased(Canvas canvas, Graphics g, MouseEvent e) {
-  }
-
-  public void paintIcon(ComponentDrawContext c, int x, int y) {
-  }
-
-  public void select(Canvas canvas) {
-  }
-
-  public void setAttributeSet(AttributeSet attrs) {
-  }
+  public void setAttributeSet(AttributeSet attrs) { }
 
   public boolean sharesSource(Tool other) {
-    return this == other;
+    return this.equals(other);
   }
 
   @Override
   public String toString() {
     return getName();
+  }
+
+  public boolean isBuiltin() { return false; } // most builtins should return true
+
+  public static final DragDrop dnd = new DragDrop(Tool.class);
+  public DragDrop getDragDrop() { return dnd; }
+
+  JDragLabel dragLabel;
+  private class JDragLabel extends JLabel {
+    public void publicPaintComponent(Graphics g) { paintComponent(g); }
+  }
+
+  private JDragLabel getDragLabel() {
+    if (dragLabel != null)
+      return dragLabel;
+    dragLabel = new JDragLabel();
+    dragLabel.setOpaque(true);
+    // dragLabel.setFont(plainFont);
+    dragLabel.setText(getDisplayName());
+    dragLabel.setIcon(new Icon() {
+      public int getIconHeight() { return 20; }
+      public int getIconWidth() { return 20; }
+      public void paintIcon(java.awt.Component c, Graphics g, int x, int y) {
+        Graphics g2 = g.create();
+        ComponentDrawContext context = new ComponentDrawContext(dragLabel, null, null, g, g2);
+        Tool.this.paintIcon(context, x, y);
+        g2.dispose();
+      }
+    });
+    return dragLabel;
+  }
+
+  public void paintDragImage(JComponent dest, Graphics g, Dimension dim) {
+    JDragLabel l = getDragLabel();
+    l.setSize(dim);
+    l.setLocation(0, 0);
+    getDragLabel().publicPaintComponent(g);
+  }
+
+  public Dimension getSize() {
+    return getDragLabel().getPreferredSize();
   }
 
 }

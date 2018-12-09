@@ -144,10 +144,6 @@ public class OptionsFrame extends LFrame.Dialog {
     setLocationRelativeTo(project.getFrame());
   }
 
-  // public LogisimFile getLogisimFile() {
-  //   return file;
-  // }
-
   public Options getOptions() {
     return project.getLogisimFile().getOptions();
   }

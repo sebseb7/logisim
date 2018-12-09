@@ -50,7 +50,7 @@ import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.base.Text;
 
-public class TextTool extends Tool {
+public final class TextTool extends Tool {
   private class MyListener implements CaretListener, CircuitListener {
     public void circuitChanged(CircuitEvent event) {
       if (event.getCircuit() != caretCircuit) {
@@ -132,7 +132,7 @@ public class TextTool extends Tool {
     }
   }
 
-  private static Cursor cursor = Cursor
+  private static final Cursor cursor = Cursor
       .getPredefinedCursor(Cursor.TEXT_CURSOR);
 
   private MyListener listener = new MyListener();
@@ -145,6 +145,29 @@ public class TextTool extends Tool {
 
   public TextTool() {
     attrs = Text.FACTORY.createAttributeSet();
+  } // usually one per project
+
+  private TextTool(TextTool base) {
+    attrs = (AttributeSet)base.attrs.clone();
+  }
+
+  @Override
+  public boolean isBuiltin() { return true; }
+
+  @Override
+  public Tool cloneTool() {
+    return new TextTool(this);
+  }
+
+  // All instances considered equal, so it is unique per toolbar, etc.
+  @Override
+  public boolean equals(Object other) {
+    return other instanceof TextTool;
+  }
+
+  @Override
+  public int hashCode() {
+    return TextTool.class.hashCode();
   }
 
   @Override
@@ -159,11 +182,6 @@ public class TextTool extends Tool {
   public void draw(Canvas canvas, ComponentDrawContext context) {
     if (caret != null)
       caret.draw(context.getGraphics());
-  }
-
-  @Override
-  public boolean equals(Object other) {
-    return other instanceof TextTool;
   }
 
   @Override
@@ -189,11 +207,6 @@ public class TextTool extends Tool {
   @Override
   public String getName() {
     return "Text Tool";
-  }
-
-  @Override
-  public int hashCode() {
-    return TextTool.class.hashCode();
   }
 
   @Override
