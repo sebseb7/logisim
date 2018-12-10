@@ -39,9 +39,7 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.util.PropertyChangeWeakSupport;
 
 class Clipboard {
-  //
-  // PropertyChangeSource methods
-  //
+
   public static void addPropertyChangeListener(PropertyChangeListener listener) {
     propertySupport.addPropertyChangeListener(listener);
   }
@@ -84,9 +82,6 @@ class Clipboard {
   private static PropertyChangeWeakSupport propertySupport = new PropertyChangeWeakSupport(
       Clipboard.class);
 
-  //
-  // instance variables and methods
-  //
   private HashSet<Component> components;
   private AttributeSet oldAttrs;
   private AttributeSet newAttrs;

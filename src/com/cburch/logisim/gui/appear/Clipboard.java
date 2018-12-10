@@ -35,9 +35,7 @@ import java.beans.PropertyChangeListener;
 import com.cburch.logisim.util.PropertyChangeWeakSupport;
 
 class Clipboard {
-  //
-  // PropertyChangeSource methods
-  //
+
   public static void addPropertyChangeListener(PropertyChangeListener listener) {
     propertySupport.addPropertyChangeListener(listener);
   }
