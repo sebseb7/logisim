@@ -120,65 +120,6 @@ public class SelectionActions {
 
   }
 
-  // todo: copy should not be an Action, and does not need undo ability
-  private static class Copy extends Action {
-    private Selection sel;
-    private LayoutClipboard oldClip;
-
-    Copy(Selection sel) {
-      this.sel = sel;
-    }
-
-    @Override
-    public void doIt(Project proj) {
-      oldClip = LayoutClipboard.get();
-      LayoutClipboard.set(sel, sel.getAttributeSet());
-    }
-
-    @Override
-    public String getName() {
-      return S.get("copySelectionAction");
-    }
-
-    @Override
-    public boolean isModification() {
-      return false;
-    }
-
-    @Override
-    public void undo(Project proj) {
-      LayoutClipboard.set(oldClip);
-    }
-  }
-
-  // todo: cut should be recored as a delete action for undo purposes
-  private static class Cut extends Action {
-    private Action first;
-    private Action second;
-
-    Cut(Selection sel) {
-      first = new Copy(sel);
-      second = new Delete(sel);
-    }
-
-    @Override
-    public void doIt(Project proj) {
-      first.doIt(proj);
-      second.doIt(proj);
-    }
-
-    @Override
-    public String getName() {
-      return S.get("cutSelectionAction");
-    }
-
-    @Override
-    public void undo(Project proj) {
-      second.undo(proj);
-      first.undo(proj);
-    }
-  }
-
   private static class Delete extends Action {
     private Selection sel;
     private CircuitTransaction xnReverse;
@@ -456,12 +397,13 @@ public class SelectionActions {
     return new Delete(sel);
   }
 
-  public static Action copy(Selection sel) {
-    return new Copy(sel);
+  public static void copy(Selection sel) { // Note: copy is not an Action
+    LayoutClipboard.set(sel, sel.getAttributeSet());
   }
 
   public static Action cut(Selection sel) {
-    return new Cut(sel);
+    LayoutClipboard.set(sel, sel.getAttributeSet());
+    return new Delete(sel);
   }
 
   // clears the selection, anchoring all floating elements in selection

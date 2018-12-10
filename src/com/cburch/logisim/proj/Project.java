@@ -166,14 +166,11 @@ public class Project {
     if (!undoLog.isEmpty() && act.shouldAppendTo(getLastAction())) {
       ActionData firstData = undoLog.removeLast();
       Action first = firstData.action;
-      if (first.isModification()) {
-        --undoMods;
-      }
+      --undoMods;
       toAdd = first.append(act);
       if (toAdd != null) {
         undoLog.add(new ActionData(circuitState, hdlModel, toAdd));
-        if (toAdd.isModification())
-          ++undoMods;
+        ++undoMods;
       }
       fireEvent(new ProjectEvent(ProjectEvent.ACTION_START, this, act));
       try {
@@ -212,9 +209,7 @@ public class Project {
     while (undoLog.size() > MAX_UNDO_SIZE) {
       undoLog.removeFirst();
     }
-    if (toAdd.isModification()) {
-      ++undoMods;
-    }
+    ++undoMods;
     file.setDirty(isFileDirty());
     fireEvent(new ProjectEvent(ProjectEvent.ACTION_COMPLETE, this, act));
   }
@@ -639,9 +634,7 @@ public class Project {
       else if (data.hdlModel != null)
         setCurrentHdlModel(data.hdlModel);
       Action action = data.action;
-      if (action.isModification()) {
-        --undoMods;
-      }
+      --undoMods;
       fireEvent(new ProjectEvent(ProjectEvent.UNDO_START, this, action));
       action.undo(this);
       file.setDirty(isFileDirty());

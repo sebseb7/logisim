@@ -39,13 +39,7 @@ public abstract class Action {
 
   public abstract String getName();
 
-  public boolean isModification() {
-    return true;
-  }
-
-  public boolean shouldAppendTo(Action other) {
-    return false;
-  }
+  public boolean shouldAppendTo(Action other) { return false; }
 
   public abstract void undo(Project proj);
 }

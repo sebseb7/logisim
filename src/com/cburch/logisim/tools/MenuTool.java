@@ -133,7 +133,7 @@ public final class MenuTool extends Tool {
       } else if (src == cut) {
         proj.doAction(SelectionActions.cut(sel));
       } else if (src == copy) {
-        proj.doAction(SelectionActions.copy(sel));
+        SelectionActions.copy(sel);
       }
     }
 

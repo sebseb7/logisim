@@ -100,7 +100,7 @@ public class LayoutEditHandler extends EditHandler
   public void copy() {
     Project proj = frame.getProject();
     Selection sel = frame.getCanvas().getSelection();
-    proj.doAction(SelectionActions.copy(sel));
+    SelectionActions.copy(sel);
   }
 
   @Override

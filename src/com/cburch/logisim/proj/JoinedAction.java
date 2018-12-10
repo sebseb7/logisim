@@ -75,15 +75,6 @@ public class JoinedAction extends Action {
   }
 
   @Override
-  public boolean isModification() {
-    for (Action act : todo) {
-      if (act.isModification())
-        return true;
-    }
-    return false;
-  }
-
-  @Override
   public void undo(Project proj) {
     for (int i = todo.length - 1; i >= 0; i--) {
       todo[i].undo(proj);
