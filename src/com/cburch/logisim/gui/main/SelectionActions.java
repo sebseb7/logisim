@@ -120,9 +120,10 @@ public class SelectionActions {
 
   }
 
+  // todo: copy should not be an Action, and does not need undo ability
   private static class Copy extends Action {
     private Selection sel;
-    private Clipboard oldClip;
+    private LayoutClipboard oldClip;
 
     Copy(Selection sel) {
       this.sel = sel;
@@ -130,8 +131,8 @@ public class SelectionActions {
 
     @Override
     public void doIt(Project proj) {
-      oldClip = Clipboard.get();
-      Clipboard.set(sel, sel.getAttributeSet());
+      oldClip = LayoutClipboard.get();
+      LayoutClipboard.set(sel, sel.getAttributeSet());
     }
 
     @Override
@@ -146,10 +147,11 @@ public class SelectionActions {
 
     @Override
     public void undo(Project proj) {
-      Clipboard.set(oldClip);
+      LayoutClipboard.set(oldClip);
     }
   }
 
+  // todo: cut should be recored as a delete action for undo purposes
   private static class Cut extends Action {
     private Action first;
     private Action second;
@@ -331,7 +333,7 @@ public class SelectionActions {
 
     @Override
     public void doIt(Project proj) {
-      Clipboard clip = Clipboard.get();
+      LayoutClipboard clip = LayoutClipboard.get();
       Circuit circuit = proj.getCurrentCircuit();
       CircuitMutation xn = new CircuitMutation(circuit);
       Collection<Component> comps = clip.getComponents();
@@ -533,7 +535,7 @@ public class SelectionActions {
     libs.addAll(file.getLibraries());
 
     ArrayList<String> dropped = null;
-    Clipboard clip = Clipboard.get();
+    LayoutClipboard clip = LayoutClipboard.get();
     Collection<Component> comps = clip.getComponents();
     HashMap<ComponentFactory, ComponentFactory> factoryReplacements;
     factoryReplacements = new HashMap<ComponentFactory, ComponentFactory>();

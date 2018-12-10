@@ -54,7 +54,7 @@ public class LayoutEditHandler extends EditHandler
     this.frame = frame;
 
     Project proj = frame.getProject();
-    Clipboard.addPropertyChangeListener(Clipboard.contentsProperty, this);
+    LayoutClipboard.addPropertyChangeListener(LayoutClipboard.contentsProperty, this);
     proj.addProjectListener(this);
     proj.addLibraryListener(this);
   }
@@ -82,7 +82,7 @@ public class LayoutEditHandler extends EditHandler
         && canChange);
     setEnabled(LogisimMenuBar.COPY, !selEmpty && selectAvailable);
     setEnabled(LogisimMenuBar.PASTE, selectAvailable && canChange
-        && !Clipboard.isEmpty());
+        && !LayoutClipboard.isEmpty());
     setEnabled(LogisimMenuBar.DELETE, !selEmpty && selectAvailable
         && canChange);
     setEnabled(LogisimMenuBar.DUPLICATE, !selEmpty && selectAvailable
@@ -166,7 +166,7 @@ public class LayoutEditHandler extends EditHandler
   }
 
   public void propertyChange(PropertyChangeEvent event) {
-    if (event.getPropertyName().equals(Clipboard.contentsProperty)) {
+    if (event.getPropertyName().equals(LayoutClipboard.contentsProperty)) {
       computeEnabled();
     }
   }

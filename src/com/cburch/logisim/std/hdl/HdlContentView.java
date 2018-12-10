@@ -71,7 +71,6 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
     }
     public void doIt(Project proj) { /* nop b/c already done */ }
     public String getName() { return "VHDL edits"; }
-    public boolean isModification() { return true; }
     public boolean shouldAppendTo(Action other) {
       return (other instanceof HdlEditAction)
           && ((HdlEditAction)other).model == model;

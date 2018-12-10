@@ -38,7 +38,7 @@ import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.util.PropertyChangeWeakSupport;
 
-class Clipboard {
+class LayoutClipboard {
 
   public static void addPropertyChangeListener(PropertyChangeListener listener) {
     propertySupport.addPropertyChangeListener(listener);
@@ -49,7 +49,7 @@ class Clipboard {
     propertySupport.addPropertyChangeListener(propertyName, listener);
   }
 
-  public static Clipboard get() {
+  public static LayoutClipboard get() {
     return current;
   }
 
@@ -67,26 +67,26 @@ class Clipboard {
     propertySupport.removePropertyChangeListener(propertyName, listener);
   }
 
-  public static void set(Clipboard value) {
-    Clipboard old = current;
+  public static void set(LayoutClipboard value) {
+    LayoutClipboard old = current;
     current = value;
     propertySupport.firePropertyChange(contentsProperty, old, current);
   }
 
   public static void set(Selection value, AttributeSet oldAttrs) {
-    set(new Clipboard(value, oldAttrs));
+    set(new LayoutClipboard(value, oldAttrs));
   }
 
   public static final String contentsProperty = "contents";
-  private static Clipboard current = null;
+  private static LayoutClipboard current = null;
   private static PropertyChangeWeakSupport propertySupport = new PropertyChangeWeakSupport(
-      Clipboard.class);
+      LayoutClipboard.class);
 
   private HashSet<Component> components;
   private AttributeSet oldAttrs;
   private AttributeSet newAttrs;
 
-  private Clipboard(Selection sel, AttributeSet viewAttrs) {
+  private LayoutClipboard(Selection sel, AttributeSet viewAttrs) {
     components = new HashSet<Component>();
     oldAttrs = null;
     newAttrs = null;
