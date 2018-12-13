@@ -110,7 +110,7 @@ class OpenRecent extends JMenu implements PropertyChangeListener {
   OpenRecent(LogisimMenuBar menubar) {
     this.menubar = menubar;
     this.recentItems = new ArrayList<RecentItem>();
-    AppPreferences.addPropertyChangeListener(
+    AppPreferences.propertyChangeProducer.addPropertyChangeListener(
         AppPreferences.RECENT_PROJECTS, this);
     renewItems();
   }

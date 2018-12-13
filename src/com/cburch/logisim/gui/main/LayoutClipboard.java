@@ -30,92 +30,136 @@
 
 package com.cburch.logisim.gui.main;
 
-import java.beans.PropertyChangeListener;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.ClipboardOwner;
+import java.awt.datatransfer.FlavorEvent;
+import java.awt.datatransfer.FlavorListener;
+import java.awt.datatransfer.Transferable;
 import java.util.Collection;
-import java.util.HashSet;
 
+import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.CircuitTransaction;
 import com.cburch.logisim.comp.Component;
-import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.file.Loader;
+import com.cburch.logisim.file.LogisimFile;
+import com.cburch.logisim.file.XmlClipReader;
+import com.cburch.logisim.file.XmlWriter;
+import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.std.hdl.VhdlContent;
+import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.util.DragDrop;
 import com.cburch.logisim.util.PropertyChangeWeakSupport;
 
-class LayoutClipboard {
+class LayoutClipboard implements ClipboardOwner, FlavorListener, PropertyChangeWeakSupport.Producer {
 
-  public static void addPropertyChangeListener(PropertyChangeListener listener) {
-    propertySupport.addPropertyChangeListener(listener);
-  }
-
-  public static void addPropertyChangeListener(String propertyName,
-      PropertyChangeListener listener) {
-    propertySupport.addPropertyChangeListener(propertyName, listener);
-  }
-
-  public static LayoutClipboard get() {
-    return current;
-  }
-
-  public static boolean isEmpty() {
-    return current == null || current.components.isEmpty();
-  }
-
-  public static void removePropertyChangeListener(
-      PropertyChangeListener listener) {
-    propertySupport.removePropertyChangeListener(listener);
-  }
-
-  public static void removePropertyChangeListener(String propertyName,
-      PropertyChangeListener listener) {
-    propertySupport.removePropertyChangeListener(propertyName, listener);
-  }
-
-  public static void set(LayoutClipboard value) {
-    LayoutClipboard old = current;
-    current = value;
-    propertySupport.firePropertyChange(contentsProperty, old, current);
-  }
-
-  public static void set(Selection value, AttributeSet oldAttrs) {
-    set(new LayoutClipboard(value, oldAttrs));
-  }
-
+  // LayoutClipboard holds a set of Components (wires, pins, subcircuits, etc.).
+  // It also needs to copy the Circuits/VhdlEntities underlying any of those
+  // subcircuits (in case the target doesn't have any suitably-named circuits
+  // and the user wants to import them). And it needs a list of any non-builtin
+  // library references (Jar or Logisim) used by any of the components as well.
+  
   public static final String contentsProperty = "contents";
-  private static LayoutClipboard current = null;
-  private static PropertyChangeWeakSupport propertySupport = new PropertyChangeWeakSupport(
-      LayoutClipboard.class);
 
-  private HashSet<Component> components;
-  private AttributeSet oldAttrs;
-  private AttributeSet newAttrs;
+  public static class Data {
+    public Collection<Component> components;
+    public Collection<Circuit> circuits;
+    public Collection<VhdlContent> vhdl;
+    public Collection<Library> libraries;
+    CircuitTransaction circuitTransaction;
 
-  private LayoutClipboard(Selection sel, AttributeSet viewAttrs) {
-    components = new HashSet<Component>();
-    oldAttrs = null;
-    newAttrs = null;
-    for (Component base : sel.getComponents()) {
-      AttributeSet baseAttrs = base.getAttributeSet();
-      AttributeSet copyAttrs = (AttributeSet) baseAttrs.clone();
-      Component copy = base.getFactory().createComponent(
-          base.getLocation(), copyAttrs);
-      components.add(copy);
-      if (baseAttrs == viewAttrs) {
-        oldAttrs = baseAttrs;
-        newAttrs = copyAttrs;
-      }
+    Data(XmlClipReader.ReadClipContext ctx) {
+      components = ctx.getComponents();
+      circuits = ctx.getCircuits();
+      vhdl = ctx.getVhdl();
+      libraries = ctx.getLibraries();
+      if (!circuits.isEmpty())
+        circuitTransaction = ctx.getCircuitTransaction();
     }
   }
 
-  public Collection<Component> getComponents() {
-    return components;
+  private static Data decode(Project proj, Transferable incoming) {
+    try {
+      String xml = (String)incoming.getTransferData(XmlData.dnd.dataFlavor);
+      LogisimFile srcFile = proj.getLogisimFile();
+      Loader loader = srcFile.getLoader();
+      XmlClipReader.ReadClipContext ctx =
+          XmlClipReader.parseSelection(srcFile, loader, xml);
+      if (ctx == null || ctx.getComponents().isEmpty())
+        return null;
+      return new Data(ctx);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return null;
+    }
   }
 
-  public AttributeSet getNewAttributeSet() {
-    return newAttrs;
+  private static XmlData encode(Selection sel) {
+    Project proj = sel.getProject();
+    LogisimFile srcFile = proj.getLogisimFile();
+    Loader loader = srcFile.getLoader();
+    String xml = XmlWriter.encodeSelection(srcFile, loader, sel.getComponents());
+    return xml == null ? null : new XmlData(xml);
   }
 
-  public AttributeSet getOldAttributeSet() {
-    return oldAttrs;
+  static class XmlData implements DragDrop.Support {
+    String xml;
+
+    XmlData(String xml) { this.xml = xml; }
+
+    public static final String mimeTypeBase = "application/vnd.kwalsh.logisim-evolution-hc";
+    public static final String mimeTypeClip = mimeTypeBase + ".components;class=java.lang.String";
+    // todo: add image
+    public static final DragDrop dnd = new DragDrop(mimeTypeClip);
+    public DragDrop getDragDrop() { return dnd; }
+    public Object convertTo(String mimetype) { return xml; }
   }
 
-  void setOldAttributeSet(AttributeSet value) {
-    oldAttrs = value;
+  public static final Clipboard sysclip = Toolkit.getDefaultToolkit().getSystemClipboard();
+  public static final LayoutClipboard SINGLETON = new LayoutClipboard();
+  private XmlData current; // the owned system clip
+  private boolean external; // not owned, but system clip is compatible
+
+  private LayoutClipboard() {
+    sysclip.addFlavorListener(this);
+    flavorsChanged(null);
   }
+
+  public void flavorsChanged(FlavorEvent e) {
+    boolean oldAvail = current != null || external;
+    external = sysclip.isDataFlavorAvailable(XmlData.dnd.dataFlavor);
+    boolean newAvail = current != null || external;
+    System.out.printf("flavors changed: external %s avail %s\n", external, newAvail);
+    if (oldAvail != newAvail)
+      firePropertyChange(contentsProperty, oldAvail, newAvail);
+  }
+
+  public void lostOwnership(Clipboard clipboard, Transferable contents) {
+    current = null;
+    System.out.printf("lost ownership\n");
+    flavorsChanged(null);
+  }
+
+  public void set(Selection value) {
+    current = encode(value);
+    if (current != null)
+      sysclip.setContents(current, this); 
+  }
+
+  public Data get(Project proj) {
+    System.out.printf("get clip %s %s\n", external, current);
+    if (current != null)
+      return decode(proj, current);
+    else if (external) 
+      return decode(proj, sysclip.getContents(XmlData.dnd.dataFlavor));
+    else
+      return null;
+  }
+
+  public boolean isEmpty() {
+    return current == null && !external;
+  }
+
+  PropertyChangeWeakSupport propListeners = new PropertyChangeWeakSupport(LayoutClipboard.class);
+  public PropertyChangeWeakSupport getPropertyChangeListeners() { return propListeners; }
 }

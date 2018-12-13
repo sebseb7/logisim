@@ -52,19 +52,17 @@ public class Dependencies {
       case CircuitEvent.ACTION_ADD:
         comp = (Component) e.getData();
         if (comp.getFactory() instanceof SubcircuitFactory) {
-          SubcircuitFactory factory = (SubcircuitFactory) comp
-              .getFactory();
-          depends.addEdge(e.getCircuit(), factory.getSubcircuit());
+          SubcircuitFactory factory = (SubcircuitFactory) comp.getFactory();
+          dag.addEdge(e.getCircuit(), factory.getSubcircuit());
         } else if (comp.getFactory() instanceof VhdlEntity) {
           VhdlEntity factory = (VhdlEntity) comp .getFactory();
-          depends.addEdge(e.getCircuit(), factory.getContent());
+          dag.addEdge(e.getCircuit(), factory.getContent());
         }
         break;
       case CircuitEvent.ACTION_REMOVE:
         comp = (Component) e.getData();
         if (comp.getFactory() instanceof SubcircuitFactory) {
-          SubcircuitFactory factory = (SubcircuitFactory) comp
-              .getFactory();
+          SubcircuitFactory factory = (SubcircuitFactory) comp.getFactory();
           boolean found = false;
           for (Component o : e.getCircuit().getNonWires()) {
             if (o.getFactory() == factory) {
@@ -73,8 +71,7 @@ public class Dependencies {
             }
           }
           if (!found)
-            depends.removeEdge(e.getCircuit(),
-                factory.getSubcircuit());
+            dag.removeEdge(e.getCircuit(), factory.getSubcircuit());
         } else if (comp.getFactory() instanceof VhdlEntity) {
           VhdlEntity factory = (VhdlEntity)comp.getFactory();
           boolean found = false;
@@ -85,12 +82,11 @@ public class Dependencies {
             }
           }
           if (!found)
-            depends.removeEdge(e.getCircuit(),
-                factory.getContent());
+            dag.removeEdge(e.getCircuit(), factory.getContent());
         }
         break;
       case CircuitEvent.ACTION_CLEAR:
-        depends.removeNode(e.getCircuit());
+        dag.removeNode(e.getCircuit());
         break;
       }
     }
@@ -115,11 +111,11 @@ public class Dependencies {
           if (factory instanceof SubcircuitFactory) {
             SubcircuitFactory circFact = (SubcircuitFactory) factory;
             Circuit circ = circFact.getSubcircuit();
-            depends.removeNode(circ);
+            dag.removeNode(circ);
             circ.removeCircuitListener(this);
           } else if (factory instanceof VhdlEntity) {
             VhdlEntity circFact = (VhdlEntity)factory;
-            depends.removeNode(circFact.getContent());
+            dag.removeNode(circFact.getContent());
           }
         }
         break;
@@ -128,7 +124,7 @@ public class Dependencies {
   }
 
   private MyListener myListener = new MyListener();
-  private Dag depends = new Dag();
+  private Dag dag = new Dag();
 
   Dependencies(LogisimFile file) {
     addDependencies(file);
@@ -142,15 +138,15 @@ public class Dependencies {
   }
 
   public boolean canAdd(Circuit circ, Circuit sub) {
-    return depends.canFollow(sub, circ);
+    return dag.canFollow(sub, circ);
   }
 
   public boolean canRemove(Circuit circ) {
-    return !depends.hasPredecessors(circ);
+    return !dag.hasPredecessors(circ);
   }
 
   public boolean canRemove(VhdlContent vhdl) {
-    return !depends.hasPredecessors(vhdl);
+    return !dag.hasPredecessors(vhdl);
   }
 
   private void processCircuit(Circuit circ) {
@@ -159,10 +155,10 @@ public class Dependencies {
       if (comp.getFactory() instanceof SubcircuitFactory) {
         SubcircuitFactory factory = (SubcircuitFactory) comp
             .getFactory();
-        depends.addEdge(circ, factory.getSubcircuit());
+        dag.addEdge(circ, factory.getSubcircuit());
       } else if (comp.getFactory() instanceof VhdlEntity) {
         VhdlEntity factory = (VhdlEntity) comp .getFactory();
-        depends.addEdge(circ, factory.getContent());
+        dag.addEdge(circ, factory.getContent());
       }
     }
   }

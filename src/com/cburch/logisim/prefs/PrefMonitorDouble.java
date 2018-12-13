@@ -59,7 +59,7 @@ class PrefMonitorDouble extends AbstractPrefMonitor<Double> {
       double newValue = prefs.getDouble(name, dflt);
       if (newValue != oldValue) {
         value = newValue;
-        AppPreferences.firePropertyChange(name,
+        AppPreferences.propertyChangeProducer.firePropertyChange(name,
             Double.valueOf(oldValue), Double.valueOf(newValue));
       }
     }

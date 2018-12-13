@@ -122,7 +122,7 @@ public class Project {
   private EventSourceWeakSupport<ProjectListener> projectListeners = new EventSourceWeakSupport<>();
   private EventSourceWeakSupport<LibraryListener> fileListeners = new EventSourceWeakSupport<>();
   private EventSourceWeakSupport<CircuitListener> circuitListeners = new EventSourceWeakSupport<>();
-  private Dependencies depends;
+  private Dependencies dependencies;
   private MyListener myListener = new MyListener();
   private boolean startupScreen = false;
 
@@ -330,7 +330,7 @@ public class Project {
   }
 
   public Dependencies getDependencies() {
-    return depends;
+    return dependencies;
   }
 
   public Frame getFrame() {
@@ -569,7 +569,7 @@ public class Project {
     recentRootState.clear();
     allRootStates.clear();
     // todo: close and dispose of orphaned ram hex window instances.
-    depends = new Dependencies(file);
+    dependencies = new Dependencies(file);
     undoLog.clear();
     redoLog.clear();
     undoMods = 0;

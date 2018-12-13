@@ -200,9 +200,9 @@ class TemplateOptions extends OptionsPanel {
     gridbag.setConstraints(templateButton, gbc);
     add(templateButton);
 
-    AppPreferences.addPropertyChangeListener(AppPreferences.TEMPLATE_TYPE,
+    AppPreferences.propertyChangeProducer.addPropertyChangeListener(AppPreferences.TEMPLATE_TYPE,
         myListener);
-    AppPreferences.addPropertyChangeListener(AppPreferences.TEMPLATE_FILE,
+    AppPreferences.propertyChangeProducer.addPropertyChangeListener(AppPreferences.TEMPLATE_FILE,
         myListener);
     switch (AppPreferences.getTemplateType()) {
     case AppPreferences.TEMPLATE_PLAIN:

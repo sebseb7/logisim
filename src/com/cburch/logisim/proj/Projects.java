@@ -34,7 +34,6 @@ import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -88,22 +87,9 @@ public class Projects {
 
       if (frame == proj.getFrame() && !openProjects.contains(proj)) {
         openProjects.add(proj);
-        propertySupport.firePropertyChange(projectListProperty, null,
-            null);
+        propertyChangeProducer.firePropertyChange(projectListProperty, null, null);
       }
     }
-  }
-
-  //
-  // PropertyChangeSource methods
-  //
-  public static void addPropertyChangeListener(PropertyChangeListener listener) {
-    propertySupport.addPropertyChangeListener(listener);
-  }
-
-  public static void addPropertyChangeListener(String propertyName,
-      PropertyChangeListener listener) {
-    propertySupport.addPropertyChangeListener(propertyName, listener);
   }
 
   public static Project findProjectFor(File query) {
@@ -164,17 +150,7 @@ public class Projects {
     frame.removeWindowListener(listener);
     openProjects.remove(proj);
     proj.getSimulator().shutDown();
-    propertySupport.firePropertyChange(projectListProperty, null, null);
-  }
-
-  public static void removePropertyChangeListener(
-      PropertyChangeListener listener) {
-    propertySupport.removePropertyChangeListener(listener);
-  }
-
-  public static void removePropertyChangeListener(String propertyName,
-      PropertyChangeListener listener) {
-    propertySupport.removePropertyChangeListener(propertyName, listener);
+    propertyChangeProducer.firePropertyChange(projectListProperty, null, null);
   }
 
   static void windowCreated(Project proj, Frame oldFrame, Frame frame) {
@@ -213,7 +189,7 @@ public class Projects {
 
     if (frame.isVisible() && !openProjects.contains(proj)) {
       openProjects.add(proj);
-      propertySupport.firePropertyChange(projectListProperty, null, null);
+      propertyChangeProducer.firePropertyChange(projectListProperty, null, null);
     }
     frame.addWindowListener(myListener);
   }
@@ -233,13 +209,16 @@ public class Projects {
 
   private static final MyListener myListener = new MyListener();
 
-  private static final PropertyChangeWeakSupport propertySupport = new PropertyChangeWeakSupport(
-      Projects.class);
-
   private static ArrayList<Project> openProjects = new ArrayList<Project>();
 
   private static Frame mostRecentFrame = null;
 
   private Projects() {
   }
+
+  public static final PropertyChangeWeakSupport.Producer propertyChangeProducer =
+      new PropertyChangeWeakSupport.Producer() {
+        PropertyChangeWeakSupport propListeners = new PropertyChangeWeakSupport(Projects.class);
+        public PropertyChangeWeakSupport getPropertyChangeListeners() { return propListeners; }
+      };
 }

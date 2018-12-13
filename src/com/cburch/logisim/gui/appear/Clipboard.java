@@ -30,50 +30,33 @@
 
 package com.cburch.logisim.gui.appear;
 
-import java.beans.PropertyChangeListener;
-
 import com.cburch.logisim.util.PropertyChangeWeakSupport;
 
-class Clipboard {
+// todo: use system clipboard
+class Clipboard implements PropertyChangeWeakSupport.Producer {
 
-  public static void addPropertyChangeListener(PropertyChangeListener listener) {
-    propertySupport.addPropertyChangeListener(listener);
-  }
-
-  public static void addPropertyChangeListener(String propertyName,
-      PropertyChangeListener listener) {
-    propertySupport.addPropertyChangeListener(propertyName, listener);
-  }
-
-  public static ClipboardContents get() {
+  public ClipboardContents get() {
     return current;
   }
 
-  public static boolean isEmpty() {
+  public boolean isEmpty() {
     return current == null || current.getElements().isEmpty();
   }
 
-  public static void removePropertyChangeListener(
-      PropertyChangeListener listener) {
-    propertySupport.removePropertyChangeListener(listener);
-  }
-
-  public static void removePropertyChangeListener(String propertyName,
-      PropertyChangeListener listener) {
-    propertySupport.removePropertyChangeListener(propertyName, listener);
-  }
-
-  public static void set(ClipboardContents value) {
+  public void set(ClipboardContents value) {
     ClipboardContents old = current;
     current = value;
-    propertySupport.firePropertyChange(contentsProperty, old, current);
+    firePropertyChange(contentsProperty, old, current);
   }
 
-  public static final String contentsProperty = "appearance";
-  private static ClipboardContents current = ClipboardContents.EMPTY;
-  private static PropertyChangeWeakSupport propertySupport = new PropertyChangeWeakSupport(
-      Clipboard.class);
+  public final String contentsProperty = "appearance";
+  private ClipboardContents current = ClipboardContents.EMPTY;
 
   private Clipboard() {
   }
+  public static final Clipboard SINGLETON = new Clipboard();
+
+  PropertyChangeWeakSupport propListeners = new PropertyChangeWeakSupport(Clipboard.class);
+  public PropertyChangeWeakSupport getPropertyChangeListeners() { return propListeners; }
+
 }

@@ -182,7 +182,7 @@ class RecentProjects implements PreferenceChangeListener {
         File newValue = recentFiles[index];
         long newTime = recentTimes[index];
         if (!isSame(oldValue, newValue) || oldTime != newTime) {
-          AppPreferences.firePropertyChange(
+          AppPreferences.propertyChangeProducer.firePropertyChange(
               AppPreferences.RECENT_PROJECTS, new FileTime(
                 oldValue, oldTime), new FileTime(newValue,
                   newTime));
@@ -200,7 +200,7 @@ class RecentProjects implements PreferenceChangeListener {
       try {
         AppPreferences.getPrefs().put(BASE_PROPERTY + index,
             "" + time + ";" + file.getCanonicalPath());
-        AppPreferences.firePropertyChange(
+        AppPreferences.propertyChangeProducer.firePropertyChange(
             AppPreferences.RECENT_PROJECTS, new FileTime(oldFile,
               oldTime), new FileTime(file, time));
       } catch (IOException e) {

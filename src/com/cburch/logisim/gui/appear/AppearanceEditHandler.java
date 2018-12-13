@@ -88,7 +88,7 @@ public class AppearanceEditHandler extends EditHandler
     Selection sel = canvas.getSelection();
     boolean selEmpty = sel.isEmpty();
     boolean canChange = proj.getLogisimFile().contains(circ);
-    boolean clipExists = !Clipboard.isEmpty();
+    boolean clipExists = !Clipboard.SINGLETON.isEmpty();
     boolean selHasRemovable = false;
     for (CanvasObject o : sel.getSelected()) {
       if (!(o instanceof AppearanceElement)) {
@@ -240,7 +240,7 @@ public class AppearanceEditHandler extends EditHandler
 
   @Override
   public void paste() {
-    ClipboardContents clip = Clipboard.get();
+    ClipboardContents clip = Clipboard.SINGLETON.get();
     Collection<CanvasObject> contents = clip.getElements();
     List<CanvasObject> add = new ArrayList<CanvasObject>(contents.size());
     for (CanvasObject o : contents) {

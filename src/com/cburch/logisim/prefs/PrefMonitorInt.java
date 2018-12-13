@@ -59,7 +59,7 @@ class PrefMonitorInt extends AbstractPrefMonitor<Integer> {
       int newValue = prefs.getInt(name, dflt);
       if (newValue != oldValue) {
         value = newValue;
-        AppPreferences.firePropertyChange(name,
+        AppPreferences.propertyChangeProducer.firePropertyChange(name,
             Integer.valueOf(oldValue), Integer.valueOf(newValue));
       }
     }

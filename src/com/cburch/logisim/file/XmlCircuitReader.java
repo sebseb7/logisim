@@ -116,21 +116,12 @@ public class XmlCircuitReader extends CircuitTransaction {
     ComponentFactory source = ((AddTool) tool).getFactory();
 
     // Determine attributes
-    String loc_str = elt.getAttribute("loc");
     AttributeSet attrs = source.createAttributeSet();
     reader.initAttributeSet(elt, attrs, source);
 
     // Create component if location known
-    if (loc_str == null || loc_str.equals("")) {
-      throw new XmlReaderException(S.fmt("compLocMissingError", source.getName()));
-    } else {
-      try {
-        Location loc = Location.parse(loc_str);
-        return source.createComponent(loc, attrs);
-      } catch (NumberFormatException e) {
-        throw new XmlReaderException(S.fmt("compLocInvalidError", source.getName(), loc_str));
-      }
-    }
+    Location loc = parseComponentLoc(elt, source.getName()); // name
+    return source.createComponent(loc, attrs);
   }
 
   private XmlReader.ReadContext reader;
@@ -143,31 +134,38 @@ public class XmlCircuitReader extends CircuitTransaction {
     this.circuitsData = circDatas;
   }
 
-  void addWire(Circuit dest, CircuitMutator mutator, Element elt)
+  public static Location parseComponentLoc(Element elt, String name)
       throws XmlReaderException {
-    Location pt0;
+    String str = elt.getAttribute("loc");
+    if (str == null || str.equals(""))
+      throw new XmlReaderException(S.fmt("compLocMissingError", name));
     try {
-      String str = elt.getAttribute("from");
-      if (str == null || str.equals("")) {
-        throw new XmlReaderException(S.get("wireStartMissingError"));
-      }
-      pt0 = Location.parse(str);
+      return Location.parse(str);
     } catch (NumberFormatException e) {
-      throw new XmlReaderException(S.get("wireStartInvalidError"));
+      throw new XmlReaderException(S.fmt("compLocInvalidError", name, str));
     }
+  }
 
-    Location pt1;
+  public static Location parseWireEnd(Element elt, String end) throws XmlReaderException {
     try {
-      String str = elt.getAttribute("to");
-      if (str == null || str.equals("")) {
+      String str = elt.getAttribute(end);
+      if (str == null || str.equals(""))
         throw new XmlReaderException(S.get("wireEndMissingError"));
-      }
-      pt1 = Location.parse(str);
+      return Location.parse(str);
     } catch (NumberFormatException e) {
       throw new XmlReaderException(S.get("wireEndInvalidError"));
     }
+  }
 
-    mutator.add(dest, Wire.create(pt0, pt1));
+  public static Wire parseWire(Element elt) throws XmlReaderException {
+    Location pt0 = parseWireEnd(elt, "from");
+    Location pt1 = parseWireEnd(elt, "to");
+    return Wire.create(pt0, pt1);
+  }
+
+  void addWire(Circuit dest, CircuitMutator mutator, Element elt)
+      throws XmlReaderException {
+    mutator.add(dest, parseWire(elt));
   }
 
   private void buildCircuit(XmlReader.CircuitData circData, CircuitMutator mutator) {

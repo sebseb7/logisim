@@ -176,8 +176,8 @@ public class LogisimFile extends Library implements LibraryEventSource {
       throw new IOException("Version 1.0 files no longer supported");
     }
 
-    XmlReader xmlReader = new XmlReader(loader, file);
-    LogisimFile ret = xmlReader.readLibrary(inBuffered);
+    XmlProjectReader xmlReader = new XmlProjectReader(loader, file);
+    LogisimFile ret = xmlReader.parseProject(inBuffered);
     ret.loader = loader;
     return ret;
   }

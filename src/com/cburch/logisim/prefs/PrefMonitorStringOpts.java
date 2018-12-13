@@ -76,7 +76,7 @@ class PrefMonitorStringOpts extends AbstractPrefMonitor<String> {
         if (chosen == null)
           chosen = dflt;
         value = chosen;
-        AppPreferences.firePropertyChange(name, oldValue, chosen);
+        AppPreferences.propertyChangeProducer.firePropertyChange(name, oldValue, chosen);
       }
     }
   }

@@ -64,7 +64,7 @@ class PrefMonitorBoolean extends AbstractPrefMonitor<Boolean> {
       boolean newValue = prefs.getBoolean(name, dflt);
       if (newValue != oldValue) {
         value = newValue;
-        AppPreferences.firePropertyChange(name, oldValue, newValue);
+        AppPreferences.propertyChangeProducer.firePropertyChange(name, oldValue, newValue);
       }
     }
   }

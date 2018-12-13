@@ -33,14 +33,17 @@ import static com.cburch.logisim.file.Strings.S;
 
 import java.io.File;
 import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -66,18 +69,20 @@ import com.cburch.draw.model.AbstractCanvasObject;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.circuit.Wire;
-import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.std.hdl.VhdlContent;
+import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.InputEventUtil;
 
-class XmlWriter {
+public class XmlWriter {
 
   /* We sort some parts of the xml tree, to help with reproducibility and to
    * ease testing (e.g. diff a circuit file). Attribute name=value pairs seem
@@ -147,20 +152,8 @@ class XmlWriter {
     NodeList children = top.getChildNodes();
     int n = children.getLength();
     String name = top.getNodeName();
-    // project (contains ordered elements, do not sort)
-    // - main
-    // - toolbar (contains ordered elements, do not sort)
-    //   - tool(s)
-    //     - a(s)
-    // - lib(s) (contains orderd elements, do not sort)
-    //   - tool(s)
-    //     - a(s)
-    // - options
-    //   - a(s)
-    // - circuit(s)
-    //   - a(s)
-    //   - comp(s)
-    //   - wire(s)
+    // see: comments about sort() below
+    // Do not sort: top level, project, toolbar, lib
     if (n > 1 && !name.equals("project") && !name.equals("lib") && !name.equals("toolbar")) {
       Node[] a = new Node[n];
       for (int i = 0; i < n; i++)
@@ -174,45 +167,69 @@ class XmlWriter {
     }
   }
 
+  private static void xform(Document doc, OutputStream out) {
+    try {
+      TransformerFactory tfFactory = TransformerFactory.newInstance();
+      try { tfFactory.setAttribute("indent-number", Integer.valueOf(2)); }
+      catch (IllegalArgumentException e) { }
+        Transformer tf = tfFactory.newTransformer();
+        tf.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+        tf.setOutputProperty(OutputKeys.INDENT, "yes");
+      try { tf.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2"); }
+      catch (IllegalArgumentException e) { }
+
+      doc.normalize();
+      sort(doc);
+      Source src = new DOMSource(doc);
+      Result dest = new StreamResult(out);
+      tf.transform(src, dest);
+    } catch (Exception e) { }
+  }
+
   static void write(LogisimFile file, OutputStream out,
       LibraryLoader loader, File destFile)
-      throws ParserConfigurationException, TransformerConfigurationException, TransformerException {
+      throws ParserConfigurationException,
+               TransformerConfigurationException, TransformerException {
 
-    DocumentBuilderFactory docFactory = DocumentBuilderFactory
-        .newInstance();
+    DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
     DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
-
     Document doc = docBuilder.newDocument();
+
     XmlWriter context;
     if (destFile != null) {
       String dstFilePath = destFile.getAbsolutePath();
       dstFilePath = dstFilePath.substring(0,
           dstFilePath.lastIndexOf(File.separator));
       context = new XmlWriter(file, doc, loader, dstFilePath);
-    } else
+    } else {
       context = new XmlWriter(file, doc, loader);
+    }
 
     context.fromLogisimFile();
+    xform(doc, out);
+  }
 
-    TransformerFactory tfFactory = TransformerFactory.newInstance();
+  public static String encodeSelection(LogisimFile file, LibraryLoader loader, Set<Component> sel) {
+    System.out.println("encoding selection");
     try {
-      tfFactory.setAttribute("indent-number", Integer.valueOf(2));
-    } catch (IllegalArgumentException e) {
-    }
-    Transformer tf = tfFactory.newTransformer();
-    tf.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-    tf.setOutputProperty(OutputKeys.INDENT, "yes");
-    try {
-      tf.setOutputProperty("{http://xml.apache.org/xslt}indent-amount",
-          "2");
-    } catch (IllegalArgumentException e) {
-    }
+      DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+      DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+      Document doc = docBuilder.newDocument();
 
-    doc.normalize();
-    sort(doc);
-    Source src = new DOMSource(doc);
-    Result dest = new StreamResult(out);
-    tf.transform(src, dest);
+      XmlWriter context = new XmlWriter(file, doc, loader);
+
+      context.fromSelection(sel);
+
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      xform(doc, out);
+      String xml = new String(out.toByteArray(), "UTF-8");
+      System.out.printf("encoded: %s\n", xml);
+      return xml;
+    } catch (Exception e) {
+      e.printStackTrace();
+      loader.showError("error serializing data to clipboard");
+      return null;
+    }
   }
 
   private LogisimFile file;
@@ -362,7 +379,10 @@ class XmlWriter {
     if (libs.containsKey(lib))
       return null;
     String name = "" + libs.size();
+    System.out.println("loader: " + loader);
+    System.out.println("lib: " + lib);
     String desc = loader.getDescriptor(lib);
+    System.out.println("desc: " + desc);
     if (desc == null) { // should never happen for a loaded file?
       loader.showError("internal error: missing library: " + lib.getName());
       return null;
@@ -384,12 +404,31 @@ class XmlWriter {
     return ret;
   }
 
+  // see: sort() above
+  // project (contains ordered elements, do not sort)
+  // - main
+  // - toolbar (contains ordered elements, do not sort)
+  //   - tool*
+  //     - a*
+  // - lib* (contains ordered elements, do not sort)
+  //   - tool*
+  //     - a*
+  // - options
+  //   - a*
+  // - mappings
+  //   - tool*
+  //     - a*
+  // - circuit*
+  //   - a*
+  //   - comp*
+  //   - wire*
+  // - vhdl*
   Element fromLogisimFile() {
     Element ret = doc.createElement("project");
     doc.appendChild(ret);
     ret.appendChild(doc
         .createTextNode("\nThis file is intended to be "
-          + "loaded by Logisim-evolution (https://github.com/reds-heig/logisim-evolution).\n"));
+          + "loaded by Logisim-evolution (https://github.com/kevinawalsh/logisim-evolution).\n"));
     ret.setAttribute("version", "1.0");
     ret.setAttribute("source", Main.VERSION_NAME);
 
@@ -415,6 +454,85 @@ class XmlWriter {
     for (VhdlContent vhdl : file.getVhdlContents()) {
       ret.appendChild(fromVhdl(vhdl));
     }
+    return ret;
+  }
+
+  private void scanSelection(Set<Component> sel,
+    HashSet<Library> usedLibs, HashSet<Circuit> usedCircs, HashSet<VhdlContent> usedVhdl) {
+    for (Component c : sel) {
+      if (c instanceof Wire)
+        continue;
+      ComponentFactory f = c.getFactory();
+      Library lib = findLibrary(f); 
+      if (lib == null) {
+        System.out.println("no library for " + f);
+        throw new IllegalStateException("bad");
+      }
+      usedLibs.add(lib);
+      if (f instanceof SubcircuitFactory) {
+        Circuit circ = ((SubcircuitFactory)f).getSubcircuit();
+        if (usedCircs.add(circ))
+          scanSelection(circ.getNonWires(), usedLibs, usedCircs, usedVhdl);
+      } else if (f instanceof VhdlEntity) {
+        VhdlEntity vhdl = (VhdlEntity)f;
+        usedVhdl.add(vhdl.getContent());
+          // scanSelection(vhdl....?); // todo: no current way to track vhdl dependencies
+      }
+    }
+  }
+
+  // see: sort() above
+  // clipdata (contains ordered elements, do not sort)
+  // - selection
+  //   - comp*
+  //   - wire*
+  // - circuit*
+  //   - a*
+  //   - comp*
+  //   - wire*
+  // - vhdl*
+  // - lib* (contains ordered elements, do not sort)
+  //   - tool*
+  //     - a*
+  Element fromSelection(Set<Component> sel) {
+    Element ret = doc.createElement("clipdata");
+    doc.appendChild(ret);
+    ret.appendChild(doc
+        .createTextNode("\nThis clipboard data is intended to be "
+          + " used by Logisim-evolution (https://github.com/kevinawalsh/logisim-evolution).\n"));
+    ret.setAttribute("version", "1.0");
+    ret.setAttribute("source", Main.VERSION_NAME);
+
+    HashSet<Library> usedLibs = new HashSet<>();
+    HashSet<Circuit> usedCircs = new HashSet<>();
+    HashSet<VhdlContent> usedVhdl = new HashSet<>();
+
+    scanSelection(sel, usedLibs, usedCircs, usedVhdl);
+
+    for (Library lib : usedLibs) {
+      Element elt = fromLibrary(lib);
+      if (elt != null)
+        ret.appendChild(elt);
+    }
+
+    Element e = doc.createElement("selection");
+    for (Component c : sel) {
+      if (c instanceof Wire)
+        e.appendChild(fromWire((Wire)c));
+    }
+    for (Component c : sel) {
+      if (!(c instanceof Wire)) {
+        Element e2 = fromComponent(c);
+        if (e2 != null)
+          e.appendChild(e2);
+      }
+    }
+    ret.appendChild(e);
+
+    for (Circuit circ : usedCircs)
+      ret.appendChild(fromCircuit(circ));
+    for (VhdlContent vhdl : usedVhdl)
+      ret.appendChild(fromVhdl(vhdl));
     return ret;
   }
 

@@ -87,8 +87,8 @@ public class ClipboardActions extends Action {
 
   @Override
   public void doIt(Project proj) {
-    oldClipboard = Clipboard.get();
-    Clipboard.set(newClipboard);
+    oldClipboard = Clipboard.SINGLETON.get();
+    Clipboard.SINGLETON.set(newClipboard);
     if (remove) {
       canvasModel.removeObjects(affected.keySet());
     }
@@ -110,7 +110,7 @@ public class ClipboardActions extends Action {
       canvas.getSelection().clearSelected();
       canvas.getSelection().setSelected(affected.keySet(), true);
     }
-    Clipboard.set(oldClipboard);
+    Clipboard.SINGLETON.set(oldClipboard);
   }
 
 }

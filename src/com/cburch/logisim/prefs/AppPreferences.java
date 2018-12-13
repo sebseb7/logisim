@@ -30,7 +30,6 @@
 
 package com.cburch.logisim.prefs;
 
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -53,9 +52,13 @@ import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.PropertyChangeWeakSupport;
 
 public class AppPreferences {
-  //
-  // LocalePreference
-  //
+
+  public static PropertyChangeWeakSupport.Producer propertyChangeProducer =
+      new PropertyChangeWeakSupport.Producer() {
+        PropertyChangeWeakSupport propListeners = new PropertyChangeWeakSupport(AppPreferences.class);
+        public PropertyChangeWeakSupport getPropertyChangeListeners() { return propListeners; }
+      };
+  
   private static class LocalePreference extends PrefMonitorString {
     private static Locale findLocale(String lang) {
       Locale[] check;
@@ -117,10 +120,8 @@ public class AppPreferences {
         int value = prefs.getInt(TEMPLATE_TYPE, TEMPLATE_UNKNOWN);
         if (value != oldValue) {
           templateType = value;
-          propertySupport.firePropertyChange(TEMPLATE, oldValue,
-              value);
-          propertySupport.firePropertyChange(TEMPLATE_TYPE, oldValue,
-              value);
+          propertyChangeProducer.firePropertyChange(TEMPLATE, oldValue, value);
+          propertyChangeProducer.firePropertyChange(TEMPLATE_TYPE, oldValue, value);
         }
       } else if (prop.equals(TEMPLATE_FILE)) {
         File oldValue = templateFile;
@@ -129,26 +130,12 @@ public class AppPreferences {
           templateFile = value;
           if (templateType == TEMPLATE_CUSTOM) {
             customTemplate = null;
-            propertySupport.firePropertyChange(TEMPLATE, oldValue,
-                value);
+            propertyChangeProducer.firePropertyChange(TEMPLATE, oldValue, value);
           }
-          propertySupport.firePropertyChange(TEMPLATE_FILE, oldValue,
-              value);
+          propertyChangeProducer.firePropertyChange(TEMPLATE_FILE, oldValue, value);
         }
       }
     }
-  }
-
-  //
-  // PropertyChangeSource methods
-  //
-  public static void addPropertyChangeListener(PropertyChangeListener listener) {
-    propertySupport.addPropertyChangeListener(listener);
-  }
-
-  public static void addPropertyChangeListener(String propertyName,
-      PropertyChangeListener listener) {
-    propertySupport.addPropertyChangeListener(propertyName, listener);
   }
 
   public static void clear() {
@@ -170,15 +157,6 @@ public class AppPreferences {
 
   private static <E> PrefMonitor<E> create(PrefMonitor<E> monitor) {
     return monitor;
-  }
-
-  static void firePropertyChange(String property, boolean oldVal,
-      boolean newVal) {
-    propertySupport.firePropertyChange(property, oldVal, newVal);
-  }
-
-  static void firePropertyChange(String property, Object oldVal, Object newVal) {
-    propertySupport.firePropertyChange(property, oldVal, newVal);
   }
 
   private static Template getCustomTemplate() {
@@ -323,16 +301,6 @@ public class AppPreferences {
     }
   }
 
-  public static void removePropertyChangeListener(
-      PropertyChangeListener listener) {
-    propertySupport.removePropertyChangeListener(listener);
-  }
-
-  public static void removePropertyChangeListener(String propertyName,
-      PropertyChangeListener listener) {
-    propertySupport.removePropertyChangeListener(propertyName, listener);
-  }
-
   public static void setTemplateFile(File value) {
     getPrefs();
     setTemplateFile(value, null);
@@ -373,8 +341,6 @@ public class AppPreferences {
   private static Preferences prefs = null;
 
   private static MyListener myListener = null;
-  private static PropertyChangeWeakSupport propertySupport = new PropertyChangeWeakSupport(
-      AppPreferences.class);
 
   // Template preferences
   public static final int TEMPLATE_UNKNOWN = -1;
@@ -513,4 +479,5 @@ public class AppPreferences {
 
   public static final PrefMonitor<String> DIALOG_DIRECTORY = create(new PrefMonitorString(
         "dialogDirectory", ""));
+
 }

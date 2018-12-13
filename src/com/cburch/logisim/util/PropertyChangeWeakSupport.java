@@ -37,108 +37,93 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class PropertyChangeWeakSupport {
+
+  // Typical usage:
+  // class Foo ... implements PropertyChangeWeakSupport.Producer {
+  //   ...
+  //   PropertyChangeWeakSupport propListeners = new PropertyChangeWeakSupport(this);
+  //   public PropertyChangeWeakSupport getPropertyListeners() { return propListeners; }
+  // }
+  
+  private static final String ALL_PROPERTIES = "ALL PROPERTIES";
+
+  public interface Producer {
+
+    public PropertyChangeWeakSupport getPropertyChangeListeners();
+
+    default public void addPropertyChangeListener(
+        PropertyChangeListener listener) {
+      addPropertyChangeListener(ALL_PROPERTIES, listener);
+    }
+
+    default public void addPropertyChangeListener(String property,
+        PropertyChangeListener listener) {
+      PropertyChangeWeakSupport s = getPropertyChangeListeners();
+      s.listeners.add(new ListenerData(property, listener));
+    }
+
+    default public void firePropertyChange(String property,
+        boolean oldValue, boolean newValue) {
+      firePropertyChange(property, Boolean.valueOf(oldValue), Boolean.valueOf(newValue));
+    }
+
+    default public void firePropertyChange(String property,
+        int oldValue, int newValue) {
+      firePropertyChange(property, Integer.valueOf(oldValue), Integer.valueOf(newValue));
+    }
+
+    default public void firePropertyChange(String property,
+        Object oldValue, Object newValue) {
+      PropertyChangeWeakSupport s = getPropertyChangeListeners();
+      PropertyChangeEvent e = null;
+      for (Iterator<ListenerData> it = s.listeners.iterator(); it.hasNext();) {
+        ListenerData data = it.next();
+        PropertyChangeListener l = data.listener.get();
+        if (l == null) {
+          it.remove();
+        } else if (data.property == ALL_PROPERTIES
+            || data.property.equals(property)) {
+          if (e == null) {
+            e = new PropertyChangeEvent(s.source, property, oldValue,
+                newValue);
+          }
+          l.propertyChange(e);
+        }
+      }
+    }
+
+    default public void removePropertyChangeListener(PropertyChangeListener listener) {
+      removePropertyChangeListener(ALL_PROPERTIES, listener);
+    }
+
+    default public void removePropertyChangeListener(String property,
+        PropertyChangeListener listener) {
+      PropertyChangeWeakSupport s = getPropertyChangeListeners();
+      for (Iterator<ListenerData> it = s.listeners.iterator(); it.hasNext();) {
+        ListenerData data = it.next();
+        PropertyChangeListener l = data.listener.get();
+        if (l == null) {
+          it.remove();
+        } else if (data.property.equals(property) && l == listener) {
+          it.remove();
+        }
+      }
+    }
+
+  }
+
   private static class ListenerData {
     String property;
     WeakReference<PropertyChangeListener> listener;
-
-    ListenerData(String property, PropertyChangeListener listener) {
-      this.property = property;
-      this.listener = new WeakReference<PropertyChangeListener>(listener);
+    ListenerData(String p, PropertyChangeListener l) {
+      property = p;
+      listener = new WeakReference<PropertyChangeListener>(l);
     }
   }
-
-  private static final String ALL_PROPERTIES = "ALL PROPERTIES";
 
   private Object source;
-  private ConcurrentLinkedQueue<ListenerData> listeners;
+  private ConcurrentLinkedQueue<ListenerData> listeners = new ConcurrentLinkedQueue<>();
 
-  public PropertyChangeWeakSupport(Object source) {
-    this.source = source;
-    this.listeners = new ConcurrentLinkedQueue<ListenerData>();
-  }
-
-  public void addPropertyChangeListener(PropertyChangeListener listener) {
-    addPropertyChangeListener(ALL_PROPERTIES, listener);
-  }
-
-  public void addPropertyChangeListener(String property,
-      PropertyChangeListener listener) {
-    listeners.add(new ListenerData(property, listener));
-  }
-
-  public void firePropertyChange(String property, boolean oldValue,
-      boolean newValue) {
-    PropertyChangeEvent e = null;
-    for (Iterator<ListenerData> it = listeners.iterator(); it.hasNext();) {
-      ListenerData data = it.next();
-      PropertyChangeListener l = data.listener.get();
-      if (l == null) {
-        it.remove();
-      } else if (data.property == ALL_PROPERTIES
-          || data.property.equals(property)) {
-        if (e == null) {
-          e = new PropertyChangeEvent(source, property,
-              Boolean.valueOf(oldValue),
-              Boolean.valueOf(newValue));
-        }
-        l.propertyChange(e);
-      }
-    }
-  }
-
-  public void firePropertyChange(String property, int oldValue, int newValue) {
-    PropertyChangeEvent e = null;
-    for (Iterator<ListenerData> it = listeners.iterator(); it.hasNext();) {
-      ListenerData data = it.next();
-      PropertyChangeListener l = data.listener.get();
-      if (l == null) {
-        it.remove();
-      } else if (data.property == ALL_PROPERTIES
-          || data.property.equals(property)) {
-        if (e == null) {
-          e = new PropertyChangeEvent(source, property,
-              Integer.valueOf(oldValue),
-              Integer.valueOf(newValue));
-        }
-        l.propertyChange(e);
-      }
-    }
-  }
-
-  public void firePropertyChange(String property, Object oldValue,
-      Object newValue) {
-    PropertyChangeEvent e = null;
-    for (Iterator<ListenerData> it = listeners.iterator(); it.hasNext();) {
-      ListenerData data = it.next();
-      PropertyChangeListener l = data.listener.get();
-      if (l == null) {
-        it.remove();
-      } else if (data.property == ALL_PROPERTIES
-          || data.property.equals(property)) {
-        if (e == null) {
-          e = new PropertyChangeEvent(source, property, oldValue,
-              newValue);
-        }
-        l.propertyChange(e);
-      }
-    }
-  }
-
-  public void removePropertyChangeListener(PropertyChangeListener listener) {
-    removePropertyChangeListener(ALL_PROPERTIES, listener);
-  }
-
-  public void removePropertyChangeListener(String property,
-      PropertyChangeListener listener) {
-    for (Iterator<ListenerData> it = listeners.iterator(); it.hasNext();) {
-      ListenerData data = it.next();
-      PropertyChangeListener l = data.listener.get();
-      if (l == null) {
-        it.remove();
-      } else if (data.property.equals(property) && l == listener) {
-        it.remove();
-      }
-    }
-  }
+  public PropertyChangeWeakSupport(Object src) { source = src; }
 
 }

@@ -88,14 +88,34 @@ public class DragDrop {
     dataFlavors = f == null ? new DataFlavor[] { } : new DataFlavor[] { f };
   }
 
+  public DragDrop(String ...mimetype) {
+    DataFlavor[] f = new DataFlavor[mimetype.length];
+    try {
+      for (int i = 0; i < mimetype.length; i++)
+        f[i] = new DataFlavor(mimetype[i]);
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+    dataClass = null;
+    dataFlavor = f[0];
+    dataFlavors = f;
+  }
+
   public interface Support extends Transferable {
     public DragDrop getDragDrop();
+    public default Object convertTo(String mimetype) { return null; }
 
     @Override
     public default Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
       if(!isDataFlavorSupported(flavor))
         throw new UnsupportedFlavorException(flavor);
-      return this;
+      DragDrop dnd = getDragDrop();
+      if (dnd.dataClass != null && dnd.dataClass.isInstance(this))
+          return this;
+      Object obj = convertTo(flavor.getMimeType());
+      if (obj == null)
+        throw new UnsupportedFlavorException(flavor);
+      return obj;
     }
 
     @Override
@@ -105,7 +125,13 @@ public class DragDrop {
 
     @Override
     public default boolean isDataFlavorSupported(DataFlavor flavor) {
-      return flavor != null && flavor.equals(getDragDrop().dataFlavor);
+      if (flavor == null)
+        return false;
+      DragDrop dnd = getDragDrop();
+      for (DataFlavor supported: dnd.dataFlavors)
+        if (flavor.equals(supported))
+            return true;
+      return false;
     }
   }
 

@@ -74,8 +74,8 @@ class ProjectsDirty {
   }
 
   public static void initialize() {
-    Projects.addPropertyChangeListener(Projects.projectListProperty,
-        projectListListener);
+    Projects.propertyChangeProducer.addPropertyChangeListener(
+        Projects.projectListProperty, projectListListener);
   }
 
   private static ProjectListListener projectListListener = new ProjectListListener();

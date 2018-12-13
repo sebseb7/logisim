@@ -32,15 +32,9 @@ package com.cburch.logisim.gui.main;
 import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitMutation;
@@ -48,20 +42,15 @@ import com.cburch.logisim.circuit.CircuitTransaction;
 import com.cburch.logisim.circuit.CircuitTransactionResult;
 import com.cburch.logisim.circuit.ReplacementMap;
 import com.cburch.logisim.circuit.SubcircuitFactory;
-import com.cburch.logisim.std.hdl.VhdlEntity;
-import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
-import com.cburch.logisim.data.AttributeSet;
-import com.cburch.logisim.data.Location;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Dependencies;
 import com.cburch.logisim.proj.JoinedAction;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.tools.AddTool;
+import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.tools.Library;
-import com.cburch.logisim.tools.Tool;
 
 public class SelectionActions {
   /**
@@ -245,52 +234,79 @@ public class SelectionActions {
 
   private static class Paste extends Action {
     private Selection sel;
-    private CircuitTransaction xnReverse;
+    private LayoutClipboard.Data clip;
+    private CircuitTransaction xnReverse, cxnReverse;
     private SelectionSave after;
-    private HashMap<Component, Component> componentReplacements;
 
-    Paste(Selection sel, HashMap<Component, Component> replacements) {
+    Paste(Selection sel, LayoutClipboard.Data clip) {
       this.sel = sel;
-      this.componentReplacements = replacements;
+      this.clip = clip;
     }
 
-    private Collection<Component> computeAdditions(
-        Collection<Component> comps) {
-      HashMap<Component, Component> replMap = componentReplacements;
-      ArrayList<Component> toAdd = new ArrayList<Component>(comps.size());
-      for (Iterator<Component> it = comps.iterator(); it.hasNext();) {
-        Component comp = it.next();
-        if (replMap.containsKey(comp)) {
-          Component repl = replMap.get(comp);
-          if (repl != null) {
-            toAdd.add(repl);
+    private HashSet<Circuit> getDependencies(Circuit circ, Collection<Circuit> newCircs) {
+      LinkedList<Circuit> todo = new LinkedList<>();
+      HashSet<Circuit> downstream = new HashSet<>();
+      todo.add(circ);
+      while (!todo.isEmpty()) {
+        Circuit c = todo.remove();
+        downstream.add(c);
+        if (!newCircs.contains(c))
+          continue; // reached the boundary between new and old circuits
+        for (Component comp : circ.getNonWires()) {
+          if (comp.getFactory() instanceof SubcircuitFactory) {
+            SubcircuitFactory factory = (SubcircuitFactory) comp.getFactory();
+            Circuit subCirc = factory.getSubcircuit();
+            if (subCirc == circ)
+              return null; // circular
+            if (todo.contains(subCirc) || downstream.contains(subCirc))
+              continue; // already visited
+            todo.add(subCirc);
           }
-        } else {
-          toAdd.add(comp);
         }
       }
-      return toAdd;
+      return downstream;
     }
 
     @Override
     public void doIt(Project proj) {
-      LayoutClipboard clip = LayoutClipboard.get();
+      LayoutClipboard.Data clip = LayoutClipboard.SINGLETON.get(proj);
       Circuit circuit = proj.getCurrentCircuit();
       CircuitMutation xn = new CircuitMutation(circuit);
-      Collection<Component> comps = clip.getComponents();
-      Collection<Component> toAdd = computeAdditions(comps);
 
       Canvas canvas = proj.getFrame().getCanvas();
       Circuit circ = canvas.getCircuit();
-
-      /* Check if instantiated circuits are one of the parent circuits */
-      for (Component c : comps) {
+      
+      // check if adding these components would cause a circular dependency
+      Dependencies dependencies = canvas.getProject().getDependencies();
+      for (Component c : clip.components) {
         ComponentFactory factory = c.getFactory();
-        if (factory instanceof SubcircuitFactory) {
-          SubcircuitFactory circFact = (SubcircuitFactory) factory;
-          Dependencies depends = canvas.getProject()
-              .getDependencies();
-          if (!depends.canAdd(circ, circFact.getSubcircuit())) {
+        if (!(factory instanceof SubcircuitFactory))
+          continue;
+        Circuit subCirc = ((SubcircuitFactory)factory).getSubcircuit();
+        if (clip.circuits.contains(subCirc))
+          continue; // no dependency info for this subcircuit
+        if (!dependencies.canAdd(circ, subCirc)) {
+          canvas.setErrorMessage(
+              com.cburch.logisim.tools.Strings.S.getter("circularError"));
+          return;
+        }
+      }
+
+      // new circuits are not represented in the existing dependencies, so we
+      // need to (a) make sure there are no circularities within the new
+      // circuits and (b) check whether we can add an edge from the current
+      // circuit to every dependency of the new circuits.
+      for (Circuit c : clip.circuits) {
+        HashSet<Circuit> downstream = getDependencies(c, clip.circuits);
+        if (downstream == null) { // failure inicates circularity
+          canvas.setErrorMessage(
+              com.cburch.logisim.tools.Strings.S.getter("circularError"));
+          return;
+        }
+        for (Circuit subCirc : downstream) {
+          if (clip.circuits.contains(subCirc))
+            continue; // not on the boundary between new and old circuits
+          if (!dependencies.canAdd(circ, subCirc)) {
             canvas.setErrorMessage(
                 com.cburch.logisim.tools.Strings.S.getter("circularError"));
             return;
@@ -298,14 +314,24 @@ public class SelectionActions {
         }
       }
 
-      if (toAdd.size() > 0) {
-        sel.pasteHelper(xn, toAdd);
-        CircuitTransactionResult result = xn.execute();
-        xnReverse = result.getReverseTransaction();
-        after = SelectionSave.create(sel);
+      LogisimFile file = proj.getLogisimFile();
+      for (Library lib : clip.libraries)
+        file.addLibrary(lib);
+      for (VhdlContent vhdl : clip.vhdl)
+        file.addVhdlContent(vhdl);
+      if (clip.circuitTransaction != null) {
+        for (Circuit c : clip.circuits)
+          file.addCircuit(c);
+        CircuitTransactionResult result = clip.circuitTransaction.execute();
+        cxnReverse = result.getReverseTransaction();
       } else {
-        xnReverse = null;
+        cxnReverse = null;
       }
+
+      sel.pasteHelper(xn, clip.components);
+      CircuitTransactionResult result = xn.execute();
+      xnReverse = result.getReverseTransaction();
+      after = SelectionSave.create(sel);
     }
 
     @Override
@@ -315,9 +341,16 @@ public class SelectionActions {
 
     @Override
     public void undo(Project proj) {
-      if (xnReverse != null) {
-        xnReverse.execute();
-      }
+      xnReverse.execute();
+      if (cxnReverse != null)
+        cxnReverse.execute();
+      LogisimFile file = proj.getLogisimFile();
+      for (Circuit circ : clip.circuits)
+        file.removeCircuit(circ);
+      for (VhdlContent vhdl : clip.vhdl)
+        file.removeVhdl(vhdl);
+      for (Library lib : clip.libraries)
+        file.removeLibrary(lib);
     }
   }
 
@@ -398,11 +431,11 @@ public class SelectionActions {
   }
 
   public static void copy(Selection sel) { // Note: copy is not an Action
-    LayoutClipboard.set(sel, sel.getAttributeSet());
+    LayoutClipboard.SINGLETON.set(sel);
   }
 
   public static Action cut(Selection sel) {
-    LayoutClipboard.set(sel, sel.getAttributeSet());
+    LayoutClipboard.SINGLETON.set(sel);
     return new Delete(sel);
   }
 
@@ -441,138 +474,14 @@ public class SelectionActions {
     return new Duplicate(sel);
   }
 
-  private static ComponentFactory findComponentFactory(
-      ComponentFactory factory, ArrayList<Library> libs,
-      boolean acceptNameMatch) {
-    String name = factory.getName();
-    for (Library lib : libs) {
-      for (Tool tool : lib.getTools()) {
-        if (tool instanceof AddTool) {
-          AddTool addTool = (AddTool) tool;
-          if (name.equals(addTool.getName())) {
-            ComponentFactory fact = addTool.getFactory(true);
-            if (acceptNameMatch) {
-              return fact;
-            } else if (fact == factory) {
-              return fact;
-            } else if (fact.getClass() == factory.getClass()
-                && !(fact instanceof SubcircuitFactory)
-                && !(fact instanceof VhdlEntity)) {
-              return fact;
-            }
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-  private static HashMap<Component, Component> getReplacementMap(Project proj) {
-    HashMap<Component, Component> replMap;
-    replMap = new HashMap<Component, Component>();
-
-    LogisimFile file = proj.getLogisimFile();
-    ArrayList<Library> libs = new ArrayList<Library>();
-    libs.add(file);
-    libs.addAll(file.getLibraries());
-
-    ArrayList<String> dropped = null;
-    LayoutClipboard clip = LayoutClipboard.get();
-    Collection<Component> comps = clip.getComponents();
-    HashMap<ComponentFactory, ComponentFactory> factoryReplacements;
-    factoryReplacements = new HashMap<ComponentFactory, ComponentFactory>();
-    for (Component comp : comps) {
-      if (comp instanceof Wire)
-        continue;
-
-      ComponentFactory compFactory = comp.getFactory();
-      ComponentFactory copyFactory = findComponentFactory(compFactory,
-          libs, false);
-      if (factoryReplacements.containsKey(compFactory)) {
-        copyFactory = factoryReplacements.get(compFactory);
-      } else if (copyFactory == null) {
-        ComponentFactory candidate = findComponentFactory(compFactory,
-            libs, true);
-        if (candidate == null) {
-          if (dropped == null) {
-            dropped = new ArrayList<String>();
-          }
-          dropped.add(compFactory.getDisplayName());
-        } else {
-          String msg = S.fmt("pasteCloneQuery", compFactory.getName());
-          Object[] opts = { S.get("pasteCloneReplace"),
-            S.get("pasteCloneIgnore"),
-            S.get("pasteCloneCancel") };
-          int select = JOptionPane.showOptionDialog(proj.getFrame(),
-              msg, S.get("pasteCloneTitle"), 0,
-              JOptionPane.QUESTION_MESSAGE, null, opts, opts[0]);
-          if (select == 0) {
-            copyFactory = candidate;
-          } else if (select == 1) {
-            copyFactory = null;
-          } else {
-            return null;
-          }
-          factoryReplacements.put(compFactory, copyFactory);
-        }
-      }
-
-      if (copyFactory == null) {
-        replMap.put(comp, null);
-      } else if (copyFactory != compFactory) {
-        Location copyLoc = comp.getLocation();
-        AttributeSet copyAttrs = (AttributeSet) comp.getAttributeSet()
-            .clone();
-        Component copy = copyFactory
-            .createComponent(copyLoc, copyAttrs);
-        replMap.put(comp, copy);
-      }
-    }
-
-    if (dropped != null) {
-      Collections.sort(dropped);
-      StringBuilder droppedStr = new StringBuilder();
-      droppedStr.append(S.get("pasteDropMessage"));
-      String curName = dropped.get(0);
-      int curCount = 1;
-      int lines = 1;
-      for (int i = 1; i <= dropped.size(); i++) {
-        String nextName = i == dropped.size() ? "" : dropped.get(i);
-        if (nextName.equals(curName)) {
-          curCount++;
-        } else {
-          lines++;
-          droppedStr.append("\n  ");
-          droppedStr.append(curName);
-          if (curCount > 1) {
-            droppedStr.append(" \u00d7 " + curCount);
-          }
-
-          curName = nextName;
-          curCount = 1;
-        }
-      }
-
-      lines = Math.max(3, Math.min(7, lines));
-      JTextArea area = new JTextArea(lines, 60);
-      area.setEditable(false);
-      area.setText(droppedStr.toString());
-      area.setCaretPosition(0);
-      JScrollPane areaPane = new JScrollPane(area);
-      JOptionPane.showMessageDialog(proj.getFrame(), areaPane,
-          S.get("pasteDropTitle"), JOptionPane.WARNING_MESSAGE);
-    }
-
-    return replMap;
-  }
-
   public static Action pasteMaybe(Project proj, Selection sel) {
-    HashMap<Component, Component> replacements = getReplacementMap(proj);
-    return new Paste(sel, replacements);
+    LayoutClipboard.Data clip = LayoutClipboard.SINGLETON.get(proj);
+    if (clip == null)
+      return null;
+    return new Paste(sel, clip);
   }
 
-  public static Action translate(Selection sel, int dx, int dy,
-      ReplacementMap repl) {
+  public static Action translate(Selection sel, int dx, int dy, ReplacementMap repl) {
     return new Translate(sel, dx, dy, repl);
   }
 

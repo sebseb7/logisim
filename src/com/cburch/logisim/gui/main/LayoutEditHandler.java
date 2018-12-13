@@ -54,7 +54,7 @@ public class LayoutEditHandler extends EditHandler
     this.frame = frame;
 
     Project proj = frame.getProject();
-    LayoutClipboard.addPropertyChangeListener(LayoutClipboard.contentsProperty, this);
+    LayoutClipboard.SINGLETON.addPropertyChangeListener(LayoutClipboard.contentsProperty, this);
     proj.addProjectListener(this);
     proj.addLibraryListener(this);
   }
@@ -82,7 +82,7 @@ public class LayoutEditHandler extends EditHandler
         && canChange);
     setEnabled(LogisimMenuBar.COPY, !selEmpty && selectAvailable);
     setEnabled(LogisimMenuBar.PASTE, selectAvailable && canChange
-        && !LayoutClipboard.isEmpty());
+        && !LayoutClipboard.SINGLETON.isEmpty());
     setEnabled(LogisimMenuBar.DELETE, !selEmpty && selectAvailable
         && canChange);
     setEnabled(LogisimMenuBar.DUPLICATE, !selEmpty && selectAvailable
@@ -149,9 +149,8 @@ public class LayoutEditHandler extends EditHandler
     Selection sel = frame.getCanvas().getSelection();
     selectSelectTool(proj);
     Action action = SelectionActions.pasteMaybe(proj, sel);
-    if (action != null) {
+    if (action != null)
       proj.doAction(action);
-    }
   }
 
   public void projectChanged(ProjectEvent e) {

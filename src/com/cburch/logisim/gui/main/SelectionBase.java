@@ -99,6 +99,10 @@ class SelectionBase {
     this.proj = proj;
   }
 
+  public Project getProject() {
+    return proj;
+  }
+
   //
   // action methods
   //

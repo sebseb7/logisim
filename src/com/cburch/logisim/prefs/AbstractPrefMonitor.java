@@ -41,7 +41,7 @@ abstract class AbstractPrefMonitor<E> implements PrefMonitor<E> {
   }
 
   public void addPropertyChangeListener(PropertyChangeListener listener) {
-    AppPreferences.addPropertyChangeListener(name, listener);
+    AppPreferences.propertyChangeProducer.addPropertyChangeListener(name, listener);
   }
 
   public boolean getBoolean() {
@@ -57,7 +57,7 @@ abstract class AbstractPrefMonitor<E> implements PrefMonitor<E> {
   }
 
   public void removePropertyChangeListener(PropertyChangeListener listener) {
-    AppPreferences.removePropertyChangeListener(name, listener);
+    AppPreferences.propertyChangeProducer.removePropertyChangeListener(name, listener);
   }
 
   public void setBoolean(boolean value) {
