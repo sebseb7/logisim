@@ -269,7 +269,6 @@ public class SelectionActions {
 
     @Override
     public void doIt(Project proj) {
-      LayoutClipboard.Data clip = LayoutClipboard.SINGLETON.get(proj);
       Circuit circuit = proj.getCurrentCircuit();
       CircuitMutation xn = new CircuitMutation(circuit);
 

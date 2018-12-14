@@ -81,12 +81,12 @@ public class LogisimFile extends Library implements LibraryEventSource {
       try {
         file.write(out, file.loader);
       } catch (IOException e) {
-        file.loader.showError(S.fmt("fileDuplicateError", e.toString()));
+        file.loader.showError(S.fmt("fileDuplicateError", e.toString()), e);
       }
       try {
         out.close();
       } catch (IOException e) {
-        file.loader.showError(S.fmt("fileDuplicateError", e.toString()));
+        file.loader.showError(S.fmt("fileDuplicateError", e.toString()), e);
       }
     }
   }
@@ -137,8 +137,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
         in = new ReaderInputStream(new FileReader(file), "UTF8");
         return loadSub(in, loader, file);
       } catch (Exception t) {
-        firstExcept.printStackTrace();
-        loader.showError(S.fmt("xmlFormatError", firstExcept.toString()));
+        loader.showError(S.fmt("xmlFormatError", firstExcept.toString()), firstExcept, t);
       } finally {
         try {
           in.close();
@@ -155,8 +154,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
     try {
       return loadSub(in, loader, null);
     } catch (SAXException e) {
-      e.printStackTrace();
-      loader.showError(S.fmt("xmlFormatError", e.toString()));
+      loader.showError(S.fmt("xmlFormatError", e.toString()), e);
       throw new IOException("huh?", e);
       // return null;
     }
@@ -263,19 +261,19 @@ public class LogisimFile extends Library implements LibraryEventSource {
     try {
       reader.connect(writer);
     } catch (IOException e) {
-      newloader.showError(S.fmt("fileDuplicateError", e.toString()));
+      newloader.showError(S.fmt("fileDuplicateError", e.toString()), e);
       return null;
     }
     new WritingThread(writer, this).start();
     try {
       return LogisimFile.load(reader, newloader);
     } catch (IOException e) {
-      newloader.showError(S.fmt("fileDuplicateError", e.toString()));
+      newloader.showError(S.fmt("fileDuplicateError", e.toString()), e);
     } catch (LoadCanceledByUser e) {
-      newloader.showError(S.fmt("fileDuplicateError", e.toString()));
+      newloader.showError(S.fmt("fileDuplicateError", e.toString()), e);
     } finally {
-      try { reader.close();
-      } catch (IOException e1) { }
+      try { reader.close(); }
+      catch (IOException e1) { }
     }
     return null;
   }
@@ -594,15 +592,15 @@ public class LogisimFile extends Library implements LibraryEventSource {
     try {
       XmlWriter.write(this, out, loader, dest);
     } catch (TransformerConfigurationException e) {
-      loader.showError("internal error configuring transformer");
+      loader.showError("internal error configuring transformer", e);
     } catch (ParserConfigurationException e) {
-      loader.showError("internal error configuring parser");
+      loader.showError("internal error configuring parser", e);
     } catch (TransformerException e) {
       String msg = e.getMessage();
       String err = S.get("xmlConversionError");
       if (msg != null)
         err += ": " + msg;
-      loader.showError(err);
+      loader.showError(err, e);
     }
   }
 }

@@ -72,22 +72,13 @@ public class LayoutEditHandler extends EditHandler
     boolean canChange = proj != null
         && proj.getLogisimFile().contains(proj.getCurrentCircuit());
 
-    boolean selectAvailable = false;
-    for (Library lib : proj.getLogisimFile().getLibraries()) {
-      if (lib instanceof Base)
-        selectAvailable = true;
-    }
-
-    setEnabled(LogisimMenuBar.CUT, !selEmpty && selectAvailable
-        && canChange);
-    setEnabled(LogisimMenuBar.COPY, !selEmpty && selectAvailable);
-    setEnabled(LogisimMenuBar.PASTE, selectAvailable && canChange
+    setEnabled(LogisimMenuBar.CUT, !selEmpty && canChange);
+    setEnabled(LogisimMenuBar.COPY, !selEmpty);
+    setEnabled(LogisimMenuBar.PASTE, canChange
         && !LayoutClipboard.SINGLETON.isEmpty());
-    setEnabled(LogisimMenuBar.DELETE, !selEmpty && selectAvailable
-        && canChange);
-    setEnabled(LogisimMenuBar.DUPLICATE, !selEmpty && selectAvailable
-        && canChange);
-    setEnabled(LogisimMenuBar.SELECT_ALL, selectAvailable);
+    setEnabled(LogisimMenuBar.DELETE, !selEmpty && canChange);
+    setEnabled(LogisimMenuBar.DUPLICATE, !selEmpty && canChange);
+    setEnabled(LogisimMenuBar.SELECT_ALL, true);
     setEnabled(LogisimMenuBar.RAISE, false);
     setEnabled(LogisimMenuBar.LOWER, false);
     setEnabled(LogisimMenuBar.RAISE_TOP, false);
@@ -165,9 +156,8 @@ public class LayoutEditHandler extends EditHandler
   }
 
   public void propertyChange(PropertyChangeEvent event) {
-    if (event.getPropertyName().equals(LayoutClipboard.contentsProperty)) {
+    if (event.getPropertyName().equals(LayoutClipboard.contentsProperty))
       computeEnabled();
-    }
   }
 
   @Override

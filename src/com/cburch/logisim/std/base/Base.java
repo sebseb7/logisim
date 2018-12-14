@@ -61,22 +61,15 @@ public class Base extends Library {
       select,
       wiring,
       new TextTool(), 
-      // MenuTool is kind of useless, but necessary for custom keyboard/mouse mappings.
+      // MenuTool is kind of useless, but necessary for custom keyboard/mouse mappings,
+      // e.g. for the right-click binding.
       MenuTool.SINGLETON,
       // TextTool internally uses Text.FACTORY, but also supports click-to-edit,
-      // custom cursor, etc. A dedicated "add text tool" is useless.
-      /* new AddTool(Text.FACTORY), */
+      // custom cursor, etc. A dedicated "add text tool" is useless. But it
+      // needs to exist here for XmlCircuitReader to re-construct circuits, and
+      // for XmlWriter to serialize circuits.
+      textAdder,
     });
-  }
-
-  @Override
-  public Tool getTool(String name) {
-    Tool t = super.getTool(name);
-    if (t == null) {
-      if (name.equals("Text"))
-        return textAdder; // needed by XmlCircuitReader to re-construct circuits
-    }
-    return t;
   }
 
   public boolean isDeprecatedTool(String name) {

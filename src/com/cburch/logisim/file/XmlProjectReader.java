@@ -59,7 +59,6 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeSet;
-import com.cburch.logisim.std.base.Base;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.Library;
@@ -96,14 +95,14 @@ class XmlProjectReader extends XmlReader {
 
         String mods_str = sub_elt.getAttribute("map");
         if (mods_str == null || mods_str.equals("")) {
-          loader.showError(S.get("mappingMissingError"));
+          addError(S.get("mappingMissingError"), "mouse mapping");
           continue;
         }
         int mods;
         try {
           mods = InputEventUtil.fromString(mods_str);
         } catch (NumberFormatException e) {
-          loader.showError(S.fmt("mappingBadError", mods_str));
+          addError(S.fmt("mappingBadError", mods_str), "mouse mapping");
           continue;
         }
 
@@ -146,11 +145,11 @@ class XmlProjectReader extends XmlReader {
 
     private Library toLibrary(Element elt) throws LoadCanceledByUser {
       if (!elt.hasAttribute("name")) {
-        loader.showError(S.get("libNameMissingError"));
+        addError(S.get("libNameMissingError"), "loading library");
         return null;
       }
       if (!elt.hasAttribute("desc")) {
-        loader.showError(S.get("libDescMissingError"));
+        addError(S.get("libDescMissingError"), "loading library");
         return null;
       }
       String name = elt.getAttribute("name");
@@ -161,7 +160,7 @@ class XmlProjectReader extends XmlReader {
       libs.put(name, ret);
       for (Element sub_elt : XmlIterator.forChildElements(elt, "tool")) {
         if (!sub_elt.hasAttribute("name")) {
-          loader.showError(S.get("toolNameMissingError"));
+          addError(S.get("toolNameMissingError"), "loading library tool");
         } else {
           String tool_str = sub_elt.getAttribute("name");
           Tool tool = ret.getTool(tool_str);
@@ -316,6 +315,7 @@ class XmlProjectReader extends XmlReader {
     }
     if (context.messages.size() > 0) {
       StringBuilder all = new StringBuilder();
+      all.append("Error were encountered loading the project:\n");
       for (String msg : context.messages) {
         all.append(msg);
         all.append("\n");
@@ -904,55 +904,55 @@ class XmlProjectReader extends XmlReader {
         }
       }
     }
-    if (version.compareTo(LogisimVersion.get(4, 0, 0)) < 0) {
-      // Pre 4.0.0, the #Base library had some useless tools. These are gone.
-      removeDeprecatedBaseTools(doc, root);
-    }
+    // if (version.compareTo(LogisimVersion.get(4, 0, 0)) < 0) {
+    //   // Pre 4.0.0, the #Base library had some useless tools. These are gone.
+    //   removeDeprecatedBaseTools(doc, root);
+    // }
   }
 
-  private void removeDeprecatedTools(Base baseLib, String baseName, Element section) {
-    ArrayList<Element> toRemove = new ArrayList<>();
-    for (Element elt : XmlIterator.forChildElements(section, "tool")) {
-      String toolName = elt.getAttribute("name");
-      String toolLib = elt.getAttribute("lib");
-      if ((baseName == null || baseName.equals(toolLib))
-          && baseLib.isDeprecatedTool(toolName))
-        toRemove.add(elt);
-    }
-    for (Element elt : toRemove)
-      section.removeChild(elt);
-  }
+  // private void removeDeprecatedTools(Base baseLib, String baseName, Element section) {
+  //   ArrayList<Element> toRemove = new ArrayList<>();
+  //   for (Element elt : XmlIterator.forChildElements(section, "tool")) {
+  //     String toolName = elt.getAttribute("name");
+  //     String toolLib = elt.getAttribute("lib");
+  //     if ((baseName == null || baseName.equals(toolLib))
+  //         && baseLib.isDeprecatedTool(toolName))
+  //       toRemove.add(elt);
+  //   }
+  //   for (Element elt : toRemove)
+  //     section.removeChild(elt);
+  // }
 
-  private void removeDeprecatedBaseTools(Document doc, Element root) {
-    Base baseLib = null;
-    for (Library lib : loader.getBuiltin().getLibraries()) {
-      if (lib.getName().equals("Base")) {
-        baseLib = (Base)lib;
-        break;
-      }
-    }
-    // remove #Base lib references to deprecated tools
-    Element baseElt = null;
-    String baseName = null;
-    for (Element libElt : XmlIterator.forChildElements(root, "lib")) {
-      String desc = libElt.getAttribute("desc");
-      String name = libElt.getAttribute("name");
-      if (desc != null && desc.equals("#Base")) {
-        baseElt = libElt;
-        baseName = name;
-        // remove all references to deprecated tools within #Base lib element
-        removeDeprecatedTools(baseLib, null, libElt);
-      }
-    }
+  // private void removeDeprecatedBaseTools(Document doc, Element root) {
+  //   Base baseLib = null;
+  //   for (Library lib : loader.getBuiltin().getLibraries()) {
+  //     if (lib.getName().equals("Base")) {
+  //       baseLib = (Base)lib;
+  //       break;
+  //     }
+  //   }
+  //   // // remove #Base lib references to deprecated tools
+  //   // Element baseElt = null;
+  //   // String baseName = null;
+  //   // for (Element libElt : XmlIterator.forChildElements(root, "lib")) {
+  //   //   String desc = libElt.getAttribute("desc");
+  //   //   String name = libElt.getAttribute("name");
+  //   //   if (desc != null && desc.equals("#Base")) {
+  //   //     baseElt = libElt;
+  //   //     baseName = name;
+  //   //     // remove all references to deprecated tools within #Base lib element
+  //   //     removeDeprecatedTools(baseLib, null, libElt);
+  //   //   }
+  //   // }
 
-    // remove mapping references to deprecated tools
-    for (Element mapElt : XmlIterator.forChildElements(root, "mappings"))
-      removeDeprecatedTools(baseLib, baseName, mapElt);
+  //   // // remove mapping references to deprecated tools
+  //   // for (Element mapElt : XmlIterator.forChildElements(root, "mappings"))
+  //   //   removeDeprecatedTools(baseLib, baseName, mapElt);
 
-    // remove toolbar references to deprecated tools
-    for (Element mapElt : XmlIterator.forChildElements(root, "toolbar"))
-      removeDeprecatedTools(baseLib, baseName, mapElt);
-  }
+  //   // // remove toolbar references to deprecated tools
+  //   // for (Element mapElt : XmlIterator.forChildElements(root, "toolbar"))
+  //   //   removeDeprecatedTools(baseLib, baseName, mapElt);
+  // }
 
   private void addBuiltinLibrariesIfMissing(Document doc, Element root) {
     HashSet<String> found = new HashSet<>();
@@ -1147,6 +1147,7 @@ class XmlProjectReader extends XmlReader {
             maxLabel = thisLabel;
         }
       } catch (NumberFormatException e) {
+        // ignore, will likely fail later anyway
       }
     }
 

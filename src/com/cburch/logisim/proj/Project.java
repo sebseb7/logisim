@@ -367,6 +367,10 @@ public class Project {
     return file;
   }
 
+  public void showError(String description, Throwable ...errs) {
+    file.getLoader().showError(description, errs);
+  }
+
   public Options getOptions() {
     return file.getOptions();
   }

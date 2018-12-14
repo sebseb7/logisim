@@ -40,6 +40,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.swing.JList;
+import javax.swing.JScrollPane;
 import javax.swing.JOptionPane;
 
 import org.w3c.dom.Document;
@@ -96,15 +98,15 @@ public class XmlClipReader extends XmlReader {
     }
 
     Library findLibrary(String name) throws XmlReaderException {
-      System.out.println("finding library " + name);
+      // System.out.println("finding library " + name);
       if (name == null || name.equals(""))
         return file;
       String desc = lDesc.get(name);
-      System.out.println("desc library " + desc);
+      // System.out.println("desc library " + desc);
       if (desc == null)
         throw new XmlReaderException(S.fmt("libMissingError", name));
       for (Library lib : file.getLibraries()) {
-        System.out.printf("file contains lib: %s\n", LibraryManager.instance.getDescriptor(loader, lib));
+        // System.out.printf("file contains lib: %s\n", LibraryManager.instance.getDescriptor(loader, lib));
         if (LibraryManager.instance.getDescriptor(loader, lib).equals(desc))
           return lib;
       }
@@ -150,11 +152,15 @@ public class XmlClipReader extends XmlReader {
         return tool;
       Element elt;
       elt = cDep.get(name);
-      if (elt != null)
+      if (elt != null) {
+        // System.out.println("missing circuit: " + name);
         return addMissingCircuit(name, elt);
+      }
       elt = vDep.get(name);
-      if (elt != null)
+      if (elt != null) {
+        // System.out.println("missing vhdl: " + name);
         return addMissingVhdl(name, elt);
+      }
       throw new XmlReaderException(S.fmt("compUnknownError", name));
     }
 
@@ -165,14 +171,15 @@ public class XmlClipReader extends XmlReader {
       circuitsData.add(circData);
       Tool tool = new AddTool(null, circ.getSubcircuitFactory());
       tools.put(name, tool);
+      circuits.put(name, circ);
       return tool;
     }
 
     Tool addMissingVhdl(String name, Element elt) throws XmlReaderException {
-      String vhdl = elt.getTextContent();
-      VhdlContent contents = VhdlContent.parse(name, vhdl, file);
+      VhdlContent contents = VhdlContent.parse(name, elt.getTextContent(), file);
       Tool tool = new AddTool(null, new VhdlEntity(contents));
       tools.put(name, tool);
+      vhdl.put(name, contents);
       return tool;
     }
 
@@ -216,7 +223,7 @@ public class XmlClipReader extends XmlReader {
       // Determine the version producing this clipboard selection.
       // Note: clipdata can only come from 4.0.0-HC or above.
       sourceVersion = LogisimVersion.parse(elt.getAttribute("source"));
-      System.out.printf("src version is %s\n", sourceVersion);
+      // System.out.printf("src version is %s\n", sourceVersion);
       
       // first, record clipboard library, circuit, and vhdl names
       for (Element o : XmlIterator.forChildElements(elt, "lib")) {
@@ -233,11 +240,11 @@ public class XmlClipReader extends XmlReader {
         for (Element c : XmlIterator.forChildElements(s)) {
           switch (c.getTagName()) {
           case "wire":
-      System.out.println("wire");
+      // System.out.println("wire");
             components.add(XmlCircuitReader.parseWire(c));
             break;
           case "comp":
-      System.out.println("comp");
+      // System.out.println("comp");
             components.add(parseComponent(c, 0));
             break;
           default:
@@ -251,31 +258,41 @@ public class XmlClipReader extends XmlReader {
 
       String msg = "Some pasted components depend on items not " +
           "included in this project.\n";
-      if (!circuits.isEmpty()) {
-        msg += String.format("%d missing circuits: ", circuits.size());
-        int i = 0;
-        for (String circName : circuits.keySet())
-          msg += (i++ > 0 ? ", " : "") + circName;
-        msg += "\n";
-      }
-      if (!vhdl.isEmpty()) {
-        msg += String.format("%d missing VHDL: ", vhdl.size());
-        int i = 0;
-        for (String vhdlName : vhdl.keySet())
-          msg += (i++ > 0 ? ", " : "") + vhdlName;
-        msg += "\n";
-      }
-      if (!libraries.isEmpty()) {
-        msg += String.format("%d missing libraries: ", libraries.size());
-        int i = 0;
-        for (String libName : libraries.keySet())
-          msg += (i++ > 0 ? ", " : "") + libraries.get(libName).getDisplayName();
-        msg += "\n";
-      }
+      ArrayList<String> missing = new ArrayList<>();
+      for (String circName : circuits.keySet())
+        missing.add("Missing circuit: " + circName);
+      for (String vhdlName : vhdl.keySet())
+        missing.add("Missing vhdl: " + vhdlName);
+      for (String libName : libraries.keySet())
+        missing.add("Missing library: " + libraries.get(libName).getDisplayName());
+      JList<String> names = new JList<String>((String[])missing.toArray(new String[missing.size()]));
+      JScrollPane scroll = new JScrollPane(names);
+      //     msg += (i++ > 0 ? ", " : "") + circName;
+      // if (!circuits.isEmpty()) {
+      //   msg += String.format("%d missing circuits: ", circuits.size());
+      //   int i = 0;
+      //   for (String circName : circuits.keySet())
+      //     msg += (i++ > 0 ? ", " : "") + circName;
+      //   msg += "\n";
+      // }
+      // if (!vhdl.isEmpty()) {
+      //   msg += String.format("%d missing VHDL: ", vhdl.size());
+      //   int i = 0;
+      //   for (String vhdlName : vhdl.keySet())
+      //     msg += (i++ > 0 ? ", " : "") + vhdlName;
+      //   msg += "\n";
+      // }
+      // if (!libraries.isEmpty()) {
+      //   msg += String.format("%d missing libraries: ", libraries.size());
+      //   int i = 0;
+      //   for (String libName : libraries.keySet())
+      //     msg += (i++ > 0 ? ", " : "") + libraries.get(libName).getDisplayName();
+      //   msg += "\n";
+      // }
       String opts[] = new String[] { "Add Missing Dependencies",
         "Skip Affected Components", "Cancel" };
       int ans = JOptionPane.showOptionDialog(
-          null/*parent*/, msg, "Missing Dependencies"/*title*/,
+          null/*parent*/, new Object[] { msg, scroll }, "Missing Dependencies"/*title*/,
           JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null/*icon*/,
           opts, opts[0]);
       if (ans == JOptionPane.YES_OPTION || ans == JOptionPane.OK_OPTION)
@@ -290,10 +307,14 @@ public class XmlClipReader extends XmlReader {
       lDep.clear();
       lDesc.clear();
       if (ans == JOptionPane.NO_OPTION) {
+        // System.out.println("removing bad components");
+        // for (Component c : badComponents)
+        //   System.out.printf("bad: %s\n", c);
         components.removeAll(badComponents);
         badComponents.clear();
         return; // done
       } else {
+        // System.out.println("removing all components");
         components.clear();
         badComponents.clear();
         throw new LoadCanceledByUser();
@@ -309,7 +330,7 @@ public class XmlClipReader extends XmlReader {
     // elt = ensureLogisimCompatibility(elt);
     // considerRepairs(doc, elt);
    
-    System.out.println("dst file is " + dstFile);
+    // System.out.println("dst file is " + dstFile);
     ReadClipContext context = new ReadClipContext(dstFile);
 
     context.parseSelection(elt);

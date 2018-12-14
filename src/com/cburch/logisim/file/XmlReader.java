@@ -77,7 +77,9 @@ class XmlReader {
           Component comp = XmlCircuitReader.getComponent(e, ctx);
           if (comp != null)
             knownComponents.put(e, comp);
-      } catch (XmlReaderException ex) { }
+      } catch (XmlReaderException ex) {
+        ctx.addErrors(ex, "parsing component from xml");
+      }
       // load appearance
       for (Element e : XmlIterator.forChildElements(elt, "appear"))
         loadAppearance(ctx, e, circ.getName() + ".appear");
@@ -205,8 +207,8 @@ class XmlReader {
     factory.setNamespaceAware(true);
     try {
       return factory.newDocumentBuilder().parse(is);
-    } catch (ParserConfigurationException ex) {
-      throw new IOException("XML parse configuration error: " + ex.getMessage());
+    } catch (ParserConfigurationException e) {
+      throw new IOException("XML parse configuration error: " + e.getMessage(), e);
     }
   }
 

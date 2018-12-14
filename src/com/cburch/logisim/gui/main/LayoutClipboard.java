@@ -89,7 +89,7 @@ class LayoutClipboard implements ClipboardOwner, FlavorListener, PropertyChangeW
         return null;
       return new Data(ctx);
     } catch (Exception e) {
-      e.printStackTrace();
+      proj.showError("Error parsing clipboard data", e);
       return null;
     }
   }
@@ -119,6 +119,7 @@ class LayoutClipboard implements ClipboardOwner, FlavorListener, PropertyChangeW
   public static final LayoutClipboard SINGLETON = new LayoutClipboard();
   private XmlData current; // the owned system clip
   private boolean external; // not owned, but system clip is compatible
+  private boolean available; // current != null || external
 
   private LayoutClipboard() {
     sysclip.addFlavorListener(this);
@@ -126,17 +127,15 @@ class LayoutClipboard implements ClipboardOwner, FlavorListener, PropertyChangeW
   }
 
   public void flavorsChanged(FlavorEvent e) {
-    boolean oldAvail = current != null || external;
+    boolean oldAvail = available;
     external = sysclip.isDataFlavorAvailable(XmlData.dnd.dataFlavor);
-    boolean newAvail = current != null || external;
-    System.out.printf("flavors changed: external %s avail %s\n", external, newAvail);
-    if (oldAvail != newAvail)
-      firePropertyChange(contentsProperty, oldAvail, newAvail);
+    available = current != null || external;
+    if (oldAvail != available)
+      LayoutClipboard.this.firePropertyChange(contentsProperty, oldAvail, available);
   }
 
   public void lostOwnership(Clipboard clipboard, Transferable contents) {
     current = null;
-    System.out.printf("lost ownership\n");
     flavorsChanged(null);
   }
 
@@ -147,7 +146,6 @@ class LayoutClipboard implements ClipboardOwner, FlavorListener, PropertyChangeW
   }
 
   public Data get(Project proj) {
-    System.out.printf("get clip %s %s\n", external, current);
     if (current != null)
       return decode(proj, current);
     else if (external) 

@@ -32,25 +32,42 @@ package com.cburch.logisim.file;
 import static com.cburch.logisim.file.Strings.S;
 
 import java.awt.Component;
-import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 
 import com.cburch.logisim.Main;
 import com.cburch.logisim.std.Builtin;
 import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.util.JDialogOk;
 import com.cburch.logisim.util.JFileChoosers;
 import com.cburch.logisim.util.MacCompatibility;
 import com.cburch.logisim.util.ZipClassLoader;
@@ -323,8 +340,7 @@ public class Loader implements LibraryLoader {
 
   public Library loadLogisimLibrary(File file) {
     File actual = getSubstitution(file);
-    LoadedLibrary ret = LibraryManager.instance.loadLogisimLibrary(this,
-        actual);
+    LoadedLibrary ret = LibraryManager.instance.loadLogisimLibrary(this, actual);
     if (ret != null) {
       LogisimFile retBase = (LogisimFile) ret.getBase();
       showMessages(retBase);
@@ -444,7 +460,7 @@ public class Loader implements LibraryLoader {
     parent = value;
   }
 
-  public void showError(String description) {
+  public void showError(String description, Throwable ...errs) {
     if (!filesOpening.empty()) {
       File top = filesOpening.peek();
       String init = toProjectName(top) + ":";
@@ -457,14 +473,18 @@ public class Loader implements LibraryLoader {
 
     if (Main.headless) {
       System.err.println(S.get("fileErrorTitle") + ": " + description);
+      if (errs.length > 1)
+        System.err.println(errs.length + " associated errors:");
+      for (Throwable t: errs)
+        t.printStackTrace();
       return;
     }
+    Icon errIcon = UIManager.getIcon("OptionPane.errorIcon");
+    JComponent msg;
     if (description.contains("\n") || description.length() > 60) {
       int lines = 1;
-      for (int pos = description.indexOf('\n'); pos >= 0; pos = description
-          .indexOf('\n', pos + 1)) {
+      for (int pos = description.indexOf('\n'); pos >= 0; pos = description.indexOf('\n', pos + 1))
         lines++;
-      }
       lines = Math.max(4, Math.min(lines, 7));
 
       JTextArea textArea = new JTextArea(lines, 60);
@@ -473,13 +493,87 @@ public class Loader implements LibraryLoader {
       textArea.setCaretPosition(0);
 
       JScrollPane scrollPane = new JScrollPane(textArea);
-      scrollPane.setPreferredSize(new Dimension(350, 150));
-      JOptionPane.showMessageDialog(parent, scrollPane,
-          S.get("fileErrorTitle"), JOptionPane.ERROR_MESSAGE);
+      Box box = Box.createHorizontalBox();
+      box.add(new JLabel(errIcon));
+      box.add(scrollPane);
+      box.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+
+      msg = box;
     } else {
-      JOptionPane.showMessageDialog(parent, description,
-          S.get("fileErrorTitle"), JOptionPane.ERROR_MESSAGE);
+      msg = new JLabel(description, errIcon, SwingConstants.LEFT);
+      msg.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
     }
+    if (errs.length > 0) {
+
+      StringWriter errors = new StringWriter();
+      PrintWriter out = new PrintWriter(errors);
+      if (errs.length > 1)
+        out.println(errs.length + " associated errors:");
+      for (Throwable t: errs)
+        t.printStackTrace(out);
+
+      msg.setAlignmentX(0);
+
+      JTextArea textArea = new JTextArea(description + "\n" + errors.toString());
+      textArea.setEditable(false);
+      textArea.setCaretPosition(0);
+      JScrollPane errPane = new JScrollPane(textArea);
+      errPane.setAlignmentX(0);
+
+      JButton button = new JButton(S.get("fileErrorShowDetail"));
+      button.setContentAreaFilled(false);
+      button.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+      button.setAlignmentX(0);
+
+      Icon iconClosed = UIManager.getIcon("Tree.collapsedIcon");
+      if (iconClosed == null) UIManager.getIcon("Tree.closedIcon");
+      Icon iconOpen = UIManager.getIcon("Tree.expandedIcon");
+      if (iconOpen == null) UIManager.getIcon("Tree.openIcon");
+      button.setIcon(iconClosed);
+
+      JPanel details = new JPanel();
+      details.setBorder(BorderFactory.createEmptyBorder(7, 10, 7, 10));
+      GridBagLayout gb = new GridBagLayout();
+      GridBagConstraints gc = new GridBagConstraints();
+      details.setLayout(gb);
+      gc.anchor = GridBagConstraints.NORTHWEST;
+      gc.weightx = 1;
+      gc.fill = GridBagConstraints.HORIZONTAL;
+      gc.gridx = gc.gridy = 0;
+      gb.setConstraints(msg, gc);
+      details.add(msg);
+      gc.fill = GridBagConstraints.NONE;
+      gc.weightx = 0;
+      gc.gridy = 1;
+      gb.setConstraints(button, gc);
+      details.add(button);
+      button.addActionListener(new ActionListener() {
+        public void actionPerformed(ActionEvent event) {
+          if (errPane.isShowing()) {
+            button.setIcon(iconClosed);
+            details.remove(errPane);
+          } else {
+            button.setIcon(iconOpen);
+            gc.fill = GridBagConstraints.BOTH;
+            gc.weightx = gc.weighty = 1;
+            gc.gridy = 2;
+            gb.setConstraints(errPane, gc);
+            details.add(errPane);
+          }
+          details.revalidate();
+          JDialog topFrame = (JDialog)SwingUtilities.getWindowAncestor(details);
+          topFrame.pack();
+          details.repaint();
+        }
+      });
+      msg = details;
+    }
+    JDialog dialog = new JDialogOk(S.get("fileErrorTitle"), false) {
+      public void okClicked() { }
+    };
+    dialog.getContentPane().add(msg);
+    dialog.pack();
+    dialog.show();
   }
 
   private void showMessages(LogisimFile source) {

@@ -37,5 +37,5 @@ interface LibraryLoader {
 
   public Library loadLibrary(String desc) throws LoadCanceledByUser;
 
-  public void showError(String description);
+  public void showError(String description, Throwable ...errs);
 }

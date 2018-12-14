@@ -171,19 +171,19 @@ public class XmlWriter {
     try {
       TransformerFactory tfFactory = TransformerFactory.newInstance();
       try { tfFactory.setAttribute("indent-number", Integer.valueOf(2)); }
-      catch (IllegalArgumentException e) { }
+      catch (IllegalArgumentException e) { } // non-fatal
         Transformer tf = tfFactory.newTransformer();
         tf.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
         tf.setOutputProperty(OutputKeys.INDENT, "yes");
       try { tf.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2"); }
-      catch (IllegalArgumentException e) { }
+      catch (IllegalArgumentException e) { } // non-fatal
 
       doc.normalize();
       sort(doc);
       Source src = new DOMSource(doc);
       Result dest = new StreamResult(out);
       tf.transform(src, dest);
-    } catch (Exception e) { }
+    } catch (Exception e) { } // non-fatal
   }
 
   static void write(LogisimFile file, OutputStream out,
@@ -210,7 +210,6 @@ public class XmlWriter {
   }
 
   public static String encodeSelection(LogisimFile file, LibraryLoader loader, Set<Component> sel) {
-    System.out.println("encoding selection");
     try {
       DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
       DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
@@ -223,11 +222,9 @@ public class XmlWriter {
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       xform(doc, out);
       String xml = new String(out.toByteArray(), "UTF-8");
-      System.out.printf("encoded: %s\n", xml);
       return xml;
     } catch (Exception e) {
-      e.printStackTrace();
-      loader.showError("error serializing data to clipboard");
+      loader.showError("Error serializing data to clipboard.", e);
       return null;
     }
   }
@@ -292,13 +289,17 @@ public class XmlWriter {
   }
 
   Library findLibrary(ComponentFactory source) {
+    // System.out.printf("- searching for library of %s\n", source);
     if (file.contains(source)) {
+      // System.out.printf("- found in file %s\n", file);
       return file;
     }
     for (Library lib : file.getLibraries()) {
+      // System.out.printf("- checking in lib %s\n", lib);
       if (lib.contains(source))
         return lib;
     }
+    // System.out.printf("- no library found for %s\n", source);
     return null;
   }
 
@@ -379,10 +380,10 @@ public class XmlWriter {
     if (libs.containsKey(lib))
       return null;
     String name = "" + libs.size();
-    System.out.println("loader: " + loader);
-    System.out.println("lib: " + lib);
+    // System.out.println("loader: " + loader);
+    // System.out.println("lib: " + lib);
     String desc = loader.getDescriptor(lib);
-    System.out.println("desc: " + desc);
+    // System.out.println("desc: " + desc);
     if (desc == null) { // should never happen for a loaded file?
       loader.showError("internal error: missing library: " + lib.getName());
       return null;
@@ -464,10 +465,8 @@ public class XmlWriter {
         continue;
       ComponentFactory f = c.getFactory();
       Library lib = findLibrary(f); 
-      if (lib == null) {
-        System.out.println("no library for " + f);
-        throw new IllegalStateException("bad");
-      }
+      if (lib == null)
+        throw new IllegalStateException("missing library for " + f.getDisplayName());
       usedLibs.add(lib);
       if (f instanceof SubcircuitFactory) {
         Circuit circ = ((SubcircuitFactory)f).getSubcircuit();
@@ -510,6 +509,8 @@ public class XmlWriter {
     scanSelection(sel, usedLibs, usedCircs, usedVhdl);
 
     for (Library lib : usedLibs) {
+      if (lib == file)
+        continue;
       Element elt = fromLibrary(lib);
       if (elt != null)
         ret.appendChild(elt);

@@ -108,7 +108,7 @@ public class XmlCircuitReader extends CircuitTransaction {
     Tool tool = lib.getTool(name);
     if (tool == null || !(tool instanceof AddTool)) {
       if (libName == null || libName.equals("")) {
-        throw new XmlReaderException(S.fmt("compUnknownError", name));
+        return null; // throw new XmlReaderException(S.fmt("compUnknownError", name));
       } else {
         throw new XmlReaderException(S.fmt("compAbsentError", name, libName));
       }
@@ -121,7 +121,10 @@ public class XmlCircuitReader extends CircuitTransaction {
 
     // Create component if location known
     Location loc = parseComponentLoc(elt, source.getName()); // name
-    return source.createComponent(loc, attrs);
+    Component comp = source.createComponent(loc, attrs);
+    if (comp == null)
+      throw new XmlReaderException(String.format("Error instantiating component `%s' from library `%s'.", name, libName));
+    return comp;
   }
 
   private XmlReader.ReadContext reader;
@@ -186,12 +189,11 @@ public class XmlCircuitReader extends CircuitTransaction {
       if (sub_elt_name.equals("comp")) {
         try {
           Component comp = knownComponents.get(sub_elt);
-          if (comp == null) {
+          if (comp == null)
             comp = getComponent(sub_elt, reader);
-          }
-          if (comp != null) {
-            mutator.add(dest, comp);
-          }
+          if (comp == null)
+            throw new XmlReaderException(S.fmt("compUnknownError", sub_elt.getAttribute("name")));
+          mutator.add(dest, comp);
         } catch (XmlReaderException e) {
           reader.addErrors(e, circData.circuit.getName() + "."
               + toComponentString(sub_elt));
