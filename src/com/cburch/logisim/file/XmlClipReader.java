@@ -1,4 +1,4 @@
-/**
+/** // should be only oe
  * This file is part of Logisim-evolution.
  *
  * Logisim-evolution is free software: you can redistribute it and/or modify
@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 
 import javax.swing.JList;
 import javax.swing.JScrollPane;
@@ -64,23 +63,23 @@ import com.cburch.logisim.tools.Tool;
 
 public class XmlClipReader extends XmlReader {
 
-  private static <K, T> Collection<T> values(HashMap<K, T> map) {
-    ArrayList<T> vals = new ArrayList<>();
-    for (K k : map.keySet())
-      vals.add((T)map.get(k));
-    return vals;
-  }
-
   public class ReadClipContext extends ReadContext {
 
-    HashSet<Component> components = new HashSet<>(); // the selection, or null if cancelled
+    // for selections of type Set<Component>
+    HashSet<Component> selectedComponents = new HashSet<>(); // the selection, or empty if cancelled
     HashSet<Component> badComponents = new HashSet<>(); // components with missing dependencies
+
+    // for selections of type Circuit
+    CircuitData selectedCircuit; // the selection, or null if cancelled
+
+    // for selections of type VhdlContent
+    VhdlContent selectedVhdl; // the selection, or null if cancelled
 
     HashMap<String, Circuit> circuits = new HashMap<>(); // circuit dependencies
     HashMap<String, VhdlContent> vhdl = new HashMap<>(); // vhdl dependencies
     HashMap<String, Library> libraries = new HashMap<>(); // library dependencies
     HashMap<String, Tool> tools = new HashMap<>(); // tools for circuit and vhdl dependencies
-    List<CircuitData> circuitsData = new ArrayList<>(); // data for circuits to be constructed 
+    ArrayList<CircuitData> circuitsData = new ArrayList<>(); // data for circuits to be constructed 
 
     HashMap<String, Element> cDep = new HashMap<>(); // name -> circuit dependencies
     HashMap<String, Element> vDep = new HashMap<>(); // name -> vhdl dependencies
@@ -89,11 +88,15 @@ public class XmlClipReader extends XmlReader {
 
     ReadClipContext(LogisimFile f) { super(f, null); }
 
-    public Collection<Component> getComponents() { return components; }
-    public Collection<Circuit> getCircuits() { return values(circuits); }
-    public Collection<VhdlContent> getVhdl() { return values(vhdl); }
-    public Collection<Library> getLibraries() { return values(libraries); }
+    public Collection<Component> getSelectedComponents() { return selectedComponents; }
+    public Circuit getSelectedCircuit() { return selectedCircuit.circuit; }
+    public VhdlContent getSelectedVhdl() { return selectedVhdl; }
+    public Collection<Circuit> getCircuits() { return circuits.values(); }
+    public Collection<VhdlContent> getVhdl() { return vhdl.values(); }
+    public Collection<Library> getLibraries() { return libraries.values(); }
     public CircuitTransaction getCircuitTransaction() {
+      if (selectedCircuit != null && !circuitsData.contains(selectedCircuit))
+        circuitsData.add(selectedCircuit);
       return new XmlCircuitReader(this, circuitsData);
     }
 
@@ -235,22 +238,35 @@ public class XmlClipReader extends XmlReader {
       for (Element o : XmlIterator.forChildElements(elt, "vhdl"))
         vDep.put(o.getAttribute("name"), o);
 
-      // second, reconstruct selection wires and components
-      for (Element s : XmlIterator.forChildElements(elt, "selection")) {
+      // second, reconstruct selection wires and components, or circuit, or vhdl
+      for (Element s : XmlIterator.forChildElements(elt, "selection")) { // normally only one
         for (Element c : XmlIterator.forChildElements(s)) {
           switch (c.getTagName()) {
           case "wire":
-      // System.out.println("wire");
-            components.add(XmlCircuitReader.parseWire(c));
+            selectedComponents.add(XmlCircuitReader.parseWire(c));
             break;
           case "comp":
-      // System.out.println("comp");
-            components.add(parseComponent(c, 0));
+            selectedComponents.add(parseComponent(c, 0));
+            break;
+          case "circuit":
+            selectedCircuit = parseCircuit(c);
+            break;
+          case "vhdl":
+            selectedVhdl = parseVhdl(c);
             break;
           default:
             // do nothing
           }
         }
+      }
+
+      // check for name clashes
+      String name = null;
+      if (selectedCircuit != null)
+        name = selectedCircuit.circuit.getName();
+      else if (selectedVhdl != null)
+        name = selectedVhdl.getName();
+      if (name != null) {
       }
 
       if (badComponents.isEmpty())
@@ -267,28 +283,6 @@ public class XmlClipReader extends XmlReader {
         missing.add("Missing library: " + libraries.get(libName).getDisplayName());
       JList<String> names = new JList<String>((String[])missing.toArray(new String[missing.size()]));
       JScrollPane scroll = new JScrollPane(names);
-      //     msg += (i++ > 0 ? ", " : "") + circName;
-      // if (!circuits.isEmpty()) {
-      //   msg += String.format("%d missing circuits: ", circuits.size());
-      //   int i = 0;
-      //   for (String circName : circuits.keySet())
-      //     msg += (i++ > 0 ? ", " : "") + circName;
-      //   msg += "\n";
-      // }
-      // if (!vhdl.isEmpty()) {
-      //   msg += String.format("%d missing VHDL: ", vhdl.size());
-      //   int i = 0;
-      //   for (String vhdlName : vhdl.keySet())
-      //     msg += (i++ > 0 ? ", " : "") + vhdlName;
-      //   msg += "\n";
-      // }
-      // if (!libraries.isEmpty()) {
-      //   msg += String.format("%d missing libraries: ", libraries.size());
-      //   int i = 0;
-      //   for (String libName : libraries.keySet())
-      //     msg += (i++ > 0 ? ", " : "") + libraries.get(libName).getDisplayName();
-      //   msg += "\n";
-      // }
       String opts[] = new String[] { "Add Missing Dependencies",
         "Skip Affected Components", "Cancel" };
       int ans = JOptionPane.showOptionDialog(
@@ -307,15 +301,18 @@ public class XmlClipReader extends XmlReader {
       lDep.clear();
       lDesc.clear();
       if (ans == JOptionPane.NO_OPTION) {
-        // System.out.println("removing bad components");
-        // for (Component c : badComponents)
-        //   System.out.printf("bad: %s\n", c);
-        components.removeAll(badComponents);
+        selectedComponents.removeAll(badComponents);
+        if (selectedCircuit != null) {
+          for (Element e : selectedCircuit.knownComponents.keySet())
+            if (badComponents.contains(selectedCircuit.knownComponents.get(e)))
+                selectedCircuit.knownComponents.put(e, null);
+        }
         badComponents.clear();
         return; // done
       } else {
-        // System.out.println("removing all components");
-        components.clear();
+        selectedCircuit = null;
+        selectedVhdl = null;
+        selectedComponents.clear();
         badComponents.clear();
         throw new LoadCanceledByUser();
       }

@@ -31,184 +31,163 @@
 package com.cburch.logisim.gui.menu;
 import static com.cburch.logisim.gui.menu.Strings.S;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 
-import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.file.LoadedLibrary;
-import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.file.LogisimFile;
+import com.cburch.logisim.gui.generic.PopupMenu;
 import com.cburch.logisim.gui.main.Frame;
+import com.cburch.logisim.gui.main.LayoutClipboard;
 import com.cburch.logisim.gui.main.StatisticsDialog;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
-import com.cburch.logisim.std.hdl.VhdlContent;
 
 public class Popups {
-  @SuppressWarnings("serial")
-  private static class CircuitPopup extends JPopupMenu
-    implements ActionListener {
+
+  private static class CircuitPopup extends PopupMenu {
     Project proj;
     /* Tool tool; */
     Circuit circuit;
-    JMenuItem analyze = new JMenuItem(
-        S.get("projectAnalyzeCircuitItem"));
-    JMenuItem stats = new JMenuItem(
-        S.get("projectGetCircuitStatisticsItem"));
-    JMenuItem main = new JMenuItem(S.get("projectSetAsMainItem"));
-    JMenuItem remove = new JMenuItem(
-        S.get("projectRemoveCircuitItem"));
-    JMenuItem editLayout = new JMenuItem(
-        S.get("projectEditCircuitLayoutItem"));
-    JMenuItem editAppearance = new JMenuItem(
-        S.get("projectEditCircuitAppearanceItem"));
+
+    static final String editLayout = "projectEditCircuitLayoutItem";
+    static final String editAppearance = "projectEditCircuitAppearanceItem";
+    static final String analyze = "projectAnalyzeCircuitItem";
+    static final String stats = "projectGetCircuitStatisticsItem";
+    static final String main = "projectSetAsMainItem";
+    static final String remove = "projectRemoveCircuitItem";
 
     CircuitPopup(Project proj, Tool tool, Circuit circuit) {
       super(S.get("circuitMenu"));
       this.proj = proj;
-      /* this.tool = tool; */
       this.circuit = circuit;
 
-      add(editLayout);
-      editLayout.addActionListener(this);
-      add(editAppearance);
-      editAppearance.addActionListener(this);
-      add(analyze);
-      analyze.addActionListener(this);
-      add(stats);
-      stats.addActionListener(this);
-      addSeparator();
-      add(main);
-      main.addActionListener(this);
-      add(remove);
-      remove.addActionListener(this);
-
-      boolean canChange = proj.getLogisimFile().contains(circuit);
-      LogisimFile file = proj.getLogisimFile();
-      if (circuit == proj.getCurrentCircuit()) {
-        if (proj.getFrame().getEditorView()
-            .equals(Frame.EDIT_APPEARANCE)) {
-          editAppearance.setEnabled(false);
-        } else {
-          editLayout.setEnabled(false);
-        }
-      }
-      main.setEnabled(canChange && file.getMainCircuit() != circuit);
-      remove.setEnabled(canChange && file.getCircuitCount() > 1
-          && proj.getDependencies().canRemove(circuit));
-    }
-
-    public void actionPerformed(ActionEvent e) {
-      Object source = e.getSource();
-      if (source == editLayout) {
+      add(editLayout, S.get(editLayout), e -> {
         proj.setCurrentCircuit(circuit);
         proj.getFrame().setEditorView(Frame.EDIT_LAYOUT);
-      } else if (source == editAppearance) {
+      });
+      add(editAppearance, S.get(editAppearance), e -> {
         proj.setCurrentCircuit(circuit);
         proj.getFrame().setEditorView(Frame.EDIT_APPEARANCE);
-      } else if (source == analyze) {
+      });
+      add(analyze, S.get(analyze), e -> {
         ProjectCircuitActions.doAnalyze(proj, circuit);
-      } else if (source == stats) {
+      });
+      add(stats, S.get(stats), e -> {
         JFrame frame = (JFrame) SwingUtilities.getRoot(this);
         StatisticsDialog.show(frame, proj.getLogisimFile(), circuit);
-      } else if (source == main) {
+      });
+      addSeparator();
+      add(main, S.get(main), e -> {
         ProjectCircuitActions.doSetAsMainCircuit(proj, circuit);
-      } else if (source == remove) {
+      });
+      add(remove, S.get(remove), e -> {
         ProjectCircuitActions.doRemoveCircuit(proj, circuit);
-      }
+      });
+    }
+
+    @Override
+    protected boolean shouldEnable(Object tag) {
+      boolean canChange = proj.getLogisimFile().contains(circuit);
+      LogisimFile file = proj.getLogisimFile();
+      if (tag == editAppearance)
+        return !(circuit == proj.getCurrentCircuit() &&
+            proj.getFrame().getEditorView().equals(Frame.EDIT_APPEARANCE));
+      else if (tag == editLayout)
+        return !(circuit == proj.getCurrentCircuit() &&
+            !proj.getFrame().getEditorView().equals(Frame.EDIT_APPEARANCE));
+      else if (tag == main)
+        return canChange && file.getMainCircuit() != circuit;
+      else if (tag == remove)
+        return canChange && file.getCircuitCount() > 1
+          && proj.getDependencies().canRemove(circuit);
+      else
+        return true;
     }
   }
 
-  private static class VhdlPopup extends JPopupMenu
-    implements ActionListener {
+  private static class VhdlPopup extends PopupMenu {
     Project proj;
     VhdlContent vhdl;
-    JMenuItem edit = new JMenuItem(
-        S.get("projectEditVhdlItem"));
-    JMenuItem remove = new JMenuItem(
-        S.get("projectRemoveVhdlItem"));
+
+    static final String edit = "projectEditVhdlItem";
+    static final String remove = "projectRemoveVhdlItem";
 
     VhdlPopup(Project proj, Tool tool, VhdlContent vhdl) {
       super(S.get("vhdlMenu"));
       this.proj = proj;
-      /* this.tool = tool; */
       this.vhdl = vhdl;
 
-      add(edit);
-      edit.addActionListener(this);
-      add(remove);
-      remove.addActionListener(this);
-
-      edit.setEnabled(vhdl != proj.getFrame().getHdlEditorView());
-
-      boolean canChange = proj.getLogisimFile().contains(vhdl);
-      LogisimFile file = proj.getLogisimFile();
-      remove.setEnabled(canChange && proj.getDependencies().canRemove(vhdl));
+      add(edit, S.get(edit), e -> proj.setCurrentHdlModel(vhdl));
+      add(remove, S.get(remove), e -> ProjectCircuitActions.doRemoveVhdl(proj, vhdl));
     }
 
-    public void actionPerformed(ActionEvent e) {
-      Object source = e.getSource();
-      if (source == edit) {
-        proj.setCurrentHdlModel(vhdl);
-      } else if (source == remove) {
-        ProjectCircuitActions.doRemoveVhdl(proj, vhdl);
-      }
+    @Override
+    protected boolean shouldEnable(Object tag) {
+      boolean canChange = proj.getLogisimFile().contains(vhdl);
+      LogisimFile file = proj.getLogisimFile();
+      if (tag == edit)
+        return vhdl != proj.getFrame().getHdlEditorView();
+      else if (tag == remove)
+        return canChange && proj.getDependencies().canRemove(vhdl);
+      else
+        return true;
     }
   }
 
-  @SuppressWarnings("serial")
-  private static class LibraryPopup extends JPopupMenu
-    implements ActionListener {
+  private static class LibraryPopup extends PopupMenu {
     Project proj;
     Library lib;
-    JMenuItem unload = new JMenuItem(
-        S.get("projectUnloadLibraryItem"));
-    JMenuItem reload = new JMenuItem(
-        S.get("projectReloadLibraryItem"));
+    boolean is_top;
+
+    static final String unload = "projectUnloadLibraryItem";
+    static final String reload = "projectReloadLibraryItem";
 
     LibraryPopup(Project proj, Library lib, boolean is_top) {
       super(S.get("libMenu"));
       this.proj = proj;
       this.lib = lib;
+      this.is_top = is_top;
+      LoadedLibrary loadedLib = (lib instanceof LoadedLibrary)
+          ? (LoadedLibrary)lib : null;
 
-      add(unload);
-      unload.addActionListener(this);
-      add(reload);
-      reload.addActionListener(this);
-      unload.setEnabled(is_top);
-      reload.setEnabled(is_top && lib instanceof LoadedLibrary);
+      add(unload, S.get(unload), e -> ProjectLibraryActions.doUnloadLibrary(proj, lib));
+      add(reload, S.get(reload), e -> proj.getLogisimFile().getLoader().reload(loadedLib));
+
     }
 
-    public void actionPerformed(ActionEvent e) {
-      Object src = e.getSource();
-      if (src == unload) {
-        ProjectLibraryActions.doUnloadLibrary(proj, lib);
-      } else if (src == reload) {
-        Loader loader = proj.getLogisimFile().getLoader();
-        loader.reload((LoadedLibrary) lib);
-      }
+    @Override
+    protected boolean shouldEnable(Object tag) {
+      if (tag == unload)
+        return is_top;
+      else if (tag == reload)
+        return is_top && lib instanceof LoadedLibrary;
+      else
+        return true;
     }
   }
 
-  @SuppressWarnings("serial")
-  private static class ProjectPopup extends JPopupMenu
-    implements ActionListener {
+  private static class ProjectPopup extends PopupMenu {
     Project proj;
-    JMenuItem add = new JMenuItem(S.get("projectAddCircuitItem"));
+    static final String cut = "editCutItem";
+    static final String copy = "editCopyItem";
+    static final String pasteCircuit = "projectPasteCircuitItem";
+    static final String pasteAsCircuit = "projectPasteAsCircuitItem";
+    static final String pasteVhdl = "projectPasteVhdlItem";
+    static final String addCirc = "projectAddCircuitItem";
+    static final String addVhdl = "projectAddVhdlItem";
+    static final String importVhdl = "projectImportVhdlItem";
+
     JMenu load = new JMenu(S.get("projectLoadLibraryItem"));
-    JMenuItem loadBuiltin = new JMenuItem(
-        S.get("projectLoadBuiltinItem"));
-    JMenuItem loadLogisim = new JMenuItem(
-        S.get("projectLoadLogisimItem"));
+    JMenuItem loadBuiltin = new JMenuItem( S.get("projectLoadBuiltinItem"));
+    JMenuItem loadLogisim = new JMenuItem( S.get("projectLoadLogisimItem"));
     JMenuItem loadJar = new JMenuItem(S.get("projectLoadJarItem"));
 
     ProjectPopup(Project proj) {
@@ -216,29 +195,42 @@ public class Popups {
       this.proj = proj;
 
       load.add(loadBuiltin);
-      loadBuiltin.addActionListener(this);
+      loadBuiltin.addActionListener(e -> ProjectLibraryActions.doLoadBuiltinLibrary(proj));
       load.add(loadLogisim);
-      loadLogisim.addActionListener(this);
+      loadLogisim.addActionListener(e -> ProjectLibraryActions.doLoadLogisimLibrary(proj));
       load.add(loadJar);
-      loadJar.addActionListener(this);
+      loadJar.addActionListener(e -> ProjectLibraryActions.doLoadJarLibrary(proj));
 
-      add(add);
-      add.addActionListener(this);
+      add(cut, cut, e -> { });
+      add(copy, copy, e -> { });
+      add(pasteCircuit, pasteCircuit, e -> ProjectCircuitActions.doPasteCircuitOrVhdl(proj));
+      add(pasteAsCircuit, pasteAsCircuit, e -> ProjectCircuitActions.doPasteAsCircuit(proj));
+      add(pasteVhdl, pasteVhdl, e -> ProjectCircuitActions.doPasteCircuitOrVhdl(proj));
+      addSeparator();
+      add(addCirc, addCirc, e -> ProjectCircuitActions.doAddCircuit(proj));
+      add(addVhdl, addVhdl, e -> ProjectCircuitActions.doAddVhdl(proj));
+      add(importVhdl, importVhdl, e -> ProjectCircuitActions.doImportVhdl(proj));
+      addSeparator();
       add(load);
     }
-
-    public void actionPerformed(ActionEvent e) {
-      Object src = e.getSource();
-      if (src == add) {
-        ProjectCircuitActions.doAddCircuit(proj);
-      } else if (src == loadBuiltin) {
-        ProjectLibraryActions.doLoadBuiltinLibrary(proj);
-      } else if (src == loadLogisim) {
-        ProjectLibraryActions.doLoadLogisimLibrary(proj);
-      } else if (src == loadJar) {
-        ProjectLibraryActions.doLoadJarLibrary(proj);
-      }
+    
+    @Override
+    protected boolean shouldEnable(Object tag) {
+      return !(tag == cut || tag == copy);
     }
+
+    @Override
+    protected boolean shouldShow(Object tag) {
+      if (tag == pasteCircuit)
+        return !LayoutClipboard.forCircuit.isEmpty();
+      else if (tag == pasteAsCircuit)
+        return !LayoutClipboard.forComponents.isEmpty();
+      else if (tag == pasteVhdl)
+        return !LayoutClipboard.forVhdl.isEmpty();
+      else
+        return true;
+    }
+
   }
 
   public static JPopupMenu forCircuit(Project proj, AddTool tool, Circuit circ) {
@@ -257,6 +249,7 @@ public class Popups {
     return new ProjectPopup(proj);
   }
 
+  // todo: tool popup
   public static JPopupMenu forTool(Project proj, Tool tool) {
     return null;
   }

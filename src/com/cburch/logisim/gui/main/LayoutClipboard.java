@@ -51,25 +51,27 @@ import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.util.DragDrop;
 import com.cburch.logisim.util.PropertyChangeWeakSupport;
 
-class LayoutClipboard implements ClipboardOwner, FlavorListener, PropertyChangeWeakSupport.Producer {
+public class LayoutClipboard<T>
+  implements ClipboardOwner, FlavorListener, PropertyChangeWeakSupport.Producer {
 
-  // LayoutClipboard holds a set of Components (wires, pins, subcircuits, etc.).
-  // It also needs to copy the Circuits/VhdlEntities underlying any of those
-  // subcircuits (in case the target doesn't have any suitably-named circuits
-  // and the user wants to import them). And it needs a list of any non-builtin
-  // library references (Jar or Logisim) used by any of the components as well.
+  // LayoutClipboard<T> holds a T=Circuit, a T=VhdlContent, or T=Collection<Component>
+  // (a set of wires, pins, subcircuits, etc.). It also needs to copy the
+  // Circuits/VhdlEntities underlying any of those subcircuits (in case the
+  // target doesn't have any suitably-named circuits and the user wants to
+  // import them). And it needs a list of any non-builtin library references
+  // (Jar or Logisim) used by any of the components as well.
   
   public static final String contentsProperty = "contents";
 
-  public static class Data {
-    public Collection<Component> components;
+  public static class Clip<T> {
+    public T selection;
     public Collection<Circuit> circuits;
     public Collection<VhdlContent> vhdl;
     public Collection<Library> libraries;
     CircuitTransaction circuitTransaction;
 
-    Data(XmlClipReader.ReadClipContext ctx) {
-      components = ctx.getComponents();
+    Clip(XmlClipReader.ReadClipContext ctx, T sel) {
+      selection = sel;
       circuits = ctx.getCircuits();
       vhdl = ctx.getVhdl();
       libraries = ctx.getLibraries();
@@ -78,57 +80,82 @@ class LayoutClipboard implements ClipboardOwner, FlavorListener, PropertyChangeW
     }
   }
 
-  private static Data decode(Project proj, Transferable incoming) {
+  private interface XmlClipExtractor<T> {
+    T extractSelection(XmlClipReader.ReadClipContext ctx);
+  }
+
+  private Clip<T> decode(Project proj, Transferable incoming, XmlClipExtractor<T> x) {
     try {
-      String xml = (String)incoming.getTransferData(XmlData.dnd.dataFlavor);
+      String xml = (String)incoming.getTransferData(dnd.dataFlavor);
+      if (xml == null || xml.length() == 0)
+        return null;
       LogisimFile srcFile = proj.getLogisimFile();
       Loader loader = srcFile.getLoader();
       XmlClipReader.ReadClipContext ctx =
           XmlClipReader.parseSelection(srcFile, loader, xml);
-      if (ctx == null || ctx.getComponents().isEmpty())
+      if (ctx == null)
         return null;
-      return new Data(ctx);
+      T sel = x.extractSelection(ctx);
+      if (sel == null)
+        return null;
+      return new Clip<T>(ctx, sel);
     } catch (Exception e) {
       proj.showError("Error parsing clipboard data", e);
       return null;
     }
   }
 
-  private static XmlData encode(Selection sel) {
-    Project proj = sel.getProject();
+  private XmlData encode(Project proj, T value) {
     LogisimFile srcFile = proj.getLogisimFile();
     Loader loader = srcFile.getLoader();
-    String xml = XmlWriter.encodeSelection(srcFile, loader, sel.getComponents());
+    String xml = XmlWriter.encodeSelection(srcFile, loader, value);
     return xml == null ? null : new XmlData(xml);
   }
 
-  static class XmlData implements DragDrop.Support {
+  class XmlData implements DragDrop.Support {
     String xml;
-
     XmlData(String xml) { this.xml = xml; }
-
-    public static final String mimeTypeBase = "application/vnd.kwalsh.logisim-evolution-hc";
-    public static final String mimeTypeClip = mimeTypeBase + ".components;class=java.lang.String";
-    // todo: add image
-    public static final DragDrop dnd = new DragDrop(mimeTypeClip);
     public DragDrop getDragDrop() { return dnd; }
     public Object convertTo(String mimetype) { return xml; }
   }
 
+  // todo: add image flavor, text flavor, etc. for export
+  public static final String mimeTypeBase = "application/vnd.kwalsh.logisim-evolution-hc";
+  public static final String mimeTypeComponentsClip =
+      mimeTypeBase + ".components;class=java.lang.String";
+  public static final String mimeTypeCircuitClip =
+      mimeTypeBase + ".circuit;class=java.lang.String";
+  public static final String mimeTypeVhdlClip =
+      mimeTypeBase + ".vhdl;class=java.lang.String";
+
   public static final Clipboard sysclip = Toolkit.getDefaultToolkit().getSystemClipboard();
-  public static final LayoutClipboard SINGLETON = new LayoutClipboard();
-  private XmlData current; // the owned system clip
-  private boolean external; // not owned, but system clip is compatible
+
+  public static final LayoutClipboard<Collection<Component>> forComponents =
+      new LayoutClipboard<Collection<Component>>(mimeTypeComponentsClip,
+          ctx -> ctx.getSelectedComponents().isEmpty() ? null : ctx.getSelectedComponents());
+  public static final LayoutClipboard<Circuit> forCircuit =
+      new LayoutClipboard<>(mimeTypeCircuitClip,
+          ctx -> ctx.getSelectedCircuit());
+  public static final LayoutClipboard<VhdlContent> forVhdl =
+      new LayoutClipboard<>(mimeTypeVhdlClip,
+          ctx -> ctx.getSelectedVhdl());
+
+  private final DragDrop dnd; // flavor of this clipboard
+  private XmlClipExtractor<T> extractor;
+  private XmlData current; // the owned system clip, if any, for this flavor
+  private boolean external; // not owned, but system clip is compatible with this flavor
   private boolean available; // current != null || external
 
-  private LayoutClipboard() {
+  private LayoutClipboard(String mimeType, XmlClipExtractor<T> x) {
+    dnd = new DragDrop(mimeType);
+    extractor = x;
     sysclip.addFlavorListener(this);
     flavorsChanged(null);
   }
 
   public void flavorsChanged(FlavorEvent e) {
     boolean oldAvail = available;
-    external = sysclip.isDataFlavorAvailable(XmlData.dnd.dataFlavor);
+    external = sysclip.isDataFlavorAvailable(dnd.dataFlavor);
     available = current != null || external;
     if (oldAvail != available)
       LayoutClipboard.this.firePropertyChange(contentsProperty, oldAvail, available);
@@ -139,17 +166,17 @@ class LayoutClipboard implements ClipboardOwner, FlavorListener, PropertyChangeW
     flavorsChanged(null);
   }
 
-  public void set(Selection value) {
-    current = encode(value);
+  public void set(Project proj, T value) {
+    current = encode(proj, value);
     if (current != null)
       sysclip.setContents(current, this); 
   }
 
-  public Data get(Project proj) {
+  public Clip<T> get(Project proj) {
     if (current != null)
-      return decode(proj, current);
+      return decode(proj, current, extractor);
     else if (external) 
-      return decode(proj, sysclip.getContents(XmlData.dnd.dataFlavor));
+      return decode(proj, sysclip.getContents(dnd.dataFlavor), extractor);
     else
       return null;
   }

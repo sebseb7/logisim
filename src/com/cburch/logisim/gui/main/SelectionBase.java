@@ -234,7 +234,7 @@ class SelectionBase {
     fireSelectionChanged();
   }
 
-  void dropAll(CircuitMutation xn) {
+  void anchorAll(CircuitMutation xn) {
     if (!lifted.isEmpty()) {
       xn.addAll(lifted);
       selected.addAll(lifted);

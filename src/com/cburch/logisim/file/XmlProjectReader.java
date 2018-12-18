@@ -212,28 +212,20 @@ class XmlProjectReader extends XmlReader {
 
       // second, create the circuits - empty for now - and the vhdl entities
       List<CircuitData> circuitsData = new ArrayList<>();
-      for (Element circElt : XmlIterator.forChildElements(elt)) {
-        String name;
-        switch (circElt.getTagName()) {
+      for (Element subElt : XmlIterator.forChildElements(elt)) {
+        switch (subElt.getTagName()) {
         case "vhdl":
-          name = circElt.getAttribute("name");
-          if (name == null || name.equals("")) {
-            addError(S.get("circNameMissingError"), "C??");
-          }
-          String vhdl = circElt.getTextContent();
-          VhdlContent contents = VhdlContent.parse(name, vhdl, file);
+          VhdlContent contents = parseVhdl(subElt);
           if (contents != null) {
             file.addVhdlContent(contents);
           }
           break;
         case "circuit":
-          name = circElt.getAttribute("name");
-          if (name == null || name.equals(""))
-            addError(S.get("circNameMissingError"), "C??");
-          Circuit circ = new Circuit(name, file);
-          CircuitData circData = new CircuitData(this, circElt, circ);
-          file.addCircuit(circData.circuit);
-          circuitsData.add(circData);
+          CircuitData circData = parseCircuit(subElt);
+          if (circData != null) {
+            file.addCircuit(circData.circuit);
+            circuitsData.add(circData);
+          }
         default:
           // do nothing
         }

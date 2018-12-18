@@ -605,22 +605,22 @@ public class Project {
       if (value == null
           || !getOptions().getMouseMappings().containsSelectTool()) {
         Action act = SelectionActions.anchorAll(selection);
-        /*
-         * Circuit circuit = canvas.getCircuit(); CircuitMutation xn =
-         * new CircuitMutation(circuit); if (value == null) { Action act
-         * = SelectionActions.dropAll(selection); if (act != null) {
-         * doAction(act); } } else if
-         * (!getOptions().getMouseMappings().containsSelectTool()) {
-         * Action act = SelectionActions.dropAll(selection);
-         * ... }
-         */
+        // Circuit circuit = canvas.getCircuit();
+        // CircuitMutation xn = new CircuitMutation(circuit);
+        // if (value == null) {
+        //   Action act = SelectionActions.dropAll(selection);
+        //   if (act != null) {
+        //     doAction(act);
+        //   }
+        // } else if (!getOptions().getMouseMappings().containsSelectTool()) {
+        //  Action act = SelectionActions.dropAll(selection);
+        //  ...
+        // }
         if (act != null) {
           doAction(act);
         }
       }
-      /*
-       * if (!xn.isEmpty()) doAction(xn.toAction(null));
-       */
+      // if (!xn.isEmpty()) doAction(xn.toAction(null));
     }
     startupScreen = false;
     tool = value;

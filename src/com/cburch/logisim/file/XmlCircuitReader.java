@@ -188,11 +188,16 @@ public class XmlCircuitReader extends CircuitTransaction {
       String sub_elt_name = sub_elt.getTagName();
       if (sub_elt_name.equals("comp")) {
         try {
-          Component comp = knownComponents.get(sub_elt);
-          if (comp == null)
+          Component comp;
+          if (knownComponents.containsKey(sub_elt)) {
+            comp = knownComponents.get(sub_elt);
+            if (comp == null)
+              continue; // deliberately skipped
+          } else {
             comp = getComponent(sub_elt, reader);
-          if (comp == null)
-            throw new XmlReaderException(S.fmt("compUnknownError", sub_elt.getAttribute("name")));
+            if (comp == null)
+              throw new XmlReaderException(S.fmt("compUnknownError", sub_elt.getAttribute("name")));
+          }
           mutator.add(dest, comp);
         } catch (XmlReaderException e) {
           reader.addErrors(e, circData.circuit.getName() + "."
@@ -211,7 +216,6 @@ public class XmlCircuitReader extends CircuitTransaction {
 
   private void buildDynamicAppearance(XmlReader.CircuitData circData, CircuitMutator mutator) {
     Circuit dest = circData.circuit;
-    Collection<Component> components = circData.knownComponents.values();
     List<AbstractCanvasObject> shapes = new ArrayList<AbstractCanvasObject>();
     for (Element appearElt : XmlIterator.forChildElements(circData.circuitElement, "appear")) {
       for (Element sub : XmlIterator.forChildElements(appearElt)) {

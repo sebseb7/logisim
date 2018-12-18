@@ -29,75 +29,64 @@
  */
 
 package com.cburch.logisim.gui.appear;
+import static com.cburch.logisim.gui.menu.Strings.S;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cburch.logisim.gui.generic.PopupMenu;
 import com.cburch.logisim.gui.menu.EditHandler;
-import com.cburch.logisim.gui.menu.EditPopup;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.LogisimMenuItem;
 
-public class AppearanceEditPopup extends EditPopup
+public class AppearanceEditPopup extends PopupMenu
   implements EditHandler.Listener {
-  private static final long serialVersionUID = 1L;
+
   private AppearanceCanvas canvas;
   private EditHandler handler;
-  private Map<LogisimMenuItem, Boolean> enabled;
+  private Map<Object, Boolean> enabled = new HashMap<>();
 
   public AppearanceEditPopup(AppearanceCanvas canvas) {
-    super(true);
     this.canvas = canvas;
     handler = new AppearanceEditHandler(canvas);
     handler.setListener(this);
-    enabled = new HashMap<LogisimMenuItem, Boolean>();
     handler.computeEnabled();
     initialize();
   }
 
-  public void enableChanged(EditHandler handler, LogisimMenuItem action,
-      boolean value) {
-    enabled.put(action, Boolean.valueOf(value));
+  private void initialize() {
+    add(LogisimMenuBar.CUT, S.get("editCutItem"), e -> handler.cut());
+    add(LogisimMenuBar.COPY, S.get("editCopyItem"), e -> handler.copy());
+    needSep = true;
+    add(LogisimMenuBar.DELETE, S.get("editClearItem"), e -> handler.delete());
+    add(LogisimMenuBar.DUPLICATE, S.get("editDuplicateItem"), e-> handler.duplicate());
+    needSep = true;
+    add(LogisimMenuBar.RAISE, S.get("editRaiseItem"), e -> handler.raise());
+    add(LogisimMenuBar.LOWER, S.get("editLowerItem"), e -> handler.lower());
+    add(LogisimMenuBar.RAISE_TOP, S.get("editRaiseTopItem"), e -> handler.raiseTop());
+    add(LogisimMenuBar.LOWER_BOTTOM, S.get("editLowerBottomItem"), e -> handler.lowerBottom());
+    needSep = true;
+    add(LogisimMenuBar.ADD_CONTROL, S.get("editAddControlItem"), e -> handler.addControlPoint());
+    add(LogisimMenuBar.REMOVE_CONTROL, S.get("editRemoveControlItem"), e -> handler.removeControlPoint());
   }
 
   @Override
-  protected void fire(LogisimMenuItem item) {
-    if (item == LogisimMenuBar.CUT) {
-      handler.cut();
-    } else if (item == LogisimMenuBar.COPY) {
-      handler.copy();
-    } else if (item == LogisimMenuBar.DELETE) {
-      handler.delete();
-    } else if (item == LogisimMenuBar.DUPLICATE) {
-      handler.duplicate();
-    } else if (item == LogisimMenuBar.RAISE) {
-      handler.raise();
-    } else if (item == LogisimMenuBar.LOWER) {
-      handler.lower();
-    } else if (item == LogisimMenuBar.RAISE_TOP) {
-      handler.raiseTop();
-    } else if (item == LogisimMenuBar.LOWER_BOTTOM) {
-      handler.lowerBottom();
-    } else if (item == LogisimMenuBar.ADD_CONTROL) {
-      handler.addControlPoint();
-    } else if (item == LogisimMenuBar.REMOVE_CONTROL) {
-      handler.removeControlPoint();
-    }
+  public void enableChanged(EditHandler handler, LogisimMenuItem tag, boolean value) {
+    enabled.put(tag, value);
   }
 
   @Override
-  protected boolean isEnabled(LogisimMenuItem item) {
-    Boolean value = enabled.get(item);
-    return value != null && value.booleanValue();
-  }
-
-  @Override
-  protected boolean shouldShow(LogisimMenuItem item) {
-    if (item == LogisimMenuBar.ADD_CONTROL
-        || item == LogisimMenuBar.REMOVE_CONTROL) {
+  protected boolean shouldShow(Object tag) {
+    if (tag == LogisimMenuBar.ADD_CONTROL
+        || tag == LogisimMenuBar.REMOVE_CONTROL) {
       return canvas.getSelection().getSelectedHandle() != null;
     } else {
       return true;
     }
+  }
+
+  @Override
+  protected boolean shouldEnable(Object tag) {
+    return enabled.getOrDefault(tag, false);
   }
 }

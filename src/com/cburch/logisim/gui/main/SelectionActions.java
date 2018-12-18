@@ -32,10 +32,13 @@ package com.cburch.logisim.gui.main;
 import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 
+import javax.swing.JOptionPane;
+
+import com.cburch.hdl.HdlModel;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitMutation;
 import com.cburch.logisim.circuit.CircuitTransaction;
@@ -45,6 +48,7 @@ import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.file.LogisimFile;
+import com.cburch.logisim.gui.menu.ProjectCircuitActions;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Dependencies;
 import com.cburch.logisim.proj.JoinedAction;
@@ -53,37 +57,35 @@ import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.tools.Library;
 
 public class SelectionActions {
+
   /**
    * Code taken from Cornell's version of Logisim:
    * http://www.cs.cornell.edu/courses/cs3410/2015sp/
    */
-  private static class Anchor extends Action {
 
-    private Selection sel;
-    private int numAnchor;
-    private SelectionSave before;
-    private CircuitTransaction xnReverse;
+  private abstract static class SelectionModifyingAction extends Action {
 
-    Anchor(Selection sel, int numAnchor) {
+    protected Selection sel;
+    protected int count;
+    protected SelectionSave before;
+    protected CircuitTransaction xnReverse;
+
+    SelectionModifyingAction(Selection sel, int count) {
       this.sel = sel;
       this.before = SelectionSave.create(sel);
-      this.numAnchor = numAnchor;
+      this.count = count;
     }
 
     @Override
     public void doIt(Project proj) {
       Circuit circuit = proj.getCurrentCircuit();
       CircuitMutation xn = new CircuitMutation(circuit);
-      sel.dropAll(xn);
+      doIt(proj, circuit, xn);
       CircuitTransactionResult result = xn.execute();
       xnReverse = result.getReverseTransaction();
     }
 
-    @Override
-    public String getName() {
-      return numAnchor == 1 ? S.get("dropComponentAction")
-          : S.get("dropComponentsAction");
-    }
+    protected abstract void doIt(Project proj, Circuit circ, CircuitMutation xn);
 
     @Override
     public boolean shouldAppendTo(Action other) {
@@ -94,8 +96,8 @@ public class SelectionActions {
         last = other;
 
       SelectionSave otherAfter = null;
-      if (last instanceof Paste) {
-        otherAfter = ((Paste) last).after;
+      if (last instanceof PasteComponents) {
+        otherAfter = ((PasteComponents) last).after;
       } else if (last instanceof Duplicate) {
         otherAfter = ((Duplicate) last).after;
       }
@@ -105,6 +107,26 @@ public class SelectionActions {
     @Override
     public void undo(Project proj) {
       xnReverse.execute();
+    }
+
+  }
+
+  private static class Anchor extends SelectionModifyingAction {
+    // Anchor makes all floating elements become anchored, but keeps them in the
+    // selection.
+
+    Anchor(Selection sel, int count) {
+      super(sel, count);
+    }
+
+    @Override
+    public String getName() {
+      return count == 1 ? S.get("anchorComponentAction") : S.get("anchorComponentsAction");
+    }
+
+    @Override
+    protected void doIt(Project proj, Circuit circ, CircuitMutation xn) {
+      sel.anchorAll(xn);
     }
 
   }
@@ -141,62 +163,25 @@ public class SelectionActions {
    * Code taken from Cornell's version of Logisim:
    * http://www.cs.cornell.edu/courses/cs3410/2015sp/
    */
-  private static class Drop extends Action {
+  private static class Drop extends SelectionModifyingAction {
+    // Drop removes things from the selection.
 
-    private Selection sel;
     private Component[] drops;
-    private int numDrops;
-    private SelectionSave before;
-    private CircuitTransaction xnReverse;
 
     Drop(Selection sel, Collection<Component> toDrop, int numDrops) {
-      this.sel = sel;
-      this.drops = new Component[toDrop.size()];
-      toDrop.toArray(this.drops);
-      this.numDrops = numDrops;
-      this.before = SelectionSave.create(sel);
+      super(sel, toDrop.size());
+      this.drops = toDrop.toArray(new Component[toDrop.size()]);
     }
 
     @Override
-    public void doIt(Project proj) {
-      Circuit circuit = proj.getCurrentCircuit();
-      CircuitMutation xn = new CircuitMutation(circuit);
-
-      for (Component comp : drops) {
+    protected void doIt(Project proj, Circuit circ, CircuitMutation xn) {
+      for (Component comp : drops)
         sel.remove(xn, comp);
-      }
-
-      CircuitTransactionResult result = xn.execute();
-      xnReverse = result.getReverseTransaction();
     }
 
     @Override
     public String getName() {
-      return numDrops == 1 ? S.get("dropComponentAction") : S.get("dropComponentsAction");
-    }
-
-    @Override
-    public boolean shouldAppendTo(Action other) {
-      Action last;
-      if (other instanceof JoinedAction)
-        last = ((JoinedAction) other).getLastAction();
-      else
-        last = other;
-
-      SelectionSave otherAfter = null;
-
-      if (last instanceof Paste) {
-        otherAfter = ((Paste) last).after;
-      } else if (last instanceof Duplicate) {
-        otherAfter = ((Duplicate) last).after;
-      }
-
-      return otherAfter != null && otherAfter.equals(this.before);
-    }
-
-    @Override
-    public void undo(Project proj) {
-      xnReverse.execute();
+      return count == 1 ? S.get("dropComponentAction") : S.get("dropComponentsAction");
     }
 
   }
@@ -215,7 +200,6 @@ public class SelectionActions {
       Circuit circuit = proj.getCurrentCircuit();
       CircuitMutation xn = new CircuitMutation(circuit);
       sel.duplicateHelper(xn);
-
       CircuitTransactionResult result = xn.execute();
       xnReverse = result.getReverseTransaction();
       after = SelectionSave.create(sel);
@@ -232,60 +216,57 @@ public class SelectionActions {
     }
   }
 
-  private static class Paste extends Action {
+  private static HashSet<Circuit> getDependencies(Circuit circ, Collection<Circuit> newCircs) {
+    LinkedList<Circuit> todo = new LinkedList<>();
+    HashSet<Circuit> downstream = new HashSet<>();
+    todo.add(circ);
+    while (!todo.isEmpty()) {
+      Circuit c = todo.remove();
+      downstream.add(c);
+      if (!newCircs.contains(c))
+        continue; // reached the boundary between new and old circuits
+      for (Component comp : circ.getNonWires()) {
+        if (comp.getFactory() instanceof SubcircuitFactory) {
+          SubcircuitFactory factory = (SubcircuitFactory) comp.getFactory();
+          Circuit subCirc = factory.getSubcircuit();
+          if (subCirc == circ)
+            return null; // circular
+          if (todo.contains(subCirc) || downstream.contains(subCirc))
+            continue; // already visited
+          todo.add(subCirc);
+        }
+      }
+    }
+    return downstream;
+  }
+
+
+  private static class PasteComponents extends Action {
     private Selection sel;
-    private LayoutClipboard.Data clip;
+    private LayoutClipboard.Clip<Collection<Component>> clip;
     private CircuitTransaction xnReverse, cxnReverse;
     private SelectionSave after;
 
-    Paste(Selection sel, LayoutClipboard.Data clip) {
+    PasteComponents(Selection sel, LayoutClipboard.Clip<Collection<Component>> clip) {
       this.sel = sel;
       this.clip = clip;
-    }
-
-    private HashSet<Circuit> getDependencies(Circuit circ, Collection<Circuit> newCircs) {
-      LinkedList<Circuit> todo = new LinkedList<>();
-      HashSet<Circuit> downstream = new HashSet<>();
-      todo.add(circ);
-      while (!todo.isEmpty()) {
-        Circuit c = todo.remove();
-        downstream.add(c);
-        if (!newCircs.contains(c))
-          continue; // reached the boundary between new and old circuits
-        for (Component comp : circ.getNonWires()) {
-          if (comp.getFactory() instanceof SubcircuitFactory) {
-            SubcircuitFactory factory = (SubcircuitFactory) comp.getFactory();
-            Circuit subCirc = factory.getSubcircuit();
-            if (subCirc == circ)
-              return null; // circular
-            if (todo.contains(subCirc) || downstream.contains(subCirc))
-              continue; // already visited
-            todo.add(subCirc);
-          }
-        }
-      }
-      return downstream;
     }
 
     @Override
     public void doIt(Project proj) {
       Circuit circuit = proj.getCurrentCircuit();
-      CircuitMutation xn = new CircuitMutation(circuit);
-
-      Canvas canvas = proj.getFrame().getCanvas();
-      Circuit circ = canvas.getCircuit();
       
       // check if adding these components would cause a circular dependency
-      Dependencies dependencies = canvas.getProject().getDependencies();
-      for (Component c : clip.components) {
+      Dependencies dependencies = proj.getDependencies();
+      for (Component c : clip.selection) {
         ComponentFactory factory = c.getFactory();
         if (!(factory instanceof SubcircuitFactory))
           continue;
         Circuit subCirc = ((SubcircuitFactory)factory).getSubcircuit();
         if (clip.circuits.contains(subCirc))
           continue; // no dependency info for this subcircuit
-        if (!dependencies.canAdd(circ, subCirc)) {
-          canvas.setErrorMessage(
+        if (!dependencies.canAdd(circuit, subCirc)) {
+          proj.getFrame().getCanvas().setErrorMessage(
               com.cburch.logisim.tools.Strings.S.getter("circularError"));
           return;
         }
@@ -297,16 +278,16 @@ public class SelectionActions {
       // circuit to every dependency of the new circuits.
       for (Circuit c : clip.circuits) {
         HashSet<Circuit> downstream = getDependencies(c, clip.circuits);
-        if (downstream == null) { // failure inicates circularity
-          canvas.setErrorMessage(
+        if (downstream == null) { // failure indicates circularity
+          proj.getFrame().getCanvas().setErrorMessage(
               com.cburch.logisim.tools.Strings.S.getter("circularError"));
           return;
         }
         for (Circuit subCirc : downstream) {
           if (clip.circuits.contains(subCirc))
             continue; // not on the boundary between new and old circuits
-          if (!dependencies.canAdd(circ, subCirc)) {
-            canvas.setErrorMessage(
+          if (!dependencies.canAdd(circuit, subCirc)) {
+            proj.getFrame().getCanvas().setErrorMessage(
                 com.cburch.logisim.tools.Strings.S.getter("circularError"));
             return;
           }
@@ -327,7 +308,8 @@ public class SelectionActions {
         cxnReverse = null;
       }
 
-      sel.pasteHelper(xn, clip.components);
+      CircuitMutation xn = new CircuitMutation(circuit);
+      sel.pasteHelper(xn, clip.selection);
       CircuitTransactionResult result = xn.execute();
       xnReverse = result.getReverseTransaction();
       after = SelectionSave.create(sel);
@@ -353,31 +335,94 @@ public class SelectionActions {
     }
   }
 
-  private static class Translate extends Action {
-    private Selection sel;
-    private int dx;
-    private int dy;
-    private ReplacementMap replacements;
-    private SelectionSave before;
-    private CircuitTransaction xnReverse;
+  private static String confirmName(Project proj, String suggested, boolean is_vhdl, LayoutClipboard.Clip<?> clip) {
+    String newName = suggested;
+    LogisimFile file = proj.getLogisimFile();
+    if (newName == null || newName.equals("") || file.getTool(newName) != null) {
+      // suggested name is bad, generate better suggestion, confirm with user
+      int i = 1;
+      do {
+        newName = suggested + (i++);
+      } while (file.getTool(newName) != null);
+      if (is_vhdl)
+        newName = ProjectCircuitActions.promptForVhdlName(proj.getFrame(), file, newName);
+      else
+        newName = ProjectCircuitActions.promptForCircuitName(proj.getFrame(), file, newName);
+      if (newName == null)
+        return null; // user cancelled or picked bad name
+    }
+    for (Circuit c : clip.circuits) {
+      if (newName.equals(c.getName())) {
+        JOptionPane.showMessageDialog(proj.getFrame(),
+            com.cburch.logisim.gui.menu.Strings.S.get("circuitNameDuplicateError"),
+            com.cburch.logisim.gui.menu.Strings.S.get("circuitNameDialogTitle"),
+            JOptionPane.ERROR_MESSAGE);
+        return null;
+      }
+    }
+    for (VhdlContent vhdl : clip.vhdl) {
+      if (newName.equals(vhdl.getName())) {
+        JOptionPane.showMessageDialog(proj.getFrame(),
+            com.cburch.logisim.gui.menu.Strings.S.get("circuitNameDuplicateError"),
+            com.cburch.logisim.gui.menu.Strings.S.get("circuitNameDialogTitle"),
+            JOptionPane.ERROR_MESSAGE);
+        return null;
+      }
+    }
+    return newName;
+  }
 
-    Translate(Selection sel, int dx, int dy, ReplacementMap replacements) {
-      this.sel = sel;
-      this.dx = dx;
-      this.dy = dy;
-      this.replacements = replacements;
-      this.before = SelectionSave.create(sel);
+  private static class PasteComponentsAsCircuit extends Action {
+    private LayoutClipboard.Clip<Collection<Component>> clip;
+    private CircuitTransaction xnReverse, cxnReverse;
+    private String newName = null;
+    private Circuit circuit;
+
+    PasteComponentsAsCircuit(LayoutClipboard.Clip<Collection<Component>> clip) {
+      this.clip = clip;
     }
 
     @Override
     public void doIt(Project proj) {
-      Circuit circuit = proj.getCurrentCircuit();
-      CircuitMutation xn = new CircuitMutation(circuit);
-
-      sel.translateHelper(xn, dx, dy);
-      if (replacements != null) {
-        xn.replace(replacements);
+      if (newName == null) {
+        newName = confirmName(proj, "", false, clip);
+        if (newName == null)
+          return;
       }
+
+      // New components go into a freshly-named circuit, which no other circuit
+      // can depend on. So we only need to make sure there are no circularities
+      // within the other new circuits.
+      for (Circuit c : clip.circuits) {
+        HashSet<Circuit> downstream = getDependencies(c, clip.circuits);
+        if (downstream == null) { // failure indicates circularity
+          proj.getFrame().getCanvas().setErrorMessage(
+              com.cburch.logisim.tools.Strings.S.getter("circularError"));
+          return;
+        }
+      }
+
+      LogisimFile file = proj.getLogisimFile();
+
+      for (Library lib : clip.libraries)
+        file.addLibrary(lib);
+      for (VhdlContent vhdl : clip.vhdl)
+        file.addVhdlContent(vhdl);
+      if (clip.circuitTransaction != null) {
+        for (Circuit c : clip.circuits)
+          file.addCircuit(c);
+        CircuitTransactionResult result = clip.circuitTransaction.execute();
+        cxnReverse = result.getReverseTransaction();
+      } else {
+        cxnReverse = null;
+      }
+
+      circuit = new Circuit(newName, file);
+      file.addCircuit(circuit);
+      proj.setCurrentCircuit(circuit);
+      CircuitMutation xn = new CircuitMutation(circuit);
+      for (Component c : clip.selection)
+        xn.add(c);
 
       CircuitTransactionResult result = xn.execute();
       xnReverse = result.getReverseTransaction();
@@ -385,36 +430,177 @@ public class SelectionActions {
 
     @Override
     public String getName() {
-      return S.get("moveSelectionAction");
-    }
-
-    @Override
-    public boolean shouldAppendTo(Action other) {
-      Action last;
-      if (other instanceof JoinedAction)
-        last = ((JoinedAction) other).getLastAction();
-      else
-        last = other;
-
-      SelectionSave otherAfter = null;
-      if (last instanceof Paste) {
-        otherAfter = ((Paste) last).after;
-      } else if (last instanceof Duplicate) {
-        otherAfter = ((Duplicate) last).after;
-      }
-      return otherAfter != null && otherAfter.equals(this.before);
+      return S.get("pasteClipboardAction");
     }
 
     @Override
     public void undo(Project proj) {
       xnReverse.execute();
+      LogisimFile file = proj.getLogisimFile();
+      file.removeCircuit(circuit);
+      if (cxnReverse != null)
+        cxnReverse.execute();
+      for (Circuit circ : clip.circuits)
+        file.removeCircuit(circ);
+      for (VhdlContent vhdl : clip.vhdl)
+        file.removeVhdl(vhdl);
+      for (Library lib : clip.libraries)
+        file.removeLibrary(lib);
     }
+  }
+
+  private static class PasteCircuit extends Action {
+    private LayoutClipboard.Clip<Circuit> clip;
+    private CircuitTransaction cxnReverse;
+    private String newName;
+    private Circuit prevCircuit;
+    private HdlModel prevHdl;
+
+    PasteCircuit(LayoutClipboard.Clip<Circuit> clip) {
+      this.clip = clip;
+    }
+
+    @Override
+    public void doIt(Project proj) {
+      if (newName == null) {
+        String oldName = clip.selection.getName();
+        newName = confirmName(proj, oldName, false, clip);
+        if (newName == null)
+          return;
+        if (!newName.equals(oldName))
+          clip.selection.setName(newName);
+      }
+
+      // New circuit is freshly-named, and no other circuit can depend on it. So
+      // we only need to make sure there are no circularities within the other
+      // new circuits.
+      for (Circuit c : clip.circuits) {
+        HashSet<Circuit> downstream = getDependencies(c, clip.circuits);
+        if (downstream == null) { // failure indicates circularity
+          proj.getFrame().getCanvas().setErrorMessage(
+              com.cburch.logisim.tools.Strings.S.getter("circularError"));
+          return;
+        }
+      }
+
+      prevCircuit = proj.getCurrentCircuit();
+      prevHdl = proj.getCurrentHdl();
+
+      LogisimFile file = proj.getLogisimFile();
+      file.addCircuit(clip.selection);
+      proj.setCurrentCircuit(clip.selection);
+
+      for (Library lib : clip.libraries)
+        file.addLibrary(lib);
+      for (VhdlContent vhdl : clip.vhdl)
+        file.addVhdlContent(vhdl);
+      for (Circuit c : clip.circuits)
+        file.addCircuit(c);
+
+      CircuitTransactionResult result = clip.circuitTransaction.execute();
+      cxnReverse = result.getReverseTransaction();
+    }
+
+    @Override
+    public String getName() {
+      return S.get("pasteClipboardAction");
+    }
+
+    @Override
+    public void undo(Project proj) {
+      cxnReverse.execute();
+      LogisimFile file = proj.getLogisimFile();
+      for (Circuit circ : clip.circuits)
+        file.removeCircuit(circ);
+      for (VhdlContent vhdl : clip.vhdl)
+        file.removeVhdl(vhdl);
+      for (Library lib : clip.libraries)
+        file.removeLibrary(lib);
+      file.removeCircuit(clip.selection);
+      if (prevHdl != null)
+        proj.setCurrentHdlModel(prevHdl);
+      else if (prevCircuit != null)
+        proj.setCurrentCircuit(prevCircuit);
+    }
+  }
+
+  private static class PasteVhdl extends Action {
+    private LayoutClipboard.Clip<VhdlContent> clip;
+    private String newName;
+    private Circuit prevCircuit;
+    private HdlModel prevHdl;
+
+    PasteVhdl(LayoutClipboard.Clip<VhdlContent> clip) {
+      this.clip = clip;
+    }
+
+    @Override
+    public void doIt(Project proj) {
+      if (newName == null) {
+        String oldName = clip.selection.getName();
+        newName = confirmName(proj, oldName, false, clip);
+        if (newName == null)
+          return;
+        if (!newName.equals(oldName))
+          clip.selection.setName(newName);
+      }
+
+      // todo: no dependency tracking for vhdl yet, so no other circuits.
+
+      prevCircuit = proj.getCurrentCircuit();
+      prevHdl = proj.getCurrentHdl();
+
+      LogisimFile file = proj.getLogisimFile();
+      file.addVhdlContent(clip.selection);
+      proj.setCurrentHdlModel(clip.selection);
+    }
+
+    @Override
+    public String getName() {
+      return S.get("pasteClipboardAction");
+    }
+
+    @Override
+    public void undo(Project proj) {
+      LogisimFile file = proj.getLogisimFile();
+      file.removeVhdl(clip.selection);
+      if (prevHdl != null)
+        proj.setCurrentHdlModel(prevHdl);
+      else if (prevCircuit != null)
+        proj.setCurrentCircuit(prevCircuit);
+    }
+  }
+
+  private static class Translate extends SelectionModifyingAction {
+    private int dx, dy;
+    private ReplacementMap replacements;
+
+    Translate(Selection sel, int dx, int dy, ReplacementMap replacements) {
+      super(sel, 0);
+      this.dx = dx;
+      this.dy = dy;
+      this.replacements = replacements;
+    }
+
+    @Override
+    protected void doIt(Project proj, Circuit circ, CircuitMutation xn) {
+      sel.translateHelper(xn, dx, dy);
+      if (replacements != null)
+        xn.replace(replacements);
+    }
+
+    @Override
+    public String getName() {
+      return S.get("moveSelectionAction");
+    }
+
   }
 
   /**
    * Code taken from Cornell's version of Logisim:
    * http://www.cs.cornell.edu/courses/cs3410/2015sp/
    */
+
   // anchors all floating elements, keeping elements in selection
   public static Action anchorAll(Selection sel) {
     int numAnchor = sel.getFloatingComponents().size();
@@ -429,12 +615,12 @@ public class SelectionActions {
     return new Delete(sel);
   }
 
-  public static void copy(Selection sel) { // Note: copy is not an Action
-    LayoutClipboard.SINGLETON.set(sel);
+  public static void copy(Project proj, Selection sel) { // Note: copy is not an Action
+    LayoutClipboard.forComponents.set(proj, sel.getComponents());
   }
 
-  public static Action cut(Selection sel) {
-    LayoutClipboard.SINGLETON.set(sel);
+  public static Action cut(Project proj, Selection sel) {
+    LayoutClipboard.forComponents.set(proj, sel.getComponents());
     return new Delete(sel);
   }
 
@@ -474,10 +660,41 @@ public class SelectionActions {
   }
 
   public static Action pasteMaybe(Project proj, Selection sel) {
-    LayoutClipboard.Data clip = LayoutClipboard.SINGLETON.get(proj);
+    Action act;
+    act = pasteComponentsMaybe(proj, sel);
+    if (act == null)
+      act = pasteCircuitMaybe(proj);
+    if (act == null)
+      act = pasteVhdlMaybe(proj);
+    return act;
+  }
+
+  public static Action pasteComponentsMaybe(Project proj, Selection sel) {
+    LayoutClipboard.Clip<Collection<Component>> clip = LayoutClipboard.forComponents.get(proj);
     if (clip == null)
       return null;
-    return new Paste(sel, clip);
+    return new PasteComponents(sel, clip);
+  }
+
+  public static Action pasteComponentsAsCircuitMaybe(Project proj) {
+    LayoutClipboard.Clip<Collection<Component>> clip = LayoutClipboard.forComponents.get(proj);
+    if (clip == null)
+      return null;
+    return new PasteComponentsAsCircuit(clip);
+  }
+
+  public static Action pasteCircuitMaybe(Project proj) {
+    LayoutClipboard.Clip<Circuit> clip = LayoutClipboard.forCircuit.get(proj);
+    if (clip == null)
+      return null;
+    return new PasteCircuit(clip);
+  }
+
+  public static Action pasteVhdlMaybe(Project proj) {
+    LayoutClipboard.Clip<VhdlContent> clip = LayoutClipboard.forVhdl.get(proj);
+    if (clip == null)
+      return null;
+    return new PasteVhdl(clip);
   }
 
   public static Action translate(Selection sel, int dx, int dy, ReplacementMap repl) {

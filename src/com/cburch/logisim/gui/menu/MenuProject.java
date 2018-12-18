@@ -34,7 +34,6 @@ import static com.cburch.logisim.gui.menu.Strings.S;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 

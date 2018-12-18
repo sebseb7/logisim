@@ -131,9 +131,9 @@ public final class MenuTool extends Tool {
       if (src == del) {
         proj.doAction(SelectionActions.clear(sel));
       } else if (src == cut) {
-        proj.doAction(SelectionActions.cut(sel));
+        proj.doAction(SelectionActions.cut(proj, sel));
       } else if (src == copy) {
-        SelectionActions.copy(sel);
+        SelectionActions.copy(proj, sel);
       }
     }
 

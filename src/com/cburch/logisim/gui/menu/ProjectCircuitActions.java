@@ -134,6 +134,13 @@ public class ProjectCircuitActions {
     proj.setCurrentHdlModel(content);
   }
 
+  public static void doPasteCircuitOrVhdl(Project proj) {
+
+  }
+
+  public static void doPasteAsCircuit(Project proj) {
+
+  }
 
   public static void doAnalyze(Project proj, Circuit circuit) {
     Map<Instance, String> pinNames = Analyze.getPinLabels(circuit);
@@ -225,12 +232,12 @@ public class ProjectCircuitActions {
    * @param initialValue
    *            Default suggested value (can be empty if no initial value)
    */
-  private static String promptForCircuitName(JFrame frame, Library lib,
+  public static String promptForCircuitName(JFrame frame, Library lib,
       String initialValue) {
     return promptForNewName(frame, lib, initialValue, false);
   }
 
-  private static String promptForVhdlName(JFrame frame, LogisimFile file,
+  public static String promptForVhdlName(JFrame frame, LogisimFile file,
       String initialValue) {
     String name = promptForNewName(frame, file, initialValue, true);
     if (name == null)
@@ -312,7 +319,7 @@ public class ProjectCircuitActions {
 
     /* If the name is invalid, display the error message */
     JOptionPane.showMessageDialog(frame, error,
-        S.get("analyzeErrorTitle"), JOptionPane.ERROR_MESSAGE);
+        title, JOptionPane.ERROR_MESSAGE);
 
     return null;
   }

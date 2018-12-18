@@ -57,12 +57,13 @@ import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.Library;
 
 class XmlReader {
 
-  static class CircuitData {
+  public static class CircuitData {
 
     Element circuitElement;
     Circuit circuit;
@@ -91,7 +92,7 @@ class XmlReader {
       // Static shapes (e.g. pins and anchors) need to be done here.
       Map<Location, Instance> pins = new HashMap<>();
       for (Component comp : knownComponents.values()) {
-        if (comp.getFactory() == Pin.FACTORY) {
+        if (comp != null && comp.getFactory() == Pin.FACTORY) {
           Instance instance = Instance.getInstanceFor(comp);
           pins.put(comp.getLocation(), instance);
         }
@@ -137,6 +138,26 @@ class XmlReader {
     }
 
     abstract Library findLibrary(String libName) throws XmlReaderException;
+
+    CircuitData parseCircuit(Element elt) {
+      String name = elt.getAttribute("name");
+      if (name == null || name.equals("")) {
+        addError(S.get("circNameMissingError"), "C??");
+        return null;
+      }
+      Circuit circ = new Circuit(name, file);
+      return new CircuitData(this, elt, circ);
+    }
+
+    VhdlContent parseVhdl(Element elt) {
+      String name = elt.getAttribute("name");
+      if (name == null || name.equals("")) {
+        addError(S.get("circNameMissingError"), "C??");
+        return null;
+      }
+      String vhdl = elt.getTextContent();
+      return VhdlContent.parse(name, vhdl, file);
+    }
 
     void initAttributeSet(Element parentElt, AttributeSet attrs,
         AttributeDefaultProvider defaults) throws XmlReaderException {

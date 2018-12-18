@@ -54,7 +54,9 @@ public class LayoutEditHandler extends EditHandler
     this.frame = frame;
 
     Project proj = frame.getProject();
-    LayoutClipboard.SINGLETON.addPropertyChangeListener(LayoutClipboard.contentsProperty, this);
+    LayoutClipboard.forComponents.addPropertyChangeListener(LayoutClipboard.contentsProperty, this);
+    LayoutClipboard.forCircuit.addPropertyChangeListener(LayoutClipboard.contentsProperty, this);
+    LayoutClipboard.forVhdl.addPropertyChangeListener(LayoutClipboard.contentsProperty, this);
     proj.addProjectListener(this);
     proj.addLibraryListener(this);
   }
@@ -68,14 +70,17 @@ public class LayoutEditHandler extends EditHandler
   public void computeEnabled() {
     Project proj = frame.getProject();
     Selection sel = proj == null ? null : proj.getSelection();
-    boolean selEmpty = (sel == null ? true : sel.isEmpty());
+    boolean selEmpty = sel == null || sel.isEmpty();
     boolean canChange = proj != null
         && proj.getLogisimFile().contains(proj.getCurrentCircuit());
 
+    // todo: cut, copy, delete, duplicate for circuits/vhdl
     setEnabled(LogisimMenuBar.CUT, !selEmpty && canChange);
     setEnabled(LogisimMenuBar.COPY, !selEmpty);
-    setEnabled(LogisimMenuBar.PASTE, canChange
-        && !LayoutClipboard.SINGLETON.isEmpty());
+    setEnabled(LogisimMenuBar.PASTE,
+        !LayoutClipboard.forCircuit.isEmpty()
+        || !LayoutClipboard.forVhdl.isEmpty()
+        || (canChange && !LayoutClipboard.forComponents.isEmpty()));
     setEnabled(LogisimMenuBar.DELETE, !selEmpty && canChange);
     setEnabled(LogisimMenuBar.DUPLICATE, !selEmpty && canChange);
     setEnabled(LogisimMenuBar.SELECT_ALL, true);
@@ -91,14 +96,14 @@ public class LayoutEditHandler extends EditHandler
   public void copy() {
     Project proj = frame.getProject();
     Selection sel = frame.getCanvas().getSelection();
-    SelectionActions.copy(sel);
+    SelectionActions.copy(proj, sel);
   }
 
   @Override
   public void cut() {
     Project proj = frame.getProject();
     Selection sel = frame.getCanvas().getSelection();
-    proj.doAction(SelectionActions.cut(sel));
+    proj.doAction(SelectionActions.cut(proj, sel));
   }
 
   @Override

@@ -209,7 +209,7 @@ public class XmlWriter {
     xform(doc, out);
   }
 
-  public static String encodeSelection(LogisimFile file, LibraryLoader loader, Set<Component> sel) {
+  public static String encodeSelection(LogisimFile file, LibraryLoader loader, Object sel) {
     try {
       DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
       DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
@@ -483,8 +483,7 @@ public class XmlWriter {
   // see: sort() above
   // clipdata (contains ordered elements, do not sort)
   // - selection
-  //   - comp*
-  //   - wire*
+  //   - circuit; or vhdl; or comp* and wire*
   // - circuit*
   //   - a*
   //   - comp*
@@ -493,7 +492,7 @@ public class XmlWriter {
   // - lib* (contains ordered elements, do not sort)
   //   - tool*
   //     - a*
-  Element fromSelection(Set<Component> sel) {
+  private Element fromSelection(Object sel) {
     Element ret = doc.createElement("clipdata");
     doc.appendChild(ret);
     ret.appendChild(doc
@@ -506,7 +505,11 @@ public class XmlWriter {
     HashSet<Circuit> usedCircs = new HashSet<>();
     HashSet<VhdlContent> usedVhdl = new HashSet<>();
 
-    scanSelection(sel, usedLibs, usedCircs, usedVhdl);
+    if (sel instanceof Circuit)
+      scanSelection(((Circuit)sel).getNonWires(), usedLibs, usedCircs, usedVhdl);
+    else if (sel instanceof Set<?>)
+      scanSelection((Set<Component>)sel, usedLibs, usedCircs, usedVhdl);
+    // else: todo: no current way to track vhdl dependencies
 
     for (Library lib : usedLibs) {
       if (lib == file)
@@ -517,16 +520,28 @@ public class XmlWriter {
     }
 
     Element e = doc.createElement("selection");
-    for (Component c : sel) {
-      if (c instanceof Wire)
-        e.appendChild(fromWire((Wire)c));
-    }
-    for (Component c : sel) {
-      if (!(c instanceof Wire)) {
-        Element e2 = fromComponent(c);
-        if (e2 != null)
-          e.appendChild(e2);
+    if (sel instanceof Circuit) {
+      e.setAttribute("type", "circuit"); // not used by parser
+      e.appendChild(fromCircuit((Circuit)sel));
+    } else if (sel instanceof VhdlContent) {
+      e.setAttribute("type", "vhdl"); // not used by parser
+      e.appendChild(fromVhdl((VhdlContent)sel));
+    } else if (sel instanceof Set<?>) {
+      e.setAttribute("type", "components"); // not used by parser
+      Set<Component> csel = (Set<Component>)sel;
+      for (Component c : csel) {
+        if (c instanceof Wire)
+          e.appendChild(fromWire((Wire)c));
       }
+      for (Component c : csel) {
+        if (!(c instanceof Wire)) {
+          Element e2 = fromComponent(c);
+          if (e2 != null)
+            e.appendChild(e2);
+        }
+      }
+    } else {
+      throw new IllegalArgumentException("clipboard type not supported: " + sel);
     }
     ret.appendChild(e);
 
