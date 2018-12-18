@@ -375,9 +375,6 @@ public class SubcircuitFactory extends InstanceFactory {
     painter.drawLabel();
   }
 
-  //
-  // user interface features
-  //
   @Override
   public void paintGhost(InstancePainter painter) {
     Graphics g = painter.getGraphics();

@@ -39,8 +39,12 @@ import java.util.Collection;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.awt.AlphaComposite;
+import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -201,11 +205,9 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
     }
   }
 
-  @Override
-  public void paintInstance(InstancePainter painter) {
+  private void paintBase(InstancePainter painter, Graphics g) {
     VhdlEntityAttributes attrs = (VhdlEntityAttributes) painter.getAttributeSet();
     Direction facing = attrs.getFacing();
-    Graphics g = painter.getGraphics();
 
     Location loc = painter.getLocation();
     g.translate(loc.getX(), loc.getY());
@@ -220,8 +222,30 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
       GraphicsUtil.drawCenteredText(g, label, bds.getX() + bds.getWidth() / 2, bds.getY() - g.getFont().getSize());
       g.setFont(oldFont);
     }
+  }
 
+  @Override
+  public void paintInstance(InstancePainter painter) {
+    paintBase(painter, painter.getGraphics());
     painter.drawPorts();
+  }
+  
+  @Override
+  public void paintGhost(InstancePainter painter) {
+    Graphics g = painter.getGraphics();
+    Color fg = g.getColor();
+    int v = fg.getRed() + fg.getGreen() + fg.getBlue();
+    Composite oldComposite = null;
+    if (g instanceof Graphics2D && v > 50) {
+      oldComposite = ((Graphics2D) g).getComposite();
+      Composite c = AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+          0.5f);
+      ((Graphics2D) g).setComposite(c);
+    }
+    paintBase(painter, g);
+    if (oldComposite != null) {
+      ((Graphics2D) g).setComposite(oldComposite);
+    }
   }
 
   @Override
