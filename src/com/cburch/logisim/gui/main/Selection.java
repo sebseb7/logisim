@@ -38,9 +38,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
@@ -154,10 +151,7 @@ public class Selection extends SelectionBase {
     }
   }
 
-  final static Logger logger = LoggerFactory.getLogger(Selection.class);
-
   private MyListener myListener;
-  private boolean isVisible = true;
   private SelectionAttributes attrs;
 
   public Selection(Project proj, Canvas canvas) {
@@ -300,12 +294,6 @@ public class Selection extends SelectionBase {
   //
   public boolean isEmpty() {
     return selected.isEmpty() && lifted.isEmpty();
-  }
-
-  @Override
-  public void print() {
-    logger.error("isVisible: {}", isVisible);
-    super.print();
   }
 
 }

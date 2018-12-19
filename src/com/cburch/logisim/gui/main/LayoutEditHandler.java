@@ -34,15 +34,22 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.SubcircuitFactory;
+import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
-import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.EditHandler;
+import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.gui.menu.ProjectCircuitActions;
+import com.cburch.logisim.gui.menu.ProjectLibraryActions;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.std.base.Base;
+import com.cburch.logisim.std.hdl.VhdlContent;
+import com.cburch.logisim.std.hdl.VhdlEntity;
+import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 
@@ -57,6 +64,7 @@ public class LayoutEditHandler extends EditHandler
     LayoutClipboard.forComponents.addPropertyChangeListener(LayoutClipboard.contentsProperty, this);
     LayoutClipboard.forCircuit.addPropertyChangeListener(LayoutClipboard.contentsProperty, this);
     LayoutClipboard.forVhdl.addPropertyChangeListener(LayoutClipboard.contentsProperty, this);
+    LayoutClipboard.forLibrary.addPropertyChangeListener(LayoutClipboard.contentsProperty, this);
     proj.addProjectListener(this);
     proj.addLibraryListener(this);
   }
@@ -69,25 +77,50 @@ public class LayoutEditHandler extends EditHandler
   @Override
   public void computeEnabled() {
     Project proj = frame.getProject();
+    
+    // check if some components are selected
     Selection sel = proj == null ? null : proj.getSelection();
-    boolean selEmpty = sel == null || sel.isEmpty();
-    boolean canChange = proj != null
+    boolean selComp = sel != null && !sel.isEmpty();
+    boolean modComp = proj != null
         && proj.getLogisimFile().contains(proj.getCurrentCircuit());
 
-    // todo: cut, copy, delete, duplicate for circuits/vhdl
-    setEnabled(LogisimMenuBar.CUT, !selEmpty && canChange);
-    setEnabled(LogisimMenuBar.COPY, !selEmpty);
+    // check if a project or library subcircuit or vhdl tool is selected in toolbox
+    Tool tool = frame.getSelectedToolboxTool();
+    boolean selProjTool = tool != null && proj.getLogisimFile().containsFromSource(tool);
+    boolean selLibTool = !selProjTool && tool instanceof AddTool
+        && ((AddTool)tool).isSubcircuitOrVhdl();
+
+    // check if a library is selected in toolbox
+    Library lib = frame.getSelectedToolboxLibrary();
+    boolean selLib = (lib != null && proj.getLogisimFile().getLibraries().contains(lib));
+
+    setEnabled(LogisimMenuBar.CUT,
+        (selComp && modComp) // cut components from project circuit
+        || selProjTool // cut circuit or vhdl from project
+        || selLib); // cut library from project
+    setEnabled(LogisimMenuBar.COPY, 
+        selComp // copy components from project circuit
+        || selProjTool // copy circuit or vhdl from project
+        || selLibTool // copy circuit or vhdl from library
+        || selLib); // copy library from project
     setEnabled(LogisimMenuBar.PASTE,
-        !LayoutClipboard.forCircuit.isEmpty()
-        || !LayoutClipboard.forVhdl.isEmpty()
-        || (canChange && !LayoutClipboard.forComponents.isEmpty()));
-    setEnabled(LogisimMenuBar.DELETE, !selEmpty && canChange);
-    setEnabled(LogisimMenuBar.DUPLICATE, !selEmpty && canChange);
+        (modComp && !LayoutClipboard.forComponents.isEmpty()) // paste components
+        || !LayoutClipboard.forCircuit.isEmpty() // paste circuit
+        || !LayoutClipboard.forVhdl.isEmpty() // paste vhdl
+        || !LayoutClipboard.forLibrary.isEmpty()); // paste library
+    setEnabled(LogisimMenuBar.DELETE,
+        (selComp && modComp) // delete components from project circuit
+        || selProjTool // delete circuit or vhdl from project
+        || selLib); // delete library from project
+    setEnabled(LogisimMenuBar.DUPLICATE,
+        (selComp && modComp) // duplicate components within project circuit
+        || selProjTool // duplicate circuit or vhdl within project
+        || selLibTool); // duplicate circuit or vhdl from library into project
     setEnabled(LogisimMenuBar.SELECT_ALL, true);
-    setEnabled(LogisimMenuBar.RAISE, false);
-    setEnabled(LogisimMenuBar.LOWER, false);
-    setEnabled(LogisimMenuBar.RAISE_TOP, false);
-    setEnabled(LogisimMenuBar.LOWER_BOTTOM, false);
+    setEnabled(LogisimMenuBar.RAISE, false); // todo: move circuit/lib up
+    setEnabled(LogisimMenuBar.LOWER, false); // todo: move circuit/lib down
+    setEnabled(LogisimMenuBar.RAISE_TOP, false); // todo: move circuit/lib up
+    setEnabled(LogisimMenuBar.LOWER_BOTTOM, false); // todo: move circuit/lib down
     setEnabled(LogisimMenuBar.ADD_CONTROL, false);
     setEnabled(LogisimMenuBar.REMOVE_CONTROL, false);
   }
@@ -95,29 +128,118 @@ public class LayoutEditHandler extends EditHandler
   @Override
   public void copy() {
     Project proj = frame.getProject();
+    // copy components from circuit
     Selection sel = frame.getCanvas().getSelection();
-    SelectionActions.copy(proj, sel);
+    if (sel != null && !sel.isEmpty()) {
+      SelectionActions.copy(proj, sel);
+      return;
+    }
+    // copy circuit or vhdl from project or library
+    Tool tool = frame.getSelectedToolboxTool();
+    if (tool instanceof AddTool) {
+      ComponentFactory f = ((AddTool)tool).getFactory();
+      if (f instanceof SubcircuitFactory) {
+        Circuit c = ((SubcircuitFactory)f).getSubcircuit();
+        SelectionActions.copy(proj, c);
+      } else if (f instanceof VhdlEntity) {
+        VhdlContent c = ((VhdlEntity)f).getContent();
+        SelectionActions.copy(proj, c);
+      }
+      return;
+    }
+    // copy library from project
+    Library lib = frame.getSelectedToolboxLibrary();
+    if (lib != null && proj.getLogisimFile().getLibraries().contains(lib)) {
+      SelectionActions.copy(proj, lib);
+      return;
+    }
   }
 
   @Override
   public void cut() {
     Project proj = frame.getProject();
+    // cut components from circuit
     Selection sel = frame.getCanvas().getSelection();
-    proj.doAction(SelectionActions.cut(proj, sel));
+    if (sel != null && !sel.isEmpty()) {
+      proj.doAction(SelectionActions.cut(proj, sel));
+      return;
+    }
+    // cut circuit or vhdl from project
+    Tool tool = frame.getSelectedToolboxTool();
+    if (tool instanceof AddTool && proj.getLogisimFile().containsFromSource(tool)) {
+      ComponentFactory f = ((AddTool)tool).getFactory();
+      if (f instanceof SubcircuitFactory) {
+        Circuit c = ((SubcircuitFactory)f).getSubcircuit();
+        SelectionActions.copy(proj, c);
+        ProjectCircuitActions.doRemoveCircuit(proj, c);
+      } else if (f instanceof VhdlEntity) {
+        VhdlContent c = ((VhdlEntity)f).getContent();
+        SelectionActions.copy(proj, c);
+        ProjectCircuitActions.doRemoveVhdl(proj, c);
+      }
+      return;
+    }
+    // cut library from project
+    Library lib = frame.getSelectedToolboxLibrary();
+    if (lib != null && proj.getLogisimFile().getLibraries().contains(lib)) {
+      SelectionActions.copy(proj, lib);
+      ProjectLibraryActions.doUnloadLibrary(proj, lib);
+      return;
+    }
   }
 
   @Override
   public void delete() {
     Project proj = frame.getProject();
+    // delete components from circuit
     Selection sel = frame.getCanvas().getSelection();
-    proj.doAction(SelectionActions.clear(sel));
+    if (sel != null && !sel.isEmpty()) {
+      proj.doAction(SelectionActions.delete(sel));
+      return;
+    }
+    // delete circuit or vhdl from project
+    Tool tool = frame.getSelectedToolboxTool();
+    if (tool instanceof AddTool && proj.getLogisimFile().containsFromSource(tool)) {
+      ComponentFactory f = ((AddTool)tool).getFactory();
+      if (f instanceof SubcircuitFactory) {
+        Circuit c = ((SubcircuitFactory)f).getSubcircuit();
+        ProjectCircuitActions.doRemoveCircuit(proj, c);
+      } else if (f instanceof VhdlEntity) {
+        VhdlContent c = ((VhdlEntity)f).getContent();
+        ProjectCircuitActions.doRemoveVhdl(proj, c);
+      }
+      return;
+    }
+    // delete library from project
+    Library lib = frame.getSelectedToolboxLibrary();
+    if (lib != null && proj.getLogisimFile().getLibraries().contains(lib)) {
+      ProjectLibraryActions.doUnloadLibrary(proj, lib);
+      return;
+    }
   }
 
   @Override
   public void duplicate() {
     Project proj = frame.getProject();
+    // duplicate componets within project circuit
     Selection sel = frame.getCanvas().getSelection();
-    proj.doAction(SelectionActions.duplicate(sel));
+    if (sel != null && !sel.isEmpty()) {
+      proj.doAction(SelectionActions.duplicate(sel));
+      return;
+    }
+    // duplicate circuit or vhdl from project or library into project
+    Tool tool = frame.getSelectedToolboxTool();
+    if (tool instanceof AddTool && proj.getLogisimFile().containsFromSource(tool)) {
+      ComponentFactory f = ((AddTool)tool).getFactory();
+      if (f instanceof SubcircuitFactory) {
+        Circuit c = ((SubcircuitFactory)f).getSubcircuit();
+        // ProjectCircuitActions.doDuplicateCircuit(proj, c); // todo
+      } else if (f instanceof VhdlEntity) {
+        VhdlContent c = ((VhdlEntity)f).getContent();
+        // ProjectCircuitActions.doDuplicateVhdl(proj, c); // todo
+      }
+      return;
+    }
   }
 
   public void libraryChanged(LibraryEvent e) {
@@ -144,9 +266,7 @@ public class LayoutEditHandler extends EditHandler
     Project proj = frame.getProject();
     Selection sel = frame.getCanvas().getSelection();
     selectSelectTool(proj);
-    Action action = SelectionActions.pasteMaybe(proj, sel);
-    if (action != null)
-      proj.doAction(action);
+    proj.doAction(SelectionActions.pasteMaybe(proj, sel));
   }
 
   public void projectChanged(ProjectEvent e) {
@@ -156,6 +276,8 @@ public class LayoutEditHandler extends EditHandler
     } else if (action == ProjectEvent.ACTION_SET_CURRENT) {
       computeEnabled();
     } else if (action == ProjectEvent.ACTION_SELECTION) {
+      computeEnabled();
+    } else if (action == ProjectEvent.ACTION_SET_TOOL) {
       computeEnabled();
     }
   }

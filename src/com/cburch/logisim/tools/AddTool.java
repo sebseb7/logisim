@@ -311,6 +311,12 @@ public class AddTool extends Tool {
 
     if (!event.isConsumed() && event.getModifiersEx() == 0) {
       switch (event.getKeyCode()) {
+      case KeyEvent.VK_ESCAPE:
+        Project proj = canvas.getProject();
+        Library base = proj.getLogisimFile().getLibrary("Base");
+        if (base != null)
+          proj.setTool(base.getTool("Edit Tool"));
+        break;
       case KeyEvent.VK_UP:
         setFacing(canvas, Direction.NORTH);
         break;
@@ -571,5 +577,12 @@ public class AddTool extends Tool {
       return false; // these have a null libraryClass, b/c they belong to project itself
     // All AddTool() items are now required to have a libraryClass.
     return Builtin.isBuiltinLibrary(libraryClass);
+  }
+
+  public boolean isSubcircuitOrVhdl() {
+    // note: circ libraries contain only subcircuit and vhdl tools
+    return (factory instanceof SubcircuitFactory)
+        || (factory instanceof VhdlEntity)
+        || (description != null && description.getName().startsWith("file#"));
   }
 }

@@ -730,4 +730,18 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
       setAttrTableModel(new AttrTableComponentModel(project, circ, comp));
     }
   }
+
+  public void clearExplorerSelection() {
+    if (toolbox != null)
+      toolbox.clearExplorerSelection();
+  }
+
+  public Library getSelectedToolboxLibrary() {
+    return toolbox == null ? null : toolbox.getSelectedLibrary();
+  }
+
+  public Tool getSelectedToolboxTool() {
+    return toolbox == null ? null : toolbox.getSelectedTool();
+  }
+
 }

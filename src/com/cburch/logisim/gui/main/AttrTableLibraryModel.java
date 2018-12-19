@@ -95,10 +95,11 @@ public class AttrTableLibraryModel extends AttributeSetTableModel {
       } else if (desc.startsWith("jar#")) {
         libType = JAR_LIB;
         path = desc.substring(4);
-      } else if (desc.startsWith("circ#")) {
+      } else if (desc.startsWith("file#")) {
         libType = LOGISIM_LIB;
         path = desc.substring(5);
       } else {
+        System.out.println("unrecognized descriptor: " + desc);
         libType = BUILTIN_LIB; // ???
       }
     }

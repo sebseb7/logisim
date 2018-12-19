@@ -54,13 +54,17 @@ import com.cburch.logisim.util.PropertyChangeWeakSupport;
 public class LayoutClipboard<T>
   implements ClipboardOwner, FlavorListener, PropertyChangeWeakSupport.Producer {
 
-  // LayoutClipboard<T> holds a T=Circuit, a T=VhdlContent, or T=Collection<Component>
-  // (a set of wires, pins, subcircuits, etc.). It also needs to copy the
-  // Circuits/VhdlEntities underlying any of those subcircuits (in case the
-  // target doesn't have any suitably-named circuits and the user wants to
-  // import them). And it needs a list of any non-builtin library references
-  // (Jar or Logisim) used by any of the components as well.
-  
+  // LayoutClipboard<T> holds an object of type T, which can be:
+  //   Circuit, 
+  //   VhdlContent,
+  //   Collection<Component> (a set of wires, pins, subcircuits, etc.),
+  //   or Library
+  // It also copies all the
+  // Circuits/VhdlEntities underlying any of those (in case the target doesn't
+  // have any suitably-named circuits and the user wants to import them). And it
+  // copies a list of any non-builtin library references (Jar or Logisim) used
+  // by any of the components as well.
+
   public static final String contentsProperty = "contents";
 
   public static class Clip<T> {
@@ -127,6 +131,8 @@ public class LayoutClipboard<T>
       mimeTypeBase + ".circuit;class=java.lang.String";
   public static final String mimeTypeVhdlClip =
       mimeTypeBase + ".vhdl;class=java.lang.String";
+  public static final String mimeTypeLibraryClip =
+      mimeTypeBase + ".library;class=java.lang.String";
 
   public static final Clipboard sysclip = Toolkit.getDefaultToolkit().getSystemClipboard();
 
@@ -139,6 +145,9 @@ public class LayoutClipboard<T>
   public static final LayoutClipboard<VhdlContent> forVhdl =
       new LayoutClipboard<>(mimeTypeVhdlClip,
           ctx -> ctx.getSelectedVhdl());
+  public static final LayoutClipboard<Library> forLibrary =
+      new LayoutClipboard<>(mimeTypeLibraryClip,
+          ctx -> ctx.getSelectedLibrary());
 
   private final DragDrop dnd; // flavor of this clipboard
   private XmlClipExtractor<T> extractor;

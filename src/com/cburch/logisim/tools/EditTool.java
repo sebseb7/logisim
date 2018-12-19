@@ -274,7 +274,7 @@ public final class EditTool extends Tool {
     case KeyEvent.VK_BACK_SPACE:
     case KeyEvent.VK_DELETE:
       if (!canvas.getSelection().isEmpty()) {
-        Action act = SelectionActions.clear(canvas.getSelection());
+        Action act = SelectionActions.delete(canvas.getSelection());
         canvas.getProject().doAction(act);
         e.consume();
       } else {

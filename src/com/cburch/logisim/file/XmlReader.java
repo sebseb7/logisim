@@ -60,6 +60,7 @@ import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.tools.Tool;
 
 class XmlReader {
 
@@ -157,6 +158,36 @@ class XmlReader {
       }
       String vhdl = elt.getTextContent();
       return VhdlContent.parse(name, vhdl, file);
+    }
+
+    Library parseLibrary(Loader loader, Element elt) throws LoadCanceledByUser {
+      if (!elt.hasAttribute("name")) {
+        addError(S.get("libNameMissingError"), "loading library");
+        return null;
+      }
+      if (!elt.hasAttribute("desc")) {
+        addError(S.get("libDescMissingError"), "loading library");
+        return null;
+      }
+      String name = elt.getAttribute("name");
+      String desc = elt.getAttribute("desc");
+      Library lib = loader.loadLibrary(desc);
+      if (lib == null)
+        return null;
+      for (Element e : XmlIterator.forChildElements(elt, "tool")) {
+        if (!e.hasAttribute("name")) {
+          addError(S.get("toolNameMissingError"), "loading library tool");
+        } else {
+          String toolName = e.getAttribute("name");
+          Tool tool = lib.getTool(toolName);
+          if (tool != null) try {
+            initAttributeSet(e, tool.getAttributeSet(), tool);
+          } catch (XmlReaderException ex) {
+            addErrors(ex, "lib." + name + "." + toolName);
+          }
+        }
+      }
+      return lib;
     }
 
     void initAttributeSet(Element parentElt, AttributeSet attrs,

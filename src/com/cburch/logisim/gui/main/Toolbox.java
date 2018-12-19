@@ -40,6 +40,7 @@ import com.cburch.logisim.gui.generic.ProjectExplorer;
 import com.cburch.logisim.gui.menu.MenuListener;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.tools.Library;
 
 class Toolbox extends JPanel {
   private static final long serialVersionUID = 1L;
@@ -65,5 +66,17 @@ class Toolbox extends JPanel {
 
   public void updateStructure() {
     toolbox.updateStructure();
+  }
+
+  public void clearExplorerSelection() {
+    toolbox.clearExplorerSelection();
+  }
+
+  public Library getSelectedLibrary() {
+    return toolbox.getSelectedLibrary();
+  }
+
+  public Tool getSelectedTool() {
+    return toolbox.getSelectedTool();
   }
 }

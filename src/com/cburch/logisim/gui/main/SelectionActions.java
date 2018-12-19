@@ -48,6 +48,7 @@ import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.file.LogisimFile;
+import com.cburch.logisim.file.LogisimFileActions;
 import com.cburch.logisim.gui.menu.ProjectCircuitActions;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Dependencies;
@@ -63,14 +64,14 @@ public class SelectionActions {
    * http://www.cs.cornell.edu/courses/cs3410/2015sp/
    */
 
-  private abstract static class SelectionModifyingAction extends Action {
+  private abstract static class SelectionAnchoringAction extends Action {
 
     protected Selection sel;
     protected int count;
     protected SelectionSave before;
     protected CircuitTransaction xnReverse;
 
-    SelectionModifyingAction(Selection sel, int count) {
+    SelectionAnchoringAction(Selection sel, int count) {
       this.sel = sel;
       this.before = SelectionSave.create(sel);
       this.count = count;
@@ -96,6 +97,8 @@ public class SelectionActions {
         last = other;
 
       SelectionSave otherAfter = null;
+      // paste and duplicate create new floating selections, so
+      // things that 
       if (last instanceof PasteComponents) {
         otherAfter = ((PasteComponents) last).after;
       } else if (last instanceof Duplicate) {
@@ -111,7 +114,26 @@ public class SelectionActions {
 
   }
 
-  private static class Anchor extends SelectionModifyingAction {
+  private static class Deselect extends SelectionAnchoringAction {
+    // Deselect makes all floating elements become anchored, and clears the selection.
+
+    Deselect(Selection sel, int count) {
+      super(sel, count);
+    }
+
+    @Override
+    public String getName() {
+      return count == 1 ? S.get("anchorComponentAction") : S.get("anchorComponentsAction");
+    }
+
+    @Override
+    protected void doIt(Project proj, Circuit circ, CircuitMutation xn) {
+      sel.clear(xn);
+    }
+
+  }
+
+  private static class Anchor extends SelectionAnchoringAction {
     // Anchor makes all floating elements become anchored, but keeps them in the
     // selection.
 
@@ -163,7 +185,7 @@ public class SelectionActions {
    * Code taken from Cornell's version of Logisim:
    * http://www.cs.cornell.edu/courses/cs3410/2015sp/
    */
-  private static class Drop extends SelectionModifyingAction {
+  private static class Drop extends SelectionAnchoringAction {
     // Drop removes things from the selection.
 
     private Component[] drops;
@@ -571,7 +593,7 @@ public class SelectionActions {
     }
   }
 
-  private static class Translate extends SelectionModifyingAction {
+  private static class Translate extends SelectionAnchoringAction {
     private int dx, dy;
     private ReplacementMap replacements;
 
@@ -611,12 +633,35 @@ public class SelectionActions {
     }
   }
 
+  // anchor all floating elements, clearing selection
   public static Action clear(Selection sel) {
+    int numAnchor = sel.getFloatingComponents().size();
+    if (numAnchor == 0) {
+      sel.clear(null);
+      return null;
+    } else {
+      return new Deselect(sel, numAnchor);
+    }
+  }
+
+  public static Action delete(Selection sel) {
     return new Delete(sel);
   }
 
   public static void copy(Project proj, Selection sel) { // Note: copy is not an Action
     LayoutClipboard.forComponents.set(proj, sel.getComponents());
+  }
+
+  public static void copy(Project proj, Circuit sel) { // Note: copy is not an Action
+    LayoutClipboard.forCircuit.set(proj, sel);
+  }
+
+  public static void copy(Project proj, VhdlContent sel) { // Note: copy is not an Action
+    LayoutClipboard.forVhdl.set(proj, sel);
+  }
+
+  public static void copy(Project proj, Library sel) { // Note: copy is not an Action
+    // todo: LayoutClipboard.forLibrary.set(proj, sel);
   }
 
   public static Action cut(Project proj, Selection sel) {
@@ -666,6 +711,8 @@ public class SelectionActions {
       act = pasteCircuitMaybe(proj);
     if (act == null)
       act = pasteVhdlMaybe(proj);
+    if (act == null)
+      act = pasteLibraryMaybe(proj);
     return act;
   }
 
@@ -695,6 +742,13 @@ public class SelectionActions {
     if (clip == null)
       return null;
     return new PasteVhdl(clip);
+  }
+
+  public static Action pasteLibraryMaybe(Project proj) {
+    LayoutClipboard.Clip<Library> clip = LayoutClipboard.forLibrary.get(proj);
+    if (clip == null)
+      return null;
+    return LogisimFileActions.loadLibrary(clip.selection);
   }
 
   public static Action translate(Selection sel, int dx, int dy, ReplacementMap repl) {

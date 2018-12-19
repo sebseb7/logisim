@@ -207,6 +207,7 @@ public class Canvas extends JPanel
     public void mousePressed(MouseEvent e) {
       viewport.setErrorMessage(null, null);
       proj.setStartupScreen(false);
+      proj.getFrame().clearExplorerSelection();
       Canvas.this.requestFocus();
       drag_tool = getToolFor(e);
       if (drag_tool != null) {

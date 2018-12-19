@@ -65,7 +65,7 @@ public class XmlClipReader extends XmlReader {
 
   public class ReadClipContext extends ReadContext {
 
-    // for selections of type Set<Component>
+    // for selections of type Collection<Component>
     HashSet<Component> selectedComponents = new HashSet<>(); // the selection, or empty if cancelled
     HashSet<Component> badComponents = new HashSet<>(); // components with missing dependencies
 
@@ -74,6 +74,9 @@ public class XmlClipReader extends XmlReader {
 
     // for selections of type VhdlContent
     VhdlContent selectedVhdl; // the selection, or null if cancelled
+
+    // for selections of type Library
+    Library selectedLibrary; // the selection, or null if cancelled
 
     HashMap<String, Circuit> circuits = new HashMap<>(); // circuit dependencies
     HashMap<String, VhdlContent> vhdl = new HashMap<>(); // vhdl dependencies
@@ -91,6 +94,7 @@ public class XmlClipReader extends XmlReader {
     public Collection<Component> getSelectedComponents() { return selectedComponents; }
     public Circuit getSelectedCircuit() { return selectedCircuit.circuit; }
     public VhdlContent getSelectedVhdl() { return selectedVhdl; }
+    public Library getSelectedLibrary() { return selectedLibrary; }
     public Collection<Circuit> getCircuits() { return circuits.values(); }
     public Collection<VhdlContent> getVhdl() { return vhdl.values(); }
     public Collection<Library> getLibraries() { return libraries.values(); }
@@ -120,33 +124,14 @@ public class XmlClipReader extends XmlReader {
       Library lib = libraries.get(name);
       if (lib != null)
         return lib;
-      String desc = lDesc.get(name);
-      if (desc == null)
-        throw new XmlReaderException(S.fmt("libMissingError", name));
       Element elt = lDep.get(name);
-      if (elt != null) {
-        lib = loader.loadLibrary(desc);
-        if (lib != null) {
-          for (Element e : XmlIterator.forChildElements(elt, "tool")) {
-            if (!e.hasAttribute("name")) {
-              loader.showError(S.get("toolNameMissingError"));
-            } else {
-              String toolName = e.getAttribute("name");
-              Tool tool = lib.getTool(toolName);
-              if (tool != null) {
-                try {
-                  initAttributeSet(e, tool.getAttributeSet(), tool);
-                } catch (XmlReaderException ex) {
-                  addErrors(ex, "lib." + name + "." + toolName);
-                }
-              }
-            }
-          }
-          libraries.put(name, lib);
-          return lib;
-        }
-      }
-      throw new XmlReaderException(S.fmt("libMissingError", name));
+      if (elt == null)
+        throw new XmlReaderException(S.fmt("libMissingError", name));
+      lib = parseLibrary(loader, elt);
+      if (lib == null)
+        throw new XmlReaderException(S.fmt("libMissingError", name));
+      libraries.put(name, lib);
+      return lib;
     }
 
     Tool addMissingTool(String name) throws XmlReaderException {
@@ -254,6 +239,9 @@ public class XmlClipReader extends XmlReader {
           case "vhdl":
             selectedVhdl = parseVhdl(c);
             break;
+          case "lib":
+            selectedLibrary = parseLibrary(loader, c);
+            break;
           default:
             // do nothing
           }
@@ -312,6 +300,7 @@ public class XmlClipReader extends XmlReader {
       } else {
         selectedCircuit = null;
         selectedVhdl = null;
+        selectedLibrary = null;
         selectedComponents.clear();
         badComponents.clear();
         throw new LoadCanceledByUser();

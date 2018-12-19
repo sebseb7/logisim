@@ -64,21 +64,21 @@ import javax.swing.TransferHandler;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
-import com.cburch.logisim.std.hdl.VhdlContent;
-import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.gui.main.Canvas;
+import com.cburch.logisim.gui.main.SelectionActions;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
+import com.cburch.logisim.std.hdl.VhdlContent;
+import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
@@ -179,16 +179,12 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     }
 
     public void mouseClicked(MouseEvent e) {
+      proj.doAction(SelectionActions.clear(proj.getSelection())); // only needed here for lib selection
       if (e.getClickCount() == 2) {
         TreePath path = getPathForLocation(e.getX(), e.getY());
         if (path != null && listener != null) {
           listener.doubleClicked(new Event(path));
         }
-      } else {
-        // TreePath path = getPathForLocation(e.getX(), e.getY());
-        // if (listener != null) {
-        //         listener.selectionChanged(new Event(path));
-        // }
       }
     }
 
@@ -219,9 +215,6 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       }
     }
 
-    //
-    // project/library file/circuit listener methods
-    //
     public void projectChanged(ProjectEvent event) {
       int act = event.getAction();
       if (act == ProjectEvent.ACTION_SET_CURRENT || act == ProjectEvent.ACTION_SET_TOOL) {
@@ -374,6 +367,19 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 
     if (last instanceof ProjectExplorerToolNode) {
       return ((ProjectExplorerToolNode) last).getValue();
+    } else {
+      return null;
+    }
+  }
+
+  public Library getSelectedLibrary() {
+    TreePath path = getSelectionPath();
+    if (path == null)
+      return null;
+    Object last = path.getLastPathComponent();
+
+    if (last instanceof ProjectExplorerLibraryNode) {
+      return ((ProjectExplorerLibraryNode) last).getValue();
     } else {
       return null;
     }
@@ -543,4 +549,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     }
   }
 
+  public void clearExplorerSelection() {
+    clearSelection();
+  }
 }

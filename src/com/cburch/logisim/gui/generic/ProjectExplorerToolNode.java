@@ -52,8 +52,8 @@ public class ProjectExplorerToolNode extends ProjectExplorerModel.Node<Tool>
   private Circuit circuit;
   private VhdlContent vhdl;
 
-  public ProjectExplorerToolNode(ProjectExplorerModel model, Tool tool) {
-    super(model, tool);
+  public ProjectExplorerToolNode(ProjectExplorerModel model, Tool tool, ProjectExplorerModel.Node<?> parent) {
+    super(model, tool, parent);
     if (tool instanceof AddTool) {
       Object factory = ((AddTool) tool).getFactory();
 
@@ -86,13 +86,9 @@ public class ProjectExplorerToolNode extends ProjectExplorerModel.Node<Tool>
   public void displayChanged(HdlModel source) {
     fireNodeChanged();
   }
-  @Override
-  public void appearanceChanged(HdlModel source) { }
 
   @Override
-  ProjectExplorerToolNode create(Tool userObject) {
-    return new ProjectExplorerToolNode(getModel(), userObject);
-  }
+  public void appearanceChanged(HdlModel source) { }
 
   @Override
   void decommission() {

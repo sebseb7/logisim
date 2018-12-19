@@ -47,14 +47,9 @@ public class ProjectExplorerRootNode extends ProjectExplorerModel.Node<Library> 
   }
 
   ProjectExplorerRootNode(ProjectExplorerModel model, Library lib) {
-    super(model, lib);
-    add(new ProjectExplorerLibraryNode(model, getBaseLib(lib)));
-    add(new ProjectExplorerLibraryNode(model, lib));
-  }
-
-  @Override
-  ProjectExplorerRootNode create(Library userObject) {
-    return new ProjectExplorerRootNode(getModel(), userObject);
+    super(model, lib, null);
+    add(new ProjectExplorerLibraryNode(model, getBaseLib(lib), this));
+    add(new ProjectExplorerLibraryNode(model, lib, this));
   }
 
   @Override

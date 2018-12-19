@@ -36,8 +36,8 @@ import java.util.LinkedList;
 
 import com.cburch.hdl.HdlModel;
 import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.circuit.CircuitLocker;
 import com.cburch.logisim.circuit.CircuitListener;
+import com.cburch.logisim.circuit.CircuitLocker;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.Simulator;
 import com.cburch.logisim.circuit.SubcircuitFactory;
@@ -56,6 +56,8 @@ import com.cburch.logisim.gui.test.TestThread;
 import com.cburch.logisim.std.hdl.VhdlSimulator;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.tools.SelectTool;
+import com.cburch.logisim.tools.EditTool;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
@@ -156,9 +158,8 @@ public class Project {
   }
 
   public void doAction(Action act) {
-    if (act == null) {
+    if (act == null)
       return;
-    }
     Action toAdd = act;
     startupScreen = false;
     redoLog.clear();
@@ -602,25 +603,8 @@ public class Project {
       old.deselect(canvas);
     Selection selection = canvas.getSelection();
     if (selection != null && !selection.isEmpty()) {
-      if (value == null
-          || !getOptions().getMouseMappings().containsSelectTool()) {
-        Action act = SelectionActions.anchorAll(selection);
-        // Circuit circuit = canvas.getCircuit();
-        // CircuitMutation xn = new CircuitMutation(circuit);
-        // if (value == null) {
-        //   Action act = SelectionActions.dropAll(selection);
-        //   if (act != null) {
-        //     doAction(act);
-        //   }
-        // } else if (!getOptions().getMouseMappings().containsSelectTool()) {
-        //  Action act = SelectionActions.dropAll(selection);
-        //  ...
-        // }
-        if (act != null) {
-          doAction(act);
-        }
-      }
-      // if (!xn.isEmpty()) doAction(xn.toAction(null));
+      if (!(value instanceof SelectTool || value instanceof EditTool))
+        doAction(SelectionActions.clear(selection));
     }
     startupScreen = false;
     tool = value;

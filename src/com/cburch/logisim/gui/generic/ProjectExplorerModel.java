@@ -50,16 +50,15 @@ class ProjectExplorerModel extends DefaultTreeModel implements ProjectListener {
   static abstract class Node<T> extends DefaultMutableTreeNode {
 
     private static final long serialVersionUID = 1L;
-    ProjectExplorerModel model;
-    int oldIndex;
-    int newIndex;
+    protected ProjectExplorerModel model;
+    protected int oldIndex, newIndex;
 
-    Node(ProjectExplorerModel model, T userObject) {
+    Node(ProjectExplorerModel model, T userObject, Node<?> parent) {
       super(userObject);
       this.model = model;
+      if (parent != null)
+        parent.add(this);
     }
-
-    abstract Node<T> create(T userObject);
 
     abstract void decommission();
 
@@ -117,7 +116,6 @@ class ProjectExplorerModel extends DefaultTreeModel implements ProjectListener {
       T val = (T) getUserObject();
       return val;
     }
-
   }
 
   private static final long serialVersionUID = 1L;
@@ -132,7 +130,7 @@ class ProjectExplorerModel extends DefaultTreeModel implements ProjectListener {
     if (showAll)
       setRoot(new ProjectExplorerRootNode(this, proj.getLogisimFile()));
     else
-      setRoot(new ProjectExplorerLibraryNode(this, proj.getLogisimFile()));
+      setRoot(new ProjectExplorerLibraryNode(this, proj.getLogisimFile(), null));
     proj.addProjectListener(this);
   }
 
@@ -188,7 +186,7 @@ class ProjectExplorerModel extends DefaultTreeModel implements ProjectListener {
     else if (showAll)
       setRoot(new ProjectExplorerRootNode(this, proj.getLogisimFile()));
     else
-      setRoot(new ProjectExplorerLibraryNode(this, proj.getLogisimFile()));
+      setRoot(new ProjectExplorerLibraryNode(this, proj.getLogisimFile(), null));
 
     fireStructureChanged();
   }

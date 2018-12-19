@@ -144,36 +144,9 @@ class XmlProjectReader extends XmlReader {
     }
 
     private Library toLibrary(Element elt) throws LoadCanceledByUser {
-      if (!elt.hasAttribute("name")) {
-        addError(S.get("libNameMissingError"), "loading library");
-        return null;
-      }
-      if (!elt.hasAttribute("desc")) {
-        addError(S.get("libDescMissingError"), "loading library");
-        return null;
-      }
-      String name = elt.getAttribute("name");
-      String desc = elt.getAttribute("desc");
-      Library ret = loader.loadLibrary(desc);
-      if (ret == null)
-        return null;
-      libs.put(name, ret);
-      for (Element sub_elt : XmlIterator.forChildElements(elt, "tool")) {
-        if (!sub_elt.hasAttribute("name")) {
-          addError(S.get("toolNameMissingError"), "loading library tool");
-        } else {
-          String tool_str = sub_elt.getAttribute("name");
-          Tool tool = ret.getTool(tool_str);
-          if (tool != null) {
-            try {
-              initAttributeSet(sub_elt, tool.getAttributeSet(), tool);
-            } catch (XmlReaderException e) {
-              addErrors(e, "lib." + name + "." + tool_str);
-            }
-          }
-        }
-      }
-      return ret;
+      Library lib = parseLibrary(loader, elt);
+      libs.put(elt.getAttribute("name"), lib);
+      return lib;
     }
 
     private void parseProject(Element elt) throws LoadCanceledByUser {

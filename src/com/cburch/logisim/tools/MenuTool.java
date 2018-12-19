@@ -129,7 +129,7 @@ public final class MenuTool extends Tool {
       Object src = e.getSource();
       Selection sel = proj.getSelection();
       if (src == del) {
-        proj.doAction(SelectionActions.clear(sel));
+        proj.doAction(SelectionActions.delete(sel));
       } else if (src == cut) {
         proj.doAction(SelectionActions.cut(proj, sel));
       } else if (src == copy) {

@@ -52,15 +52,8 @@ public class ProjectExplorerLibraryNode
   private static final long serialVersionUID = 1L;
   private LogisimFile file;
 
-  private static Base getBaseLib(Library projLib) {
-    for (Library lib : projLib.getLibraries())
-      if (lib instanceof Base)
-        return (Base)lib;
-    return null;
-  }
-
-  ProjectExplorerLibraryNode(ProjectExplorerModel model, Library lib) {
-    super(model, lib);
+  ProjectExplorerLibraryNode(ProjectExplorerModel model, Library lib, ProjectExplorerModel.Node<?> parent) {
+    super(model, lib, parent);
     if (lib instanceof LogisimFile) {
       file = (LogisimFile) lib;
       file.addLibraryListener(this);
@@ -68,17 +61,48 @@ public class ProjectExplorerLibraryNode
     buildChildren();
   }
 
+  private boolean ancestorContainsLibrary(Library lib) {
+    ProjectExplorerModel.Node<?> p = (ProjectExplorerModel.Node<?>)getParent();
+    while (p != null) {
+      Object v = p.getValue();
+      if (v instanceof Library && ((Library)v).getLibraries().contains(lib))
+        return true;
+      p = (ProjectExplorerModel.Node<?>)p.getParent();
+    }
+    return false;
+  }
+
+  private void buildDescendents() {
+    buildChildren();
+    for (Enumeration<?> en = children(); en.hasMoreElements();) {
+      Object child = en.nextElement();
+      if (child instanceof ProjectExplorerLibraryNode) {
+        @SuppressWarnings("unchecked")
+        ProjectExplorerLibraryNode childNode = (ProjectExplorerLibraryNode)child;
+        childNode.buildDescendents();
+      }
+    }
+  }
+
   private void buildChildren() {
     Library lib = getValue();
     if (lib != null) {
-      buildChildren(new ProjectExplorerToolNode(getModel(), null),
+      buildChildren(
+          ProjectExplorerToolNode.class,
+          tool -> new ProjectExplorerToolNode(getModel(), tool, this),
           lib.getTools(), 0);
-      buildChildren(new ProjectExplorerLibraryNode(getModel(), null),
+      buildChildren(
+          ProjectExplorerLibraryNode.class,
+          subLib -> new ProjectExplorerLibraryNode(getModel(), subLib, this),
           lib.getLibraries(), lib.getTools().size());
     }
   }
 
-  private <T> void buildChildren(ProjectExplorerModel.Node<T> factory,
+  interface NodeFactory<T> {
+    ProjectExplorerModel.Node<T> create(T userObject);
+  }
+
+  private <T> void buildChildren(Class t, NodeFactory<T> factory,
       List<? extends T> items, int startIndex) {
     // go through previously built children
     Map<T, ProjectExplorerModel.Node<T>> nodeMap = new HashMap<T, ProjectExplorerModel.Node<T>>();
@@ -86,14 +110,14 @@ public class ProjectExplorerLibraryNode
     int oldPos = startIndex;
 
     for (Enumeration<?> en = children(); en.hasMoreElements();) {
-      Object baseNode = en.nextElement();
-      if (baseNode.getClass() == factory.getClass()) {
+      Object child = en.nextElement();
+      if (child.getClass() == t) {
         @SuppressWarnings("unchecked")
-        ProjectExplorerModel.Node<T> node = (ProjectExplorerModel.Node<T>) baseNode;
-        nodeMap.put(node.getValue(), node);
-        nodeList.add(node);
-        node.oldIndex = oldPos;
-        node.newIndex = -1;
+        ProjectExplorerModel.Node<T> childNode = (ProjectExplorerModel.Node<T>) child;
+        nodeMap.put(childNode.getValue(), childNode);
+        nodeList.add(childNode);
+        childNode.oldIndex = oldPos;
+        childNode.newIndex = -1;
         oldPos++;
       }
     }
@@ -108,6 +132,8 @@ public class ProjectExplorerLibraryNode
     for (T item : items) {
       if (item instanceof Base)
         continue;
+      if (item instanceof Library && ancestorContainsLibrary((Library)item))
+        continue; // hide libraries already shown in an ancestor
       ProjectExplorerModel.Node<T> node = nodeMap.get(item);
 
       if (node == null) {
@@ -197,11 +223,6 @@ public class ProjectExplorerLibraryNode
   }
 
   @Override
-  ProjectExplorerLibraryNode create(Library userObject) {
-    return new ProjectExplorerLibraryNode(getModel(), userObject);
-  }
-
-  @Override
   void decommission() {
     if (file != null) {
       file.removeLibraryListener(this);
@@ -225,9 +246,11 @@ public class ProjectExplorerLibraryNode
     case LibraryEvent.ADD_TOOL:
     case LibraryEvent.REMOVE_TOOL:
     case LibraryEvent.MOVE_TOOL:
+      buildChildren();
+      break;
     case LibraryEvent.ADD_LIBRARY:
     case LibraryEvent.REMOVE_LIBRARY:
-      buildChildren();
+      buildDescendents();
       break;
     default:
       fireStructureChanged();

@@ -483,7 +483,7 @@ public class XmlWriter {
   // see: sort() above
   // clipdata (contains ordered elements, do not sort)
   // - selection
-  //   - circuit; or vhdl; or comp* and wire*
+  //   - circuit; or vhdl; or comp* and wire*; or lib
   // - circuit*
   //   - a*
   //   - comp*
@@ -540,6 +540,9 @@ public class XmlWriter {
             e.appendChild(e2);
         }
       }
+    } else if (sel instanceof Library) {
+      e.setAttribute("type", "lib"); // not used by parser
+      e.appendChild(fromLibrary((Library)sel));
     } else {
       throw new IllegalArgumentException("clipboard type not supported: " + sel);
     }
