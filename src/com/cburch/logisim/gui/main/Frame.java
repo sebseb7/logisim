@@ -60,6 +60,7 @@ import javax.swing.event.ChangeListener;
 
 import com.cburch.draw.toolbar.Toolbar;
 import com.cburch.draw.toolbar.ToolbarModel;
+import com.cburch.hdl.HdlModel;
 import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
@@ -87,10 +88,10 @@ import com.cburch.logisim.proj.ProjectActions;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.proj.Projects;
+import com.cburch.logisim.std.hdl.HdlContentView;
 import com.cburch.logisim.std.hdl.VhdlSimulatorConsole;
 import com.cburch.logisim.std.hdl.VhdlSimulatorListener;
-import com.cburch.logisim.std.hdl.HdlContentView;
-import com.cburch.hdl.HdlModel;
+import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.HorizontalSplitPane;
 import com.cburch.logisim.util.JFileChoosers;
@@ -686,6 +687,10 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     return hdlEditor.getHdlModel();
   }
 
+  public void viewAttributes(Library lib) {
+    setAttrTableModel(new AttrTableLibraryModel(project, lib));
+  }
+
   void viewAttributes(Tool newTool) {
     viewAttributes(null, newTool, false);
   }
@@ -695,15 +700,9 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
   }
 
   private void viewAttributes(Tool oldTool, Tool newTool, boolean force) {
-    AttributeSet newAttrs;
-    if (newTool == null) {
-      newAttrs = null;
-      if (!force) {
-        return;
-      }
-    } else {
-      newAttrs = newTool.getAttributeSet(layoutCanvas);
-    }
+    if (newTool == null && !force)
+      return;
+    AttributeSet newAttrs = newTool == null ? null : newTool.getAttributeSet(layoutCanvas);
     if (newAttrs == null) {
       AttrTableModel oldModel = attrTable.getAttrTableModel();
       boolean same = oldModel instanceof AttrTableToolModel
@@ -711,8 +710,6 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
       if (!force && !same && !(oldModel instanceof AttrTableCircuitModel)) {
         return;
       }
-    }
-    if (newAttrs == null) {
       Circuit circ = project.getCurrentCircuit();
       if (circ != null) {
         setAttrTableModel(new AttrTableCircuitModel(project, circ));

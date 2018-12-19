@@ -41,7 +41,7 @@ import java.util.WeakHashMap;
 
 import com.cburch.logisim.tools.Library;
 
-class LibraryManager {
+public class LibraryManager {
   private static class JarDescriptor extends LibraryDescriptor {
     private File file;
     private String className;

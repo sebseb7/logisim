@@ -222,7 +222,7 @@ class ToolboxManip implements ProjectExplorer.Listener {
       if (lib == proj.getLogisimFile()) {
         return Popups.forProject(proj);
       } else {
-        boolean is_top = event.getTreePath().getPathCount() <= 2;
+        boolean is_top = event.getTreePath().getPathCount() <= 2; // fixme: should be 3? 1?
         return Popups.forLibrary(proj, lib, is_top);
       }
     } else {
@@ -258,8 +258,6 @@ class ToolboxManip implements ProjectExplorer.Listener {
   }
 
   public void selectionChanged(ProjectExplorer.Event event) {
-    // This was causing the selection to lag behind double-clicks,
-    // commented-out
     if (proj.getTool() instanceof PokeTool || proj.getTool() instanceof EditTool) {
       lastSelected = proj.getTool();
     }
@@ -283,6 +281,10 @@ class ToolboxManip implements ProjectExplorer.Listener {
       }
       proj.setTool(tool);
       proj.getFrame().viewAttributes(tool);
+    } else if (selected instanceof ProjectExplorerLibraryNode) {
+      setDefaultTool(lastSelected, proj);
+      Library lib = ((ProjectExplorerLibraryNode) selected).getValue();
+      proj.getFrame().viewAttributes(lib);
     }
   }
 

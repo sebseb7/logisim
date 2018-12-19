@@ -250,74 +250,6 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     }
   }
 
-  private class MySelectionModel extends DefaultTreeSelectionModel {
-
-    private static final long serialVersionUID = 1L;
-
-    @Override
-    public void addSelectionPath(TreePath path) {
-      if (isPathValid(path))
-        super.addSelectionPath(path);
-    }
-
-    @Override
-    public void addSelectionPaths(TreePath[] paths) {
-      paths = getValidPaths(paths);
-
-      if (paths != null)
-        super.addSelectionPaths(paths);
-    }
-
-    private TreePath[] getValidPaths(TreePath[] paths) {
-      int count = 0;
-      for (int i = 0; i < paths.length; i++) {
-        if (isPathValid(paths[i]))
-          ++count;
-      }
-
-      if (count == 0) {
-        return null;
-      } else if (count == paths.length) {
-        return paths;
-      } else {
-        TreePath[] ret = new TreePath[count];
-        int j = 0;
-
-        for (int i = 0; i < paths.length; i++) {
-          if (isPathValid(paths[i]))
-            ret[j++] = paths[i];
-        }
-
-        return ret;
-      }
-    }
-
-    private boolean isPathValid(TreePath path) {
-      if (path == null || path.getPathCount() > 3)
-        return false;
-      Object last = path.getLastPathComponent();
-
-      return last instanceof ProjectExplorerToolNode;
-    }
-
-    @Override
-    public void setSelectionPath(TreePath path) {
-      if (isPathValid(path)) {
-        clearSelection();
-        super.setSelectionPath(path);
-      }
-    }
-
-    @Override
-    public void setSelectionPaths(TreePath[] paths) {
-      paths = getValidPaths(paths);
-      if (paths != null) {
-        clearSelection();
-        super.setSelectionPaths(paths);
-      }
-    }
-  }
-
   private class ToolIcon implements Icon {
 
     Tool tool;
@@ -416,9 +348,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     addMouseListener(myListener);
     ToolTipManager.sharedInstance().registerComponent(this);
 
-    MySelectionModel selector = new MySelectionModel();
-    selector.setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-    setSelectionModel(selector);
+    getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
     setCellRenderer(renderer);
     addTreeSelectionListener(myListener);
     setDragEnabled(true);
