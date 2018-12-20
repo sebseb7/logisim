@@ -63,7 +63,8 @@ public class ProjectExplorerLibraryNode
 
   private boolean ancestorContainsLibrary(Library lib) {
     ProjectExplorerModel.Node<?> p = (ProjectExplorerModel.Node<?>)getParent();
-    while (p != null) {
+    // note: root node contains same library as child; don't supress in that case
+    while (p != null && !(p instanceof ProjectExplorerRootNode)) {
       Object v = p.getValue();
       if (v instanceof Library && ((Library)v).getLibraries().contains(lib))
         return true;
@@ -109,7 +110,7 @@ public class ProjectExplorerLibraryNode
     List<ProjectExplorerModel.Node<T>> nodeList = new ArrayList<ProjectExplorerModel.Node<T>>();
     int oldPos = startIndex;
 
-    for (Enumeration<?> en = children(); en.hasMoreElements();) {
+    for (Enumeration<?> en = children(); en.hasMoreElements(); ) {
       Object child = en.nextElement();
       if (child.getClass() == t) {
         @SuppressWarnings("unchecked")
@@ -143,7 +144,7 @@ public class ProjectExplorerLibraryNode
         nodeList.add(node);
         insertionCount++;
       } else {
-        node.newIndex = oldPos;
+        node.newIndex = actualPos;
         oldPos++;
       }
       actualPos++;
@@ -164,9 +165,8 @@ public class ProjectExplorerLibraryNode
           nodeList.remove(node.oldIndex - startIndex);
 
           for (ProjectExplorerModel.Node<T> other : nodeList) {
-            if (other.oldIndex > node.oldIndex) {
+            if (other.oldIndex > node.oldIndex)
               other.oldIndex--;
-            }
           }
           delIndex[delPos] = node.oldIndex;
           delNodes[delPos] = node;

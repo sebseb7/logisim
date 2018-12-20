@@ -326,7 +326,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 
     setModel(new ProjectExplorerModel(proj, showAll));
     setRootVisible(!showAll); // hide the fake root when showing all
-    setShowsRootHandles(!showAll); // but show handles instead
+    setShowsRootHandles(false); // do not show root handles
     if (showAll) {
       for (Enumeration<?> en =
           ((ProjectExplorerModel.Node<?>)getModel().getRoot()).children(); en.hasMoreElements();) {
