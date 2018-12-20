@@ -79,6 +79,7 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.InputEventUtil;
 
@@ -251,43 +252,6 @@ public class XmlWriter {
     this.outFilepath = outFilepath;
   }
 
-  void addAttributeSetContent(Element elt, AttributeSet attrs,
-      AttributeDefaultProvider source) {
-    if (attrs == null)
-      return;
-    LogisimVersion ver = Main.VERSION;
-    if (source != null && source.isAllDefaultValues(attrs, ver))
-      return;
-    for (Attribute<?> attrBase : attrs.getAttributes()) {
-      @SuppressWarnings("unchecked")
-      Attribute<Object> attr = (Attribute<Object>) attrBase;
-      Object val = attrs.getValue(attr);
-      if (attrs.isToSave(attr) && val != null) {
-        Object dflt = source == null ? null : source
-            .getDefaultAttributeValue(attr, ver);
-        if (dflt == null || !dflt.equals(val)) {
-          Element a = doc.createElement("a");
-          a.setAttribute("name", attr.getName());
-          String value = attr.toStandardString(val);
-          if (attr.getName().equals("filePath")
-              && outFilepath != null) {
-            Path outFP = Paths.get(outFilepath);
-            Path attrValP = Paths.get(value);
-            value = (outFP.relativize(attrValP)).toString();
-            a.setAttribute("val", value);
-          } else {
-            if (value.indexOf("\n") >= 0) {
-              a.appendChild(doc.createTextNode(value));
-            } else {
-              a.setAttribute("val", attr.toStandardString(val));
-            }
-          }
-          elt.appendChild(a);
-        }
-      }
-    }
-  }
-
   Library findLibrary(ComponentFactory source) {
     if (file.contains(source)) {
       return file;
@@ -310,10 +274,17 @@ public class XmlWriter {
     return null;
   }
 
-  Element fromCircuit(Circuit circuit) {
+  void addAttributeSetContent(Element elt,
+      AttributeSet attrs, AttributeDefaultProvider source) {
+    XmlAttributesUtil.addAttributeSetContent(doc, outFilepath, elt, attrs, source);
+  }
+
+  Element fromCircuit(Circuit circuit, AddTool tool) {
     Element ret = doc.createElement("circuit");
     ret.setAttribute("name", circuit.getName());
-    addAttributeSetContent(ret, circuit.getStaticAttributes(), null);
+    addAttributeSetContent(ret, circuit.getStaticAttributes(), circuit);
+    if (tool != null)
+      addAttributeSetContent(ret, tool.getAttributeSet(), tool);
     if (!circuit.getAppearance().isDefaultAppearance()) {
       Element appear = doc.createElement("appear");
       for (Object o : circuit.getAppearance().getObjectsFromBottom()) {
@@ -443,7 +414,7 @@ public class XmlWriter {
     ret.appendChild(fromToolbarData());
 
     for (Circuit circ : file.getCircuits()) {
-      ret.appendChild(fromCircuit(circ));
+      ret.appendChild(fromCircuit(circ, file.findTool(circ)));
     }
     for (VhdlContent vhdl : file.getVhdlContents()) {
       ret.appendChild(fromVhdl(vhdl));
@@ -515,7 +486,7 @@ public class XmlWriter {
     Element e = doc.createElement("selection");
     if (sel instanceof Circuit) {
       e.setAttribute("type", "circuit"); // not used by parser
-      e.appendChild(fromCircuit((Circuit)sel));
+      e.appendChild(fromCircuit((Circuit)sel, file.findTool((Circuit)sel)));
     } else if (sel instanceof VhdlContent) {
       e.setAttribute("type", "vhdl"); // not used by parser
       e.appendChild(fromVhdl((VhdlContent)sel));
@@ -542,7 +513,7 @@ public class XmlWriter {
     ret.appendChild(e);
 
     for (Circuit circ : usedCircs)
-      ret.appendChild(fromCircuit(circ));
+      ret.appendChild(fromCircuit(circ, file.findTool(circ)));
     for (VhdlContent vhdl : usedVhdl)
       ret.appendChild(fromVhdl(vhdl));
     return ret;

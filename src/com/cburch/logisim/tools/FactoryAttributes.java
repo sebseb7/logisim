@@ -64,6 +64,14 @@ public class FactoryAttributes implements AttributeSet, AttributeListener, Clone
     this.listeners = new ArrayList<AttributeListener>();
   }
 
+  public FactoryAttributes(FactoryAttributes other) {
+    this.libraryClass = other.libraryClass;
+    this.desc = other.desc;
+    this.factory = other.factory;
+    this.baseAttrs = null;
+    this.listeners = new ArrayList<AttributeListener>();
+  }
+
   public void addAttributeListener(AttributeListener l) {
     listeners.add(l);
   }

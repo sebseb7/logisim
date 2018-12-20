@@ -107,7 +107,10 @@ public class AddTool extends Tool {
     this.factory = base.factory;
     this.bounds = base.bounds;
     this.shouldSnap = base.shouldSnap;
-    this.attrs = (AttributeSet) base.attrs.clone();
+    if (base.isAllDefaultValues(base.attrs, null))
+      this.attrs = new FactoryAttributes((FactoryAttributes)base.attrs);
+    else
+      this.attrs = (AttributeSet) base.attrs.clone();
     attrs.addAttributeListener(new MyAttributeListener());
   }
 

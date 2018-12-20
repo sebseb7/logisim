@@ -417,6 +417,19 @@ public class LogisimFile extends Library implements LibraryEventSource {
     return -1;
   }
 
+  public AddTool findTool(Circuit circ) {
+    for (int i = 0; i < tools.size(); i++) {
+      AddTool tool = tools.get(i);
+      if (tool.getFactory() instanceof SubcircuitFactory) {
+        SubcircuitFactory factory = (SubcircuitFactory) tool.getFactory();
+        if (factory.getSubcircuit() == circ) {
+          return tool;
+        }
+      }
+    }
+    return null;
+  }
+
   public List<VhdlContent> getVhdlContents() {
     List<VhdlContent> ret = new ArrayList<VhdlContent>(tools.size());
     for (AddTool tool : tools) {

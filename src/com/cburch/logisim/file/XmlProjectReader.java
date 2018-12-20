@@ -62,6 +62,7 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.InputEventUtil;
 
@@ -246,6 +247,18 @@ class XmlProjectReader extends XmlReader {
       // fourth, execute a transaction that initializes all the circuits
       XmlCircuitReader builder = new XmlCircuitReader(this, circuitsData);
       builder.execute();
+
+      // last, configure AddTool attributes for circuits within the project
+      for (CircuitData cd : circuitsData) {
+        AddTool tool = file.findTool(cd.circuit);
+        if (tool == null)
+          continue;
+        try {
+          initAttributeSet(cd.circuitElement, tool.getAttributeSet(), tool);
+        } catch (XmlReaderException e) {
+            addErrors(e, "circuit tool attributes");
+        }
+      }
     }
 
     Tool toTool(Element elt) throws XmlReaderException {
@@ -571,8 +584,7 @@ class XmlProjectReader extends XmlReader {
    * @param attrValuesList
    *            empty list that will contain the values found
    */
-  private static void inspectCompNodes(Element root,
-      List<String> attrValuesList) {
+  private static void inspectCompNodes(Element root, List<String> attrValuesList) {
     assert (root != null);
     assert (attrValuesList != null);
     assert (attrValuesList.isEmpty());
@@ -692,8 +704,7 @@ class XmlProjectReader extends XmlReader {
    * @param validLabels
    *            map containing valid label values
    */
-  private static void replaceCompNodes(Element root,
-      Map<String, String> validLabels) {
+  private static void replaceCompNodes(Element root, Map<String, String> validLabels) {
     assert (root != null);
     assert (validLabels != null);
 
@@ -816,55 +827,7 @@ class XmlProjectReader extends XmlReader {
         }
       }
     }
-    // if (version.compareTo(LogisimVersion.get(4, 0, 0)) < 0) {
-    //   // Pre 4.0.0, the #Base library had some useless tools. These are gone.
-    //   removeDeprecatedBaseTools(doc, root);
-    // }
   }
-
-  // private void removeDeprecatedTools(Base baseLib, String baseName, Element section) {
-  //   ArrayList<Element> toRemove = new ArrayList<>();
-  //   for (Element elt : XmlIterator.forChildElements(section, "tool")) {
-  //     String toolName = elt.getAttribute("name");
-  //     String toolLib = elt.getAttribute("lib");
-  //     if ((baseName == null || baseName.equals(toolLib))
-  //         && baseLib.isDeprecatedTool(toolName))
-  //       toRemove.add(elt);
-  //   }
-  //   for (Element elt : toRemove)
-  //     section.removeChild(elt);
-  // }
-
-  // private void removeDeprecatedBaseTools(Document doc, Element root) {
-  //   Base baseLib = null;
-  //   for (Library lib : loader.getBuiltin().getLibraries()) {
-  //     if (lib.getName().equals("Base")) {
-  //       baseLib = (Base)lib;
-  //       break;
-  //     }
-  //   }
-  //   // // remove #Base lib references to deprecated tools
-  //   // Element baseElt = null;
-  //   // String baseName = null;
-  //   // for (Element libElt : XmlIterator.forChildElements(root, "lib")) {
-  //   //   String desc = libElt.getAttribute("desc");
-  //   //   String name = libElt.getAttribute("name");
-  //   //   if (desc != null && desc.equals("#Base")) {
-  //   //     baseElt = libElt;
-  //   //     baseName = name;
-  //   //     // remove all references to deprecated tools within #Base lib element
-  //   //     removeDeprecatedTools(baseLib, null, libElt);
-  //   //   }
-  //   // }
-
-  //   // // remove mapping references to deprecated tools
-  //   // for (Element mapElt : XmlIterator.forChildElements(root, "mappings"))
-  //   //   removeDeprecatedTools(baseLib, baseName, mapElt);
-
-  //   // // remove toolbar references to deprecated tools
-  //   // for (Element mapElt : XmlIterator.forChildElements(root, "toolbar"))
-  //   //   removeDeprecatedTools(baseLib, baseName, mapElt);
-  // }
 
   private void addBuiltinLibrariesIfMissing(Document doc, Element root) {
     HashSet<String> found = new HashSet<>();
@@ -894,7 +857,7 @@ class XmlProjectReader extends XmlReader {
         if (attrs != null) {
           Element toAdd = doc.createElement("tool");
           toAdd.setAttribute("name", t.getName());
-          addAttributeSetContent(doc, toAdd, attrs, t);
+          XmlAttributesUtil.addAttributeSetContent(doc, null, toAdd, attrs, t);
           if (toAdd.getChildNodes().getLength() > 0) {
             libElt.appendChild(toAdd);
           }
@@ -903,44 +866,6 @@ class XmlProjectReader extends XmlReader {
       root.insertBefore(libElt, end);
       found.add(desc);
       maxLib++;
-    }
-  }
-
-  void addAttributeSetContent(Document doc, Element elt, AttributeSet attrs,
-      AttributeDefaultProvider source) {
-    String outFilepath = null;
-    if (attrs == null)
-      return;
-    LogisimVersion ver = Main.VERSION;
-    if (source != null && source.isAllDefaultValues(attrs, ver))
-      return;
-    for (Attribute<?> attrBase : attrs.getAttributes()) {
-      @SuppressWarnings("unchecked")
-      Attribute<Object> attr = (Attribute<Object>) attrBase;
-      Object val = attrs.getValue(attr);
-      if (attrs.isToSave(attr) && val != null) {
-        Object dflt = source == null
-            ? null : source.getDefaultAttributeValue(attr, ver);
-        if (dflt == null || !dflt.equals(val)) {
-          Element a = doc.createElement("a");
-          a.setAttribute("name", attr.getName());
-          String value = attr.toStandardString(val);
-          if (attr.getName().equals("filePath")
-              && outFilepath != null) {
-            Path outFP = Paths.get(outFilepath);
-            Path attrValP = Paths.get(value);
-            value = (outFP.relativize(attrValP)).toString();
-            a.setAttribute("val", value);
-          } else {
-            if (value.indexOf("\n") >= 0) {
-              a.appendChild(doc.createTextNode(value));
-            } else {
-              a.setAttribute("val", attr.toStandardString(val));
-            }
-          }
-          elt.appendChild(a);
-        }
-      }
     }
   }
 

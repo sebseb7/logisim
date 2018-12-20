@@ -48,6 +48,7 @@ import java.util.WeakHashMap;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.fpgagui.FPGAReport;
+import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.circuit.appear.CircuitAppearance;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.comp.Component;
@@ -56,6 +57,8 @@ import com.cburch.logisim.comp.ComponentEvent;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.comp.ComponentListener;
 import com.cburch.logisim.comp.EndData;
+import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -69,14 +72,14 @@ import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.std.hdl.VhdlEntity;
-import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.std.memory.Rom;
+import com.cburch.logisim.std.wiring.Clock;
+import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.util.CollectionUtil;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
-public class Circuit {
+public class Circuit implements AttributeDefaultProvider {
   private class EndChangedTransaction extends CircuitTransaction {
     private Component comp;
     private Map<Location, EndData> toRemove;
@@ -798,5 +801,19 @@ public class Circuit {
   @Override
   public String toString() {
     return staticAttrs.getValue(CircuitAttributes.NAME_ATTR);
+  }
+  
+  public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver) {
+    return false;
+  }
+
+  public Object getDefaultAttributeValue(Attribute<?> attr, LogisimVersion ver) {
+    if (attr == CircuitAttributes.NAME_ATTR)
+      return null;
+    for (int i = 0; i < CircuitAttributes.STATIC_ATTRS.length; i++) {
+      if (CircuitAttributes.STATIC_ATTRS[i] == attr)
+        return CircuitAttributes.STATIC_DEFAULTS[i];
+    }
+    return null;
   }
 }
