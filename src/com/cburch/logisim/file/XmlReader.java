@@ -228,6 +228,8 @@ class XmlReader {
           break;
         @SuppressWarnings("unchecked")
         Attribute<Object> attr = (Attribute<Object>) attrList.get(i);
+        if (!attrs.isToSave(attr))
+          continue; // ignore attributes that should never have been saved (like circuit name)
         String attrName = attr.getName();
         String attrVal = attrsDefined.get(attrName);
         if (attrVal == null) {

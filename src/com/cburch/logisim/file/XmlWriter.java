@@ -289,17 +289,13 @@ public class XmlWriter {
   }
 
   Library findLibrary(ComponentFactory source) {
-    // System.out.printf("- searching for library of %s\n", source);
     if (file.contains(source)) {
-      // System.out.printf("- found in file %s\n", file);
       return file;
     }
     for (Library lib : file.getLibraries()) {
-      // System.out.printf("- checking in lib %s\n", lib);
       if (lib.contains(source))
         return lib;
     }
-    // System.out.printf("- no library found for %s\n", source);
     return null;
   }
 
@@ -380,10 +376,7 @@ public class XmlWriter {
     if (libs.containsKey(lib))
       return null;
     String name = "" + libs.size();
-    // System.out.println("loader: " + loader);
-    // System.out.println("lib: " + lib);
     String desc = loader.getDescriptor(lib);
-    // System.out.println("desc: " + desc);
     if (desc == null) { // should never happen for a loaded file?
       loader.showError("internal error: missing library: " + lib.getName());
       return null;

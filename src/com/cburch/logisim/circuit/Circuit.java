@@ -151,9 +151,6 @@ public class Circuit {
     }
   }
 
-  //
-  // helper methods for other classes in package
-  //
   public static boolean isInput(Component comp) {
     return comp.getEnd(0).getType() != EndData.INPUT_ONLY;
   }
@@ -169,7 +166,7 @@ public class Circuit {
   private ArrayList<Component> clocks = new ArrayList<Component>();
   private CircuitLocker locker;
 
-  final static Logger logger = LoggerFactory.getLogger(Circuit.class);
+  // final static Logger logger = LoggerFactory.getLogger(Circuit.class);
 
   private WeakHashMap<Component, Circuit> circuitsUsingThis;
   private Netlist MyNetList;
@@ -428,8 +425,7 @@ public class Circuit {
           try {
             c.draw(context);
           } catch (RuntimeException e) {
-            // this is a JAR developer error - display it and move
-            // on
+            // this is a JAR developer error - display it and move on
             e.printStackTrace();
           }
         }
@@ -440,8 +436,6 @@ public class Circuit {
   }
 
   private void fireEvent(CircuitEvent event) {
-    // System.out.println("==== Firing CircuitEvent ====");
-    // System.out.println(event);
     for (CircuitListener l : listeners) {
       l.circuitChanged(event);
     }
@@ -775,9 +769,6 @@ public class Circuit {
     listeners.remove(what);
   }
 
-  //
-  // action methods
-  //
   public void setName(String name) {
     staticAttrs.setValue(CircuitAttributes.NAME_ATTR, name);
   }

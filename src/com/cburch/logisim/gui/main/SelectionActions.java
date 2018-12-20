@@ -268,16 +268,16 @@ public class SelectionActions {
     private LayoutClipboard.Clip<Collection<Component>> clip;
     private CircuitTransaction xnReverse, cxnReverse;
     private SelectionSave after;
+    private boolean validated;
 
     PasteComponents(Selection sel, LayoutClipboard.Clip<Collection<Component>> clip) {
       this.sel = sel;
       this.clip = clip;
     }
 
-    @Override
-    public void doIt(Project proj) {
+    boolean circular(Project proj)  {
       Circuit circuit = proj.getCurrentCircuit();
-      
+
       // check if adding these components would cause a circular dependency
       Dependencies dependencies = proj.getDependencies();
       for (Component c : clip.selection) {
@@ -287,11 +287,8 @@ public class SelectionActions {
         Circuit subCirc = ((SubcircuitFactory)factory).getSubcircuit();
         if (clip.circuits.contains(subCirc))
           continue; // no dependency info for this subcircuit
-        if (!dependencies.canAdd(circuit, subCirc)) {
-          proj.getFrame().getCanvas().setErrorMessage(
-              com.cburch.logisim.tools.Strings.S.getter("circularError"));
-          return;
-        }
+        if (!dependencies.canAdd(circuit, subCirc))
+          return true;
       }
 
       // new circuits are not represented in the existing dependencies, so we
@@ -300,21 +297,36 @@ public class SelectionActions {
       // circuit to every dependency of the new circuits.
       for (Circuit c : clip.circuits) {
         HashSet<Circuit> downstream = getDependencies(c, clip.circuits);
-        if (downstream == null) { // failure indicates circularity
-          proj.getFrame().getCanvas().setErrorMessage(
-              com.cburch.logisim.tools.Strings.S.getter("circularError"));
-          return;
-        }
+        if (downstream == null) // failure indicates circularity
+          return true;
         for (Circuit subCirc : downstream) {
           if (clip.circuits.contains(subCirc))
             continue; // not on the boundary between new and old circuits
-          if (!dependencies.canAdd(circuit, subCirc)) {
-            proj.getFrame().getCanvas().setErrorMessage(
-                com.cburch.logisim.tools.Strings.S.getter("circularError"));
-            return;
-          }
+          if (!dependencies.canAdd(circuit, subCirc))
+            return true;
         }
       }
+      return false;
+    }
+
+    boolean valid(Project proj) {
+      if (clip == null)
+        return false;
+      if (validated)
+        return true;
+      if (circular(proj)) {
+        proj.getFrame().getCanvas().setErrorMessage(
+            com.cburch.logisim.tools.Strings.S.getter("circularError"));
+        clip = null;
+        return false;
+      }
+      validated = true;
+      return true;
+    }
+
+    @Override
+    public void doIt(Project proj) {
+      Circuit circuit = proj.getCurrentCircuit();
 
       LogisimFile file = proj.getLogisimFile();
       for (Library lib : clip.libraries)
@@ -404,12 +416,15 @@ public class SelectionActions {
       this.clip = clip;
     }
 
-    @Override
-    public void doIt(Project proj) {
+    boolean valid(Project proj) {
+      if (clip == null)
+        return false;
+      else if (newName != null)
+        return true;
+      newName = confirmName(proj, "", false, clip);
       if (newName == null) {
-        newName = confirmName(proj, "", false, clip);
-        if (newName == null)
-          return;
+        clip = null;
+        return false;
       }
 
       // New components go into a freshly-named circuit, which no other circuit
@@ -420,9 +435,15 @@ public class SelectionActions {
         if (downstream == null) { // failure indicates circularity
           proj.getFrame().getCanvas().setErrorMessage(
               com.cburch.logisim.tools.Strings.S.getter("circularError"));
-          return;
+          clip = null;
+          return false;
         }
       }
+      return true;
+    }
+
+    @Override
+    public void doIt(Project proj) {
 
       LogisimFile file = proj.getLogisimFile();
 
@@ -482,16 +503,19 @@ public class SelectionActions {
       this.clip = clip;
     }
 
-    @Override
-    public void doIt(Project proj) {
+    boolean valid(Project proj) {
+      if (clip == null)
+        return false;
+      else if (newName != null)
+        return true;
+      String oldName = clip.selection.getName();
+      newName = confirmName(proj, oldName, false, clip);
       if (newName == null) {
-        String oldName = clip.selection.getName();
-        newName = confirmName(proj, oldName, false, clip);
-        if (newName == null)
-          return;
-        if (!newName.equals(oldName))
-          clip.selection.setName(newName);
+        clip = null;
+        return false;
       }
+      if (!newName.equals(oldName))
+        clip.selection.setName(newName);
 
       // New circuit is freshly-named, and no other circuit can depend on it. So
       // we only need to make sure there are no circularities within the other
@@ -501,9 +525,15 @@ public class SelectionActions {
         if (downstream == null) { // failure indicates circularity
           proj.getFrame().getCanvas().setErrorMessage(
               com.cburch.logisim.tools.Strings.S.getter("circularError"));
-          return;
+          clip = null;
+          return false;
         }
       }
+      return true;
+    }
+
+    @Override
+    public void doIt(Project proj) {
 
       prevCircuit = proj.getCurrentCircuit();
       prevHdl = proj.getCurrentHdl();
@@ -556,19 +586,26 @@ public class SelectionActions {
       this.clip = clip;
     }
 
-    @Override
-    public void doIt(Project proj) {
+    boolean valid(Project proj) {
+      if (clip == null)
+        return false;
+      else if (newName != null)
+        return true;
+      String oldName = clip.selection.getName();
+      newName = confirmName(proj, oldName, false, clip);
       if (newName == null) {
-        String oldName = clip.selection.getName();
-        newName = confirmName(proj, oldName, false, clip);
-        if (newName == null)
-          return;
-        if (!newName.equals(oldName))
-          clip.selection.setName(newName);
+        clip = null;
+        return false;
       }
+      if (!newName.equals(oldName))
+        clip.selection.setName(newName);
 
       // todo: no dependency tracking for vhdl yet, so no other circuits.
+      return true;
+    }
 
+    @Override
+    public void doIt(Project proj) {
       prevCircuit = proj.getCurrentCircuit();
       prevHdl = proj.getCurrentHdl();
 
@@ -720,34 +757,39 @@ public class SelectionActions {
     LayoutClipboard.Clip<Collection<Component>> clip = LayoutClipboard.forComponents.get(proj);
     if (clip == null)
       return null;
-    return new PasteComponents(sel, clip);
+    PasteComponents act = new PasteComponents(sel, clip);
+    return act.valid(proj) ? act : null;
   }
 
   public static Action pasteComponentsAsCircuitMaybe(Project proj) {
     LayoutClipboard.Clip<Collection<Component>> clip = LayoutClipboard.forComponents.get(proj);
     if (clip == null)
       return null;
-    return new PasteComponentsAsCircuit(clip);
+    PasteComponentsAsCircuit act = new PasteComponentsAsCircuit(clip);
+    return act.valid(proj) ? act : null;
   }
 
   public static Action pasteCircuitMaybe(Project proj) {
     LayoutClipboard.Clip<Circuit> clip = LayoutClipboard.forCircuit.get(proj);
     if (clip == null)
       return null;
-    return new PasteCircuit(clip);
+    PasteCircuit act = new PasteCircuit(clip);
+    return act.valid(proj) ? act : null;
   }
 
   public static Action pasteVhdlMaybe(Project proj) {
     LayoutClipboard.Clip<VhdlContent> clip = LayoutClipboard.forVhdl.get(proj);
     if (clip == null)
       return null;
-    return new PasteVhdl(clip);
+    PasteVhdl act = new PasteVhdl(clip);
+    return act.valid(proj) ? act : null;
   }
 
   public static Action pasteLibraryMaybe(Project proj) {
     LayoutClipboard.Clip<Library> clip = LayoutClipboard.forLibrary.get(proj);
     if (clip == null)
       return null;
+    // todo: error checking for naming clashes / duplicate libraries?
     return LogisimFileActions.loadLibrary(clip.selection);
   }
 

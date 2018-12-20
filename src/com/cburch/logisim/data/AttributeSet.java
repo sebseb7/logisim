@@ -53,5 +53,7 @@ public interface AttributeSet {
 
   public void setReadOnly(Attribute<?> attr, boolean value); // optional
 
+  public default void setToSave(Attribute<?> attr, boolean value) { } // optional
+
   public <V> void setValue(Attribute<V> attr, V value);
 }

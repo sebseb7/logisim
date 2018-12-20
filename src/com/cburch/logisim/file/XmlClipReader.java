@@ -101,19 +101,18 @@ public class XmlClipReader extends XmlReader {
     public CircuitTransaction getCircuitTransaction() {
       if (selectedCircuit != null && !circuitsData.contains(selectedCircuit))
         circuitsData.add(selectedCircuit);
+      else if (circuitsData.isEmpty())
+        return null;
       return new XmlCircuitReader(this, circuitsData);
     }
 
     Library findLibrary(String name) throws XmlReaderException {
-      // System.out.println("finding library " + name);
       if (name == null || name.equals(""))
         return file;
       String desc = lDesc.get(name);
-      // System.out.println("desc library " + desc);
       if (desc == null)
         throw new XmlReaderException(S.fmt("libMissingError", name));
       for (Library lib : file.getLibraries()) {
-        // System.out.printf("file contains lib: %s\n", LibraryManager.instance.getDescriptor(loader, lib));
         if (LibraryManager.instance.getDescriptor(loader, lib).equals(desc))
           return lib;
       }
@@ -140,15 +139,11 @@ public class XmlClipReader extends XmlReader {
         return tool;
       Element elt;
       elt = cDep.get(name);
-      if (elt != null) {
-        // System.out.println("missing circuit: " + name);
+      if (elt != null)
         return addMissingCircuit(name, elt);
-      }
       elt = vDep.get(name);
-      if (elt != null) {
-        // System.out.println("missing vhdl: " + name);
+      if (elt != null)
         return addMissingVhdl(name, elt);
-      }
       throw new XmlReaderException(S.fmt("compUnknownError", name));
     }
 
@@ -211,7 +206,6 @@ public class XmlClipReader extends XmlReader {
       // Determine the version producing this clipboard selection.
       // Note: clipdata can only come from 4.0.0-HC or above.
       sourceVersion = LogisimVersion.parse(elt.getAttribute("source"));
-      // System.out.printf("src version is %s\n", sourceVersion);
       
       // first, record clipboard library, circuit, and vhdl names
       for (Element o : XmlIterator.forChildElements(elt, "lib")) {
@@ -316,7 +310,6 @@ public class XmlClipReader extends XmlReader {
     // elt = ensureLogisimCompatibility(elt);
     // considerRepairs(doc, elt);
    
-    // System.out.println("dst file is " + dstFile);
     ReadClipContext context = new ReadClipContext(dstFile);
 
     context.parseSelection(elt);

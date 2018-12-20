@@ -79,8 +79,7 @@ public class LayoutClipboard<T>
       circuits = ctx.getCircuits();
       vhdl = ctx.getVhdl();
       libraries = ctx.getLibraries();
-      if (!circuits.isEmpty())
-        circuitTransaction = ctx.getCircuitTransaction();
+      circuitTransaction = ctx.getCircuitTransaction();
     }
   }
 

@@ -104,7 +104,8 @@ public class CircuitAttributes extends AbstractAttributeSet {
 
   static AttributeSet createBaseAttrs(Circuit source, String name) {
     AttributeSet ret = AttributeSets.fixedSet(STATIC_ATTRS, STATIC_DEFAULTS);
-    ret.setValue(CircuitAttributes.NAME_ATTR, name);
+    ret.setToSave(NAME_ATTR, false); // name already appears as an attribute of circuit's outer xml node
+    ret.setValue(NAME_ATTR, name);
     ret.addAttributeListener(new StaticListener(source));
     return ret;
   }
@@ -258,9 +259,8 @@ public class CircuitAttributes extends AbstractAttributeSet {
       fireAttributeValueChanged(LABEL_LOCATION_ATTR, val);
     } else {
       source.getStaticAttributes().setValue(attr, value);
-      if (attr == NAME_ATTR) {
+      if (attr == NAME_ATTR)
         source.fireEvent(CircuitEvent.ACTION_SET_NAME, value);
-      }
     }
   }
 }

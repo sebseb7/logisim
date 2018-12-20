@@ -122,7 +122,6 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       if (ret instanceof JComponent) {
         JComponent comp = (JComponent) ret;
         comp.setToolTipText(null);
-
       }
       if (value instanceof ProjectExplorerToolNode) {
         ProjectExplorerToolNode toolNode = (ProjectExplorerToolNode) value;
@@ -134,11 +133,10 @@ public class ProjectExplorer extends JTree implements LocaleListener {
             Circuit circ = null;
             VhdlContent vhdl = null;
             ComponentFactory fact = ((AddTool) tool).getFactory(false);
-            if (fact instanceof SubcircuitFactory) {
+            if (fact instanceof SubcircuitFactory)
               circ = ((SubcircuitFactory) fact).getSubcircuit();
-            } else if (fact instanceof VhdlEntity) {
+            else if (fact instanceof VhdlEntity)
               vhdl = ((VhdlEntity) fact).getContent();
-            }
             if (proj.getFrame().getHdlEditorView() == null)
               viewed = (circ != null && circ == proj.getCurrentCircuit());
             else
@@ -451,7 +449,6 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     @Override
     public boolean canImport(TransferHandler.TransferSupport support) {
       if (!support.isDataFlavorSupported(AddTool.dnd.dataFlavor)) {
-        // System.out.println("cant import non-AddTool");
         return false;
       }
       try {
@@ -461,20 +458,16 @@ public class ProjectExplorer extends JTree implements LocaleListener {
           if (newPath.getPathCount() != 1)
             return false;
         }
-        // System.out.println("can import addtool?");
         AddTool incoming = (AddTool)support.getTransferable().getTransferData(AddTool.dnd.dataFlavor);
         if (incoming.isBuiltin())
           return false; // can't import a builtin tool
-        // System.out.println("incoming = " + incoming + " removing = " + removing);
         if (incoming == removing)
           return true;
         ComponentFactory cf = incoming.getFactory(false);
         if (cf == null)
           return false;
-        // System.out.println("cf = " + cf + " : " + cf.getClass());
         if (!(cf instanceof SubcircuitFactory))
           return false;
-        // System.out.println("yup");
         return true;
       } catch (Throwable e) {
         e.printStackTrace();
@@ -501,7 +494,6 @@ public class ProjectExplorer extends JTree implements LocaleListener {
             if (newPath.getPathCount() != 1)
               return false;
             Object o = newPath.getPathComponent(0);
-            System.out.println("o = " + o);
             if (o != getModel().getRoot())
               return false;
             newIdx = dl.getChildIndex();

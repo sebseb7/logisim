@@ -43,7 +43,7 @@ public class AttributeSets {
   static class FixedSet extends AbstractAttributeSet {
     private List<Attribute<?>> attrs;
     private Object[] values;
-    private int readOnly = 0;
+    private int readOnly = 0, dontSave = 0;
 
     FixedSet(Attribute<?>[] attrs, Object[] initValues) {
       if (attrs.length != initValues.length) {
@@ -64,6 +64,7 @@ public class AttributeSets {
       dest.attrs = this.attrs;
       dest.values = this.values.clone();
       dest.readOnly = this.readOnly;
+      dest.dontSave = this.dontSave;
     }
 
     @Override
@@ -106,6 +107,31 @@ public class AttributeSets {
         readOnly |= (1 << index);
       else
         readOnly &= ~(1 << index);
+    }
+
+    @Override
+    public boolean isToSave(Attribute<?> attr) {
+      int index = attrs.indexOf(attr);
+      if (index < 0)
+        return true;
+      return isToSave(index);
+    }
+
+    private boolean isToSave(int index) {
+      return ((dontSave >> index) & 1) == 0;
+    }
+
+    @Override
+    public void setToSave(Attribute<?> attr, boolean value) {
+      int index = attrs.indexOf(attr);
+      if (index < 0)
+        throw new IllegalArgumentException("attribute "
+            + attr.getName() + " absent");
+
+      if (!value)
+        dontSave |= (1 << index);
+      else
+        dontSave &= ~(1 << index);
     }
 
     @Override
