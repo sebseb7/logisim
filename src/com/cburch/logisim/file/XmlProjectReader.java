@@ -338,33 +338,6 @@ class XmlProjectReader extends XmlReader {
     }
   }
 
-  /**
-   * Sets to the empty string any label attribute in tool nodes derived from
-   * elt.
-   *
-   * @param root
-   *            root node
-   */
-  private static void cleanupToolsLabel(Element root) {
-    assert (root != null);
-
-    // Iterate on tools
-    for (Element toolElt : XmlIterator.forChildElements(root, "tool")) {
-      // Iterate on attribute nodes
-      for (Element attrElt : XmlIterator.forChildElements(toolElt, "a")) {
-        // Each attribute node should have a name field
-        if (attrElt.hasAttribute("name")) {
-          String aName = attrElt.getAttribute("name");
-          if (aName.equals("label")) {
-            // Found a label node in a tool, clean it up!
-            attrElt.setAttribute("val", "");
-          }
-        }
-      }
-    }
-
-  }
-
   public static Element ensureLogisimCompatibility(Element elt) {
     Map<String, String> validLabels;
     validLabels = findValidLabels(elt, "circuit", "name");
@@ -373,10 +346,6 @@ class XmlProjectReader extends XmlReader {
     applyValidLabels(elt, "circuit", "label", validLabels);
     validLabels = findValidLabels(elt, "comp", "label");
     applyValidLabels(elt, "comp", "label", validLabels);
-    // In old, buggy Logisim versions, labels where incorrectly
-    // stored also in toolbar and lib components. If this is the
-    // case, clean them up.
-    fixInvalidToolbarLib(elt);
     return (elt);
   }
 
@@ -432,28 +401,6 @@ class XmlProjectReader extends XmlReader {
     }
 
     return validLabels;
-  }
-
-  /**
-   * In some old version of Logisim, buggy Logisim versions, labels where
-   * incorrectly stored also in toolbar and lib components. If this is the
-   * case, clean them up..
-   *
-   * @param root
-   *            root element of the XML tree
-   */
-  private static void fixInvalidToolbarLib(Element root) {
-    assert (root != null);
-
-    // Iterate on toolbars -- though there should be only one!
-    for (Element toolbarElt : XmlIterator.forChildElements(root, "toolbar")) {
-      cleanupToolsLabel(toolbarElt);
-    }
-
-    // Iterate on libs
-    for (Element libsElt : XmlIterator.forChildElements(root, "lib")) {
-      cleanupToolsLabel(libsElt);
-    }
   }
 
   /**

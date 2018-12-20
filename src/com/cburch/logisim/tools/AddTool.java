@@ -58,6 +58,7 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.gui.main.SelectionActions;
 import com.cburch.logisim.gui.main.ToolAttributeAction;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Dependencies;
@@ -425,6 +426,12 @@ public class AddTool extends Tool {
 
       Location loc = Location.create(e.getX(), e.getY());
       AttributeSet attrsCopy = (AttributeSet) attrs.clone();
+      String label = attrsCopy.getValue(StdAttr.LABEL);
+      if (label != null && !label.equals("")) {
+        String newLabel = canvas.getCircuit().chooseUniqueLabel(label);
+        if (!newLabel.equals(label))
+            attrsCopy.setValue(StdAttr.LABEL, newLabel);
+      }
       ComponentFactory source = getFactory();
       if (source == null)
         return;

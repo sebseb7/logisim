@@ -900,9 +900,6 @@ public class Canvas extends JPanel
     }
   }
 
-  //
-  // access methods
-  //
   public Circuit getCircuit() {
     return proj.getCurrentCircuit();
   }

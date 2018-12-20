@@ -45,9 +45,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.WeakHashMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.fpgagui.FPGAReport;
@@ -596,6 +593,31 @@ public class Circuit {
 
   public Set<Component> getNonWires() {
     return comps;
+  }
+
+  public String chooseUniqueLabel(String suggestion) {
+    String[] p = suggestion.split("(?=\\d+$)", 2);
+    String prefix = p[0];
+    int suffix = 0;
+    String fmt = "%s%d";
+    if (p.length == 2) try {
+      suffix = Integer.parseInt(p[1]);
+      int len = p[0].length();
+      fmt = "%s%0" + len + "d";
+    }
+    catch (NumberFormatException e) { }
+    while (labelConflicts(suggestion)) {
+      suggestion = String.format(fmt, prefix, ++suffix);
+    }
+    return suggestion;
+  }
+
+  private boolean labelConflicts(String label) {
+    for (Component c : comps) {
+      if (label.equals(c.getAttributeSet().getValue(StdAttr.LABEL)))
+        return true;
+    }
+    return false;
   }
 
   public Collection<? extends Component> getNonWires(Location loc) {
