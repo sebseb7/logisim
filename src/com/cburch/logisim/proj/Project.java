@@ -629,4 +629,24 @@ public class Project {
       fireEvent(new ProjectEvent(ProjectEvent.UNDO_COMPLETE, this, action));
     }
   }
+
+  // Search for matching text
+  // - Find on current circuit / current vhdl, vs global search
+  // - Replace?
+  // Things to search:
+  // - vhdl contents
+  // - circuits
+  // - toolbars
+  // - component labels
+  // - text components
+  // - tunnel names
+  // - pin names
+  // - later: memory data ? as bytes? as strings? as hex?
+  
+  // Search for matching components and attributes (e.g. find all 8-wide multiplexors)
+  // - Find on current circuit vs global search
+  // Things to search:
+  // - circuits
+  // - toolbar
+  // - mouse mappings
 }

@@ -383,8 +383,7 @@ public class Circuit implements AttributeDefaultProvider {
       if (!val[i].compatible(v)) {
         if (err == null)
           err = new FailException(i,
-              pinState.getAttributeValue(StdAttr.LABEL), val[i],
-              v);
+              pinState.getAttributeValue(StdAttr.LABEL), val[i], v);
         else
           err.add(new FailException(i,
                 pinState.getAttributeValue(StdAttr.LABEL), val[i], v));

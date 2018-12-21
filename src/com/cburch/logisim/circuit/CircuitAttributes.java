@@ -113,9 +113,6 @@ public class CircuitAttributes extends AbstractAttributeSet {
   public static final Attribute<String> NAME_ATTR = Attributes.forString(
       "circuit", S.getter("circuitName"));
 
-  public static final Attribute<Direction> LABEL_LOCATION_ATTR = Attributes
-      .forDirection("labelloc", S.getter("circuitLabelLocAttr"));
-
   public static final Attribute<String> CIRCUIT_LABEL_ATTR = Attributes
       .forString("clabel", S.getter("circuitLabelAttr"));
 
@@ -146,7 +143,7 @@ public class CircuitAttributes extends AbstractAttributeSet {
 
   private static final List<Attribute<?>> INSTANCE_ATTRS = Arrays
       .asList(new Attribute<?>[] { StdAttr.FACING, StdAttr.LABEL,
-        LABEL_LOCATION_ATTR, StdAttr.LABEL_FONT,
+        StdAttr.LABEL_LOC, StdAttr.LABEL_FONT,
         NAME_ATTR, CIRCUIT_LABEL_ATTR,
         CIRCUIT_LABEL_FACING_ATTR, CIRCUIT_LABEL_FONT_ATTR,
         CIRCUIT_IS_VHDL_BOX, CIRCUIT_VHDL_PATH,
@@ -156,7 +153,7 @@ public class CircuitAttributes extends AbstractAttributeSet {
   private Instance subcircInstance;
   private Direction facing;
   private String label;
-  private Direction labelLocation;
+  private Object labelLocation;
   private Font labelFont;
   private MyListener listener;
   private Instance[] pinInstances;
@@ -200,7 +197,7 @@ public class CircuitAttributes extends AbstractAttributeSet {
       return (E) label;
     if (attr == StdAttr.LABEL_FONT)
       return (E) labelFont;
-    if (attr == LABEL_LOCATION_ATTR)
+    if (attr == StdAttr.LABEL_LOC)
       return (E) labelLocation;
     else
       return source.getStaticAttributes().getValue(attr);
@@ -251,12 +248,11 @@ public class CircuitAttributes extends AbstractAttributeSet {
         return;
       labelFont = val;
       fireAttributeValueChanged(StdAttr.LABEL_FONT, val);
-    } else if (attr == LABEL_LOCATION_ATTR) {
-      Direction val = (Direction) value;
-      if (labelLocation.equals(val))
+    } else if (attr == StdAttr.LABEL_LOC) {
+      if (labelLocation.equals(value))
         return;
-      labelLocation = val;
-      fireAttributeValueChanged(LABEL_LOCATION_ATTR, val);
+      labelLocation = value;
+      fireAttributeValueChanged(StdAttr.LABEL_LOC, value);
     } else {
       source.getStaticAttributes().setValue(attr, value);
       if (attr == NAME_ATTR)

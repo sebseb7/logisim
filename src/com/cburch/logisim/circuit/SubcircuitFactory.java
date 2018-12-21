@@ -36,12 +36,13 @@ import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Map;
+import java.awt.event.KeyEvent;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -64,6 +65,7 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.MenuExtender;
+import com.cburch.logisim.tools.key.DirectionConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.StringUtil;
@@ -111,6 +113,7 @@ public class SubcircuitFactory extends InstanceFactory {
     setFacingAttribute(StdAttr.FACING);
     setDefaultToolTip(new CircuitFeature(null));
     setInstancePoker(SubcircuitPoker.class);
+    setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK));
   }
 
   void computePorts(Instance instance) {
@@ -146,8 +149,7 @@ public class SubcircuitFactory extends InstanceFactory {
 
   private void configureLabel(Instance instance) {
     Bounds bds = instance.getBounds();
-    Direction loc =
-        instance.getAttributeValue(CircuitAttributes.LABEL_LOCATION_ATTR);
+    Object loc = instance.getAttributeValue(StdAttr.LABEL_LOC);
 
     int x = bds.getX() + bds.getWidth() / 2;
     int y = bds.getY() + bds.getHeight() / 2;
@@ -162,6 +164,9 @@ public class SubcircuitFactory extends InstanceFactory {
     } else if (loc == Direction.SOUTH) {
       y = bds.getY() + bds.getHeight() + 2;
       va = GraphicsUtil.V_TOP;
+    } else if (loc == StdAttr.LABEL_CENTER) {
+      ha = GraphicsUtil.H_CENTER;
+      va = GraphicsUtil.V_CENTER;
     } else {
       y = bds.getY() - 2;
       va = GraphicsUtil.V_BASELINE;
@@ -338,7 +343,7 @@ public class SubcircuitFactory extends InstanceFactory {
   public void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
     if (attr == StdAttr.FACING) {
       computePorts(instance);
-    } else if (attr == CircuitAttributes.LABEL_LOCATION_ATTR) {
+    } else if (attr == StdAttr.LABEL_LOC) {
       configureLabel(instance);
     } else if (attr == CircuitAttributes.APPEARANCE_ATTR) {
       final Circuit src = source;
