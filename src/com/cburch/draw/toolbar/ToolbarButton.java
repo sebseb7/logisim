@@ -147,17 +147,17 @@ class ToolbarButton extends JComponent implements MouseListener, DragDrop.Suppor
   public static final DragDrop dnd = new DragDrop(ToolbarButton.class);
   public DragDrop getDragDrop() { return dnd; }
 
-  public void paintDragImage(JComponent dest, Graphics g, Dimension dim) {
-    ((Graphics2D)g).setComposite(java.awt.AlphaComposite.SrcOver.derive(0.75f));
+  public void paintDragImage(JComponent dest, Graphics gr, Dimension dim) {
+		Graphics2D g = (Graphics2D)gr.create();
+    g.setComposite(java.awt.AlphaComposite.SrcOver.derive(0.75f));
     g.setColor(Color.WHITE);
     g.fillRect(0, 0, dim.width, dim.height);
     g.setColor(Color.BLACK);
     g.drawRect(0, 0, dim.width-1, dim.height-1);
-		Graphics g2 = g.create();
 		g.translate(BORDER, BORDER);
 		item.paintIcon(ToolbarButton.this, g);
-    ((Graphics2D)g).setComposite(java.awt.AlphaComposite.SrcOver);
-		g2.dispose();
+    // ((Graphics2D)g).setComposite(java.awt.AlphaComposite.SrcOver);
+		g.dispose();
 	}
 
 }

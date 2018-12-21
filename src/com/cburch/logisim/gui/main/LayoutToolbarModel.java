@@ -33,7 +33,9 @@ package com.cburch.logisim.gui.main;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.datatransfer.DataFlavor;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -42,6 +44,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.cburch.draw.toolbar.AbstractToolbarModel;
+import com.cburch.draw.toolbar.Toolbar;
 import com.cburch.draw.toolbar.ToolbarItem;
 import com.cburch.draw.toolbar.ToolbarSeparator;
 import com.cburch.logisim.circuit.SubcircuitFactory;
@@ -49,6 +52,7 @@ import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
+import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.file.Options;
 import com.cburch.logisim.file.ToolbarData;
@@ -60,7 +64,9 @@ import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.InputEventUtil;
+import com.cburch.logisim.util.StringUtil;
 
 class LayoutToolbarModel extends AbstractToolbarModel {
   private class MyListener implements ProjectListener, AttributeListener,
@@ -110,15 +116,33 @@ class LayoutToolbarModel extends AbstractToolbarModel {
     }
   }
 
+  private static Font FONT = new Font("SansSerif", Font.PLAIN, 12);
+
   private class ToolItem implements ToolbarItem {
     private Tool tool;
+    String label;
+    Bounds labelBounds;
 
     ToolItem(Tool tool) {
       this.tool = tool;
+      if (tool instanceof AddTool) {
+        AddTool addTool = (AddTool)tool;
+        if (addTool.getFactory() instanceof SubcircuitFactory)
+          label = tool.getName();
+        else if (addTool.getFactory() instanceof VhdlEntity)
+          label = tool.getName();
+        if (label != null)
+          labelBounds = StringUtil.estimateBounds(label, FONT);
+      }
     }
 
     public Dimension getDimension(Object orientation) {
-      return new Dimension(24, 24);
+      if (label == null)
+        return new Dimension(24, 24);
+      if (orientation == Toolbar.HORIZONTAL)
+        return new Dimension(24 + 3 + labelBounds.getWidth(), 24);
+      else
+        return new Dimension(24, 24 + 2 + labelBounds.getWidth());
     }
 
     @Override
@@ -147,7 +171,7 @@ class LayoutToolbarModel extends AbstractToolbarModel {
     }
 
     @Override
-    public void paintIcon(Component destination, Graphics g) {
+    public void paintIcon(Component dest, Graphics g) {
       // draw halo
       if (tool == haloedTool
           && AppPreferences.ATTRIBUTE_HALO.getBoolean()) {
@@ -158,10 +182,23 @@ class LayoutToolbarModel extends AbstractToolbarModel {
       // draw tool icon
       g.setColor(Color.BLACK);
       Graphics g_copy = g.create();
-      ComponentDrawContext c = new ComponentDrawContext(destination,
-          null, null, g, g_copy);
+      ComponentDrawContext c = new ComponentDrawContext(dest, null, null, g, g_copy);
       tool.paintIcon(c, 2, 2);
+
+      if (label != null) {
+        Dimension dim = dest.getPreferredSize();
+        if (dim.width >= dim.height) {
+          GraphicsUtil.drawText(g_copy, FONT, label, 24 - 2, 24/2 - 2,
+              GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        } else {
+          ((Graphics2D)g_copy).rotate(-Math.PI/2, 24/2, 24/2);
+          GraphicsUtil.drawText(g_copy, FONT, label, 24 - 2, 24/2 - 2,
+              GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        }
+      }
+
       g_copy.dispose();
+
     }
   }
 
