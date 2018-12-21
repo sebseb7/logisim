@@ -38,9 +38,10 @@ public class LibraryEvent {
   public final static int MOVE_TOOL = 2;
   public final static int ADD_LIBRARY = 3;
   public final static int REMOVE_LIBRARY = 4;
-  public final static int SET_MAIN = 5;
-  public final static int SET_NAME = 6;
-  public static final int DIRTY_STATE = 7;
+  public final static int MOVE_LIBRARY = 5;
+  public final static int SET_MAIN = 6;
+  public final static int SET_NAME = 7;
+  public static final int DIRTY_STATE = 8;
 
   private Library source;
   private int action;

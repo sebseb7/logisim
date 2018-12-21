@@ -32,6 +32,7 @@ package com.cburch.logisim.util;
 
 import java.util.AbstractList;
 import java.util.AbstractSet;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -92,6 +93,16 @@ public class CollectionUtil {
   public static <E> Set<E> createUnmodifiableSetUnion(Set<? extends E> a,
       Set<? extends E> b) {
     return new UnionSet<E>(a, b);
+  }
+
+  public static int[] toArray(ArrayList<Integer> list) {
+    if (list == null)
+      return null;
+    int[] arr = new int[list.size()];
+    int i = 0;
+    for (Integer v : list)
+      arr[i++] = v;
+    return arr;
   }
 
   private CollectionUtil() {

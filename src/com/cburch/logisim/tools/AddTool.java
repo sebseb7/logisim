@@ -68,6 +68,7 @@ import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.key.KeyConfigurationEvent;
 import com.cburch.logisim.tools.key.KeyConfigurationResult;
 import com.cburch.logisim.tools.key.KeyConfigurator;
+import com.cburch.logisim.util.DragDrop;
 
 public class AddTool extends Tool {
 

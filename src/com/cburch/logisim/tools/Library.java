@@ -30,12 +30,24 @@
 
 package com.cburch.logisim.tools;
 
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.util.Set;
 import java.util.Collections;
 import java.util.List;
 
-import com.cburch.logisim.comp.ComponentFactory;
+import javax.swing.Icon;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.UIManager;
 
-public abstract class Library {
+import com.cburch.logisim.comp.ComponentFactory;
+import com.cburch.logisim.util.DragDrop;
+
+public abstract class Library implements DragDrop.Support, DragDrop.Ghost {
   public boolean contains(ComponentFactory query) {
     return indexOf(query) >= 0;
   }
@@ -105,6 +117,36 @@ public abstract class Library {
 
   public boolean displayInToolbox() {
     return true;
+  }
+
+  public static final DragDrop dnd = new DragDrop(Library.class);
+  public DragDrop getDragDrop() { return dnd; }
+
+  JDragLabel dragLabel;
+  private class JDragLabel extends JLabel {
+    public void publicPaintComponent(Graphics g) { paintComponent(g); }
+  }
+
+  private JDragLabel getDragLabel() {
+    if (dragLabel != null)
+      return dragLabel;
+    dragLabel = new JDragLabel();
+    dragLabel.setOpaque(true);
+    // dragLabel.setFont(plainFont);
+    dragLabel.setText(getDisplayName());
+    dragLabel.setIcon(UIManager.getIcon("Tree.closedIcon"));
+    return dragLabel;
+  }
+
+  public void paintDragImage(JComponent dest, Graphics g, Dimension dim) {
+    JDragLabel l = getDragLabel();
+    l.setSize(dim);
+    l.setLocation(0, 0);
+    getDragLabel().publicPaintComponent(g);
+  }
+
+  public Dimension getSize() {
+    return getDragLabel().getPreferredSize();
   }
 
 }

@@ -76,7 +76,6 @@ import com.cburch.logisim.gui.main.SelectionActions;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
-import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.AddTool;
@@ -163,7 +162,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     }
   }
   private class MyListener implements MouseListener, TreeSelectionListener,
-          ProjectListener, PropertyChangeListener {
+          PropertyChangeListener {
     private void checkForPopup(MouseEvent e) {
       if (e.isPopupTrigger()) {
         TreePath path = getPathForLocation(e.getX(), e.getY());
@@ -186,14 +185,8 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       }
     }
 
-    //
-    // MouseListener methods
-    //
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
+    public void mouseEntered(MouseEvent e) { } 
+    public void mouseExited(MouseEvent e) { }
 
     public void mousePressed(MouseEvent e) {
       ProjectExplorer.this.requestFocus();
@@ -204,35 +197,12 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       checkForPopup(e);
     }
 
-    void changedNode(Object o) {
-      ProjectExplorerModel model = (ProjectExplorerModel) getModel();
-      if (model != null && o instanceof Tool) {
-        ProjectExplorerModel.Node<Tool> node = model.findTool((Tool)o);
-        if (node != null)
-          node.fireNodeChanged();
-      }
-    }
-
-    public void projectChanged(ProjectEvent event) {
-      int act = event.getAction();
-      if (act == ProjectEvent.ACTION_SET_CURRENT || act == ProjectEvent.ACTION_SET_TOOL) {
-        changedNode(event.getOldData());
-        changedNode(event.getData());
-      }
-    }
-
-    //
-    // PropertyChangeListener methods
-    //
     public void propertyChange(PropertyChangeEvent event) {
       if (AppPreferences.GATE_SHAPE.isSource(event)) {
         ProjectExplorer.this.repaint();
       }
     }
 
-    //
-    // TreeSelectionListener methods
-    //
     public void valueChanged(TreeSelectionEvent e) {
       TreePath path = e.getNewLeadSelectionPath();
       if (listener != null) {
@@ -323,17 +293,15 @@ public class ProjectExplorer extends JTree implements LocaleListener {
   public ProjectExplorer(Project proj, boolean showAll) {
     super();
     this.proj = proj;
-
-    setModel(new ProjectExplorerModel(proj, showAll));
+    ProjectExplorerModel model = new ProjectExplorerModel(proj, showAll);
+    setModel(model);
     setRootVisible(!showAll); // hide the fake root when showing all
     setShowsRootHandles(false); // do not show root handles
     if (showAll) {
-      for (Enumeration<?> en =
-          ((ProjectExplorerModel.Node<?>)getModel().getRoot()).children(); en.hasMoreElements();) {
-        Object n = en.nextElement();
-        if (n instanceof ProjectExplorerModel.Node<?>)
-          expandPath(new TreePath(((ProjectExplorerModel.Node<?>)n).getPath()));
-      }
+      // expand first level children
+      ProjectExplorerModel.Node<?> root = model.getRootNode();
+      for (ProjectExplorerModel.Node<?> node : root.getChildren())
+          expandPath(model.getPath(node));
     }
 
     addMouseListener(myListener);
@@ -352,7 +320,6 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     ActionMap amap = getActionMap();
     amap.put(deleteAction, deleteAction);
 
-    proj.addProjectListener(myListener);
     AppPreferences.GATE_SHAPE.addPropertyChangeListener(myListener);
     LocaleManager.addLocaleListener(this);
   }
@@ -391,8 +358,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
   public void localeChanged() {
     // repaint() would work, except that names that get longer will be
     // abbreviated with an ellipsis, even when they fit into the window.
-    final ProjectExplorerModel model = (ProjectExplorerModel) getModel();
-    model.fireStructureChanged();
+    ((ProjectExplorerModel) getModel()).updateStructure();
   }
 
   public void setHaloedTool(Tool t) {
@@ -404,7 +370,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
   }
 
   private class ProjectTransferHandler extends TransferHandler {
-    Tool removing = null;
+    Transferable removing = null;
 
     @Override
     public int getSourceActions(JComponent comp) {
@@ -416,20 +382,29 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       // Only for top level tools, path len = 0 or 1?
       // Or only for subcircuit and vhdl circuit tools?
       // Or also other tools, so we can send to toolbar?
+      // Better:
+      // Also for libraries, e.g. to reorder or copy to other projects.
+      // Also for subcircuit/vhdl tools within libraries, to copy
+      // to this or other projects.
       removing = null;
       Tool tool = getSelectedTool();
-      // temporary hack
+      // todo: unify with xml copy/paste
       if (tool instanceof AddTool) {
         System.out.println("xfer explorer AddTool item: " + tool);
-        removing = tool;
+        removing = (AddTool)tool;
         return (AddTool)removing;
-      } else if (tool instanceof Transferable) {
+      }
+      if (tool instanceof Transferable) {
         System.out.println("not add tool, but still ok to send: " + tool);
         return (Transferable)tool;
-      } else {
-        System.out.println("nvm");
-        return null;
       }
+      Library lib = getSelectedLibrary();
+      if (lib != null) {
+        System.out.println("xfer explorer Library item: " + lib);
+        removing = lib;
+        return lib;
+      }
+      return null;
     }
 
     @Override
@@ -448,79 +423,122 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     
     @Override
     public boolean canImport(TransferHandler.TransferSupport support) {
-      if (!support.isDataFlavorSupported(AddTool.dnd.dataFlavor)) {
-        return false;
-      }
       try {
-        if (support.isDrop()) {
-          JTree.DropLocation dl = (JTree.DropLocation)support.getDropLocation();
-          TreePath newPath = dl.getPath();
-          if (newPath.getPathCount() != 1)
+        if (support.isDataFlavorSupported(AddTool.dnd.dataFlavor)) {
+          int newIdx = insertionIndex(support, false);
+          if (newIdx < 0)
             return false;
-        }
-        AddTool incoming = (AddTool)support.getTransferable().getTransferData(AddTool.dnd.dataFlavor);
-        if (incoming.isBuiltin())
-          return false; // can't import a builtin tool
-        if (incoming == removing)
+
+          AddTool incoming = (AddTool)support.getTransferable().getTransferData(AddTool.dnd.dataFlavor);
+          if (incoming.isBuiltin())
+            return false; // can't import a builtin tool
+          if (incoming == removing)
+            return true;
+          ComponentFactory cf = incoming.getFactory(false);
+          if (cf == null)
+            return false; // ?
+          if (!(cf instanceof SubcircuitFactory))
+            return false; // ?
           return true;
-        ComponentFactory cf = incoming.getFactory(false);
-        if (cf == null)
-          return false;
-        if (!(cf instanceof SubcircuitFactory))
-          return false;
-        return true;
+        }
+        if (support.isDataFlavorSupported(Library.dnd.dataFlavor)) {
+          int newIdx = insertionIndex(support, true);
+          return newIdx >= 0;
+        }
       } catch (Throwable e) {
         e.printStackTrace();
-        return false;
+      }
+      return false;
+    }
+
+    private int insertionIndex(TransferHandler.TransferSupport support, boolean isLib) {
+      Object root = getModel().getRoot();
+      if (!(root instanceof ProjectExplorerLibraryNode)) // no inserting in options window
+        return -1;
+      ProjectExplorerLibraryNode libNode = (ProjectExplorerLibraryNode)root;
+      Library lib = libNode.getValue();
+      int n = lib.getTools().size();
+      int m = lib.getLibraries().size();
+      if (!support.isDrop())
+        return isLib ? m : n;
+      try {
+        JTree.DropLocation dl = (JTree.DropLocation)support.getDropLocation();
+        TreePath newPath = dl.getPath();
+        if (newPath.getPathCount() != 1)
+          return -1;
+        Object o = newPath.getPathComponent(0);
+        if (o != getModel().getRoot())
+          return -1;
+        int newIdx = dl.getChildIndex();
+        if (isLib && newIdx < n)
+          return -1;
+        else if (!isLib && newIdx > n)
+          return -1;
+        System.out.println("drop at top position " + newIdx);
+        return isLib ? newIdx - n : newIdx;
+      } catch (ClassCastException e) {
+        return -1;
       }
     }
 
     @Override
     public boolean importData(TransferHandler.TransferSupport support) {
       System.out.println("importing...");
-      Tool outgoing = removing;
+      Transferable outgoing = removing;
       removing = null;
       try {
-        AddTool incoming = (AddTool)support.getTransferable().getTransferData(AddTool.dnd.dataFlavor);
-
-        ProjectExplorerLibraryNode libNode = (ProjectExplorerLibraryNode)getModel().getRoot();
-        Library lib = libNode.getValue();
-        int newIdx = lib.getTools().size();
-
-        if (support.isDrop()) {
-          try {
-            JTree.DropLocation dl = (JTree.DropLocation)support.getDropLocation();
-            TreePath newPath = dl.getPath();
-            if (newPath.getPathCount() != 1)
-              return false;
-            Object o = newPath.getPathComponent(0);
-            if (o != getModel().getRoot())
-              return false;
-            newIdx = dl.getChildIndex();
-            System.out.println("drop at top position " + newIdx);
-            // newIdx = Math.min(newIdx, dl.getRow());
-          } catch (ClassCastException e) {
+        if (support.isDataFlavorSupported(AddTool.dnd.dataFlavor)) {
+          int newIdx = insertionIndex(support, false);
+          if (newIdx < 0)
             return false;
+
+          AddTool incoming = (AddTool)support.getTransferable().getTransferData(AddTool.dnd.dataFlavor);
+          ProjectExplorerLibraryNode libNode = (ProjectExplorerLibraryNode)getModel().getRoot();
+          Library lib = libNode.getValue();
+
+          System.out.println("import tool " + incoming + " at " + newIdx + " vs " + outgoing);
+          int oldIdx = lib.getTools().indexOf(incoming);
+          if (oldIdx >= 0 && incoming == outgoing) {
+            System.out.printf("moving from %d to %d\n", oldIdx, newIdx);
+            if (listener != null) {
+              TreePath path = new TreePath(
+                  new Object[] { libNode, libNode.getChildAt(oldIdx) });
+              listener.moveRequested(new Event(path), incoming, newIdx);
+              return true;
+            }
+          } else {
+            System.out.printf("? moving from %d to %d\n", oldIdx, newIdx);
           }
+          return false;
         }
-        System.out.println("import " + incoming + " at " + newIdx + " vs " + outgoing);
-        int oldIdx = lib.getTools().indexOf(incoming);
-        if (oldIdx >= 0 && incoming == outgoing) {
-          System.out.printf("moving from %d to %d\n", oldIdx, newIdx);
-          if (listener != null) {
-            TreePath path = new TreePath(
-                new Object[] { libNode, libNode.getChildAt(oldIdx) });
-            listener.moveRequested(new Event(path), incoming, newIdx);
-            return true;
+        if (support.isDataFlavorSupported(Library.dnd.dataFlavor)) {
+          int newIdx = insertionIndex(support, true);
+          if (newIdx < 0)
+            return false;
+
+          Library incoming = (Library)support.getTransferable().getTransferData(Library.dnd.dataFlavor);
+          ProjectExplorerLibraryNode libNode = (ProjectExplorerLibraryNode)getModel().getRoot();
+          Library lib = libNode.getValue();
+
+          System.out.println("import lib " + incoming + " at " + newIdx + " vs " + outgoing);
+          int oldIdx = lib.getLibraries().indexOf(incoming);
+          if (oldIdx >= 0 && incoming == outgoing) {
+            System.out.printf("moving lib from %d to %d\n", oldIdx, newIdx);
+            if (listener != null) {
+              TreePath path = new TreePath(
+                  new Object[] { libNode, libNode.getChildAt(oldIdx) });
+              listener.moveRequested(new Event(path), incoming, newIdx);
+              return true;
+            }
+          } else {
+            System.out.printf("? moving from %d to %d\n", oldIdx, newIdx);
           }
-        } else {
-          System.out.printf("? moving from %d to %d\n", oldIdx, newIdx);
+          return false;
         }
-        return false;
       } catch (UnsupportedFlavorException | IOException e) {
         e.printStackTrace();
-        return false;
       }
+      return false;
     }
   }
 
@@ -529,6 +547,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     public void doubleClicked(Event event);
     public JPopupMenu menuRequested(Event event);
     public void moveRequested(Event event, AddTool dragged, int newIdx);
+    public void moveRequested(Event event, Library dragged, int newIdx);
     public void selectionChanged(Event event);
   }
 

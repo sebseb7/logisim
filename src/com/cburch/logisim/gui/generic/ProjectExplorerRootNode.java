@@ -35,9 +35,7 @@ import java.util.Enumeration;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.std.base.Base;
 
-public class ProjectExplorerRootNode extends ProjectExplorerModel.Node<Library> {
-
-  private static final long serialVersionUID = 1L;
+public class ProjectExplorerRootNode extends ProjectExplorerModel.Node<String> {
 
   private static Base getBaseLib(Library projLib) {
     for (Library lib : projLib.getLibraries())
@@ -47,18 +45,11 @@ public class ProjectExplorerRootNode extends ProjectExplorerModel.Node<Library> 
   }
 
   ProjectExplorerRootNode(ProjectExplorerModel model, Library lib) {
-    super(model, lib, null);
-    add(new ProjectExplorerLibraryNode(model, getBaseLib(lib), this));
-    add(new ProjectExplorerLibraryNode(model, lib, this));
-  }
-
-  @Override
-  void decommission() {
-    for (Enumeration<?> en = children(); en.hasMoreElements();) {
-      Object n = en.nextElement();
-      if (n instanceof ProjectExplorerModel.Node<?>)
-        ((ProjectExplorerModel.Node<?>) n).decommission();
-    }
+    super(model, "root", null); // object is irrelevant, but should not be null
+    Base base = getBaseLib(lib);
+    if (base != null) // should always be non-null
+      children.add(new ProjectExplorerLibraryNode(model, base, this));
+    children.add(new ProjectExplorerLibraryNode(model, lib, this));
   }
 
 }

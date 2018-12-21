@@ -180,7 +180,7 @@ class ToolboxManip implements ProjectExplorer.Listener {
   public void doubleClicked(ProjectExplorer.Event event) {
     Object clicked = event.getTarget();
     if (clicked instanceof ProjectExplorerToolNode) {
-      ((ProjectExplorerToolNode)clicked).fireNodeChanged();
+      ((ProjectExplorerToolNode)clicked).fireAppearanceChanged();
       Tool baseTool = ((ProjectExplorerToolNode) clicked).getValue();
       if (baseTool instanceof AddTool) {
         AddTool tool = (AddTool) baseTool;
@@ -241,6 +241,17 @@ class ToolboxManip implements ProjectExplorer.Listener {
     proj.doAction(LogisimFileActions.moveCircuit(dragged, targetIndex));
   }
 
+  public void moveRequested(ProjectExplorer.Event event, Library dragged, int newIdx) {
+    LogisimFile file = proj.getLogisimFile();
+    int draggedIndex = file.getLibraries().indexOf(dragged);
+    int targetIndex = newIdx;
+    if (targetIndex > draggedIndex)
+      targetIndex--;
+    if (targetIndex == draggedIndex)
+      return;
+    proj.doAction(LogisimFileActions.moveLibrary(dragged, targetIndex));
+  }
+
   private static void setDefaultTool(Tool lastSelected, Project proj) {
     if (lastSelected != null) {
       proj.setTool(lastSelected);
@@ -263,7 +274,7 @@ class ToolboxManip implements ProjectExplorer.Listener {
     }
     Object selected = event.getTarget();
     if (selected instanceof ProjectExplorerToolNode) {
-      ((ProjectExplorerToolNode)selected).fireNodeChanged();
+      ((ProjectExplorerToolNode)selected).fireAppearanceChanged();
       Tool tool = ((ProjectExplorerToolNode) selected).getValue();
       if (tool instanceof AddTool) {
         AddTool addTool = (AddTool) tool;

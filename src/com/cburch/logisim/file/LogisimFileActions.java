@@ -163,6 +163,47 @@ public class LogisimFileActions {
     }
   }
 
+  private static class MoveLibrary extends Action {
+    private Library lib;
+    private int fromIndex;
+    private int toIndex;
+
+    MoveLibrary(Library lib, int toIndex) {
+      this.lib = lib;
+      this.toIndex = toIndex;
+    }
+
+    @Override
+    public Action append(Action other) {
+      MoveLibrary ret = new MoveLibrary(lib,
+          ((MoveLibrary) other).toIndex);
+      ret.fromIndex = this.fromIndex;
+      return ret.fromIndex == ret.toIndex ? null : ret;
+    }
+
+    @Override
+    public void doIt(Project proj) {
+      fromIndex = proj.getLogisimFile().getLibraries().indexOf(lib);
+      proj.getLogisimFile().moveLibrary(lib, toIndex);
+    }
+
+    @Override
+    public String getName() {
+      return S.get("moveLibraryAction");
+    }
+
+    @Override
+    public boolean shouldAppendTo(Action other) {
+      return other instanceof MoveLibrary
+          && ((MoveLibrary) other).lib == this.lib;
+    }
+
+    @Override
+    public void undo(Project proj) {
+      proj.getLogisimFile().moveLibrary(lib, fromIndex);
+    }
+  }
+
   private static class RemoveCircuit extends Action {
     private Circuit circuit;
     private int index;
@@ -381,6 +422,10 @@ public class LogisimFileActions {
 
   public static Action moveCircuit(AddTool tool, int toIndex) {
     return new MoveCircuit(tool, toIndex);
+  }
+
+  public static Action moveLibrary(Library lib, int toIndex) {
+    return new MoveLibrary(lib, toIndex);
   }
 
   public static Action removeCircuit(Circuit circuit) {

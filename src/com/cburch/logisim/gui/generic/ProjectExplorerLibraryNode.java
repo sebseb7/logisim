@@ -35,16 +35,14 @@ package com.cburch.logisim.gui.generic;
  * http://www.cs.cornell.edu/courses/cs3410/2015sp/
  */
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
 import com.cburch.logisim.file.LogisimFile;
-import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.std.base.Base;
+import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.CollectionUtil;
 
 public class ProjectExplorerLibraryNode
   extends ProjectExplorerModel.Node<Library> implements LibraryListener {
@@ -55,205 +53,208 @@ public class ProjectExplorerLibraryNode
   ProjectExplorerLibraryNode(ProjectExplorerModel model, Library lib, ProjectExplorerModel.Node<?> parent) {
     super(model, lib, parent);
     if (lib instanceof LogisimFile) {
-      file = (LogisimFile) lib;
+      file = (LogisimFile)lib;
       file.addLibraryListener(this);
     }
-    buildChildren();
-  }
-
-  private boolean ancestorContainsLibrary(Library lib) {
-    ProjectExplorerModel.Node<?> p = (ProjectExplorerModel.Node<?>)getParent();
-    // note: root node contains same library as child; don't supress in that case
-    while (p != null && !(p instanceof ProjectExplorerRootNode)) {
-      Object v = p.getValue();
-      if (v instanceof Library && ((Library)v).getLibraries().contains(lib))
-        return true;
-      p = (ProjectExplorerModel.Node<?>)p.getParent();
+    for (Tool item : lib.getTools()) {
+      children.add(new ProjectExplorerToolNode(model, item, this));
     }
-    return false;
-  }
-
-  private void buildDescendents() {
-    buildChildren();
-    for (Enumeration<?> en = children(); en.hasMoreElements();) {
-      Object child = en.nextElement();
-      if (child instanceof ProjectExplorerLibraryNode) {
-        @SuppressWarnings("unchecked")
-        ProjectExplorerLibraryNode childNode = (ProjectExplorerLibraryNode)child;
-        childNode.buildDescendents();
-      }
-    }
-  }
-
-  private void buildChildren() {
-    Library lib = getValue();
-    if (lib != null) {
-      buildChildren(
-          ProjectExplorerToolNode.class,
-          tool -> new ProjectExplorerToolNode(getModel(), tool, this),
-          lib.getTools(), 0);
-      buildChildren(
-          ProjectExplorerLibraryNode.class,
-          subLib -> new ProjectExplorerLibraryNode(getModel(), subLib, this),
-          lib.getLibraries(), lib.getTools().size());
-    }
-  }
-
-  interface NodeFactory<T> {
-    ProjectExplorerModel.Node<T> create(T userObject);
-  }
-
-  private <T> void buildChildren(Class t, NodeFactory<T> factory,
-      List<? extends T> items, int startIndex) {
-    // go through previously built children
-    Map<T, ProjectExplorerModel.Node<T>> nodeMap = new HashMap<T, ProjectExplorerModel.Node<T>>();
-    List<ProjectExplorerModel.Node<T>> nodeList = new ArrayList<ProjectExplorerModel.Node<T>>();
-    int oldPos = startIndex;
-
-    for (Enumeration<?> en = children(); en.hasMoreElements(); ) {
-      Object child = en.nextElement();
-      if (child.getClass() == t) {
-        @SuppressWarnings("unchecked")
-        ProjectExplorerModel.Node<T> childNode = (ProjectExplorerModel.Node<T>) child;
-        nodeMap.put(childNode.getValue(), childNode);
-        nodeList.add(childNode);
-        childNode.oldIndex = oldPos;
-        childNode.newIndex = -1;
-        oldPos++;
-      }
-    }
-
-    int oldCount = oldPos;
-
-    // go through what should be the children
-    int actualPos = startIndex;
-    int insertionCount = 0;
-    oldPos = startIndex;
-
-    for (T item : items) {
+    for (Library item : lib.getLibraries()) {
       if (item instanceof Base)
         continue;
       if (item instanceof Library && ancestorContainsLibrary((Library)item))
         continue; // hide libraries already shown in an ancestor
-      ProjectExplorerModel.Node<T> node = nodeMap.get(item);
-
-      if (node == null) {
-        node = factory.create(item);
-        node.oldIndex = -1;
-        node.newIndex = actualPos;
-        nodeList.add(node);
-        insertionCount++;
-      } else {
-        node.newIndex = actualPos;
-        oldPos++;
-      }
-      actualPos++;
+      children.add(new ProjectExplorerLibraryNode(model, item, this));
     }
+  }
 
-    // identify removals first
-    if (oldPos != oldCount) {
-      int[] delIndex = new int[oldCount - oldPos];
-      ProjectExplorerModel.Node<?>[] delNodes = new ProjectExplorerModel.Node<?>[delIndex.length];
-      int delPos = 0;
-
-      for (int i = nodeList.size() - 1; i >= 0; i--) {
-        ProjectExplorerModel.Node<T> node = nodeList.get(i);
-
-        if (node.newIndex < 0) {
-          node.decommission();
-          remove(node.oldIndex);
-          nodeList.remove(node.oldIndex - startIndex);
-
-          for (ProjectExplorerModel.Node<T> other : nodeList) {
-            if (other.oldIndex > node.oldIndex)
-              other.oldIndex--;
-          }
-          delIndex[delPos] = node.oldIndex;
-          delNodes[delPos] = node;
-          delPos++;
-        }
-      }
-      this.fireNodesRemoved(delIndex, delNodes);
+  private boolean ancestorContainsLibrary(Library lib) {
+    ProjectExplorerModel.Node<?> p = parent;
+    while (p != null) {
+      Object v = p.value;
+      if (v instanceof Library && ((Library)v).getLibraries().contains(lib))
+        return true;
+      p = p.parent;
     }
-
-    // identify moved nodes
-    int minChange = Integer.MAX_VALUE >> 3;
-    int maxChange = Integer.MIN_VALUE >> 3;
-
-    for (ProjectExplorerModel.Node<T> node : nodeList) {
-      if (node.newIndex != node.oldIndex && node.oldIndex >= 0) {
-        minChange = Math.min(minChange, node.oldIndex);
-        maxChange = Math.max(maxChange, node.oldIndex);
-      }
-    }
-    if (minChange <= maxChange) {
-      int[] moveIndex = new int[maxChange - minChange + 1];
-      ProjectExplorerModel.Node<?>[] moveNodes = new ProjectExplorerModel.Node<?>[moveIndex.length];
-
-      for (int i = maxChange; i >= minChange; i--) {
-        ProjectExplorerModel.Node<T> node = nodeList.get(i);
-        moveIndex[node.newIndex - minChange] = node.newIndex;
-        moveNodes[node.newIndex - minChange] = node;
-        remove(i);
-      }
-
-      for (int i = 0; i < moveIndex.length; i++) {
-        insert(moveNodes[i], moveIndex[i]);
-      }
-
-      this.fireNodesChanged(moveIndex, moveNodes);
-    }
-
-    // identify inserted nodes
-    if (insertionCount > 0) {
-      int[] insIndex = new int[insertionCount];
-      ProjectExplorerModel.Node<?>[] insNodes = new ProjectExplorerModel.Node<?>[insertionCount];
-      int insertionsPos = 0;
-
-      for (ProjectExplorerModel.Node<T> node : nodeList) {
-        if (node.oldIndex < 0) {
-          insert(node, node.newIndex);
-          insIndex[insertionsPos] = node.newIndex;
-          insNodes[insertionsPos] = node;
-          insertionsPos++;
-        }
-      }
-      this.fireNodesInserted(insIndex, insNodes);
-    }
+    return false;
   }
 
   @Override
-  void decommission() {
-    if (file != null) {
-      file.removeLibraryListener(this);
-    }
-    for (Enumeration<?> en = children(); en.hasMoreElements();) {
-      Object n = en.nextElement();
-      if (n instanceof ProjectExplorerModel.Node<?>) {
-        ((ProjectExplorerModel.Node<?>) n).decommission();
-      }
-    }
+  public void reload() {
+    removeAll();
+    rebuildAfterAdditionsOrRemovals();
+    super.reload();
   }
 
+  private void rebuildAfterLibraryAdditionOrRemovals() {
+    rebuildAfterAdditionsOrRemovals();
+    for (ProjectExplorerModel.Node<?> child : children)
+      if (child instanceof ProjectExplorerLibraryNode)
+        ((ProjectExplorerLibraryNode)child).rebuildAfterLibraryAdditionOrRemovals();
+  }
+
+  // This is used when children have changed only by:
+  //  - possibly adding one or more children
+  //  - possibly removing one or more children
+  // Note: the order of existing children should not have changed.
+  private void rebuildAfterAdditionsOrRemovals() {
+
+    // build updated list of child values
+    ArrayList<Object> v = new ArrayList<>();
+    v.addAll(value.getTools());
+    for (Library item : value.getLibraries()) {
+      if (item instanceof Base)
+        continue;
+      if (item instanceof Library && ancestorContainsLibrary((Library)item))
+        continue; // hide libraries already shown in an ancestor
+      v.add(item);
+    }
+
+    ArrayList<Integer> indices = new ArrayList<>();
+    ArrayList<ProjectExplorerModel.Node<?>> affected = new ArrayList<>();
+
+    // remove and decommission existing children as necessary, and notify of removal
+    for (int i = children.size()-1; i >= 0; i--) {
+      ProjectExplorerModel.Node<?> child = children.get(i);
+      if (v.contains(child.value))
+        continue;
+      children.remove(i);
+      child.decommission();
+      affected.add(child);
+      indices.add(i);
+    }
+    if (!affected.isEmpty()) {
+      fireChildrenRemoved(CollectionUtil.toArray(indices),
+          affected.toArray(new ProjectExplorerModel.Node<?>[affected.size()]));
+      indices.clear();
+      affected.clear();
+    }
+
+    // sanity check: all remaining children should be in proper order already
+    int previdx = -1;
+    boolean bad = false;
+    for (ProjectExplorerModel.Node<?> child : children) {
+      int idx = v.indexOf(child.value);
+      if (idx <= previdx) {
+        bad = true;
+        break;
+      }
+      previdx = idx;
+    }
+    if (bad) {
+      System.err.println("Project explorer failure: nodes not in proper order");
+      removeAll(); // remove all nodes, start over from scratch
+    }
+
+    // create and add new children as necessary, and notify of addition
+    // note: existing children are in proper order already
+    for (int i = 0; i < v.size(); i++) {
+      Object value = v.get(i);
+      if (i < children.size() && children.get(i).value == value)
+        continue;
+      ProjectExplorerModel.Node<?> child;
+      if (value instanceof Tool)
+        child = new ProjectExplorerToolNode(model, (Tool)value, this);
+      else if (value instanceof Library)
+        child = new ProjectExplorerLibraryNode(model, (Library)value, this);
+      else
+        continue; // ?
+      children.add(i, child);
+      indices.add(i);
+      affected.add(child);
+    }
+    if (!affected.isEmpty()) {
+      fireChildrenInserted(CollectionUtil.toArray(indices),
+          affected.toArray(new ProjectExplorerModel.Node<?>[affected.size()]));
+      indices.clear();
+      affected.clear();
+    }
+
+  }
+
+  private int getNewIndexOfValue(Object v) {
+    int i = -1;
+    for (Tool item : value.getTools()) {
+      i++;
+      if (item == v)
+        return i;
+    }
+    for (Library item : value.getLibraries()) {
+      if (item instanceof Base)
+        continue;
+      if (item instanceof Library && ancestorContainsLibrary((Library)item))
+        continue; // hide libraries already shown in an ancestor
+      i++;
+      if (item == v)
+        return i;
+    }
+    return -1;
+  }
+
+  // This is used when children have changed only by:
+  //  - moving at most ONE existing child to a different position
+  // Note: no children should have been added or removed.
+  private void rebuildAfterSingleMove(Object v) {
+    int oldIdx = getIndexOfValue(v);
+    int newIdx = getNewIndexOfValue(v);
+    // sanity check:
+    if (oldIdx == -1 || newIdx == -1) {
+      System.err.println("Project explorer failure: nodes missing, rebuilding");
+      removeAll();
+      rebuildAfterAdditionsOrRemovals();
+      return;
+    }
+    if (oldIdx == newIdx)
+      return;
+    ProjectExplorerModel.Node<?> child = children.remove(oldIdx);
+    fireChildrenRemoved(new int[] { oldIdx }, new ProjectExplorerModel.Node<?>[] { child });
+    children.add(newIdx, child);
+    fireChildrenInserted(new int[] { newIdx }, new ProjectExplorerModel.Node<?>[] { child });
+  }
+
+  private void removeAll() { // only used in desperation
+    int n = children.size();
+    int[] indices = new int[n];
+    ProjectExplorerModel.Node<?>[] affected = new ProjectExplorerModel.Node<?>[n];
+    for (int i = 0; i < n; i++) {
+      ProjectExplorerModel.Node<?> child = children.get(i);
+      indices[i] = i;
+      affected[i] = child;
+      child.decommission();
+    }
+    children.clear();
+    fireChildrenRemoved(indices, affected);
+  }
+
+
+  @Override
+  protected void decommission() {
+    super.decommission();
+    if (file != null)
+      file.removeLibraryListener(this);
+  }
+
+  @Override
   public void libraryChanged(LibraryEvent event) {
     switch (event.getAction()) {
     case LibraryEvent.DIRTY_STATE:
     case LibraryEvent.SET_NAME:
-      this.fireNodeChanged();
+      fireAppearanceChanged();
       break;
     case LibraryEvent.SET_MAIN:
       break;
     case LibraryEvent.ADD_TOOL:
     case LibraryEvent.REMOVE_TOOL:
+      rebuildAfterAdditionsOrRemovals();
+      break;
     case LibraryEvent.MOVE_TOOL:
-      buildChildren();
+    case LibraryEvent.MOVE_LIBRARY:
+      rebuildAfterSingleMove(event.getData());
       break;
     case LibraryEvent.ADD_LIBRARY:
     case LibraryEvent.REMOVE_LIBRARY:
-      buildDescendents();
+      rebuildAfterLibraryAdditionOrRemovals();
       break;
-    default:
-      fireStructureChanged();
     }
   }
 

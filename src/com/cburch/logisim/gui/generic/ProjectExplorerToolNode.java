@@ -56,7 +56,6 @@ public class ProjectExplorerToolNode extends ProjectExplorerModel.Node<Tool>
     super(model, tool, parent);
     if (tool instanceof AddTool) {
       Object factory = ((AddTool) tool).getFactory();
-
       if (factory instanceof SubcircuitFactory) {
         circuit = ((SubcircuitFactory) factory).getSubcircuit();
         circuit.addCircuitListener(this);
@@ -69,14 +68,13 @@ public class ProjectExplorerToolNode extends ProjectExplorerModel.Node<Tool>
 
   public void circuitChanged(CircuitEvent event) {
     int act = event.getAction();
-    if (act == CircuitEvent.ACTION_SET_NAME || act == CircuitEvent.ACTION_DISPLAY_CHANGE) {
-      fireNodeChanged();
-    }
+    if (act == CircuitEvent.ACTION_SET_NAME || act == CircuitEvent.ACTION_DISPLAY_CHANGE)
+      fireAppearanceChanged();
   }
 
   @Override
   public void contentSet(HdlModel model) {
-    fireNodeChanged();
+    fireAppearanceChanged();
   }
 
   @Override
@@ -84,14 +82,14 @@ public class ProjectExplorerToolNode extends ProjectExplorerModel.Node<Tool>
 
   @Override
   public void displayChanged(HdlModel source) {
-    fireNodeChanged();
+    fireAppearanceChanged();
   }
 
   @Override
   public void appearanceChanged(HdlModel source) { }
 
   @Override
-  void decommission() {
+  protected void decommission() {
     if (circuit != null) {
       circuit.removeCircuitListener(this);
     }
@@ -99,5 +97,8 @@ public class ProjectExplorerToolNode extends ProjectExplorerModel.Node<Tool>
       vhdl.removeHdlModelListener(this);
     }
   }
+
+  @Override
+  public boolean getAllowsChildren() { return false; }
 
 }

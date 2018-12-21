@@ -48,6 +48,7 @@ import com.cburch.logisim.file.ToolbarData;
 import com.cburch.logisim.gui.generic.ProjectExplorer;
 import com.cburch.logisim.gui.generic.ProjectExplorerToolNode;
 import com.cburch.logisim.tools.AddTool;
+import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.TableLayout;
 
@@ -119,6 +120,9 @@ class ToolbarOptions extends OptionsPanel {
     }
 
     public void moveRequested(ProjectExplorer.Event event, AddTool dragged, int newIdx) {
+    }
+
+    public void moveRequested(ProjectExplorer.Event event, Library dragged, int newIdx) {
     }
 
     public void selectionChanged(ProjectExplorer.Event event) {

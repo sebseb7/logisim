@@ -65,6 +65,7 @@ import com.cburch.logisim.gui.generic.ProjectExplorerToolNode;
 import com.cburch.logisim.gui.main.AttrTableToolModel;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.AddTool;
+import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.InputEventUtil;
 
@@ -232,6 +233,9 @@ class MouseOptions extends OptionsPanel {
     }
 
     public void moveRequested(ProjectExplorer.Event event, AddTool dragged, int newIdx) {
+    }
+
+    public void moveRequested(ProjectExplorer.Event event, Library dragged, int newIdx) {
     }
 
     //
