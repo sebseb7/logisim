@@ -83,7 +83,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
   final static Logger logger = LoggerFactory.getLogger(VhdlEntity.class);
 
-  static final Attribute<String> NAME_ATTR = Attributes.forString(
+  public static final Attribute<String> NAME_ATTR = Attributes.forString(
       "vhdlEntity", S.getter("vhdlEntityName"));
 
   static final int WIDTH = 140;

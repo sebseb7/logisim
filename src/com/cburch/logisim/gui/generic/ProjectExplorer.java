@@ -47,7 +47,6 @@ import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
-import java.util.Enumeration;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
@@ -75,7 +74,6 @@ import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.gui.main.SelectionActions;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.AddTool;

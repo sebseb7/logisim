@@ -48,6 +48,7 @@ import com.cburch.draw.toolbar.Toolbar;
 import com.cburch.draw.toolbar.ToolbarItem;
 import com.cburch.draw.toolbar.ToolbarSeparator;
 import com.cburch.logisim.circuit.SubcircuitFactory;
+import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.AttributeEvent;
@@ -73,8 +74,7 @@ class LayoutToolbarModel extends AbstractToolbarModel {
           ToolbarData.ToolbarListener, PropertyChangeListener {
     
     @Override
-    public void attributeListChanged(AttributeEvent e) {
-    }
+    public void attributeListChanged(AttributeEvent e) { }
 
     @Override
     public void attributeValueChanged(AttributeEvent e) {
@@ -118,24 +118,44 @@ class LayoutToolbarModel extends AbstractToolbarModel {
 
   private static Font FONT = new Font("SansSerif", Font.PLAIN, 12);
 
-  private class ToolItem implements ToolbarItem {
+  private class ToolItem implements ToolbarItem, AttributeListener {
     private Tool tool;
     String label;
     Bounds labelBounds;
 
     ToolItem(Tool tool) {
       this.tool = tool;
-      if (tool instanceof AddTool) {
-        AddTool addTool = (AddTool)tool;
-        if (addTool.getFactory() instanceof SubcircuitFactory)
-          label = tool.getName();
-        else if (addTool.getFactory() instanceof VhdlEntity)
-          label = tool.getName();
-        if (label != null)
-          labelBounds = StringUtil.estimateBounds(label, FONT);
-      }
+      if (tool instanceof AddTool)
+        makeLabel();
     }
 
+    private void makeLabel() {
+      AddTool addTool = (AddTool)tool;
+      if (addTool.getFactory() instanceof SubcircuitFactory) {
+        label = tool.getName();
+        ((SubcircuitFactory)addTool.getFactory()).getSubcircuit()
+            .getStaticAttributes().addAttributeListener(this);
+      } else if (addTool.getFactory() instanceof VhdlEntity) {
+        label = tool.getName();
+        ((VhdlEntity)addTool.getFactory()).getContent()
+            .getStaticAttributes().addAttributeListener(this);
+      }
+      if (label != null)
+        labelBounds = StringUtil.estimateBounds(label, FONT);
+    }
+
+    @Override
+    public void attributeValueChanged(AttributeEvent e) {
+      if (e.getAttribute() == VhdlEntity.NAME_ATTR
+          || e.getAttribute() == CircuitAttributes.NAME_ATTR)
+        makeLabel();
+      fireToolbarAppearanceChanged();
+    }
+
+    @Override
+    public void attributeListChanged(AttributeEvent e) { }
+
+    @Override
     public Dimension getDimension(Object orientation) {
       if (label == null)
         return new Dimension(24, 24);
