@@ -191,7 +191,7 @@ class LayoutToolbarModel extends AbstractToolbarModel {
           GraphicsUtil.drawText(g_copy, FONT, label, 24 - 2, 24/2 - 2,
               GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
         } else {
-          ((Graphics2D)g_copy).rotate(-Math.PI/2, 24/2, 24/2);
+          ((Graphics2D)g_copy).rotate(Math.PI/2, 24/2, 24/2);
           GraphicsUtil.drawText(g_copy, FONT, label, 24 - 2, 24/2 - 2,
               GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
         }

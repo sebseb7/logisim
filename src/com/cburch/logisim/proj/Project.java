@@ -634,13 +634,16 @@ public class Project {
   // - Find on current circuit / current vhdl, vs global search
   // - Replace?
   // Things to search:
-  // - vhdl contents
-  // - circuits
-  // - toolbars
-  // - component labels
-  // - text components
-  // - tunnel names
-  // - pin names
+  // - vhdl entity contents (entity.getContents...)
+  // - circuit contents (circ.nonWires...)
+  // - circuit name CircuitAttributes.NAME_ATTR
+  // - vhdl name VhdlEntity.NAME_ATTR
+  // - toolbar contents (layout toolbar getItems)
+  // - standard label attributes on various components (except Pin, Tunnel) StdAttr.LABEL
+  // - circuit shared label attributes CircuitAttributes.CIRCUIT_LABEL_ATTR
+  // - text components Text.ATTR_TEXT
+  // - tunnel names StdAttr.LABEL
+  // - pin names StdAttr.LABEL
   // - later: memory data ? as bytes? as strings? as hex?
   
   // Search for matching components and attributes (e.g. find all 8-wide multiplexors)
