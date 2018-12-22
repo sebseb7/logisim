@@ -214,8 +214,7 @@ public class LogisimFileActions {
 
     @Override
     public void doIt(Project proj) {
-      index = proj.getLogisimFile().indexOfCircuit(circuit);
-      proj.getLogisimFile().removeCircuit(circuit);
+      index = proj.getLogisimFile().removeCircuit(circuit);
     }
 
     @Override
@@ -375,15 +374,17 @@ public class LogisimFileActions {
 
   private static class UnloadLibraries extends Action {
     private Library[] libs;
+    private int[] index;
 
     UnloadLibraries(Library[] libs) {
       this.libs = libs;
+      this.index = new int[libs.length];
     }
 
     @Override
     public void doIt(Project proj) {
       for (int i = libs.length - 1; i >= 0; i--) {
-        proj.getLogisimFile().removeLibrary(libs[i]);
+        index[i] = proj.getLogisimFile().removeLibrary(libs[i]);
       }
     }
 
@@ -399,7 +400,7 @@ public class LogisimFileActions {
     @Override
     public void undo(Project proj) {
       for (int i = 0; i < libs.length; i++) {
-        proj.getLogisimFile().addLibrary(libs[i]);
+        proj.getLogisimFile().addLibrary(libs[i], index[i]);
       }
     }
   }

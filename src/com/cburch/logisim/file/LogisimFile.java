@@ -236,9 +236,14 @@ public class LogisimFile extends Library implements LibraryEventSource {
   }
 
   public void addLibrary(Library lib) {
-    libraries.add(lib);
+    addLibrary(lib, libraries.size());
+  }
+
+  public void addLibrary(Library lib, int index) {
+    libraries.add(index, lib);
     fireEvent(LibraryEvent.ADD_LIBRARY, lib);
   }
+
 
   //
   // listener methods
@@ -404,6 +409,10 @@ public class LogisimFile extends Library implements LibraryEventSource {
     return ret;
   }
 
+  public int indexOfLibrary(Library lib) {
+    return libraries.indexOf(lib);
+  }
+
   public int indexOfCircuit(Circuit circ) {
     for (int i = 0; i < tools.size(); i++) {
       AddTool tool = tools.get(i);
@@ -550,7 +559,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
     }
   }
 
-  public void removeCircuit(Circuit circuit) {
+  public int removeCircuit(Circuit circuit) {
     if (getCircuitCount() <= 1) {
       throw new RuntimeException("Cannot remove last circuit");
     }
@@ -567,6 +576,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
       }
       fireEvent(LibraryEvent.REMOVE_TOOL, circuitTool);
     }
+    return index;
   }
 
   public void removeVhdl(VhdlContent vhdl) {
@@ -577,9 +587,13 @@ public class LogisimFile extends Library implements LibraryEventSource {
     }
   }
 
-  public void removeLibrary(Library lib) {
-    libraries.remove(lib);
-    fireEvent(LibraryEvent.REMOVE_LIBRARY, lib);
+  public int removeLibrary(Library lib) {
+    int index = indexOfLibrary(lib);
+    if (index >= 0) {
+      libraries.remove(lib);
+      fireEvent(LibraryEvent.REMOVE_LIBRARY, lib);
+    }
+    return index;
   }
 
   public void removeLibraryListener(LibraryListener what) {
