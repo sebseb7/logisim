@@ -50,6 +50,7 @@ import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.file.LogisimFileActions;
 import com.cburch.logisim.gui.menu.ProjectCircuitActions;
+import com.cburch.logisim.gui.menu.ProjectLibraryActions;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Dependencies;
 import com.cburch.logisim.proj.JoinedAction;
@@ -376,7 +377,10 @@ public class SelectionActions {
       // suggested name is bad, generate better suggestion, confirm with user
       int i = 1;
       do {
-        newName = suggested + (i++);
+        if (newName == null || newName.equals(""))
+          newName = "circuit";
+        else
+          newName = suggested + (i++);
       } while (file.getTool(newName) != null);
       if (is_vhdl)
         newName = ProjectCircuitActions.promptForVhdlName(proj.getFrame(), file, newName);
@@ -421,7 +425,7 @@ public class SelectionActions {
         return false;
       else if (newName != null)
         return true;
-      newName = confirmName(proj, "", false, clip);
+      newName = confirmName(proj, null, false, clip);
       if (newName == null) {
         clip = null;
         return false;
@@ -685,25 +689,44 @@ public class SelectionActions {
     return new Delete(sel);
   }
 
-  public static void copy(Project proj, Selection sel) { // Note: copy is not an Action
+  public static void doCopy(Project proj, Selection sel) { // Note: copy is not an Action
     LayoutClipboard.forComponents.set(proj, sel.getComponents());
   }
 
-  public static void copy(Project proj, Circuit sel) { // Note: copy is not an Action
+  public static void doCopy(Project proj, Circuit sel) { // Note: copy is not an Action
     LayoutClipboard.forCircuit.set(proj, sel);
   }
 
-  public static void copy(Project proj, VhdlContent sel) { // Note: copy is not an Action
+  public static void doCopy(Project proj, VhdlContent sel) { // Note: copy is not an Action
     LayoutClipboard.forVhdl.set(proj, sel);
   }
 
-  public static void copy(Project proj, Library sel) { // Note: copy is not an Action
-    // todo: LayoutClipboard.forLibrary.set(proj, sel);
+  public static void doCopy(Project proj, Library sel) { // Note: copy is not an Action
+    LayoutClipboard.forLibrary.set(proj, sel);
   }
 
-  public static Action cut(Project proj, Selection sel) {
-    LayoutClipboard.forComponents.set(proj, sel.getComponents());
-    return new Delete(sel);
+  public static void doCut(Project proj, Selection sel) {
+    if (!sel.isEmpty()) {
+      LayoutClipboard.forComponents.set(proj, sel.getComponents());
+      proj.doAction(new Delete(sel));
+    }
+  }
+
+  public static void doCut(Project proj, Circuit sel) {
+    LayoutClipboard.forCircuit.set(proj, sel);
+    if (proj.getLogisimFile().getCircuitCount() > 1
+          && proj.getDependencies().canRemove(sel))
+      ProjectCircuitActions.doRemoveCircuit(proj, sel);
+  }
+
+  public static void doCut(Project proj, VhdlContent sel) {
+    LayoutClipboard.forVhdl.set(proj, sel);
+    ProjectCircuitActions.doRemoveVhdl(proj, sel);
+  }
+
+  public static void doCut(Project proj, Library sel) {
+    LayoutClipboard.forLibrary.set(proj, sel);
+    ProjectLibraryActions.doUnloadLibrary(proj, sel);
   }
 
   // clears the selection, anchoring all floating elements in selection
@@ -741,56 +764,70 @@ public class SelectionActions {
     return new Duplicate(sel);
   }
 
-  public static Action pasteMaybe(Project proj, Selection sel) {
-    Action act;
-    act = pasteComponentsMaybe(proj, sel);
-    if (act == null)
-      act = pasteCircuitMaybe(proj);
-    if (act == null)
-      act = pasteVhdlMaybe(proj);
-    if (act == null)
-      act = pasteLibraryMaybe(proj);
-    return act;
+  public static boolean doPaste(Project proj, Selection sel) {
+    return doPasteComponents(proj, sel)
+        || doPasteCircuit(proj)
+        || doPasteVhdl(proj)
+        || doPasteLibrary(proj);
   }
 
-  public static Action pasteComponentsMaybe(Project proj, Selection sel) {
+  public static boolean doPasteComponents(Project proj, Selection sel) {
     LayoutClipboard.Clip<Collection<Component>> clip = LayoutClipboard.forComponents.get(proj);
     if (clip == null)
-      return null;
+      return false;
     PasteComponents act = new PasteComponents(sel, clip);
-    return act.valid(proj) ? act : null;
+    if (act.valid(proj)) {
+      proj.doAction(act);
+      return true;
+    }
+    return false;
   }
 
-  public static Action pasteComponentsAsCircuitMaybe(Project proj) {
+  public static boolean doPasteComponentsAsCircuit(Project proj) {
     LayoutClipboard.Clip<Collection<Component>> clip = LayoutClipboard.forComponents.get(proj);
     if (clip == null)
-      return null;
+      return false;
     PasteComponentsAsCircuit act = new PasteComponentsAsCircuit(clip);
-    return act.valid(proj) ? act : null;
+    if (act.valid(proj)) {
+      proj.doAction(act);
+      return true;
+    }
+    return false;
   }
 
-  public static Action pasteCircuitMaybe(Project proj) {
+  public static boolean doPasteCircuit(Project proj) {
     LayoutClipboard.Clip<Circuit> clip = LayoutClipboard.forCircuit.get(proj);
     if (clip == null)
-      return null;
+      return false;
     PasteCircuit act = new PasteCircuit(clip);
-    return act.valid(proj) ? act : null;
+    if (act.valid(proj)) {
+      proj.doAction(act);
+      return true;
+    }
+    return false;
   }
 
-  public static Action pasteVhdlMaybe(Project proj) {
+  public static boolean doPasteVhdl(Project proj) {
     LayoutClipboard.Clip<VhdlContent> clip = LayoutClipboard.forVhdl.get(proj);
     if (clip == null)
-      return null;
+      return false;
     PasteVhdl act = new PasteVhdl(clip);
-    return act.valid(proj) ? act : null;
+    if (act.valid(proj)) {
+      proj.doAction(act);
+      return true;
+    }
+    return false;
   }
 
-  public static Action pasteLibraryMaybe(Project proj) {
+  public static boolean doPasteLibrary(Project proj) {
     LayoutClipboard.Clip<Library> clip = LayoutClipboard.forLibrary.get(proj);
     if (clip == null)
-      return null;
+      return false;
     // todo: error checking for naming clashes / duplicate libraries?
-    return LogisimFileActions.loadLibrary(clip.selection);
+    Action act = LogisimFileActions.loadLibrary(clip.selection);
+    // if (act.valid(proj))
+    proj.doAction(act);
+    return true;
   }
 
   public static Action translate(Selection sel, int dx, int dy, ReplacementMap repl) {

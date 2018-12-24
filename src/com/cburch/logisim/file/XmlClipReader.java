@@ -119,7 +119,7 @@ public class XmlClipReader extends XmlReader {
       return null;
     }
 
-    Library addMissingLibrary(String name) throws XmlReaderException, LoadCanceledByUser {
+    private Library addMissingLibrary(String name) throws XmlReaderException, LoadCanceledByUser {
       Library lib = libraries.get(name);
       if (lib != null)
         return lib;
@@ -133,7 +133,7 @@ public class XmlClipReader extends XmlReader {
       return lib;
     }
 
-    Tool addMissingTool(String name) throws XmlReaderException {
+    private Tool addMissingTool(String name) throws XmlReaderException {
       Tool tool = tools.get(name);
       if (tool != null)
         return tool;
@@ -147,7 +147,7 @@ public class XmlClipReader extends XmlReader {
       throw new XmlReaderException(S.fmt("compUnknownError", name));
     }
 
-    Tool addMissingCircuit(String name, Element elt) throws XmlReaderException {
+    private Tool addMissingCircuit(String name, Element elt) throws XmlReaderException {
       Circuit circ = new Circuit(name, file);
       // this part is in a transaction that gets executed later
       CircuitData circData = new CircuitData(this, elt, circ);
@@ -158,7 +158,7 @@ public class XmlClipReader extends XmlReader {
       return tool;
     }
 
-    Tool addMissingVhdl(String name, Element elt) throws XmlReaderException {
+    private Tool addMissingVhdl(String name, Element elt) throws XmlReaderException {
       VhdlContent contents = VhdlContent.parse(name, elt.getTextContent(), file);
       Tool tool = new AddTool(null, new VhdlEntity(contents));
       tools.put(name, tool);
@@ -166,7 +166,7 @@ public class XmlClipReader extends XmlReader {
       return tool;
     }
 
-    private Component parseComponent(Element elt, int depth)
+    private Component parseComponent(Element elt)
     throws XmlReaderException, LoadCanceledByUser {
       boolean isBad = false;
       String name = elt.getAttribute("name");
@@ -192,7 +192,7 @@ public class XmlClipReader extends XmlReader {
       initAttributeSet(elt, attrs, source);
       Location loc = XmlCircuitReader.parseComponentLoc(elt, name); // source.getName()
       Component comp = source.createComponent(loc, attrs);
-      if (depth == 0 && isBad)
+      if (isBad)
         badComponents.add(comp);
       return comp;
     }
@@ -225,10 +225,14 @@ public class XmlClipReader extends XmlReader {
             selectedComponents.add(XmlCircuitReader.parseWire(c));
             break;
           case "comp":
-            selectedComponents.add(parseComponent(c, 0));
+            selectedComponents.add(parseComponent(c));
             break;
           case "circuit":
             selectedCircuit = parseCircuit(c);
+            // check if the circuit has any missind dependencies
+            for (Element cc : XmlIterator.forChildElements(c))
+              if (cc.getTagName().equals("comp"))
+                parseComponent(cc);
             break;
           case "vhdl":
             selectedVhdl = parseVhdl(c);
@@ -240,15 +244,6 @@ public class XmlClipReader extends XmlReader {
             // do nothing
           }
         }
-      }
-
-      // check for name clashes
-      String name = null;
-      if (selectedCircuit != null)
-        name = selectedCircuit.circuit.getName();
-      else if (selectedVhdl != null)
-        name = selectedVhdl.getName();
-      if (name != null) {
       }
 
       if (badComponents.isEmpty())

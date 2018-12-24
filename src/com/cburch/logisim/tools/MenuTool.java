@@ -113,16 +113,15 @@ public final class MenuTool extends Tool {
 
     MenuSelection(Project proj) {
       this.proj = proj;
-      boolean canChange = proj.getLogisimFile().contains(
-          proj.getCurrentCircuit());
-      add(del);
-      del.addActionListener(this);
-      del.setEnabled(canChange);
+      boolean canChange = proj.getLogisimFile().contains(proj.getCurrentCircuit());
       add(cut);
       cut.addActionListener(this);
       cut.setEnabled(canChange);
       add(copy);
       copy.addActionListener(this);
+      add(del);
+      del.addActionListener(this);
+      del.setEnabled(canChange);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -131,9 +130,9 @@ public final class MenuTool extends Tool {
       if (src == del) {
         proj.doAction(SelectionActions.delete(sel));
       } else if (src == cut) {
-        proj.doAction(SelectionActions.cut(proj, sel));
+        SelectionActions.doCut(proj, sel);
       } else if (src == copy) {
-        SelectionActions.copy(proj, sel);
+        SelectionActions.doCopy(proj, sel);
       }
     }
 

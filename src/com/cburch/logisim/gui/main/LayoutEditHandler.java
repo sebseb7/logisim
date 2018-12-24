@@ -130,7 +130,7 @@ public class LayoutEditHandler extends EditHandler
     // copy components from circuit
     Selection sel = frame.getCanvas().getSelection();
     if (sel != null && !sel.isEmpty()) {
-      SelectionActions.copy(proj, sel);
+      SelectionActions.doCopy(proj, sel);
       return;
     }
     // copy circuit or vhdl from project or library
@@ -139,17 +139,17 @@ public class LayoutEditHandler extends EditHandler
       ComponentFactory f = ((AddTool)tool).getFactory();
       if (f instanceof SubcircuitFactory) {
         Circuit c = ((SubcircuitFactory)f).getSubcircuit();
-        SelectionActions.copy(proj, c);
+        SelectionActions.doCopy(proj, c);
       } else if (f instanceof VhdlEntity) {
         VhdlContent c = ((VhdlEntity)f).getContent();
-        SelectionActions.copy(proj, c);
+        SelectionActions.doCopy(proj, c);
       }
       return;
     }
     // copy library from project
     Library lib = frame.getSelectedToolboxLibrary();
     if (lib != null && proj.getLogisimFile().getLibraries().contains(lib)) {
-      SelectionActions.copy(proj, lib);
+      SelectionActions.doCopy(proj, lib);
       return;
     }
   }
@@ -160,29 +160,23 @@ public class LayoutEditHandler extends EditHandler
     // cut components from circuit
     Selection sel = frame.getCanvas().getSelection();
     if (sel != null && !sel.isEmpty()) {
-      proj.doAction(SelectionActions.cut(proj, sel));
+      SelectionActions.doCut(proj, sel);
       return;
     }
     // cut circuit or vhdl from project
     Tool tool = frame.getSelectedToolboxTool();
     if (tool instanceof AddTool && proj.getLogisimFile().containsFromSource(tool)) {
       ComponentFactory f = ((AddTool)tool).getFactory();
-      if (f instanceof SubcircuitFactory) {
-        Circuit c = ((SubcircuitFactory)f).getSubcircuit();
-        SelectionActions.copy(proj, c);
-        ProjectCircuitActions.doRemoveCircuit(proj, c);
-      } else if (f instanceof VhdlEntity) {
-        VhdlContent c = ((VhdlEntity)f).getContent();
-        SelectionActions.copy(proj, c);
-        ProjectCircuitActions.doRemoveVhdl(proj, c);
-      }
+      if (f instanceof SubcircuitFactory)
+        SelectionActions.doCut(proj, ((SubcircuitFactory)f).getSubcircuit());
+      else if (f instanceof VhdlEntity)
+        SelectionActions.doCut(proj, ((VhdlEntity)f).getContent());
       return;
     }
     // cut library from project
     Library lib = frame.getSelectedToolboxLibrary();
     if (lib != null && proj.getLogisimFile().getLibraries().contains(lib)) {
-      SelectionActions.copy(proj, lib);
-      ProjectLibraryActions.doUnloadLibrary(proj, lib);
+      SelectionActions.doCut(proj, lib);
       return;
     }
   }
@@ -265,7 +259,7 @@ public class LayoutEditHandler extends EditHandler
     Project proj = frame.getProject();
     Selection sel = frame.getCanvas().getSelection();
     selectSelectTool(proj);
-    proj.doAction(SelectionActions.pasteMaybe(proj, sel));
+    SelectionActions.doPaste(proj, sel);
   }
 
   public void projectChanged(ProjectEvent e) {

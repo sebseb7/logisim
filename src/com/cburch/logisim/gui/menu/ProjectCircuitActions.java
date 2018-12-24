@@ -134,14 +134,6 @@ public class ProjectCircuitActions {
     proj.setCurrentHdlModel(content);
   }
 
-  public static void doPasteCircuitOrVhdl(Project proj) {
-
-  }
-
-  public static void doPasteAsCircuit(Project proj) {
-
-  }
-
   public static void doAnalyze(Project proj, Circuit circuit) {
     Map<Instance, String> pinNames = Analyze.getPinLabels(circuit);
     ArrayList<Var> inputVars = new ArrayList<Var>();

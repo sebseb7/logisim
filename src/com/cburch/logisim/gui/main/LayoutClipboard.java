@@ -80,6 +80,17 @@ public class LayoutClipboard<T>
       vhdl = ctx.getVhdl();
       libraries = ctx.getLibraries();
       circuitTransaction = ctx.getCircuitTransaction();
+      // System.out.println("== clip report ==");
+      // System.out.println("selection: " + selection.getClass());
+      // System.out.println("circuits: ");
+      // for (Circuit c : circuits)
+      //   System.out.println(" - " + c.getName());
+      // System.out.println("vhdl: ");
+      // for (VhdlContent c : vhdl)
+      //   System.out.println(" - " + c.getName());
+      // System.out.println("libraries: ");
+      // for (Library c : libraries)
+      //   System.out.println(" - " + c.getName());
     }
   }
 

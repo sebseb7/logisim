@@ -43,6 +43,8 @@ import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.generic.PopupMenu;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.gui.main.LayoutClipboard;
+import com.cburch.logisim.gui.main.Selection;
+import com.cburch.logisim.gui.main.SelectionActions;
 import com.cburch.logisim.gui.main.StatisticsDialog;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.hdl.VhdlContent;
@@ -54,20 +56,31 @@ public class Popups {
 
   private static class CircuitPopup extends PopupMenu {
     Project proj;
-    /* Tool tool; */
     Circuit circuit;
+
+    static final String cut = "projectCutCircuitItem";
+    static final String copy = "projectCopyCircuitItem";
+    static final String paste = "projectPasteComponentsItem";
+    static final String delete = "projectRemoveCircuitItem";
 
     static final String editLayout = "projectEditCircuitLayoutItem";
     static final String editAppearance = "projectEditCircuitAppearanceItem";
     static final String analyze = "projectAnalyzeCircuitItem";
     static final String stats = "projectGetCircuitStatisticsItem";
     static final String main = "projectSetAsMainItem";
-    static final String remove = "projectRemoveCircuitItem";
 
     CircuitPopup(Project proj, Tool tool, Circuit circuit) {
       super(S.get("circuitMenu"));
       this.proj = proj;
       this.circuit = circuit;
+      Selection sel = proj.getFrame().getCanvas().getSelection();
+
+      add(cut, S.get(cut), e -> SelectionActions.doCut(proj, circuit));
+      add(copy, S.get(copy), e -> SelectionActions.doCopy(proj, circuit));
+      add(paste, S.get(paste), e -> SelectionActions.doPasteComponents(proj, sel));
+      add(delete, S.get(delete), e -> ProjectCircuitActions.doRemoveCircuit(proj, circuit));
+
+      addSeparator();
 
       add(editLayout, S.get(editLayout), e -> {
         proj.setCurrentCircuit(circuit);
@@ -77,27 +90,27 @@ public class Popups {
         proj.setCurrentCircuit(circuit);
         proj.getFrame().setEditorView(Frame.EDIT_APPEARANCE);
       });
-      add(analyze, S.get(analyze), e -> {
-        ProjectCircuitActions.doAnalyze(proj, circuit);
-      });
+      add(analyze, S.get(analyze), e -> ProjectCircuitActions.doAnalyze(proj, circuit));
       add(stats, S.get(stats), e -> {
         JFrame frame = (JFrame) SwingUtilities.getRoot(this);
         StatisticsDialog.show(frame, proj.getLogisimFile(), circuit);
       });
+
       addSeparator();
-      add(main, S.get(main), e -> {
-        ProjectCircuitActions.doSetAsMainCircuit(proj, circuit);
-      });
-      add(remove, S.get(remove), e -> {
-        ProjectCircuitActions.doRemoveCircuit(proj, circuit);
-      });
+
+      add(main, S.get(main), e -> ProjectCircuitActions.doSetAsMainCircuit(proj, circuit));
     }
 
     @Override
     protected boolean shouldEnable(Object tag) {
       boolean canChange = proj.getLogisimFile().contains(circuit);
       LogisimFile file = proj.getLogisimFile();
-      if (tag == editAppearance)
+      if (tag == cut || tag == delete)
+        return canChange && file.getCircuitCount() > 1
+          && proj.getDependencies().canRemove(circuit);
+      else if (tag == paste)
+        return canChange && !LayoutClipboard.forComponents.isEmpty();
+      else if (tag == editAppearance)
         return !(circuit == proj.getCurrentCircuit() &&
             proj.getFrame().getEditorView().equals(Frame.EDIT_APPEARANCE));
       else if (tag == editLayout)
@@ -105,9 +118,6 @@ public class Popups {
             !proj.getFrame().getEditorView().equals(Frame.EDIT_APPEARANCE));
       else if (tag == main)
         return canChange && file.getMainCircuit() != circuit;
-      else if (tag == remove)
-        return canChange && file.getCircuitCount() > 1
-          && proj.getDependencies().canRemove(circuit);
       else
         return true;
     }
@@ -117,16 +127,24 @@ public class Popups {
     Project proj;
     VhdlContent vhdl;
 
+    static final String cut = "projectCutVhdlItem";
+    static final String copy = "projectCopyVhdlItem";
+    static final String delete = "projectRemoveVhdlItem";
+
     static final String edit = "projectEditVhdlItem";
-    static final String remove = "projectRemoveVhdlItem";
 
     VhdlPopup(Project proj, Tool tool, VhdlContent vhdl) {
       super(S.get("vhdlMenu"));
       this.proj = proj;
       this.vhdl = vhdl;
 
+      add(cut, S.get(cut), e -> SelectionActions.doCut(proj, vhdl));
+      add(copy, S.get(copy), e -> SelectionActions.doCopy(proj, vhdl));
+      add(delete, S.get(delete), e -> ProjectCircuitActions.doRemoveVhdl(proj, vhdl));
+
+      addSeparator();
+
       add(edit, S.get(edit), e -> proj.setCurrentHdlModel(vhdl));
-      add(remove, S.get(remove), e -> ProjectCircuitActions.doRemoveVhdl(proj, vhdl));
     }
 
     @Override
@@ -135,7 +153,7 @@ public class Popups {
       LogisimFile file = proj.getLogisimFile();
       if (tag == edit)
         return vhdl != proj.getFrame().getHdlEditorView();
-      else if (tag == remove)
+      else if (tag == cut || tag == delete)
         return canChange && proj.getDependencies().canRemove(vhdl);
       else
         return true;
@@ -146,6 +164,9 @@ public class Popups {
     Project proj;
     Library lib;
     boolean is_top;
+
+    static final String cut = "projectCutLibraryItem";
+    static final String copy = "projectCopyLibraryItem";
 
     static final String unload = "projectUnloadLibraryItem";
     static final String reload = "projectReloadLibraryItem";
@@ -158,14 +179,18 @@ public class Popups {
       LoadedLibrary loadedLib = (lib instanceof LoadedLibrary)
           ? (LoadedLibrary)lib : null;
 
+      add(cut, S.get(cut), e -> SelectionActions.doCut(proj, lib));
+      add(copy, S.get(copy), e -> SelectionActions.doCopy(proj, lib));
+
+      addSeparator();
+
       add(unload, S.get(unload), e -> ProjectLibraryActions.doUnloadLibrary(proj, lib));
       add(reload, S.get(reload), e -> proj.getLogisimFile().getLoader().reload(loadedLib));
-
     }
 
     @Override
     protected boolean shouldEnable(Object tag) {
-      if (tag == unload)
+      if (tag == unload || tag == cut)
         return is_top;
       else if (tag == reload)
         return is_top && lib instanceof LoadedLibrary;
@@ -176,11 +201,13 @@ public class Popups {
 
   private static class ProjectPopup extends PopupMenu {
     Project proj;
-    static final String cut = "editCutItem";
-    static final String copy = "editCopyItem";
+
+    static final String paste = "editPasteItem"; // used only when no others are applicable
     static final String pasteCircuit = "projectPasteCircuitItem";
     static final String pasteAsCircuit = "projectPasteAsCircuitItem";
     static final String pasteVhdl = "projectPasteVhdlItem";
+    static final String pasteLibrary = "projectPasteLibraryItem";
+
     static final String addCirc = "projectAddCircuitItem";
     static final String addVhdl = "projectAddVhdlItem";
     static final String importVhdl = "projectImportVhdlItem";
@@ -193,6 +220,21 @@ public class Popups {
     ProjectPopup(Project proj) {
       super(S.get("projMenu"));
       this.proj = proj;
+      Selection sel = proj.getFrame().getCanvas().getSelection();
+
+      add(paste, S.get(paste), e -> { }); // shows as disabled when others paste items are hidden
+      add(pasteCircuit, S.get(pasteCircuit), e -> SelectionActions.doPaste(proj, sel));
+      add(pasteAsCircuit, S.get(pasteAsCircuit), e -> SelectionActions.doPasteComponentsAsCircuit(proj));
+      add(pasteVhdl, S.get(pasteVhdl), e -> SelectionActions.doPaste(proj, sel));
+      add(pasteLibrary, S.get(pasteLibrary), e -> SelectionActions.doPaste(proj, sel));
+
+      addSeparator();
+
+      add(addCirc, S.get(addCirc), e -> ProjectCircuitActions.doAddCircuit(proj));
+      add(addVhdl, S.get(addVhdl), e -> ProjectCircuitActions.doAddVhdl(proj));
+      add(importVhdl, S.get(importVhdl), e -> ProjectCircuitActions.doImportVhdl(proj));
+
+      addSeparator();
 
       load.add(loadBuiltin);
       loadBuiltin.addActionListener(e -> ProjectLibraryActions.doLoadBuiltinLibrary(proj));
@@ -201,22 +243,12 @@ public class Popups {
       load.add(loadJar);
       loadJar.addActionListener(e -> ProjectLibraryActions.doLoadJarLibrary(proj));
 
-      add(cut, cut, e -> { });
-      add(copy, copy, e -> { });
-      add(pasteCircuit, pasteCircuit, e -> ProjectCircuitActions.doPasteCircuitOrVhdl(proj));
-      add(pasteAsCircuit, pasteAsCircuit, e -> ProjectCircuitActions.doPasteAsCircuit(proj));
-      add(pasteVhdl, pasteVhdl, e -> ProjectCircuitActions.doPasteCircuitOrVhdl(proj));
-      addSeparator();
-      add(addCirc, addCirc, e -> ProjectCircuitActions.doAddCircuit(proj));
-      add(addVhdl, addVhdl, e -> ProjectCircuitActions.doAddVhdl(proj));
-      add(importVhdl, importVhdl, e -> ProjectCircuitActions.doImportVhdl(proj));
-      addSeparator();
       add(load);
     }
     
     @Override
     protected boolean shouldEnable(Object tag) {
-      return !(tag == cut || tag == copy);
+      return tag != paste;
     }
 
     @Override
@@ -227,6 +259,13 @@ public class Popups {
         return !LayoutClipboard.forComponents.isEmpty();
       else if (tag == pasteVhdl)
         return !LayoutClipboard.forVhdl.isEmpty();
+      else if (tag == pasteLibrary)
+        return !LayoutClipboard.forVhdl.isEmpty();
+      else if (tag == paste)
+        return LayoutClipboard.forCircuit.isEmpty()
+            && LayoutClipboard.forComponents.isEmpty()
+            && LayoutClipboard.forVhdl.isEmpty()
+            && LayoutClipboard.forLibrary.isEmpty();
       else
         return true;
     }
@@ -249,9 +288,9 @@ public class Popups {
     return new ProjectPopup(proj);
   }
 
-  // todo: tool popup
-  public static JPopupMenu forTool(Project proj, Tool tool) {
-    return null;
-  }
+  // todo: tool popup for toolbar?
+  // public static JPopupMenu forTool(Project proj, Tool tool) {
+  //   return null;
+  // }
 
 }
