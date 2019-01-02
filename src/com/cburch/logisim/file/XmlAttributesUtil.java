@@ -63,7 +63,8 @@ public class XmlAttributesUtil {
           a.setAttribute("name", attr.getName());
           String value = attr.toStandardString(val);
           if (attr.getName().equals("filePath")
-              && outFilepath != null) {
+              && outFilepath != null) { // for tcl console file path
+            // fixme: 
             Path outFP = Paths.get(outFilepath);
             Path attrValP = Paths.get(value);
             value = (outFP.relativize(attrValP)).toString();

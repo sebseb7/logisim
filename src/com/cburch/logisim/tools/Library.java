@@ -30,16 +30,11 @@
 
 package com.cburch.logisim.tools;
 
-import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.util.Set;
 import java.util.Collections;
 import java.util.List;
 
-import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.UIManager;

@@ -846,7 +846,7 @@ class XmlProjectReader extends XmlReader {
       end = libElt.getNextSibling();
     }
     for (Library lib : loader.getBuiltin().getLibraries()) {
-      String desc = loader.getDescriptor(lib);
+      String desc = loader.getShortDescriptor(lib);
       if (found.contains(desc))
         continue;
       Element libElt = doc.createElement("lib");

@@ -34,130 +34,197 @@ import static com.cburch.logisim.file.Strings.S;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.WeakHashMap;
 
 import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.std.Builtin;
 
 public class LibraryManager {
-  private static class JarDescriptor extends LibraryDescriptor {
-    private File file;
-    private String className;
-
-    JarDescriptor(File file, String className) {
-      this.file = file;
-      this.className = className;
-    }
-
-    @Override
-    boolean concernsFile(File query) {
-      return file.equals(query);
-    }
-
-    @Override
-    public boolean equals(Object other) {
-      if (!(other instanceof JarDescriptor))
-        return false;
-      JarDescriptor o = (JarDescriptor) other;
-      return this.file.equals(o.file)
-          && this.className.equals(o.className);
-    }
-
-    @Override
-    public int hashCode() {
-      return file.hashCode() * 31 + className.hashCode();
-    }
-
-    @Override
-    void setBase(Loader loader, LoadedLibrary lib)
-        throws LoadFailedException {
-      lib.setBase(loader.loadJarFile(file, className));
-    }
-
-    @Override
-    String toDescriptor(Loader loader) {
-      return "jar#" + toRelative(loader, file) + desc_sep + className;
-    }
-  }
 
   private static abstract class LibraryDescriptor {
-    abstract boolean concernsFile(File query);
+    protected final String prefix, suffix;
+    protected final File absoluteFile;
+
+    LibraryDescriptor(String prefix, File absoluteFile, String optionalSuffix) {
+      if (!absoluteFile.isAbsolute())
+        throw new IllegalArgumentException("library path must be absolute");
+      this.prefix = prefix;
+      this.absoluteFile = absoluteFile;
+      this.suffix = (optionalSuffix != null ? "#" + optionalSuffix : "");
+    }
+
+    boolean isSameFile(File query) {
+      try {
+        return Files.isSameFile(absoluteFile.toPath(), query.toPath());
+      } catch (IOException e) {
+        return absoluteFile.equals(query);
+      }
+      // if (!query.isAbsolute())
+      //   throw new IllegalArgumentException("library query path must be absolute");
+      // return absoluteFile.equals(query);
+    }
 
     abstract void setBase(Loader loader, LoadedLibrary lib)
         throws LoadFailedException;
 
-    abstract String toDescriptor(Loader loader);
-  }
-
-  private static class LogisimProjectDescriptor extends LibraryDescriptor {
-    private File file;
-
-    LogisimProjectDescriptor(File file) {
-      this.file = file;
+    String toShortDescriptor() {
+      return prefix + "#"
+          + absoluteFile.getName()
+          + suffix;
     }
 
-    @Override
-    boolean concernsFile(File query) {
-      return file.equals(query);
+    String toRelativeDescriptor(Loader loader) {
+      return prefix + "#"
+          + toRelative(loader.getMainFile().toPath(), absoluteFile.toPath())
+          + suffix;
+    }
+
+    String toAbsoluteDescriptor() {
+      return prefix + "#" + absoluteFile.toString() + suffix;
     }
 
     @Override
     public boolean equals(Object other) {
-      if (!(other instanceof LogisimProjectDescriptor))
+      if (!(other instanceof LibraryDescriptor))
         return false;
-      LogisimProjectDescriptor o = (LogisimProjectDescriptor) other;
-      return this.file.equals(o.file);
+      return this.toAbsoluteDescriptor().equals(((LibraryDescriptor)other).toAbsoluteDescriptor());
     }
 
     @Override
     public int hashCode() {
-      return file.hashCode();
+      return this.toAbsoluteDescriptor().hashCode();
+    }
+
+  }
+
+  private static class JarDescriptor extends LibraryDescriptor {
+    private String className;
+
+    JarDescriptor(File absFile, String className) {
+      super("jar", absFile, className);
+      this.className = className;
     }
 
     @Override
-    void setBase(Loader loader, LoadedLibrary lib)
-        throws LoadFailedException {
-      lib.setBase(loader.loadLogisimFile(file));
-    }
-
-    @Override
-    String toDescriptor(Loader loader) {
-      return "file#" + toRelative(loader, file);
+    void setBase(Loader loader, LoadedLibrary lib) throws LoadFailedException {
+      lib.setBase(loader.loadJarFile(absoluteFile, className));
     }
   }
 
-  private static String toRelative(Loader loader, File file) {
-    File currentDirectory = loader.getCurrentDirectory();
-    if (currentDirectory == null) {
-      try {
-        return file.getCanonicalPath();
-      } catch (IOException e) {
-        return file.toString();
-      }
+  private static class LogisimProjectDescriptor extends LibraryDescriptor {
+
+    LogisimProjectDescriptor(File absFile) {
+      super("file", absFile, null);
     }
 
-    File fileDir = file.getParentFile();
-    if (fileDir != null) {
-      if (currentDirectory.equals(fileDir)) {
-        return file.getName();
-      } else if (currentDirectory.equals(fileDir.getParentFile())) {
-        return fileDir.getName() + File.separator + file.getName();
-      } else if (fileDir.equals(currentDirectory.getParentFile())) {
-        return ".." + File.separator + file.getName();
-      }
+    @Override
+    void setBase(Loader loader, LoadedLibrary lib) throws LoadFailedException {
+      lib.setBase(loader.loadLogisimFile(absoluteFile));
     }
+
+  }
+
+//  private static String toRelative(File circFile, File otherFile) {
+//     File curdir = circFile.getParentFile();
+//     if (curdir == null)
+//       throw new IllegalArgumentException("circ file must have parent");
+//    //   try {
+//    //     return file.getCanonicalPath();
+//    //   } catch (IOException e) {
+//    //     return file.toString();
+//    //   }
+// 
+//     String name = otherFile.getName();
+//     File fileDir = otherFile.getParentFile();
+//     if (fileDir == null)
+//       throw new IllegalArgumentException("other file must be absolute");
+// 
+//     // if (fileDir != null) {
+//       if (curdir.equals(fileDir))
+//         return name;
+//       else if (curdir.equals(fileDir.getParentFile()))
+//         return fileDir.getName() + File.separator + name;
+//       else if (fileDir.equals(curdir.getParentFile()))
+//         return ".." + File.separator + name;
+//       else
+//         return otherFile.toString();
+//     // }
+//     //   try {
+//     //     return file.getCanonicalPath();
+//     //   } catch (IOException e) {
+//     //     return file.toString();
+//     //   }
+//  }
+
+  // Logisim .circ files contain some embedded file paths, e.g. for external
+  // libraries ("file#foo.circ" or "jar#foo.jar"), and for some tcl-related or
+  // hdl-related components. When user adds an external library (todo: or
+  // chooses a path for tcl-related or hdl-related components), we don't know if
+  // the user would prefer to embed a relative path (i.e. relative to the
+  // directory containing the .circ file, or to the current working directory),
+  // or an absolute path. The pros and cons depend on the situation:
+  //  - Moving .circ file around within same filesystem with some shared
+  //    libraries: abs is better.
+  //  - Moving .circ file together with dependencies (e.g. in "project" folder):
+  //    rels is better.
+  // And there are complications:
+  //  - If the circ file hasn't yet been saved, .circ file directory is unknown.
+  //  - Upon save-as, the .circ file directory may change.
+  //  - For windows and mac, the cwd is often not obvious or intuitive.
+  //
+  // Currently, when saving a .circ file, we make relative any path that is for
+  // a file in the same directory, some sub-directory, or the direct parent
+  // directory of the .circ file. So for a circ file:
+  //      /home/kwalsh/proj/foo.circ
+  // we would use these relative paths:
+  //      jar#lib.jar          -- resolves to /home/kwalsh/proj/lib.jar
+  //      jar#libs/lib.jar     -- resolves to /home/kwalsh/proj/libs/lib.jar
+  //      jar#libs/foo/lib.jar -- resolves to /home/kwalsh/proj/libs/foo/lib.jar
+  //      jar#../lib.jar       -- resolves to /home/kwalsh/lib.jar
+  // and all other paths would be written as absolute, canonical paths. When
+  // loading a .circ file, we resolve relative paths against the directory
+  // containing the .circ file. When copy-pasting, we always use absolute,
+  // canonical paths.
+  //
+  // There is currently no way to change the path except by editing the saved
+  // xml. Ideally, paths would stay the same through load-edit-save cycles, but
+  // currently all paths are re-normalized when saving the .circ file. It might
+  // make sense to add a property in the attributes tab to allow a choice of
+  // "relative" or "absolute" (or maybe "shell-style with homedir, etc.), and
+  // maybe normalize only once upon the first save then preserve any later
+  // changes the user makes to the paths. Alternatively, we could have a global
+  // or project option to control the default, or a dialog on import.
+
+  public static String toRelative(Path circFile, Path embeddedFile) {
+    if (!embeddedFile.isAbsolute())
+      throw new IllegalArgumentException("embedded path must be absolute");
+    if (!circFile.isAbsolute())
+      throw new IllegalArgumentException("circ path must be absolute");
     try {
-      return file.getCanonicalPath();
+      embeddedFile = embeddedFile.toRealPath();
+      Path baseDir = circFile.toRealPath().getParent();
+      Path baseParentDir = baseDir.getParent();
+      Path eDir = embeddedFile.getParent();
+      String eName = embeddedFile.getFileName().toString();
+      if (baseDir.equals(eDir))
+        return eName;
+      if (baseParentDir != null && baseParentDir.equals(eDir))
+        return ".." + File.separator + eName;
+      if (eDir.startsWith(baseDir))
+        return eDir.subpath(baseDir.getNameCount(), eDir.getNameCount())
+            + File.separator + eName;
     } catch (IOException e) {
-      return file.toString();
     }
+    return embeddedFile.toString();
   }
 
   public static final LibraryManager instance = new LibraryManager();
 
-  private static char desc_sep = '#';
   private HashMap<LibraryDescriptor, WeakReference<LoadedLibrary>> fileMap;
 
   private WeakHashMap<LoadedLibrary, LibraryDescriptor> invMap;
@@ -203,9 +270,8 @@ public class LibraryManager {
   public Library findReference(LogisimFile file, File query) {
     for (Library lib : file.getLibraries()) {
       LibraryDescriptor desc = invMap.get(lib);
-      if (desc != null && desc.concernsFile(query)) {
+      if (desc != null && desc.isSameFile(query))
         return lib;
-      }
       if (lib instanceof LoadedLibrary) {
         LoadedLibrary loadedLib = (LoadedLibrary) lib;
         if (loadedLib.getBase() instanceof LogisimFile) {
@@ -219,16 +285,51 @@ public class LibraryManager {
     return null;
   }
 
-  public String getDescriptor(Loader loader, Library lib) {
-    if (loader.getBuiltin().getLibraries().contains(lib)) {
-      return desc_sep + lib.getName();
+  private String getDescriptor(Loader loader, Library lib, int verbose) {
+    if (Builtin.isBuiltinLibrary(lib.getClass())) {
+      return "#" + lib.getName();
     } else {
       LibraryDescriptor desc = invMap.get(lib);
       if (desc == null)
         return null;
-      return desc.toDescriptor(loader);
+      if (verbose == 0)
+        return desc.toShortDescriptor();
+      else if (verbose == 1 && loader.getMainFile() != null)
+        return desc.toRelativeDescriptor(loader);
+      else
+        return desc.toAbsoluteDescriptor();
     }
   }
+
+  public String getShortDescriptor(Library lib) {
+    return getDescriptor(null, lib, 0);
+  }
+
+  public String getRelativeDescriptor(Loader loader, Library lib) {
+    return getDescriptor(loader, lib, 1);
+  }
+
+  public String getAbsoluteDescriptor(Library lib) {
+    return getDescriptor(null, lib, 2);
+  }
+
+  public String getShortDescriptor(String desc) {
+    if (desc.startsWith("file#")) {
+      String path = desc.substring(5);
+      String file = new File(path).getName();
+      return "file#" + file;
+    } else if (desc.startsWith("jar#")) {
+      String path = desc.substring(4);
+      int i = path.lastIndexOf('#');
+      if (i >= 0)
+        path = path.substring(0, i);
+      String file = new File(path).getName();
+      return "file#" + file + (i >= 0 ? path.substring(i) : "");
+    } else {
+      return desc;
+    }
+  }
+
 
   Collection<LogisimFile> getLogisimLibraries() {
     ArrayList<LogisimFile> ret = new ArrayList<LogisimFile>();
@@ -240,15 +341,17 @@ public class LibraryManager {
     return ret;
   }
 
-  public LoadedLibrary loadJarLibrary(Loader loader, File toRead,
+  public LoadedLibrary loadJarLibrary(Loader loader, File toReadAbsolute,
       String className) {
-    JarDescriptor jarDescriptor = new JarDescriptor(toRead, className);
+    if (!toReadAbsolute.isAbsolute())
+      throw new IllegalArgumentException("jar path must be absolute");
+    JarDescriptor jarDescriptor = new JarDescriptor(toReadAbsolute, className);
     LoadedLibrary ret = findKnown(jarDescriptor);
     if (ret != null)
       return ret;
 
     try {
-      ret = new LoadedLibrary(loader.loadJarFile(toRead, className));
+      ret = new LoadedLibrary(loader.loadJarFile(toReadAbsolute, className));
     } catch (LoadFailedException e) {
       loader.showError(e.getMessage());
       return null;
@@ -262,7 +365,7 @@ public class LibraryManager {
   public Library loadLibrary(Loader loader, String desc) throws LoadCanceledByUser {
     // It may already be loaded.
     // Otherwise we'll have to decode it.
-    int sep = desc.indexOf(desc_sep);
+    int sep = desc.indexOf('#');
     if (sep < 0) {
       loader.showError(S.fmt("fileDescriptorError", desc));
       return null;
@@ -281,7 +384,7 @@ public class LibraryManager {
       File toRead = loader.getFileFor(name, Loader.LOGISIM_FILTER);
       return loadLogisimLibrary(loader, toRead);
     } else if (type.equals("jar")) {
-      int sepLoc = name.lastIndexOf(desc_sep);
+      int sepLoc = name.lastIndexOf('#');
       String fileName = name.substring(0, sepLoc);
       String className = name.substring(sepLoc + 1);
       File toRead = loader.getFileFor(fileName, Loader.JAR_FILTER);

@@ -240,11 +240,11 @@ public class SelectionActions {
   }
 
   private static HashSet<Circuit> getDependencies(Circuit circ, Collection<Circuit> newCircs) {
-    LinkedList<Circuit> todo = new LinkedList<>();
+    LinkedList<Circuit> q = new LinkedList<>();
     HashSet<Circuit> downstream = new HashSet<>();
-    todo.add(circ);
-    while (!todo.isEmpty()) {
-      Circuit c = todo.remove();
+    q.add(circ);
+    while (!q.isEmpty()) {
+      Circuit c = q.remove();
       downstream.add(c);
       if (!newCircs.contains(c))
         continue; // reached the boundary between new and old circuits
@@ -254,9 +254,9 @@ public class SelectionActions {
           Circuit subCirc = factory.getSubcircuit();
           if (subCirc == circ)
             return null; // circular
-          if (todo.contains(subCirc) || downstream.contains(subCirc))
+          if (q.contains(subCirc) || downstream.contains(subCirc))
             continue; // already visited
-          todo.add(subCirc);
+          q.add(subCirc);
         }
       }
     }
@@ -824,8 +824,9 @@ public class SelectionActions {
     if (clip == null)
       return false;
     // todo: error checking for naming clashes / duplicate libraries?
+    if (proj.getLogisimFile().getLibraries().contains(clip.selection))
+      return false;
     Action act = LogisimFileActions.loadLibrary(clip.selection);
-    // if (act.valid(proj))
     proj.doAction(act);
     return true;
   }

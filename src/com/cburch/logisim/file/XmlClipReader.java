@@ -113,7 +113,13 @@ public class XmlClipReader extends XmlReader {
       if (desc == null)
         throw new XmlReaderException(S.fmt("libMissingError", name));
       for (Library lib : file.getLibraries()) {
-        if (LibraryManager.instance.getDescriptor(loader, lib).equals(desc))
+        // substitute libraries that have the same name and type, even if their
+        // file path differs. 
+        String d = LibraryManager.instance.getShortDescriptor(lib);
+        // Incoming name will be absolute path (necessary in
+        // case we need to load the library). We need to shorten it here.
+        String d2 = LibraryManager.instance.getShortDescriptor(name);
+        if (d.equals(d2))
           return lib;
       }
       return null;

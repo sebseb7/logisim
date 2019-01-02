@@ -131,7 +131,7 @@ public final class Softwares {
     chooser.setApproveButtonText(S.get("questaDialogButton"));
     int action = chooser.showOpenDialog(parent);
     if (action == JFileChooser.APPROVE_OPTION) {
-      File file = chooser.getSelectedFile();
+      File file = chooser.getSelectedFile(); // todo: relativize ??
 
       try {
         path = file.getCanonicalPath();

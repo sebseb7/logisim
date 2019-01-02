@@ -57,7 +57,8 @@ public class Builtin extends Library {
   }
 
   public static boolean isBuiltinLibrary(Class<? extends Library> libClass) {
-    return libClass == Base.class
+    return libClass == Builtin.class
+        || libClass == Base.class
         || libClass == Gates.class
         || libClass == Wiring.class
         || libClass == Plexers.class

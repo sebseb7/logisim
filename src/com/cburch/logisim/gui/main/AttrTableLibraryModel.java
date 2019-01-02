@@ -87,7 +87,7 @@ public class AttrTableLibraryModel extends AttributeSetTableModel {
       else
         path = "";
     } else {
-      String desc = LibraryManager.instance.getDescriptor(file.getLoader(), lib);
+      String desc = LibraryManager.instance.getRelativeDescriptor(file.getLoader(), lib);
       if (desc == null)
         desc = "#unknown";
       if (desc.startsWith("#")) {

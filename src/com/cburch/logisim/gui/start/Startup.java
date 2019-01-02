@@ -59,13 +59,13 @@ import com.cburch.logisim.util.MacCompatibility;
 
 public class Startup {
 
-  static void doOpen(File file) {
+  static void doOpen(File file) { // used by mac-os adapter
     if (startupTemp != null) {
       startupTemp.doOpenFile(file);
     }
   }
 
-  static void doPrint(File file) {
+  static void doPrint(File file) { // used by mac-os adapter
     if (startupTemp != null) {
       startupTemp.doPrintFile(file);
     }
@@ -502,10 +502,7 @@ public class Startup {
     return ttyFormat;
   }
 
-  private void loadTemplate(Loader loader, File templFile, boolean templEmpty) {
-    if (showSplash) {
-      monitor.setProgress(SplashScreen.TEMPLATE_OPEN);
-    }
+  private void loadTemplate() {
     if (templFile != null) {
       AppPreferences.setTemplateFile(templFile);
       AppPreferences.setTemplateType(AppPreferences.TEMPLATE_CUSTOM);
@@ -544,11 +541,10 @@ public class Startup {
     if (showSplash) {
       monitor.setProgress(SplashScreen.LIBRARIES);
     }
-    Loader templLoader = new Loader(monitor);
-    int count = templLoader.getBuiltin().getLibrary("Base").getTools()
-        .size()
-        + templLoader.getBuiltin().getLibrary("Gates").getTools()
-        .size();
+    Loader preLoader = new Loader(monitor);
+    int count;
+    count = preLoader.getBuiltin().getLibrary("Base").getTools().size();
+    count += preLoader.getBuiltin().getLibrary("Gates").getTools().size();
     if (count < 0) {
       // this will never happen, but the optimizer doesn't know that...
       logger.error("FATAL ERROR - no components"); // OK
@@ -556,13 +552,14 @@ public class Startup {
     }
 
     // load in template
-    loadTemplate(templLoader, templFile, templEmpty);
+    if (showSplash)
+      monitor.setProgress(SplashScreen.TEMPLATE_OPEN);
+    loadTemplate();
 
     // now that the splash screen is almost gone, we do some last-minute
     // interface initialization
-    if (showSplash) {
+    if (showSplash)
       monitor.setProgress(SplashScreen.GUI_INIT);
-    }
     WindowManagers.initialize();
     if (MacCompatibility.isSwingUsingScreenMenuBar()) {
       MacCompatibility.setFramelessJMenuBar(new LogisimMenuBar(null, null, null, null));
@@ -600,11 +597,10 @@ public class Startup {
         try {
           if (testVector != null) {
             Project proj = ProjectActions.doOpenNoWindow(monitor,
-                fileToOpen);
+                fileToOpen, substitutions);
             proj.doTestVector(testVector, circuitToTest);
           } else {
-            ProjectActions.doOpen(monitor, fileToOpen,
-                substitutions);
+            ProjectActions.doOpen(monitor, fileToOpen, substitutions);
           }
           numOpened++;
         } catch (LoadFailedException ex) {

@@ -34,8 +34,6 @@ import static com.cburch.logisim.file.Strings.S;
 import java.io.File;
 import java.io.OutputStream;
 import java.io.ByteArrayOutputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,7 +64,6 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.NamedNodeMap;
 
 import com.cburch.draw.model.AbstractCanvasObject;
-import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.SubcircuitFactory;
@@ -232,11 +229,7 @@ public class XmlWriter {
 
   private LogisimFile file;
   private Document doc;
-  /**
-   * Path of the file which is being written on disk -- used to relativize
-   * components stored in it
-   */
-  private String outFilepath;
+  private String outFilepath; // path of circ file begin written, used to relativize paths of components
   private LibraryLoader loader;
   private HashMap<Library, String> libs = new HashMap<Library, String>();
 
@@ -342,12 +335,13 @@ public class XmlWriter {
     return ret;
   }
 
-  Element fromLibrary(Library lib) {
+  Element fromLibrary(Library lib, boolean relative) {
     Element ret = doc.createElement("lib");
     if (libs.containsKey(lib))
       return null;
     String name = "" + libs.size();
-    String desc = loader.getDescriptor(lib);
+    String desc = relative ? loader.getRelativeDescriptor(lib)
+                           : loader.getAbsoluteDescriptor(lib);
     if (desc == null) { // should never happen for a loaded file?
       loader.showError("internal error: missing library: " + lib.getName());
       return null;
@@ -398,7 +392,7 @@ public class XmlWriter {
     ret.setAttribute("source", Main.VERSION_NAME);
 
     for (Library lib : file.getLibraries()) {
-      Element elt = fromLibrary(lib);
+      Element elt = fromLibrary(lib, true);
       if (elt != null)
         ret.appendChild(elt);
     }
@@ -478,7 +472,7 @@ public class XmlWriter {
     for (Library lib : usedLibs) {
       if (lib == file)
         continue;
-      Element elt = fromLibrary(lib);
+      Element elt = fromLibrary(lib, false);
       if (elt != null)
         ret.appendChild(elt);
     }
@@ -506,7 +500,7 @@ public class XmlWriter {
       }
     } else if (sel instanceof Library) {
       e.setAttribute("type", "lib"); // not used by parser
-      e.appendChild(fromLibrary((Library)sel));
+      e.appendChild(fromLibrary((Library)sel, false));
     } else {
       throw new IllegalArgumentException("clipboard type not supported: " + sel);
     }

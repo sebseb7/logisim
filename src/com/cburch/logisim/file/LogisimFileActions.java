@@ -307,7 +307,7 @@ public class LogisimFileActions {
         Library dstLib = dst.getLibrary(srcLib.getName());
         if (dstLib == null) {
           try {
-            String desc = src.getLoader().getDescriptor(srcLib);
+            String desc = src.getLoader().getAbsoluteDescriptor(srcLib);
             dstLib = dst.getLoader().loadLibrary(desc);
             proj.getLogisimFile().addLibrary(dstLib);
             if (libraries == null)

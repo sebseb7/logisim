@@ -301,7 +301,8 @@ public class ProjectActions {
     return completeProject(monitor, loader, file, false);
   }
 
-  public static Project doOpenNoWindow(SplashScreen monitor, File source)
+  public static Project doOpenNoWindow(SplashScreen monitor, File source,
+      Map<File, File> substitutions)
       throws LoadFailedException {
     Loader loader = new Loader(monitor);
     LogisimFile file = loader.openLogisimFile(source);
@@ -365,13 +366,10 @@ public class ProjectActions {
       if (returnVal != JFileChooser.APPROVE_OPTION) {
         return false;
       }
-      validFilename = checkValidFilename(chooser.getSelectedFile()
-          .getName());
+      validFilename = checkValidFilename(chooser.getSelectedFile().getName());
       if (!validFilename) {
-        JOptionPane
-            .showMessageDialog(
-                chooser,
-                "The file name contains invalid characters. Only alphanumeric characters and underscores are accepted.");
+        JOptionPane.showMessageDialog(chooser,
+            "The file name contains invalid characters. Only alphanumeric characters and underscores are accepted.");
       }
     } while (!validFilename);
 

@@ -175,21 +175,12 @@ public class Loader implements LibraryLoader {
   // to be cleared with each new file
   private File mainFile = null;
 
-  private Stack<File> filesOpening = new Stack<File>();
+  private Stack<File> filesOpening = new Stack<>();
 
   private Map<File, File> substitutions = new HashMap<File, File>();
 
   public Loader(Component parent) {
     this.parent = parent;
-    clear();
-  }
-
-  //
-  // more substantive methods accessed from outside this package
-  //
-  public void clear() {
-    filesOpening.clear();
-    mainFile = null;
   }
 
   public JFileChooser createChooser() {
@@ -211,8 +202,16 @@ public class Loader implements LibraryLoader {
     return ref == null ? null : ref.getParentFile();
   }
 
-  public String getDescriptor(Library lib) {
-    return LibraryManager.instance.getDescriptor(this, lib);
+  public String getRelativeDescriptor(Library lib) {
+    return LibraryManager.instance.getRelativeDescriptor(this, lib);
+  }
+
+  public String getAbsoluteDescriptor(Library lib) {
+    return LibraryManager.instance.getAbsoluteDescriptor(lib);
+  }
+
+  public String getShortDescriptor(Library lib) {
+    return LibraryManager.instance.getShortDescriptor(lib);
   }
 
   //
@@ -228,6 +227,7 @@ public class Loader implements LibraryLoader {
     }
     while (!file.canRead()) {
       // It doesn't exist. Figure it out from the user.
+      System.out.println("missing file: " + file);
       JOptionPane.showMessageDialog(parent, S.fmt("fileLibraryMissingError", file.getName()));
       JFileChooser chooser = createChooser();
       chooser.setFileFilter(filter);
@@ -453,6 +453,8 @@ public class Loader implements LibraryLoader {
   }
 
   private void setMainFile(File value) {
+    if (!value.isAbsolute())
+      throw new IllegalArgumentException("must be absolute");
     mainFile = value;
   }
 

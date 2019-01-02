@@ -121,7 +121,7 @@ public class ProjectLibraryActions {
     chooser.setFileFilter(Loader.JAR_FILTER);
     int check = chooser.showOpenDialog(proj.getFrame());
     if (check == JFileChooser.APPROVE_OPTION) {
-      File f = chooser.getSelectedFile();
+      File f = chooser.getSelectedFile().getAbsoluteFile();
       String className = null;
 
       // try to retrieve the class name from the "Library-Class"

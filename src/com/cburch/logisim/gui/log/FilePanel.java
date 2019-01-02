@@ -49,7 +49,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import com.cburch.logisim.data.TestVector;
-import com.cburch.logisim.data.Value;
 import com.cburch.logisim.util.JFileChoosers;
 
 class FilePanel extends LogPanel {

@@ -260,7 +260,7 @@ public class Popups {
       else if (tag == pasteVhdl)
         return !LayoutClipboard.forVhdl.isEmpty();
       else if (tag == pasteLibrary)
-        return !LayoutClipboard.forVhdl.isEmpty();
+        return !LayoutClipboard.forLibrary.isEmpty();
       else if (tag == paste)
         return LayoutClipboard.forCircuit.isEmpty()
             && LayoutClipboard.forComponents.isEmpty()
