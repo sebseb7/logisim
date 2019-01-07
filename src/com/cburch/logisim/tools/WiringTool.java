@@ -180,7 +180,7 @@ public final class WiringTool extends Tool {
         if (x0 != x1)
           g.drawLine(x0, y1, x1, y1);
       }
-    } else if (AppPreferences.ADD_SHOW_GHOSTS.getBoolean() && inCanvas) {
+    } else if (AppPreferences.ADD_SHOW_GHOSTS.get() && inCanvas) {
       g.setColor(Color.GRAY);
       g.fillOval(cur.getX() - 2, cur.getY() - 2, 5, 5);
     }

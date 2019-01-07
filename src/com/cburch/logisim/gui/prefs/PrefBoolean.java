@@ -53,11 +53,11 @@ class PrefBoolean extends JCheckBox
 
     addActionListener(this);
     pref.addPropertyChangeListener(this);
-    setSelected(pref.getBoolean());
+    setSelected(pref.get());
   }
 
   public void actionPerformed(ActionEvent e) {
-    pref.setBoolean(this.isSelected());
+    pref.set(this.isSelected());
   }
 
   void localeChanged() {
@@ -66,7 +66,7 @@ class PrefBoolean extends JCheckBox
 
   public void propertyChange(PropertyChangeEvent event) {
     if (pref.isSource(event)) {
-      setSelected(pref.getBoolean());
+      setSelected(pref.get());
     }
   }
 }

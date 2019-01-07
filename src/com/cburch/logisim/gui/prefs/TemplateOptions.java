@@ -76,7 +76,7 @@ class TemplateOptions extends OptionsPanel {
             reader = new FileInputStream(file);
             Template template = Template.create(reader);
             reader2 = template.createStream();
-            LogisimFile.load(reader2, loader); // to see if OK
+            LogisimFile.load(file, reader2, loader); // to see if OK
             AppPreferences.setTemplateFile(file, template); // todo: relativize ?
             AppPreferences.setTemplateType(AppPreferences.TEMPLATE_CUSTOM);
           } catch (LoadCanceledByUser ex) {

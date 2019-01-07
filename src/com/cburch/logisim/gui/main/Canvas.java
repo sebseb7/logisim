@@ -308,7 +308,7 @@ public class Canvas extends JPanel
           || AppPreferences.SHOW_TICK_RATE.isSource(event)) {
         paintThread.requestRepaint();
       } else if (AppPreferences.COMPONENT_TIPS.isSource(event)) {
-        boolean showTips = AppPreferences.COMPONENT_TIPS.getBoolean();
+        boolean showTips = AppPreferences.COMPONENT_TIPS.get();
         setToolTipText(showTips ? "" : null);
       }
     }
@@ -583,7 +583,7 @@ public class Canvas extends JPanel
       if (isSouthwest)
         GraphicsUtil.drawArrow(g, 28, h - 28, 12, h - 12, s, l, a);
 
-      if (AppPreferences.SHOW_TICK_RATE.getBoolean()) {
+      if (AppPreferences.SHOW_TICK_RATE.get()) {
         String hz = tickCounter.getTickRate();
         if (hz != null && !hz.equals("")) {
           g.setColor(TICK_RATE_COLOR);
@@ -963,7 +963,7 @@ public class Canvas extends JPanel
 
   @Override
   public String getToolTipText(MouseEvent event) {
-    boolean showTips = AppPreferences.COMPONENT_TIPS.getBoolean();
+    boolean showTips = AppPreferences.COMPONENT_TIPS.get();
     if (showTips) {
       Canvas.snapToGrid(event);
       Location loc = Location.create(event.getX(), event.getY());
@@ -1008,7 +1008,7 @@ public class Canvas extends JPanel
   }
 
   private void loadOptions(AttributeSet options) {
-    boolean showTips = AppPreferences.COMPONENT_TIPS.getBoolean();
+    boolean showTips = AppPreferences.COMPONENT_TIPS.get();
     setToolTipText(showTips ? "" : null);
 
     proj.getSimulator().removeSimulatorListener(myProjectListener);

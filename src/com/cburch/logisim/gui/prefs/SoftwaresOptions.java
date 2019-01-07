@@ -44,7 +44,6 @@ import javax.swing.JPanel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
-import javax.swing.JSeparator;
 import javax.swing.JTextField;
 
 import com.cburch.logisim.prefs.AppPreferences;
@@ -63,8 +62,7 @@ public class SoftwaresOptions extends OptionsPanel {
         Softwares.setQuestaPath(getPreferencesFrame());
       }
       if (source == questaValidationCheckBox) {
-        AppPreferences.QUESTA_VALIDATION
-            .setBoolean(questaValidationCheckBox.isSelected());
+        AppPreferences.QUESTA_VALIDATION.set(questaValidationCheckBox.isSelected());
       }
     }
 
@@ -78,8 +76,7 @@ public class SoftwaresOptions extends OptionsPanel {
       if (property.equals(AppPreferences.QUESTA_VALIDATION
             .getIdentifier())) {
         questaValidationCheckBox
-            .setSelected(AppPreferences.QUESTA_VALIDATION
-                .getBoolean());
+            .setSelected(AppPreferences.QUESTA_VALIDATION.get());
       }
     }
 
@@ -132,7 +129,7 @@ public class SoftwaresOptions extends OptionsPanel {
     c.gridx = 2; c.gridy = 3; c.weightx = 0.0;
     add(questaPathButton, c);
 
-    questaValidationCheckBox.setSelected(AppPreferences.QUESTA_VALIDATION.getBoolean());
+    questaValidationCheckBox.setSelected(AppPreferences.QUESTA_VALIDATION.get());
     questaPathField.setText(AppPreferences.QUESTA_PATH.get());
     questaPathField.setEditable(false);
   }

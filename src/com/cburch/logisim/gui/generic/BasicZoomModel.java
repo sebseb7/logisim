@@ -49,8 +49,8 @@ public class BasicZoomModel implements ZoomModel {
     zoomFactor = 1.0;
     showGrid = true;
 
-    setZoomFactor(zoomPref.get().doubleValue());
-    setShowGrid(gridPref.getBoolean());
+    setZoomFactor(zoomPref.get());
+    setShowGrid(gridPref.get());
   }
 
   public void addPropertyChangeListener(String prop, PropertyChangeListener l) {

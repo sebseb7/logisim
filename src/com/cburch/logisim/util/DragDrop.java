@@ -59,6 +59,7 @@ public class DragDrop {
   public final DataFlavor dataFlavor;
   public final DataFlavor[] dataFlavors;
   public final Class dataClass;
+  public final Class[] dataClasses;
 
   // DragDrop and Support are intended to make it easier to add drag and drop
   // support to a class:
@@ -72,47 +73,73 @@ public class DragDrop {
   // This is enough to make Foo implement all of the methods of interface
   // Transferable (the sending side), and provide a jvm-local data flavor for
   // the class (used by the receiving side).
-  
-  public DragDrop(Class cls) {
-    DataFlavor f = null;
+ 
+  public DragDrop(Object ...classOrMimeTypeString) {
+    int n = classOrMimeTypeString.length;
+    DataFlavor[] flavors = new DataFlavor[n];
+    Class[] classes = new Class[n];
     try {
-      f = new DataFlavor(
-          String.format("%s;class=\"%s\"",
-            DataFlavor.javaJVMLocalObjectMimeType,
-            cls.getName()));
-    } catch (ClassNotFoundException e) {
+      for (int i = 0; i < n; i++) {
+        Object o  = classOrMimeTypeString[i];
+        if (o instanceof Class) {
+          flavors[i] = new DataFlavor(
+              String.format("%s;class=\"%s\"",
+                DataFlavor.javaJVMLocalObjectMimeType,
+                ((Class)o).getName()));
+          classes[0] = (Class)o;
+        } else if (o instanceof String) {
+          flavors[i] = new DataFlavor((String)o);
+        } else {
+          throw new IllegalArgumentException("DragDrop data flavor must be stirng or class");
+        }
+      }
+    } catch (Exception e) {
       e.printStackTrace();
+      flavors = new DataFlavor[] { };
+      classes = new Class[] { };
     }
-    dataClass = cls;
-    dataFlavor = f;
-    dataFlavors = f == null ? new DataFlavor[] { } : new DataFlavor[] { f };
-  }
-
-  public DragDrop(String ...mimetype) {
-    DataFlavor[] f = new DataFlavor[mimetype.length];
-    try {
-      for (int i = 0; i < mimetype.length; i++)
-        f[i] = new DataFlavor(mimetype[i]);
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
+    dataFlavors = flavors;
+    dataClasses = classes;
+    if (flavors.length > 0) {
+      dataFlavor = flavors[0];
+      dataClass = classes[0];
+    } else {
+      dataFlavor = null;
+      dataClass = null;
     }
-    dataClass = null;
-    dataFlavor = f[0];
-    dataFlavors = f;
   }
 
   public interface Support extends Transferable {
     public DragDrop getDragDrop();
-    public default Object convertTo(String mimetype) { return null; }
+
+    public default Object convertTo(DataFlavor flavor) {
+      DragDrop dnd = getDragDrop();
+      if (dnd == null || dnd.dataFlavors == null)
+        return null;
+      for (int i = 0; i < dnd.dataFlavors.length; i++) {
+        if (!dnd.dataFlavors[i].equals(flavor))
+          continue;
+        else if (dnd.dataClasses[i] != null)
+          return convertTo(dnd.dataClasses[i]);
+        else
+          return convertTo(flavor.getMimeType());
+      }
+      return null;
+    }
+
+    public default Object convertTo(String mimetype) {
+      return null;
+    }
+
+    public default Object convertTo(Class cls) {
+      return cls.isInstance(this) ? this : null;
+    }
 
     @Override
     public default Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
       if(!isDataFlavorSupported(flavor))
         throw new UnsupportedFlavorException(flavor);
-      DragDrop dnd = getDragDrop();
-      if (dnd.dataClass != null && dnd.dataClass.isInstance(this))
-          return this;
-      Object obj = convertTo(flavor.getMimeType());
+      Object obj = convertTo(flavor);
       if (obj == null)
         throw new UnsupportedFlavorException(flavor);
       return obj;

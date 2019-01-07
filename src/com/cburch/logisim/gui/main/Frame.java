@@ -115,8 +115,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
 
     private void enableSave() {
       boolean ok = getProject().isFileDirty();
-      getRootPane().putClientProperty("windowModified",
-          Boolean.valueOf(ok));
+      getRootPane().putClientProperty("windowModified", ok);
     }
 
     @Override
@@ -433,7 +432,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     bottomTabAndZoom.add(attrFooter, BorderLayout.SOUTH);
 
     leftRegion = new HorizontalSplitPane(topTab, bottomTabAndZoom,
-        AppPreferences.WINDOW_LEFT_SPLIT.get().doubleValue());
+        AppPreferences.WINDOW_LEFT_SPLIT.get());
 
     hdlEditor = new HdlContentView(project);
     vhdlSimulatorConsole = new VhdlSimulatorConsole(project);
@@ -441,19 +440,19 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     rightRegion = new HorizontalSplitPane(editRegion, vhdlSimulatorConsole, 1.0);
 
     mainRegion = new VerticalSplitPane(leftRegion, rightRegion,
-        AppPreferences.WINDOW_MAIN_SPLIT.get().doubleValue());
+        AppPreferences.WINDOW_MAIN_SPLIT.get());
 
     getContentPane().add(mainRegion, BorderLayout.CENTER);
 
     computeTitle();
 
-    this.setSize(AppPreferences.WINDOW_WIDTH.get().intValue(),
-        AppPreferences.WINDOW_HEIGHT.get().intValue());
+    this.setSize(AppPreferences.WINDOW_WIDTH.get(),
+        AppPreferences.WINDOW_HEIGHT.get());
     Point prefPoint = getInitialLocation();
     if (prefPoint != null) {
       this.setLocation(prefPoint);
     }
-    this.setExtendedState(AppPreferences.WINDOW_STATE.get().intValue());
+    this.setExtendedState(AppPreferences.WINDOW_STATE.get());
 
     menuListener.register(mainPanel);
     KeyboardToolSelection.register(toolbar);
@@ -572,23 +571,19 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
   }
 
   public void savePreferences() {
-    AppPreferences.TICK_FREQUENCY.set(Double.valueOf(project.getSimulator()
-          .getTickFrequency()));
-    AppPreferences.LAYOUT_SHOW_GRID.setBoolean(layoutZoomModel
-        .getShowGrid());
-    AppPreferences.LAYOUT_ZOOM.set(Double.valueOf(layoutZoomModel
-          .getZoomFactor()));
+    AppPreferences.TICK_FREQUENCY.set(project.getSimulator().getTickFrequency());
+    AppPreferences.LAYOUT_SHOW_GRID.set(layoutZoomModel.getShowGrid());
+    AppPreferences.LAYOUT_ZOOM.set(layoutZoomModel.getZoomFactor());
     if (appearance != null) {
       ZoomModel aZoom = appearance.getZoomModel();
-      AppPreferences.APPEARANCE_SHOW_GRID.setBoolean(aZoom.getShowGrid());
-      AppPreferences.APPEARANCE_ZOOM.set(Double.valueOf(aZoom
-            .getZoomFactor()));
+      AppPreferences.APPEARANCE_SHOW_GRID.set(aZoom.getShowGrid());
+      AppPreferences.APPEARANCE_ZOOM.set(aZoom.getZoomFactor());
     }
     int state = getExtendedState() & ~JFrame.ICONIFIED;
-    AppPreferences.WINDOW_STATE.set(Integer.valueOf(state));
+    AppPreferences.WINDOW_STATE.set(state);
     Dimension dim = getSize();
-    AppPreferences.WINDOW_WIDTH.set(Integer.valueOf(dim.width));
-    AppPreferences.WINDOW_HEIGHT.set(Integer.valueOf(dim.height));
+    AppPreferences.WINDOW_WIDTH.set(dim.width);
+    AppPreferences.WINDOW_HEIGHT.set(dim.height);
     Point loc;
     try {
       loc = getLocationOnScreen();
@@ -598,16 +593,12 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     if (loc != null) {
       AppPreferences.WINDOW_LOCATION.set(loc.x + "," + loc.y);
     }
-    AppPreferences.WINDOW_LEFT_SPLIT.set(Double.valueOf(leftRegion
-          .getFraction()));
+    AppPreferences.WINDOW_LEFT_SPLIT.set(leftRegion.getFraction());
 
-    if (Double.valueOf(rightRegion.getFraction()) < 1.0)
-      AppPreferences.WINDOW_RIGHT_SPLIT.set(Double.valueOf(rightRegion
-            .getFraction()));
-    AppPreferences.WINDOW_MAIN_SPLIT.set(Double.valueOf(mainRegion
-          .getFraction()));
-    AppPreferences.DIALOG_DIRECTORY
-        .set(JFileChoosers.getCurrentDirectory());
+    if (rightRegion.getFraction() < 1.0)
+      AppPreferences.WINDOW_RIGHT_SPLIT.set(rightRegion.getFraction());
+    AppPreferences.WINDOW_MAIN_SPLIT.set(mainRegion.getFraction());
+    AppPreferences.DIALOG_DIRECTORY.set(JFileChoosers.getCurrentDirectory());
   }
 
   void setAttrTableModel(AttrTableModel value) {

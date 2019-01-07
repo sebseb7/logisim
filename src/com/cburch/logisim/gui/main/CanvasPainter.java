@@ -141,7 +141,7 @@ class CanvasPainter implements PropertyChangeListener {
     }
 
     // draw halo around component whose attributes we are viewing
-    boolean showHalo = AppPreferences.ATTRIBUTE_HALO.getBoolean();
+    boolean showHalo = AppPreferences.ATTRIBUTE_HALO.get();
     if (showHalo && haloedComponent != null && haloedCircuit == circ
         && !hidden.contains(haloedComponent)) {
       GraphicsUtil.switchToWidth(g, 3);
@@ -160,7 +160,7 @@ class CanvasPainter implements PropertyChangeListener {
 
     // draw circuit and selection
     CircuitState circState = proj.getCircuitState();
-    boolean printerView = AppPreferences.PRINTER_VIEW.getBoolean();
+    boolean printerView = AppPreferences.PRINTER_VIEW.get();
     ComponentDrawContext context = new ComponentDrawContext(canvas, circ,
         circState, base, g, printerView);
     context.setHighlightedWires(highlightedWires);
