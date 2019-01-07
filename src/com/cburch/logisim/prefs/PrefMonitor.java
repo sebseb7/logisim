@@ -32,25 +32,107 @@ package com.cburch.logisim.prefs;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.prefs.Preferences;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
 
-public interface PrefMonitor<E> extends PreferenceChangeListener {
-  public void addPropertyChangeListener(PropertyChangeListener listener);
+public class PrefMonitor<E> implements PreferenceChangeListener {
 
-  public E get();
+  protected String name;
+  protected E value, oldValue, dflt;
+  protected E[] opts;
+  protected Preferences backingStore;
 
-  public boolean getBoolean();
+  PrefMonitor(String name, E dflt) {
+    this(name, null, dflt);
+  }
 
-  public String getIdentifier();
+  PrefMonitor(String name, E[] opts, E dflt) {
+    this.name = name;
+    this.dflt = dflt;
+    this.value = dflt;
+    this.oldValue = dflt;
+    this.opts = opts;
+    this.backingStore = AppPreferences.getPrefs();
+    backingStore.addPreferenceChangeListener(this);
 
-  public boolean isSource(PropertyChangeEvent event);
+    set(getFromBackingStore()); // if needed, this updates value (and fires event)
+  }
 
-  public void preferenceChange(PreferenceChangeEvent e);
+  public void addPropertyChangeListener(PropertyChangeListener listener) {
+    AppPreferences.propertyChangeProducer.addPropertyChangeListener(name, listener);
+  }
 
-  public void removePropertyChangeListener(PropertyChangeListener listener);
+  public void removePropertyChangeListener(PropertyChangeListener listener) {
+    AppPreferences.propertyChangeProducer.removePropertyChangeListener(name, listener);
+  }
 
-  public void set(E value);
+  public boolean isSource(PropertyChangeEvent event) {
+    return name.equals(event.getPropertyName());
+  }
 
-  public void setBoolean(boolean value);
+  public void preferenceChange(PreferenceChangeEvent event) {
+    if (!event.getKey().equals(name))
+      return;
+    if (identical(oldValue, value))
+      return;
+    E prev = oldValue;
+    oldValue = value;
+    AppPreferences.propertyChangeProducer.firePropertyChange(name, prev, value);
+  }
+
+  public String getIdentifier() {
+    return name;
+  }
+
+  public E get() {
+    return value;
+  }
+
+  public void set(E newValue) {
+    if (identical(value, newValue))
+      return;
+    if (opts != null) {
+      E chosen = dflt;
+      for (E opt : opts) {
+        if (identical(opt, newValue)) {
+          chosen = opt;
+          break;
+        }
+      }
+      newValue = chosen;
+    }
+    value = newValue;
+    setIntoBackingStore();
+  }
+
+  private void setIntoBackingStore() {
+    if (dflt instanceof Double)
+      backingStore.putDouble(name, (Double)value);
+    else if (dflt instanceof Integer)
+      backingStore.putInt(name, (Integer)value);
+    else if (dflt instanceof Boolean)
+      backingStore.putBoolean(name, (Boolean)value);
+    else if (dflt instanceof String)
+      backingStore.put(name, (String)value);
+  }
+
+  private E getFromBackingStore() {
+    if (dflt instanceof Double)
+      return (E)Double.valueOf(backingStore.getDouble(name, (Double)dflt));
+    else if (dflt instanceof Integer)
+      return (E)Integer.valueOf(backingStore.getInt(name, (Integer)dflt));
+    else if (dflt instanceof Boolean)
+      return (E)Boolean.valueOf(backingStore.getBoolean(name, (Boolean)dflt));
+    else if (dflt instanceof String)
+      return (E)backingStore.get(name, (String)dflt);
+    else
+      throw new IllegalArgumentException("illegal preference type");
+  }
+
+  protected static <E> boolean identical(E a, E b) {
+    return (a == null && b == null)
+        || (a != null && b != null && a.equals(b));
+  }
+
 }

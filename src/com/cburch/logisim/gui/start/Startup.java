@@ -286,9 +286,9 @@ public class Startup {
         // already handled above
       } else if (arg.equals("-accents")) {
         if (param0.equals("yes"))
-          AppPreferences.ACCENTS_REPLACE.setBoolean(false);
+          AppPreferences.ACCENTS_REPLACE.set(false);
         else if (param0.equals("no"))
-          AppPreferences.ACCENTS_REPLACE.setBoolean(true);
+          AppPreferences.ACCENTS_REPLACE.set(true);
         else
           fail(S.get("argAccentsOptionError"));
       } else if (arg.equals("-nosplash")) {
@@ -308,9 +308,9 @@ public class Startup {
         // ignore
       } else if (arg.equals("-questa")) {
         if (param0.equals("yes"))
-          AppPreferences.QUESTA_VALIDATION.setBoolean(true);
+          AppPreferences.QUESTA_VALIDATION.set(true);
         else if (param0.equals("no"))
-          AppPreferences.QUESTA_VALIDATION.setBoolean(false);
+          AppPreferences.QUESTA_VALIDATION.set(false);
         else
           fail(S.get("argQuestaOptionError"));
       } else if (arg.equals("-help") || arg.equals("-?")) {
