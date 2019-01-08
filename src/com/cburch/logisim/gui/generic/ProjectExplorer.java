@@ -76,7 +76,6 @@ import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.gui.main.LayoutClipboard;
 import com.cburch.logisim.gui.main.SelectionActions;
-import com.cburch.logisim.gui.menu.ProjectLibraryActions;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.hdl.VhdlContent;
@@ -451,24 +450,6 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       }
     }
 
-    // @Override
-    // public void exportDone(JComponent comp, Transferable trans, int action) {
-      // System.out.println("export done");
-      // if (action == MOVE) {
-      //   System.out.println("need to remove it");
-      //   if (trans instanceof AddTool.TransferableCircuit) {
-      //     Circuit circ = ((AddTool.TransferableCircuit)removing).getElement();
-      //     ProjectCircuitActions.doRemoveCircuit(proj, circ);
-      //   if (trans instanceof AddTool.TransferableVhdl) {
-      //     VhdlContent vhdl = ((AddTool.TransferableVhdl)removing).getElement();
-      //     ProjectCircuitActions.doRemove(proj, vhdl);
-      //   } else if (trans instanceof Library.TransferableLibrary) {
-      //     Library lib = ((Library.TransferableLibrary)removing).getLibrary();
-      //     ProjectLibraryActions.doUnloadLibrary(proj, lib);
-      //   }
-      // }
-    // }
-
     private final DataFlavor[] supportedFlavors = new DataFlavor[] {
         AddTool.dnd.dataFlavor,
         Library.dnd.dataFlavor,
@@ -603,28 +584,11 @@ public class ProjectExplorer extends JTree implements LocaleListener {
           // huh? isMove should happen only for move-type drag of JVM-local object
           // System.out.printf("bad move\n");
           return false;
+        } else {
+          // Handle paste, JVM-foreign drag, and copy-type drag
+          return SelectionActions.doPaste(proj, support.getTransferable(), newIdx);
         }
 
-        // Handle paste, JVM-foreign drag, and copy-type drag
-        if (support.isDataFlavorSupported(LayoutClipboard.forCircuit.dnd.dataFlavor)) {
-          // paste, drag JVM-foreign, or drag-copy JVM-local for Circuit
-          Transferable t = support.getTransferable();
-          LayoutClipboard.Clip<Circuit> clip = LayoutClipboard.forCircuit.get(proj, t);
-          if (clip != null) 
-            SelectionActions.doPasteCircuit(proj, clip);
-        } else if (support.isDataFlavorSupported(LayoutClipboard.forVhdl.dnd.dataFlavor)) {
-          // paste, drag JVM-foreign, or drag-copy JVM-local for Vhdl
-          Transferable t = support.getTransferable();
-          LayoutClipboard.Clip<VhdlContent> clip = LayoutClipboard.forVhdl.get(proj, t);
-          if (clip != null) 
-            SelectionActions.doPasteVhdl(proj, clip);
-        } else if (support.isDataFlavorSupported(LayoutClipboard.forLibrary.dnd.dataFlavor)) {
-          // paste, drag JVM-foreign, or drag-copy JVM-local for Library
-          Transferable t = support.getTransferable();
-          LayoutClipboard.Clip<Library> clip = LayoutClipboard.forLibrary.get(proj, t);
-          if (clip != null) 
-            SelectionActions.doPasteLibrary(proj, clip);
-        }
       } catch (UnsupportedFlavorException | IOException e) {
         e.printStackTrace();
       }

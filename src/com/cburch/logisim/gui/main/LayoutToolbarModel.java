@@ -330,8 +330,6 @@ class LayoutToolbarModel extends AbstractToolbarModel {
       // AddTool for one our circuits, or an AddTool for some jar library we
       // loaded, or an AddTool for some circuit inside (perhaps even nested
       // multiple levels deep) inside a Logisim library.
-      System.out.println("subcirc..." + factory);
-      System.out.println("found: " +  proj.getLogisimFile().findTool(tool));
       return proj.getLogisimFile().getTools().contains(tool)
           || proj.getLogisimFile().findTool(tool) != null;
     }

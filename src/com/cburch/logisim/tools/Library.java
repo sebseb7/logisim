@@ -134,7 +134,6 @@ public abstract class Library {
 
     @Override
     public Object convertTo(String mimetype) {
-      System.out.println("converting lib to xml");
       return XmlWriter.encodeSelection(file, Library.this);
     }
 

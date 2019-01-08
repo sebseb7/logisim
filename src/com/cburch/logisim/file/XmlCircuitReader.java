@@ -101,8 +101,9 @@ public class XmlCircuitReader extends CircuitTransaction {
     String libName = elt.getAttribute("lib");
     Library lib = reader.findLibrary(libName);
     if (lib == null) {
-      XmlClipReader.ReadClipContext cr = (XmlClipReader.ReadClipContext)reader;
-      throw new XmlReaderException(S.fmt("compUnknownError", name + "(missing library)"));
+      // try { throw new XmlReaderException(S.fmt("compUnknownError", name + "(missing library)"));
+      // } catch (Exception e) { e.printStackTrace(); throw e; }
+      return null; 
     }
 
     Tool tool = lib.getTool(name);

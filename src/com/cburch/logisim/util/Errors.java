@@ -210,7 +210,7 @@ public class Errors {
       });
       msg = details;
     }
-    JDialog dialog = new JDialogOk(S.get("fileErrorTitle"), false) {
+    JDialog dialog = new JDialogOk(title, false) {
       public void okClicked() { }
     };
     dialog.getContentPane().add(msg);

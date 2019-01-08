@@ -239,7 +239,6 @@ class ToolboxManip implements ProjectExplorer.Listener {
       targetIndex--;
     if (targetIndex == draggedIndex)
       return false;
-    System.out.println("move");
     proj.doAction(LogisimFileActions.moveCircuit(dragged, targetIndex));
     return true;
   }

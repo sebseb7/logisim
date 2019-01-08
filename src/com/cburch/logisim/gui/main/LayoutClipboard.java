@@ -116,12 +116,12 @@ public class LayoutClipboard<T>
     }
   }
 
-  private XmlData encode(Project proj, T value) {
+  public XmlData encode(Project proj, T value) {
     String xml = XmlWriter.encodeSelection(proj.getLogisimFile(), value);
     return xml == null ? null : new XmlData(xml);
   }
 
-  class XmlData implements DragDrop.Support {
+  private class XmlData implements DragDrop.Support {
     String xml;
     XmlData(String xml) { this.xml = xml; }
     public DragDrop getDragDrop() { return dnd; }

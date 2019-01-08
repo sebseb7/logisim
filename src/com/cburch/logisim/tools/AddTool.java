@@ -625,7 +625,6 @@ public class AddTool extends Tool {
 
     @Override
     public Object convertTo(String mimetype) {
-      System.out.printf("converting AddTool<%s> to xml", elt == null ? "null" : elt.getClass());
       return elt ==  null ? null : XmlWriter.encodeSelection(file, elt);
     }
 

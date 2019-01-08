@@ -93,15 +93,17 @@ public class LogisimFileActions {
 
   private static class LoadLibraries extends Action {
     private Library[] libs;
+    private int idx;
 
-    LoadLibraries(Library[] libs) {
+    LoadLibraries(Library[] libs, int idx) {
       this.libs = libs;
+      this.idx = idx;
     }
 
     @Override
     public void doIt(Project proj) {
       for (int i = 0; i < libs.length; i++) {
-        proj.getLogisimFile().addLibrary(libs[i]);
+        proj.getLogisimFile().addLibrary(libs[i], idx + i);
       }
     }
 
@@ -414,11 +416,15 @@ public class LogisimFileActions {
   }
 
   public static Action loadLibraries(Library[] libs) {
-    return new LoadLibraries(libs);
+    return new LoadLibraries(libs, -1);
   }
 
   public static Action loadLibrary(Library lib) {
-    return new LoadLibraries(new Library[] { lib });
+    return new LoadLibraries(new Library[] { lib }, -1);
+  }
+
+  public static Action loadLibrary(Library lib, int idx) {
+    return new LoadLibraries(new Library[] { lib }, idx);
   }
 
   public static Action moveCircuit(AddTool tool, int toIndex) {

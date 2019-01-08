@@ -30,6 +30,7 @@
 
 package com.cburch.logisim.gui.main;
 
+import java.awt.datatransfer.Transferable;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
@@ -222,15 +223,23 @@ public class LayoutEditHandler extends EditHandler
     }
     // duplicate circuit or vhdl from project or library into project
     Tool tool = frame.getSelectedToolboxTool();
-    if (tool instanceof AddTool && proj.getLogisimFile().containsFromSource(tool)) {
+    if (tool instanceof AddTool) {
       ComponentFactory f = ((AddTool)tool).getFactory();
       if (f instanceof SubcircuitFactory) {
         Circuit c = ((SubcircuitFactory)f).getSubcircuit();
-        // ProjectCircuitActions.doDuplicateCircuit(proj, c); // todo
+        Transferable t = LayoutClipboard.forCircuit.encode(proj, c);
+        SelectionActions.doPaste(proj, t, proj.getLogisimFile().getTools().size());
       } else if (f instanceof VhdlEntity) {
-        VhdlContent c = ((VhdlEntity)f).getContent();
-        // ProjectCircuitActions.doDuplicateVhdl(proj, c); // todo
+        VhdlContent v = ((VhdlEntity)f).getContent();
+        Transferable t = LayoutClipboard.forVhdl.encode(proj, v);
+        SelectionActions.doPaste(proj, t, proj.getLogisimFile().getTools().size());
       }
+      return;
+    }
+    Library lib = frame.getSelectedToolboxLibrary();
+    if (lib != null) {
+      Transferable t = LayoutClipboard.forLibrary.encode(proj, lib);
+      SelectionActions.doPaste(proj, t, proj.getLogisimFile().getLibraries().size());
       return;
     }
   }

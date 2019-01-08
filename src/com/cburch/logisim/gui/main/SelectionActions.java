@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.awt.datatransfer.Transferable;
 
 import javax.swing.JOptionPane;
 
@@ -502,13 +503,15 @@ public class SelectionActions {
     private String newName;
     private Circuit prevCircuit;
     private HdlModel prevHdl;
+    private int idx;
 
-    PasteCircuit(LayoutClipboard.Clip<Circuit> clip) {
+    PasteCircuit(LayoutClipboard.Clip<Circuit> clip, int idx) {
       this.clip = clip;
+      this.idx = idx;
     }
 
     boolean valid(Project proj) {
-      if (clip == null)
+      if (clip == null || idx < 0 || idx > proj.getLogisimFile().getTools().size())
         return false;
       else if (newName != null)
         return true;
@@ -542,16 +545,17 @@ public class SelectionActions {
       prevCircuit = proj.getCurrentCircuit();
       prevHdl = proj.getCurrentHdl();
 
+      int pos = idx;
       LogisimFile file = proj.getLogisimFile();
-      file.addCircuit(clip.selection);
+      file.addCircuit(clip.selection, pos++);
       proj.setCurrentCircuit(clip.selection);
 
       for (Library lib : clip.libraries)
         file.addLibrary(lib);
       for (VhdlContent vhdl : clip.vhdl)
-        file.addVhdlContent(vhdl);
+        file.addVhdlContent(vhdl, pos++);
       for (Circuit c : clip.circuits)
-        file.addCircuit(c);
+        file.addCircuit(c, pos++);
 
       CircuitTransactionResult result = clip.circuitTransaction.execute();
       cxnReverse = result.getReverseTransaction();
@@ -585,13 +589,15 @@ public class SelectionActions {
     private String newName;
     private Circuit prevCircuit;
     private HdlModel prevHdl;
+    private int idx;
 
-    PasteVhdl(LayoutClipboard.Clip<VhdlContent> clip) {
+    PasteVhdl(LayoutClipboard.Clip<VhdlContent> clip, int idx) {
       this.clip = clip;
+      this.idx = idx;
     }
 
     boolean valid(Project proj) {
-      if (clip == null)
+      if (clip == null || idx < 0 || idx > proj.getLogisimFile().getTools().size())
         return false;
       else if (newName != null)
         return true;
@@ -614,7 +620,7 @@ public class SelectionActions {
       prevHdl = proj.getCurrentHdl();
 
       LogisimFile file = proj.getLogisimFile();
-      file.addVhdlContent(clip.selection);
+      file.addVhdlContent(clip.selection, idx);
       proj.setCurrentHdlModel(clip.selection);
     }
 
@@ -793,15 +799,34 @@ public class SelectionActions {
     return false;
   }
 
+  public static boolean doPaste(Project proj, Transferable t, int newIdx) {
+    if (t.isDataFlavorSupported(LayoutClipboard.forCircuit.dnd.dataFlavor)) {
+      // paste, drag JVM-foreign, or drag-copy JVM-local for Circuit
+      LayoutClipboard.Clip<Circuit> clip = LayoutClipboard.forCircuit.get(proj, t);
+      if (clip != null) 
+        return doPasteCircuit(proj, clip, newIdx);
+    } else if (t.isDataFlavorSupported(LayoutClipboard.forVhdl.dnd.dataFlavor)) {
+      // paste, drag JVM-foreign, or drag-copy JVM-local for Vhdl
+      LayoutClipboard.Clip<VhdlContent> clip = LayoutClipboard.forVhdl.get(proj, t);
+      if (clip != null) 
+        return doPasteVhdl(proj, clip, newIdx);
+    } else if (t.isDataFlavorSupported(LayoutClipboard.forLibrary.dnd.dataFlavor)) {
+      // paste, drag JVM-foreign, or drag-copy JVM-local for Library
+      LayoutClipboard.Clip<Library> clip = LayoutClipboard.forLibrary.get(proj, t);
+      if (clip != null) 
+        return doPasteLibrary(proj, clip, newIdx);
+    }
+    return false;
+  }
+
   public static boolean doPasteCircuit(Project proj) {
     LayoutClipboard.Clip<Circuit> clip = LayoutClipboard.forCircuit.get(proj);
-    return clip != null && doPasteCircuit(proj, clip);
+    return clip != null && doPasteCircuit(proj, clip, proj.getLogisimFile().getTools().size());
   }
   
-  public static boolean doPasteCircuit(Project proj, LayoutClipboard.Clip<Circuit> clip) {
-    PasteCircuit act = new PasteCircuit(clip);
+  public static boolean doPasteCircuit(Project proj, LayoutClipboard.Clip<Circuit> clip, int idx) {
+    PasteCircuit act = new PasteCircuit(clip, idx);
     if (act.valid(proj)) {
-      System.out.println("paste circ");
       proj.doAction(act);
       return true;
     }
@@ -810,11 +835,11 @@ public class SelectionActions {
 
   public static boolean doPasteVhdl(Project proj) {
     LayoutClipboard.Clip<VhdlContent> clip = LayoutClipboard.forVhdl.get(proj);
-    return clip != null && doPasteVhdl(proj, clip);
+    return clip != null && doPasteVhdl(proj, clip, proj.getLogisimFile().getTools().size());
   }
 
-  public static boolean doPasteVhdl(Project proj, LayoutClipboard.Clip<VhdlContent> clip) {
-    PasteVhdl act = new PasteVhdl(clip);
+  public static boolean doPasteVhdl(Project proj, LayoutClipboard.Clip<VhdlContent> clip, int idx) {
+    PasteVhdl act = new PasteVhdl(clip, idx);
     if (act.valid(proj)) {
       proj.doAction(act);
       return true;
@@ -824,14 +849,14 @@ public class SelectionActions {
 
   public static boolean doPasteLibrary(Project proj) {
     LayoutClipboard.Clip<Library> clip = LayoutClipboard.forLibrary.get(proj);
-    return clip != null && doPasteLibrary(proj, clip);
+    return clip != null && doPasteLibrary(proj, clip, proj.getLogisimFile().getLibraries().size());
   }
 
-  public static boolean doPasteLibrary(Project proj, LayoutClipboard.Clip<Library> clip) {
+  public static boolean doPasteLibrary(Project proj, LayoutClipboard.Clip<Library> clip, int idx) {
     // todo: error checking for naming clashes / duplicate libraries?
     if (proj.getLogisimFile().getLibraries().contains(clip.selection))
       return false;
-    Action act = LogisimFileActions.loadLibrary(clip.selection);
+    Action act = LogisimFileActions.loadLibrary(clip.selection, idx);
     proj.doAction(act);
     return true;
   }

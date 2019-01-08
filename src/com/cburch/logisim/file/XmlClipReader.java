@@ -323,7 +323,9 @@ public class XmlClipReader extends XmlReader {
         all.append(msg);
         all.append("\n");
       }
+      System.out.println("messages: " + all);
       Errors.title("Clipboard Error").show(all.substring(0, all.length() - 1));
+      System.out.println("done messages");
     }
     return context;
   }
