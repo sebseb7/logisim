@@ -106,7 +106,7 @@ public class Popups {
       boolean canChange = proj.getLogisimFile().contains(circuit);
       LogisimFile file = proj.getLogisimFile();
       if (tag == cut || tag == delete)
-        return canChange && file.getCircuitCount() > 1
+        return canChange && file.getCircuits().size() > 1
           && proj.getDependencies().canRemove(circuit);
       else if (tag == paste)
         return canChange && !LayoutClipboard.forComponents.isEmpty();

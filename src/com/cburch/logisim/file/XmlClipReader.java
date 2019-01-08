@@ -60,6 +60,7 @@ import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.Errors;
 
 public class XmlClipReader extends XmlReader {
 
@@ -112,14 +113,15 @@ public class XmlClipReader extends XmlReader {
       String desc = lDesc.get(name);
       if (desc == null)
         throw new XmlReaderException(S.fmt("libMissingError", name));
+      // Incoming desc will contain absolute path (necessary in
+      // case we need to load the library). We need to shorten it to check for
+      // matches.
+      String shortDesc = LibraryManager.instance.getShortDescriptor(desc);
       for (Library lib : file.getLibraries()) {
         // substitute libraries that have the same name and type, even if their
         // file path differs. 
         String d = LibraryManager.instance.getShortDescriptor(lib);
-        // Incoming name will be absolute path (necessary in
-        // case we need to load the library). We need to shorten it here.
-        String d2 = LibraryManager.instance.getShortDescriptor(name);
-        if (d.equals(d2))
+        if (d.equals(shortDesc))
           return lib;
       }
       return null;
@@ -321,7 +323,7 @@ public class XmlClipReader extends XmlReader {
         all.append(msg);
         all.append("\n");
       }
-      loader.showError(all.substring(0, all.length() - 1));
+      Errors.title("Clipboard Error").show(all.substring(0, all.length() - 1));
     }
     return context;
   }
@@ -329,15 +331,15 @@ public class XmlClipReader extends XmlReader {
   private LogisimFile dstFile;
   private Loader loader;
 
-  XmlClipReader(LogisimFile dstFile, Loader loader) {
+  XmlClipReader(LogisimFile dstFile) {
     this.dstFile = dstFile;
-    this.loader = loader;
+    this.loader = loader = dstFile.getLoader();
   }
 
-  public static ReadClipContext parseSelection(LogisimFile dstFile, Loader loader, String xml)
+  public static ReadClipContext parseSelection(LogisimFile dstFile, String xml)
       throws IOException, XmlReaderException, SAXException, LoadCanceledByUser {
     InputStream in = new ByteArrayInputStream(xml.getBytes("UTF-8"));
-    XmlClipReader reader = new XmlClipReader(dstFile, loader);
+    XmlClipReader reader = new XmlClipReader(dstFile);
     return reader.readSelection(in);
   }
 

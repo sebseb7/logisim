@@ -34,6 +34,7 @@ import static com.cburch.logisim.file.Strings.S;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,7 +60,9 @@ import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.util.MacCompatibility;
 import com.cburch.logisim.util.UniquelyNamedThread;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
@@ -69,31 +72,27 @@ public class LogisimFile extends Library implements LibraryEventSource {
   private static class WritingThread extends UniquelyNamedThread {
     OutputStream out;
     LogisimFile file;
+    File destFile;
 
-    WritingThread(OutputStream out, LogisimFile file) {
+    WritingThread(OutputStream out, LogisimFile file, File destFile) {
       super("WritingThread");
       this.out = out;
       this.file = file;
+      this.destFile = destFile;
     }
 
     @Override
     public void run() {
       try {
-        file.write(out, file.loader);
+        file.write(out, destFile);
       } catch (IOException e) {
-        file.loader.showError(S.fmt("fileDuplicateError", e.toString()), e);
+        Errors.project(destFile).show(S.fmt("fileDuplicateError", e.toString()), e);
       }
-      try {
-        out.close();
-      } catch (IOException e) {
-        file.loader.showError(S.fmt("fileDuplicateError", e.toString()), e);
-      }
+      try { out.close(); }
+      catch (Exception e) { }
     }
   }
 
-  //
-  // creation methods
-  //
   public static LogisimFile createNew(Loader loader) {
     LogisimFile ret = new LogisimFile(loader);
     ret.main = new Circuit("main", ret);
@@ -137,30 +136,27 @@ public class LogisimFile extends Library implements LibraryEventSource {
         in = new ReaderInputStream(new FileReader(file), "UTF8");
         return loadSub(in, loader, file);
       } catch (Exception t) {
-        loader.showError(S.fmt("xmlFormatError", firstExcept.toString()), firstExcept, t);
+        Errors.project(file).show(S.fmt("xmlFormatError", firstExcept.toString()), firstExcept, t);
       } finally {
-        try {
-          in.close();
-        } catch (Exception t) {
-        }
+        try { in.close(); }
+        catch (Exception t) { }
       }
     }
 
     return null;
   }
 
-  public static LogisimFile load(InputStream in, Loader loader)
+  public static LogisimFile load(File srcFile, InputStream in, Loader loader)
       throws IOException, LoadCanceledByUser {
     try {
       return loadSub(in, loader, null);
     } catch (SAXException e) {
-      loader.showError(S.fmt("xmlFormatError", e.toString()), e);
+      Errors.project(srcFile).show(S.fmt("xmlFormatError", e.toString()), e);
       throw new IOException("huh?", e);
-      // return null;
     }
   }
 
-  private static LogisimFile loadSub(InputStream in, Loader loader, File file)
+  private static LogisimFile loadSub(InputStream in, Loader loader, File srcFile)
       throws IOException, SAXException, LoadCanceledByUser {
     // fetch first line and then reset
     BufferedInputStream inBuffered = new BufferedInputStream(in);
@@ -174,7 +170,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
       throw new IOException("Version 1.0 files no longer supported");
     }
 
-    XmlProjectReader xmlReader = new XmlProjectReader(loader, file);
+    XmlProjectReader xmlReader = new XmlProjectReader(loader, srcFile);
     LogisimFile ret = xmlReader.parseProject(inBuffered);
     ret.loader = loader;
     return ret;
@@ -260,22 +256,20 @@ public class LogisimFile extends Library implements LibraryEventSource {
   }
 
   @SuppressWarnings("resource")
-  public LogisimFile cloneLogisimFile(Loader newloader) {
+  public LogisimFile cloneLogisimFile(File destFile, Loader newloader) {
     PipedInputStream reader = new PipedInputStream();
     PipedOutputStream writer = new PipedOutputStream();
     try {
       reader.connect(writer);
     } catch (IOException e) {
-      newloader.showError(S.fmt("fileDuplicateError", e.toString()), e);
+      Errors.project(destFile).show(S.fmt("fileDuplicateError", e.toString()), e);
       return null;
     }
-    new WritingThread(writer, this).start();
+    new WritingThread(writer, this, destFile).start();
     try {
-      return LogisimFile.load(reader, newloader);
-    } catch (IOException e) {
-      newloader.showError(S.fmt("fileDuplicateError", e.toString()), e);
-    } catch (LoadCanceledByUser e) {
-      newloader.showError(S.fmt("fileDuplicateError", e.toString()), e);
+      return LogisimFile.load(destFile, reader, newloader);
+    } catch (IOException | LoadCanceledByUser e) {
+      Errors.project(destFile).show(S.fmt("fileDuplicateError", e.toString()), e);
     } finally {
       try { reader.close(); }
       catch (IOException e1) { }
@@ -392,10 +386,6 @@ public class LogisimFile extends Library implements LibraryEventSource {
       }
     }
     return null;
-  }
-
-  public int getCircuitCount() {
-    return getCircuits().size();
   }
 
   public List<Circuit> getCircuits() {
@@ -560,22 +550,27 @@ public class LogisimFile extends Library implements LibraryEventSource {
   }
 
   public int removeCircuit(Circuit circuit) {
-    if (getCircuitCount() <= 1) {
+    if (getCircuits().size() <= 1)
       throw new RuntimeException("Cannot remove last circuit");
-    }
-
     int index = indexOfCircuit(circuit);
-    if (index >= 0) {
-      Tool circuitTool = tools.remove(index);
-
-      if (main == circuit) {
-        AddTool dflt_tool = tools.get(0);
-        SubcircuitFactory factory = (SubcircuitFactory) dflt_tool
-            .getFactory();
-        setMainCircuit(factory.getSubcircuit());
+    if (index < 0)
+      return -1;
+    if (main == circuit) {
+      Circuit newMain = null;
+      for (AddTool tool : tools) {
+        if (tool.getFactory() instanceof SubcircuitFactory) {
+          SubcircuitFactory factory = (SubcircuitFactory)tool.getFactory();
+          newMain = factory.getSubcircuit();
+          break;
+        }
       }
-      fireEvent(LibraryEvent.REMOVE_TOOL, circuitTool);
+      if (newMain == null)
+        throw new IllegalStateException("Can't find new main circuit");
+      setMainCircuit(newMain);
     }
+
+    Tool circuitTool = tools.remove(index);
+    fireEvent(LibraryEvent.REMOVE_TOOL, circuitTool);
     return index;
   }
 
@@ -620,27 +615,127 @@ public class LogisimFile extends Library implements LibraryEventSource {
     fireEvent(LibraryEvent.SET_NAME, name);
   }
 
-  //
-  // other methods
-  //
-  void write(OutputStream out, LibraryLoader loader) throws IOException {
-    write(out, loader, null);
-  }
+  // void write(OutputStream out) throws IOException {
+  //   write(out, null);
+  // }
 
-  void write(OutputStream out, LibraryLoader loader, File dest)
-      throws IOException {
+  void write(OutputStream out, File dest) throws IOException {
     try {
-      XmlWriter.write(this, out, loader, dest);
+      XmlWriter.write(this, out, dest);
     } catch (TransformerConfigurationException e) {
-      loader.showError("internal error configuring transformer", e);
+      Errors.project(dest).show("internal error configuring transformer", e);
     } catch (ParserConfigurationException e) {
-      loader.showError("internal error configuring parser", e);
+      Errors.project(dest).show("internal error configuring parser", e);
     } catch (TransformerException e) {
       String msg = e.getMessage();
       String err = S.get("xmlConversionError");
       if (msg != null)
         err += ": " + msg;
-      loader.showError(err, e);
+      Errors.project(dest).show(err, e);
     }
   }
+
+  public boolean save(File dest) {
+    Library reference = LibraryManager.instance.findReference(this, dest);
+    if (reference != null) {
+      Errors.title(S.get("fileSaveErrorTitle")).show(
+          S.fmt("fileCircularError", reference.getDisplayName()));
+      return false;
+    }
+
+    File backup = determineBackupName(dest);
+    boolean backupCreated = backup != null && dest.renameTo(backup);
+
+    FileOutputStream fwrite = null;
+    try {
+      try {
+        MacCompatibility.setFileCreatorAndType(dest, "LGSM", "circ");
+      } catch (IOException e) {
+      }
+      fwrite = new FileOutputStream(dest);
+      write(fwrite, dest);
+      setName(toProjectName(dest));
+
+      File oldFile = loader.getMainFile();
+      loader.setMainFile(dest);
+      LibraryManager.instance.fileSaved(loader, dest, oldFile, this);
+    } catch (IOException e) {
+      if (backupCreated)
+        recoverBackup(backup, dest);
+      if (dest.exists() && dest.length() == 0)
+        dest.delete();
+      Errors.title(S.get("fileSaveErrorTitle")).show(
+          S.fmt("fileSaveError", e.toString()));
+      return false;
+    } finally {
+      if (fwrite != null) {
+        try {
+          fwrite.close();
+        } catch (IOException e) {
+          if (backupCreated)
+            recoverBackup(backup, dest);
+          if (dest.exists() && dest.length() == 0)
+            dest.delete();
+          Errors.title(S.get("fileSaveErrorTitle")).show(
+              S.fmt("fileSaveCloseError", e.toString()));
+          return false;
+        }
+      }
+    }
+
+    if (!dest.exists() || dest.length() == 0) {
+      if (backupCreated && backup != null && backup.exists())
+        recoverBackup(backup, dest);
+      else
+        dest.delete();
+      Errors.title(S.get("fileSaveErrorTitle")).show(
+          S.get("fileSaveZeroError"));
+      return false;
+    }
+
+    if (backupCreated && backup.exists()) {
+      backup.delete();
+    }
+    return true;
+  }
+
+  private static void recoverBackup(File backup, File dest) {
+    if (backup != null && backup.exists()) {
+      if (dest.exists())
+        dest.delete();
+      backup.renameTo(dest);
+    }
+  }
+
+  private static File determineBackupName(File base) {
+    File dir = base.getParentFile();
+    String name = base.getName();
+    if (name.endsWith(LOGISIM_EXTENSION)) {
+      name = name.substring(0, name.length() - LOGISIM_EXTENSION.length());
+    } else if (name.endsWith(LOGISIM_EXTENSION_ALT)) {
+      name = name.substring(0, name.length() - LOGISIM_EXTENSION_ALT.length());
+    }
+    for (int i = 1; i <= 20; i++) {
+      String ext = i == 1 ? ".bak" : (".bak" + i);
+      File candidate = new File(dir, name + ext);
+      if (!candidate.exists())
+        return candidate;
+    }
+    return null;
+  }
+
+  public static String toProjectName(File file) {
+    String ret = file.getName();
+    if (ret.endsWith(LOGISIM_EXTENSION)) {
+      return ret.substring(0, ret.length() - LOGISIM_EXTENSION.length());
+    } else if (ret.endsWith(LOGISIM_EXTENSION_ALT)) {
+      return ret.substring(0, ret.length() - LOGISIM_EXTENSION_ALT.length());
+    } else {
+      return ret;
+    }
+  }
+
+  public static final String LOGISIM_EXTENSION = ".circ";
+  public static final String LOGISIM_EXTENSION_ALT = ".circ.xml";
+
 }

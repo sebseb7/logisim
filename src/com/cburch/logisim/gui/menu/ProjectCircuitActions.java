@@ -182,6 +182,7 @@ public class ProjectCircuitActions {
   }
 
   public static void doRemoveCircuit(Project proj, Circuit circuit) {
+    System.out.println("num left " + proj.getLogisimFile().getCircuits().size());
     if (proj.getLogisimFile().getCircuits().size() == 1) {
       JOptionPane.showMessageDialog(proj.getFrame(),
           S.get("circuitRemoveLastError"),

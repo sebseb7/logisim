@@ -75,9 +75,10 @@ import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
-import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.AddTool;
+import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.InputEventUtil;
 
 public class XmlWriter {
@@ -184,36 +185,25 @@ public class XmlWriter {
     } catch (Exception e) { } // non-fatal
   }
 
-  static void write(LogisimFile file, OutputStream out,
-      LibraryLoader loader, File destFile)
-      throws ParserConfigurationException,
-               TransformerConfigurationException, TransformerException {
+  static void write(LogisimFile file, OutputStream out, File destFile)
+      throws ParserConfigurationException, TransformerConfigurationException, TransformerException {
 
     DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
     DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
     Document doc = docBuilder.newDocument();
 
-    XmlWriter context;
-    if (destFile != null) {
-      String dstFilePath = destFile.getAbsolutePath();
-      dstFilePath = dstFilePath.substring(0,
-          dstFilePath.lastIndexOf(File.separator));
-      context = new XmlWriter(file, doc, loader, dstFilePath);
-    } else {
-      context = new XmlWriter(file, doc, loader);
-    }
-
+    XmlWriter context = new XmlWriter(file, doc, destFile);
     context.fromLogisimFile();
     xform(doc, out);
   }
 
-  public static String encodeSelection(LogisimFile file, LibraryLoader loader, Object sel) {
+  public static String encodeSelection(LogisimFile file, Object sel) {
     try {
       DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
       DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
       Document doc = docBuilder.newDocument();
 
-      XmlWriter context = new XmlWriter(file, doc, loader);
+      XmlWriter context = new XmlWriter(file, doc, null);
 
       context.fromSelection(sel);
 
@@ -222,27 +212,23 @@ public class XmlWriter {
       String xml = new String(out.toByteArray(), "UTF-8");
       return xml;
     } catch (Exception e) {
-      loader.showError("Error serializing data to clipboard.", e);
+      Errors.title("Clipboard Error").show("Error serializing data to clipboard.", e);
       return null;
     }
   }
 
   private LogisimFile file;
   private Document doc;
-  private String outFilepath; // path of circ file begin written, used to relativize paths of components
-  private LibraryLoader loader;
+  private File destFile; // file being written, used to relativize library paths
+  private String destDir; // dir path of circ file begin written, used to relativize paths of components
   private HashMap<Library, String> libs = new HashMap<Library, String>();
 
-  private XmlWriter(LogisimFile file, Document doc, LibraryLoader loader) {
-    this(file, doc, loader, null);
-  }
-
-  private XmlWriter(LogisimFile file, Document doc, LibraryLoader loader,
-      String outFilepath) {
+  private XmlWriter(LogisimFile file, Document doc, File destFile) {
     this.file = file;
     this.doc = doc;
-    this.loader = loader;
-    this.outFilepath = outFilepath;
+    this.destFile = destFile;
+    if (destFile != null)
+      this.destDir = destFile.getAbsoluteFile().getParent().toString();
   }
 
   Library findLibrary(ComponentFactory source) {
@@ -269,7 +255,7 @@ public class XmlWriter {
 
   void addAttributeSetContent(Element elt,
       AttributeSet attrs, AttributeDefaultProvider source) {
-    XmlAttributesUtil.addAttributeSetContent(doc, outFilepath, elt, attrs, source);
+    XmlAttributesUtil.addAttributeSetContent(doc, destDir, elt, attrs, source);
   }
 
   Element fromCircuit(Circuit circuit, AddTool tool) {
@@ -309,19 +295,26 @@ public class XmlWriter {
     return ret;
   }
 
+  private void showError(String description, Throwable ...errs) {
+    String name = destFile != null
+        ? destFile.getName()
+        : file.getName();
+    Errors.project(name).show(description, errs);
+  }
+
   Element fromComponent(Component comp) {
     ComponentFactory source = comp.getFactory();
     Library lib = findLibrary(source);
     String lib_name;
     if (lib == null) {
-      loader.showError(source.getName() + " component not found");
+      showError(source.getName() + " component not found");
       return null;
     } else if (lib == file) {
       lib_name = null;
     } else {
       lib_name = libs.get(lib);
       if (lib_name == null) {
-        loader.showError("unknown library within file");
+        showError("unknown library within file");
         return null;
       }
     }
@@ -335,15 +328,16 @@ public class XmlWriter {
     return ret;
   }
 
-  Element fromLibrary(Library lib, boolean relative) {
+  Element fromLibrary(Library lib) {
     Element ret = doc.createElement("lib");
     if (libs.containsKey(lib))
       return null;
     String name = "" + libs.size();
-    String desc = relative ? loader.getRelativeDescriptor(lib)
-                           : loader.getAbsoluteDescriptor(lib);
+    String desc = destFile != null
+        ? LibraryManager.instance.getRelativeDescriptor(destFile, lib)
+        : LibraryManager.instance.getAbsoluteDescriptor(lib);
     if (desc == null) { // should never happen for a loaded file?
-      loader.showError("internal error: missing library: " + lib.getName());
+      showError("internal error: missing library: " + lib.getName());
       return null;
     }
     libs.put(lib, name);
@@ -392,7 +386,7 @@ public class XmlWriter {
     ret.setAttribute("source", Main.VERSION_NAME);
 
     for (Library lib : file.getLibraries()) {
-      Element elt = fromLibrary(lib, true);
+      Element elt = fromLibrary(lib);
       if (elt != null)
         ret.appendChild(elt);
     }
@@ -472,7 +466,7 @@ public class XmlWriter {
     for (Library lib : usedLibs) {
       if (lib == file)
         continue;
-      Element elt = fromLibrary(lib, false);
+      Element elt = fromLibrary(lib);
       if (elt != null)
         ret.appendChild(elt);
     }
@@ -500,7 +494,7 @@ public class XmlWriter {
       }
     } else if (sel instanceof Library) {
       e.setAttribute("type", "lib"); // not used by parser
-      e.appendChild(fromLibrary((Library)sel, false));
+      e.appendChild(fromLibrary((Library)sel));
     } else {
       throw new IllegalArgumentException("clipboard type not supported: " + sel);
     }
@@ -537,14 +531,14 @@ public class XmlWriter {
     Library lib = findLibrary(tool);
     String lib_name;
     if (lib == null) {
-      loader.showError(S.fmt("xmlToolNotFound", tool.getDisplayName()));
+      showError(S.fmt("xmlToolNotFound", tool.getDisplayName()));
       return null;
     } else if (lib == file) {
       lib_name = null;
     } else {
       lib_name = libs.get(lib);
       if (lib_name == null) {
-        loader.showError(S.fmt("toolLibraryMissingError", tool.getDisplayName()));
+        showError(S.fmt("toolLibraryMissingError", tool.getDisplayName()));
         return null;
       }
     }

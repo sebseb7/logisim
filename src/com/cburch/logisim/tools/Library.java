@@ -40,9 +40,12 @@ import javax.swing.JLabel;
 import javax.swing.UIManager;
 
 import com.cburch.logisim.comp.ComponentFactory;
+import com.cburch.logisim.file.LogisimFile;
+import com.cburch.logisim.file.XmlWriter;
+import com.cburch.logisim.gui.main.LayoutClipboard;
 import com.cburch.logisim.util.DragDrop;
 
-public abstract class Library implements DragDrop.Support, DragDrop.Ghost {
+public abstract class Library {
   public boolean contains(ComponentFactory query) {
     return indexOf(query) >= 0;
   }
@@ -113,35 +116,59 @@ public abstract class Library implements DragDrop.Support, DragDrop.Ghost {
   public boolean displayInToolbox() {
     return true;
   }
+  
+  public static final DragDrop dnd = new DragDrop(
+      Library.class, LayoutClipboard.mimeTypeLibraryClip);
 
-  public static final DragDrop dnd = new DragDrop(Library.class);
-  public DragDrop getDragDrop() { return dnd; }
+  public class TransferableLibrary implements DragDrop.Support, DragDrop.Ghost {
+    private LogisimFile file;
 
-  JDragLabel dragLabel;
-  private class JDragLabel extends JLabel {
-    public void publicPaintComponent(Graphics g) { paintComponent(g); }
-  }
+    public TransferableLibrary(LogisimFile file) {
+      this.file = file;
+    }
 
-  private JDragLabel getDragLabel() {
-    if (dragLabel != null)
+    public LogisimFile getLogisimFile() { return file; }
+    public Library getLibrary() { return Library.this; }
+
+    public DragDrop getDragDrop() { return dnd; }
+
+    @Override
+    public Object convertTo(String mimetype) {
+      System.out.println("converting lib to xml");
+      return XmlWriter.encodeSelection(file, Library.this);
+    }
+
+    @Override
+    public Object convertTo(Class cls) {
+      return Library.this;
+    }
+
+    JDragLabel dragLabel;
+    private class JDragLabel extends JLabel {
+      public void publicPaintComponent(Graphics g) { paintComponent(g); }
+    }
+
+    private JDragLabel getDragLabel() {
+      if (dragLabel != null)
+        return dragLabel;
+      dragLabel = new JDragLabel();
+      dragLabel.setOpaque(true);
+      // dragLabel.setFont(plainFont);
+      dragLabel.setText(getDisplayName());
+      dragLabel.setIcon(UIManager.getIcon("Tree.closedIcon"));
       return dragLabel;
-    dragLabel = new JDragLabel();
-    dragLabel.setOpaque(true);
-    // dragLabel.setFont(plainFont);
-    dragLabel.setText(getDisplayName());
-    dragLabel.setIcon(UIManager.getIcon("Tree.closedIcon"));
-    return dragLabel;
-  }
+    }
 
-  public void paintDragImage(JComponent dest, Graphics g, Dimension dim) {
-    JDragLabel l = getDragLabel();
-    l.setSize(dim);
-    l.setLocation(0, 0);
-    getDragLabel().publicPaintComponent(g);
-  }
+    public void paintDragImage(JComponent dest, Graphics g, Dimension dim) {
+      JDragLabel l = getDragLabel();
+      l.setSize(dim);
+      l.setLocation(0, 0);
+      getDragLabel().publicPaintComponent(g);
+    }
 
-  public Dimension getSize() {
-    return getDragLabel().getPreferredSize();
+    public Dimension getSize() {
+      return getDragLabel().getPreferredSize();
+    }
   }
 
 }

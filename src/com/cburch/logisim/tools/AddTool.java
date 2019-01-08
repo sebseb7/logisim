@@ -33,11 +33,13 @@ import static com.cburch.logisim.tools.Strings.S;
 
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
 import javax.swing.Icon;
+import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 
 import com.cburch.logisim.LogisimVersion;
@@ -55,7 +57,10 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.file.LogisimFile;
+import com.cburch.logisim.file.XmlWriter;
 import com.cburch.logisim.gui.main.Canvas;
+import com.cburch.logisim.gui.main.LayoutClipboard;
 import com.cburch.logisim.gui.main.SelectionActions;
 import com.cburch.logisim.gui.main.ToolAttributeAction;
 import com.cburch.logisim.instance.StdAttr;
@@ -64,6 +69,7 @@ import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Dependencies;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.Builtin;
+import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.key.KeyConfigurationEvent;
 import com.cburch.logisim.tools.key.KeyConfigurationResult;
@@ -558,7 +564,7 @@ public class AddTool extends Tool {
     if (value == SHOW_GHOST) {
       if (canvas.getProject().getLogisimFile()
           .contains(canvas.getCircuit())
-          && AppPreferences.ADD_SHOW_GHOSTS.getBoolean()) {
+          && AppPreferences.ADD_SHOW_GHOSTS.get()) {
         state = SHOW_GHOST;
       } else {
         state = SHOW_NONE;
@@ -596,4 +602,67 @@ public class AddTool extends Tool {
         || (factory instanceof VhdlEntity)
         || (description != null && description.getName().startsWith("file#"));
   }
+
+  public static final DragDrop circuitDnd = new DragDrop(
+      Tool.class, LayoutClipboard.mimeTypeCircuitClip);
+  public static final DragDrop vhdlDnd = new DragDrop(
+      Tool.class, LayoutClipboard.mimeTypeVhdlClip);
+
+  public class TransferableAddTool<E> implements DragDrop.Support, DragDrop.Ghost {
+    private DragDrop dnd;
+    private LogisimFile file;
+    private E elt;
+
+    public TransferableAddTool(DragDrop dnd, LogisimFile file, E elt) {
+      this.dnd = dnd;
+      this.file = file;
+      this.elt = elt;
+    }
+
+    public LogisimFile getLogisimFile() { return file; }
+    public E getElement() { return elt; }
+    public DragDrop getDragDrop() { return dnd; }
+
+    @Override
+    public Object convertTo(String mimetype) {
+      System.out.printf("converting AddTool<%s> to xml", elt == null ? "null" : elt.getClass());
+      return elt ==  null ? null : XmlWriter.encodeSelection(file, elt);
+    }
+
+    @Override
+    public Object convertTo(Class cls) {
+      return AddTool.this;
+    }
+
+    public void paintDragImage(JComponent dest, Graphics g, Dimension dim) {
+      AddTool.this.paintDragImage(dest, g, dim);
+    }
+
+    public Dimension getSize() {
+      return AddTool.this.getSize();
+    }
+  }
+
+  private static Circuit getCircuit(ComponentFactory fact) {
+    return (fact instanceof SubcircuitFactory)
+        ? ((SubcircuitFactory)fact).getSubcircuit() : null;
+  }
+
+  private static VhdlContent getVhdl(ComponentFactory fact) {
+    return (fact instanceof VhdlEntity)
+        ? ((VhdlEntity)fact).getContent() : null;
+  }
+
+  public class TransferableCircuit extends TransferableAddTool<Circuit> {
+    public TransferableCircuit(LogisimFile file) {
+      super(circuitDnd, file, getCircuit(getFactory()));
+    }
+  }
+
+  public class TransferableVhdl extends TransferableAddTool<VhdlContent> {
+    public TransferableVhdl(LogisimFile file) {
+      super(circuitDnd, file, getVhdl(getFactory()));
+    }
+  }
+
 }

@@ -32,46 +32,23 @@ package com.cburch.logisim.file;
 import static com.cburch.logisim.file.Strings.S;
 
 import java.awt.Component;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.Icon;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 
-import com.cburch.logisim.Main;
+import com.cburch.hdl.HdlFile;
 import com.cburch.logisim.std.Builtin;
 import com.cburch.logisim.tools.Library;
-import com.cburch.logisim.util.JDialogOk;
+import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.JFileChoosers;
-import com.cburch.logisim.util.MacCompatibility;
 import com.cburch.logisim.util.ZipClassLoader;
-import com.cburch.hdl.HdlFile;
 
 public class Loader implements LibraryLoader {
   private static class JarFileFilter extends FileFilter {
@@ -89,7 +66,9 @@ public class Loader implements LibraryLoader {
   private static class LogisimFileFilter extends FileFilter {
     @Override
     public boolean accept(File f) {
-      return f.isDirectory() || f.getName().endsWith(LOGISIM_EXTENSION) || f.getName().endsWith(LOGISIM_EXTENSION_ALT);
+      return f.isDirectory()
+          || f.getName().endsWith(LogisimFile.LOGISIM_EXTENSION)
+          || f.getName().endsWith(LogisimFile.LOGISIM_EXTENSION_ALT);
     }
 
     @Override
@@ -134,34 +113,6 @@ public class Loader implements LibraryLoader {
     }
   }
 
-  private static File determineBackupName(File base) {
-    File dir = base.getParentFile();
-    String name = base.getName();
-    if (name.endsWith(LOGISIM_EXTENSION)) {
-      name = name.substring(0, name.length() - LOGISIM_EXTENSION.length());
-    } else if (name.endsWith(LOGISIM_EXTENSION_ALT)) {
-      name = name.substring(0, name.length() - LOGISIM_EXTENSION_ALT.length());
-    }
-    for (int i = 1; i <= 20; i++) {
-      String ext = i == 1 ? ".bak" : (".bak" + i);
-      File candidate = new File(dir, name + ext);
-      if (!candidate.exists())
-        return candidate;
-    }
-    return null;
-  }
-
-  private static void recoverBackup(File backup, File dest) {
-    if (backup != null && backup.exists()) {
-      if (dest.exists())
-        dest.delete();
-      backup.renameTo(dest);
-    }
-  }
-
-  public static final String LOGISIM_EXTENSION = ".circ";
-  public static final String LOGISIM_EXTENSION_ALT = ".circ.xml";
-
   public static final FileFilter LOGISIM_FILTER = new LogisimFileFilter();
 
   public static final FileFilter JAR_FILTER = new JarFileFilter();
@@ -169,14 +120,10 @@ public class Loader implements LibraryLoader {
   public static final FileFilter TCL_FILTER = new TclFileFilter();
   public static final FileFilter VHDL_FILTER = new VhdlFileFilter();
 
-  // fixed
   private Component parent;
   private Builtin builtin = new Builtin();
-  // to be cleared with each new file
-  private File mainFile = null;
-
+  private File mainFile = null; // to be cleared with each new file
   private Stack<File> filesOpening = new Stack<>();
-
   private Map<File, File> substitutions = new HashMap<File, File>();
 
   public Loader(Component parent) {
@@ -193,30 +140,10 @@ public class Loader implements LibraryLoader {
 
   // used here and in LibraryManager only, also in MemMenu
   public File getCurrentDirectory() {
-    File ref;
-    if (!filesOpening.empty()) {
-      ref = filesOpening.peek();
-    } else {
-      ref = mainFile;
-    }
+    File ref = filesOpening.empty() ? mainFile : filesOpening.peek();
     return ref == null ? null : ref.getParentFile();
   }
 
-  public String getRelativeDescriptor(Library lib) {
-    return LibraryManager.instance.getRelativeDescriptor(this, lib);
-  }
-
-  public String getAbsoluteDescriptor(Library lib) {
-    return LibraryManager.instance.getAbsoluteDescriptor(lib);
-  }
-
-  public String getShortDescriptor(Library lib) {
-    return LibraryManager.instance.getShortDescriptor(lib);
-  }
-
-  //
-  // helper methods
-  //
   File getFileFor(String name, FileFilter filter) throws LoadCanceledByUser {
     // Determine the actual file name.
     File file = new File(name);
@@ -227,8 +154,8 @@ public class Loader implements LibraryLoader {
     }
     while (!file.canRead()) {
       // It doesn't exist. Figure it out from the user.
-      System.out.println("missing file: " + file);
-      JOptionPane.showMessageDialog(parent, S.fmt("fileLibraryMissingError", file.getName()));
+      // todo: allow cancel in first dialog
+      Errors.title("Missing File").show(S.fmt("fileLibraryMissingError", file.getName()));
       JFileChooser chooser = createChooser();
       chooser.setFileFilter(filter);
       chooser.setDialogTitle(S.fmt("fileLibraryMissingTitle", file.getName()));
@@ -240,9 +167,6 @@ public class Loader implements LibraryLoader {
     return file;
   }
 
-  //
-  // file chooser related methods
-  //
   public File getMainFile() {
     return mainFile;
   }
@@ -319,7 +243,7 @@ public class Loader implements LibraryLoader {
     for (File fileOpening : filesOpening) {
       if (fileOpening.equals(actual)) {
         throw new LoadFailedException(
-            S.fmt("logisimCircularError", toProjectName(actual)));
+            S.fmt("logisimCircularError", LogisimFile.toProjectName(actual)));
       }
     }
 
@@ -329,12 +253,12 @@ public class Loader implements LibraryLoader {
       ret = LogisimFile.load(actual, this);
     } catch (IOException e) {
       throw new LoadFailedException(
-            S.fmt("logisimLoadError", toProjectName(actual), e.toString()));
+            S.fmt("logisimLoadError", LogisimFile.toProjectName(actual), e.toString()));
     } finally {
       filesOpening.pop();
     }
     if (ret != null)
-      ret.setName(toProjectName(actual));
+      ret.setName(LogisimFile.toProjectName(actual));
     return ret;
   }
 
@@ -367,9 +291,9 @@ public class Loader implements LibraryLoader {
     }
   }
 
-  public LogisimFile openLogisimFile(InputStream reader)
+  public LogisimFile openLogisimFile(File srcFile, InputStream reader)
       throws /* LoadFailedException, */ IOException, LoadCanceledByUser {
-    LogisimFile ret = LogisimFile.load(reader, this);
+    LogisimFile ret = LogisimFile.load(srcFile, reader, this);
     showMessages(ret);
     return ret;
   }
@@ -378,81 +302,7 @@ public class Loader implements LibraryLoader {
     LibraryManager.instance.reload(this, lib);
   }
 
-  public boolean save(LogisimFile file, File dest) {
-    Library reference = LibraryManager.instance.findReference(file, dest);
-    if (reference != null) {
-      JOptionPane.showMessageDialog(parent, 
-            S.fmt("fileCircularError", reference.getDisplayName()),
-            S.get("fileSaveErrorTitle"),
-            JOptionPane.ERROR_MESSAGE);
-      return false;
-    }
-
-    File backup = determineBackupName(dest);
-    boolean backupCreated = backup != null && dest.renameTo(backup);
-
-    FileOutputStream fwrite = null;
-    try {
-      try {
-        MacCompatibility.setFileCreatorAndType(dest, "LGSM", "circ");
-      } catch (IOException e) {
-      }
-      fwrite = new FileOutputStream(dest);
-      file.write(fwrite, this, dest);
-      file.setName(toProjectName(dest));
-
-      File oldFile = getMainFile();
-      setMainFile(dest);
-      LibraryManager.instance.fileSaved(this, dest, oldFile, file);
-    } catch (IOException e) {
-      if (backupCreated)
-        recoverBackup(backup, dest);
-      if (dest.exists() && dest.length() == 0)
-        dest.delete();
-      JOptionPane.showMessageDialog(
-          parent,
-          S.fmt("fileSaveError", e.toString()),
-          S.get("fileSaveErrorTitle"),
-          JOptionPane.ERROR_MESSAGE);
-      return false;
-    } finally {
-      if (fwrite != null) {
-        try {
-          fwrite.close();
-        } catch (IOException e) {
-          if (backupCreated)
-            recoverBackup(backup, dest);
-          if (dest.exists() && dest.length() == 0)
-            dest.delete();
-          JOptionPane.showMessageDialog(parent, 
-              S.fmt("fileSaveCloseError", e.toString()),
-              S.get("fileSaveErrorTitle"),
-              JOptionPane.ERROR_MESSAGE);
-          return false;
-        }
-      }
-    }
-
-    if (!dest.exists() || dest.length() == 0) {
-      if (backupCreated && backup != null && backup.exists()) {
-        recoverBackup(backup, dest);
-      } else {
-        dest.delete();
-      }
-      JOptionPane.showMessageDialog(parent,
-          S.get("fileSaveZeroError"),
-          S.get("fileSaveErrorTitle"),
-          JOptionPane.ERROR_MESSAGE);
-      return false;
-    }
-
-    if (backupCreated && backup.exists()) {
-      backup.delete();
-    }
-    return true;
-  }
-
-  private void setMainFile(File value) {
+  public void setMainFile(File value) {
     if (!value.isAbsolute())
       throw new IllegalArgumentException("must be absolute");
     mainFile = value;
@@ -462,147 +312,12 @@ public class Loader implements LibraryLoader {
     parent = value;
   }
 
-  public void showError(String description, Throwable ...errs) {
-    if (!filesOpening.empty()) {
-      File top = filesOpening.peek();
-      String init = toProjectName(top) + ":";
-      if (description.contains("\n")) {
-        description = init + "\n" + description;
-      } else {
-        description = init + " " + description;
-      }
-    }
-
-    if (Main.headless) {
-      System.err.println(S.get("fileErrorTitle") + ": " + description);
-      if (errs.length > 1)
-        System.err.println(errs.length + " associated errors:");
-      for (Throwable t: errs)
-        t.printStackTrace();
-      return;
-    }
-    Icon errIcon = UIManager.getIcon("OptionPane.errorIcon");
-    JComponent msg;
-    if (description.contains("\n") || description.length() > 60) {
-      int lines = 1;
-      for (int pos = description.indexOf('\n'); pos >= 0; pos = description.indexOf('\n', pos + 1))
-        lines++;
-      lines = Math.max(4, Math.min(lines, 7));
-
-      JTextArea textArea = new JTextArea(lines, 60);
-      textArea.setEditable(false);
-      textArea.setText(description);
-      textArea.setCaretPosition(0);
-
-      JScrollPane scrollPane = new JScrollPane(textArea);
-      Box box = Box.createHorizontalBox();
-      box.add(new JLabel(errIcon));
-      box.add(scrollPane);
-      box.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-
-      msg = box;
-    } else {
-      msg = new JLabel(description, errIcon, SwingConstants.LEFT);
-      msg.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-    }
-    if (errs.length > 0) {
-
-      StringWriter errors = new StringWriter();
-      PrintWriter out = new PrintWriter(errors);
-      if (errs.length > 1)
-        out.println(errs.length + " associated errors:");
-      for (Throwable t: errs)
-        t.printStackTrace(out);
-
-      msg.setAlignmentX(0);
-
-      JTextArea textArea = new JTextArea(description + "\n" + errors.toString());
-      textArea.setEditable(false);
-      textArea.setCaretPosition(0);
-      JScrollPane errPane = new JScrollPane(textArea);
-      errPane.setAlignmentX(0);
-
-      JButton button = new JButton(S.get("fileErrorShowDetail"));
-      button.setContentAreaFilled(false);
-      button.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-      button.setAlignmentX(0);
-
-      Icon iconClosed = UIManager.getIcon("Tree.collapsedIcon");
-      if (iconClosed == null) UIManager.getIcon("Tree.closedIcon");
-      Icon iconOpen = UIManager.getIcon("Tree.expandedIcon");
-      if (iconOpen == null) UIManager.getIcon("Tree.openIcon");
-      button.setIcon(iconClosed);
-
-      JPanel details = new JPanel();
-      details.setBorder(BorderFactory.createEmptyBorder(7, 10, 7, 10));
-      GridBagLayout gb = new GridBagLayout();
-      GridBagConstraints gc = new GridBagConstraints();
-      details.setLayout(gb);
-      gc.anchor = GridBagConstraints.NORTHWEST;
-      gc.weightx = 1;
-      gc.fill = GridBagConstraints.HORIZONTAL;
-      gc.gridx = gc.gridy = 0;
-      gb.setConstraints(msg, gc);
-      details.add(msg);
-      gc.fill = GridBagConstraints.NONE;
-      gc.weightx = 0;
-      gc.gridy = 1;
-      gb.setConstraints(button, gc);
-      details.add(button);
-      button.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent event) {
-          if (errPane.isShowing()) {
-            button.setIcon(iconClosed);
-            details.remove(errPane);
-          } else {
-            button.setIcon(iconOpen);
-            gc.fill = GridBagConstraints.BOTH;
-            gc.weightx = gc.weighty = 1;
-            gc.gridy = 2;
-            gb.setConstraints(errPane, gc);
-            details.add(errPane);
-          }
-          details.revalidate();
-          JDialog topFrame = (JDialog)SwingUtilities.getWindowAncestor(details);
-          topFrame.pack();
-          details.repaint();
-        }
-      });
-      msg = details;
-    }
-    JDialog dialog = new JDialogOk(S.get("fileErrorTitle"), false) {
-      public void okClicked() { }
-    };
-    dialog.getContentPane().add(msg);
-    dialog.pack();
-    dialog.show();
-  }
-
   private void showMessages(LogisimFile source) {
     if (source == null)
       return;
-    String message = source.getMessage();
-    while (message != null) {
-      if (Main.headless) {
-        System.err.println(S.get("fileMessageTitle") + ": " + message);
-      } else {
-        JOptionPane.showMessageDialog(parent, message,
-            S.get("fileMessageTitle"),
-            JOptionPane.INFORMATION_MESSAGE);
-      }
-      message = source.getMessage();
-    }
-  }
-
-  private String toProjectName(File file) {
-    String ret = file.getName();
-    if (ret.endsWith(LOGISIM_EXTENSION)) {
-      return ret.substring(0, ret.length() - LOGISIM_EXTENSION.length());
-    } else if (ret.endsWith(LOGISIM_EXTENSION_ALT)) {
-      return ret.substring(0, ret.length() - LOGISIM_EXTENSION_ALT.length());
-    } else {
-      return ret;
-    }
+    File circFile = filesOpening.empty() ? null : filesOpening.peek();
+    for (String m = source.getMessage(); m != null; m = source.getMessage())
+      Errors.project(circFile).warn(m);
   }
 
   public String vhdlImportChooser(Component window) {
@@ -619,10 +334,7 @@ public class Loader implements LibraryLoader {
       String vhdl = HdlFile.load(selected);
       return vhdl;
     } catch (IOException e) {
-      JOptionPane.showMessageDialog(window,
-          e.getMessage(),
-          S.get("hexOpenErrorTitle"),
-          JOptionPane.ERROR_MESSAGE);
+      Errors.title(S.get("hexOpenErrorTitle")).show(e.getMessage(), e);
       return null;
     }
   }

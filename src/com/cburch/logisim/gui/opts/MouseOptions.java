@@ -189,9 +189,6 @@ class MouseOptions extends OptionsPanel {
       }
     }
 
-    public void deleteRequested(ProjectExplorer.Event event) {
-    }
-
     public void doubleClicked(ProjectExplorer.Event event) {
     }
 
@@ -230,12 +227,6 @@ class MouseOptions extends OptionsPanel {
     }
 
     public void mouseReleased(MouseEvent e) {
-    }
-
-    public void moveRequested(ProjectExplorer.Event event, AddTool dragged, int newIdx) {
-    }
-
-    public void moveRequested(ProjectExplorer.Event event, Library dragged, int newIdx) {
     }
 
     //

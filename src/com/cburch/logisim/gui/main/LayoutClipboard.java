@@ -41,7 +41,6 @@ import java.util.Collection;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitTransaction;
 import com.cburch.logisim.comp.Component;
-import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.file.XmlClipReader;
 import com.cburch.logisim.file.XmlWriter;
@@ -104,9 +103,7 @@ public class LayoutClipboard<T>
       if (xml == null || xml.length() == 0)
         return null;
       LogisimFile srcFile = proj.getLogisimFile();
-      Loader loader = srcFile.getLoader();
-      XmlClipReader.ReadClipContext ctx =
-          XmlClipReader.parseSelection(srcFile, loader, xml);
+      XmlClipReader.ReadClipContext ctx = XmlClipReader.parseSelection(srcFile, xml);
       if (ctx == null)
         return null;
       T sel = x.extractSelection(ctx);
@@ -120,9 +117,7 @@ public class LayoutClipboard<T>
   }
 
   private XmlData encode(Project proj, T value) {
-    LogisimFile srcFile = proj.getLogisimFile();
-    Loader loader = srcFile.getLoader();
-    String xml = XmlWriter.encodeSelection(srcFile, loader, value);
+    String xml = XmlWriter.encodeSelection(proj.getLogisimFile(), value);
     return xml == null ? null : new XmlData(xml);
   }
 
@@ -159,7 +154,7 @@ public class LayoutClipboard<T>
       new LayoutClipboard<>(mimeTypeLibraryClip,
           ctx -> ctx.getSelectedLibrary());
 
-  private final DragDrop dnd; // flavor of this clipboard
+  public final DragDrop dnd; // flavor of this clipboard
   private XmlClipExtractor<T> extractor;
   private XmlData current; // the owned system clip, if any, for this flavor
   private boolean external; // not owned, but system clip is compatible with this flavor
@@ -198,6 +193,10 @@ public class LayoutClipboard<T>
       return decode(proj, sysclip.getContents(dnd.dataFlavor), extractor);
     else
       return null;
+  }
+
+  public Clip<T> get(Project proj, Transferable t) {
+    return decode(proj, t, extractor);
   }
 
   public boolean isEmpty() {

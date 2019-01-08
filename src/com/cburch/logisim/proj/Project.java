@@ -59,6 +59,7 @@ import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.SelectTool;
 import com.cburch.logisim.tools.EditTool;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
 public class Project {
@@ -369,7 +370,7 @@ public class Project {
   }
 
   public void showError(String description, Throwable ...errs) {
-    file.getLoader().showError(description, errs);
+    Errors.project(file.getName()).show(description, errs);
   }
 
   public Options getOptions() {

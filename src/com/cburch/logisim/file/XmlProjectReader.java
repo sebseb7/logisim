@@ -34,8 +34,6 @@ import static com.cburch.logisim.file.Strings.S;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,14 +54,13 @@ import org.xml.sax.SAXException;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.wiring.Pin;
-import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.AddTool;
+import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.InputEventUtil;
 
 class XmlProjectReader extends XmlReader {
@@ -288,9 +285,9 @@ class XmlProjectReader extends XmlReader {
 
     context.parseProject(elt);
 
-    if (file.getCircuitCount() == 0) {
+    if (file.getCircuits().size() == 0)
       file.addCircuit(new Circuit("main", file));
-    }
+    
     if (context.messages.size() > 0) {
       StringBuilder all = new StringBuilder();
       all.append("Error were encountered loading the project:\n");
@@ -298,7 +295,7 @@ class XmlProjectReader extends XmlReader {
         all.append(msg);
         all.append("\n");
       }
-      loader.showError(all.substring(0, all.length() - 1));
+      Errors.title("XML Error").show(all.substring(0, all.length() - 1));
     }
     return file;
   }
@@ -846,7 +843,7 @@ class XmlProjectReader extends XmlReader {
       end = libElt.getNextSibling();
     }
     for (Library lib : loader.getBuiltin().getLibraries()) {
-      String desc = loader.getShortDescriptor(lib);
+      String desc = LibraryManager.instance.getShortDescriptor(lib);
       if (found.contains(desc))
         continue;
       Element libElt = doc.createElement("lib");

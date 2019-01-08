@@ -194,7 +194,7 @@ class LayoutToolbarModel extends AbstractToolbarModel {
     public void paintIcon(Component dest, Graphics g) {
       // draw halo
       if (tool == haloedTool
-          && AppPreferences.ATTRIBUTE_HALO.getBoolean()) {
+          && AppPreferences.ATTRIBUTE_HALO.get()) {
         g.setColor(Canvas.HALO_COLOR);
         g.fillRect(1, 1, 22, 22);
       }

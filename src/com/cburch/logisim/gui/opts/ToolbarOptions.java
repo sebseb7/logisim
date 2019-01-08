@@ -85,9 +85,6 @@ class ToolbarOptions extends OptionsPanel {
       remove.setEnabled(index >= 0);
     }
 
-    public void deleteRequested(ProjectExplorer.Event event) {
-    }
-
     private void doAddTool(Tool tool) {
       if (tool != null) {
         getProject().doAction(
@@ -117,12 +114,6 @@ class ToolbarOptions extends OptionsPanel {
 
     public JPopupMenu menuRequested(ProjectExplorer.Event event) {
       return null;
-    }
-
-    public void moveRequested(ProjectExplorer.Event event, AddTool dragged, int newIdx) {
-    }
-
-    public void moveRequested(ProjectExplorer.Event event, Library dragged, int newIdx) {
     }
 
     public void selectionChanged(ProjectExplorer.Event event) {

@@ -43,6 +43,7 @@ import java.util.WeakHashMap;
 
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.std.Builtin;
+import com.cburch.logisim.util.Errors;
 
 public class LibraryManager {
 
@@ -78,9 +79,9 @@ public class LibraryManager {
           + suffix;
     }
 
-    String toRelativeDescriptor(Loader loader) {
+    String toRelativeDescriptor(File mainFile) {
       return prefix + "#"
-          + toRelative(loader.getMainFile().toPath(), absoluteFile.toPath())
+          + toRelative(mainFile.toPath(), absoluteFile.toPath())
           + suffix;
     }
 
@@ -244,7 +245,7 @@ public class LibraryManager {
 
     LoadedLibrary lib = findKnown(dest);
     if (lib != null) {
-      LogisimFile clone = file.cloneLogisimFile(loader);
+      LogisimFile clone = file.cloneLogisimFile(dest, loader);
       clone.setName(file.getName());
       clone.setDirty(false);
       lib.setBase(clone);
@@ -285,7 +286,7 @@ public class LibraryManager {
     return null;
   }
 
-  private String getDescriptor(Loader loader, Library lib, int verbose) {
+  private String getDescriptor(File mainFile, Library lib, int verbose) {
     if (Builtin.isBuiltinLibrary(lib.getClass())) {
       return "#" + lib.getName();
     } else {
@@ -294,8 +295,8 @@ public class LibraryManager {
         return null;
       if (verbose == 0)
         return desc.toShortDescriptor();
-      else if (verbose == 1 && loader.getMainFile() != null)
-        return desc.toRelativeDescriptor(loader);
+      else if (verbose == 1 && mainFile != null)
+        return desc.toRelativeDescriptor(mainFile);
       else
         return desc.toAbsoluteDescriptor();
     }
@@ -305,8 +306,8 @@ public class LibraryManager {
     return getDescriptor(null, lib, 0);
   }
 
-  public String getRelativeDescriptor(Loader loader, Library lib) {
-    return getDescriptor(loader, lib, 1);
+  public String getRelativeDescriptor(File mainFile, Library lib) {
+    return getDescriptor(mainFile, lib, 1);
   }
 
   public String getAbsoluteDescriptor(Library lib) {
@@ -353,7 +354,7 @@ public class LibraryManager {
     try {
       ret = new LoadedLibrary(loader.loadJarFile(toReadAbsolute, className));
     } catch (LoadFailedException e) {
-      loader.showError(e.getMessage());
+      Errors.project(loader.getMainFile()).show(e.getMessage());
       return null;
     }
 
@@ -367,7 +368,7 @@ public class LibraryManager {
     // Otherwise we'll have to decode it.
     int sep = desc.indexOf('#');
     if (sep < 0) {
-      loader.showError(S.fmt("fileDescriptorError", desc));
+      Errors.project(loader.getMainFile()).show(S.fmt("fileDescriptorError", desc));
       return null;
     }
     String type = desc.substring(0, sep);
@@ -376,7 +377,7 @@ public class LibraryManager {
     if (type.equals("")) {
       Library ret = loader.getBuiltin().getLibrary(name);
       if (ret == null) {
-        loader.showError(S.fmt("fileBuiltinMissingError", name));
+        Errors.project(loader.getMainFile()).show(S.fmt("fileBuiltinMissingError", name));
         return null;
       }
       return ret;
@@ -390,7 +391,7 @@ public class LibraryManager {
       File toRead = loader.getFileFor(fileName, Loader.JAR_FILTER);
       return loadJarLibrary(loader, toRead, className);
     } else {
-      loader.showError(S.fmt("fileTypeError", type, desc));
+      Errors.project(loader.getMainFile()).show(S.fmt("fileTypeError", type, desc));
       return null;
     }
   }
@@ -403,7 +404,7 @@ public class LibraryManager {
     try {
       ret = new LoadedLibrary(loader.loadLogisimFile(toRead));
     } catch (LoadFailedException e) {
-      loader.showError(e.getMessage());
+      Errors.project(loader.getMainFile()).show(e.getMessage());
       return null;
     }
 
@@ -416,12 +417,12 @@ public class LibraryManager {
   public void reload(Loader loader, LoadedLibrary lib) {
     LibraryDescriptor descriptor = invMap.get(lib);
     if (descriptor == null) {
-      loader.showError(S.fmt("unknownLibraryFileError", lib.getDisplayName()));
+      Errors.project(loader.getMainFile()).show(S.fmt("unknownLibraryFileError", lib.getDisplayName()));
     } else {
       try {
         descriptor.setBase(loader, lib);
       } catch (LoadFailedException e) {
-        loader.showError(e.getMessage());
+        Errors.project(loader.getMainFile()).show(e.getMessage());
       }
     }
   }

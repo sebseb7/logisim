@@ -230,26 +230,31 @@ class ToolboxManip implements ProjectExplorer.Listener {
     }
   }
 
-  public void moveRequested(ProjectExplorer.Event event, AddTool dragged, int newIdx) {
+  @Override
+  public boolean moveRequested(AddTool dragged, int newIdx) {
     LogisimFile file = proj.getLogisimFile();
     int draggedIndex = file.getTools().indexOf(dragged);
     int targetIndex = newIdx;
     if (targetIndex > draggedIndex)
       targetIndex--;
     if (targetIndex == draggedIndex)
-      return;
+      return false;
+    System.out.println("move");
     proj.doAction(LogisimFileActions.moveCircuit(dragged, targetIndex));
+    return true;
   }
 
-  public void moveRequested(ProjectExplorer.Event event, Library dragged, int newIdx) {
+  @Override
+  public boolean moveRequested(Library dragged, int newIdx) {
     LogisimFile file = proj.getLogisimFile();
     int draggedIndex = file.getLibraries().indexOf(dragged);
     int targetIndex = newIdx;
     if (targetIndex > draggedIndex)
       targetIndex--;
     if (targetIndex == draggedIndex)
-      return;
+      return false;
     proj.doAction(LogisimFileActions.moveLibrary(dragged, targetIndex));
+    return true;
   }
 
   private static void setDefaultTool(Tool lastSelected, Project proj) {

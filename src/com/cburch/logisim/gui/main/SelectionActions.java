@@ -714,9 +714,7 @@ public class SelectionActions {
 
   public static void doCut(Project proj, Circuit sel) {
     LayoutClipboard.forCircuit.set(proj, sel);
-    if (proj.getLogisimFile().getCircuitCount() > 1
-          && proj.getDependencies().canRemove(sel))
-      ProjectCircuitActions.doRemoveCircuit(proj, sel);
+    ProjectCircuitActions.doRemoveCircuit(proj, sel);
   }
 
   public static void doCut(Project proj, VhdlContent sel) {
@@ -797,10 +795,13 @@ public class SelectionActions {
 
   public static boolean doPasteCircuit(Project proj) {
     LayoutClipboard.Clip<Circuit> clip = LayoutClipboard.forCircuit.get(proj);
-    if (clip == null)
-      return false;
+    return clip != null && doPasteCircuit(proj, clip);
+  }
+  
+  public static boolean doPasteCircuit(Project proj, LayoutClipboard.Clip<Circuit> clip) {
     PasteCircuit act = new PasteCircuit(clip);
     if (act.valid(proj)) {
+      System.out.println("paste circ");
       proj.doAction(act);
       return true;
     }
@@ -809,8 +810,10 @@ public class SelectionActions {
 
   public static boolean doPasteVhdl(Project proj) {
     LayoutClipboard.Clip<VhdlContent> clip = LayoutClipboard.forVhdl.get(proj);
-    if (clip == null)
-      return false;
+    return clip != null && doPasteVhdl(proj, clip);
+  }
+
+  public static boolean doPasteVhdl(Project proj, LayoutClipboard.Clip<VhdlContent> clip) {
     PasteVhdl act = new PasteVhdl(clip);
     if (act.valid(proj)) {
       proj.doAction(act);
@@ -821,8 +824,10 @@ public class SelectionActions {
 
   public static boolean doPasteLibrary(Project proj) {
     LayoutClipboard.Clip<Library> clip = LayoutClipboard.forLibrary.get(proj);
-    if (clip == null)
-      return false;
+    return clip != null && doPasteLibrary(proj, clip);
+  }
+
+  public static boolean doPasteLibrary(Project proj, LayoutClipboard.Clip<Library> clip) {
     // todo: error checking for naming clashes / duplicate libraries?
     if (proj.getLogisimFile().getLibraries().contains(clip.selection))
       return false;

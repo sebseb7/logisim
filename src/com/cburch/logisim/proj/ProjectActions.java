@@ -113,11 +113,10 @@ public class ProjectActions {
   }
 
   private static LogisimFile createEmptyFile(Loader loader) {
-    InputStream templReader = AppPreferences.getEmptyTemplate()
-        .createStream();
+    InputStream templReader = AppPreferences.getEmptyTemplate().createStream();
     LogisimFile file;
     try {
-      file = loader.openLogisimFile(templReader);
+      file = loader.openLogisimFile(null, templReader);
     } catch (Exception t) {
       file = LogisimFile.createNew(loader);
       file.addCircuit(new Circuit("main", file));
@@ -143,7 +142,7 @@ public class ProjectActions {
     InputStream templReader = AppPreferences.getTemplate().createStream();
     LogisimFile file;
     try {
-      file = loader.openLogisimFile(templReader);
+      file = loader.openLogisimFile(null, templReader);
     } catch (IOException ex) {
       displayException(errReportFrame, ex);
       file = createEmptyFile(loader);
@@ -187,7 +186,7 @@ public class ProjectActions {
     InputStream templReader = AppPreferences.getTemplate().createStream();
     LogisimFile file = null;
     try {
-      file = loader.openLogisimFile(templReader);
+      file = loader.openLogisimFile(null, templReader);
     } catch (IOException ex) {
       displayException(monitor, ex);
     } catch (LoadCanceledByUser ex) {
@@ -330,10 +329,9 @@ public class ProjectActions {
   }
 
   private static boolean doSave(Project proj, File f) {
-    Loader loader = proj.getLogisimFile().getLoader();
     Tool oldTool = proj.getTool();
     proj.setTool(null);
-    boolean ret = loader.save(proj.getLogisimFile(), f);
+    boolean ret = proj.getLogisimFile().save(f);
     if (ret) {
       AppPreferences.updateRecentFile(f);
       proj.setFileAsClean();
@@ -374,7 +372,7 @@ public class ProjectActions {
     } while (!validFilename);
 
     File f = chooser.getSelectedFile();
-    String circExt = Loader.LOGISIM_EXTENSION;
+    String circExt = LogisimFile.LOGISIM_EXTENSION;
     if (!f.getName().endsWith(circExt)) {
       String old = f.getName();
       int ext0 = old.lastIndexOf('.');

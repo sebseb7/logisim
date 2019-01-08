@@ -38,6 +38,9 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Shape;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
@@ -71,7 +74,9 @@ import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.gui.main.Canvas;
+import com.cburch.logisim.gui.main.LayoutClipboard;
 import com.cburch.logisim.gui.main.SelectionActions;
+import com.cburch.logisim.gui.menu.ProjectLibraryActions;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.hdl.VhdlContent;
@@ -133,7 +138,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
             if (fact instanceof SubcircuitFactory)
               circ = ((SubcircuitFactory) fact).getSubcircuit();
             else if (fact instanceof VhdlEntity)
-              vhdl = ((VhdlEntity) fact).getContent();
+              vhdl = ((VhdlEntity)fact).getContent();
             if (proj.getFrame().getHdlEditorView() == null)
               viewed = (circ != null && circ == proj.getCurrentCircuit());
             else
@@ -237,7 +242,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       else
         viewed = (vhdl != null && vhdl == proj.getFrame().getHdlEditorView());
       boolean haloed = !viewed
-          && (tool == haloedTool && AppPreferences.ATTRIBUTE_HALO.getBoolean());
+          && (tool == haloedTool && AppPreferences.ATTRIBUTE_HALO.get());
 
       // draw halo if appropriate
       if (haloed) {
@@ -317,7 +322,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     imap.put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), deleteAction);
     ActionMap amap = getActionMap();
     amap.put(deleteAction, deleteAction);
-
+   
     AppPreferences.GATE_SHAPE.addPropertyChangeListener(myListener);
     LocaleManager.addLocaleListener(this);
   }
@@ -368,7 +373,6 @@ public class ProjectExplorer extends JTree implements LocaleListener {
   }
 
   private class ProjectTransferHandler extends TransferHandler {
-    Transferable removing = null;
 
     @Override
     public int getSourceActions(JComponent comp) {
@@ -377,79 +381,150 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 
     @Override
     public Transferable createTransferable(JComponent comp) {
-      // Only for top level tools, path len = 0 or 1?
-      // Or only for subcircuit and vhdl circuit tools?
-      // Or also other tools, so we can send to toolbar?
-      // Better:
-      // Also for libraries, e.g. to reorder or copy to other projects.
-      // Also for subcircuit/vhdl tools within libraries, to copy
-      // to this or other projects.
-      removing = null;
+      // Circuit and Vhdl AddTools can be dragged out to be dropped into to this
+      // project (for reordering and/or copying), into other JVM-local or
+      // JVM-foriegn projects (xml-based copying), into the toolbar, or into the
+      // mouse options panes. To support all these, dual-purpose Transferables
+      // are used.
       Tool tool = getSelectedTool();
-      // todo: unify with xml copy/paste
       if (tool instanceof AddTool) {
-        System.out.println("xfer explorer AddTool item: " + tool);
-        removing = (AddTool)tool;
-        return (AddTool)removing;
+        if (((AddTool)tool).getFactory() instanceof SubcircuitFactory) {
+          System.out.println("xfer explorer AddTool circuit item: " + tool);
+          return ((AddTool)tool).new TransferableCircuit(proj.getLogisimFile());
+        } else if (((AddTool)tool).getFactory() instanceof VhdlEntity) {
+          System.out.println("xfer explorer AddTool vhdl item: " + tool);
+          return ((AddTool)tool).new TransferableVhdl(proj.getLogisimFile());
+        }
       }
+      // Other tools (e.g. Muxes, Wiring) can be dragged out to be dropped into 
+      // toolbars, mouse option panes, etc.
       if (tool instanceof Transferable) {
-        System.out.println("not add tool, but still ok to send: " + tool);
+        System.out.println("not add circuit or vhdl tool, but still ok to send locally: " + tool);
         return (Transferable)tool;
       }
+      // Libraries can be dragged out to be dropped into this project (for
+      // reordering and/or copying), or into other JVM-local or JVM-foriegn
+      // projects (xml-based copying). To support all these, dual-purpose
+      // Transferables are used.
       Library lib = getSelectedLibrary();
       if (lib != null) {
         System.out.println("xfer explorer Library item: " + lib);
-        removing = lib;
-        return lib;
+        return lib.new TransferableLibrary(proj.getLogisimFile());
       }
       return null;
     }
 
+    // We use the default TransferHandler behavior for drag/drop, but not for
+    // cut/copy/paste. Drag/drop will transfer using JVM-local Circuit and
+    // Library objects when possible, and will only xml-encode objects when
+    // dragging across JVMs (in which case it gets encoded as soon as the mouse
+    // is released). For cut/copy/paste, we always want to xml-encode
+    // immediately, and never use JVM-local objects.
     @Override
-    public void exportDone(JComponent comp, Transferable trans, int action) {
-//       if (removing == null)
-//         return;
-//       ArrayList<SignalInfo> items = new ArrayList<>();
-//       for (Signal s : removing)
-//         items.add(s.info);
-//       removing = null;
-//       model.remove(items);
+    public void exportToClipboard(JComponent comp, Clipboard clip, int action)
+        throws IllegalStateException { 
+      System.out.println("exporting to clip");
+      if (clip != Toolkit.getDefaultToolkit().getSystemClipboard())
+        throw new IllegalArgumentException("mystery clipboard");
+      Tool tool = getSelectedTool();
+      Library lib = getSelectedLibrary();
+      if (tool instanceof AddTool) {
+        ComponentFactory fact = ((AddTool)tool).getFactory();
+        if (fact instanceof SubcircuitFactory) {
+          Circuit circ = ((SubcircuitFactory)fact).getSubcircuit();
+          if (action == MOVE)
+            SelectionActions.doCut(proj, circ);
+          else
+            SelectionActions.doCopy(proj, circ);
+        } else if (fact instanceof VhdlEntity) {
+          VhdlContent vhdl = ((VhdlEntity) fact).getContent();
+          if (action == MOVE)
+            SelectionActions.doCut(proj, vhdl);
+          else
+            SelectionActions.doCopy(proj, vhdl);
+        }
+      } else if (lib != null) {
+        if (action == MOVE)
+          SelectionActions.doCut(proj, lib);
+        else
+          SelectionActions.doCopy(proj, lib);
+      }
     }
 
-    // todo: check for isBuiltin, cross-project importing
-    // see: gui/main/LayoutToolbarModel
+    @Override
+    public void exportDone(JComponent comp, Transferable trans, int action) {
+      System.out.println("export done");
+      // if (action == MOVE) {
+      //   System.out.println("need to remove it");
+      //   if (trans instanceof AddTool.TransferableCircuit) {
+      //     Circuit circ = ((AddTool.TransferableCircuit)removing).getElement();
+      //     ProjectCircuitActions.doRemoveCircuit(proj, circ);
+      //   if (trans instanceof AddTool.TransferableVhdl) {
+      //     VhdlContent vhdl = ((AddTool.TransferableVhdl)removing).getElement();
+      //     ProjectCircuitActions.doRemove(proj, vhdl);
+      //   } else if (trans instanceof Library.TransferableLibrary) {
+      //     Library lib = ((Library.TransferableLibrary)removing).getLibrary();
+      //     ProjectLibraryActions.doUnloadLibrary(proj, lib);
+      //   }
+      // }
+    }
+
+    private final DataFlavor[] supportedFlavors = new DataFlavor[] {
+        AddTool.dnd.dataFlavor,
+        Library.dnd.dataFlavor,
+        LayoutClipboard.forCircuit.dnd.dataFlavor,
+        LayoutClipboard.forVhdl.dnd.dataFlavor,
+        LayoutClipboard.forLibrary.dnd.dataFlavor,
+    };
+
+    private DataFlavor supportedFlavor(TransferSupport support) {
+      for (DataFlavor flavor : supportedFlavors) {
+        if (support.isDataFlavorSupported(flavor))
+          return flavor;
+      }
+      return null;
+    }
     
     @Override
-    public boolean canImport(TransferHandler.TransferSupport support) {
+    public boolean canImport(TransferSupport support) {
+      if (listener == null || !(getModel().getRoot() instanceof ProjectExplorerLibraryNode))
+        return false; // no drag if we are in showAll mode (i.e. in prefs window)
       try {
-        if (support.isDataFlavorSupported(AddTool.dnd.dataFlavor)) {
-          int newIdx = insertionIndex(support, false);
-          if (newIdx < 0)
-            return false;
-
-          AddTool incoming = (AddTool)support.getTransferable().getTransferData(AddTool.dnd.dataFlavor);
-          if (incoming.isBuiltin())
-            return false; // can't import a builtin tool
-          if (incoming == removing)
-            return true;
-          ComponentFactory cf = incoming.getFactory(false);
-          if (cf == null)
-            return false; // ?
-          if (!(cf instanceof SubcircuitFactory))
-            return false; // ?
-          return true;
+        DataFlavor flavor = supportedFlavor(support);
+        if (flavor == null)
+          return false;
+        boolean isTool, isLocal;
+        isTool = (flavor == AddTool.dnd.dataFlavor
+            || flavor == LayoutClipboard.forCircuit.dnd.dataFlavor
+            || flavor == LayoutClipboard.forVhdl.dnd.dataFlavor);
+        if (flavor == AddTool.dnd.dataFlavor) {
+          // drag import of JVM-local AddTool
+          AddTool incoming = (AddTool)support.getTransferable().getTransferData(flavor);
+          ComponentFactory fact = incoming.getFactory();
+          if (!(fact instanceof SubcircuitFactory || fact instanceof VhdlEntity))
+            return false; // only Circuit and Vhdl can be imported into a project
+          isLocal = proj.getLogisimFile().getTools().contains(incoming);
+        } else if (flavor == Library.dnd.dataFlavor) {
+          // drag import of JVM-local Library
+          Library incoming = (Library)support.getTransferable().getTransferData(flavor);
+          isLocal = proj.getLogisimFile().getLibraries().contains(incoming);
+        } else {
+          // drag import of JVM-foreign Circuit, Vhdl, or Library
+          isLocal = false;
         }
-        if (support.isDataFlavorSupported(Library.dnd.dataFlavor)) {
-          int newIdx = insertionIndex(support, true);
-          return newIdx >= 0;
-        }
+        int newIdx = insertionIndex(support, isTool);
+        if (newIdx < 0)
+          return false; // bad drop target
+        if (!isLocal)
+          support.setDropAction(COPY);
+        return true;
       } catch (Throwable e) {
         e.printStackTrace();
       }
       return false;
     }
 
-    private int insertionIndex(TransferHandler.TransferSupport support, boolean isLib) {
+    private int insertionIndex(TransferSupport support, boolean isTool) {
       Object root = getModel().getRoot();
       if (!(root instanceof ProjectExplorerLibraryNode)) // no inserting in options window
         return -1;
@@ -458,7 +533,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       int n = lib.getTools().size();
       int m = lib.getLibraries().size();
       if (!support.isDrop())
-        return isLib ? m : n;
+        return isTool ? n : m;
       try {
         JTree.DropLocation dl = (JTree.DropLocation)support.getDropLocation();
         TreePath newPath = dl.getPath();
@@ -468,70 +543,87 @@ public class ProjectExplorer extends JTree implements LocaleListener {
         if (o != getModel().getRoot())
           return -1;
         int newIdx = dl.getChildIndex();
-        if (isLib && newIdx < n)
+        if (newIdx < n && !isTool)
           return -1;
-        else if (!isLib && newIdx > n)
+        else if (newIdx > n && isTool)
           return -1;
         System.out.println("drop at top position " + newIdx);
-        return isLib ? newIdx - n : newIdx;
+        return isTool ? newIdx : (newIdx - n);
       } catch (ClassCastException e) {
         return -1;
       }
     }
 
     @Override
-    public boolean importData(TransferHandler.TransferSupport support) {
+    public boolean importData(TransferSupport support) {
       System.out.println("importing...");
-      Transferable outgoing = removing;
-      removing = null;
+      if (listener == null || !(getModel().getRoot() instanceof ProjectExplorerLibraryNode))
+        return false; // no import if we are in showAll mode (i.e. in prefs window)
       try {
-        if (support.isDataFlavorSupported(AddTool.dnd.dataFlavor)) {
-          int newIdx = insertionIndex(support, false);
-          if (newIdx < 0)
-            return false;
+        DataFlavor flavor = supportedFlavor(support);
+        if (flavor == null)
+          return false;
+        boolean isTool = (flavor == AddTool.dnd.dataFlavor
+            || flavor == LayoutClipboard.forCircuit.dnd.dataFlavor
+            || flavor == LayoutClipboard.forVhdl.dnd.dataFlavor);
+        int newIdx = insertionIndex(support, isTool);
+        if (newIdx < 0)
+          return false; // bad drop target
+        boolean isMove = support.isDrop() && support.getDropAction() == MOVE;
 
-          AddTool incoming = (AddTool)support.getTransferable().getTransferData(AddTool.dnd.dataFlavor);
-          ProjectExplorerLibraryNode libNode = (ProjectExplorerLibraryNode)getModel().getRoot();
-          Library lib = libNode.getValue();
+        if (isMove && flavor == AddTool.dnd.dataFlavor) {
+          // drag import of JVM-local AddTool
+          AddTool incoming = (AddTool)support.getTransferable().getTransferData(flavor);
+          ComponentFactory fact = incoming.getFactory();
+          if (!(fact instanceof SubcircuitFactory || fact instanceof VhdlEntity))
+            return false; // only Circuit and Vhdl can be imported into a project
 
-          System.out.println("import tool " + incoming + " at " + newIdx + " vs " + outgoing);
-          int oldIdx = lib.getTools().indexOf(incoming);
-          if (oldIdx >= 0 && incoming == outgoing) {
-            System.out.printf("moving from %d to %d\n", oldIdx, newIdx);
-            if (listener != null) {
-              TreePath path = new TreePath(
-                  new Object[] { libNode, libNode.getChildAt(oldIdx) });
-              listener.moveRequested(new Event(path), incoming, newIdx);
-              return true;
-            }
+          int oldIdx = proj.getLogisimFile().getTools().indexOf(incoming);
+          System.out.println("import tool " + incoming + " at " + newIdx + " vs " + oldIdx);
+          if (oldIdx >= 0) {
+            System.out.printf("move circuit or vhdl from %d to %d\n", oldIdx, newIdx);
+            return listener.moveRequested(incoming, newIdx);
           } else {
-            System.out.printf("? moving from %d to %d\n", oldIdx, newIdx);
+            System.out.printf("bad move circuit or vhdl to %d\n", newIdx);
+            return false;
           }
+        } else if (isMove && flavor == Library.dnd.dataFlavor) {
+          // drag import of JVM-local Library
+          Library incoming = (Library)support.getTransferable().getTransferData(flavor);
+          int oldIdx = proj.getLogisimFile().getLibraries().indexOf(incoming);
+          System.out.println("import lib " + incoming + " at " + newIdx + " vs " + oldIdx);
+          if (oldIdx >= 0) {
+            System.out.printf("move lib from %d to %d\n", oldIdx, newIdx);
+            return listener.moveRequested(incoming, newIdx);
+          } else {
+            System.out.printf("bad move lib to %d\n", newIdx);
+            return false;
+          }
+        } else if (isMove) {
+          // huh? isMove should happen only for move-type drag of JVM-local object
+          System.out.printf("bad move\n");
           return false;
         }
-        if (support.isDataFlavorSupported(Library.dnd.dataFlavor)) {
-          int newIdx = insertionIndex(support, true);
-          if (newIdx < 0)
-            return false;
 
-          Library incoming = (Library)support.getTransferable().getTransferData(Library.dnd.dataFlavor);
-          ProjectExplorerLibraryNode libNode = (ProjectExplorerLibraryNode)getModel().getRoot();
-          Library lib = libNode.getValue();
-
-          System.out.println("import lib " + incoming + " at " + newIdx + " vs " + outgoing);
-          int oldIdx = lib.getLibraries().indexOf(incoming);
-          if (oldIdx >= 0 && incoming == outgoing) {
-            System.out.printf("moving lib from %d to %d\n", oldIdx, newIdx);
-            if (listener != null) {
-              TreePath path = new TreePath(
-                  new Object[] { libNode, libNode.getChildAt(oldIdx) });
-              listener.moveRequested(new Event(path), incoming, newIdx);
-              return true;
-            }
-          } else {
-            System.out.printf("? moving from %d to %d\n", oldIdx, newIdx);
-          }
-          return false;
+        // Handle paste, JVM-foreign drag, and copy-type drag
+        if (support.isDataFlavorSupported(LayoutClipboard.forCircuit.dnd.dataFlavor)) {
+          // paste, drag JVM-foreign, or drag-copy JVM-local for Circuit
+          Transferable t = support.getTransferable();
+          LayoutClipboard.Clip<Circuit> clip = LayoutClipboard.forCircuit.get(proj, t);
+          if (clip != null) 
+            SelectionActions.doPasteCircuit(proj, clip);
+        } else if (support.isDataFlavorSupported(LayoutClipboard.forVhdl.dnd.dataFlavor)) {
+          // paste, drag JVM-foreign, or drag-copy JVM-local for Vhdl
+          Transferable t = support.getTransferable();
+          LayoutClipboard.Clip<VhdlContent> clip = LayoutClipboard.forVhdl.get(proj, t);
+          if (clip != null) 
+            SelectionActions.doPasteVhdl(proj, clip);
+        } else if (support.isDataFlavorSupported(LayoutClipboard.forLibrary.dnd.dataFlavor)) {
+          // paste, drag JVM-foreign, or drag-copy JVM-local for Library
+          Transferable t = support.getTransferable();
+          LayoutClipboard.Clip<Library> clip = LayoutClipboard.forLibrary.get(proj, t);
+          if (clip != null) 
+            SelectionActions.doPasteLibrary(proj, clip);
         }
       } catch (UnsupportedFlavorException | IOException e) {
         e.printStackTrace();
@@ -541,11 +633,11 @@ public class ProjectExplorer extends JTree implements LocaleListener {
   }
 
   public static interface Listener {
-    public void deleteRequested(Event event);
     public void doubleClicked(Event event);
     public JPopupMenu menuRequested(Event event);
-    public void moveRequested(Event event, AddTool dragged, int newIdx);
-    public void moveRequested(Event event, Library dragged, int newIdx);
+    default public void deleteRequested(Event event) { }
+    default public boolean moveRequested(AddTool dragged, int newIdx) { return false; }
+    default public boolean moveRequested(Library dragged, int newIdx) { return false; }
     public void selectionChanged(Event event);
   }
 
