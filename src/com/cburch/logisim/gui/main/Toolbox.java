@@ -44,7 +44,7 @@ import com.cburch.logisim.tools.Library;
 
 class Toolbox extends JPanel {
   private static final long serialVersionUID = 1L;
-  private ProjectExplorer toolbox;
+  private ProjectExplorer explorer;
 
   Toolbox(Project proj, Frame frame, MenuListener menu) {
     super(new BorderLayout());
@@ -53,30 +53,30 @@ class Toolbox extends JPanel {
     Toolbar toolbar = new Toolbar(toolbarModel);
     add(toolbar, BorderLayout.NORTH);
 
-    toolbox = new ProjectExplorer(proj);
-    toolbox.setListener(new ToolboxManip(proj, toolbox));
-    add(new JScrollPane(toolbox), BorderLayout.CENTER);
+    explorer = new ProjectExplorer(proj);
+    explorer.setListener(new ToolboxManip(proj, explorer));
+    add(new JScrollPane(explorer), BorderLayout.CENTER);
 
     toolbarModel.menuEnableChanged(menu);
   }
 
   void setHaloedTool(Tool value) {
-    toolbox.setHaloedTool(value);
+    explorer.setHaloedTool(value);
   }
 
   public void updateStructure() {
-    toolbox.updateStructure();
+    explorer.updateStructure();
   }
 
   public void clearExplorerSelection() {
-    toolbox.clearExplorerSelection();
+    explorer.clearExplorerSelection();
   }
 
   public Library getSelectedLibrary() {
-    return toolbox.getSelectedLibrary();
+    return explorer.getSelectedLibrary();
   }
 
   public Tool getSelectedTool() {
-    return toolbox.getSelectedTool();
+    return explorer.getSelectedTool();
   }
 }

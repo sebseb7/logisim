@@ -389,17 +389,17 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       Tool tool = getSelectedTool();
       if (tool instanceof AddTool) {
         if (((AddTool)tool).getFactory() instanceof SubcircuitFactory) {
-          System.out.println("xfer explorer AddTool circuit item: " + tool);
+          // System.out.println("xfer explorer AddTool circuit item: " + tool);
           return ((AddTool)tool).new TransferableCircuit(proj.getLogisimFile());
         } else if (((AddTool)tool).getFactory() instanceof VhdlEntity) {
-          System.out.println("xfer explorer AddTool vhdl item: " + tool);
+          // System.out.println("xfer explorer AddTool vhdl item: " + tool);
           return ((AddTool)tool).new TransferableVhdl(proj.getLogisimFile());
         }
       }
       // Other tools (e.g. Muxes, Wiring) can be dragged out to be dropped into 
       // toolbars, mouse option panes, etc.
       if (tool instanceof Transferable) {
-        System.out.println("not add circuit or vhdl tool, but still ok to send locally: " + tool);
+        // System.out.println("not add circuit or vhdl tool, but still ok to send locally: " + tool);
         return (Transferable)tool;
       }
       // Libraries can be dragged out to be dropped into this project (for
@@ -408,7 +408,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       // Transferables are used.
       Library lib = getSelectedLibrary();
       if (lib != null) {
-        System.out.println("xfer explorer Library item: " + lib);
+        // System.out.println("xfer explorer Library item: " + lib);
         return lib.new TransferableLibrary(proj.getLogisimFile());
       }
       return null;
@@ -423,7 +423,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     @Override
     public void exportToClipboard(JComponent comp, Clipboard clip, int action)
         throws IllegalStateException { 
-      System.out.println("exporting to clip");
+      // System.out.println("exporting to clip");
       if (clip != Toolkit.getDefaultToolkit().getSystemClipboard())
         throw new IllegalArgumentException("mystery clipboard");
       Tool tool = getSelectedTool();
@@ -451,9 +451,9 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       }
     }
 
-    @Override
-    public void exportDone(JComponent comp, Transferable trans, int action) {
-      System.out.println("export done");
+    // @Override
+    // public void exportDone(JComponent comp, Transferable trans, int action) {
+      // System.out.println("export done");
       // if (action == MOVE) {
       //   System.out.println("need to remove it");
       //   if (trans instanceof AddTool.TransferableCircuit) {
@@ -467,7 +467,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       //     ProjectLibraryActions.doUnloadLibrary(proj, lib);
       //   }
       // }
-    }
+    // }
 
     private final DataFlavor[] supportedFlavors = new DataFlavor[] {
         AddTool.dnd.dataFlavor,
@@ -547,7 +547,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
           return -1;
         else if (newIdx > n && isTool)
           return -1;
-        System.out.println("drop at top position " + newIdx);
+        // System.out.println("drop at top position " + newIdx);
         return isTool ? newIdx : (newIdx - n);
       } catch (ClassCastException e) {
         return -1;
@@ -556,7 +556,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 
     @Override
     public boolean importData(TransferSupport support) {
-      System.out.println("importing...");
+      // System.out.println("importing...");
       if (listener == null || !(getModel().getRoot() instanceof ProjectExplorerLibraryNode))
         return false; // no import if we are in showAll mode (i.e. in prefs window)
       try {
@@ -579,29 +579,29 @@ public class ProjectExplorer extends JTree implements LocaleListener {
             return false; // only Circuit and Vhdl can be imported into a project
 
           int oldIdx = proj.getLogisimFile().getTools().indexOf(incoming);
-          System.out.println("import tool " + incoming + " at " + newIdx + " vs " + oldIdx);
+          // System.out.println("import tool " + incoming + " at " + newIdx + " vs " + oldIdx);
           if (oldIdx >= 0) {
-            System.out.printf("move circuit or vhdl from %d to %d\n", oldIdx, newIdx);
+            // System.out.printf("move circuit or vhdl from %d to %d\n", oldIdx, newIdx);
             return listener.moveRequested(incoming, newIdx);
           } else {
-            System.out.printf("bad move circuit or vhdl to %d\n", newIdx);
+            // System.out.printf("bad move circuit or vhdl to %d\n", newIdx);
             return false;
           }
         } else if (isMove && flavor == Library.dnd.dataFlavor) {
           // drag import of JVM-local Library
           Library incoming = (Library)support.getTransferable().getTransferData(flavor);
           int oldIdx = proj.getLogisimFile().getLibraries().indexOf(incoming);
-          System.out.println("import lib " + incoming + " at " + newIdx + " vs " + oldIdx);
+          // System.out.println("import lib " + incoming + " at " + newIdx + " vs " + oldIdx);
           if (oldIdx >= 0) {
-            System.out.printf("move lib from %d to %d\n", oldIdx, newIdx);
+            // System.out.printf("move lib from %d to %d\n", oldIdx, newIdx);
             return listener.moveRequested(incoming, newIdx);
           } else {
-            System.out.printf("bad move lib to %d\n", newIdx);
+            // System.out.printf("bad move lib to %d\n", newIdx);
             return false;
           }
         } else if (isMove) {
           // huh? isMove should happen only for move-type drag of JVM-local object
-          System.out.printf("bad move\n");
+          // System.out.printf("bad move\n");
           return false;
         }
 

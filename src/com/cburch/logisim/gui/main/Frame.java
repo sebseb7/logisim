@@ -735,4 +735,8 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     return toolbox == null ? null : toolbox.getSelectedTool();
   }
 
+  public void fireLibrarySelected() {
+    layoutEditHandler.computeEnabled();
+  }
+
 }

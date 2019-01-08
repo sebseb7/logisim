@@ -301,6 +301,7 @@ class ToolboxManip implements ProjectExplorer.Listener {
       setDefaultTool(lastSelected, proj);
       Library lib = ((ProjectExplorerLibraryNode) selected).getValue();
       proj.getFrame().viewAttributes(lib);
+      proj.getFrame().fireLibrarySelected();
     }
   }
 
