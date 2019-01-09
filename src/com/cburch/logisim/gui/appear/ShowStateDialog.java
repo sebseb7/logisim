@@ -45,12 +45,15 @@ import java.util.Arrays;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.tree.TreePath;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreePath;
+
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingModel;
+
 
 import com.cburch.draw.actions.ModelAddAction;
 import com.cburch.draw.actions.ModelRemoveAction;
@@ -72,26 +75,32 @@ import com.cburch.logisim.comp.ComponentFactory;
 public class ShowStateDialog extends JDialog implements ActionListener {
   private static final long serialVersionUID = 1L;
   JButton ok, cancel;
-  DefaultMutableTreeNode root;
+  DefaultMutableTreeNode root; // or null, if nothing available
   CheckboxTree tree;
   AppearanceCanvas canvas;
 
-  public ShowStateDialog(JFrame parent, AppearanceCanvas canvas) {
+  public static ShowStateDialog makeDialog(JFrame parent, AppearanceCanvas canvas) {
+    Circuit circuit = canvas.getCircuit();
+    DefaultMutableTreeNode root = enumerate(circuit, null);
+    if (root != null)
+      return new ShowStateDialog(parent, canvas, root);
+    JOptionPane.showMessageDialog(parent,
+        S.fmt("showStateDialogEmptyMessage", circuit.getName()),
+        S.get("showStateDialogEmptyTitle"),
+        JOptionPane.ERROR_MESSAGE);
+    return null;
+  }
+
+  private ShowStateDialog(JFrame parent, AppearanceCanvas canvas,
+      DefaultMutableTreeNode root) {
     super(parent, true);
     this.canvas = canvas;
+    this.root = root;
+
     setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
     Circuit circuit = canvas.getCircuit();
     setTitle(S.fmt("showStateDialogTitle", circuit.getName()));
-
-    root = enumerate(circuit, null);
-    if (root == null) {
-      root = new DefaultMutableTreeNode(S.fmt("showStateDialogEmptyNode", circuit.getName()));
-    }
-    tree = new CheckboxTree(root);
-    tree.getCheckingModel().setCheckingMode(TreeCheckingModel.CheckingMode.PROPAGATE_PRESERVING_CHECK);
-    tree.setCheckingPaths(getPaths());
-    JScrollPane infoPane = new JScrollPane(tree);
 
     ok = new JButton(S.get("showStateDialogOkButton"));
     cancel = new JButton(S.get("showStateDialogCancelButton"));
@@ -100,6 +109,11 @@ public class ShowStateDialog extends JDialog implements ActionListener {
     JPanel buttonPanel = new JPanel();
     buttonPanel.add(ok);
     buttonPanel.add(cancel);
+
+    tree = new CheckboxTree(root);
+    tree.getCheckingModel().setCheckingMode(TreeCheckingModel.CheckingMode.PROPAGATE_PRESERVING_CHECK);
+    tree.setCheckingPaths(getPaths());
+    JScrollPane infoPane = new JScrollPane(tree);
 
     Container contents = this.getContentPane();
     contents.setLayout(new BorderLayout());
@@ -122,6 +136,9 @@ public class ShowStateDialog extends JDialog implements ActionListener {
   }
 
   private TreePath[] getPaths() {
+    if (root == null)
+      return new TreePath[0];
+
     DefaultMutableTreeNode root = (DefaultMutableTreeNode)tree.getModel().getRoot();
     ArrayList<TreePath> paths = new ArrayList<>();
     for (CanvasObject shape : canvas.getModel().getObjectsFromBottom()) {
@@ -134,6 +151,8 @@ public class ShowStateDialog extends JDialog implements ActionListener {
   }
 
   private void apply() {
+    if (root == null)
+      return;
     CanvasModel model = canvas.getModel();
     DefaultMutableTreeNode root = (DefaultMutableTreeNode)tree.getModel().getRoot();
 
@@ -306,7 +325,7 @@ public class ShowStateDialog extends JDialog implements ActionListener {
     }
   }
 
-  private DefaultMutableTreeNode enumerate(Circuit circuit, InstanceComponent ic) {
+  private static DefaultMutableTreeNode enumerate(Circuit circuit, InstanceComponent ic) {
     DefaultMutableTreeNode root = new DefaultMutableTreeNode(new CircuitRef(circuit, ic));
     for (Component c : circuit.getNonWires()) {
       if (c instanceof InstanceComponent) {

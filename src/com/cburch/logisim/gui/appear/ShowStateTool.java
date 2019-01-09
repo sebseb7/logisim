@@ -68,11 +68,13 @@ public class ShowStateTool implements ToolbarClickableItem {
   }
 
   public void clicked() {
-    ShowStateDialog w = new ShowStateDialog(view.getFrame(), canvas);
-    Point p = view.getFrame().getLocation();
-    p.translate(80, 50);
-    w.setLocation(p);
-    w.setVisible(true);
+    ShowStateDialog w = ShowStateDialog.makeDialog(view.getFrame(), canvas);
+    if (w != null) {
+      Point p = view.getFrame().getLocation();
+      p.translate(80, 50);
+      w.setLocation(p);
+      w.setVisible(true);
+    }
   }
 
   public void paintIcon(java.awt.Component destination, Graphics g) {
