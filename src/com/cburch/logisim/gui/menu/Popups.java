@@ -62,6 +62,7 @@ public class Popups {
     static final String copy = "projectCopyCircuitItem";
     static final String paste = "projectPasteComponentsItem";
     static final String delete = "projectRemoveCircuitItem";
+    static final String dup = "projectDuplicateCircuitItem";
 
     static final String editLayout = "projectEditCircuitLayoutItem";
     static final String editAppearance = "projectEditCircuitAppearanceItem";
@@ -79,6 +80,7 @@ public class Popups {
       add(copy, S.get(copy), e -> SelectionActions.doCopy(proj, circuit));
       add(paste, S.get(paste), e -> SelectionActions.doPasteComponents(proj, sel));
       add(delete, S.get(delete), e -> ProjectCircuitActions.doRemoveCircuit(proj, circuit));
+      add(dup, S.get(dup), e -> SelectionActions.doDuplicate(proj, circuit));
 
       addSeparator();
 
@@ -130,6 +132,7 @@ public class Popups {
     static final String cut = "projectCutVhdlItem";
     static final String copy = "projectCopyVhdlItem";
     static final String delete = "projectRemoveVhdlItem";
+    static final String dup = "projectDuplicateVhdlItem";
 
     static final String edit = "projectEditVhdlItem";
 
@@ -141,6 +144,7 @@ public class Popups {
       add(cut, S.get(cut), e -> SelectionActions.doCut(proj, vhdl));
       add(copy, S.get(copy), e -> SelectionActions.doCopy(proj, vhdl));
       add(delete, S.get(delete), e -> ProjectCircuitActions.doRemoveVhdl(proj, vhdl));
+      add(dup, S.get(dup), e -> SelectionActions.doDuplicate(proj, vhdl));
 
       addSeparator();
 
@@ -167,6 +171,7 @@ public class Popups {
 
     static final String cut = "projectCutLibraryItem";
     static final String copy = "projectCopyLibraryItem";
+    static final String dup = "projectAddLibraryItem";
 
     static final String unload = "projectUnloadLibraryItem";
     static final String reload = "projectReloadLibraryItem";
@@ -181,6 +186,7 @@ public class Popups {
 
       add(cut, S.get(cut), e -> SelectionActions.doCut(proj, lib));
       add(copy, S.get(copy), e -> SelectionActions.doCopy(proj, lib));
+      add(dup, S.get(dup), e -> SelectionActions.doDuplicate(proj, lib));
 
       addSeparator();
 
@@ -192,6 +198,8 @@ public class Popups {
     protected boolean shouldEnable(Object tag) {
       if (tag == unload || tag == cut)
         return is_top;
+      else if (tag == dup)
+        return !is_top;
       else if (tag == reload)
         return is_top && lib instanceof LoadedLibrary;
       else

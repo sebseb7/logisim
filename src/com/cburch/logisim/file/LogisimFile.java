@@ -530,7 +530,6 @@ public class LogisimFile extends Library implements LibraryEventSource {
       libraries.add(index, lib);
       fireEvent(LibraryEvent.ADD_LIBRARY, lib);
     } else {
-      System.out.println("lib moving from " + oldIndex + " to " + index);
       Library value = libraries.remove(oldIndex);
       libraries.add(index, value);
       fireEvent(LibraryEvent.MOVE_LIBRARY, lib);

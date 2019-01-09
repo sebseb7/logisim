@@ -102,8 +102,9 @@ public class LogisimFileActions {
 
     @Override
     public void doIt(Project proj) {
+      int pos = idx >= 0 ? idx : proj.getLogisimFile().getLibraries().size();
       for (int i = 0; i < libs.length; i++) {
-        proj.getLogisimFile().addLibrary(libs[i], idx + i);
+        proj.getLogisimFile().addLibrary(libs[i], pos++);
       }
     }
 

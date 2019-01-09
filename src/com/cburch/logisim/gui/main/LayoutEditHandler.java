@@ -225,21 +225,15 @@ public class LayoutEditHandler extends EditHandler
     Tool tool = frame.getSelectedToolboxTool();
     if (tool instanceof AddTool) {
       ComponentFactory f = ((AddTool)tool).getFactory();
-      if (f instanceof SubcircuitFactory) {
-        Circuit c = ((SubcircuitFactory)f).getSubcircuit();
-        Transferable t = LayoutClipboard.forCircuit.encode(proj, c);
-        SelectionActions.doPaste(proj, t, proj.getLogisimFile().getTools().size());
-      } else if (f instanceof VhdlEntity) {
-        VhdlContent v = ((VhdlEntity)f).getContent();
-        Transferable t = LayoutClipboard.forVhdl.encode(proj, v);
-        SelectionActions.doPaste(proj, t, proj.getLogisimFile().getTools().size());
-      }
+      if (f instanceof SubcircuitFactory)
+        SelectionActions.doDuplicate(proj, ((SubcircuitFactory)f).getSubcircuit());
+      else if (f instanceof VhdlEntity)
+        SelectionActions.doDuplicate(proj, ((VhdlEntity)f).getContent());
       return;
     }
     Library lib = frame.getSelectedToolboxLibrary();
     if (lib != null) {
-      Transferable t = LayoutClipboard.forLibrary.encode(proj, lib);
-      SelectionActions.doPaste(proj, t, proj.getLogisimFile().getLibraries().size());
+      SelectionActions.doDuplicate(proj, lib);
       return;
     }
   }

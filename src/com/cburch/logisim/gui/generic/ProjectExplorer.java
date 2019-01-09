@@ -584,11 +584,13 @@ public class ProjectExplorer extends JTree implements LocaleListener {
           // huh? isMove should happen only for move-type drag of JVM-local object
           // System.out.printf("bad move\n");
           return false;
+        } else if (support.isDrop()) {
+          // JVM-foreign drag or copy-type drag of Circuit, Vhdl, or Library
+          return SelectionActions.doDrop(proj, support.getTransferable(), newIdx);
         } else {
-          // Handle paste, JVM-foreign drag, and copy-type drag
-          return SelectionActions.doPaste(proj, support.getTransferable(), newIdx);
+          // paste of Circuit, Vhdl, or Library
+          return SelectionActions.doPaste(proj, support.getTransferable());
         }
-
       } catch (UnsupportedFlavorException | IOException e) {
         e.printStackTrace();
       }
