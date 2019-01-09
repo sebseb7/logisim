@@ -29,6 +29,7 @@
  */
 
 package com.cburch.draw.tools;
+import static com.cburch.draw.Strings.S;
 
 import java.awt.Cursor;
 import java.awt.Graphics;
@@ -231,4 +232,9 @@ public class TextTool extends AbstractTool {
 			t.getLabel().configureTextField(field, canvas.getZoomFactor());
 		}
 	}
+
+  @Override
+  public String getDescription() {
+    return S.get("toolText");
+  }
 }

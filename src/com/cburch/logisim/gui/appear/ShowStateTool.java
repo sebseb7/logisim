@@ -29,6 +29,7 @@
  */
 
 package com.cburch.logisim.gui.appear;
+import static com.cburch.logisim.tools.Strings.S;
 
 import java.awt.Graphics;
 import java.awt.Dimension;
@@ -59,7 +60,7 @@ public class ShowStateTool implements ToolbarClickableItem {
   }
 
   public String getToolTip() {
-    return "Select state to be shown";
+    return S.get("tooltipShowState");
   }
 
   public boolean isSelectable() {

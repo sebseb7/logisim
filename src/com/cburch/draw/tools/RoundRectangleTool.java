@@ -29,6 +29,7 @@
  */
 
 package com.cburch.draw.tools;
+import static com.cburch.draw.Strings.S;
 
 import java.awt.Graphics;
 import java.util.List;
@@ -75,4 +76,9 @@ public class RoundRectangleTool extends RectangularTool {
 	public Icon getIcon() {
 		return Icons.getIcon("drawrrct.gif");
 	}
+
+  @Override
+  public String getDescription() {
+    return S.get("toolRoundedRectangle");
+  }
 }

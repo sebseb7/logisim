@@ -29,6 +29,7 @@
  */
 
 package com.cburch.draw.tools;
+import static com.cburch.draw.Strings.S;
 
 import java.awt.Color;
 import java.awt.Cursor;
@@ -251,4 +252,9 @@ public class PolyTool extends AbstractTool {
 			}
 		}
 	}
+
+  @Override
+  public String getDescription() {
+    return closed ? S.get("toolPolyClosed") : S.get("toolPolyOpen");
+  }
 }

@@ -69,9 +69,7 @@ public abstract class AbstractTool extends CanvasTool {
 	@Override
 	public abstract Cursor getCursor(Canvas canvas);
 
-	public String getDescription() {
-		return null;
-	}
+	public abstract String getDescription();
 
 	public abstract Icon getIcon();
 

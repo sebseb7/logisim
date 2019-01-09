@@ -29,6 +29,7 @@
  */
 
 package com.cburch.draw.tools;
+import static com.cburch.draw.Strings.S;
 
 import java.awt.Color;
 import java.awt.Cursor;
@@ -251,4 +252,9 @@ public class CurveTool extends AbstractTool {
 		}
 		return ret;
 	}
+
+  @Override
+  public String getDescription() {
+    return S.get("toolCurve");
+  }
 }

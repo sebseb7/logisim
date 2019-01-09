@@ -29,6 +29,7 @@
  */
 
 package com.cburch.draw.tools;
+import static com.cburch.draw.Strings.S;
 
 import java.awt.Color;
 import java.awt.Cursor;
@@ -547,4 +548,9 @@ public class SelectTool extends AbstractTool {
 		canvas.getSelection().clearSelected();
 		repaintArea(canvas);
 	}
+
+  @Override
+  public String getDescription() {
+    return S.get("toolSelect");
+  }
 }

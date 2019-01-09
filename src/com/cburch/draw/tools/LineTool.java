@@ -31,6 +31,8 @@
 package com.cburch.draw.tools;
 
 import java.awt.Color;
+import static com.cburch.draw.Strings.S;
+
 import java.awt.Cursor;
 import java.awt.Graphics;
 import java.awt.event.InputEvent;
@@ -198,4 +200,9 @@ public class LineTool extends AbstractTool {
 		lastMouseX = mx;
 		lastMouseY = my;
 	}
+
+  @Override
+  public String getDescription() {
+    return S.get("toolLine");
+  }
 }

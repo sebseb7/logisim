@@ -29,6 +29,7 @@
  */
 
 package com.cburch.logisim.gui.appear;
+import static com.cburch.logisim.tools.Strings.S;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -62,11 +63,17 @@ class AppearanceToolbarModel extends AbstractToolbarModel
       DrawingAttributeSet attrs) {
     this.canvas = canvas;
 
-    AbstractTool[] tools = { selectTool, new TextTool(attrs),
-      new LineTool(attrs), new CurveTool(attrs),
-      new PolyTool(false, attrs), new RectangleTool(attrs),
-      new RoundRectangleTool(attrs), new OvalTool(attrs),
-      new PolyTool(true, attrs), };
+    AbstractTool[] tools = {
+      selectTool,
+      new TextTool(attrs),
+      new LineTool(attrs),
+      new CurveTool(attrs),
+      new PolyTool(false, attrs),
+      new RectangleTool(attrs),
+      new RoundRectangleTool(attrs),
+      new OvalTool(attrs),
+      new PolyTool(true, attrs),
+    };
 
     ArrayList<ToolbarItem> rawItems = new ArrayList<ToolbarItem>();
     for (AbstractTool tool : tools) {
