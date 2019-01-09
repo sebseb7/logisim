@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javax.swing.JPopupMenu;
+
 import com.cburch.draw.canvas.Canvas;
 import com.cburch.draw.toolbar.AbstractToolbarModel;
 import com.cburch.draw.toolbar.ToolbarItem;
@@ -49,6 +51,7 @@ import com.cburch.draw.tools.RectangleTool;
 import com.cburch.draw.tools.RoundRectangleTool;
 import com.cburch.draw.tools.TextTool;
 import com.cburch.draw.tools.ToolbarToolItem;
+import com.cburch.logisim.gui.menu.Popups;
 
 class AppearanceToolbarModel extends AbstractToolbarModel
   implements PropertyChangeListener {
@@ -108,5 +111,10 @@ class AppearanceToolbarModel extends AbstractToolbarModel
     if (Canvas.TOOL_PROPERTY.equals(prop)) {
       fireToolbarAppearanceChanged();
     }
+  }
+
+  @Override
+  public JPopupMenu getPopupMenu() {
+    return Popups.forAppearanceToolbar();
   }
 }

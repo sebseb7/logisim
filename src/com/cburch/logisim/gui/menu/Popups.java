@@ -284,13 +284,13 @@ public class Popups {
 
   }
 
-  private static class LayoutToolbarPopup extends PopupMenu {
+  private static class ToolbarPopup extends PopupMenu {
     Project proj;
 
-    static final String customize = "layoutToolbarCustomize";
-    static final String hide = "layoutToolbarHide";
+    static final String customize = "toolbarCustomize";
+    static final String hide = "toolbarHide";
 
-    JMenu location = new JMenu(S.get("layoutToolbarLocation"));
+    JMenu location = new JMenu(S.get("toolbarLocation"));
     JRadioButtonMenuItem north = new JRadioButtonMenuItem(Direction.NORTH.toDisplayString());
     JRadioButtonMenuItem south = new JRadioButtonMenuItem(Direction.SOUTH.toDisplayString());
     JRadioButtonMenuItem east = new JRadioButtonMenuItem(Direction.EAST.toDisplayString());
@@ -299,8 +299,8 @@ public class Popups {
         com.cburch.logisim.gui.prefs.Strings.S.get("windowToolbarDownMiddle"));
     ButtonGroup group = new ButtonGroup();
 
-    LayoutToolbarPopup(Project proj) {
-      super(S.get("layoutToolbarMenu"));
+    ToolbarPopup(Project proj, boolean showCustomize) {
+      super(S.get("toolbarMenu"));
       this.proj = proj;
 
       String[] opts = new String[] {
@@ -318,7 +318,8 @@ public class Popups {
         menus[i].addActionListener(e -> AppPreferences.TOOLBAR_PLACEMENT.set(opt));
       }
 
-      add(customize, S.get(customize), e -> proj.getOptionsFrame().showToolbarPanel());
+      if (showCustomize)
+        add(customize, S.get(customize), e -> proj.getOptionsFrame().showToolbarPanel());
       add(location);
       addSeparator();
       add(hide, S.get(hide),
@@ -344,7 +345,15 @@ public class Popups {
   }
 
   public static JPopupMenu forLayoutToolbar(Project proj) {
-    return new LayoutToolbarPopup(proj);
+    return new ToolbarPopup(proj, true);
+  }
+
+  public static JPopupMenu forHdlToolbar() {
+    return new ToolbarPopup(null, false);
+  }
+
+  public static JPopupMenu forAppearanceToolbar() {
+    return new ToolbarPopup(null, false);
   }
 
 }

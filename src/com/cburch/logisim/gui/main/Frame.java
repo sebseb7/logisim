@@ -329,7 +329,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
   private Toolbar toolbar;
   private HorizontalSplitPane leftRegion, rightRegion, editRegion;
   private VerticalSplitPane mainRegion;
-  private JPanel mainPanelSuper;
+  private JPanel rightPanel;
   private CardPanel mainPanel;
   // left-side elements
   private JTabbedPane topTab, bottomTab;
@@ -403,12 +403,12 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
 
     // set up the central area
     CanvasPane canvasPane = new CanvasPane(layoutCanvas);
-    mainPanelSuper = new JPanel(new BorderLayout());
+    JPanel circEditor = new JPanel(new BorderLayout());
     canvasPane.setZoomModel(layoutZoomModel);
     mainPanel = new CardPanel();
     mainPanel.addView(EDIT_LAYOUT, canvasPane);
     mainPanel.setView(EDIT_LAYOUT);
-    mainPanelSuper.add(mainPanel, BorderLayout.CENTER);
+    circEditor.add(mainPanel, BorderLayout.CENTER);
 
     // set up the contents, split down the middle, with the canvas
     // on the right and a split pane on the left containing the
@@ -436,10 +436,13 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
 
     hdlEditor = new HdlContentView(project);
     vhdlSimulatorConsole = new VhdlSimulatorConsole(project);
-    editRegion = new HorizontalSplitPane(mainPanelSuper, hdlEditor, 1.0);
-    rightRegion = new HorizontalSplitPane(editRegion, vhdlSimulatorConsole, 1.0);
+    editRegion = new HorizontalSplitPane(circEditor, hdlEditor, 1.0);
+    rightRegion = new HorizontalSplitPane(editRegion, vhdlSimulatorConsole, 1.0); // ?
 
-    mainRegion = new VerticalSplitPane(leftRegion, rightRegion,
+    rightPanel = new JPanel(new BorderLayout()); // panel where toolbar is attached
+    rightPanel.add(rightRegion, BorderLayout.CENTER);
+
+    mainRegion = new VerticalSplitPane(leftRegion, rightPanel,
         AppPreferences.WINDOW_MAIN_SPLIT.get());
 
     getContentPane().add(mainRegion, BorderLayout.CENTER);
@@ -539,33 +542,23 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     String loc = AppPreferences.TOOLBAR_PLACEMENT.get();
     Container contents = getContentPane();
     contents.remove(toolbar);
-    mainPanelSuper.remove(toolbar);
-    if (AppPreferences.TOOLBAR_HIDDEN.equals(loc)) {
-      ; // don't place value anywhere
-    } else if (AppPreferences.TOOLBAR_DOWN_MIDDLE.equals(loc)) {
-      toolbar.setOrientation(Toolbar.VERTICAL);
-      mainPanelSuper.add(toolbar, BorderLayout.WEST);
-    } else { // it is a BorderLayout constant
-      Object value = BorderLayout.NORTH;
-      for (Direction dir : Direction.cardinals) {
-        if (dir.toString().equals(loc)) {
-          if (dir == Direction.EAST) {
-            value = BorderLayout.EAST;
-          } else if (dir == Direction.SOUTH) {
-            value = BorderLayout.SOUTH;
-          } else if (dir == Direction.WEST) {
-            value = BorderLayout.WEST;
-          } else {
-            value = BorderLayout.NORTH;
-          }
-        }
-      }
+    rightPanel.remove(toolbar);
 
-      contents.add(toolbar, value);
-      boolean vertical = value == BorderLayout.WEST
-          || value == BorderLayout.EAST;
-      toolbar.setOrientation(vertical ? Toolbar.VERTICAL
-          : Toolbar.HORIZONTAL);
+    if (AppPreferences.TOOLBAR_DOWN_MIDDLE.equals(loc)) {
+      toolbar.setOrientation(Toolbar.VERTICAL);
+      rightPanel.add(toolbar, BorderLayout.WEST);
+    } else if (Direction.NORTH.toString().equals(loc)) {
+      toolbar.setOrientation(Toolbar.HORIZONTAL);
+      rightPanel.add(toolbar, BorderLayout.NORTH);
+    } else if (Direction.SOUTH.toString().equals(loc)) {
+      toolbar.setOrientation(Toolbar.HORIZONTAL);
+      rightPanel.add(toolbar, BorderLayout.SOUTH);
+    } else if (Direction.EAST.toString().equals(loc)) {
+      toolbar.setOrientation(Toolbar.VERTICAL);
+      rightPanel.add(toolbar, BorderLayout.EAST);
+    } else if (Direction.WEST.toString().equals(loc)) {
+      toolbar.setOrientation(Toolbar.VERTICAL);
+      contents.add(toolbar, BorderLayout.WEST);
     }
     contents.validate();
   }

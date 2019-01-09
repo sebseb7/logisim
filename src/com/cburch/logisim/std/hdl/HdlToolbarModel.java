@@ -41,16 +41,18 @@ import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import javax.swing.Icon;
 
-import com.cburch.logisim.proj.Project;
+import javax.swing.Icon;
+import javax.swing.JPopupMenu;
+
 import com.cburch.draw.toolbar.AbstractToolbarModel;
 import com.cburch.draw.toolbar.ToolbarItem;
+import com.cburch.hdl.HdlModel;
+import com.cburch.hdl.HdlModelListener;
+import com.cburch.logisim.gui.menu.Popups;
+import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.util.StringGetter;
-import com.cburch.hdl.HdlModelListener;
-import com.cburch.hdl.HdlModel;
-
 
 class HdlToolbarModel extends AbstractToolbarModel implements HdlModelListener {
   private Project proj;
@@ -184,6 +186,11 @@ class HdlToolbarModel extends AbstractToolbarModel implements HdlModelListener {
         icon.paintIcon(destination, g, 0, 1);
       }
     }
+  }
+
+  @Override
+  public JPopupMenu getPopupMenu() {
+    return Popups.forHdlToolbar();
   }
 
 }
