@@ -31,13 +31,15 @@
 package com.cburch.draw.toolbar;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
 import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
 
 import com.cburch.logisim.util.DragDrop;
 import com.cburch.logisim.util.GraphicsUtil;
@@ -86,7 +88,6 @@ class ToolbarButton extends JComponent implements MouseListener, DragDrop.Suppor
 	}
 
 	public void mouseClicked(MouseEvent e) { }
-
 	public void mouseEntered(MouseEvent e) { }
 
 	public void mouseExited(MouseEvent e) {
@@ -94,7 +95,11 @@ class ToolbarButton extends JComponent implements MouseListener, DragDrop.Suppor
 	}
 
 	public void mousePressed(MouseEvent e) {
-		if (item != null && (item.isSelectable() || (item instanceof ToolbarClickableItem))) {
+    if (!SwingUtilities.isLeftMouseButton(e)) {
+      Component src = (Component)e.getSource();
+      Component parent = src.getParent();
+      parent.dispatchEvent(SwingUtilities.convertMouseEvent(src, e, parent));
+    } else if (item != null && (item.isSelectable() || (item instanceof ToolbarClickableItem))) {
 			toolbar.setPressed(this);
 		}
 	}

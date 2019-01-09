@@ -33,6 +33,8 @@ package com.cburch.draw.toolbar;
 import java.util.List;
 import java.awt.datatransfer.DataFlavor;
 
+import javax.swing.JPopupMenu;
+
 public interface ToolbarModel {
 	public void addToolbarModelListener(ToolbarModelListener listener);
 
@@ -49,4 +51,6 @@ public interface ToolbarModel {
   default public boolean handleDrop(Object incoming, int pos) { return false; }
   default public boolean handleDragDrop(int oldPos, int newP) { return false; }
   default public boolean isSameProject(Object incoming) { return false; }
+
+  default public JPopupMenu getPopupMenu() { return null; }
 }

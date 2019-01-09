@@ -31,13 +31,16 @@
 package com.cburch.logisim.gui.menu;
 import static com.cburch.logisim.gui.menu.Strings.S;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.SwingUtilities;
 
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.file.LoadedLibrary;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.generic.PopupMenu;
@@ -51,6 +54,7 @@ import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.prefs.AppPreferences;
 
 public class Popups {
 
@@ -221,8 +225,8 @@ public class Popups {
     static final String importVhdl = "projectImportVhdlItem";
 
     JMenu load = new JMenu(S.get("projectLoadLibraryItem"));
-    JMenuItem loadBuiltin = new JMenuItem( S.get("projectLoadBuiltinItem"));
-    JMenuItem loadLogisim = new JMenuItem( S.get("projectLoadLogisimItem"));
+    JMenuItem loadBuiltin = new JMenuItem(S.get("projectLoadBuiltinItem"));
+    JMenuItem loadLogisim = new JMenuItem(S.get("projectLoadLogisimItem"));
     JMenuItem loadJar = new JMenuItem(S.get("projectLoadJarItem"));
 
     ProjectPopup(Project proj) {
@@ -280,6 +284,49 @@ public class Popups {
 
   }
 
+  private static class LayoutToolbarPopup extends PopupMenu {
+    Project proj;
+
+    static final String customize = "layoutToolbarCustomize";
+    static final String hide = "layoutToolbarHide";
+
+    JMenu location = new JMenu(S.get("layoutToolbarLocation"));
+    JRadioButtonMenuItem north = new JRadioButtonMenuItem(Direction.NORTH.toDisplayString());
+    JRadioButtonMenuItem south = new JRadioButtonMenuItem(Direction.SOUTH.toDisplayString());
+    JRadioButtonMenuItem east = new JRadioButtonMenuItem(Direction.EAST.toDisplayString());
+    JRadioButtonMenuItem west = new JRadioButtonMenuItem(Direction.WEST.toDisplayString());
+    JRadioButtonMenuItem middle = new JRadioButtonMenuItem(
+        com.cburch.logisim.gui.prefs.Strings.S.get("windowToolbarDownMiddle"));
+    ButtonGroup group = new ButtonGroup();
+
+    LayoutToolbarPopup(Project proj) {
+      super(S.get("layoutToolbarMenu"));
+      this.proj = proj;
+
+      String[] opts = new String[] {
+          Direction.NORTH.toString(), Direction.SOUTH.toString(),
+          Direction.EAST.toString(), Direction.WEST.toString(),
+          AppPreferences.TOOLBAR_DOWN_MIDDLE };
+      JRadioButtonMenuItem[] menus = new JRadioButtonMenuItem[] {
+        north, south, east, west, middle };
+      for (int i = 0; i < 5; i++) {
+        final String opt = opts[i];
+        group.add(menus[i]);
+        location.add(menus[i]);
+        if (opts[i].equals(AppPreferences.TOOLBAR_PLACEMENT.get()))
+            menus[i].setSelected(true);
+        menus[i].addActionListener(e -> AppPreferences.TOOLBAR_PLACEMENT.set(opt));
+      }
+
+      add(customize, S.get(customize), e -> proj.getOptionsFrame().showToolbarPanel());
+      add(location);
+      addSeparator();
+      add(hide, S.get(hide),
+        e -> AppPreferences.TOOLBAR_PLACEMENT.set(AppPreferences.TOOLBAR_HIDDEN));
+    }
+
+  }
+
   public static JPopupMenu forCircuit(Project proj, AddTool tool, Circuit circ) {
     return new CircuitPopup(proj, tool, circ);
   }
@@ -296,9 +343,8 @@ public class Popups {
     return new ProjectPopup(proj);
   }
 
-  // todo: tool popup for toolbar?
-  // public static JPopupMenu forTool(Project proj, Tool tool) {
-  //   return null;
-  // }
+  public static JPopupMenu forLayoutToolbar(Project proj) {
+    return new LayoutToolbarPopup(proj);
+  }
 
 }

@@ -31,7 +31,6 @@
 package com.cburch.logisim.gui.menu;
 import static com.cburch.logisim.gui.menu.Strings.S;
 
-import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
@@ -43,7 +42,6 @@ import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 
 import com.cburch.logisim.gui.main.Frame;
-import com.cburch.logisim.gui.opts.OptionsFrame;
 import com.cburch.logisim.gui.prefs.PreferencesFrame;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;

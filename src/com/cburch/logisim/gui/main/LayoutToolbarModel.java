@@ -43,12 +43,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javax.swing.JPopupMenu;
+
 import com.cburch.draw.toolbar.AbstractToolbarModel;
 import com.cburch.draw.toolbar.Toolbar;
 import com.cburch.draw.toolbar.ToolbarItem;
 import com.cburch.draw.toolbar.ToolbarSeparator;
-import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.circuit.CircuitAttributes;
+import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.AttributeEvent;
@@ -57,6 +59,7 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.file.Options;
 import com.cburch.logisim.file.ToolbarData;
+import com.cburch.logisim.gui.menu.Popups;
 import com.cburch.logisim.gui.opts.ToolbarActions;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
@@ -351,6 +354,11 @@ class LayoutToolbarModel extends AbstractToolbarModel {
     Options opts = proj.getLogisimFile().getOptions();
     proj.doAction(ToolbarActions.moveTool(opts.getToolbarData(), oldPos, newPos));
     return true;
+  }
+
+  @Override
+  public JPopupMenu getPopupMenu() {
+    return Popups.forLayoutToolbar(proj);
   }
 
 }

@@ -101,26 +101,26 @@ public class PreferencesFrame extends LFrame.Dialog {
   private PreferencesFrame() {
     super(null); // not associated with a project
 
-    panels = new OptionsPanel[] { new TemplateOptions(this),
-      new IntlOptions(this), new WindowOptions(this),
-      new LayoutOptions(this), new ExperimentalOptions(this),
-      new SoftwaresOptions(this), };
+    panels = new OptionsPanel[] {
+      new TemplateOptions(this),
+      new IntlOptions(this), // index=1: see setSelectedIndex(1) below
+      new WindowOptions(this),
+      new LayoutOptions(this),
+      new ExperimentalOptions(this),
+      new SoftwaresOptions(this),
+    };
     tabbedPane = new JTabbedPane();
-    int intlIndex = -1;
     for (int index = 0; index < panels.length; index++) {
       OptionsPanel panel = panels[index];
       tabbedPane.addTab(panel.getTitle(), null, panel,
           panel.getToolTipText());
-      if (panel instanceof IntlOptions)
-        intlIndex = index;
     }
 
     Container contents = getContentPane();
     tabbedPane.setPreferredSize(new Dimension(450, 300));
     contents.add(tabbedPane, BorderLayout.CENTER);
 
-    if (intlIndex >= 0)
-      tabbedPane.setSelectedIndex(intlIndex);
+    tabbedPane.setSelectedIndex(1);
 
     LocaleManager.addLocaleListener(myListener);
     myListener.localeChanged();

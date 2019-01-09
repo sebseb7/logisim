@@ -123,9 +123,12 @@ public class OptionsFrame extends LFrame.Dialog {
       }
     });
 
-    panels = new OptionsPanel[] { new SimulateOptions(this),
-      new ToolbarOptions(this), new MouseOptions(this),
-      new RevertPanel(this)};
+    panels = new OptionsPanel[] {
+      new SimulateOptions(this),
+      new ToolbarOptions(this), // index=1: see setSelectedIndex(1) below
+      new MouseOptions(this),
+      new RevertPanel(this)
+    };
     tabbedPane = new JTabbedPane();
     for (int index = 0; index < panels.length; index++) {
       OptionsPanel panel = panels[index];
@@ -158,6 +161,11 @@ public class OptionsFrame extends LFrame.Dialog {
       windowManager.frameOpened(this);
     }
     super.setVisible(value);
+  }
+
+  public void showToolbarPanel() {
+    tabbedPane.setSelectedIndex(1);
+    setVisible(true);
   }
 
   static class RevertPanel extends OptionsPanel {

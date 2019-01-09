@@ -44,10 +44,15 @@ import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 public class Toolbar extends JPanel {
@@ -94,7 +99,7 @@ public class Toolbar extends JPanel {
 
   }
 
-	private class MyListener implements ToolbarModelListener, DropTargetListener {
+	private class MyListener implements MouseListener, ToolbarModelListener, DropTargetListener {
     @Override
 		public void toolbarAppearanceChanged(ToolbarModelEvent event) {
 			repaint();
@@ -119,24 +124,16 @@ public class Toolbar extends JPanel {
     boolean checkIntraProjectAddition(DropTargetDragEvent e) throws Exception {
       DataFlavor flavor = model.getAcceptedDataFlavor();
       int action = DnDConstants.ACTION_LINK;
-      // System.out.printf("checking proj flavor %d %s\n", action, flavor);
-      // System.out.printf("%s %s\n",
-      // (e.getSourceActions() & action) != 0,  e.isDataFlavorSupported(flavor));
-      // for (DataFlavor f : e.getCurrentDataFlavorsAsList()) {
-      //   System.out.println("> " + f);
-      // }
       if ((e.getSourceActions() & action) == 0 || !e.isDataFlavorSupported(flavor))
         return false;
       e.acceptDrag(action);
       Object incoming = e.getTransferable().getTransferData(flavor);
-      // System.out.println("checking for same project");
       return (incoming != null && model.isSameProject(incoming));
     }
 
     void checkDrag(DropTargetDragEvent e) {
       // todo: be careful about drag and drop between projects
       try {
-        // System.out.println("checking drag" + model.supportsDragDrop());
         if (model.supportsDragDrop()
             && (checkIntraToolbarMove(e) || checkIntraProjectAddition(e))) {
           subpanel.setDropCursor(e.getLocation());
@@ -199,6 +196,20 @@ public class Toolbar extends JPanel {
       e.dropComplete(false);
       e.rejectDrop();
     }
+
+    public void mouseClicked(MouseEvent e) { }
+    public void mouseEntered(MouseEvent e) { }
+    public void mouseExited(MouseEvent e) { }
+    public void mouseReleased(MouseEvent e) { }
+
+    public void mousePressed(MouseEvent e) {
+      if (!SwingUtilities.isRightMouseButton(e))
+        return;
+      JPopupMenu menu = model.getPopupMenu();
+      if (menu != null)
+        menu.show(Toolbar.this, e.getX(), e.getY());
+    }
+
   }
 
 	private static final long serialVersionUID = 1L;
@@ -223,8 +234,17 @@ public class Toolbar extends JPanel {
     // this.flavorMap = new FlavorMap();
     this.dropTarget = new DropTarget(this, DnDConstants.ACTION_LINK, myListener, true /* , flavorMap */);
 
-		this.add(new JPanel(), BorderLayout.CENTER);
+		// this.add(new JPanel(), BorderLayout.CENTER);
 		setOrientation(HORIZONTAL);
+
+		subpanel.addMouseListener(new MouseAdapter() {
+      public void mousePressed(MouseEvent e) {
+        Component src = (Component)e.getSource();
+        Component parent = src.getParent();
+        parent.dispatchEvent(SwingUtilities.convertMouseEvent(src, e, parent));
+      }
+    });
+		addMouseListener(myListener);
 
 		computeContents();
 		if (model != null)
