@@ -62,6 +62,8 @@ public class Popups {
     Project proj;
     Circuit circuit;
 
+    static final String rename = "projectRenameCircuitItem";
+
     static final String cut = "projectCutCircuitItem";
     static final String copy = "projectCopyCircuitItem";
     static final String paste = "projectPasteComponentsItem";
@@ -79,13 +81,15 @@ public class Popups {
       this.proj = proj;
       this.circuit = circuit;
       Selection sel = proj.getFrame().getCanvas().getSelection();
+      
+      add(rename, S.get(rename), e -> ProjectCircuitActions.doRename(proj, circuit));
+      addSeparator();
 
       add(cut, S.get(cut), e -> SelectionActions.doCut(proj, circuit));
       add(copy, S.get(copy), e -> SelectionActions.doCopy(proj, circuit));
       add(paste, S.get(paste), e -> SelectionActions.doPasteComponents(proj, sel));
       add(delete, S.get(delete), e -> ProjectCircuitActions.doRemoveCircuit(proj, circuit));
       add(dup, S.get(dup), e -> SelectionActions.doDuplicate(proj, circuit));
-
       addSeparator();
 
       add(editLayout, S.get(editLayout), e -> {
@@ -101,7 +105,6 @@ public class Popups {
         JFrame frame = (JFrame) SwingUtilities.getRoot(this);
         StatisticsDialog.show(frame, proj.getLogisimFile(), circuit);
       });
-
       addSeparator();
 
       add(main, S.get(main), e -> ProjectCircuitActions.doSetAsMainCircuit(proj, circuit));
@@ -124,6 +127,8 @@ public class Popups {
             !proj.getFrame().getEditorView().equals(Frame.EDIT_APPEARANCE));
       else if (tag == main)
         return canChange && file.getMainCircuit() != circuit;
+      else if (tag == rename)
+        return canChange;
       else
         return true;
     }
@@ -132,6 +137,8 @@ public class Popups {
   private static class VhdlPopup extends PopupMenu {
     Project proj;
     VhdlContent vhdl;
+
+    static final String rename = "projectRenameVhdlItem";
 
     static final String cut = "projectCutVhdlItem";
     static final String copy = "projectCopyVhdlItem";
@@ -144,12 +151,14 @@ public class Popups {
       super(S.get("vhdlMenu"));
       this.proj = proj;
       this.vhdl = vhdl;
+      
+      add(rename, S.get(rename), e -> ProjectCircuitActions.doRename(proj, vhdl));
+      addSeparator();
 
       add(cut, S.get(cut), e -> SelectionActions.doCut(proj, vhdl));
       add(copy, S.get(copy), e -> SelectionActions.doCopy(proj, vhdl));
       add(delete, S.get(delete), e -> ProjectCircuitActions.doRemoveVhdl(proj, vhdl));
       add(dup, S.get(dup), e -> SelectionActions.doDuplicate(proj, vhdl));
-
       addSeparator();
 
       add(edit, S.get(edit), e -> proj.setCurrentHdlModel(vhdl));
@@ -163,6 +172,8 @@ public class Popups {
         return vhdl != proj.getFrame().getHdlEditorView();
       else if (tag == cut || tag == delete)
         return canChange && proj.getDependencies().canRemove(vhdl);
+      else if (tag == rename)
+        return canChange;
       else
         return true;
     }

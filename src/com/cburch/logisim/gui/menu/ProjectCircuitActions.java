@@ -134,6 +134,24 @@ public class ProjectCircuitActions {
     proj.setCurrentHdlModel(content);
   }
 
+  public static boolean doRename(Project proj, Circuit circuit) {
+    String newName = promptForCircuitName(proj.getFrame(), proj.getLogisimFile(),
+        circuit.getName());
+    if (newName == null || newName.equals(circuit.getName()))
+      return false;
+    circuit.setName(newName);
+    return true;
+  }
+
+  public static boolean doRename(Project proj, VhdlContent vhdl) {
+    String newName = promptForVhdlName(proj.getFrame(), proj.getLogisimFile(),
+        vhdl.getName());
+    if (newName == null || newName.equals(vhdl.getName()))
+      return false;
+    vhdl.setName(newName);
+    return true;
+  }
+
   public static void doAnalyze(Project proj, Circuit circuit) {
     Map<Instance, String> pinNames = Analyze.getPinLabels(circuit);
     ArrayList<Var> inputVars = new ArrayList<Var>();
