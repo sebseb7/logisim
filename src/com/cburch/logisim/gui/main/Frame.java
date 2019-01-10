@@ -399,7 +399,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     vhdlSimState.stateChanged();
     project.getVhdlSimulator().addVhdlSimStateListener(vhdlSimState);
 
-    zoom = new ZoomControl(layoutZoomModel);
+    zoom = new ZoomControl(layoutZoomModel, layoutCanvas);
 
     // set up the central area
     CanvasPane canvasPane = new CanvasPane(layoutCanvas);

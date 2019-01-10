@@ -365,7 +365,9 @@ public class AppPreferences {
       ACCENTS_REPLACE = new PrefMonitor("accentsReplace", false);
   // Window preferences
   public static final PrefMonitor<Boolean>
-      SHOW_TICK_RATE = new PrefMonitor( "showTickRate", false);
+      SHOW_TICK_RATE = new PrefMonitor("showTickRate", false);
+  public static final PrefMonitor<Boolean>
+      SHOW_COORDS = new PrefMonitor("showCoordinates", false);
   public static final String TOOLBAR_HIDDEN = "hidden";
   public static final String TOOLBAR_DOWN_MIDDLE = "downMiddle";
   public static final PrefMonitor<String>

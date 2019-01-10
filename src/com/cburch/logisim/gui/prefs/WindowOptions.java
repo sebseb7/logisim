@@ -45,8 +45,10 @@ class WindowOptions extends OptionsPanel {
   public WindowOptions(PreferencesFrame window) {
     super(window);
 
-    checks = new PrefBoolean[] { new PrefBoolean(
-        AppPreferences.SHOW_TICK_RATE, S.getter("windowTickRate")), };
+    checks = new PrefBoolean[] {
+      new PrefBoolean(AppPreferences.SHOW_TICK_RATE, S.getter("windowTickRate")),
+      new PrefBoolean(AppPreferences.SHOW_COORDS, S.getter("windowCoordinates")),
+    };
 
     toolbarPlacement = new PrefOptionList(AppPreferences.TOOLBAR_PLACEMENT,
         S.getter("windowToolbarLocation"), new PrefOption[] {
@@ -68,9 +70,8 @@ class WindowOptions extends OptionsPanel {
     panel.add(toolbarPlacement.getJComboBox());
 
     setLayout(new TableLayout(1));
-    for (int i = 0; i < checks.length; i++) {
+    for (int i = 0; i < checks.length; i++)
       add(checks[i]);
-    }
     add(panel);
   }
 

@@ -37,6 +37,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -54,6 +55,8 @@ import javax.swing.JSlider;
 import java.awt.event.MouseAdapter;
 import java.awt.Insets;
 
+import com.cburch.logisim.gui.main.Canvas;
+import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.Icons;
 
 public class ZoomControl extends JPanel {
@@ -155,6 +158,7 @@ public class ZoomControl extends JPanel {
   private SliderModel sliderModel;
   private JSlider slider;
   private GridIcon grid;
+  private Canvas canvas;
 
   private int nearestZoomOption() {
     double[] choices = model.getZoomOptions();
@@ -197,9 +201,10 @@ public class ZoomControl extends JPanel {
     }
   }
 
-  public ZoomControl(ZoomModel model) {
+  public ZoomControl(ZoomModel model, Canvas canvas) {
     super(new BorderLayout());
     this.model = model;
+    this.canvas = canvas;
 
     label = new ZoomLabel();
     sliderModel = new SliderModel(model);
@@ -224,6 +229,14 @@ public class ZoomControl extends JPanel {
     model.addPropertyChangeListener(ZoomModel.SHOW_GRID, grid);
     model.addPropertyChangeListener(ZoomModel.ZOOM, sliderModel);
     model.addPropertyChangeListener(ZoomModel.ZOOM, label);
+
+    showCoordinates(AppPreferences.SHOW_COORDS.get());
+    AppPreferences.SHOW_COORDS.addPropertyChangeListener(
+        new PropertyChangeListener() {
+          public void propertyChange(PropertyChangeEvent event) {
+            showCoordinates(AppPreferences.SHOW_COORDS.get());
+          }
+        });
   }
 
   public String zoomString() {
@@ -287,5 +300,29 @@ public class ZoomControl extends JPanel {
         value.addPropertyChangeListener(ZoomModel.ZOOM, label);
       }
     }
+  }
+
+  private boolean showCoords = false;
+  private JLabel coords = new JLabel("");
+  private MouseAdapter coordListener = new MouseAdapter() {
+    @Override
+    public void mouseMoved(MouseEvent e) {
+      coords.setText(String.format("   x, y = (%d, %d)", e.getX(), e.getY()));
+    }
+    public void mouseExited(MouseEvent e) { coords.setText(""); }
+  };
+
+  public void showCoordinates(boolean value) {
+    if (showCoords == value)
+      return;
+    showCoords = value;
+    if (showCoords) {
+      add(coords, BorderLayout.SOUTH);
+      canvas.addMouseMotionListener(coordListener);
+    } else {
+      remove(coords);
+      canvas.removeMouseMotionListener(coordListener);
+    }
+    revalidate();
   }
 }

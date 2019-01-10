@@ -148,9 +148,6 @@ public class Canvas extends JPanel
       }
     }
 
-    //
-    // MouseListener methods
-    //
     @Override
     public void mouseClicked(MouseEvent e) {
     }
