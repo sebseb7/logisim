@@ -45,17 +45,15 @@ import com.cburch.logisim.circuit.SplitterAttributes;
 
 public abstract class AttributeSetTableModel
   implements AttrTableModel, AttributeListener {
-  private class AttrRow implements AttrTableModelRow {
-    private Attribute<Object> attr;
+  private class AttrRow<V> implements AttrTableModelRow {
+    private Attribute<V> attr;
 
-    AttrRow(Attribute<?> attr) {
-      @SuppressWarnings("unchecked")
-      Attribute<Object> objAttr = (Attribute<Object>) attr;
-      this.attr = objAttr;
+    AttrRow(Attribute<V> attr) {
+      this.attr = attr;
     }
 
     public Component getEditor(Window parent) {
-      Object value = attrs.getValue(attr);
+      V value = attrs.getValue(attr);
       return attr.getCellEditor(parent, value);
     }
 
@@ -64,7 +62,7 @@ public abstract class AttributeSetTableModel
     }
 
     public String getValue() {
-      Object value = attrs.getValue(attr);
+      V value = attrs.getValue(attr);
       if (value == null) {
         try {
           return attr.toDisplayString(value);
@@ -85,9 +83,9 @@ public abstract class AttributeSetTableModel
     }
 
     public boolean multiEditCompatible(AttrTableModelRow other) {
-      if (other == null || !(other instanceof AttrRow))
+      if (other == null || !(other instanceof AttrRow<?>))
         return false;
-      AttrRow o = (AttrRow)other;
+      AttrRow<?> o = (AttrRow<?>)other;
       if (!(((Object)attr) instanceof SplitterAttributes.BitOutAttribute))
         return false;
       if (!(((Object)o.attr) instanceof SplitterAttributes.BitOutAttribute))
@@ -97,19 +95,20 @@ public abstract class AttributeSetTableModel
       return a.sameOptions(b);
     }
 
-    public void setValue(Window parent, Object value) throws AttrTableSetException {
-      Attribute<Object> attr = this.attr;
-      if (attr == null || value == null)
+    public void setValue(Window parent, Object valueOrStr) throws AttrTableSetException {
+      // Attribute<Object> attr = this.attr;
+      if (attr == null || valueOrStr == null)
         return;
 
       try {
-        if (value instanceof String) {
-          value = attr.parse(parent, (String) value);
-        }
+        V value;
+        if (valueOrStr instanceof String)
+          value = attr.parse(parent, (String) valueOrStr);
+        else
+          value = (V)valueOrStr;
         setValueRequested(attr, value);
       } catch (ClassCastException e) {
-        String msg = S.get("attributeChangeInvalidError") + ": "
-            + e;
+        String msg = S.get("attributeChangeInvalidError") + ": " + e;
         throw new AttrTableSetException(msg);
       } catch (NumberFormatException e) {
         String msg = S.get("attributeChangeInvalidError");
@@ -124,17 +123,17 @@ public abstract class AttributeSetTableModel
 
   private ArrayList<AttrTableModelListener> listeners;
   private AttributeSet attrs;
-  private HashMap<Attribute<?>, AttrRow> rowMap;
-  private ArrayList<AttrRow> rows;
+  private HashMap<Attribute<?>, AttrRow<?>> rowMap;
+  private ArrayList<AttrRow<?>> rows;
 
   public AttributeSetTableModel(AttributeSet attrs) {
     this.attrs = attrs;
     this.listeners = new ArrayList<AttrTableModelListener>();
-    this.rowMap = new HashMap<Attribute<?>, AttrRow>();
-    this.rows = new ArrayList<AttrRow>();
+    this.rowMap = new HashMap<Attribute<?>, AttrRow<?>>();
+    this.rows = new ArrayList<AttrRow<?>>();
     if (attrs != null) {
       for (Attribute<?> attr : attrs.getAttributes()) {
-        AttrRow row = new AttrRow(attr);
+        AttrRow<?> row = new AttrRow(attr);
         rowMap.put(attr, row);
         rows.add(row);
       }
@@ -167,11 +166,11 @@ public abstract class AttributeSetTableModel
       return;
 
     // compute the new list of rows, possible adding into hash map
-    ArrayList<AttrRow> newRows = new ArrayList<AttrRow>();
+    ArrayList<AttrRow<?>> newRows = new ArrayList<AttrRow<?>>();
     HashSet<Attribute<?>> missing = new HashSet<Attribute<?>>(
         rowMap.keySet());
     for (Attribute<?> attr : attrs.getAttributes()) {
-      AttrRow row = rowMap.get(attr);
+      AttrRow<?> row = rowMap.get(attr);
       if (row == null) {
         row = new AttrRow(attr);
         rowMap.put(attr, row);
@@ -253,7 +252,7 @@ public abstract class AttributeSetTableModel
     }
   }
 
-  protected abstract void setValueRequested(Attribute<Object> attr,
-      Object value) throws AttrTableSetException;
+  protected abstract <V> void setValueRequested(Attribute<V> attr,
+      V value) throws AttrTableSetException;
 
 }

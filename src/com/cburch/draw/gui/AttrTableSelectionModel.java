@@ -97,7 +97,7 @@ class AttrTableSelectionModel extends AttributeSetTableModel implements
 	}
 
 	@Override
-	public void setValueRequested(Attribute<Object> attr, Object value)
+	public <V> void setValueRequested(Attribute<V> attr, V value)
 			throws AttrTableSetException {
 		SelectionAttributes attrs = (SelectionAttributes) getAttributeSet();
 		Map<AttributeMapKey, Object> oldVals;

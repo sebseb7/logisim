@@ -236,12 +236,12 @@ class XmlReader {
           if (setDefaults) {
             Object val = defaults.getDefaultAttributeValue(attr, sourceVersion);
             if (val != null)
-              attrs.setValue(attr, val);
+              attrs.setAttr(attr, val);
           }
         } else {
           try {
             Object val = attr.parse(attrVal);
-            attrs.setValue(attr, val);
+            attrs.setAttr(attr, val);
           } catch (NumberFormatException e) {
             if (messages == null)
               messages = new ArrayList<String>();

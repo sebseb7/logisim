@@ -133,7 +133,7 @@ class GateAttributes extends AbstractAttributeSet {
   }
 
   @Override
-  public <V> void setValue(Attribute<V> attr, V value) {
+  public <V> void updateAttr(Attribute<V> attr, V value) {
     if (attr == StdAttr.WIDTH) {
       width = (BitWidth) value;
       int bits = width.getWidth();
@@ -142,13 +142,14 @@ class GateAttributes extends AbstractAttributeSet {
     } else if (attr == StdAttr.FACING) {
       facing = (Direction) value;
     } else if (attr == StdAttr.LABEL) {
-      String val = (String) value;
-      if (!SyntaxChecker.isVariableNameAcceptable(val)) {
-        SyntaxChecker.showNonAcceptableNameMessage();
-        label = "";
-      } else {
-        label = val;
-      }
+      // fixme: not here
+      // if (!SyntaxChecker.isVariableNameAcceptable(val)) {
+      //   SyntaxChecker.showNonAcceptableNameMessage();
+      //   label = "";
+      // } else {
+      //   label = val;
+      // }
+      label = (String) value;
     } else if (attr == StdAttr.LABEL_FONT) {
       labelFont = (Font) value;
     } else if (attr == ATTR_SIZE) {
@@ -162,14 +163,10 @@ class GateAttributes extends AbstractAttributeSet {
       out = (AttributeOption) value;
     } else if (attr instanceof NegateAttribute) {
       int index = ((NegateAttribute) attr).index;
-      if (((Boolean) value).booleanValue()) {
+      if (((Boolean) value).booleanValue())
         negated |= 1 << index;
-      } else {
+      else
         negated &= ~(1 << index);
-      }
-    } else {
-      throw new IllegalArgumentException("unrecognized argument");
     }
-    fireAttributeValueChanged(attr, value);
   }
 }

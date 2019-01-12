@@ -33,12 +33,11 @@ package com.cburch.draw.model;
 import java.awt.Graphics;
 import java.util.List;
 
-import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 
-public interface CanvasObject {
+public interface CanvasObject extends AttributeSet, Cloneable {
 	public abstract Handle canDeleteHandle(Location desired);
 
 	public abstract Handle canInsertHandle(Location desired);
@@ -47,13 +46,11 @@ public interface CanvasObject {
 
 	public abstract boolean canRemove();
 
-	public abstract CanvasObject clone();
-
 	public abstract boolean contains(Location loc, boolean assumeFilled);
 
 	public Handle deleteHandle(Handle handle);
 
-	public abstract AttributeSet getAttributeSet();
+	// public abstract AttributeSet getAttributeSet();
 
 	public abstract Bounds getBounds();
 
@@ -62,8 +59,6 @@ public interface CanvasObject {
 	public abstract String getDisplayNameAndLabel();
 
 	public abstract List<Handle> getHandles(HandleGesture gesture);
-
-	public abstract <V> V getValue(Attribute<V> attr);
 
 	public void insertHandle(Handle desired, Handle previous);
 
@@ -76,8 +71,6 @@ public interface CanvasObject {
 	public abstract boolean overlaps(CanvasObject other);
 
 	public abstract void paint(Graphics g, HandleGesture gesture);
-
-	public <V> void setValue(Attribute<V> attr, V value);
 
 	public void translate(int dx, int dy);
 }

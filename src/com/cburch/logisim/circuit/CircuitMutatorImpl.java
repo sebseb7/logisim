@@ -150,7 +150,7 @@ class CircuitMutatorImpl implements CircuitMutator {
       AttributeSet attrs = comp.getAttributeSet();
       Object oldValue = attrs.getValue(a);
       log.add(CircuitChange.set(circuit, comp, attr, oldValue, newValue));
-      attrs.setValue(a, newValue);
+      attrs.setAttr(a, newValue);
     }
   }
 
@@ -161,6 +161,6 @@ class CircuitMutatorImpl implements CircuitMutator {
     AttributeSet attrs = circuit.getStaticAttributes();
     Object oldValue = attrs.getValue(a);
     log.add(CircuitChange.setForCircuit(circuit, attr, oldValue, newValue));
-    attrs.setValue(a, newValue);
+    attrs.setAttr(a, newValue);
   }
 }

@@ -39,15 +39,16 @@ import com.cburch.logisim.circuit.appear.CircuitAppearanceEvent;
 import com.cburch.logisim.circuit.appear.CircuitAppearanceListener;
 import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.tools.Library;
 
 public class CircuitAttributes extends AbstractAttributeSet {
   private class MyListener
@@ -76,7 +77,7 @@ public class CircuitAttributes extends AbstractAttributeSet {
       }
       subcircInstance.fireInvalidated();
       if (source != null & !source.getAppearance().isDefaultAppearance())
-        source.getStaticAttributes().setValue(APPEARANCE_ATTR, APPEAR_CUSTOM);
+        source.getStaticAttributes().setAttr(APPEARANCE_ATTR, APPEAR_CUSTOM);
     }
   }
 
@@ -102,10 +103,10 @@ public class CircuitAttributes extends AbstractAttributeSet {
     }
   }
 
-  static AttributeSet createBaseAttrs(Circuit source, String name) {
+  static AttributeSet createBaseAttrs(Circuit source, Library lib, String name) {
     AttributeSet ret = AttributeSets.fixedSet(STATIC_ATTRS, STATIC_DEFAULTS);
     ret.setToSave(NAME_ATTR, false); // name already appears as an attribute of circuit's outer xml node
-    ret.setValue(NAME_ATTR, name);
+    ret.setAttr(NAME_ATTR, name);
     ret.addAttributeListener(new StaticListener(source));
     return ret;
   }
@@ -134,18 +135,24 @@ public class CircuitAttributes extends AbstractAttributeSet {
       .forOption("appearance", S.getter("circuitAppearanceAttr"),
           new AttributeOption[] { APPEAR_CLASSIC, APPEAR_FPGA, APPEAR_CUSTOM });
 
-  static final Attribute<?>[] STATIC_ATTRS = { NAME_ATTR,
-    CIRCUIT_LABEL_ATTR, CIRCUIT_LABEL_FACING_ATTR,
-    CIRCUIT_LABEL_FONT_ATTR, CIRCUIT_IS_VHDL_BOX, CIRCUIT_VHDL_PATH, APPEARANCE_ATTR};
+  static final Attribute<?>[] STATIC_ATTRS = {
+    NAME_ATTR,
+    CIRCUIT_LABEL_ATTR, CIRCUIT_LABEL_FACING_ATTR, CIRCUIT_LABEL_FONT_ATTR,
+    CIRCUIT_IS_VHDL_BOX, CIRCUIT_VHDL_PATH,
+    APPEARANCE_ATTR };
 
-  static final Object[] STATIC_DEFAULTS = { "", "", Direction.EAST,
-    StdAttr.DEFAULT_LABEL_FONT, false, "", APPEAR_FPGA};
+  static final Object[] STATIC_DEFAULTS = {
+    "",
+    "", Direction.EAST, StdAttr.DEFAULT_LABEL_FONT,
+    false, "",
+    APPEAR_FPGA };
 
-  private static final List<Attribute<?>> INSTANCE_ATTRS = Arrays
-      .asList(new Attribute<?>[] { StdAttr.FACING, StdAttr.LABEL,
-        StdAttr.LABEL_LOC, StdAttr.LABEL_FONT,
-        NAME_ATTR, CIRCUIT_LABEL_ATTR,
-        CIRCUIT_LABEL_FACING_ATTR, CIRCUIT_LABEL_FONT_ATTR,
+  private static final List<Attribute<?>> INSTANCE_ATTRS = Arrays.asList(
+      new Attribute<?>[] {
+        StdAttr.FACING,
+        StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT,
+        NAME_ATTR,
+        CIRCUIT_LABEL_ATTR, CIRCUIT_LABEL_FACING_ATTR, CIRCUIT_LABEL_FONT_ATTR,
         CIRCUIT_IS_VHDL_BOX, CIRCUIT_VHDL_PATH,
         APPEARANCE_ATTR });
 
@@ -189,16 +196,15 @@ public class CircuitAttributes extends AbstractAttributeSet {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public <E> E getValue(Attribute<E> attr) {
+  public <V> V getValue(Attribute<V> attr) {
     if (attr == StdAttr.FACING)
-      return (E) facing;
-    if (attr == StdAttr.LABEL)
-      return (E) label;
-    if (attr == StdAttr.LABEL_FONT)
-      return (E) labelFont;
-    if (attr == StdAttr.LABEL_LOC)
-      return (E) labelLocation;
+      return (V) facing;
+    else if (attr == StdAttr.LABEL)
+      return (V) label;
+    else if (attr == StdAttr.LABEL_FONT)
+      return (V) labelFont;
+    else if (attr == StdAttr.LABEL_LOC)
+      return (V) labelLocation;
     else
       return source.getStaticAttributes().getValue(attr);
   }
@@ -227,34 +233,19 @@ public class CircuitAttributes extends AbstractAttributeSet {
   }
 
   @Override
-  public <E> void setValue(Attribute<E> attr, E value) {
+  public <V> void updateAttr(Attribute<V> attr, V value) {
     if (attr == StdAttr.FACING) {
-      Direction val = (Direction) value;
-      if (facing.equals(val))
-        return;
-      facing = val;
-      fireAttributeValueChanged(StdAttr.FACING, val);
+      facing = (Direction) value;
       if (subcircInstance != null)
         subcircInstance.recomputeBounds();
     } else if (attr == StdAttr.LABEL) {
-      String val = (String) value;
-      if (label.equals(val))
-        return;
-      label = val;
-      fireAttributeValueChanged(StdAttr.LABEL, val);
+      label = (String) value;
     } else if (attr == StdAttr.LABEL_FONT) {
-      Font val = (Font) value;
-      if (labelFont.equals(val))
-        return;
-      labelFont = val;
-      fireAttributeValueChanged(StdAttr.LABEL_FONT, val);
+      labelFont = (Font) value;
     } else if (attr == StdAttr.LABEL_LOC) {
-      if (labelLocation.equals(value))
-        return;
       labelLocation = value;
-      fireAttributeValueChanged(StdAttr.LABEL_LOC, value);
     } else {
-      source.getStaticAttributes().setValue(attr, value);
+      source.getStaticAttributes().setAttr(attr, value);
       if (attr == NAME_ATTR)
         source.fireEvent(CircuitEvent.ACTION_SET_NAME, value);
     }

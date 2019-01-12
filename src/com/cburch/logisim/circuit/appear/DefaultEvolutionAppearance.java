@@ -204,7 +204,7 @@ public class DefaultEvolutionAppearance {
     int ry = OFFS + (9 - (ay + 9) % 10);
 
     Rectangle rect = new Rectangle(rx, ry, width, height);
-    rect.setValue(DrawAttr.STROKE_WIDTH, Integer.valueOf(2));
+    rect.setAttr(DrawAttr.STROKE_WIDTH, Integer.valueOf(2));
     List<CanvasObject> ret = new ArrayList<CanvasObject>();
     ret.add(rect);
 

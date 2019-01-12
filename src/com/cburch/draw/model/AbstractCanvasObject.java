@@ -39,29 +39,16 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import com.cburch.draw.shapes.DrawAttr;
-import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeEvent;
-import com.cburch.logisim.data.AttributeListener;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.util.EventSourceWeakSupport;
 import com.cburch.logisim.util.GraphicsUtil;
 
-public abstract class AbstractCanvasObject implements AttributeSet,
-		CanvasObject, Cloneable {
+public abstract class AbstractCanvasObject extends AbstractDrawingAttributeSet
+  implements CanvasObject {
 	private static final int OVERLAP_TRIES = 50;
 	private static final int GENERATE_RANDOM_TRIES = 20;
 
-	private EventSourceWeakSupport<AttributeListener> listeners;
-
-	public AbstractCanvasObject() {
-		listeners = new EventSourceWeakSupport<AttributeListener>();
-	}
-
-	public void addAttributeListener(AttributeListener l) {
-		listeners.add(l);
-	}
+	public AbstractCanvasObject() { }
 
 	public Handle canDeleteHandle(Location loc) {
 		return null;
@@ -79,47 +66,10 @@ public abstract class AbstractCanvasObject implements AttributeSet,
 		return true;
 	}
 
-	@Override
-	public CanvasObject clone() {
-		try {
-			AbstractCanvasObject ret = (AbstractCanvasObject) super.clone();
-			ret.listeners = new EventSourceWeakSupport<AttributeListener>();
-			return ret;
-		} catch (CloneNotSupportedException e) {
-			return null;
-		}
-	}
-
 	public abstract boolean contains(Location loc, boolean assumeFilled);
-
-	public boolean containsAttribute(Attribute<?> attr) {
-		return getAttributes().contains(attr);
-	}
 
 	public Handle deleteHandle(Handle handle) {
 		throw new UnsupportedOperationException("deleteHandle");
-	}
-
-	protected void fireAttributeListChanged() {
-		AttributeEvent e = new AttributeEvent(this);
-		for (AttributeListener listener : listeners) {
-			listener.attributeListChanged(e);
-		}
-	}
-
-	public Attribute<?> getAttribute(String name) {
-		for (Attribute<?> attr : getAttributes()) {
-			if (attr.getName().equals(name))
-				return attr;
-		}
-		return null;
-	}
-
-	// methods required by AttributeSet interface
-	public abstract List<Attribute<?>> getAttributes();
-
-	public AttributeSet getAttributeSet() {
-		return this;
 	}
 
 	public abstract Bounds getBounds();
@@ -146,18 +96,8 @@ public abstract class AbstractCanvasObject implements AttributeSet,
 		return null;
 	}
 
-	public abstract <V> V getValue(Attribute<V> attr);
-
 	public void insertHandle(Handle desired, Handle previous) {
 		throw new UnsupportedOperationException("insertHandle");
-	}
-
-	public boolean isReadOnly(Attribute<?> attr) {
-		return false;
-	}
-
-	public boolean isToSave(Attribute<?> attr) {
-		return true;
 	}
 
 	public abstract boolean matches(CanvasObject other);
@@ -201,13 +141,8 @@ public abstract class AbstractCanvasObject implements AttributeSet,
 
 	public abstract void paint(Graphics g, HandleGesture gesture);
 
-	public void removeAttributeListener(AttributeListener l) {
-		listeners.remove(l);
-	}
-
 	protected boolean setForFill(Graphics g) {
-		List<Attribute<?>> attrs = getAttributes();
-		if (attrs.contains(DrawAttr.PAINT_TYPE)) {
+		if (containsAttribute(DrawAttr.PAINT_TYPE)) {
 			Object value = getValue(DrawAttr.PAINT_TYPE);
 			if (value == DrawAttr.PAINT_STROKE)
 				return false;
@@ -224,8 +159,7 @@ public abstract class AbstractCanvasObject implements AttributeSet,
 	}
 
 	protected boolean setForStroke(Graphics g) {
-		List<Attribute<?>> attrs = getAttributes();
-		if (attrs.contains(DrawAttr.PAINT_TYPE)) {
+		if (containsAttribute(DrawAttr.PAINT_TYPE)) {
 			Object value = getValue(DrawAttr.PAINT_TYPE);
 			if (value == DrawAttr.PAINT_FILL)
 				return false;
@@ -247,26 +181,7 @@ public abstract class AbstractCanvasObject implements AttributeSet,
 		}
 	}
 
-	public void setReadOnly(Attribute<?> attr, boolean value) {
-		throw new UnsupportedOperationException("setReadOnly");
-	}
-
-	public final <V> void setValue(Attribute<V> attr, V value) {
-		Object old = getValue(attr);
-		boolean same = old == null ? value == null : old.equals(value);
-		if (!same) {
-			updateValue(attr, value);
-			AttributeEvent e = new AttributeEvent(this, attr, value);
-			for (AttributeListener listener : listeners) {
-				listener.attributeValueChanged(e);
-			}
-		}
-	}
-
 	public abstract Element toSvgElement(Document doc);
 
 	public abstract void translate(int dx, int dy);
-
-	protected abstract void updateValue(Attribute<?> attr, Object value);
-
 }

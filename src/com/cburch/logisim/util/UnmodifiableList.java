@@ -36,11 +36,10 @@ import java.util.List;
 
 public class UnmodifiableList<E> extends AbstractList<E> {
   public static <E> List<E> create(E[] data) {
-    if (data.length == 0) {
+    if (data.length == 0)
       return Collections.emptyList();
-    } else {
+    else
       return new UnmodifiableList<E>(data);
-    }
   }
 
   private E[] data;

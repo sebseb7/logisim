@@ -440,7 +440,7 @@ public class AddTool extends Tool {
       if (label != null && !label.equals("")) {
         String newLabel = canvas.getCircuit().chooseUniqueLabel(label);
         if (!newLabel.equals(label))
-            attrsCopy.setValue(StdAttr.LABEL, newLabel);
+            attrsCopy.setAttr(StdAttr.LABEL, newLabel);
       }
       ComponentFactory source = getFactory();
       if (source == null)

@@ -139,7 +139,7 @@ public class ProjectCircuitActions {
         circuit.getName());
     if (newName == null || newName.equals(circuit.getName()))
       return false;
-    circuit.setName(newName);
+    circuit.setCircuitName(newName);
     return true;
   }
 
@@ -272,7 +272,6 @@ public class ProjectCircuitActions {
     JLabel label = new JLabel(prompt);
     final JTextField field = new JTextField(15);
     field.setText(initialValue);
-    JLabel error = new JLabel(" ");
     GridBagLayout gb = new GridBagLayout();
     GridBagConstraints gc = new GridBagConstraints();
     JPanel strut = new JPanel(null);
@@ -288,8 +287,6 @@ public class ProjectCircuitActions {
     panel.add(label);
     gb.setConstraints(field, gc);
     panel.add(field);
-    gb.setConstraints(error, gc);
-    panel.add(error);
     gb.setConstraints(strut, gc);
     panel.add(strut);
     JOptionPane pane = new JOptionPane(panel, JOptionPane.QUESTION_MESSAGE,
@@ -316,25 +313,30 @@ public class ProjectCircuitActions {
     }
 
     String name = field.getText().trim();
-    if (name.equals("")) {
-      error.setText(S.get("circuitNameMissingError"));
-    } else if (!SyntaxChecker.isVariableNameAcceptable(name)) {
-      error.setText(S.get("circuitNameInvalidName"));
-    } else {
-      if (lib.getTool(name) == null) {
-        return name;
-      } else {
-        error.setText(S.get("circuitNameDuplicateError"));
-      }
-    }
+    return validateCircuitName(frame, lib, name, vhdl);
+  }
 
-    /* If the name is invalid, display the error message */
-    JOptionPane.showMessageDialog(frame, error,
-        title, JOptionPane.ERROR_MESSAGE);
-
+  public static String getNewNameErrors(Library lib, String name, boolean vhdl) {
+    name = name.trim();
+    if (name.equals(""))
+      return S.get("circuitNameMissingError");
+    else if (!SyntaxChecker.isVariableNameAcceptable(name))
+      return S.get("circuitNameInvalidName");
+    else if (lib.getTool(name) != null)
+      return S.get("circuitNameDuplicateError");
     return null;
   }
 
-  private ProjectCircuitActions() {
+  public static String validateCircuitName(JFrame frame, Library lib, String name, boolean vhdl) {
+    String error = getNewNameErrors(lib, name, vhdl);;
+    if (error == null)
+      return name;
+    try { throw new Exception(); }
+    catch (Exception e) { e.printStackTrace(); }
+    String title = vhdl ? S.get("vhdlNameDialogTitle") : S.get("circuitNameDialogTitle");
+    JOptionPane.showMessageDialog(frame, error, title, JOptionPane.ERROR_MESSAGE);
+    return null;
   }
+
+  private ProjectCircuitActions() { }
 }

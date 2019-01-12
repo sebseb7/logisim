@@ -148,11 +148,10 @@ public class InstanceTextField
   }
 
   public void textChanged(TextFieldEvent e) {
-    String prev = e.getOldText();
-    String next = e.getText();
-    if (!next.equals(prev)) {
-      comp.getAttributeSet().setValue(labelAttr, next);
-    }
+    String oldText = e.getOldText();
+    String newText = e.getText();
+    if (!newText.equals(oldText))
+      comp.getAttributeSet().setAttr(labelAttr, newText);
   }
 
   void update(Attribute<String> labelAttr, Attribute<Font> fontAttr, int x,

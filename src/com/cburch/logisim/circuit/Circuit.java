@@ -176,7 +176,7 @@ public class Circuit implements AttributeDefaultProvider {
 
   public Circuit(String name, LogisimFile file) {
     appearance = new CircuitAppearance(this);
-    staticAttrs = CircuitAttributes.createBaseAttrs(this, name);
+    staticAttrs = CircuitAttributes.createBaseAttrs(this, file, name);
     subcircuitFactory = new SubcircuitFactory(this);
     locker = new CircuitLocker();
     circuitsUsingThis = new WeakHashMap<Component, Circuit>();
@@ -217,7 +217,7 @@ public class Circuit implements AttributeDefaultProvider {
           continue;
         reporter.AddInfo("Cleared " + this.getName() + "/"
             + comp.getAttributeSet().getValue(StdAttr.LABEL));
-        comp.getAttributeSet().setValue(StdAttr.LABEL, "");
+        comp.getAttributeSet().setAttr(StdAttr.LABEL, "");
       }
     }
     for (Component comp : comps) {
@@ -321,7 +321,7 @@ public class Circuit implements AttributeDefaultProvider {
        * "FPGACommanderGUI.java"
        */
       reporter.AddInfo("Labeled " + this.getName() + "/" + NewLabel);
-      comp.getAttributeSet().setValue(StdAttr.LABEL, NewLabel);
+      comp.getAttributeSet().setAttr(StdAttr.LABEL, NewLabel);
       AnnotationNames.get(index).add(NewLabel);
     }
     Annotated = true;
@@ -793,8 +793,9 @@ public class Circuit implements AttributeDefaultProvider {
     listeners.remove(what);
   }
 
-  public void setName(String name) {
-    staticAttrs.setValue(CircuitAttributes.NAME_ATTR, name);
+  // Note: caller must have validated name already
+  public void setCircuitName(String name) {
+    staticAttrs.setAttr(CircuitAttributes.NAME_ATTR, name);
   }
 
   @Override

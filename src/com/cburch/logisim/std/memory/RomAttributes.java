@@ -111,30 +111,22 @@ class RomAttributes extends AbstractAttributeSet {
     return ATTRIBUTES;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public <V> V getValue(Attribute<V> attr) {
-    if (attr == Mem.ADDR_ATTR) {
+    if (attr == Mem.ADDR_ATTR)
       return (V) addrBits;
-    }
-    if (attr == Mem.DATA_ATTR) {
+    if (attr == Mem.DATA_ATTR)
       return (V) dataBits;
-    }
-    if (attr == Rom.CONTENTS_ATTR) {
+    if (attr == Rom.CONTENTS_ATTR)
       return (V) contents;
-    }
-    if (attr == Mem.LINE_ATTR) {
+    if (attr == Mem.LINE_ATTR)
       return (V) lineSize;
-    }
-    if (attr == StdAttr.LABEL) {
+    if (attr == StdAttr.LABEL)
       return (V) Label;
-    }
-    if (attr == StdAttr.LABEL_FONT) {
+    if (attr == StdAttr.LABEL_FONT)
       return (V) LabelFont;
-    }
-    if (attr == StdAttr.APPEARANCE) {
+    if (attr == StdAttr.APPEARANCE)
       return (V) Appearance;
-    }
     return null;
   }
 
@@ -143,53 +135,23 @@ class RomAttributes extends AbstractAttributeSet {
   }
 
   @Override
-  public <V> void setValue(Attribute<V> attr, V value) {
+  public <V> void updateAttr(Attribute<V> attr, V value) {
     if (attr == Mem.ADDR_ATTR) {
-      BitWidth newAddr = (BitWidth) value;
-      if (newAddr == addrBits)
-        return;
-      addrBits = newAddr;
+      addrBits = (BitWidth) value;
       contents.setDimensions(addrBits.getWidth(), dataBits.getWidth());
-      fireAttributeValueChanged(attr, value);
     } else if (attr == Mem.DATA_ATTR) {
-      BitWidth newData = (BitWidth) value;
-      if (newData == dataBits)
-        return;
-      dataBits = newData;
+      dataBits = (BitWidth) value;
       contents.setDimensions(addrBits.getWidth(), dataBits.getWidth());
-      fireAttributeValueChanged(attr, value);
-    } else if (attr == Mem.LINE_ATTR) {
-      AttributeOption newLine = (AttributeOption) value;
-      if (newLine == lineSize)
-        return;
-      // if (!Appearance.equals(StdAttr.APPEAR_CLASSIC))
-      //   newLine = Mem.SINGLE;
-      lineSize = newLine;
-      fireAttributeValueChanged(attr, value);
-    } else if (attr == Rom.CONTENTS_ATTR) {
-      MemContents newContents = (MemContents) value;
-      if (contents.equals(newContents))
-        return;
-      contents = newContents;
-      fireAttributeValueChanged(attr, value);
-    } else if (attr == StdAttr.LABEL) {
-      String NewLabel = (String) value;
-      if (Label.equals(NewLabel))
-        return;
-      Label = NewLabel;
-      fireAttributeValueChanged(attr, value);
-    } else if (attr == StdAttr.LABEL_FONT) {
-      Font NewFont = (Font) value;
-      if (LabelFont.equals(NewFont))
-        return;
-      LabelFont = NewFont;
-      fireAttributeValueChanged(attr, value);
-    } else if (attr == StdAttr.APPEARANCE) {
-      AttributeOption NewAppearance = (AttributeOption) value;
-      if (Appearance.equals(NewAppearance))
-        return;
-      Appearance = NewAppearance;
-      fireAttributeValueChanged(attr, value);
     }
+    else if (attr == Mem.LINE_ATTR)
+      lineSize = (AttributeOption) value;
+    else if (attr == Rom.CONTENTS_ATTR)
+      contents = (MemContents) value;
+    else if (attr == StdAttr.LABEL)
+      Label = (String) value;
+    else if (attr == StdAttr.LABEL_FONT)
+      LabelFont = (Font) value;
+    else if (attr == StdAttr.APPEARANCE)
+      Appearance = (AttributeOption) value;
   }
 }

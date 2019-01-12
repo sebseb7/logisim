@@ -61,17 +61,16 @@ abstract class FillableCanvasObject extends AbstractCanvasObject {
 	@Override
 	@SuppressWarnings("unchecked")
 	public <V> V getValue(Attribute<V> attr) {
-		if (attr == DrawAttr.PAINT_TYPE) {
+		if (attr == DrawAttr.PAINT_TYPE)
 			return (V) paintType;
-		} else if (attr == DrawAttr.STROKE_COLOR) {
+		else if (attr == DrawAttr.STROKE_COLOR)
 			return (V) strokeColor;
-		} else if (attr == DrawAttr.FILL_COLOR) {
+		else if (attr == DrawAttr.FILL_COLOR)
 			return (V) fillColor;
-		} else if (attr == DrawAttr.STROKE_WIDTH) {
+		else if (attr == DrawAttr.STROKE_WIDTH)
 			return (V) Integer.valueOf(strokeWidth);
-		} else {
+		else
 			return null;
-		}
 	}
 
 	@Override
@@ -110,16 +109,14 @@ abstract class FillableCanvasObject extends AbstractCanvasObject {
 	}
 
 	@Override
-	public void updateValue(Attribute<?> attr, Object value) {
-		if (attr == DrawAttr.PAINT_TYPE) {
+	public <V> void updateAttr(Attribute<V> attr, V value) {
+		if (attr == DrawAttr.PAINT_TYPE)
 			paintType = (AttributeOption) value;
-			fireAttributeListChanged();
-		} else if (attr == DrawAttr.STROKE_COLOR) {
+		else if (attr == DrawAttr.STROKE_COLOR)
 			strokeColor = (Color) value;
-		} else if (attr == DrawAttr.FILL_COLOR) {
+		else if (attr == DrawAttr.FILL_COLOR)
 			fillColor = (Color) value;
-		} else if (attr == DrawAttr.STROKE_WIDTH) {
+		else if (attr == DrawAttr.STROKE_WIDTH)
 			strokeWidth = ((Integer) value).intValue();
-		}
 	}
 }

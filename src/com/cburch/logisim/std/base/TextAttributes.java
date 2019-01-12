@@ -113,20 +113,16 @@ class TextAttributes extends AbstractAttributeSet {
   }
 
   @Override
-  public <V> void setValue(Attribute<V> attr, V value) {
-    if (attr == Text.ATTR_TEXT) {
+  public <V> void updateAttr(Attribute<V> attr, V value) {
+    if (attr == Text.ATTR_TEXT)
       text = (String) value;
-    } else if (attr == Text.ATTR_FONT) {
+    else if (attr == Text.ATTR_FONT)
       font = (Font) value;
-    } else if (attr == Text.ATTR_HALIGN) {
+    else if (attr == Text.ATTR_HALIGN)
       halign = (AttributeOption) value;
-    } else if (attr == Text.ATTR_VALIGN) {
+    else if (attr == Text.ATTR_VALIGN)
       valign = (AttributeOption) value;
-    } else {
-      throw new IllegalArgumentException("unknown attribute");
-    }
     offsetBounds = null;
-    fireAttributeValueChanged(attr, value);
   }
 
 }

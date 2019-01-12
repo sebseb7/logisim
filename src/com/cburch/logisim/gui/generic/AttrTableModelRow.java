@@ -42,7 +42,10 @@ public interface AttrTableModelRow {
 
   public boolean isValueEditable();
 
-  public boolean multiEditCompatible(AttrTableModelRow other);
+  // Note: for multiEdit, it is assumed that a value that is valid for one cell
+  // is valid for all the cells being editing, and likewise that a value that is
+  // invalid for one cell is invalid for all of the cells.
+  public boolean multiEditCompatible(AttrTableModelRow other); 
 
   public void setValue(Window parent, Object value) throws AttrTableSetException;
 }

@@ -62,7 +62,6 @@ class PinAttributes extends ProbeAttributes {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <V> V getValue(Attribute<V> attr) {
     if (attr == StdAttr.WIDTH)
       return (V) width;
@@ -84,32 +83,18 @@ class PinAttributes extends ProbeAttributes {
   }
 
   @Override
-  public <V> void setValue(Attribute<V> attr, V value) {
-    if (attr == StdAttr.WIDTH) {
-      BitWidth NewWidth = (BitWidth) value;
-      if (width == NewWidth)
-        return;
+  public <V> void updateAttr(Attribute<V> attr, V value) {
+    if (attr == StdAttr.WIDTH)
       width = (BitWidth) value;
-    } else if (attr == Pin.ATTR_TRISTATE) {
-      boolean NewThree = ((Boolean) value).booleanValue();
-      if (threeState == NewThree)
-        return;
-      threeState = NewThree;
-    } else if (attr == Pin.ATTR_TYPE) {
-      int Newtype = ((Boolean) value).booleanValue() ? EndData.OUTPUT_ONLY
+    else if (attr == Pin.ATTR_TRISTATE)
+      threeState = ((Boolean) value).booleanValue();
+    else if (attr == Pin.ATTR_TYPE)
+      type = ((Boolean) value).booleanValue()
+          ? EndData.OUTPUT_ONLY
           : EndData.INPUT_ONLY;
-      if (type == Newtype)
-        return;
-      type = Newtype;
-    } else if (attr == Pin.ATTR_PULL) {
-      Object newPull = value;
-      if (pull.equals(newPull))
-        return;
-      pull = newPull;
-    } else {
-      super.setValue(attr, value);
-      return;
-    }
-    fireAttributeValueChanged(attr, value);
+    else if (attr == Pin.ATTR_PULL)
+      pull = value;
+    else
+      super.updateAttr(attr, value);
   }
 }

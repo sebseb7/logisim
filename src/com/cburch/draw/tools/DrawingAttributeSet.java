@@ -32,12 +32,10 @@ package com.cburch.draw.tools;
 
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 
+import com.cburch.draw.model.AbstractDrawingAttributeSet;
 import com.cburch.draw.model.AbstractCanvasObject;
 import com.cburch.draw.model.CanvasObject;
 import com.cburch.draw.shapes.DrawAttr;
@@ -46,12 +44,11 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.AttributeSet;
-import com.cburch.logisim.util.EventSourceWeakSupport;
 import com.cburch.logisim.util.UnmodifiableList;
 
-public class DrawingAttributeSet implements AttributeSet, Cloneable {
-	private class Restriction extends AbstractAttributeSet implements
-			AttributeListener {
+public class DrawingAttributeSet extends AbstractDrawingAttributeSet {
+
+	private class Restriction extends AbstractAttributeSet implements AttributeListener {
 		private AbstractTool tool;
 		private List<Attribute<?>> selectedAttrs;
 		private List<Attribute<?>> selectedView;
@@ -61,9 +58,6 @@ public class DrawingAttributeSet implements AttributeSet, Cloneable {
 			updateAttributes();
 		}
 
-		//
-		// AttributeListener methods
-		//
 		public void attributeListChanged(AttributeEvent e) {
 			fireAttributeListChanged();
 		}
@@ -93,8 +87,8 @@ public class DrawingAttributeSet implements AttributeSet, Cloneable {
 		}
 
 		@Override
-		public <V> void setValue(Attribute<V> attr, V value) {
-			DrawingAttributeSet.this.setValue(attr, value);
+		public <V> void updateAttr(Attribute<V> attr, V value) {
+			DrawingAttributeSet.this.setAttr(attr, value);
 			updateAttributes();
 		}
 
@@ -114,29 +108,34 @@ public class DrawingAttributeSet implements AttributeSet, Cloneable {
 		}
 	}
 
-	static final List<Attribute<?>> ATTRS_ALL = UnmodifiableList
-			.create(new Attribute<?>[] { DrawAttr.FONT, DrawAttr.HALIGNMENT, DrawAttr.VALIGNMENT,
-					DrawAttr.PAINT_TYPE, DrawAttr.STROKE_WIDTH,
-					DrawAttr.STROKE_COLOR, DrawAttr.FILL_COLOR,
-					DrawAttr.TEXT_DEFAULT_FILL, DrawAttr.CORNER_RADIUS });
+  private static final Attribute<?>[] attrs_all = new Attribute<?>[] {
+        DrawAttr.FONT,
+        DrawAttr.HALIGNMENT,
+        DrawAttr.VALIGNMENT,
+        DrawAttr.PAINT_TYPE,
+        DrawAttr.STROKE_WIDTH,
+        DrawAttr.STROKE_COLOR,
+        DrawAttr.FILL_COLOR,
+        DrawAttr.TEXT_DEFAULT_FILL,
+        DrawAttr.CORNER_RADIUS
+  };
+	private static final List<Attribute<?>> ATTRS_ALL = UnmodifiableList.create(attrs_all);
+	private static final Object[] defaults_all = new Object[] {
+        DrawAttr.DEFAULT_FONT,
+        DrawAttr.HALIGN_CENTER,
+        DrawAttr.VALIGN_MIDDLE,
+        DrawAttr.PAINT_STROKE,
+        Integer.valueOf(1),
+        Color.BLACK,
+        Color.WHITE,
+        Color.BLACK,
+        Integer.valueOf(10)
+  };
 
-	static final List<Object> DEFAULTS_ALL = Arrays.asList(new Object[] {
-			DrawAttr.DEFAULT_FONT, DrawAttr.HALIGN_CENTER, DrawAttr.VALIGN_MIDDLE,
-			DrawAttr.PAINT_STROKE, Integer.valueOf(1), Color.BLACK,
-			Color.WHITE, Color.BLACK, Integer.valueOf(10) });
-
-	private EventSourceWeakSupport<AttributeListener> listeners;
-	private List<Attribute<?>> attrs;
-	private List<Object> values;
+	private Object[] values;
 
 	public DrawingAttributeSet() {
-		listeners = new EventSourceWeakSupport<AttributeListener>();
-		attrs = ATTRS_ALL;
-		values = DEFAULTS_ALL;
-	}
-
-	public void addAttributeListener(AttributeListener l) {
-		listeners.add(l);
+		values = defaults_all; // defaults_all.clone();
 	}
 
 	public <E extends CanvasObject> E applyTo(E drawable) {
@@ -148,10 +147,10 @@ public class DrawingAttributeSet implements AttributeSet, Cloneable {
 			Attribute<Object> a = (Attribute<Object>) attr;
 			if (attr == DrawAttr.FILL_COLOR
 					&& this.containsAttribute(DrawAttr.TEXT_DEFAULT_FILL)) {
-				d.setValue(a, this.getValue(DrawAttr.TEXT_DEFAULT_FILL));
+				d.setAttr(a, this.getValue(DrawAttr.TEXT_DEFAULT_FILL));
 			} else if (this.containsAttribute(a)) {
 				Object value = this.getValue(a);
-				d.setValue(a, value);
+				d.setAttr(a, value);
 			}
 		}
 		return drawable;
@@ -159,87 +158,42 @@ public class DrawingAttributeSet implements AttributeSet, Cloneable {
 
 	@Override
 	public Object clone() {
-		try {
-			DrawingAttributeSet ret = (DrawingAttributeSet) super.clone();
-			ret.listeners = new EventSourceWeakSupport<AttributeListener>();
-			ret.values = new ArrayList<Object>(this.values);
-			return ret;
-		} catch (CloneNotSupportedException e) {
-			return null;
-		}
-	}
-
-	public boolean containsAttribute(Attribute<?> attr) {
-		return attrs.contains(attr);
+    DrawingAttributeSet ret = (DrawingAttributeSet) super.clone();
+    ret.values = (Object[])this.values.clone();
+    return ret;
 	}
 
 	public AttributeSet createSubset(AbstractTool tool) {
 		return new Restriction(tool);
 	}
 
-	public Attribute<?> getAttribute(String name) {
-		for (Attribute<?> attr : attrs) {
-			if (attr.getName().equals(name))
-				return attr;
-		}
-		return null;
-	}
-
 	public List<Attribute<?>> getAttributes() {
-		return attrs;
+		return ATTRS_ALL;
 	}
 
-	@SuppressWarnings("unchecked")
+  @Override
 	public <V> V getValue(Attribute<V> attr) {
-		Iterator<Attribute<?>> ait = attrs.iterator();
-		Iterator<Object> vit = values.iterator();
-		while (ait.hasNext()) {
-			Object a = ait.next();
-			Object v = vit.next();
-			if (a.equals(attr)) {
-				return (V) v;
-			}
-		}
+    for (int i = 0; i < attrs_all.length; i++) {
+      if (attrs_all[i].equals(attr))
+        return (V)values[i];
+    }
 		return null;
 	}
 
-	public boolean isReadOnly(Attribute<?> attr) {
-		return false;
-	}
+  @Override
+	public <V> void updateAttr(Attribute<V> attr, V value) {
+    for (int i = 0; i < attrs_all.length; i++) {
+      if (attrs_all[i].equals(attr)) {
+        values[i] = value;
+        break;
+      }
+    }
+  }
 
-	public boolean isToSave(Attribute<?> attr) {
-		return true;
-	}
-
-	public void removeAttributeListener(AttributeListener l) {
-		listeners.remove(l);
-	}
-
-	public void setReadOnly(Attribute<?> attr, boolean value) {
-		throw new UnsupportedOperationException("setReadOnly");
-	}
-
-	public <V> void setValue(Attribute<V> attr, V value) {
-		Iterator<Attribute<?>> ait = attrs.iterator();
-		ListIterator<Object> vit = values.listIterator();
-		while (ait.hasNext()) {
-			Object a = ait.next();
-			vit.next();
-			if (a.equals(attr)) {
-				vit.set(value);
-				AttributeEvent e = new AttributeEvent(this, attr, value);
-				for (AttributeListener listener : listeners) {
-					listener.attributeValueChanged(e);
-				}
-				if (attr == DrawAttr.PAINT_TYPE) {
-					e = new AttributeEvent(this);
-					for (AttributeListener listener : listeners) {
-						listener.attributeListChanged(e);
-					}
-				}
-				return;
-			}
-		}
-		throw new IllegalArgumentException(attr.toString());
-	}
+  @Override
+  public <V> void changeAttr(Attribute<V> attr, V value) {
+    updateAttr(attr, value);
+    fireAttributeValueChanged(attr, value);
+    fireAttributeListChanged();
+  }
 }

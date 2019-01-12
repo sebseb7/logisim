@@ -147,7 +147,7 @@ public class SvgReader {
 		if (elt.hasAttribute("rx")) {
 			AbstractCanvasObject ret = new RoundRectangle(x, y, w, h);
 			int rx = Integer.parseInt(elt.getAttribute("rx"));
-			ret.setValue(DrawAttr.CORNER_RADIUS, Integer.valueOf(rx));
+			ret.setAttr(DrawAttr.CORNER_RADIUS, Integer.valueOf(rx));
 			return ret;
 		} else {
 			return new Rectangle(x, y, w, h);
@@ -157,46 +157,44 @@ public class SvgReader {
 	public static AbstractCanvasObject createShape(Element elt) {
 		String name = elt.getTagName();
 		AbstractCanvasObject ret;
-		if (name.equals("ellipse")) {
+		if (name.equals("ellipse"))
 			ret = createOval(elt);
-		} else if (name.equals("line")) {
+		else if (name.equals("line"))
 			ret = createLine(elt);
-		} else if (name.equals("path")) {
+		else if (name.equals("path"))
 			ret = createPath(elt);
-		} else if (name.equals("polyline")) {
+		else if (name.equals("polyline"))
 			ret = createPolyline(elt);
-		} else if (name.equals("polygon")) {
+		else if (name.equals("polygon"))
 			ret = createPolygon(elt);
-		} else if (name.equals("rect")) {
+		else if (name.equals("rect"))
 			ret = createRectangle(elt);
-		} else if (name.equals("text")) {
+		else if (name.equals("text"))
 			ret = createText(elt);
-		} else {
+		else
 			return null;
-		}
 		List<Attribute<?>> attrs = ret.getAttributes();
 		if (attrs.contains(DrawAttr.PAINT_TYPE)) {
 			String stroke = elt.getAttribute("stroke");
 			String fill = elt.getAttribute("fill");
-			if (stroke.equals("") || stroke.equals("none")) {
-				ret.setValue(DrawAttr.PAINT_TYPE, DrawAttr.PAINT_FILL);
-			} else if (fill.equals("none")) {
-				ret.setValue(DrawAttr.PAINT_TYPE, DrawAttr.PAINT_STROKE);
-			} else {
-				ret.setValue(DrawAttr.PAINT_TYPE, DrawAttr.PAINT_STROKE_FILL);
-			}
+			if (stroke.equals("") || stroke.equals("none"))
+				ret.setAttr(DrawAttr.PAINT_TYPE, DrawAttr.PAINT_FILL);
+			else if (fill.equals("none"))
+				ret.setAttr(DrawAttr.PAINT_TYPE, DrawAttr.PAINT_STROKE);
+			else
+				ret.setAttr(DrawAttr.PAINT_TYPE, DrawAttr.PAINT_STROKE_FILL);
 		}
 		attrs = ret.getAttributes(); // since changing paintType could change it
 		if (attrs.contains(DrawAttr.STROKE_WIDTH)
 				&& elt.hasAttribute("stroke-width")) {
 			Integer width = Integer.valueOf(elt.getAttribute("stroke-width"));
-			ret.setValue(DrawAttr.STROKE_WIDTH, width);
+			ret.setAttr(DrawAttr.STROKE_WIDTH, width);
 		}
 		if (attrs.contains(DrawAttr.STROKE_COLOR)) {
 			String color = elt.getAttribute("stroke");
 			String opacity = elt.getAttribute("stroke-opacity");
 			if (!color.equals("none")) {
-				ret.setValue(DrawAttr.STROKE_COLOR, getColor(color, opacity));
+				ret.setAttr(DrawAttr.STROKE_COLOR, getColor(color, opacity));
 			}
 		}
 		if (attrs.contains(DrawAttr.FILL_COLOR)) {
@@ -205,7 +203,7 @@ public class SvgReader {
 				color = "#000000";
 			String opacity = elt.getAttribute("fill-opacity");
 			if (!color.equals("none")) {
-				ret.setValue(DrawAttr.FILL_COLOR, getColor(color, opacity));
+				ret.setAttr(DrawAttr.FILL_COLOR, getColor(color, opacity));
 			}
 		}
 		return ret;
@@ -227,7 +225,7 @@ public class SvgReader {
 		if (fontWeight.equals("bold"))
 			styleFlags |= Font.BOLD;
 		int size = Integer.parseInt(fontSize);
-		ret.setValue(DrawAttr.FONT, new Font(fontFamily, styleFlags, size));
+		ret.setAttr(DrawAttr.FONT, new Font(fontFamily, styleFlags, size));
 
 		String halignStr = elt.getAttribute("text-anchor");
 		AttributeOption halign;
@@ -238,7 +236,7 @@ public class SvgReader {
 		} else {
 			halign = DrawAttr.HALIGN_CENTER;
 		}
-		ret.setValue(DrawAttr.HALIGNMENT, halign);
+		ret.setAttr(DrawAttr.HALIGNMENT, halign);
 
 		String valignStr = elt.getAttribute("dominant-baseline");
 		AttributeOption valign;
@@ -251,7 +249,7 @@ public class SvgReader {
 		} else {
 			valign = DrawAttr.VALIGN_MIDDLE;
 		}
-		ret.setValue(DrawAttr.VALIGNMENT, valign);
+		ret.setAttr(DrawAttr.VALIGNMENT, valign);
 
 		// fill color is handled after we return
 		return ret;

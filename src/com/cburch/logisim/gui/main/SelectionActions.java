@@ -526,7 +526,7 @@ public class SelectionActions {
         return false;
       }
       if (!newName.equals(oldName))
-        clip.selection.setName(newName);
+        clip.selection.setCircuitName(newName);
 
       // New circuit is freshly-named, and no other circuit can depend on it. So
       // we only need to make sure there are no circularities within the other

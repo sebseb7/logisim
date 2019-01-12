@@ -94,7 +94,7 @@ class SelectionAction extends Action {
     }
     if (anchor != null && anchorNewFacing != null) {
       anchorOldFacing = anchor.getFacing();
-      anchor.setValue(AppearanceAnchor.FACING, anchorNewFacing);
+      anchor.setAttr(AppearanceAnchor.FACING, anchorNewFacing);
     }
     sel.setSelected(newSelection, true);
     canvas.repaint();
@@ -123,7 +123,7 @@ class SelectionAction extends Action {
           anchorOldLocation.getY() - anchorNewLocation.getY());
     }
     if (anchor != null && anchorOldFacing != null) {
-      anchor.setValue(AppearanceAnchor.FACING, anchorOldFacing);
+      anchor.setAttr(AppearanceAnchor.FACING, anchorOldFacing);
     }
     Selection sel = canvas.getSelection();
     sel.clearSelected();

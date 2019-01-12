@@ -339,7 +339,6 @@ public class SplitterAttributes extends AbstractAttributeSet {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <V> V getValue(Attribute<V> attr) {
     if (attr == StdAttr.FACING) {
       return (V) facing;
@@ -360,63 +359,45 @@ public class SplitterAttributes extends AbstractAttributeSet {
   }
 
   @Override
-  public <V> void setValue(Attribute<V> attr, V value) {
+  public <V> void updateAttr(Attribute<V> attr, V value) {
     if (attr == StdAttr.FACING) {
-      Direction NewFacing = (Direction) value;
-      if (facing.equals(NewFacing))
-        return;
       facing = (Direction) value;
       configureOptions();
       parameters = null;
     } else if (attr == ATTR_FANOUT) {
-      int newValue = ((Integer) value).intValue();
+      byte newValue = (byte)((Integer) value).intValue();
       byte[] bits = bit_end;
       for (int i = 0; i < bits.length; i++) {
         if (bits[i] > newValue)
-          bits[i] = (byte) (newValue);
+          bits[i] = newValue;
       }
-      if (fanout == (byte) newValue)
-        return;
-      fanout = (byte) newValue;
+      fanout = newValue;
       configureOptions();
       configureDefaults();
       parameters = null;
     } else if (attr == ATTR_WIDTH) {
       BitWidth width = (BitWidth) value;
-      if (bit_end.length == width.getWidth())
-        return;
       bit_end = new byte[width.getWidth()];
       configureOptions();
       configureDefaults();
     } else if (attr == ATTR_SPACING) {
-      int s = (Integer) value;
-      if (s == spacing)
-        return;
-      spacing = s;
+      spacing = (Integer)value;
       parameters = null;
     } else if (attr == ATTR_APPEARANCE) {
-      AttributeOption appearance = (AttributeOption) value;
-      if (appear.equals(appearance))
-        return;
-      appear = appearance;
+      appear = (AttributeOption) value;
       parameters = null;
     } else if (attr instanceof BitOutAttribute) {
       BitOutAttribute bitOutAttr = (BitOutAttribute) attr;
       int val;
-      if (value instanceof Integer) {
+      if (value instanceof Integer)
         val = ((Integer) value).intValue();
-      } else {
+      else
         val = ((BitOutOption) value).value + 1;
-      }
       if (val >= 0 && val <= fanout) {
         if (bit_end[bitOutAttr.which] == (byte) val)
           return;
         bit_end[bitOutAttr.which] = (byte) val;
-      } else
-        return;
-    } else {
-      throw new IllegalArgumentException("unknown attribute " + attr);
+      }
     }
-    fireAttributeValueChanged(attr, value);
   }
 }

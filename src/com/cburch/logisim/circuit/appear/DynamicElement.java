@@ -341,29 +341,28 @@ public abstract class DynamicElement extends AbstractCanvasObject {
   @Override
   @SuppressWarnings("unchecked")
   public <V> V getValue(Attribute<V> attr) {
-    if (attr == DrawAttr.STROKE_WIDTH) {
+    if (attr == DrawAttr.STROKE_WIDTH)
       return (V) Integer.valueOf(strokeWidth);
-    } else if (attr == ATTR_LABEL) {
+    else if (attr == ATTR_LABEL)
       return (V) labelLoc;
-    } else if (attr == StdAttr.LABEL_FONT) {
+    else if (attr == StdAttr.LABEL_FONT)
       return (V) labelFont;
-    } else if (attr == StdAttr.LABEL_COLOR) {
+    else if (attr == StdAttr.LABEL_COLOR)
       return (V) labelColor;
-    }
-    return null;
+    else
+      return null;
   }
 
   @Override
-  public void updateValue(Attribute<?> attr, Object value) {
-    if (attr == DrawAttr.STROKE_WIDTH) {
+  public <V> void updateAttr(Attribute<V> attr, V value) {
+    if (attr == DrawAttr.STROKE_WIDTH)
       strokeWidth = ((Integer) value).intValue();
-    } else if (attr == ATTR_LABEL) {
+    else if (attr == ATTR_LABEL)
       labelLoc = (AttributeOption) value;
-    } else if (attr == StdAttr.LABEL_FONT) {
+    else if (attr == StdAttr.LABEL_FONT)
       labelFont = (Font) value;
-    } else if (attr == StdAttr.LABEL_COLOR) {
+    else if (attr == StdAttr.LABEL_COLOR)
       labelColor = (Color) value;
-    }
   }
 
 }

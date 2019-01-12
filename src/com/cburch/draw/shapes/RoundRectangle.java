@@ -165,13 +165,11 @@ public class RoundRectangle extends Rectangular {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public <V> V getValue(Attribute<V> attr) {
-		if (attr == DrawAttr.CORNER_RADIUS) {
+		if (attr == DrawAttr.CORNER_RADIUS)
 			return (V) Integer.valueOf(radius);
-		} else {
+		else
 			return super.getValue(attr);
-		}
 	}
 
 	@Override
@@ -195,11 +193,10 @@ public class RoundRectangle extends Rectangular {
 	}
 
 	@Override
-	public void updateValue(Attribute<?> attr, Object value) {
-		if (attr == DrawAttr.CORNER_RADIUS) {
+	public <V> void updateAttr(Attribute<V> attr, V value) {
+		if (attr == DrawAttr.CORNER_RADIUS)
 			radius = ((Integer) value).intValue();
-		} else {
-			super.updateValue(attr, value);
-		}
+		else
+			super.updateAttr(attr, value);
 	}
 }

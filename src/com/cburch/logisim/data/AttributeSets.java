@@ -30,9 +30,7 @@
 
 package com.cburch.logisim.data;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import com.cburch.logisim.circuit.CircuitAttributes;
@@ -40,12 +38,13 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.SyntaxChecker;
 
 public class AttributeSets {
-  static class FixedSet extends AbstractAttributeSet {
+
+  public static class ArrayBacked extends AbstractAttributeSet {
     private List<Attribute<?>> attrs;
     private Object[] values;
     private int readOnly = 0, dontSave = 0;
 
-    FixedSet(Attribute<?>[] attrs, Object[] initValues) {
+    public ArrayBacked(Attribute<?>[] attrs, Object[] initValues) {
       if (attrs.length != initValues.length) {
         throw new IllegalArgumentException(
             "attribute and value arrays must have same length");
@@ -60,7 +59,7 @@ public class AttributeSets {
 
     @Override
     protected void copyInto(AbstractAttributeSet destSet) {
-      FixedSet dest = (FixedSet) destSet;
+      ArrayBacked dest = (ArrayBacked) destSet;
       dest.attrs = this.attrs;
       dest.values = this.values.clone();
       dest.readOnly = this.readOnly;
@@ -75,21 +74,13 @@ public class AttributeSets {
     @Override
     public <V> V getValue(Attribute<V> attr) {
       int index = attrs.indexOf(attr);
-      if (index < 0) {
-        return null;
-      } else {
-        @SuppressWarnings("unchecked")
-        V ret = (V) values[index];
-        return ret;
-      }
+      return index < 0 ? null : (V)values[index];
     }
 
     @Override
     public boolean isReadOnly(Attribute<?> attr) {
       int index = attrs.indexOf(attr);
-      if (index < 0)
-        return true;
-      return isReadOnly(index);
+      return index < 0 || isReadOnly(index);
     }
 
     private boolean isReadOnly(int index) {
@@ -100,9 +91,7 @@ public class AttributeSets {
     public void setReadOnly(Attribute<?> attr, boolean value) {
       int index = attrs.indexOf(attr);
       if (index < 0)
-        throw new IllegalArgumentException("attribute "
-            + attr.getName() + " absent");
-
+        throw new IllegalArgumentException("no such attribute: " + attr);
       if (value)
         readOnly |= (1 << index);
       else
@@ -112,9 +101,7 @@ public class AttributeSets {
     @Override
     public boolean isToSave(Attribute<?> attr) {
       int index = attrs.indexOf(attr);
-      if (index < 0)
-        return true;
-      return isToSave(index);
+      return index < 0 || isToSave(index);
     }
 
     private boolean isToSave(int index) {
@@ -125,9 +112,7 @@ public class AttributeSets {
     public void setToSave(Attribute<?> attr, boolean value) {
       int index = attrs.indexOf(attr);
       if (index < 0)
-        throw new IllegalArgumentException("attribute "
-            + attr.getName() + " absent");
-
+        throw new IllegalArgumentException("no such attribute: " + attr);
       if (!value)
         dontSave |= (1 << index);
       else
@@ -135,97 +120,24 @@ public class AttributeSets {
     }
 
     @Override
-    public <V> void setValue(Attribute<V> attr, V value) {
+    public <V> void updateAttr(Attribute<V> attr, V value) {
       int index = attrs.indexOf(attr);
       if (index < 0)
-        throw new IllegalArgumentException("attribute "
-            + attr.getName() + " absent");
-      if (isReadOnly(index))
-        throw new IllegalArgumentException("read only");
-      if (isAttrLabel(attr)) {
-        String val = (String) value;
-        if (!SyntaxChecker.isVariableNameAcceptable(val)) {
-          SyntaxChecker.showNonAcceptableNameMessage();
-          values[index] = "";
-        } else {
-          values[index] = val;
-        }
-      } else {
-        values[index] = value;
-      }
-      fireAttributeValueChanged(attr, value);
+        throw new IllegalArgumentException("no such attribute: " + attr);
+      // fixme: not here
+      // if (isAttrLabel(attr) && !SyntaxChecker.isVariableNameAcceptable((String)value))
+      //  throw new IllegalArgumentException("invalid label: " + attr + " = " + value);
+      values[index] = value;
     }
   }
 
-  // Note: this class could be removed, just use FixedSet above instead.
-  private static class SingletonSet extends AbstractAttributeSet {
-    private List<Attribute<?>> attrs;
-    private Object value;
-    private boolean readOnly = false;
-
-    SingletonSet(Attribute<?> attr, Object initValue) {
-      this.attrs = new ArrayList<Attribute<?>>(1);
-      this.attrs.add(attr);
-      this.value = initValue;
-    }
-
-    @Override
-    protected void copyInto(AbstractAttributeSet destSet) {
-      SingletonSet dest = (SingletonSet) destSet;
-      dest.attrs = this.attrs;
-      dest.value = this.value;
-      dest.readOnly = this.readOnly;
-    }
-
-    @Override
-    public List<Attribute<?>> getAttributes() {
-      return attrs;
-    }
-
-    @Override
-    public <V> V getValue(Attribute<V> attr) {
-      int index = attrs.indexOf(attr);
-      @SuppressWarnings("unchecked")
-      V ret = (V) (index >= 0 ? value : null);
-      return ret;
-    }
-
-    @Override
-    public boolean isReadOnly(Attribute<?> attr) {
-      return readOnly;
-    }
-
-    @Override
-    public void setReadOnly(Attribute<?> attr, boolean value) {
-      int index = attrs.indexOf(attr);
-      if (index < 0)
-        throw new IllegalArgumentException("attribute "
-            + attr.getName() + " absent");
-      readOnly = value;
-    }
-
-    @Override
-    public <V> void setValue(Attribute<V> attr, V value) {
-      int index = attrs.indexOf(attr);
-      if (index < 0)
-        throw new IllegalArgumentException("attribute "
-            + attr.getName() + " absent");
-      if (readOnly)
-        throw new IllegalArgumentException("read only");
-      if (isAttrLabel(attr)) {
-        String val = (String) value;
-        if (!SyntaxChecker.isVariableNameAcceptable(val)) {
-          SyntaxChecker.showNonAcceptableNameMessage();
-          this.value = "";
-        } else {
-          this.value = val;
-        }
-      } else {
-        this.value = value;
-      }
-      fireAttributeValueChanged(attr, value);
-    }
+  public static AttributeSet fixedSet(Attribute<?>[] attrs, Object[] initValues) {
+    if (attrs.length == 0)
+      return EMPTY;
+    else
+      return new ArrayBacked(attrs, initValues);
   }
+
 
   public static void copy(AttributeSet src, AttributeSet dst) {
     if (src == null || src.getAttributes() == null)
@@ -234,71 +146,18 @@ public class AttributeSets {
       @SuppressWarnings("unchecked")
       Attribute<Object> attrObj = (Attribute<Object>) attr;
       Object value = src.getValue(attr);
-      dst.setValue(attrObj, value);
+      dst.setAttr(attrObj, value);
     }
   }
 
-  public static AttributeSet fixedSet(Attribute<?>[] attrs,
-      Object[] initValues) {
-    if (attrs.length > 1) {
-      return new FixedSet(attrs, initValues);
-    } else if (attrs.length == 1) {
-      return new SingletonSet(attrs[0], initValues[0]);
-    } else {
-      return EMPTY;
-    }
-  }
-
-  private static <V> boolean isAttrLabel(Attribute<V> attr) {
+  public static <V> boolean isAttrLabel(Attribute<V> attr) {
     return (attr.equals(StdAttr.LABEL))
         || (attr.equals(CircuitAttributes.CIRCUIT_LABEL_ATTR))
         || (attr.equals(CircuitAttributes.NAME_ATTR));
   }
 
-  public static final AttributeSet EMPTY = new AttributeSet() {
-    public void addAttributeListener(AttributeListener l) {
-    }
+  public static final AttributeSet EMPTY
+      = new ArrayBacked(new Attribute<?>[0], new Object[0]);
 
-    @Override
-    public Object clone() {
-      return this;
-    }
-
-    public boolean containsAttribute(Attribute<?> attr) {
-      return false;
-    }
-
-    public Attribute<?> getAttribute(String name) {
-      return null;
-    }
-
-    public List<Attribute<?>> getAttributes() {
-      return Collections.emptyList();
-    }
-
-    public <V> V getValue(Attribute<V> attr) {
-      return null;
-    }
-
-    public boolean isReadOnly(Attribute<?> attr) {
-      return true;
-    }
-
-    public boolean isToSave(Attribute<?> attr) {
-      return true;
-    }
-
-    public void removeAttributeListener(AttributeListener l) {
-    }
-
-    public void setReadOnly(Attribute<?> attr, boolean value) {
-      throw new UnsupportedOperationException();
-    }
-
-    public <V> void setValue(Attribute<V> attr, V value) {
-    }
-  };
-
-  private AttributeSets() {
-  }
+  private AttributeSets() { }
 }

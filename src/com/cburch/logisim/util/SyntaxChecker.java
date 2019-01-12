@@ -40,12 +40,9 @@ public class SyntaxChecker {
   public static boolean isVariableNameAcceptable(String val) {
     if (val.length() == 0)
       return true;
-    if (val.length() > 0) {
-      variableMatcher = variablePattern.matcher(val);
-      forbiddenMatcher = forbiddenPattern.matcher(val);
-      return (variableMatcher.matches() && !forbiddenMatcher.find());
-    }
-    return false;
+    variableMatcher = variablePattern.matcher(val);
+    forbiddenMatcher = forbiddenPattern.matcher(val);
+    return (variableMatcher.matches() && !forbiddenMatcher.find());
   }
 
   public static void showNonAcceptableNameMessage() {
@@ -53,8 +50,7 @@ public class SyntaxChecker {
         S.get("variableNameNotAcceptable"));
   }
 
-  private static Pattern variablePattern = Pattern
-      .compile("^([a-zA-Z]+\\w*)");
+  private static Pattern variablePattern = Pattern.compile("^([a-zA-Z]+\\w*)");
   private static Pattern forbiddenPattern = Pattern.compile("__");
 
   private static Matcher forbiddenMatcher;

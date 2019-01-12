@@ -56,7 +56,7 @@ public class AppearanceSvgReader {
       AbstractCanvasObject ret = new AppearanceAnchor(loc);
       if (elt.hasAttribute("facing")) {
         Direction facing = Direction.parse(elt.getAttribute("facing"));
-        ret.setValue(AppearanceAnchor.FACING, facing);
+        ret.setAttr(AppearanceAnchor.FACING, facing);
       }
       return ret;
     } else if (name.equals("circ-port")) {

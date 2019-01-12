@@ -128,43 +128,25 @@ public class TclComponentAttributes extends AbstractAttributeSet {
     return attributes;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public <V> V getValue(Attribute<V> attr) {
-    if (attr == CONTENT_FILE_ATTR) {
+    if (attr == CONTENT_FILE_ATTR)
       return (V) contentFile;
-    }
-    if (attr == StdAttr.LABEL) {
+    if (attr == StdAttr.LABEL)
       return (V) label;
-    }
-    if (attr == StdAttr.LABEL_FONT) {
+    if (attr == StdAttr.LABEL_FONT)
       return (V) labelFont;
-    }
     return null;
   }
 
   @Override
-  public <V> void setValue(Attribute<V> attr, V value) {
-    if (attr == CONTENT_FILE_ATTR) {
-      File newFile = (File) value;
-      if (!contentFile.equals(newFile))
-        contentFile = newFile;
-      fireAttributeValueChanged(attr, value);
-    }
-    if (attr == StdAttr.LABEL) {
-      String newLabel = (String) value;
-      if (label.equals(newLabel))
-        return;
-      label = newLabel;
-      fireAttributeValueChanged(attr, value);
-    }
-    if (attr == StdAttr.LABEL_FONT) {
-      Font newFont = (Font) value;
-      if (labelFont.equals(newFont))
-        return;
-      labelFont = newFont;
-      fireAttributeValueChanged(attr, value);
-    }
+  public <V> void updateAttr(Attribute<V> attr, V value) {
+    if (attr == CONTENT_FILE_ATTR)
+      contentFile = (File) value;
+    else if (attr == StdAttr.LABEL)
+      label = (String) value;
+    else if (attr == StdAttr.LABEL_FONT)
+      labelFont = (Font) value;
   }
 
 }

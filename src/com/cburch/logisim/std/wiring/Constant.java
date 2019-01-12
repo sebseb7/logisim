@@ -78,7 +78,6 @@ public class Constant extends InstanceFactory {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <V> V getValue(Attribute<V> attr) {
       if (attr == StdAttr.FACING)
         return (V) facing;
@@ -90,7 +89,7 @@ public class Constant extends InstanceFactory {
     }
 
     @Override
-    public <V> void setValue(Attribute<V> attr, V value) {
+    public <V> void updateAttr(Attribute<V> attr, V value) {
       if (attr == StdAttr.FACING) {
         facing = (Direction) value;
       } else if (attr == StdAttr.WIDTH) {
@@ -100,10 +99,7 @@ public class Constant extends InstanceFactory {
       } else if (attr == ATTR_VALUE) {
         int val = ((Integer) value).intValue();
         this.value = Value.createKnown(width, val);
-      } else {
-        throw new IllegalArgumentException("unknown attribute " + attr);
       }
-      fireAttributeValueChanged(attr, value);
     }
   }
 

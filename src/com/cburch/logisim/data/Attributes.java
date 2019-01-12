@@ -181,7 +181,7 @@ public class Attributes {
 
     @Override
     public java.awt.Component getCellEditor(Font value) {
-      return new FontChooser(value);
+      return value == null ? new FontChooser() : new FontChooser(value);
     }
 
     @Override
@@ -209,6 +209,10 @@ public class Attributes {
   private static class FontChooser extends JFontChooser
     implements JInputComponent {
     private static final long serialVersionUID = 1L;
+
+    FontChooser() {
+      super();
+    }
 
     FontChooser(Font initial) {
       super(initial);
@@ -285,7 +289,7 @@ public class Attributes {
     @Override
     public java.awt.Component getCellEditor(Integer value) {
       if (end - start > 32 - 1) {
-        return super.getCellEditor(value);
+        return super.getCellEditor(value == null ? start : value);
       } else {
         if (options == null) {
           options = new Integer[end - start + 1];

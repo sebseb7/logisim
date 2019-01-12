@@ -33,27 +33,59 @@ package com.cburch.logisim.data;
 import java.util.List;
 
 public interface AttributeSet {
+
   public void addAttributeListener(AttributeListener l);
+  public void removeAttributeListener(AttributeListener l);
 
   public Object clone();
 
-  public boolean containsAttribute(Attribute<?> attr);
-
-  public Attribute<?> getAttribute(String name);
-
   public List<Attribute<?>> getAttributes();
 
+  public default Attribute<?> getAttribute(String name) {
+    for (Attribute<?> attr : getAttributes())
+      if (attr.getName().equals(name))
+        return attr;
+    return null;
+  }
+
+  public default boolean containsAttribute(Attribute<?> attr) {
+    return getAttributes().contains(attr);
+  }
+
+  public default boolean isReadOnly(Attribute<?> attr) { return false; }
+
+  public default boolean isToSave(Attribute<?> attr) { return true; }
+
+  public default void setReadOnly(Attribute<?> attr, boolean value) {
+    throw new UnsupportedOperationException("Attribute.setReadOnly");
+  }
+
+  public default void setToSave(Attribute<?> attr, boolean value) {
+    // optional, so no error
+  }
+
+  // getValue() returns null if attr was not found
   public <V> V getValue(Attribute<V> attr);
+  
+  // Note: changeAttr() and setAttr() must not fail by putting up a dialog. Any
+  // validation must be done before these are called. Worst case, these can
+  // ignore the new value, or coerce it into soemthing valid. But they should
+  // not cause the keyboard or mouse focus to change.
+  public <V> void changeAttr(Attribute<V> attr, V value);
 
-  public boolean isReadOnly(Attribute<?> attr);
-
-  public boolean isToSave(Attribute<?> attr);
-
-  public void removeAttributeListener(AttributeListener l);
-
-  public void setReadOnly(Attribute<?> attr, boolean value); // optional
-
-  public default void setToSave(Attribute<?> attr, boolean value) { } // optional
-
-  public <V> void setValue(Attribute<V> attr, V value);
+  // Normally, callers should use setAttr(), which ignores re-setting the same
+  // value that is already set.
+  public default <V> void setAttr(Attribute<V> attr, V value) {
+    if (isReadOnly(attr)) {
+      System.err.printf("attempt change readonly attribute %s to %s\n",
+          attr, value);
+      return;
+    }
+    V oldValue = getValue(attr);
+    if (oldValue == null && value == null)
+      return;
+    if (oldValue != null && value != null && oldValue.equals(value))
+      return;
+    changeAttr(attr, value);
+  }
 }

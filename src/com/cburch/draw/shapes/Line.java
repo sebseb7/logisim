@@ -144,13 +144,12 @@ public class Line extends AbstractCanvasObject {
 	@Override
 	@SuppressWarnings("unchecked")
 	public <V> V getValue(Attribute<V> attr) {
-		if (attr == DrawAttr.STROKE_COLOR) {
+		if (attr == DrawAttr.STROKE_COLOR)
 			return (V) strokeColor;
-		} else if (attr == DrawAttr.STROKE_WIDTH) {
+		else if (attr == DrawAttr.STROKE_WIDTH)
 			return (V) Integer.valueOf(strokeWidth);
-		} else {
+		else
 			return null;
-		}
 	}
 
 	@Override
@@ -229,12 +228,11 @@ public class Line extends AbstractCanvasObject {
 	}
 
 	@Override
-	public void updateValue(Attribute<?> attr, Object value) {
-		if (attr == DrawAttr.STROKE_COLOR) {
+	public <V> void updateAttr(Attribute<V> attr, V value) {
+		if (attr == DrawAttr.STROKE_COLOR)
 			strokeColor = (Color) value;
-		} else if (attr == DrawAttr.STROKE_WIDTH) {
+		else if (attr == DrawAttr.STROKE_WIDTH)
 			strokeWidth = ((Integer) value).intValue();
-		}
 	}
 
 }

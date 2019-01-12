@@ -252,7 +252,7 @@ public class Drawing implements CanvasModel {
 				CanvasObject shape = key.getObject();
 				@SuppressWarnings("unchecked")
 				Attribute<Object> attr = (Attribute<Object>) key.getAttribute();
-				shape.setValue(attr, entry.getValue());
+				shape.setAttr(attr, entry.getValue());
 				overlaps.invalidateShape(shape);
 			}
 			fireChanged(e);

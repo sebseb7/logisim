@@ -70,7 +70,6 @@ class ProbeAttributes extends AbstractAttributeSet {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <E> E getValue(Attribute<E> attr) {
     if (attr == StdAttr.FACING)
       return (E) facing;
@@ -86,39 +85,16 @@ class ProbeAttributes extends AbstractAttributeSet {
   }
 
   @Override
-  public <V> void setValue(Attribute<V> attr, V value) {
-    if (attr == StdAttr.FACING) {
-      Direction newValue = (Direction) value;
-      if (facing.equals(newValue))
-        return;
+  public <V> void updateAttr(Attribute<V> attr, V value) {
+    if (attr == StdAttr.FACING)
       facing = (Direction) value;
-    } else if (attr == StdAttr.LABEL) {
-      String val = (String) value;
-      if (!SyntaxChecker.isVariableNameAcceptable(val) && !val.equals("")) {
-        SyntaxChecker.showNonAcceptableNameMessage();
-        val = "";
-      }
-      if (label.equals(val))
-        return;
-      label = val;
-    } else if (attr == StdAttr.LABEL_LOC) {
-      Direction newValue = (Direction) value;
-      if (labelloc.equals(newValue))
-        return;
-      labelloc = newValue;
-    } else if (attr == StdAttr.LABEL_FONT) {
-      Font NewValue = (Font) value;
-      if (labelfont.equals(NewValue))
-        return;
-      labelfont = NewValue;
-    } else if (attr == RadixOption.ATTRIBUTE) {
-      RadixOption NewValue = (RadixOption) value;
-      if (radix.equals(NewValue))
-        return;
-      radix = NewValue;
-    } else {
-      throw new IllegalArgumentException("unknown attribute");
-    }
-    fireAttributeValueChanged(attr, value);
+    else if (attr == StdAttr.LABEL)
+      label = (String) value;
+    else if (attr == StdAttr.LABEL_LOC)
+      labelloc = (Direction) value;
+    else if (attr == StdAttr.LABEL_FONT)
+      labelfont = (Font) value;
+    else if (attr == RadixOption.ATTRIBUTE)
+      radix = (RadixOption) value;
   }
 }

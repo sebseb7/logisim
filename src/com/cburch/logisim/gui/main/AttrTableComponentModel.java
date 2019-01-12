@@ -32,14 +32,18 @@ package com.cburch.logisim.gui.main;
 import static com.cburch.logisim.gui.main.Strings.S;
 
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.gui.generic.AttrTableSetException;
 import com.cburch.logisim.gui.generic.AttributeSetTableModel;
+import com.cburch.logisim.gui.menu.ProjectCircuitActions;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.SetAttributeAction;
+import com.cburch.logisim.util.SyntaxChecker;
 
 class AttrTableComponentModel extends AttributeSetTableModel {
   Project proj;
@@ -74,16 +78,32 @@ class AttrTableComponentModel extends AttributeSetTableModel {
   }
 
   @Override
-  public void setValueRequested(Attribute<Object> attr, Object value)
+  public <V> void setValueRequested(Attribute<V> attr, V value)
       throws AttrTableSetException {
     if (!proj.getLogisimFile().contains(circ)) {
       String msg = S.get("cannotModifyCircuitError");
       throw new AttrTableSetException(msg);
-    } else {
-      SetAttributeAction act = new SetAttributeAction(circ,
-          S.getter("changeAttributeAction"));
-      act.set(comp, attr, value);
-      proj.doAction(act);
     }
+    String err = null;
+    // validate circuit name, label, and other attributes
+    if (attr == CircuitAttributes.NAME_ATTR) {
+      String name = ((String)value).trim();
+      if (name.equals(circ.getName()))
+        return;
+      err = ProjectCircuitActions.getNewNameErrors(
+              proj.getLogisimFile(), name, false);
+    } else if (AttributeSets.isAttrLabel(attr)) {
+      String label = (String)value;
+      if (!SyntaxChecker.isVariableNameAcceptable(label))
+        err = S.get("variableNameNotAcceptable");
+    }
+    if (err != null) {
+      System.out.println("new name err: " + err);
+      // try { throw new Exception(); } catch (Exception e) { e.printStackTrace(); }
+      throw new AttrTableSetException(err);
+    }
+    SetAttributeAction act = new SetAttributeAction(circ, S.getter("changeAttributeAction"));
+    act.set(comp, attr, value);
+    proj.doAction(act);
   }
 }

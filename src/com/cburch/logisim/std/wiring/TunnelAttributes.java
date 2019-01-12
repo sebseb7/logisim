@@ -41,7 +41,6 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.util.SyntaxChecker;
 
 class TunnelAttributes extends AbstractAttributeSet {
   private static final List<Attribute<?>> ATTRIBUTES = Arrays
@@ -144,7 +143,6 @@ class TunnelAttributes extends AbstractAttributeSet {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <V> V getValue(Attribute<V> attr) {
     if (attr == StdAttr.FACING)
       return (V) facing;
@@ -167,26 +165,17 @@ class TunnelAttributes extends AbstractAttributeSet {
   }
 
   @Override
-  public <V> void setValue(Attribute<V> attr, V value) {
+  public <V> void updateAttr(Attribute<V> attr, V value) {
     if (attr == StdAttr.FACING) {
       facing = (Direction) value;
       configureLabel();
     } else if (attr == StdAttr.WIDTH) {
       width = (BitWidth) value;
     } else if (attr == StdAttr.LABEL) {
-      String val = (String) value;
-      if (!SyntaxChecker.isVariableNameAcceptable(val)) {
-        SyntaxChecker.showNonAcceptableNameMessage();
-        label = "";
-      } else {
-        label = val;
-      }
+      label = (String) value;
     } else if (attr == StdAttr.LABEL_FONT) {
       labelFont = (Font) value;
-    } else {
-      throw new IllegalArgumentException("unknown attribute");
     }
     offsetBounds = null;
-    fireAttributeValueChanged(attr, value);
   }
 }

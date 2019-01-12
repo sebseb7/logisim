@@ -382,10 +382,10 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
     int y = 0;
     for (VhdlParser.PortDescription p: content.getPorts()) {
       AttributeSet a = Pin.FACTORY.createAttributeSet();
-      a.setValue(StdAttr.LABEL, p.getName());
-      a.setValue(Pin.ATTR_TYPE, p.getType() != Port.INPUT);
-      a.setValue(StdAttr.FACING, p.getType() != Port.INPUT ? Direction.WEST : Direction.EAST);
-      a.setValue(StdAttr.WIDTH, p.getWidth());
+      a.setAttr(StdAttr.LABEL, p.getName());
+      a.setAttr(Pin.ATTR_TYPE, p.getType() != Port.INPUT);
+      a.setAttr(StdAttr.FACING, p.getType() != Port.INPUT ? Direction.WEST : Direction.EAST);
+      a.setAttr(StdAttr.WIDTH, p.getWidth());
       InstanceComponent ic = (InstanceComponent)Pin.FACTORY.createComponent(Location.create(100, y), a);
       pins.add(ic.getInstance());
       y += 10;

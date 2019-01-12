@@ -107,15 +107,12 @@ public class SelectionAttributes extends AbstractAttributeSet {
 			fireAttributeListChanged();
 		}
 
-		//
-		// SelectionListener
-		//
 		public void selectionChanged(SelectionEvent ex) {
 			Map<AttributeSet, CanvasObject> oldSel = selected;
 			Map<AttributeSet, CanvasObject> newSel = new HashMap<AttributeSet, CanvasObject>();
 			for (CanvasObject o : selection.getSelected()) {
 				if (o != null)
-					newSel.put(o.getAttributeSet(), o);
+					newSel.put(o, o); // this is silly
 			}
 			selected = newSel;
 			boolean change = false;
@@ -212,19 +209,25 @@ public class SelectionAttributes extends AbstractAttributeSet {
 	}
 
 	@Override
-	public <V> void setValue(Attribute<V> attr, V value) {
+	public <V> void updateAttr(Attribute<V> attr, V value) {
+    throw new UnsupportedOperationException("draw.gui.SelectionAttributes.updateAttr");
+  }
+
+	@Override
+	public <V> void setAttr(Attribute<V> attr, V value) {
+    if (isReadOnly(attr)) {
+      System.err.printf("attempt change readonly attribute %s to %s\n",
+          attr, value);
+      return;
+    }
 		Attribute<?>[] attrs = this.selAttrs;
 		Object[] values = this.selValues;
 		for (int i = 0; i < attrs.length; i++) {
 			if (attrs[i] == attr) {
-				boolean same = value == null ? values[i] == null : value
-						.equals(values[i]);
-				if (!same) {
-					values[i] = value;
-					for (AttributeSet objAttrs : selected.keySet()) {
-						objAttrs.setValue(attr, value);
-					}
-				}
+        values[i] = value;
+        fireAttributeValueChanged(attr, value);
+        for (AttributeSet objAttrs : selected.keySet())
+          objAttrs.setAttr(attr, value);
 				break;
 			}
 		}

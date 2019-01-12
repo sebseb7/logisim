@@ -156,7 +156,7 @@ public class LineTool extends AbstractTool {
 				Location[] ends = { start, end };
 				List<Location> locs = UnmodifiableList.create(ends);
 				add = attrs.applyTo(new Poly(false, locs));
-				add.setValue(DrawAttr.PAINT_TYPE, DrawAttr.PAINT_STROKE);
+				add.setAttr(DrawAttr.PAINT_TYPE, DrawAttr.PAINT_STROKE);
 				canvas.doAction(new ModelAddAction(model, add));
 				repaintArea(canvas);
 			}

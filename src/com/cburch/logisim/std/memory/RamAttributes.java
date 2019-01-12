@@ -94,102 +94,48 @@ public class RamAttributes extends AbstractAttributeSet {
     return ATTRIBUTES;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public <V> V getValue(Attribute<V> attr) {
-    if (attr == Mem.ADDR_ATTR) {
+    if (attr == Mem.ADDR_ATTR)
       return (V) addrBits;
-    }
-    if (attr == Mem.DATA_ATTR) {
+    if (attr == Mem.DATA_ATTR)
       return (V) dataBits;
-    }
-    if (attr == Mem.LINE_ATTR) {
+    if (attr == Mem.LINE_ATTR)
       return (V) lineSize;
-    }
-    if (attr == StdAttr.LABEL) {
+    if (attr == StdAttr.LABEL)
       return (V) Label;
-    }
-    if (attr == StdAttr.TRIGGER) {
+    if (attr == StdAttr.TRIGGER)
       return (V) Trigger;
-    }
-    if (attr == ATTR_TYPE) {
+    if (attr == ATTR_TYPE)
       return (V) Type;
-    }
-    if (attr == ATTR_DBUS) {
+    if (attr == ATTR_DBUS)
       return (V) BusStyle;
-    }
-    if (attr == StdAttr.LABEL_FONT) {
+    if (attr == StdAttr.LABEL_FONT)
       return (V) LabelFont;
-    }
-    if (attr == StdAttr.APPEARANCE) {
+    if (attr == StdAttr.APPEARANCE)
       return (V) Appearance;
-    }
     return null;
   }
 
   @Override
-  public <V> void setValue(Attribute<V> attr, V value) {
-    if (attr == Mem.ADDR_ATTR) {
-      BitWidth newAddr = (BitWidth) value;
-      if (addrBits == newAddr) {
-        return;
-      }
-      addrBits = newAddr;
-      fireAttributeValueChanged(attr, value);
-    } else if (attr == Mem.DATA_ATTR) {
-      BitWidth newData = (BitWidth) value;
-      if (dataBits == newData) {
-        return;
-      }
-      dataBits = newData;
-      fireAttributeValueChanged(attr, value);
-    } else if (attr == Mem.LINE_ATTR) {
-      AttributeOption newLine = (AttributeOption) value;
-      if (newLine == lineSize)
-        return;
-      lineSize = newLine;
-      fireAttributeValueChanged(attr, value);
-    } else if (attr == StdAttr.LABEL) {
-      String NewLabel = (String) value;
-      if (Label.equals(NewLabel)) {
-        return;
-      }
-      Label = NewLabel;
-      fireAttributeValueChanged(attr, value);
-    } else if (attr == StdAttr.TRIGGER) {
-      AttributeOption newTrigger = (AttributeOption) value;
-      if (Trigger.equals(newTrigger)) {
-        return;
-      }
-      Trigger = newTrigger;
-      fireAttributeValueChanged(attr, value);
-    } else if (attr == ATTR_TYPE) {
-      AttributeOption NewType = (AttributeOption) value;
-      if (Type.equals(NewType)) {
-        return;
-      }
-      Type = NewType;
-      fireAttributeValueChanged(attr, value);
-    } else if (attr == ATTR_DBUS) {
-      AttributeOption NewStyle = (AttributeOption) value;
-      if (BusStyle.equals(NewStyle)) {
-        return;
-      }
-      BusStyle = NewStyle;
-      fireAttributeValueChanged(attr, value);
-    } else if (attr == StdAttr.LABEL_FONT) {
-      Font NewFont = (Font) value;
-      if (LabelFont.equals(NewFont)) {
-        return;
-      }
-      LabelFont = NewFont;
-      fireAttributeValueChanged(attr, value);
-    } else if (attr == StdAttr.APPEARANCE) {
-      AttributeOption NewAppearance = (AttributeOption) value;
-      if (Appearance.equals(NewAppearance))
-        return;
-      Appearance = NewAppearance;
-      fireAttributeValueChanged(attr, value);
-    }
+  public <V> void updateAttr(Attribute<V> attr, V value) {
+    if (attr == Mem.ADDR_ATTR)
+      addrBits = (BitWidth) value;
+    else if (attr == Mem.DATA_ATTR)
+      dataBits = (BitWidth) value;
+    else if (attr == Mem.LINE_ATTR)
+      lineSize = (AttributeOption) value;
+    else if (attr == StdAttr.LABEL)
+      Label = (String) value;
+    else if (attr == StdAttr.TRIGGER)
+      Trigger = (AttributeOption) value;
+    else if (attr == ATTR_TYPE)
+      Type = (AttributeOption) value;
+    else if (attr == ATTR_DBUS)
+      BusStyle = (AttributeOption) value;
+    else if (attr == StdAttr.LABEL_FONT)
+      LabelFont = (Font) value;
+    else if (attr == StdAttr.APPEARANCE)
+      Appearance = (AttributeOption) value;
   }
 }

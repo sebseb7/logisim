@@ -83,7 +83,7 @@ class OptionsActions {
     @Override
     public void doIt(Project proj) {
       oldval = attrs.getValue(attr);
-      attrs.setValue(attr, newval);
+      attrs.setAttr(attr, newval);
     }
 
     @Override
@@ -93,7 +93,7 @@ class OptionsActions {
 
     @Override
     public void undo(Project proj) {
-      attrs.setValue(attr, oldval);
+      attrs.setAttr(attr, oldval);
     }
   }
 

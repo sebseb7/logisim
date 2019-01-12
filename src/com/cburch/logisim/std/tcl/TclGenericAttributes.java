@@ -99,26 +99,19 @@ public class TclGenericAttributes extends TclComponentAttributes {
     return attributes;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public <V> V getValue(Attribute<V> attr) {
-
-    if (attr == TclGeneric.CONTENT_ATTR) {
+    if (attr == TclGeneric.CONTENT_ATTR)
       return (V) vhdlEntitiy;
-    } else {
+    else
       return super.getValue(attr);
-    }
   }
 
   @Override
-  public <V> void setValue(Attribute<V> attr, V value) {
-    if (attr == TclGeneric.CONTENT_ATTR) {
-      VhdlContent newContent = (VhdlContent) value;
-      if (!vhdlEntitiy.equals(newContent))
-        vhdlEntitiy = newContent;
-      fireAttributeValueChanged(attr, value);
-    } else {
-      super.setValue(attr, value);
-    }
+  public <V> void updateAttr(Attribute<V> attr, V value) {
+    if (attr == TclGeneric.CONTENT_ATTR)
+      vhdlEntitiy = (VhdlContent) value;
+    else
+      super.updateAttr(attr, value);
   }
 }

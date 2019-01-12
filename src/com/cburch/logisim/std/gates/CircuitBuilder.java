@@ -251,7 +251,7 @@ public class CircuitBuilder {
       CircuitDetermination.Value value = (CircuitDetermination.Value) det;
       ComponentFactory factory = Constant.FACTORY;
       AttributeSet attrs = factory.createAttributeSet();
-      attrs.setValue(Constant.ATTR_VALUE,
+      attrs.setAttr(Constant.ATTR_VALUE,
           Integer.valueOf(value.getValue()));
       Bounds bds = factory.getOffsetBounds(attrs);
       return new Layout(bds.getWidth(), bds.getHeight(), -bds.getY(),
@@ -272,9 +272,8 @@ public class CircuitBuilder {
         sub[0].y = 0;
 
         AttributeSet attrs = factory.createAttributeSet();
-        attrs.setValue(GateAttributes.ATTR_SIZE,
-            GateAttributes.SIZE_NARROW);
-        attrs.setValue(GateAttributes.ATTR_INPUTS, Integer.valueOf(2));
+        attrs.setAttr(GateAttributes.ATTR_SIZE, GateAttributes.SIZE_NARROW);
+        attrs.setAttr(GateAttributes.ATTR_INPUTS, Integer.valueOf(2));
 
         // determine layout's width
         Bounds bds = factory.getOffsetBounds(attrs);
@@ -334,17 +333,16 @@ public class CircuitBuilder {
 
     AttributeSet attrs = factory.createAttributeSet();
     if (factory == NotGate.FACTORY) {
-      attrs.setValue(NotGate.ATTR_SIZE, NotGate.SIZE_NARROW);
+      attrs.setAttr(NotGate.ATTR_SIZE, NotGate.SIZE_NARROW);
     } else {
-      attrs.setValue(GateAttributes.ATTR_SIZE, GateAttributes.SIZE_NARROW);
-
+      attrs.setAttr(GateAttributes.ATTR_SIZE, GateAttributes.SIZE_NARROW);
       int ins = sub.length;
-      attrs.setValue(GateAttributes.ATTR_INPUTS, Integer.valueOf(ins));
+      attrs.setAttr(GateAttributes.ATTR_INPUTS, Integer.valueOf(ins));
     }
     for (int i = 0; i < invert.length; i++) {
       if (!invert[i])
         continue;
-      attrs.setValue(new NegateAttribute(i, null), Boolean.TRUE);
+      attrs.setAttr(new NegateAttribute(i, null), Boolean.TRUE);
     }
 
     // determine layout's width
@@ -452,7 +450,7 @@ public class CircuitBuilder {
         Integer valInt = Integer.valueOf(val.toIntValue());
         Location loc = parent.getEnd(index).getLocation();
         AttributeSet attrs = Constant.FACTORY.createAttributeSet();
-        attrs.setValue(Constant.ATTR_VALUE, valInt);
+        attrs.setAttr(Constant.ATTR_VALUE, valInt);
         result.add(Constant.FACTORY.createComponent(loc, attrs));
       }
     }
@@ -578,10 +576,10 @@ public class CircuitBuilder {
     int n = loc.length;
     ComponentFactory factory = SplitterFactory.instance;
     AttributeSet attrs = factory.createAttributeSet();
-    attrs.setValue(SplitterAttributes.ATTR_WIDTH, BitWidth.create(n));
-    attrs.setValue(SplitterAttributes.ATTR_FANOUT, n);
-    attrs.setValue(SplitterAttributes.ATTR_APPEARANCE, SplitterAttributes.APPEAR_LEFT);
-    attrs.setValue(StdAttr.FACING, isOutput ? Direction.NORTH : Direction.SOUTH);
+    attrs.setAttr(SplitterAttributes.ATTR_WIDTH, BitWidth.create(n));
+    attrs.setAttr(SplitterAttributes.ATTR_FANOUT, n);
+    attrs.setAttr(SplitterAttributes.ATTR_APPEARANCE, SplitterAttributes.APPEAR_LEFT);
+    attrs.setAttr(StdAttr.FACING, isOutput ? Direction.NORTH : Direction.SOUTH);
     Bounds bds = factory.getOffsetBounds(attrs);
     int w = roundUp(bds.getWidth());
     int h = roundUp(bds.getHeight());
@@ -620,12 +618,12 @@ public class CircuitBuilder {
       String name, boolean isOutput, int width) {
     ComponentFactory factory = Pin.FACTORY;
     AttributeSet attrs = factory.createAttributeSet();
-    attrs.setValue(StdAttr.FACING, isOutput ? Direction.WEST : Direction.EAST);
-    attrs.setValue(Pin.ATTR_TYPE, isOutput);
-    attrs.setValue(Pin.ATTR_TRISTATE, Boolean.FALSE);
-    attrs.setValue(StdAttr.LABEL, name);
-    attrs.setValue(StdAttr.LABEL_LOC, Direction.NORTH);
-    attrs.setValue(StdAttr.WIDTH, BitWidth.create(width));
+    attrs.setAttr(StdAttr.FACING, isOutput ? Direction.WEST : Direction.EAST);
+    attrs.setAttr(Pin.ATTR_TYPE, isOutput);
+    attrs.setAttr(Pin.ATTR_TRISTATE, Boolean.FALSE);
+    attrs.setAttr(StdAttr.LABEL, name);
+    attrs.setAttr(StdAttr.LABEL_LOC, Direction.NORTH);
+    attrs.setAttr(StdAttr.WIDTH, BitWidth.create(width));
     result.add(factory.createComponent(loc, attrs));
   }
 

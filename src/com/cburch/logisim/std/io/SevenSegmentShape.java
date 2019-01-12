@@ -53,10 +53,13 @@ public class SevenSegmentShape extends DynamicElement {
     super(p, Bounds.create(x, y, 14, 20));
   }
 
+  private static final List<Attribute<?>> ATTRIBUTES
+      = UnmodifiableList.create(new Attribute<?>[] {
+        ATTR_LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR });
+
   @Override
   public List<Attribute<?>> getAttributes() {
-    return UnmodifiableList.create(new Attribute<?>[] {
-      ATTR_LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR });
+    return ATTRIBUTES;
   }
 
   @Override

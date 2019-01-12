@@ -162,7 +162,11 @@ public class FactoryAttributes implements AttributeSet, AttributeListener, Clone
     getBase().setReadOnly(attr, value);
   }
 
-  public <V> void setValue(Attribute<V> attr, V value) {
-    getBase().setValue(attr, value);
+  public <V> void setAttr(Attribute<V> attr, V value) {
+    getBase().setAttr(attr, value);
+  }
+
+  public <V> void changeAttr(Attribute<V> attr, V value) {
+    throw new UnsupportedOperationException("FactoryAttributes.changeAttr");
   }
 }

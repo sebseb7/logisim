@@ -90,9 +90,6 @@ public class AttrTable extends JPanel implements LocaleListener {
         stopCellEditing(); // selection via mouse button
     }
 
-    //
-    // TableCellListener management
-    //
     @Override
     public void addCellEditorListener(CellEditorListener l) {
       // Adds a listener to the list that's notified when the
@@ -100,9 +97,6 @@ public class AttrTable extends JPanel implements LocaleListener {
       listeners.add(l);
     }
 
-    //
-    // other TableCellEditor methods
-    //
     @Override
     public void cancelCellEditing() {
       // Tells the editor to cancel editing and not accept any
@@ -112,36 +106,20 @@ public class AttrTable extends JPanel implements LocaleListener {
 
     public void fireEditingCanceled() {
       ChangeEvent e = new ChangeEvent(AttrTable.this);
-      for (CellEditorListener l : new ArrayList<CellEditorListener>(
-            listeners)) {
+      for (CellEditorListener l : new ArrayList<CellEditorListener>(listeners))
         l.editingCanceled(e);
-      }
     }
 
     public void fireEditingStopped() {
-      int col = table.getEditingColumn();
       ChangeEvent e = new ChangeEvent(AttrTable.this);
-      for (CellEditorListener l : new ArrayList<CellEditorListener>(
-            listeners)) {
+      for (CellEditorListener l : new ArrayList<CellEditorListener>( listeners))
         l.editingStopped(e);
-      }
-      if (multiEditActive) {
-        Object value = getCellEditorValue();
-        for (int r : currentRowIndexes) {
-          if (r == table.getEditingRow())
-            continue;
-          table.setValueAt(value, r, col);
-        }
-      }
     }
 
     @Override
     public void focusGained(FocusEvent e) {
     }
 
-    //
-    // FocusListener methods
-    //
     @Override
     public void focusLost(FocusEvent e) {
       Object dst = e.getOppositeComponent();
@@ -282,7 +260,49 @@ public class AttrTable extends JPanel implements LocaleListener {
     public boolean stopCellEditing() {
       // Tells the editor to stop editing and accept any partially
       // edited value as the value of the editor.
-      fireEditingStopped();
+      int row = table.getEditingRow();
+      System.out.println("stop editing row " + row);
+      System.out.println("actually, stop editing row " + table.convertRowIndexToModel(row));
+      Object value = getCellEditorValue();
+      // Normally, we could just fireEditingStopped(), because JTable has a
+      // listener for editingStopped() that will call setValueAt(row, col, val).
+      // We do it here instead, for two reasons:
+      //  (1) For multiEditActive, we need to set multiple rows, not just the
+      //      current row.
+      //  (2) In cases where the value is invalid we want to cancelEditing()
+      //      instead. If we were to just call editingStopped(), JTable would
+      //      ultimately call TableModelAdapter.setValueAt(), which would catch
+      //      and swallow an exception thrown somewhere down the line by
+      //      setValue(). But when that error handler it tries to display the
+      //      error, the editor gets a focus-lost event, causing another attempt
+      //      to stop editing, and an immediate second error message. So we need
+      //      to setValueAt() here instead. The one in JTable.editingStopped()
+      //      will be redundant.
+      try {
+        System.out.println("--- about to set row ---");
+        getAttrTableModel().getRow(row).setValue(parent, value);
+        fireEditingStopped();
+        // If the above setValue() didn't throw an exception, then we assume none
+        // of these next setValue() calls will either. So no rollback needed.
+        if (multiEditActive) {
+          try {
+            for (int r : currentRowIndexes)
+              if (r != row)
+                getAttrTableModel().getRow(r).setValue(parent, value);
+          } catch (AttrTableSetException e) {
+            e.printStackTrace();
+          }
+          tableModel.fireTableChanged(); // repaints the other changed rows
+        }
+        System.out.println("--- done set row ---");
+      } catch (AttrTableSetException e) {
+        System.out.println("--- about to handle error b/c set row ---");
+        fireEditingCanceled();
+        JOptionPane.showMessageDialog(parent, e.getMessage(),
+            S.get("attributeChangeInvalidTitle"),
+            JOptionPane.WARNING_MESSAGE);
+        System.out.println("--- done handle error b/c set row ---");
+      }
       return true;
     }
   }
@@ -475,20 +495,33 @@ public class AttrTable extends JPanel implements LocaleListener {
 
     @Override
     public void setValueAt(Object value, int rowIndex, int columnIndex) {
-      if (columnIndex > 0) {
-        try {
-          attrModel.getRow(rowIndex).setValue(parent, value);
-        } catch (AttrTableSetException e) {
-          JOptionPane.showMessageDialog(parent, e.getMessage(),
-              S.get("attributeChangeInvalidTitle"),
-              JOptionPane.WARNING_MESSAGE);
-        }
+      // try { throw new Exception(); }
+      // catch (Exception e) { e.printStackTrace(); }
+      if (columnIndex <= 0)
+        return;
+      try {
+        AttrTableModelRow row = attrModel.getRow(rowIndex);
+        String oldValue = row.getValue();
+        if (oldValue == null && value == null)
+          return;
+        if (oldValue != null && value != null && oldValue.equals(value))
+          return;
+        System.out.println("--- about to set row via JTable ? ---");
+        System.out.printf("old value: %s\n", oldValue);
+        System.out.printf("new value: %s\n", value);
+        row.setValue(parent, value);
+        System.out.println("--- done set row via JTable ? ---");
+      } catch (AttrTableSetException e) {
+        System.out.println("--- about to handle error b/c set row via JTable ?---");
+        JOptionPane.showMessageDialog(parent, e.getMessage(),
+            S.get("attributeChangeInvalidTitle"),
+            JOptionPane.WARNING_MESSAGE);
+        System.out.println("--- done handle error b/c set row via JTable ?---");
       }
     }
   }
 
   private static class TitleLabel extends JLabel {
-
     @Override
     public Dimension getMinimumSize() {
       Dimension ret = super.getMinimumSize();

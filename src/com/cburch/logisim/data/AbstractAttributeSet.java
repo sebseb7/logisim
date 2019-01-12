@@ -36,8 +36,7 @@ import java.util.List;
 public abstract class AbstractAttributeSet implements Cloneable, AttributeSet {
   private ArrayList<AttributeListener> listeners = null;
 
-  public AbstractAttributeSet() {
-  }
+  public AbstractAttributeSet() { }
 
   public void addAttributeListener(AttributeListener l) {
     if (listeners == null)
@@ -45,84 +44,61 @@ public abstract class AbstractAttributeSet implements Cloneable, AttributeSet {
     listeners.add(l);
   }
 
+  public void removeAttributeListener(AttributeListener l) {
+    if (listeners == null)
+      return;
+    listeners.remove(l);
+    if (listeners.isEmpty())
+      listeners = null;
+  }
+
   public boolean amIListening(AttributeListener l) {
-    return listeners.contains(l);
+    return listeners != null && listeners.contains(l);
   }
 
   @Override
   public Object clone() {
     AbstractAttributeSet ret;
     try {
-      ret = (AbstractAttributeSet) super.clone();
+      ret = (AbstractAttributeSet)super.clone();
     } catch (CloneNotSupportedException ex) {
-      throw new UnsupportedOperationException();
+      throw new UnsupportedOperationException("AbstractAttributeSet.clone");
     }
     // old listeners don't want to listen to clone instead?!?
-    ret.listeners = new ArrayList<AttributeListener>();
+    ret.listeners = null;
     this.copyInto(ret);
     return ret;
-  }
-
-  public boolean containsAttribute(Attribute<?> attr) {
-    return getAttributes().contains(attr);
   }
 
   protected abstract void copyInto(AbstractAttributeSet dest);
 
   protected void fireAttributeListChanged() {
-    if (listeners != null) {
-      AttributeEvent event = new AttributeEvent(this);
-      List<AttributeListener> ls = new ArrayList<AttributeListener>(
-          listeners);
-      for (AttributeListener l : ls) {
-        l.attributeListChanged(event);
-      }
-    }
+    if (listeners == null)
+      return;
+    AttributeEvent event = new AttributeEvent(this);
+    List<AttributeListener> ls = new ArrayList<>(listeners);
+    for (AttributeListener l : ls)
+      l.attributeListChanged(event);
   }
 
-  protected <V> void fireAttributeValueChanged(Attribute<? super V> attr,
-      V value) {
-    if (listeners != null) {
-      AttributeEvent event = new AttributeEvent(this, attr, value);
-      List<AttributeListener> ls = new ArrayList<AttributeListener>(
-          listeners);
-      for (AttributeListener l : ls) {
-        l.attributeValueChanged(event);
-      }
-    }
+  protected <V> void fireAttributeValueChanged(Attribute<? super V> attr, V value) {
+    if (listeners == null)
+      return;
+    AttributeEvent event = new AttributeEvent(this, attr, value);
+    List<AttributeListener> ls = new ArrayList<>(listeners);
+    for (AttributeListener l : ls)
+      l.attributeValueChanged(event);
   }
 
-  public Attribute<?> getAttribute(String name) {
-    for (Attribute<?> attr : getAttributes()) {
-      if (attr.getName().equals(name)) {
-        return attr;
-      }
-    }
-    return null;
+  // public abstract List<Attribute<?>> getAttributes();
+
+  // public abstract <V> V getValue(Attribute<V> attr);
+
+  public final <V> void changeAttr(Attribute<V> attr, V value) {
+    updateAttr(attr, value);
+    fireAttributeValueChanged(attr, value);
   }
 
-  public abstract List<Attribute<?>> getAttributes();
-
-  public abstract <V> V getValue(Attribute<V> attr);
-
-  public boolean isReadOnly(Attribute<?> attr) {
-    return false;
-  }
-
-  public boolean isToSave(Attribute<?> attr) {
-    return true;
-  }
-
-  public void removeAttributeListener(AttributeListener l) {
-    listeners.remove(l);
-    if (listeners.isEmpty())
-      listeners = null;
-  }
-
-  public void setReadOnly(Attribute<?> attr, boolean value) {
-    throw new UnsupportedOperationException();
-  }
-
-  public abstract <V> void setValue(Attribute<V> attr, V value);
+  public abstract <V> void updateAttr(Attribute<V> attr, V value);
 
 }

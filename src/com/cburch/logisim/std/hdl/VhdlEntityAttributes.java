@@ -136,26 +136,11 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
     public void attributeListChanged(AttributeEvent e) { }
     public void attributeValueChanged(AttributeEvent e) {
       if (e.getAttribute() == VhdlEntity.NAME_ATTR)
-        setValue(VhdlEntity.NAME_ATTR, (String)e.getValue());
+        setAttr(VhdlEntity.NAME_ATTR, (String)e.getValue());
       else if (e.getAttribute() == StdAttr.APPEARANCE)
-        setValue(StdAttr.APPEARANCE, (AttributeOption)e.getValue());
+        setAttr(StdAttr.APPEARANCE, (AttributeOption)e.getValue());
     }
   }
-
-  /*
-     private static class StaticListener implements AttributeListener {
-     private VhdlContent content;
-     private StaticListener(VhdlContent vhdl) { content = vhdl; }
-     public void attributeListChanged(AttributeEvent e) { }
-     public void attributeValueChanged(AttributeEvent e) {
-     if (e.getAttribute() == VhdlEntity.NAME_ATTR) {
-     String newValue = (String)e.getValue();
-     if (!content.getName().equals(newValue)
-     && !content.setName(newValue))
-     e.getSource().setValue(VhdlEntity.NAME_ATTR, content.getName());
-     }
-     }
-     } */
 
   private VhdlContent content;
   private Instance vhdlInstance;
@@ -233,86 +218,37 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
     return instanceAttrs;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public <V> V getValue(Attribute<V> attr) {
-    if (attr == VhdlEntity.NAME_ATTR) {
+    if (attr == VhdlEntity.NAME_ATTR)
       return (V) content.getName();
-    }
-    if (attr == StdAttr.LABEL) {
+    if (attr == StdAttr.LABEL)
       return (V) label;
-    }
-    if (attr == StdAttr.LABEL_FONT) {
+    if (attr == StdAttr.LABEL_FONT)
       return (V) labelFont;
-    }
-    if (attr == StdAttr.APPEARANCE) {
+    if (attr == StdAttr.APPEARANCE)
       return (V) content.getAppearance();
-    }
-    if (attr == StdAttr.FACING) {
+    if (attr == StdAttr.FACING)
       return (V) facing;
-    }
-    if (genericValues.containsKey((Attribute<Integer>)attr)) {
-      V v = (V) genericValues.get((Attribute<Integer>)attr);
-      return v;
-    }
-    // V v = content.getStaticAttributes().getValue(attr);
-    // return v;
+    if (genericValues != null)
+      return (V) genericValues.get((Attribute<Integer>)attr);
     return null;
   }
 
   @Override
-  public boolean isToSave(Attribute<?> attr) {
-    return true;
-  }
-
-  @Override
-  public <V> void setValue(Attribute<V> attr, V value) {
-    if (attr == VhdlEntity.NAME_ATTR) {
-      String newValue = (String)value;
-      if (content.getName().equals(newValue))
-        return;
-      if (!content.setName(newValue))
-        return;
-      fireAttributeValueChanged(attr, value);
-      return;
-    }
-    if (attr == StdAttr.LABEL && value instanceof String) {
-      String newLabel = (String) value;
-      if (label.equals(newLabel))
-        return;
-      label = newLabel;
-      fireAttributeValueChanged(attr, value);
-      return;
-    }
-    if (attr == StdAttr.LABEL_FONT && value instanceof Font) {
-      Font newFont = (Font) value;
-      if (labelFont.equals(newFont))
-        return;
-      labelFont = newFont;
-      fireAttributeValueChanged(attr, value);
-      return;
-    }
-    if (attr == StdAttr.FACING) {
-      Direction val = (Direction) value;
-      if (facing.equals(val))
-        return;
-      facing = val;
-      fireAttributeValueChanged(attr, value);
-      return;
-    }
-    if (attr == StdAttr.APPEARANCE
-        && (value == StdAttr.APPEAR_FPGA || value == StdAttr.APPEAR_CLASSIC)) {
-      AttributeOption a = (AttributeOption) value;
-      if (content.getAppearance().equals(a))
-        return;
-      content.setAppearance(a);
-      fireAttributeValueChanged(attr, value);
-      return;
-    }
-    if (genericValues != null) {
+  public <V> void updateAttr(Attribute<V> attr, V value) {
+    if (attr == VhdlEntity.NAME_ATTR)
+      content.setName((String) value);
+    else if (attr == StdAttr.LABEL)
+      label = (String) value;
+    else if (attr == StdAttr.LABEL_FONT)
+      labelFont = (Font) value;
+    else if (attr == StdAttr.FACING)
+      facing = (Direction) value;
+    else if (attr == StdAttr.APPEARANCE)
+      content.setAppearance((AttributeOption)value);
+    else if (genericValues != null)
       genericValues.put((Attribute<Integer>)attr, (Integer)value);
-      fireAttributeValueChanged(attr, value);
-    }
   }
 
   static class VhdlEntityListener implements HdlModelListener {

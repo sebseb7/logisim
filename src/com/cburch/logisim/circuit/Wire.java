@@ -132,17 +132,6 @@ public final class Wire
   public void addComponentListener(ComponentListener e) {
   }
 
-  //
-  // AttributeSet methods
-  //
-  // It makes some sense for a wire to be its own attribute, since
-  // after all it is immutable.
-  //
-  @Override
-  public Object clone() {
-    return this;
-  }
-
   public boolean contains(Location q) {
     int qx = q.getX();
     int qy = q.getY();
@@ -159,10 +148,6 @@ public final class Wire
 
   public boolean contains(Location pt, Graphics g) {
     return contains(pt);
-  }
-
-  public boolean containsAttribute(Attribute<?> attr) {
-    return ATTRIBUTES.contains(attr);
   }
 
   public void draw(ComponentDrawContext context) {
@@ -198,18 +183,6 @@ public final class Wire
     int x0 = e0.getX();
     int y0 = e0.getY();
     dest.repaint(x0 - 5, y0 - 5, e1.getX() - x0 + 10, e1.getY() - y0 + 10);
-  }
-
-  public Attribute<?> getAttribute(String name) {
-    for (Attribute<?> attr : ATTRIBUTES) {
-      if (name.equals(attr.getName()))
-        return attr;
-    }
-    return null;
-  }
-
-  public List<Attribute<?>> getAttributes() {
-    return ATTRIBUTES;
   }
 
   public AttributeSet getAttributeSet() {
@@ -274,16 +247,33 @@ public final class Wire
     return (loc.equals(e0) ? e1 : e0);
   }
 
-  @SuppressWarnings("unchecked")
-  public <V> V getValue(Attribute<V> attr) {
-    if (attr == dir_attr) {
-      return (V) (is_x_equal ? VALUE_VERT : VALUE_HORZ);
-    } else if (attr == len_attr) {
-      return (V) Integer.valueOf(getLength());
-    } else {
-      return null;
-    }
+  @Override
+  public Object clone() { // Wire is immutable, so no need to clone
+    return this;
   }
+
+  @Override
+  public <V> V getValue(Attribute<V> attr) {
+    if (attr == dir_attr)
+      return (V) (is_x_equal ? VALUE_VERT : VALUE_HORZ);
+    else if (attr == len_attr)
+      return (V) Integer.valueOf(getLength());
+    else
+      return null;
+  }
+
+  @Override
+  public List<Attribute<?>> getAttributes() { return ATTRIBUTES; }
+  @Override
+  public boolean isReadOnly(Attribute<?> attr) { return true; }
+  @Override
+  public boolean isToSave(Attribute<?> attr) { return false; }
+  @Override
+  public void removeAttributeListener(AttributeListener l) { }
+  @Override
+  public void removeComponentListener(ComponentListener e) { }
+  @Override
+  public <V> void changeAttr(Attribute<V> attr, V value) { }
 
   @Override
   public int hashCode() {
@@ -294,17 +284,6 @@ public final class Wire
     return this.is_x_equal == other.is_x_equal;
   }
 
-  public boolean isReadOnly(Attribute<?> attr) {
-    return true;
-  }
-
-  public boolean isToSave(Attribute<?> attr) {
-    return false;
-  }
-
-  //
-  // other methods
-  //
   public boolean isVertical() {
     return is_x_equal;
   }
@@ -344,20 +323,6 @@ public final class Wire
     // called. The exception is when a wire is added or removed
     state.markPointAsDirty(e0);
     state.markPointAsDirty(e1);
-  }
-
-  public void removeAttributeListener(AttributeListener l) {
-  }
-
-  public void removeComponentListener(ComponentListener e) {
-  }
-
-  public void setReadOnly(Attribute<?> attr, boolean value) {
-    throw new UnsupportedOperationException();
-  }
-
-  public <V> void setValue(Attribute<V> attr, V value) {
-    throw new IllegalArgumentException("read only attribute");
   }
 
   public boolean sharesEnd(Wire other) {

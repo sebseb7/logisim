@@ -63,7 +63,7 @@ public class LoadedLibrary extends Library implements LibraryEventSource {
       if (srcAttr != null) {
         @SuppressWarnings("unchecked")
         Attribute<Object> destAttr2 = (Attribute<Object>) destAttr;
-        dest.setValue(destAttr2, src.getValue(srcAttr));
+        dest.setAttr(destAttr2, src.getValue(srcAttr));
       }
     }
   }

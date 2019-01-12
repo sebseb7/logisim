@@ -144,17 +144,23 @@ class PLA extends InstanceFactory {
     @Override
     @SuppressWarnings("unchecked")
     public <V> V getValue(Attribute<V> attr) {
-      if (attr == StdAttr.FACING)  return (V) facing;
-      if (attr == ATTR_IN_WIDTH)  return (V) widthIn;
-      if (attr == ATTR_OUT_WIDTH) return (V) widthOut;
-      if (attr == ATTR_TABLE) return (V) tt;
-      if (attr == StdAttr.LABEL) return (V) label;
-      if (attr == StdAttr.LABEL_FONT) return (V) labelFont;
+      if (attr == StdAttr.FACING)
+        return (V) facing;
+      if (attr == ATTR_IN_WIDTH)
+        return (V) widthIn;
+      if (attr == ATTR_OUT_WIDTH)
+        return (V) widthOut;
+      if (attr == ATTR_TABLE)
+        return (V) tt;
+      if (attr == StdAttr.LABEL)
+        return (V) label;
+      if (attr == StdAttr.LABEL_FONT)
+        return (V) labelFont;
       return null;
     }
 
     @Override
-    public <V> void setValue(Attribute<V> attr, V value) {
+    public <V> void updateAttr(Attribute<V> attr, V value) {
       if (attr == StdAttr.FACING) {
         facing = (Direction) value;
       } else if (attr == ATTR_IN_WIDTH) {
@@ -167,18 +173,15 @@ class PLA extends InstanceFactory {
         tt = (PLATable) value;
         tt.setLabel(label);
         if (tt.inSize() != widthIn.getWidth())
-          setValue(ATTR_IN_WIDTH, BitWidth.create(tt.inSize()));
+          setAttr(ATTR_IN_WIDTH, BitWidth.create(tt.inSize()));
         if (tt.outSize() != widthOut.getWidth())
-          setValue(ATTR_OUT_WIDTH, BitWidth.create(tt.outSize()));
+          setAttr(ATTR_OUT_WIDTH, BitWidth.create(tt.outSize()));
       } else if (attr == StdAttr.LABEL) {
         label = (String) value;
         tt.setLabel(label);
       } else if (attr == StdAttr.LABEL_FONT) {
         labelFont = (Font) value;
-      } else {
-        throw new IllegalArgumentException("unknown attribute " + attr);
       }
-      fireAttributeValueChanged(attr, value);
     }
   }
 

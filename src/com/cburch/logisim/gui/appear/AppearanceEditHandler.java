@@ -199,7 +199,7 @@ public class AppearanceEditHandler extends EditHandler
     List<CanvasObject> clones = new ArrayList<CanvasObject>(n);
     for (CanvasObject o : sel.getSelected()) {
       if (o.canRemove()) {
-        CanvasObject copy = o.clone();
+        CanvasObject copy = (CanvasObject)o.clone();
         copy.translate(10, 10);
         clones.add(copy);
         select.add(copy);
@@ -244,7 +244,7 @@ public class AppearanceEditHandler extends EditHandler
     Collection<CanvasObject> contents = clip.getElements();
     List<CanvasObject> add = new ArrayList<CanvasObject>(contents.size());
     for (CanvasObject o : contents) {
-      add.add(o.clone());
+      add.add((CanvasObject)o.clone());
     }
     if (add.isEmpty())
       return;

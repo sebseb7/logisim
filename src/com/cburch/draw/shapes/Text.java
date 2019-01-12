@@ -132,28 +132,22 @@ public class Text extends AbstractCanvasObject {
 			return (V) label.getColor();
 		} else if (attr == DrawAttr.HALIGNMENT) {
 			int halign = label.getHorizontalAlignment();
-			AttributeOption h;
-			if (halign == EditableLabel.LEFT) {
-				h = DrawAttr.HALIGN_LEFT;
-			} else if (halign == EditableLabel.RIGHT) {
-				h = DrawAttr.HALIGN_RIGHT;
-			} else {
-				h = DrawAttr.HALIGN_CENTER;
-			}
-			return (V) h;
+			if (halign == EditableLabel.LEFT)
+				return (V) DrawAttr.HALIGN_LEFT;
+			else if (halign == EditableLabel.RIGHT)
+				return (V) DrawAttr.HALIGN_RIGHT;
+			else
+				return (V) DrawAttr.HALIGN_CENTER;
 		} else if (attr == DrawAttr.VALIGNMENT) {
 			int valign = label.getVerticalAlignment();
-			AttributeOption v;
-			if (valign == EditableLabel.TOP) {
-				v = DrawAttr.VALIGN_TOP;
-			} else if (valign == EditableLabel.BOTTOM) {
-				v = DrawAttr.VALIGN_BOTTOM;
-			} else if (valign == EditableLabel.BASELINE) {
-				v = DrawAttr.VALIGN_BASELINE;
-			} else {
-				v = DrawAttr.VALIGN_MIDDLE;
-			}
-			return (V) v;
+			if (valign == EditableLabel.TOP)
+				return (V) DrawAttr.VALIGN_TOP;
+			else if (valign == EditableLabel.BOTTOM)
+				return (V) DrawAttr.VALIGN_BOTTOM;
+			else if (valign == EditableLabel.BASELINE)
+				return (V) DrawAttr.VALIGN_BASELINE;
+			else
+				return (V) DrawAttr.VALIGN_MIDDLE;
 		} else {
 			return null;
 		}
@@ -194,7 +188,7 @@ public class Text extends AbstractCanvasObject {
 	}
 
 	@Override
-	public void updateValue(Attribute<?> attr, Object value) {
+	public <V> void updateAttr(Attribute<V> attr, V value) {
 		if (attr == DrawAttr.FONT) {
 			label.setFont((Font) value);
 		} else if (attr == DrawAttr.FILL_COLOR) {

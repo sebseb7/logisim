@@ -129,7 +129,7 @@ public class AttrTableLibraryModel extends AttributeSetTableModel {
   }
 
   @Override
-  public void setValueRequested(Attribute<Object> attr, Object value)
+  public <V> void setValueRequested(Attribute<V> attr, V value)
       throws AttrTableSetException {
     String msg = S.get("attributeChangeInvalidError");
     throw new AttrTableSetException(msg);

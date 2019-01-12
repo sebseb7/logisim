@@ -104,7 +104,7 @@ public abstract class AppearanceElement extends AbstractCanvasObject {
   }
 
   @Override
-  protected void updateValue(Attribute<?> attr, Object value) {
+  protected <V> void updateAttr(Attribute<V> attr, V value) {
     // nothing to do
   }
 }

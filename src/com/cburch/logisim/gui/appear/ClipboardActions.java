@@ -72,7 +72,7 @@ public class ClipboardActions extends Action {
     for (CanvasObject o : canvas.getSelection().getSelected()) {
       if (o.canRemove()) {
         aff.add(o);
-        contents.add(o.clone());
+        contents.add((CanvasObject)o.clone());
       } else if (o instanceof AppearanceAnchor) {
         AppearanceAnchor anch = (AppearanceAnchor) o;
         anchorFacing = anch.getFacing();

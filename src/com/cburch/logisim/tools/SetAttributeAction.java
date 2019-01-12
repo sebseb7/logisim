@@ -77,7 +77,7 @@ public class SetAttributeAction extends Action {
       } else {
         AttributeSet compAttrs = comp.getAttributeSet();
         oldValues.add(compAttrs.getValue(attr));
-        compAttrs.setValue(attr, value);
+        compAttrs.setAttr(attr, value);
       }
     }
 
@@ -113,7 +113,7 @@ public class SetAttributeAction extends Action {
       Attribute<Object> attr = attrs.get(i);
       Object value = oldValues.get(i);
       if (value != null) {
-        comp.getAttributeSet().setValue(attr, value);
+        comp.getAttributeSet().setAttr(attr, value);
       }
     }
   }

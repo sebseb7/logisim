@@ -119,7 +119,7 @@ class AttrTableSelectionModel extends AttributeSetTableModel
   }
 
   @Override
-  public void setValueRequested(Attribute<Object> attr, Object value)
+  public <V> void setValueRequested(Attribute<V> attr, V value)
       throws AttrTableSetException {
     Selection selection = frame.getCanvas().getSelection();
     Circuit circuit = frame.getCanvas().getCircuit();
@@ -128,6 +128,7 @@ class AttrTableSelectionModel extends AttributeSetTableModel
           project, circuit);
       circuitModel.setValueRequested(attr, value);
     } else {
+      // idea: if attr = label, make each label unique by appending number
       SetAttributeAction act = new SetAttributeAction(circuit,
           S.getter("selectionAttributeAction"));
       for (Component comp : selection.getComponents()) {

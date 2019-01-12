@@ -92,21 +92,19 @@ public class RegisterShape extends DynamicElement {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <V> V getValue(Attribute<V> attr) {
-    if (attr == Text.ATTR_FONT) {
+    if (attr == Text.ATTR_FONT)
       return (V) label.getFont();
-    }
     return super.getValue(attr);
   }
 
   @Override
-  public void updateValue(Attribute<?> attr, Object value) {
+  public <V> void updateAttr(Attribute<V> attr, V value) {
     if (attr == Text.ATTR_FONT) {
       label.setFont((Font)value);
       calculateBounds();
     } else {
-      super.updateValue(attr, value);
+      super.updateAttr(attr, value);
     }
   }
 
@@ -150,7 +148,7 @@ public class RegisterShape extends DynamicElement {
 
   public void parseSvgElement(Element elt) {
     super.parseSvgElement(elt);
-    setValue(Text.ATTR_FONT, SvgReader.getFontAttribute(elt, "value-", "monospaced", 10));
+    setAttr(Text.ATTR_FONT, SvgReader.getFontAttribute(elt, "value-", "monospaced", 10));
   }
 
   @Override

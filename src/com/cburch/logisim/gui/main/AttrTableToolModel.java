@@ -31,10 +31,19 @@
 package com.cburch.logisim.gui.main;
 import static com.cburch.logisim.gui.main.Strings.S;
 
+import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.CircuitAttributes;
+import com.cburch.logisim.circuit.SubcircuitFactory;
+import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeSets;
+import com.cburch.logisim.gui.generic.AttrTableSetException;
 import com.cburch.logisim.gui.generic.AttributeSetTableModel;
+import com.cburch.logisim.gui.menu.ProjectCircuitActions;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.SyntaxChecker;
 
 public class AttrTableToolModel extends AttributeSetTableModel {
   Project proj;
@@ -55,8 +64,43 @@ public class AttrTableToolModel extends AttributeSetTableModel {
     return tool;
   }
 
+  // fixme: make these read-only instead of throwing error here
   @Override
-  public void setValueRequested(Attribute<Object> attr, Object value) {
+  public <V> void setValueRequested(Attribute<V> attr, V value)
+      throws AttrTableSetException {
+    ComponentFactory fact = null;
+    if (tool instanceof AddTool)
+      fact = ((AddTool)tool).getFactory();
+    Circuit circ = null;
+    if (fact instanceof SubcircuitFactory)
+      circ = ((SubcircuitFactory)fact).getSubcircuit();
+    // fixme: also check VhdlEntity.NAME_ATTR
+    if (circ != null && !proj.getLogisimFile().contains(circ)) {
+      if (attr == CircuitAttributes.NAME_ATTR) {
+        String msg = S.get("cannotModifyCircuitError");
+        throw new AttrTableSetException(msg);
+      }
+    }
+    String err = null;
+    // validate circuit name, label, and other attributes
+    if (attr == CircuitAttributes.NAME_ATTR) {
+      if (circ == null)
+        return;
+      String name = ((String)value).trim();
+      if (name.equals(circ.getName()))
+        return;
+      err = ProjectCircuitActions.getNewNameErrors(
+              proj.getLogisimFile(), name, false);
+    } else if (AttributeSets.isAttrLabel(attr)) {
+      String label = (String)value;
+      if (!SyntaxChecker.isVariableNameAcceptable(label))
+        err = S.get("variableNameNotAcceptable");
+    }
+    if (err != null) {
+      System.out.println("new name err: " + err);
+      // try { throw new Exception(); } catch (Exception e) { e.printStackTrace(); }
+      throw new AttrTableSetException(err);
+    }
     proj.doAction(ToolAttributeAction.create(tool, attr, value));
   }
 }

@@ -49,10 +49,10 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.util.UnmodifiableList;
 
 public class AppearanceAnchor extends AppearanceElement {
-  public static final Attribute<Direction> FACING = Attributes.forDirection(
-      "facing", S.getter("appearanceFacingAttr"));
-  static final List<Attribute<?>> ATTRIBUTES = UnmodifiableList
-      .create(new Attribute<?>[] { FACING });
+  public static final Attribute<Direction> FACING
+      = Attributes.forDirection("facing", S.getter("appearanceFacingAttr"));
+  static final List<Attribute<?>> ATTRIBUTES
+      = UnmodifiableList.create(new Attribute<?>[] { FACING });
 
   private static final int RADIUS = 3;
   private static final int INDICATOR_LENGTH = 8;
@@ -85,11 +85,6 @@ public class AppearanceAnchor extends AppearanceElement {
   }
 
   @Override
-  public List<Attribute<?>> getAttributes() {
-    return ATTRIBUTES;
-  }
-
-  @Override
   public Bounds getBounds() {
     Bounds bds = super.getBounds(RADIUS);
     Location center = getLocation();
@@ -115,13 +110,16 @@ public class AppearanceAnchor extends AppearanceElement {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  public List<Attribute<?>> getAttributes() {
+    return ATTRIBUTES;
+  }
+
+  @Override
   public <V> V getValue(Attribute<V> attr) {
-    if (attr == FACING) {
+    if (attr == FACING)
       return (V) facing;
-    } else {
-      return super.getValue(attr);
-    }
+    else
+      return null;
   }
 
   @Override
@@ -164,11 +162,8 @@ public class AppearanceAnchor extends AppearanceElement {
   }
 
   @Override
-  protected void updateValue(Attribute<?> attr, Object value) {
-    if (attr == FACING) {
+  protected <V> void updateAttr(Attribute<V> attr, V value) {
+    if (attr == FACING)
       facing = (Direction) value;
-    } else {
-      super.updateValue(attr, value);
-    }
   }
 }
