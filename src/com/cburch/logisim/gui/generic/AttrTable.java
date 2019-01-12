@@ -55,6 +55,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.TableModelEvent;
@@ -62,6 +63,7 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableModel;
 
+import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.JDialogOk;
 import com.cburch.logisim.util.JInputComponent;
 import com.cburch.logisim.util.JInputDialog;
@@ -70,6 +72,35 @@ import com.cburch.logisim.util.LocaleManager;
 
 @SuppressWarnings("serial")
 public class AttrTable extends JPanel implements LocaleListener {
+
+  private static final Object SENTINEL = new Object();
+
+  public static interface PopupActor {
+    public Object doPopup(); // returns null if cancelled
+  }
+
+  public static class PopupEditor extends JLabel {
+    TableCellEditor editor;
+    PopupActor pop;
+    Object result;
+    public PopupEditor(String text, TableCellEditor editor, PopupActor pop) {
+      super(text);
+      this.editor = editor;
+      this.pop = pop;
+    }
+    public void trigger() {
+      SwingUtilities.invokeLater(() -> {
+        result = pop.doPopup();
+        if (result != null)
+          editor.stopCellEditing();
+        else
+          editor.cancelCellEditing();
+      });
+    }
+    public Object getResult() {
+      return result;
+    }
+  }
 
   private class CellEditor
     implements TableCellEditor, FocusListener, ActionListener {
@@ -81,9 +112,6 @@ public class AttrTable extends JPanel implements LocaleListener {
     Component currentEditor;
     boolean multiEditActive = false;
 
-    //
-    // ActionListener methods
-    //
     @Override
     public void actionPerformed(ActionEvent e) {
       if (e.getModifiers() != 0)
@@ -92,16 +120,15 @@ public class AttrTable extends JPanel implements LocaleListener {
 
     @Override
     public void addCellEditorListener(CellEditorListener l) {
-      // Adds a listener to the list that's notified when the
-      // editor stops, or cancels editing.
       listeners.add(l);
     }
 
     @Override
     public void cancelCellEditing() {
-      // Tells the editor to cancel editing and not accept any
-      // partially edited value.
-      fireEditingCanceled();
+      if (currentEditor != null) {
+        currentEditor = null;
+        fireEditingCanceled();
+      }
     }
 
     public void fireEditingCanceled() {
@@ -117,113 +144,107 @@ public class AttrTable extends JPanel implements LocaleListener {
     }
 
     @Override
-    public void focusGained(FocusEvent e) {
-    }
+    public void focusGained(FocusEvent e) { }
 
     @Override
     public void focusLost(FocusEvent e) {
       Object dst = e.getOppositeComponent();
+      // If focus is shifting from the cell editor to somewhere else within the
+      // same JTable (or AttrTable panel), the JTable may have caused the loss
+      // of focus (e.g. when user presses escape), or at least the JTable maybe
+      // handles this case properly. But if focus leaves the JTable (or Attr
+      // panel) entirely and goes somwehere else in the application, we want to
+      // stop editing and accept any partial input. If we leave the application
+      // entirely, we can leave the editor open.
+      // null
       if (dst instanceof Component) {
         Component p = (Component) dst;
         while (p != null && !(p instanceof Window)) {
           if (p == AttrTable.this) {
-            // switch to another place in this table,
-            // no problem
+            // Focus stayed within JTable, allow JTable to handle this.
             return;
           }
           p = p.getParent();
         }
-        // focus transferred outside table; stop editing
+        // Focus transferred outside JTable, but stayed in application.
         editor.stopCellEditing();
+      } else {
+        // Focus left application.
       }
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public Object getCellEditorValue() {
-      // Returns the value contained in the editor.
-      Component comp = currentEditor;
-      if (comp instanceof JTextField) {
-        return ((JTextField) comp).getText();
-      } else if (comp instanceof JComboBox) {
-        return ((JComboBox) comp).getSelectedItem();
-      } else {
-        return null;
-      }
+      // Return a bogus object here, because stopCellEditing() takes care of the
+      // setAttr() before JTable has a chance to do it.
+      return SENTINEL;
     }
 
     @SuppressWarnings("rawtypes")
     @Override
     public Component getTableCellEditorComponent(JTable table,
         Object value, boolean isSelected, int rowIndex, int columnIndex) {
+
+      if (currentEditor != null) {
+        // cleanup old editor before creating a new one
+        Component comp = currentEditor;
+        currentEditor = null;
+        comp.transferFocus();
+      }
+
       AttrTableModel attrModel = tableModel.attrModel;
       AttrTableModelRow row = attrModel.getRow(rowIndex);
+
+      if (columnIndex == 0)
+        return new JLabel(row.getLabel());
+
       AttrTableModelRow[] rows = null;
       int rowIndexes[] = null;
       multiEditActive = false;
 
-      if (columnIndex == 0) {
-        return new JLabel(row.getLabel());
-      } else {
-        if (currentEditor != null) {
-          currentEditor.transferFocus();
-        }
-
-        Component editor = row.getEditor(parent);
-        if (editor instanceof JComboBox) {
-          ((JComboBox) editor).addActionListener(this);
-          editor.addFocusListener(this);
-          rowIndexes = table.getSelectedRows();
-          if (isSelected && rowIndexes.length > 1) {
-            multiEditActive = true;
-            rows = new AttrTableModelRow[rowIndexes.length];
-            for (int i = 0; i < rowIndexes.length; i++) {
-              rows[i] = attrModel.getRow(rowIndexes[i]);
-              if (!row.multiEditCompatible(rows[i])) {
-                multiEditActive = false;
-                rowIndexes = null;
-                rows = null;
-                break;
-              }
+      Component editor = row.getEditor(parent);
+      if (editor instanceof JComboBox) {
+        ((JComboBox) editor).addActionListener(this);
+        editor.addFocusListener(this);
+        rowIndexes = table.getSelectedRows();
+        if (isSelected && rowIndexes.length > 1) {
+          multiEditActive = true;
+          rows = new AttrTableModelRow[rowIndexes.length];
+          for (int i = 0; i < rowIndexes.length; i++) {
+            rows[i] = attrModel.getRow(rowIndexes[i]);
+            if (!row.multiEditCompatible(rows[i])) {
+              multiEditActive = false;
+              rowIndexes = null;
+              rows = null;
+              break;
             }
-          } else {
-            rowIndexes = null;
           }
-        } else if (editor instanceof JInputDialog) {
-          JInputDialog dlog = (JInputDialog) editor;
-          dlog.setVisible(true);
-          Object retval = dlog.getValue();
-          try {
-            row.setValue(parent, retval);
-          } catch (AttrTableSetException e) {
-            JOptionPane.showMessageDialog(parent, e.getMessage(),
-                S.get("attributeChangeInvalidTitle"),
-                JOptionPane.WARNING_MESSAGE);
-          }
-          editor = new JLabel(row.getValue());
-        } else if (editor instanceof JInputComponent) {
-          JInputComponent input = (JInputComponent) editor;
-          MyDialog dlog = new MyDialog(input);
-          dlog.setVisible(true);
-          Object retval = dlog.getValue();
-          try {
-            row.setValue(parent, retval);
-          } catch (AttrTableSetException e) {
-            JOptionPane.showMessageDialog(parent, e.getMessage(),
-                S.get("attributeChangeInvalidTitle"),
-                JOptionPane.WARNING_MESSAGE);
-          }
-          editor = new JLabel(row.getValue());
         } else {
-          editor.addFocusListener(this);
+          rowIndexes = null;
         }
-
-        currentRow = row;
-        currentRows = rows;
-        currentRowIndexes = rowIndexes;
-        currentEditor = editor;
-        return editor;
+      } else if (editor instanceof JInputDialog) {
+        JInputDialog dlg = (JInputDialog) editor;
+        String text = row.getDisplayString();
+        editor = new PopupEditor(text, this, 
+            () -> { dlg.setVisible(true); return dlg.getValue(); });
+      } else if (editor instanceof JInputComponent) {
+        JInputComponent input = (JInputComponent) editor;
+        MyDialog dlg = new MyDialog(input);
+        String text = row.getDisplayString();
+        editor = new PopupEditor(text, this, dlg);
+      } else {
+        editor.addFocusListener(this);
       }
+
+      currentRow = row;
+      currentRows = rows;
+      currentRowIndexes = rowIndexes;
+      currentEditor = editor;
+
+      if (editor instanceof PopupEditor)
+        ((PopupEditor)editor).trigger();
+
+      return editor;
     }
 
     public boolean isEditing(AttrTableModelRow row) {
@@ -238,32 +259,48 @@ public class AttrTable extends JPanel implements LocaleListener {
     }
 
     @Override
-    public boolean isCellEditable(EventObject anEvent) {
-      // Asks the editor if it can start editing using anEvent.
-      return true;
-    }
+    public boolean isCellEditable(EventObject anEvent) { return true; }
 
     @Override
     public void removeCellEditorListener(CellEditorListener l) {
-      // Removes a listener from the list that's notified
       listeners.remove(l);
     }
 
     @Override
     public boolean shouldSelectCell(EventObject anEvent) {
-      // Returns true if the editing cell should be selected,
-      // false otherwise.
       return !multiEditActive;
     }
 
     @Override
     public boolean stopCellEditing() {
-      // Tells the editor to stop editing and accept any partially
-      // edited value as the value of the editor.
-      int row = table.getEditingRow();
-      System.out.println("stop editing row " + row);
-      System.out.println("actually, stop editing row " + table.convertRowIndexToModel(row));
-      Object value = getCellEditorValue();
+      // Try to accept new value from editor.
+      int row = table.convertRowIndexToModel(table.getEditingRow());
+      if (row < 0 || currentEditor == null)
+        return true; // false stop, nothing is being edited right now
+
+      Component comp = currentEditor;
+      currentEditor = null;
+
+      Object value = null;
+      if (comp instanceof JTextField) {
+        value = ((JTextField) comp).getText();
+      } else if (comp instanceof JComboBox) {
+        value = ((JComboBox) comp).getSelectedItem();
+      } else if (comp instanceof PopupEditor) {
+        value = ((PopupEditor) comp).getResult();
+      } else {
+        JOptionPane.showMessageDialog(parent, "internal error: "
+            + " unknown value in editor: " + (comp == null ? null : comp.getClass()),
+            S.get("attributeChangeInvalidTitle"),
+            JOptionPane.WARNING_MESSAGE);
+      }
+
+      if (value == null) {
+        // must have been cancelled...
+        fireEditingCanceled();
+        return true;
+      }
+      
       // Normally, we could just fireEditingStopped(), because JTable has a
       // listener for editingStopped() that will call setValueAt(row, col, val).
       // We do it here instead, for two reasons:
@@ -279,7 +316,6 @@ public class AttrTable extends JPanel implements LocaleListener {
       //      to setValueAt() here instead. The one in JTable.editingStopped()
       //      will be redundant.
       try {
-        System.out.println("--- about to set row ---");
         getAttrTableModel().getRow(row).setValue(parent, value);
         fireEditingStopped();
         // If the above setValue() didn't throw an exception, then we assume none
@@ -290,24 +326,23 @@ public class AttrTable extends JPanel implements LocaleListener {
               if (r != row)
                 getAttrTableModel().getRow(r).setValue(parent, value);
           } catch (AttrTableSetException e) {
-            e.printStackTrace();
+            Errors.title(S.get("attributeChangeInvalidTitle")).show(
+                "Could not change multiple attributes.", e);
           }
           tableModel.fireTableChanged(); // repaints the other changed rows
         }
-        System.out.println("--- done set row ---");
       } catch (AttrTableSetException e) {
-        System.out.println("--- about to handle error b/c set row ---");
         fireEditingCanceled();
         JOptionPane.showMessageDialog(parent, e.getMessage(),
             S.get("attributeChangeInvalidTitle"),
             JOptionPane.WARNING_MESSAGE);
-        System.out.println("--- done handle error b/c set row ---");
       }
       return true;
     }
   }
 
-  private static class MyDialog extends JDialogOk {
+  private static class MyDialog extends JDialogOk
+    implements PopupActor {
 
     JInputComponent input;
     Object value;
@@ -319,7 +354,6 @@ public class AttrTable extends JPanel implements LocaleListener {
 
     private void configure(JInputComponent input) {
       this.input = input;
-      this.value = input.getValue();
 
       // Thanks to Christophe Jacquet, who contributed a fix to this
       // so that when the dialog is resized, the component within it
@@ -336,13 +370,20 @@ public class AttrTable extends JPanel implements LocaleListener {
       pack();
     }
 
-    public Object getValue() {
-      return value;
-    }
-
     @Override
     public void okClicked() {
       value = input.getValue();
+    }
+
+    @Override
+    public void cancelClicked() {
+      value = null;
+    }
+
+    @Override
+    public Object doPopup() {
+      setVisible(true);
+      return value;
     }
   }
 
@@ -403,9 +444,6 @@ public class AttrTable extends JPanel implements LocaleListener {
       fireTableChanged();
     }
 
-    //
-    // AttrTableModelListener methods
-    //
     @Override
     public void attrTitleChanged(AttrTableModelEvent e) {
       if (e.getSource() != attrModel) {
@@ -425,9 +463,8 @@ public class AttrTable extends JPanel implements LocaleListener {
 
       TableCellEditor ed = table.getCellEditor();
       if (row >= 0 && ed instanceof CellEditor
-          && ((CellEditor)ed).isEditing(attrModel.getRow(row))) {
+          && ((CellEditor)ed).isEditing(attrModel.getRow(row)))
         ed.cancelCellEditing();
-      }
 
       fireTableChanged();
     }
@@ -469,7 +506,7 @@ public class AttrTable extends JPanel implements LocaleListener {
       if (columnIndex == 0) {
         return attrModel.getRow(rowIndex).getLabel();
       } else {
-        return attrModel.getRow(rowIndex).getValue();
+        return attrModel.getRow(rowIndex).getDisplayString();
       }
     }
 
@@ -495,29 +532,9 @@ public class AttrTable extends JPanel implements LocaleListener {
 
     @Override
     public void setValueAt(Object value, int rowIndex, int columnIndex) {
-      // try { throw new Exception(); }
-      // catch (Exception e) { e.printStackTrace(); }
-      if (columnIndex <= 0)
+      if (columnIndex <= 0 || value == SENTINEL)
         return;
-      try {
-        AttrTableModelRow row = attrModel.getRow(rowIndex);
-        String oldValue = row.getValue();
-        if (oldValue == null && value == null)
-          return;
-        if (oldValue != null && value != null && oldValue.equals(value))
-          return;
-        System.out.println("--- about to set row via JTable ? ---");
-        System.out.printf("old value: %s\n", oldValue);
-        System.out.printf("new value: %s\n", value);
-        row.setValue(parent, value);
-        System.out.println("--- done set row via JTable ? ---");
-      } catch (AttrTableSetException e) {
-        System.out.println("--- about to handle error b/c set row via JTable ?---");
-        JOptionPane.showMessageDialog(parent, e.getMessage(),
-            S.get("attributeChangeInvalidTitle"),
-            JOptionPane.WARNING_MESSAGE);
-        System.out.println("--- done handle error b/c set row via JTable ?---");
-      }
+      throw new IllegalArgumentException("AttrTable.TableModelAdapter.setValueAt");
     }
   }
 

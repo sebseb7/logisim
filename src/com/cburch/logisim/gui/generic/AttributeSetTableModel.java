@@ -61,7 +61,11 @@ public abstract class AttributeSetTableModel
       return attr.getDisplayName();
     }
 
-    public String getValue() {
+    public Object getValue() {
+      return attrs.getValue(attr);
+    }
+
+    public String getDisplayString() {
       V value = attrs.getValue(attr);
       if (value == null) {
         try {

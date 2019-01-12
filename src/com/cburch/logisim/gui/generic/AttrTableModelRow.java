@@ -38,7 +38,9 @@ public interface AttrTableModelRow {
 
   public String getLabel();
 
-  public String getValue();
+  public String getDisplayString();
+
+  public Object getValue();
 
   public boolean isValueEditable();
 
