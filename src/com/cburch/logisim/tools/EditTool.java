@@ -484,10 +484,11 @@ public final class EditTool extends Tool {
   private void repaintIndicators(Canvas canvas, Location a, Location b) {
     if (a.equals(b))
       return;
+    int w = 3;
     if (a != NULL_LOCATION)
-      canvas.repaint(a.getX()-6, a.getY()-6, 12, 12);
+      canvas.repaint(a.getX()-5-w, a.getY()-5-w, 10+2*w, 10+2*w);
     if (b != NULL_LOCATION)
-      canvas.repaint(b.getX()-6, b.getY()-6, 12, 12);
+      canvas.repaint(b.getX()-5-w, b.getY()-5-w, 10+2*w, 10+2*w);
   }
 
   private boolean updateLocation(Canvas canvas, KeyEvent e) {
