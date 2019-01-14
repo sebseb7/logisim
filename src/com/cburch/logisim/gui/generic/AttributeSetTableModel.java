@@ -52,6 +52,10 @@ public abstract class AttributeSetTableModel
       this.attr = attr;
     }
 
+    public Attribute<?> getAttribute() {
+      return attr;
+    }
+
     public Component getEditor(Window parent) {
       V value = attrs.getValue(attr);
       return attr.getCellEditor(parent, value);
@@ -80,10 +84,6 @@ public abstract class AttributeSetTableModel
           return "???";
         }
       }
-    }
-
-    public boolean isValueEditable() {
-      return !attrs.isReadOnly(attr);
     }
 
     public boolean multiEditCompatible(AttrTableModelRow other) {
@@ -254,6 +254,10 @@ public abstract class AttributeSetTableModel
       }
       attributeListChanged(null);
     }
+  }
+
+  public boolean isRowValueEditable(int rowIndex) {
+    return !attrs.isReadOnly(rows.get(rowIndex).attr);
   }
 
   protected abstract <V> void setValueRequested(Attribute<V> attr,

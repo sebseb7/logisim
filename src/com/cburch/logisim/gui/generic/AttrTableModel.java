@@ -39,5 +39,7 @@ public interface AttrTableModel {
 
   public String getTitle();
 
+  public boolean isRowValueEditable(int rowIndex);
+
   public void removeAttrTableModelListener(AttrTableModelListener listener);
 }

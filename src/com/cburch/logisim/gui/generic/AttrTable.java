@@ -404,6 +404,11 @@ public class AttrTable extends JPanel implements LocaleListener {
     }
 
     @Override
+    public boolean isRowValueEditable(int rowIndex) {
+      return false;
+    }
+
+    @Override
     public String getTitle() {
       return null;
     }
@@ -513,7 +518,7 @@ public class AttrTable extends JPanel implements LocaleListener {
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
       return columnIndex > 0
-          && attrModel.getRow(rowIndex).isValueEditable();
+          && attrModel.isRowValueEditable(rowIndex);
     }
 
     @Override

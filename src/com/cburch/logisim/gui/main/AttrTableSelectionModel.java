@@ -119,13 +119,38 @@ class AttrTableSelectionModel extends AttributeSetTableModel
   }
 
   @Override
-  public <V> void setValueRequested(Attribute<V> attr, V value)
-      throws AttrTableSetException {
+  public boolean isRowValueEditable(int rowIndex) {
     Selection selection = frame.getCanvas().getSelection();
     Circuit circuit = frame.getCanvas().getCircuit();
     if (selection.isEmpty() && circuit != null) {
-      AttrTableCircuitModel circuitModel = new AttrTableCircuitModel(
-          project, circuit);
+      // Empty selection is really modifying the circuit, so just delegate to
+      // that model. This is a little redundant with the check in
+      // SelectionAtributes.isReadOnly().
+      AttrTableCircuitModel circuitModel = new AttrTableCircuitModel(project, circuit);
+      return circuitModel.isRowValueEditable(rowIndex);
+    } else {
+      // Non-empty selection calls superclass, which ultimately relies on
+      // SelectionAttributes.isReadOnly(attr), which should handle all cases:
+      //  - can't edit if selecting within a non-project circuit
+      //  - can't edit circuit name if selecting multiple circuits (b/c they
+      //    must be unique)
+      //  - can't edit vhdl name if selecting multiple vhdl (b/c they
+      //    must be unique)
+      //  - can't edit static attributes for non-project SubCircuit or
+      //    VhdlEntity
+      //  - can't edit if any component attribute was read-only
+      return super.isRowValueEditable(rowIndex);
+    }
+  }
+
+  @Override
+  public <V> void setValueRequested(Attribute<V> attr, V value)
+      throws AttrTableSetException {
+    // We rely on isRowValueEditable() to filter out all non-editable cases.
+    Selection selection = frame.getCanvas().getSelection();
+    Circuit circuit = frame.getCanvas().getCircuit();
+    if (selection.isEmpty() && circuit != null) {
+      AttrTableCircuitModel circuitModel = new AttrTableCircuitModel(project, circuit);
       circuitModel.setValueRequested(attr, value);
     } else {
       // idea: if attr = label, make each label unique by appending number

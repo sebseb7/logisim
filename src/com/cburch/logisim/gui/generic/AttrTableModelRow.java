@@ -33,6 +33,8 @@ package com.cburch.logisim.gui.generic;
 import java.awt.Component;
 import java.awt.Window;
 
+import com.cburch.logisim.data.Attribute;
+
 public interface AttrTableModelRow {
   public Component getEditor(Window parent);
 
@@ -42,7 +44,7 @@ public interface AttrTableModelRow {
 
   public Object getValue();
 
-  public boolean isValueEditable();
+  public Attribute<?> getAttribute();
 
   // Note: for multiEdit, it is assumed that a value that is valid for one cell
   // is valid for all the cells being editing, and likewise that a value that is

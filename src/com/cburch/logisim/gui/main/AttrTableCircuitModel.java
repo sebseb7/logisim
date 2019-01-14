@@ -58,10 +58,17 @@ public class AttrTableCircuitModel extends AttributeSetTableModel {
   }
 
   @Override
+  public boolean isRowValueEditable(int rowIndex) {
+    // circuits outside current project can't be modified at all
+    return super.isRowValueEditable(rowIndex) &&
+      proj.getLogisimFile().contains(circ);
+  }
+
+  @Override
   public <V> void setValueRequested(Attribute<V> attr, V value)
       throws AttrTableSetException {
-    // circuits outside current project can't be modified at all
     if (!proj.getLogisimFile().contains(circ)) {
+      // This should never happen, prevented by isRowValueEditable().
       String msg = S.get("cannotModifyCircuitError");
       throw new AttrTableSetException(msg);
     }
@@ -78,11 +85,8 @@ public class AttrTableCircuitModel extends AttributeSetTableModel {
       if (!SyntaxChecker.isVariableNameAcceptable(label))
         err = S.get("variableNameNotAcceptable");
     }
-    if (err != null) {
-      System.out.println("new name err: " + err);
-      // try { throw new Exception(); } catch (Exception e) { e.printStackTrace(); }
+    if (err != null)
       throw new AttrTableSetException(err);
-    }
 
     CircuitMutation xn = new CircuitMutation(circ);
     xn.setForCircuit(attr, value);

@@ -129,8 +129,15 @@ public class AttrTableLibraryModel extends AttributeSetTableModel {
   }
 
   @Override
+  public boolean isRowValueEditable(int rowIndex) {
+    // libraries have no editable attributes
+    return false;
+  }
+
+  @Override
   public <V> void setValueRequested(Attribute<V> attr, V value)
       throws AttrTableSetException {
+    // This should never happen, prevented by isRowValueEditable().
     String msg = S.get("attributeChangeInvalidError");
     throw new AttrTableSetException(msg);
   }

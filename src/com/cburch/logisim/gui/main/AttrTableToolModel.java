@@ -41,6 +41,8 @@ import com.cburch.logisim.gui.generic.AttrTableSetException;
 import com.cburch.logisim.gui.generic.AttributeSetTableModel;
 import com.cburch.logisim.gui.menu.ProjectCircuitActions;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.std.hdl.VhdlContent;
+import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.SyntaxChecker;
@@ -64,43 +66,73 @@ public class AttrTableToolModel extends AttributeSetTableModel {
     return tool;
   }
 
-  // fixme: make these read-only instead of throwing error here
+  private Circuit getCircuit() {
+    if (!(tool instanceof AddTool))
+      return null;
+    ComponentFactory fact = ((AddTool)tool).getFactory();
+    if (!(fact instanceof SubcircuitFactory))
+      return null;
+    return ((SubcircuitFactory)fact).getSubcircuit();
+  }
+
+  private VhdlContent getVhdlContent() {
+    if (!(tool instanceof AddTool))
+      return null;
+    ComponentFactory fact = ((AddTool)tool).getFactory();
+    if (!(fact instanceof VhdlEntity))
+      return null;
+    return ((VhdlEntity)fact).getContent();
+  }
+
+  @Override
+  public boolean isRowValueEditable(int rowIndex) {
+    if (!super.isRowValueEditable(rowIndex))
+      return false;
+    Attribute<?> attr = getRow(rowIndex).getAttribute();
+    Circuit circ = getCircuit();
+    if (circ != null) {
+      return proj.getLogisimFile().contains(circ)
+          || !circ.getStaticAttributes().containsAttribute(attr);
+    }
+    VhdlContent vhdl = getVhdlContent();
+    if (vhdl != null) {
+      return proj.getLogisimFile().contains(circ)
+          || !vhdl.getStaticAttributes().containsAttribute(attr);
+    }
+    return true; // built-in tool, jar library tool, etc.
+  }
+
   @Override
   public <V> void setValueRequested(Attribute<V> attr, V value)
       throws AttrTableSetException {
-    ComponentFactory fact = null;
-    if (tool instanceof AddTool)
-      fact = ((AddTool)tool).getFactory();
-    Circuit circ = null;
-    if (fact instanceof SubcircuitFactory)
-      circ = ((SubcircuitFactory)fact).getSubcircuit();
-    // fixme: also check VhdlEntity.NAME_ATTR
-    if (circ != null && !proj.getLogisimFile().contains(circ)) {
-      if (attr == CircuitAttributes.NAME_ATTR) {
-        String msg = S.get("cannotModifyCircuitError");
-        throw new AttrTableSetException(msg);
-      }
-    }
-    String err = null;
     // validate circuit name, label, and other attributes
+    Circuit circ = getCircuit();
+    VhdlContent vhdl = getVhdlContent();
+    String err = null;
     if (attr == CircuitAttributes.NAME_ATTR) {
       if (circ == null)
-        return;
+        return; // huh ?
       String name = ((String)value).trim();
       if (name.equals(circ.getName()))
-        return;
+        return; // no change
       err = ProjectCircuitActions.getNewNameErrors(
               proj.getLogisimFile(), name, false);
+    } else if (attr == VhdlEntity.NAME_ATTR) {
+      if (vhdl == null)
+        return; // huh ?
+      String name = ((String)value).trim();
+      if (name.equals(vhdl.getName()))
+        return; // no change
+      err = ProjectCircuitActions.getNewNameErrors(
+              proj.getLogisimFile(), name, true);
     } else if (AttributeSets.isAttrLabel(attr)) {
       String label = (String)value;
       if (!SyntaxChecker.isVariableNameAcceptable(label))
         err = S.get("variableNameNotAcceptable");
     }
-    if (err != null) {
-      System.out.println("new name err: " + err);
-      // try { throw new Exception(); } catch (Exception e) { e.printStackTrace(); }
+    if (err != null)
       throw new AttrTableSetException(err);
-    }
+
     proj.doAction(ToolAttributeAction.create(tool, attr, value));
   }
 }

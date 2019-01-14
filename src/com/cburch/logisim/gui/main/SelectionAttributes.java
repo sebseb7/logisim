@@ -39,14 +39,19 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.CircuitAttributes;
+import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.std.hdl.VhdlContent;
+import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.util.UnmodifiableList;
 
 class SelectionAttributes extends AbstractAttributeSet {
@@ -55,14 +60,12 @@ class SelectionAttributes extends AbstractAttributeSet {
 
     @Override
     public void attributeListChanged(AttributeEvent e) {
-      if (listening)
-        updateList(false);
+      updateList(false);
     }
 
     @Override
     public void attributeValueChanged(AttributeEvent e) {
-      if (listening)
-        updateList(false);
+      updateList(false);
     }
 
     @Override
@@ -102,11 +105,25 @@ class SelectionAttributes extends AbstractAttributeSet {
   }
 
   private static boolean computeReadOnly(Collection<Component> sel,
-      Attribute<?> attr) {
+      Attribute<?> attr, Project proj) {
     for (Component comp : sel) {
       AttributeSet attrs = comp.getAttributeSet();
       if (attrs.isReadOnly(attr))
         return true;
+      // If component is a subcircuit or vhdl from a library, can't modify
+      // static attributes.
+      ComponentFactory fact = comp.getFactory();
+      if (fact instanceof SubcircuitFactory) {
+        Circuit circ = ((SubcircuitFactory)fact).getSubcircuit();
+        if (!proj.getLogisimFile().contains(circ)
+            && circ.getStaticAttributes().containsAttribute(attr))
+          return true;
+      } else if (fact instanceof VhdlEntity) {
+        VhdlContent vhdl = ((VhdlEntity)fact).getContent();
+        if (!proj.getLogisimFile().contains(vhdl)
+            && vhdl.getStaticAttributes().containsAttribute(attr))
+          return true;
+      }
     }
     return false;
   }
@@ -173,30 +190,21 @@ class SelectionAttributes extends AbstractAttributeSet {
 
   private static final Attribute<?>[] EMPTY_ATTRIBUTES = new Attribute<?>[0];
   private static final Object[] EMPTY_VALUES = new Object[0];
+
   private Canvas canvas;
   private Selection selection;
-  private Listener listener;
-  private boolean listening;
-
-  private Set<Component> selected;
-  private Attribute<?>[] attrs;
+  private Listener listener = new Listener();
+  private Set<Component> selected = Collections.emptySet();
+  private Attribute<?>[] attrs = EMPTY_ATTRIBUTES;
   private boolean[] readOnly;
-  private Object[] values;
-  private List<Attribute<?>> attrsView;
+  private Object[] values = EMPTY_VALUES;
+  private List<Attribute<?>> attrsView = Collections.emptyList();
 
   public SelectionAttributes(Canvas canvas, Selection selection) {
     this.canvas = canvas;
     this.selection = selection;
-    this.listener = new Listener();
-    this.listening = true;
-    this.selected = Collections.emptySet();
-    this.attrs = EMPTY_ATTRIBUTES;
-    this.values = EMPTY_VALUES;
-    this.attrsView = Collections.emptyList();
-
     selection.addListener(listener);
     updateList(true);
-    setListening(true);
   }
 
   @Override
@@ -250,14 +258,23 @@ class SelectionAttributes extends AbstractAttributeSet {
     Project proj = canvas.getProject();
     Circuit circ = canvas.getCircuit();
     if (!proj.getLogisimFile().contains(circ)) {
+      // Can't edit if selecting within a non-project circuit.
       return true;
     } else if (selected.isEmpty() && circ != null) {
+      // This case is detected in AttrTableSelectionModel.isRowValueEditable(),
+      // so we never end up here. We can handle it easy enough anyway.
+      System.out.println("never happens");
       return circ.getStaticAttributes().isReadOnly(attr);
     } else {
-      if (selected.size() > 0 && attr == com.cburch.logisim.circuit.CircuitAttributes.NAME_ATTR)
-        return true; // can't rename multiple circuits at a time
+      if (selected.size() > 1 && attr == CircuitAttributes.NAME_ATTR)
+        return true; // Can't rename multiple circuits at a time
+      if (selected.size() > 1 && attr == VhdlEntity.NAME_ATTR)
+        return true; // Can't rename multiple vhdl at a time
       int i = findIndex(attr);
       boolean[] ro = readOnly;
+      // Can't rename if any of the selection component attribs were read-only,
+      // or if it was a static attribute for a non-project SubCircuit or
+      // VhdlEntity.
       return i >= 0 && i < ro.length ? ro[i] : true;
     }
   }
@@ -267,18 +284,9 @@ class SelectionAttributes extends AbstractAttributeSet {
     return false;
   }
 
-  private void setListening(boolean value) {
-    if (listening != value) {
-      listening = value;
-      if (value) {
-        updateList(false);
-      }
-    }
-  }
-
   @Override
   public <V> void setAttr(Attribute<V> attr, V value) {
-    // we don't fire an event here, b/c circuit or components will instead
+    // We don't fire an event here, b/c circuit or components will fire instead
     Circuit circ = canvas.getCircuit();
     if (selected.isEmpty() && circ != null) {
       circ.getStaticAttributes().setAttr(attr, value);
@@ -306,6 +314,7 @@ class SelectionAttributes extends AbstractAttributeSet {
       newSel = Collections.emptySet();
     else
       newSel = createSet(sel.getComponents());
+
     if (haveSameElements(newSel, oldSel)) {
       if (ignoreIfSelectionSame)
         return;
@@ -336,7 +345,7 @@ class SelectionAttributes extends AbstractAttributeSet {
         i++;
         newAttrs[i] = entry.getKey();
         newValues[i] = entry.getValue();
-        newReadOnly[i] = computeReadOnly(newSel, newAttrs[i]);
+        newReadOnly[i] = computeReadOnly(newSel, newAttrs[i], canvas.getProject());
       }
       if (newSel != oldSel)
         this.selected = newSel;
