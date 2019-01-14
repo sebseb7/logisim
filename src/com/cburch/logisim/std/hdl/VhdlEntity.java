@@ -236,10 +236,9 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
     Color fg = g.getColor();
     int v = fg.getRed() + fg.getGreen() + fg.getBlue();
     Composite oldComposite = null;
-    if (g instanceof Graphics2D && v > 50) {
+    if (v > 50) {
       oldComposite = ((Graphics2D) g).getComposite();
-      Composite c = AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-          0.5f);
+      Composite c = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f);
       ((Graphics2D) g).setComposite(c);
     }
     paintBase(painter, g);

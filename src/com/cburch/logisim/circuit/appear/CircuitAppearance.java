@@ -267,7 +267,7 @@ public class CircuitAppearance extends Drawing {
   public void paintSubcircuit(InstancePainter painter, Graphics g, Direction facing) {
     Direction defaultFacing = getFacing();
     double rotate = 0.0;
-    if (facing != defaultFacing && g instanceof Graphics2D) {
+    if (facing != defaultFacing) {
       rotate = defaultFacing.toRadians() - facing.toRadians();
       ((Graphics2D) g).rotate(rotate);
     }

@@ -92,9 +92,8 @@ public class LayoutThumbnail extends JComponent {
       int borderX = (int) ((size.width - bds.getWidth() * scale) / 2);
       int borderY = (int) ((size.height - bds.getHeight() * scale) / 2);
       gCopy.translate(borderX, borderY);
-      if (scale != 1.0 && g instanceof Graphics2D) {
+      if (scale != 1.0)
         ((Graphics2D) gCopy).scale(scale, scale);
-      }
       gCopy.translate(-bds.getX(), -bds.getY());
 
       ComponentDrawContext context = new ComponentDrawContext(this,

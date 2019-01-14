@@ -85,8 +85,7 @@ public class Print {
 
       Circuit circ = circuits.get(pageIndex);
       CircuitState circState = proj.getCircuitState(circ);
-      Graphics g = base.create();
-      Graphics2D g2 = g instanceof Graphics2D ? (Graphics2D) g : null;
+      Graphics2D g = (Graphics2D)base.create();
       FontMetrics fm = g.getFontMetrics();
       String head = (header != null && !header.equals("")) ? format(
           header, pageIndex + 1, circuits.size(), circ.getName())
@@ -102,24 +101,22 @@ public class Print {
       Bounds bds = circ.getBounds(g).expand(4);
       double scale = Math.min(imWidth / bds.getWidth(),
           (imHeight - headHeight) / bds.getHeight());
-      if (g2 != null) {
-        g2.translate(format.getImageableX(), format.getImageableY());
-        if (rotateToFit && scale < 1.0 / 1.1) {
-          double scale2 = Math.min(imHeight / bds.getWidth(),
-              (imWidth - headHeight) / bds.getHeight());
-          if (scale2 >= scale * 1.1) { // will rotate
-            scale = scale2;
-            if (imHeight > imWidth) { // portrait -> landscape
-              g2.translate(0, imHeight);
-              g2.rotate(-Math.PI / 2);
-            } else { // landscape -> portrait
-              g2.translate(imWidth, 0);
-              g2.rotate(Math.PI / 2);
-            }
-            double t = imHeight;
-            imHeight = imWidth;
-            imWidth = t;
+      g.translate(format.getImageableX(), format.getImageableY());
+      if (rotateToFit && scale < 1.0 / 1.1) {
+        double scale2 = Math.min(imHeight / bds.getWidth(),
+            (imWidth - headHeight) / bds.getHeight());
+        if (scale2 >= scale * 1.1) { // will rotate
+          scale = scale2;
+          if (imHeight > imWidth) { // portrait -> landscape
+            g.translate(0, imHeight);
+            g.rotate(-Math.PI / 2);
+          } else { // landscape -> portrait
+            g.translate(imWidth, 0);
+            g.rotate(Math.PI / 2);
           }
+          double t = imHeight;
+          imHeight = imWidth;
+          imWidth = t;
         }
       }
 
@@ -128,23 +125,21 @@ public class Print {
         g.drawString(head,
             (int) Math.round((imWidth - fm.stringWidth(head)) / 2),
             fm.getAscent());
-        if (g2 != null) {
+        if (g != null) {
           imHeight -= headHeight;
-          g2.translate(0, headHeight);
+          g.translate(0, headHeight);
         }
       }
 
       // Now change coordinate system for circuit, including
       // translation and possible scaling
-      if (g2 != null) {
-        if (scale < 1.0) {
-          g2.scale(scale, scale);
-          imWidth /= scale;
-          imHeight /= scale;
-        }
-        double dx = Math.max(0.0, (imWidth - bds.getWidth()) / 2);
-        g2.translate(-bds.getX() + dx, -bds.getY());
+      if (scale < 1.0) {
+        g.scale(scale, scale);
+        imWidth /= scale;
+        imHeight /= scale;
       }
+      double dx = Math.max(0.0, (imWidth - bds.getWidth()) / 2);
+      g.translate(-bds.getX() + dx, -bds.getY());
 
       // Ensure that the circuit is eligible to be drawn
       Rectangle clip = g.getClipBounds();

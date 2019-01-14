@@ -146,26 +146,24 @@ public abstract class PrintHandler implements Printable {
 
   public abstract void paintExportImage(BufferedImage img, Graphics2D g);
 
-  private boolean showErr(String key) {
+  private void showErr(String key) {
     Component parent = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
     String msg = S.get("couldNotCreateImage");
     JOptionPane.showMessageDialog(parent, msg);
-    return true;
   }
 
   public void exportImage(File dest, int fmt) {
 
     Dimension d = getExportImageSize();
-    if (d == null && showErr("couldNotCreateImage"))
+    if (d == null) {
+      showErr("couldNotCreateImage");
       return;
+    }
 
     BufferedImage img = new BufferedImage(d.width, d.height, BufferedImage.TYPE_INT_RGB);
     Graphics base = img.getGraphics();
-    Graphics gr = base.create();
+    Graphics2D g = (Graphics2D)base.create();
     try {
-      if (!(gr instanceof Graphics2D) && showErr("couldNotCreateImage"))
-        return;
-      Graphics2D g = (Graphics2D)gr;
       g.setColor(Color.white);
       g.fillRect(0, 0, d.width, d.height);
       g.setColor(Color.black);
@@ -194,7 +192,7 @@ public abstract class PrintHandler implements Printable {
         return;
       }
     } finally {
-        gr.dispose();
+        g.dispose();
     }
   }
 

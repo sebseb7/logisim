@@ -248,7 +248,7 @@ public class DipSwitch extends InstanceFactory {
     Graphics g = painter.getGraphics();
     g.translate(x, y);
     double rotate = 0.0;
-    if (facing != Direction.NORTH && facing != Direction.SOUTH && g instanceof Graphics2D) {
+    if (facing != Direction.NORTH && facing != Direction.SOUTH) {
       rotate = -facing.getRight().toRadians();
       ((Graphics2D) g).rotate(rotate);
     }

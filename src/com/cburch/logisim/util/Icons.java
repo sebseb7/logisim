@@ -50,7 +50,7 @@ public class Icons {
 
   public static void paintRotated(Graphics g, int x, int y, Direction dir,
       Icon icon, Component dest) {
-    if (!(g instanceof Graphics2D) || dir == Direction.EAST) {
+    if (dir == Direction.EAST) {
       icon.paintIcon(dest, g, x, y);
       return;
     }

@@ -220,9 +220,8 @@ class CanvasPainter implements PropertyChangeListener {
     g.setColor(Color.black);
 
     Graphics gScaled = g.create();
-    if (zoomFactor != 1.0 && gScaled instanceof Graphics2D) {
+    if (zoomFactor != 1.0)
       ((Graphics2D) gScaled).scale(zoomFactor, zoomFactor);
-    }
     drawWithUserState(g, gScaled, proj);
     drawWidthIncompatibilityData(g, gScaled, proj);
     Circuit circ = proj.getCurrentCircuit();

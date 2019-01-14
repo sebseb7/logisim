@@ -270,9 +270,8 @@ public class AppearanceCanvas extends Canvas
   protected void paintForeground(Graphics g) {
     double zoom = grid.getZoomFactor();
     Graphics gScaled = g.create();
-    if (zoom != 1.0 && zoom != 0.0 && gScaled instanceof Graphics2D) {
+    if (zoom != 1.0 && zoom != 0.0)
       ((Graphics2D) gScaled).scale(zoom, zoom);
-    }
     super.paintForeground(gScaled);
     gScaled.dispose();
   }

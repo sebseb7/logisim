@@ -126,10 +126,8 @@ public class About {
     }
 
     private void drawCircuit(Graphics g, int x0, int y0) {
-      if (g instanceof Graphics2D) {
-        Graphics2D g2 = (Graphics2D) g;
-        g2.setStroke(new BasicStroke(5.0f));
-      }
+      Graphics2D g2 = (Graphics2D) g;
+      g2.setStroke(new BasicStroke(5.0f));
       drawWires(g, x0, y0);
       g.setColor(gateColor);
       drawNot(g, x0, y0, 70, 10);

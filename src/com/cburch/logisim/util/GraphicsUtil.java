@@ -360,10 +360,8 @@ public class GraphicsUtil {
   }
 
   static public void switchToWidth(Graphics g, int width) {
-    if (g instanceof Graphics2D) {
-      Graphics2D g2 = (Graphics2D) g;
-      g2.setStroke(new BasicStroke((float) width));
-    }
+    Graphics2D g2 = (Graphics2D) g;
+    g2.setStroke(new BasicStroke((float) width));
   }
 
   public static final int H_LEFT = -1;

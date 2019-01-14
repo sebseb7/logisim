@@ -89,9 +89,8 @@ public class LogisimToolbarItem implements ToolbarItem {
   }
 
   public void paintIcon(Component destination, Graphics g) {
-    if (!isSelectable() && g instanceof Graphics2D) {
-      Composite c = AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-          0.3f);
+    if (!isSelectable()) {
+      Composite c = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f);
       ((Graphics2D) g).setComposite(c);
     }
 

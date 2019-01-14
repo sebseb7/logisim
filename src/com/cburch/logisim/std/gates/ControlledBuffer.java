@@ -239,7 +239,7 @@ class ControlledBuffer extends InstanceFactory {
     double rotate = 0.0;
     Graphics g = painter.getGraphics();
     g.translate(x, y);
-    if (facing != Direction.EAST && g instanceof Graphics2D) {
+    if (facing != Direction.EAST) {
       rotate = -facing.toRadians();
       ((Graphics2D) g).rotate(rotate);
     }

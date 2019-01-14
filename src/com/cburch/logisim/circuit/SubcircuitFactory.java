@@ -245,7 +245,7 @@ public class SubcircuitFactory extends InstanceFactory {
       double angle = Math.PI / 2
           - (up.toRadians() - defaultFacing.toRadians())
           - facing.toRadians();
-      if (g instanceof Graphics2D && Math.abs(angle) > 0.01) {
+      if (Math.abs(angle) > 0.01) {
         Graphics2D g2 = (Graphics2D) g;
         g2.rotate(angle, x, y);
       }
@@ -386,7 +386,7 @@ public class SubcircuitFactory extends InstanceFactory {
     Color fg = g.getColor();
     int v = fg.getRed() + fg.getGreen() + fg.getBlue();
     Composite oldComposite = null;
-    if (g instanceof Graphics2D && v > 50) {
+    if (v > 50) {
       oldComposite = ((Graphics2D) g).getComposite();
       Composite c = AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
           0.5f);

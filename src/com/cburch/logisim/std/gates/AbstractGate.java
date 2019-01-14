@@ -478,7 +478,7 @@ abstract class AbstractGate extends InstanceFactory {
     g.setColor(baseColor);
     g.translate(loc.getX(), loc.getY());
     double rotate = 0.0;
-    if (facing != Direction.EAST && g instanceof Graphics2D) {
+    if (facing != Direction.EAST) {
       rotate = -facing.toRadians();
       Graphics2D g2 = (Graphics2D) g;
       g2.rotate(rotate);

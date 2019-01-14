@@ -147,12 +147,8 @@ public class ExportImage {
     g.setColor(Color.white);
     g.fillRect(0, 0, width, height);
     g.setColor(Color.black);
-    if (g instanceof Graphics2D) {
-      ((Graphics2D) g).scale(scale, scale);
-      ((Graphics2D) g).translate(-bds.getX(), -bds.getY());
-    } else {
-      return S.get("couldNotCreateImage");
-    }
+    ((Graphics2D) g).scale(scale, scale);
+    ((Graphics2D) g).translate(-bds.getX(), -bds.getY());
 
     CircuitState circuitState = canvas.getProject().getCircuitState(circuit);
     ComponentDrawContext context = new ComponentDrawContext(canvas,
