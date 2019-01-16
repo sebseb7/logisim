@@ -35,7 +35,6 @@ import java.util.List;
 
 import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.util.SyntaxChecker;
 
 public class AttributeSets {
 
@@ -124,9 +123,6 @@ public class AttributeSets {
       int index = attrs.indexOf(attr);
       if (index < 0)
         throw new IllegalArgumentException("no such attribute: " + attr);
-      // fixme: not here
-      // if (isAttrLabel(attr) && !SyntaxChecker.isVariableNameAcceptable((String)value))
-      //  throw new IllegalArgumentException("invalid label: " + attr + " = " + value);
       values[index] = value;
     }
   }

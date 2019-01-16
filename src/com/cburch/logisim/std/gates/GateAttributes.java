@@ -41,7 +41,6 @@ import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.util.SyntaxChecker;
 
 class GateAttributes extends AbstractAttributeSet {
   static final int MAX_INPUTS = 32;
@@ -142,13 +141,6 @@ class GateAttributes extends AbstractAttributeSet {
     } else if (attr == StdAttr.FACING) {
       facing = (Direction) value;
     } else if (attr == StdAttr.LABEL) {
-      // fixme: not here
-      // if (!SyntaxChecker.isVariableNameAcceptable(val)) {
-      //   SyntaxChecker.showNonAcceptableNameMessage();
-      //   label = "";
-      // } else {
-      //   label = val;
-      // }
       label = (String) value;
     } else if (attr == StdAttr.LABEL_FONT) {
       labelFont = (Font) value;
