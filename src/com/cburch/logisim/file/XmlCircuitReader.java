@@ -100,11 +100,8 @@ public class XmlCircuitReader extends CircuitTransaction {
 
     String libName = elt.getAttribute("lib");
     Library lib = reader.findLibrary(libName);
-    if (lib == null) {
-      // try { throw new XmlReaderException(S.fmt("compUnknownError", name + "(missing library)"));
-      // } catch (Exception e) { e.printStackTrace(); throw e; }
-      return null; 
-    }
+    if (lib == null) // skip components from missing libs
+      return null; // throw new XmlReaderException(S.fmt("compUnknownError", name + " (missing library)"));
 
     Tool tool = lib.getTool(name);
     if (tool == null || !(tool instanceof AddTool)) {

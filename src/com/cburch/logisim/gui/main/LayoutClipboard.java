@@ -41,6 +41,7 @@ import java.util.Collection;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitTransaction;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.file.LoadCanceledByUser;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.file.XmlClipReader;
 import com.cburch.logisim.file.XmlWriter;
@@ -110,6 +111,8 @@ public class LayoutClipboard<T>
       if (sel == null)
         return null;
       return new Clip<T>(ctx, sel);
+    } catch (LoadCanceledByUser e) {
+      return null;
     } catch (Exception e) {
       proj.showError("Error parsing clipboard data", e);
       return null;

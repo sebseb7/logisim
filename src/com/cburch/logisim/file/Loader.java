@@ -41,9 +41,11 @@ import java.util.Map;
 import java.util.Stack;
 
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
 
 import com.cburch.hdl.HdlFile;
+import com.cburch.logisim.Main;
 import com.cburch.logisim.std.Builtin;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.util.Errors;
@@ -124,7 +126,7 @@ public class Loader implements LibraryLoader {
   private Builtin builtin = new Builtin();
   private File mainFile = null; // to be cleared with each new file
   private Stack<File> filesOpening = new Stack<>();
-  private Map<File, File> substitutions = new HashMap<File, File>();
+  private Map<String, String> substitutions = new HashMap<>();
 
   public Loader(Component parent) {
     this.parent = parent;
@@ -138,13 +140,18 @@ public class Loader implements LibraryLoader {
     return builtin;
   }
 
-  // used here and in LibraryManager only, also in MemMenu
+  // Used here, in LibraryManager, and in MemMenu.
   public File getCurrentDirectory() {
     File ref = filesOpening.empty() ? mainFile : filesOpening.peek();
     return ref == null ? null : ref.getParentFile();
   }
 
-  File getFileFor(String name, FileFilter filter) throws LoadCanceledByUser {
+  // Used by LibraryManager.
+  private File getFileFor(String requestedName, FileFilter filter) throws LoadCanceledByUser {
+    String name = substitutions.getOrDefault(requestedName, requestedName);
+    if (name == null)
+      return null;
+
     // Determine the actual file name.
     File file = new File(name);
     if (!file.isAbsolute()) {
@@ -152,17 +159,43 @@ public class Loader implements LibraryLoader {
       if (currentDirectory != null)
         file = new File(currentDirectory, name);
     }
+    // It doesn't exist. Figure it out from the user.
+    if (!file.canRead() && Main.headless) {
+      String msg = file.exists()
+          ? S.fmt("fileLibraryUnreadableError", name, file.getName())
+          : S.fmt("fileLibraryMissingError", name, file.getName());
+      System.out.println(msg);
+      System.exit(1);
+    }
     while (!file.canRead()) {
-      // It doesn't exist. Figure it out from the user.
-      // todo: allow cancel in first dialog
-      Errors.title("Missing File").show(S.fmt("fileLibraryMissingError", file.getName()));
-      JFileChooser chooser = createChooser();
-      chooser.setFileFilter(filter);
-      chooser.setDialogTitle(S.fmt("fileLibraryMissingTitle", file.getName()));
-      int action = chooser.showDialog(parent, S.get("fileLibraryMissingButton"));
-      if (action != JFileChooser.APPROVE_OPTION)
+      Object[] choices = {
+        S.get("fileLibraryMissingChoiceCancel"),
+        S.get("fileLibraryMissingChoiceSkip"),
+        S.get("fileLibraryMissingChoiceSelect") };
+      String msg = file.exists()
+          ? S.fmt("fileLibraryUnreadableMessage", name, file.getName())
+          : S.fmt("fileLibraryMissingMessage", name, file.getName());
+      int choice = JOptionPane.showOptionDialog(parent,
+          "<html><body><p style='width: 400px;'>" + msg + "</p></body></html>",
+          S.fmt("logisimLoadError", file.getName(), S.get("fileLibraryMissingTitleDetail")),
+          JOptionPane.DEFAULT_OPTION,
+          JOptionPane.ERROR_MESSAGE,
+          null /* icon */,
+          choices,
+          choices[2]);
+      if (choice == 1) {
+        substitutions.put(requestedName, null); // record, so we don't ask again
+        return null;
+      } else if (choice == 2) { 
+        JFileChooser chooser = createChooser();
+        chooser.setFileFilter(filter);
+        chooser.setDialogTitle(S.get("fileLibraryMissingChoiceSelect") + ": " + name);
+        int action = chooser.showDialog(parent, S.get("fileLibraryMissingChoiceOk"));
+        if (action == JFileChooser.APPROVE_OPTION)
+          file = chooser.getSelectedFile();
+      } else {
         throw new LoadCanceledByUser();
-      file = chooser.getSelectedFile();
+      }
     }
     return file;
   }
@@ -171,14 +204,8 @@ public class Loader implements LibraryLoader {
     return mainFile;
   }
 
-  private File getSubstitution(File source) {
-    File ret = substitutions.get(source);
-    return ret == null ? source : ret;
-  }
-
-  Library loadJarFile(File request, String className)
+  Library loadJarFile(File actual, String className)
       throws LoadFailedException {
-    File actual = getSubstitution(request);
     // Up until 2.1.8, this was written to use a URLClassLoader, which
     // worked pretty well, except that the class never releases its file
     // handles. For this reason, with 2.2.0, it's been switched to use
@@ -223,34 +250,37 @@ public class Loader implements LibraryLoader {
     return ret;
   }
 
+  public Library loadJarLibraryWithSubstitutions(String fileName, String className)
+      throws LoadCanceledByUser {
+      File file = getFileFor(fileName, JAR_FILTER);
+      return file == null ? null : loadJarLibrary(file, className);
+  }
+
   public Library loadJarLibrary(File file, String className) {
-    File actual = getSubstitution(file);
-    return LibraryManager.instance.loadJarLibrary(this, actual, className);
+    return LibraryManager.instance.loadJarLibraryStage2(this, file, className);
   }
 
-  //
-  // Library methods
-  //
   public Library loadLibrary(String desc) throws LoadCanceledByUser {
-    return LibraryManager.instance.loadLibrary(this, desc);
+    return LibraryManager.instance.loadLibraryStage2(this, desc);
   }
 
-  //
-  // methods for LibraryManager
-  //
-  LogisimFile loadLogisimFile(File request) throws LoadFailedException {
-    File actual = getSubstitution(request);
-    for (File fileOpening : filesOpening) {
-      if (fileOpening.equals(actual)) {
-        throw new LoadFailedException(
-            S.fmt("logisimCircularError", LogisimFile.toProjectName(actual)));
-      }
-    }
+  // This is used only by Loader.loadLogisimFile(), which calls
+  // LibraryManager.loadLogisimFileStage2(), which calls this.
+  LogisimFile loadLogisimLibraryStage3(File request) throws LoadFailedException, LoadCanceledByUser {
+    return loadLogisimFile(request);
+  }
+
+  private LogisimFile loadLogisimFile(File actual) throws LoadFailedException, LoadCanceledByUser {
+    if (filesOpening.contains(actual))
+      throw new LoadFailedException(
+          S.fmt("logisimCircularError", LogisimFile.toProjectName(actual)));
 
     LogisimFile ret = null;
     filesOpening.push(actual);
     try {
       ret = LogisimFile.load(actual, this);
+    } catch (LoadCanceledByUser e) {
+      throw e;
     } catch (IOException e) {
       throw new LoadFailedException(
             S.fmt("logisimLoadError", LogisimFile.toProjectName(actual), e.toString()));
@@ -262,17 +292,20 @@ public class Loader implements LibraryLoader {
     return ret;
   }
 
-  public Library loadLogisimLibrary(File file) {
-    File actual = getSubstitution(file);
-    LoadedLibrary ret = LibraryManager.instance.loadLogisimLibrary(this, actual);
-    if (ret != null) {
-      LogisimFile retBase = (LogisimFile) ret.getBase();
-      showMessages(retBase);
-    }
-    return ret;
+  public Library loadLogisimLibraryWithSubstitutions(String fileName)
+      throws LoadCanceledByUser {
+    File file = getFileFor(fileName, LOGISIM_FILTER);
+    return file == null ? null : loadLogisimLibrary(file);
   }
 
-  public LogisimFile openLogisimFile(File file) throws LoadFailedException {
+  public Library loadLogisimLibrary(File file) throws LoadCanceledByUser {
+    LoadedLibrary lib = LibraryManager.instance.loadLogisimLibraryStage2(this, file);
+    if (lib != null)
+      showMessages((LogisimFile) lib.getBase());
+    return lib;
+  }
+
+  public LogisimFile openLogisimFile(File file) throws LoadFailedException, LoadCanceledByUser {
       LogisimFile ret = loadLogisimFile(file);
       if (ret == null)
         throw new LoadFailedException("File could not be opened"); // fixme i18n
@@ -281,8 +314,8 @@ public class Loader implements LibraryLoader {
       return ret;
   }
 
-  public LogisimFile openLogisimFile(File file, Map<File, File> substitutions)
-      throws LoadFailedException {
+  public LogisimFile openLogisimFile(File file, Map<String, String> substitutions)
+      throws LoadFailedException, LoadCanceledByUser {
     this.substitutions = substitutions;
     try {
       return openLogisimFile(file);
@@ -322,7 +355,7 @@ public class Loader implements LibraryLoader {
 
   public String vhdlImportChooser(Component window) {
     JFileChooser chooser = createChooser();
-    chooser.setFileFilter(Loader.VHDL_FILTER);
+    chooser.setFileFilter(VHDL_FILTER);
     chooser.setDialogTitle(S.get("hdlOpenDialog"));
     int returnVal = chooser.showOpenDialog(window);
     if (returnVal != JFileChooser.APPROVE_OPTION)

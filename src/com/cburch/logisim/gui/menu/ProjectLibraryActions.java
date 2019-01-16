@@ -43,6 +43,7 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 
+import com.cburch.logisim.file.LoadCanceledByUser;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.file.LogisimFileActions;
@@ -170,9 +171,12 @@ public class ProjectLibraryActions {
     int check = chooser.showOpenDialog(proj.getFrame());
     if (check == JFileChooser.APPROVE_OPTION) {
       File f = chooser.getSelectedFile();
-      Library lib = loader.loadLogisimLibrary(f);
-      if (lib != null) {
-        proj.doAction(LogisimFileActions.loadLibrary(lib));
+      try {
+        Library lib = loader.loadLogisimLibrary(f);
+        if (lib != null)
+          proj.doAction(LogisimFileActions.loadLibrary(lib));
+      } catch (LoadCanceledByUser e) {
+        // eat exception
       }
     }
   }

@@ -81,6 +81,7 @@ public class XmlClipReader extends XmlReader {
 
     HashMap<String, Circuit> circuits = new HashMap<>(); // circuit dependencies
     HashMap<String, VhdlContent> vhdl = new HashMap<>(); // vhdl dependencies
+    HashSet<String> skippedLibraries = new HashSet<>();
     HashMap<String, Library> libraries = new HashMap<>(); // library dependencies
     HashMap<String, Tool> tools = new HashMap<>(); // tools for circuit and vhdl dependencies
     ArrayList<CircuitData> circuitsData = new ArrayList<>(); // data for circuits to be constructed 
@@ -127,17 +128,20 @@ public class XmlClipReader extends XmlReader {
       return null;
     }
 
-    private Library addMissingLibrary(String name) throws XmlReaderException, LoadCanceledByUser {
-      Library lib = libraries.get(name);
-      if (lib != null)
-        return lib;
+    private Library addMissingLibrary(String name) // may be null
+        throws XmlReaderException, LoadCanceledByUser {
+      if (libraries.containsKey(name))
+        return libraries.get(name);
+      if (skippedLibraries.contains(name))
+        return null;
       Element elt = lDep.get(name);
       if (elt == null)
         throw new XmlReaderException(S.fmt("libMissingError", name));
-      lib = parseLibrary(loader, elt);
+      Library lib = parseLibrary(loader, elt); // will be null if skipping lib
       if (lib == null)
-        throw new XmlReaderException(S.fmt("libMissingError", name));
-      libraries.put(name, lib);
+        skippedLibraries.add(name);
+      else
+        libraries.put(name, lib); 
       return lib;
     }
 
@@ -174,8 +178,8 @@ public class XmlClipReader extends XmlReader {
       return tool;
     }
 
-    private Component parseComponent(Element elt)
-    throws XmlReaderException, LoadCanceledByUser {
+    private Component parseComponent(Element elt) // may be null
+        throws XmlReaderException, LoadCanceledByUser {
       boolean isBad = false;
       String name = elt.getAttribute("name");
       if (name == null || name.equals(""))
@@ -185,6 +189,8 @@ public class XmlClipReader extends XmlReader {
       if (lib == null) {
         isBad = true;
         lib = addMissingLibrary(libName);
+        if (lib == null)
+          return null; // skip components from skipped libs
       }
       Tool circTool = lib.getTool(name);
       if (circTool == null) {
@@ -233,11 +239,13 @@ public class XmlClipReader extends XmlReader {
             selectedComponents.add(XmlCircuitReader.parseWire(c));
             break;
           case "comp":
-            selectedComponents.add(parseComponent(c));
+            Component comp = parseComponent(c);
+            if (comp != null) // skip components from skipped libs
+              selectedComponents.add(comp);
             break;
           case "circuit":
             selectedCircuit = parseCircuit(c);
-            // check if the circuit has any missind dependencies
+            // check if the circuit has any missing dependencies
             for (Element cc : XmlIterator.forChildElements(c))
               if (cc.getTagName().equals("comp"))
                 parseComponent(cc);
@@ -246,13 +254,17 @@ public class XmlClipReader extends XmlReader {
             selectedVhdl = parseVhdl(c);
             break;
           case "lib":
-            selectedLibrary = parseLibrary(loader, c);
+            selectedLibrary = parseLibrary(loader, c); // will be null if skipping lib
             break;
           default:
             // do nothing
           }
         }
       }
+
+      if (selectedCircuit == null && selectedVhdl == null &&
+          selectedLibrary == null && selectedComponents.isEmpty())
+        throw new LoadCanceledByUser();
 
       if (badComponents.isEmpty())
         return; // done
@@ -266,6 +278,8 @@ public class XmlClipReader extends XmlReader {
         missing.add("Missing vhdl: " + vhdlName);
       for (String libName : libraries.keySet())
         missing.add("Missing library: " + libraries.get(libName).getDisplayName());
+      for (String libName : skippedLibraries)
+        missing.add("Skipped library: " + libName);
       JList<String> names = new JList<String>((String[])missing.toArray(new String[missing.size()]));
       JScrollPane scroll = new JScrollPane(names);
       String opts[] = new String[] { "Add Missing Dependencies",
@@ -278,6 +292,7 @@ public class XmlClipReader extends XmlReader {
         return; // done
       circuits.clear();
       vhdl.clear();
+      skippedLibraries.clear();
       libraries.clear();
       tools.clear();
       circuitsData.clear();
@@ -323,9 +338,7 @@ public class XmlClipReader extends XmlReader {
         all.append(msg);
         all.append("\n");
       }
-      System.out.println("messages: " + all);
       Errors.title("Clipboard Error").show(all.substring(0, all.length() - 1));
-      System.out.println("done messages");
     }
     return context;
   }

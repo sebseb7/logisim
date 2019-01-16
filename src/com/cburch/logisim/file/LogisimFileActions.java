@@ -272,12 +272,9 @@ public class LogisimFileActions {
   private static class RevertDefaults extends Action {
     private Options oldOpts;
     private ArrayList<Library> libraries = null;
-    private ArrayList<RevertAttributeValue> attrValues;
+    private ArrayList<RevertAttributeValue> attrValues = new ArrayList<>();
 
-    RevertDefaults() {
-      libraries = null;
-      attrValues = new ArrayList<RevertAttributeValue>();
-    }
+    RevertDefaults() { }
 
     private void copyToolAttributes(Library srcLib, Library dstLib) {
       for (Tool srcTool : srcLib.getTools()) {
@@ -312,12 +309,15 @@ public class LogisimFileActions {
           try {
             String desc = LibraryManager.instance.getAbsoluteDescriptor(srcLib);
             dstLib = dst.getLoader().loadLibrary(desc);
+            if (dstLib == null)
+              continue;
             proj.getLogisimFile().addLibrary(dstLib);
             if (libraries == null)
               libraries = new ArrayList<Library>();
             libraries.add(dstLib);
           } catch (LoadCanceledByUser ex) {
             // todo: log
+            continue;
           }
         }
         copyToolAttributes(srcLib, dstLib);

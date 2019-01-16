@@ -71,13 +71,12 @@ class XmlProjectReader extends XmlReader {
 
     ReadProjectContext(LogisimFile f, String path) { super(f, path); }
 
-    Library findLibrary(String libName) throws XmlReaderException {
+    Library findLibrary(String libName) throws XmlReaderException { // may be null
       if (libName == null || libName.equals(""))
         return file;
-      Library lib = libs.get(libName);
-      if (lib != null)
-        return lib;
-      throw new XmlReaderException(S.fmt("libMissingError", libName));
+      if (!libs.containsKey(libName))
+        throw new XmlReaderException(S.fmt("libMissingError", libName));
+      return libs.get(libName); // may be null
     }
 
     private void initMouseMappings(Element elt) {
@@ -86,6 +85,8 @@ class XmlProjectReader extends XmlReader {
         Tool tool;
         try {
           tool = toTool(sub_elt);
+          if (tool == null)
+            continue; // skip mappings for tools from skipped libs
         } catch (XmlReaderException e) {
           addErrors(e, "mapping");
           continue;
@@ -124,6 +125,8 @@ class XmlProjectReader extends XmlReader {
           Tool tool;
           try {
             tool = toTool(sub_elt);
+            if (tool == null)
+              continue; // skip toolbar items for tools from skipped libs
           } catch (XmlReaderException e) {
             addErrors(e, "toolbar");
             continue;
@@ -143,7 +146,7 @@ class XmlProjectReader extends XmlReader {
 
     private Library toLibrary(Element elt) throws LoadCanceledByUser {
       Library lib = parseLibrary(loader, elt);
-      libs.put(elt.getAttribute("name"), lib);
+      libs.put(elt.getAttribute("name"), lib); // will be null if skipping lib
       return lib;
     }
 
@@ -258,16 +261,16 @@ class XmlProjectReader extends XmlReader {
       }
     }
 
-    Tool toTool(Element elt) throws XmlReaderException {
+    Tool toTool(Element elt) throws XmlReaderException { // may be null
       Library lib = findLibrary(elt.getAttribute("lib"));
+      if (lib == null)
+        return null; // skip tools from skipped libs
       String name = elt.getAttribute("name");
-      if (name == null || name.equals("")) {
+      if (name == null || name.equals(""))
         throw new XmlReaderException(S.get("toolNameMissing"));
-      }
       Tool tool = lib.getTool(name);
-      if (tool == null) {
+      if (tool == null)
         throw new XmlReaderException(S.fmt("xmlToolNotFound", name));
-      }
       return tool;
     }
   }

@@ -236,8 +236,7 @@ public class ProjectActions {
           S.get("openAlreadyLoseChangesOption"),
           S.get("openAlreadyNewWindowOption"),
           S.get("openAlreadyCancelOption"), };
-        int result = JOptionPane
-            .showOptionDialog(proj.getFrame(), message,
+        int result = JOptionPane.showOptionDialog(proj.getFrame(), message,
                 S.get("openAlreadyTitle"), 0,
                 JOptionPane.QUESTION_MESSAGE, null, options,
                 options[2]);
@@ -269,6 +268,9 @@ public class ProjectActions {
       } else {
         proj.setLogisimFile(lib);
       }
+    } catch (LoadCanceledByUser ex) {
+      // eat exception
+      return null;
     } catch (LoadFailedException ex) {
       JOptionPane.showMessageDialog(
           parent,
@@ -290,7 +292,7 @@ public class ProjectActions {
   }
 
   public static Project doOpen(SplashScreen monitor, File source,
-      Map<File, File> substitutions) throws LoadFailedException {
+      Map<String, String> substitutions) throws LoadFailedException, LoadCanceledByUser {
     if (monitor != null)
       monitor.setProgress(SplashScreen.FILE_LOAD);
     Loader loader = new Loader(monitor);
@@ -301,8 +303,8 @@ public class ProjectActions {
   }
 
   public static Project doOpenNoWindow(SplashScreen monitor, File source,
-      Map<File, File> substitutions)
-      throws LoadFailedException {
+      Map<String, String> substitutions)
+      throws LoadFailedException, LoadCanceledByUser {
     Loader loader = new Loader(monitor);
     LogisimFile file = loader.openLogisimFile(source);
     return new Project(file);

@@ -44,6 +44,7 @@ import javax.swing.UIManager;
 import javax.swing.UIDefaults;
 
 import com.cburch.logisim.Main;
+import com.cburch.logisim.file.LoadCanceledByUser;
 import com.cburch.logisim.file.LoadFailedException;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.gui.main.Print;
@@ -212,11 +213,9 @@ public class Startup {
       } else if (arg.equals("-list")) {
         ret.headlessList = true;
       } else if (arg.equals("-sub")) {
-        File a = new File(param0);
-        File b = new File(param1);
-        if (ret.substitutions.containsKey(a))
+        if (ret.substitutions.containsKey(param0))
           fail(S.get("argDuplicateSubstitutionError"));
-        ret.substitutions.put(a, b);
+        ret.substitutions.put(param0, param1);
       } else if (arg.equals("-load")) {
         if (ret.loadFile != null)
           fail(S.get("loadMultipleError"));
@@ -400,19 +399,19 @@ public class Startup {
   private File templFile = null;
   private boolean templEmpty = false;
   private boolean templPlain = false;
-  private ArrayList<File> filesToOpen = new ArrayList<File>();
+  private ArrayList<File> filesToOpen = new ArrayList<>();
   private String testVector = null;
   private String circuitToTest = null;
   private boolean exitAfterStartup = false;
   private boolean showSplash;
   private File loadFile;
-  private HashMap<File, File> substitutions = new HashMap<File, File>();
+  private HashMap<String, String> substitutions = new HashMap<>();
   private int ttyFormat = 0;
   // from other sources
   private boolean initialized = false;
   private SplashScreen monitor = null;
 
-  private ArrayList<File> filesToPrint = new ArrayList<File>();
+  private ArrayList<File> filesToPrint = new ArrayList<>();
 
   private Startup() {
     this.showSplash = !Main.headless;
@@ -448,7 +447,7 @@ public class Startup {
     return circuitToTest;
   }
 
-  Map<File, File> getSubstitutions() {
+  Map<String, String> getSubstitutions() {
     return Collections.unmodifiableMap(substitutions);
   }
 
@@ -556,6 +555,8 @@ public class Startup {
             ProjectActions.doOpen(monitor, fileToOpen, substitutions);
           }
           numOpened++;
+        } catch (LoadCanceledByUser ex) {
+          // eat exception
         } catch (LoadFailedException ex) {
           Errors.title(S.get("startupFailTitle")).show(
               S.fmt("startupCantOpenError", fileToOpen.getName()), ex);
@@ -567,8 +568,12 @@ public class Startup {
           monitor = null;
         }
       }
-      if (numOpened == 0)
-        System.exit(1);
+      if (numOpened == 0 && filesToPrint.isEmpty()) {
+        if (exitAfterStartup)
+          System.exit(1);
+        else
+          ProjectActions.doNew((SplashScreen)null);
+      }
     }
 
     for (File fileToPrint : filesToPrint)

@@ -117,11 +117,13 @@ public class LogisimFile extends Library implements LibraryEventSource {
     return new String(first, 0, lineBreak, "UTF-8");
   }
 
-  public static LogisimFile load(File file, Loader loader) throws IOException {
+  public static LogisimFile load(File file, Loader loader) throws IOException, LoadCanceledByUser {
     InputStream in = new FileInputStream(file);
     Throwable firstExcept = null;
     try {
       return loadSub(in, loader, file);
+    } catch (LoadCanceledByUser e) {
+      throw e;
     } catch (Throwable t) {
       firstExcept = t;
     } finally {
@@ -241,9 +243,6 @@ public class LogisimFile extends Library implements LibraryEventSource {
   }
 
 
-  //
-  // listener methods
-  //
   public void addLibraryListener(LibraryListener what) {
     listeners.add(what);
   }

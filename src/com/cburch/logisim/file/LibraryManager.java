@@ -71,7 +71,7 @@ public class LibraryManager {
     }
 
     abstract void setBase(Loader loader, LoadedLibrary lib)
-        throws LoadFailedException;
+        throws LoadFailedException, LoadCanceledByUser;
 
     String toShortDescriptor() {
       return prefix + "#"
@@ -112,7 +112,7 @@ public class LibraryManager {
     }
 
     @Override
-    void setBase(Loader loader, LoadedLibrary lib) throws LoadFailedException {
+    void setBase(Loader loader, LoadedLibrary lib) throws LoadFailedException, LoadCanceledByUser {
       lib.setBase(loader.loadJarFile(absoluteFile, className));
     }
   }
@@ -124,8 +124,8 @@ public class LibraryManager {
     }
 
     @Override
-    void setBase(Loader loader, LoadedLibrary lib) throws LoadFailedException {
-      lib.setBase(loader.loadLogisimFile(absoluteFile));
+    void setBase(Loader loader, LoadedLibrary lib) throws LoadFailedException, LoadCanceledByUser {
+      lib.setBase(loader.loadLogisimLibraryStage3(absoluteFile));
     }
 
   }
@@ -342,7 +342,7 @@ public class LibraryManager {
     return ret;
   }
 
-  public LoadedLibrary loadJarLibrary(Loader loader, File toReadAbsolute,
+  public LoadedLibrary loadJarLibraryStage2(Loader loader, File toReadAbsolute,
       String className) {
     if (!toReadAbsolute.isAbsolute())
       throw new IllegalArgumentException("jar path must be absolute");
@@ -363,7 +363,8 @@ public class LibraryManager {
     return ret;
   }
 
-  public Library loadLibrary(Loader loader, String desc) throws LoadCanceledByUser {
+  // Called only by Loader.loadLibrary()
+  Library loadLibraryStage2(Loader loader, String desc) throws LoadCanceledByUser {
     // It may already be loaded.
     // Otherwise we'll have to decode it.
     int sep = desc.indexOf('#');
@@ -382,27 +383,26 @@ public class LibraryManager {
       }
       return ret;
     } else if (type.equals("file")) {
-      File toRead = loader.getFileFor(name, Loader.LOGISIM_FILTER);
-      return loadLogisimLibrary(loader, toRead);
+      return loader.loadLogisimLibraryWithSubstitutions(name);
     } else if (type.equals("jar")) {
       int sepLoc = name.lastIndexOf('#');
       String fileName = name.substring(0, sepLoc);
       String className = name.substring(sepLoc + 1);
-      File toRead = loader.getFileFor(fileName, Loader.JAR_FILTER);
-      return loadJarLibrary(loader, toRead, className);
+      return loader.loadJarLibraryWithSubstitutions(fileName, className);
     } else {
       Errors.project(loader.getMainFile()).show(S.fmt("fileTypeError", type, desc));
       return null;
     }
   }
 
-  public LoadedLibrary loadLogisimLibrary(Loader loader, File toRead) {
+  // This is used only by Loader.loadLogisimLibrary()
+  LoadedLibrary loadLogisimLibraryStage2(Loader loader, File toRead) throws LoadCanceledByUser {
     LoadedLibrary ret = findKnown(toRead);
     if (ret != null)
       return ret;
 
     try {
-      ret = new LoadedLibrary(loader.loadLogisimFile(toRead));
+      ret = new LoadedLibrary(loader.loadLogisimLibraryStage3(toRead));
     } catch (LoadFailedException e) {
       Errors.project(loader.getMainFile()).show(e.getMessage());
       return null;
@@ -421,6 +421,8 @@ public class LibraryManager {
     } else {
       try {
         descriptor.setBase(loader, lib);
+      } catch (LoadCanceledByUser e) {
+        // eat exception
       } catch (LoadFailedException e) {
         Errors.project(loader.getMainFile()).show(e.getMessage());
       }

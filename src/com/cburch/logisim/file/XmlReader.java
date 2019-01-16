@@ -171,7 +171,7 @@ class XmlReader {
       }
       String name = elt.getAttribute("name");
       String desc = elt.getAttribute("desc");
-      Library lib = loader.loadLibrary(desc);
+      Library lib = loader.loadLibrary(desc); // will be null if skipping lib
       if (lib == null)
         return null;
       for (Element e : XmlIterator.forChildElements(elt, "tool")) {

@@ -42,33 +42,34 @@ import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.analyze.model.TruthTable;
+import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.circuit.Analyze;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.Propagator;
 import com.cburch.logisim.comp.Component;
-import com.cburch.logisim.data.Value;
 import com.cburch.logisim.data.BitWidth;
+import com.cburch.logisim.data.Value;
 import com.cburch.logisim.file.FileStatistics;
+import com.cburch.logisim.file.LoadCanceledByUser;
 import com.cburch.logisim.file.LoadFailedException;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.file.LogisimFile;
+import com.cburch.logisim.gui.hex.HexFile;
+import com.cburch.logisim.gui.main.Canvas;
+import com.cburch.logisim.gui.main.ExportImage;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceState;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.io.Keyboard;
 import com.cburch.logisim.std.io.Tty;
-import com.cburch.logisim.std.memory.Ram;
 import com.cburch.logisim.std.memory.MemContents;
-import com.cburch.logisim.gui.hex.HexFile;
+import com.cburch.logisim.std.memory.Ram;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.util.UniquelyNamedThread;
-import com.cburch.logisim.gui.main.ExportImage;
-import com.cburch.logisim.gui.main.Canvas;
-import com.cburch.logisim.instance.StdAttr;
 
 public class TtyInterface {
 
@@ -303,9 +304,12 @@ public class TtyInterface {
     LogisimFile file;
     try {
       file = loader.openLogisimFile(fileToOpen, args.getSubstitutions());
+    } catch (LoadCanceledByUser e) {
+      logger.error("{}", S.fmt("ttyLoadCanceled", fileToOpen.getName()));
+      System.exit(-1);
+      return;
     } catch (LoadFailedException e) {
       logger.error("{}", S.fmt("ttyLoadError", fileToOpen.getName()));
-
       System.exit(-1);
       return;
     }
