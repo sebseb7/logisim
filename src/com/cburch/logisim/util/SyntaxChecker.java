@@ -45,11 +45,6 @@ public class SyntaxChecker {
     return (variableMatcher.matches() && !forbiddenMatcher.find());
   }
 
-  public static void showNonAcceptableNameMessage() {
-    JOptionPane.showMessageDialog(null,
-        S.get("variableNameNotAcceptable"));
-  }
-
   private static Pattern variablePattern = Pattern.compile("^([a-zA-Z]+\\w*)");
   private static Pattern forbiddenPattern = Pattern.compile("__");
 

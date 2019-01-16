@@ -40,7 +40,6 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.util.SyntaxChecker;
 
 class ProbeAttributes extends AbstractAttributeSet {
   public static ProbeAttributes instance = new ProbeAttributes();
