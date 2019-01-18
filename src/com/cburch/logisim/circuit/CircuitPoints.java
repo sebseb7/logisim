@@ -173,16 +173,14 @@ class CircuitPoints {
     return w;
   }
 
-  List<Wire> getWireSequenceEndingAt(Location loc) {
-    Wire w = getUniqueNonMatchingWireAt(loc, null);
-    if (w == null)
-      return Collections.emptyList();
+  List<Wire> getWireSequenceEndingAt(Wire w, Location loc) {
     LinkedList<Wire> seq = new LinkedList<>();
-    while (w != null) {
+    Wire original = w;
+    do {
       seq.addFirst(w);
       loc = w.getOtherEnd(loc);
       w = getUniqueNonMatchingWireAt(loc, w);
-    }
+    } while (w != null && w != original);
     return seq;
   }
 

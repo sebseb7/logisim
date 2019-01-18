@@ -74,6 +74,7 @@ public final class WiringTool extends Tool {
 
   private Set<Component> toRemove = new HashSet<>();
   private LinkedList<Wire> wires = new LinkedList<>();
+  private List<Wire> candidates = new LinkedList<>();
   private Location origin = Location.ORIGIN;
   private Location anchor = Location.ORIGIN;
   private Location cur = Location.ORIGIN;
@@ -272,6 +273,7 @@ public final class WiringTool extends Tool {
     case KeyEvent.VK_SPACE:
       if (!pending || direction == AIMLESS)
         return;
+      candidates.clear();
       if (anchor.x == cur.x || anchor.y == cur.y) {
         wires.addLast(Wire.create(anchor, cur));
         anchor = cur;
@@ -341,43 +343,71 @@ public final class WiringTool extends Tool {
     Canvas.snapToGrid(e);
     Location p = Location.create(e.getX(), e.getY());
 
-    List<Wire> seq = canvas.getCircuit().getWireSequenceEndingAt(p);
     wires.clear();
     toRemove.clear();
-    toRemove.addAll(seq);
-    int n = seq.size();
-    if (n == 0) {
+    candidates.clear();
+
+    List<Wire> touching = canvas.getCircuit().getWiresTouching(p);
+    if (touching.isEmpty()) {
+      // Case 0: No wires touching this location at all.
       origin = p;
       anchor = p;
       cur = p;
       direction = AIMLESS;
       repairOrigin = true;
       unrepairableEnd = null;
-    } else if (n == 1) {
-      Wire w = seq.get(0);
-      origin = w.getOtherEnd(p);
-      anchor = origin;
-      cur = p;
-      direction = w.isVertical() ? VERTICAL : HORIZONTAL;
-      repairOrigin = false;
-      unrepairableEnd = justBeyondEnd(w, p);
+    } else if (touching.get(0).endsAt(p)) {
+      // Case 1: One or more wires end at this location.
+      if (touching.size() == 1) {
+        // Case 1a: One sequence of wires leading to this location.
+        List<Wire> seq = canvas.getCircuit().getWireSequenceEndingAt(touching.get(0), p);
+        toRemove.addAll(seq);
+        int n = seq.size();
+        if (n == 1) {
+          Wire w = seq.get(0);
+          origin = w.getOtherEnd(p);
+          anchor = origin;
+          cur = p;
+          direction = w.isVertical() ? VERTICAL : HORIZONTAL;
+          repairOrigin = false;
+          unrepairableEnd = justBeyondEnd(w, p);
+        } else {
+          Wire w0 = seq.get(0);
+          Wire w1 = seq.get(1);
+          origin = w0.getOtherEnd(w1);
+          Wire w = seq.get(n-1);
+          anchor = w.getOtherEnd(p);
+          cur = p;
+          direction = w.isVertical() ? VERTICAL : HORIZONTAL;
+          wires.addAll(seq);
+          wires.removeLast();
+          repairOrigin = false;
+          unrepairableEnd = justBeyondEnd(w, p);
+        }
+      } else {
+        // Case 1b: Two or more sequences of wires leading to this location.
+        System.out.println("multi seq");
+        candidates.addAll(touching);
+        origin = p;
+        anchor = p;
+        cur = p;
+        direction = AIMLESS;
+        repairOrigin = false;
+        unrepairableEnd = null;
+      }
     } else {
-      Wire w0 = seq.get(0);
-      Wire w1 = seq.get(1);
-      origin = w0.getOtherEnd(w1);
-      Wire w = seq.get(n-1);
-      anchor = w.getOtherEnd(p);
-      cur = p;
-      direction = w.isVertical() ? VERTICAL : HORIZONTAL;
-      wires.addAll(seq);
-      wires.removeLast();
-      repairOrigin = false;
-      unrepairableEnd = justBeyondEnd(w, p);
+      // Case 2: One or two wires pass through this location.
+      Wire w = touching.get(0);
+      if (w.isVertical() && touching.size() > 1)
+        w = touching.get(1); // pick horizontal in case of tie, for consistency
+      System.out.println("todo split wire");
+      return;
     }
-    
-    pending = true;
 
+    pending = true;
     canvas.getProject().repaintCanvas(); // fixme: entire canvas?!
+    return;
+    
   }
 
   private Location justBeyondEnd(Wire w, Location p) {
@@ -411,6 +441,39 @@ public final class WiringTool extends Tool {
     cur = Location.create(newX, newY);
     updateDirection();
 
+    if (wires.isEmpty() && !candidates.isEmpty() && !cur.equals(origin)) {
+      for (Wire w : candidates) {
+        if (!w.contains(cur))
+          continue;
+        // Case 1b, cont: One chosen sequence (out of many) of wires leading to this location.
+        List<Wire> seq = canvas.getCircuit().getWireSequenceEndingAt(w, origin);
+        toRemove.clear();
+        toRemove.addAll(seq);
+        int n = seq.size();
+        if (n == 1) {
+          origin = w.getOtherEnd(origin);
+          anchor = origin;
+          direction = w.isVertical() ? VERTICAL : HORIZONTAL;
+          repairOrigin = false;
+          unrepairableEnd = justBeyondEnd(w, origin);
+        } else {
+          Wire w0 = seq.get(0);
+          Wire w1 = seq.get(1);
+          anchor = w.getOtherEnd(origin);
+          unrepairableEnd = justBeyondEnd(w, origin);
+          origin = w0.getOtherEnd(w1);
+          direction = w.isVertical() ? VERTICAL : HORIZONTAL;
+          wires.addAll(seq);
+          wires.removeLast();
+          repairOrigin = false;
+        }
+        updateDirection();
+        candidates.clear();
+        canvas.getProject().repaintCanvas(); // fixme: entire canvas?!
+        break;
+      }
+    }
+    
     if (anchor.equals(cur) && !wires.isEmpty())
       backup(canvas);
 
@@ -558,6 +621,7 @@ public final class WiringTool extends Tool {
     inCanvas = false;
     wires.clear();
     toRemove.clear();
+    candidates.clear();
     origin = Location.ORIGIN;
     anchor = Location.ORIGIN;
     cur = Location.ORIGIN;

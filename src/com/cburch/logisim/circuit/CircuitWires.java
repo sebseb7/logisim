@@ -35,6 +35,7 @@ import java.awt.Graphics2D;
 import java.awt.Stroke;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -700,6 +701,18 @@ class CircuitWires {
 
   Set<Wire> getWires() {
     return wires;
+  }
+
+  List<Wire> getWiresTouching(Location loc) {
+    ArrayList<Wire> list = null;
+    for (Wire w : wires) {
+      if (!w.contains(loc))
+        continue;
+      if (list == null)
+        list = new ArrayList<Wire>();
+      list.add(w);
+    }
+    return list == null ? Collections.emptyList() : list;
   }
 
   WireSet getWireSet(Wire start) {
