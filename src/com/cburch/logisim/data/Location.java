@@ -82,9 +82,7 @@ public class Location implements Comparable<Location> {
   private static final Cache cache = new Cache();
   private final int hashCode;
 
-  private final int x;
-
-  private final int y;
+  public final int x, y;
 
   private Location(int hashCode, int x, int y) {
     this.hashCode = hashCode;
@@ -105,6 +103,10 @@ public class Location implements Comparable<Location> {
       return false;
     Location other = (Location) other_obj;
     return this.x == other.x && this.y == other.y;
+  }
+
+  public boolean equals(int x, int y) {
+    return this.x == x && this.y == y;
   }
 
   public int getX() {
@@ -219,4 +221,6 @@ public class Location implements Comparable<Location> {
   public static <T extends At> void sortVertical(List<T> list) {
     Collections.sort(list, CompareVertical);
   }
+
+  public static final Location ORIGIN = Location.create(0, 0);
 }

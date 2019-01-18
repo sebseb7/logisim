@@ -747,19 +747,16 @@ class XmlProjectReader extends XmlReader {
   }
 
   private void considerRepairs(Document doc, Element root) {
-    LogisimVersion version = LogisimVersion.parse(root
-        .getAttribute("source"));
+    LogisimVersion version = LogisimVersion.parse(root.getAttribute("source"));
     if (version.compareTo(LogisimVersion.get(2, 3, 0)) < 0) {
       // This file was saved before an Edit tool existed. Most likely
       // we should replace the Select and Wiring tools in the toolbar
       // with the Edit tool instead.
-      for (Element toolbar : XmlIterator
-          .forChildElements(root, "toolbar")) {
+      for (Element toolbar : XmlIterator.forChildElements(root, "toolbar")) {
         Element wiring = null;
         Element select = null;
         Element edit = null;
-        for (Element elt : XmlIterator
-            .forChildElements(toolbar, "tool")) {
+        for (Element elt : XmlIterator.forChildElements(toolbar, "tool")) {
           String eltName = elt.getAttribute("name");
           if (eltName != null && !eltName.equals("")) {
             if (eltName.equals("Select Tool"))
@@ -777,8 +774,7 @@ class XmlProjectReader extends XmlReader {
       }
     }
     if (version.compareTo(LogisimVersion.get(2, 6, 3)) < 0) {
-      for (Element circElt : XmlIterator
-          .forChildElements(root, "circuit")) {
+      for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
         for (Element attrElt : XmlIterator.forChildElements(circElt, "a")) {
           String name = attrElt.getAttribute("name");
           if (name != null && name.startsWith("label")) {

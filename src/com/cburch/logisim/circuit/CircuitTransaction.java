@@ -88,8 +88,7 @@ public abstract class CircuitTransaction {
 
       // Now go through each affected circuit and repair its wires
       for (Circuit circuit : modified) {
-        CircuitMutatorImpl circMutator = circuit.getLocker()
-            .getMutator();
+        CircuitMutatorImpl circMutator = circuit.getLocker().getMutator();
         if (circMutator == mutator) {
           WireRepair repair = new WireRepair(circuit);
           repair.run(mutator);

@@ -97,14 +97,13 @@ public final class Wire
 
   private static final Cache cache = new Cache();
 
-  final Location e0;
-  final Location e1;
+  final Location e0, e1;
   final boolean is_x_equal;
 
   private Wire(Location e0, Location e1) {
-    this.is_x_equal = e0.getX() == e1.getX();
+    this.is_x_equal = e0.x == e1.x;
     if (is_x_equal) {
-      if (e0.getY() > e1.getY()) {
+      if (e0.y > e1.y) {
         this.e0 = e1;
         this.e1 = e0;
       } else {
@@ -112,7 +111,7 @@ public final class Wire
         this.e1 = e1;
       }
     } else {
-      if (e0.getX() > e1.getX()) {
+      if (e0.x > e1.x) {
         this.e0 = e1;
         this.e1 = e0;
       } else {
@@ -133,17 +132,12 @@ public final class Wire
   }
 
   public boolean contains(Location q) {
-    int qx = q.getX();
-    int qy = q.getY();
-    if (is_x_equal) {
-      int wx = e0.getX();
-      return qx >= wx - 2 && qx <= wx + 2 && e0.getY() <= qy
-          && qy <= e1.getY();
-    } else {
-      int wy = e0.getY();
-      return qy >= wy - 2 && qy <= wy + 2 && e0.getX() <= qx
-          && qx <= e1.getX();
-    }
+    if (is_x_equal)
+      return e0.x - 2 <= q.x && q.x <= e1.x + 2
+          && e0.y - 0 <= q.y && q.y <= e1.y + 0;
+    else
+      return e0.x - 0 <= q.x && q.x <= e1.x + 0
+          && e0.y - 2 <= q.y && q.y <= e1.y + 2;
   }
 
   public boolean contains(Location pt, Graphics g) {
@@ -155,7 +149,7 @@ public final class Wire
     Graphics g = context.getGraphics();
     GraphicsUtil.switchToWidth(g, WIDTH);
     g.setColor(state.getValue(e0).getColor());
-    g.drawLine(e0.getX(), e0.getY(), e1.getX(), e1.getY());
+    g.drawLine(e0.x, e0.y, e1.x, e1.y);
   }
 
   public void drawHandles(ComponentDrawContext context) {
@@ -175,14 +169,9 @@ public final class Wire
     return w.e0.equals(this.e0) && w.e1.equals(this.e1);
   }
 
-  //
-  // user interface methods
-  //
   public void expose(ComponentDrawContext context) {
-    java.awt.Component dest = context.getDestination();
-    int x0 = e0.getX();
-    int y0 = e0.getY();
-    dest.repaint(x0 - 5, y0 - 5, e1.getX() - x0 + 10, e1.getY() - y0 + 10);
+    context.getDestination().repaint(e0.x - 5, e0.y - 5,
+        e1.x - e0.x + 10, e1.y - e0.y + 10);
   }
 
   public AttributeSet getAttributeSet() {
@@ -190,10 +179,8 @@ public final class Wire
   }
 
   public Bounds getBounds() {
-    int x0 = e0.getX();
-    int y0 = e0.getY();
-    return Bounds.create(x0 - 2, y0 - 2, e1.getX() - x0 + 5, e1.getY() - y0
-        + 5);
+    return Bounds.create(e0.x - 2, e0.y - 2,
+        e1.x - e0.x + 5, e1.y - e0.y + 5);
   }
 
   public Bounds getBounds(Graphics g) {
@@ -205,11 +192,11 @@ public final class Wire
     return new EndData(loc, BitWidth.UNKNOWN, EndData.INPUT_OUTPUT);
   }
 
-  public Location getEnd0() {
+  public Location getEnd0() { // top-most or left-most point
     return e0;
   }
 
-  public Location getEnd1() {
+  public Location getEnd1() { // bottom-most or right-most point
     return e1;
   }
 
@@ -217,9 +204,6 @@ public final class Wire
     return index == 0 ? e0 : e1;
   }
 
-  //
-  // propagation methods
-  //
   public List<EndData> getEnds() {
     return new EndList();
   }
@@ -235,7 +219,7 @@ public final class Wire
   }
 
   public int getLength() {
-    return (e1.getY() - e0.getY()) + (e1.getX() - e0.getX());
+    return (e1.y - e0.y) + (e1.x - e0.x);
   }
 
   // location/extent methods
@@ -244,7 +228,11 @@ public final class Wire
   }
 
   public Location getOtherEnd(Location loc) {
-    return (loc.equals(e0) ? e1 : e0);
+    return loc.equals(e0) ? e1 : e0;
+  }
+
+  public Location getOtherEnd(Wire other) {
+    return other.endsAt(e0) ? e1 : e0;
   }
 
   @Override
@@ -292,30 +280,22 @@ public final class Wire
     return new WireIterator(e0, e1);
   }
 
-  private boolean overlaps(Location q0, Location q1, boolean includeEnds) {
+  public boolean overlaps(Wire q, boolean includeEnds) {
+    if (is_x_equal != q.is_x_equal)
+      return false;
+    Location q0 = q.e0;
+    Location q1 = q.e1;
     if (is_x_equal) {
-      int x0 = q0.getX();
-      if (x0 != q1.getX() || x0 != e0.getX())
-        return false;
-      if (includeEnds) {
-        return e1.getY() >= q0.getY() && e0.getY() <= q1.getY();
-      } else {
-        return e1.getY() > q0.getY() && e0.getY() < q1.getY();
-      }
+      if (includeEnds)
+        return e1.y >= q0.y && e0.y <= q1.y;
+      else
+        return e1.y > q0.y && e0.y < q1.y;
     } else {
-      int y0 = q0.getY();
-      if (y0 != q1.getY() || y0 != e0.getY())
-        return false;
-      if (includeEnds) {
-        return e1.getX() >= q0.getX() && e0.getX() <= q1.getX();
-      } else {
-        return e1.getX() > q0.getX() && e0.getX() < q1.getX();
-      }
+      if (includeEnds)
+        return e1.x >= q0.x && e0.x <= q1.x;
+      else
+        return e1.x > q0.x && e0.x < q1.x;
     }
-  }
-
-  public boolean overlaps(Wire other, boolean includeEnds) {
-    return overlaps(other.e0, other.e1, includeEnds);
   }
 
   public void propagate(CircuitState state) {

@@ -666,6 +666,10 @@ public class Circuit implements AttributeDefaultProvider {
     return wires.points.getWires(loc);
   }
 
+  public List<Wire> getWireSequenceEndingAt(Location loc) {
+    return wires.points.getWireSequenceEndingAt(loc);
+  }
+
   public WireSet getWireSet(Wire start) {
     return wires.getWireSet(start);
   }

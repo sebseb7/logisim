@@ -202,9 +202,6 @@ class CircuitWires {
   CircuitWires() {
   }
 
-  //
-  // action methods
-  //
   // NOTE: this could be made much more efficient in most cases to
   // avoid voiding the bundle map.
   /*synchronized*/ boolean add(Component comp) {

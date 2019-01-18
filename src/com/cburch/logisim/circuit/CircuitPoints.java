@@ -35,6 +35,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import com.cburch.logisim.comp.Component;
@@ -151,6 +153,37 @@ class CircuitPoints {
       }
     }
     return Arrays.asList(ret);
+  }
+
+  private Wire getUniqueNonMatchingWireAt(Location loc, Wire other) {
+    LocationData locData = map.get(loc);
+    if (locData == null)
+      return null;
+    Wire w = null;
+    for (Component o : locData.components) {
+      if (o instanceof Wire) {
+        if (o == other)
+          continue; // skip matching wire
+        else if (w == null)
+          w = (Wire)o; // found a first non-matching wire
+        else
+          return null; // found a second non-matching wire
+      }
+    }
+    return w;
+  }
+
+  List<Wire> getWireSequenceEndingAt(Location loc) {
+    Wire w = getUniqueNonMatchingWireAt(loc, null);
+    if (w == null)
+      return Collections.emptyList();
+    LinkedList<Wire> seq = new LinkedList<>();
+    while (w != null) {
+      seq.addFirst(w);
+      loc = w.getOtherEnd(loc);
+      w = getUniqueNonMatchingWireAt(loc, w);
+    }
+    return seq;
   }
 
   int getComponentCount(Location loc) {
