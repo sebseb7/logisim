@@ -57,7 +57,6 @@ import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.Icons;
-import com.cburch.logisim.util.StringGetter;
 
 public final class WiringTool extends Tool {
   private static Cursor cursor = Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
@@ -74,7 +73,9 @@ public final class WiringTool extends Tool {
 
   private Set<Component> toRemove = new HashSet<>();
   private LinkedList<Wire> wires = new LinkedList<>();
+  private Wire extraWireFromSplitting = null;
   private List<Wire> candidates = new LinkedList<>();
+  private boolean splitCandidate = false;
   private Location origin = Location.ORIGIN;
   private Location anchor = Location.ORIGIN;
   private Location cur = Location.ORIGIN;
@@ -178,6 +179,11 @@ public final class WiringTool extends Tool {
 
       g.setColor(Color.BLACK);
       GraphicsUtil.switchToWidth(g, 3);
+      if (extraWireFromSplitting != null) {
+        Location a = extraWireFromSplitting.getEnd0();
+        Location b = extraWireFromSplitting.getEnd1();
+        g.drawLine(a.x, a.y, b.x, b.y);
+      }
       for (Wire w : wires) {
         Location a = w.getEnd0();
         Location b = w.getEnd1();
@@ -274,6 +280,7 @@ public final class WiringTool extends Tool {
       if (!pending || direction == AIMLESS)
         return;
       candidates.clear();
+      extraWireFromSplitting = null;
       if (anchor.x == cur.x || anchor.y == cur.y) {
         wires.addLast(Wire.create(anchor, cur));
         anchor = cur;
@@ -293,7 +300,7 @@ public final class WiringTool extends Tool {
     case KeyEvent.VK_ESCAPE:
       if (pending) {
         reset();
-        canvas.getProject().repaintCanvas(); // fixme: entire canvas?!
+        canvas.getProject().repaintCanvas();
       }
       break;
     }
@@ -302,13 +309,13 @@ public final class WiringTool extends Tool {
   @Override
   public void mouseEntered(Canvas canvas, Graphics g, MouseEvent e) {
     inCanvas = true;
-    canvas.getProject().repaintCanvas(); // fixme: entire canvas?!
+    canvas.getProject().repaintCanvas();
   }
 
   @Override
   public void mouseExited(Canvas canvas, Graphics g, MouseEvent e) {
     inCanvas = false;
-    canvas.getProject().repaintCanvas(); // fixme: entire canvas?!
+    canvas.getProject().repaintCanvas();
   }
 
   @Override
@@ -322,8 +329,9 @@ public final class WiringTool extends Tool {
     int newX = e.getX();
     int newY = e.getY();
     if (!cur.equals(newX, newY)) {
+      canvas.repaint(cur.x - 5, cur.y - 5, 10, 10);
       cur = Location.create(newX, newY);
-      canvas.getProject().repaintCanvas(); // fixme: entire canvas?!
+      canvas.repaint(cur.x - 5, cur.y - 5, 10, 10);
     }
   }
 
@@ -346,6 +354,7 @@ public final class WiringTool extends Tool {
     wires.clear();
     toRemove.clear();
     candidates.clear();
+    extraWireFromSplitting = null;
 
     List<Wire> touching = canvas.getCircuit().getWiresTouching(p);
     if (touching.isEmpty()) {
@@ -370,7 +379,7 @@ public final class WiringTool extends Tool {
           cur = p;
           direction = w.isVertical() ? VERTICAL : HORIZONTAL;
           repairOrigin = false;
-          unrepairableEnd = justBeyondEnd(w, p);
+          unrepairableEnd = repel(w.getOtherEnd(p), p);
         } else {
           Wire w0 = seq.get(0);
           Wire w1 = seq.get(1);
@@ -382,12 +391,12 @@ public final class WiringTool extends Tool {
           wires.addAll(seq);
           wires.removeLast();
           repairOrigin = false;
-          unrepairableEnd = justBeyondEnd(w, p);
+          unrepairableEnd = repel(w.getOtherEnd(p), p);
         }
       } else {
         // Case 1b: Two or more sequences of wires leading to this location.
-        System.out.println("multi seq");
         candidates.addAll(touching);
+        splitCandidate = false;
         origin = p;
         anchor = p;
         cur = p;
@@ -397,28 +406,29 @@ public final class WiringTool extends Tool {
       }
     } else {
       // Case 2: One or two wires pass through this location.
-      Wire w = touching.get(0);
-      if (w.isVertical() && touching.size() > 1)
-        w = touching.get(1); // pick horizontal in case of tie, for consistency
-      System.out.println("todo split wire");
-      return;
+      candidates.addAll(touching);
+      splitCandidate = true;
+      origin = p;
+      anchor = p;
+      cur = p;
+      direction = AIMLESS;
+      repairOrigin = false;
+      unrepairableEnd = null;
     }
 
     pending = true;
-    canvas.getProject().repaintCanvas(); // fixme: entire canvas?!
-    return;
-    
+    canvas.getProject().repaintCanvas();
   }
 
-  private Location justBeyondEnd(Wire w, Location p) {
-    if (w.isVertical() && w.getEnd0().equals(p))
-      return Location.create(p.x, p.y-10);
-    else if (w.isVertical())
-      return Location.create(p.x, p.y+10);
-    else if (w.getEnd0().equals(p))
-      return Location.create(p.x-10, p.y);
-    else
+  private Location repel(Location fixed, Location p) {
+    if (fixed.x < p.x)
       return Location.create(p.x+10, p.y);
+    else if (fixed.x > p.x)
+      return Location.create(p.x-10, p.y);
+    else if (fixed.y < p.y)
+      return Location.create(p.x, p.y+10);
+    else
+      return Location.create(p.x, p.y-10);
   }
 
   @Override
@@ -445,31 +455,60 @@ public final class WiringTool extends Tool {
       for (Wire w : candidates) {
         if (!w.contains(cur))
           continue;
-        // Case 1b, cont: One chosen sequence (out of many) of wires leading to this location.
-        List<Wire> seq = canvas.getCircuit().getWireSequenceEndingAt(w, origin);
-        toRemove.clear();
-        toRemove.addAll(seq);
-        int n = seq.size();
-        if (n == 1) {
-          origin = w.getOtherEnd(origin);
-          anchor = origin;
-          direction = w.isVertical() ? VERTICAL : HORIZONTAL;
-          repairOrigin = false;
-          unrepairableEnd = justBeyondEnd(w, origin);
+        extraWireFromSplitting = null;
+        if (!splitCandidate) {
+          // Case 1b, cont: One chosen sequence (out of many) of wires leading to this location.
+          List<Wire> seq = canvas.getCircuit().getWireSequenceEndingAt(w, origin);
+          toRemove.clear();
+          toRemove.addAll(seq);
+          int n = seq.size();
+          if (n == 1) {
+            origin = w.getOtherEnd(origin);
+            anchor = origin;
+            direction = w.isVertical() ? VERTICAL : HORIZONTAL;
+            repairOrigin = false;
+            unrepairableEnd = repel(w.getOtherEnd(origin), origin);
+          } else {
+            Wire w0 = seq.get(0);
+            Wire w1 = seq.get(1);
+            anchor = w.getOtherEnd(origin);
+            unrepairableEnd = repel(anchor, origin);
+            origin = w0.getOtherEnd(w1);
+            direction = w.isVertical() ? VERTICAL : HORIZONTAL;
+            wires.addAll(seq);
+            wires.removeLast();
+            repairOrigin = false;
+          }
         } else {
-          Wire w0 = seq.get(0);
-          Wire w1 = seq.get(1);
-          anchor = w.getOtherEnd(origin);
-          unrepairableEnd = justBeyondEnd(w, origin);
-          origin = w0.getOtherEnd(w1);
-          direction = w.isVertical() ? VERTICAL : HORIZONTAL;
-          wires.addAll(seq);
-          wires.removeLast();
-          repairOrigin = false;
+          // Case 2, cont: Split a wire passing through this location.
+          anchor = (cur.x < origin.x || cur.y < origin.y) ? w.getEnd0() : w.getEnd1();
+          Location other = w.getOtherEnd(anchor);
+          Location splitpt = candidates.size() == 1 ? origin : repel(anchor, origin);
+          if (!other.equals(splitpt))
+            extraWireFromSplitting = Wire.create(splitpt, other);
+          List<Wire> seq = canvas.getCircuit().getWireSequenceEndingAt(w, other);
+          toRemove.clear();
+          toRemove.addAll(seq);
+          int n = seq.size();
+          if (n == 1) {
+            unrepairableEnd = origin;
+            origin = anchor;
+            direction = w.isVertical() ? VERTICAL : HORIZONTAL;
+            repairOrigin = false;
+          } else {
+            Wire w0 = seq.get(0);
+            Wire w1 = seq.get(1);
+            unrepairableEnd = origin;
+            origin = w0.getOtherEnd(w1);
+            direction = w.isVertical() ? VERTICAL : HORIZONTAL;
+            wires.addAll(seq);
+            wires.removeLast();
+            repairOrigin = false;
+          }
         }
         updateDirection();
         candidates.clear();
-        canvas.getProject().repaintCanvas(); // fixme: entire canvas?!
+        canvas.getProject().repaintCanvas();
         break;
       }
     }
@@ -530,6 +569,9 @@ public final class WiringTool extends Tool {
     removals.removeAll(wires);
     wires.removeAll(toRemove);
 
+    if (extraWireFromSplitting != null)
+      wires.add(extraWireFromSplitting);
+
     if (wires.isEmpty() && removals.isEmpty())
       return;
 
@@ -548,7 +590,7 @@ public final class WiringTool extends Tool {
     } else if (wires.size() == 1) {
       Wire w = wires.removeFirst();
       if (!w.endsAt(origin) || !w.endsAt(cur)) {
-        System.out.printf("logic error: w=%s origin=%s cur=%s\n", w, origin, cur);
+        System.err.printf("wire repair error: w=%s origin=%s cur=%s\n", w, origin, cur);
         return;
       }
       if (repairOrigin)
@@ -561,7 +603,7 @@ public final class WiringTool extends Tool {
       Wire w0 = wires.removeFirst();
       Wire wN = wires.removeLast();
       if (!w0.endsAt(origin) || !wN.endsAt(cur)) {
-        System.out.printf("logic error: w0=%s wN=%s origin=%s cur=%s\n", w0, wN, origin, cur);
+        System.err.printf("wire repair error: w0=%s wN=%s origin=%s cur=%s\n", w0, wN, origin, cur);
         return;
       }
       if (repairOrigin)
@@ -622,12 +664,11 @@ public final class WiringTool extends Tool {
     wires.clear();
     toRemove.clear();
     candidates.clear();
+    extraWireFromSplitting = null;
     origin = Location.ORIGIN;
     anchor = Location.ORIGIN;
     cur = Location.ORIGIN;
     direction = AIMLESS;
-    // startedOnWire = false;
-    // shortening = null;
   }
 
   void resetClick() {
