@@ -741,6 +741,7 @@ public class Canvas extends JPanel
   private Object repaintLock = new Object(); // for waitForRepaintDone
 
   public Canvas(Project proj) {
+    setLayout(null);
     this.proj = proj;
     this.selection = new Selection(proj, this);
     this.painter = new CanvasPainter(this);
@@ -1179,4 +1180,5 @@ public class Canvas extends JPanel
     int newy = (int) Math.round(e.getY() / zoom);
     e.translatePoint(newx - oldx, newy - oldy);
   }
+
 }

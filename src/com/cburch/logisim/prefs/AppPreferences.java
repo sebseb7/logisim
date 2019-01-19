@@ -468,4 +468,7 @@ public class AppPreferences {
 
   public static final PrefMonitor<String>
       DIALOG_DIRECTORY = new PrefMonitor("dialogDirectory", "");
+
+  public static final PrefMonitor<Integer>
+      WIRING_TOOL_TIP = new PrefMonitor("wiringToolTip", 3);
 }

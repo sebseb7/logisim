@@ -96,9 +96,8 @@ public final class PokeTool extends Tool {
       if (radix1 == null)
         radix1 = RadixOption.RADIX_2;
       String vStr = radix1.toString(v);
-      if (radix2 != null && v.getWidth() > 1) {
+      if (radix2 != null && v.getWidth() > 1)
         vStr += " / " + radix2.toString(v);
-      }
 
       FontMetrics fm = g.getFontMetrics();
       g.setColor(caretColor);
@@ -281,7 +280,7 @@ public final class PokeTool extends Tool {
     if (toolIcon != null) {
       toolIcon.paintIcon(c.getDestination(), g, x + 2, y + 2);
     } else {
-      g.setColor(java.awt.Color.black);
+      g.setColor(Color.BLACK);
       g.drawLine(x + 4, y + 2, x + 4, y + 17);
       g.drawLine(x + 4, y + 17, x + 1, y + 11);
       g.drawLine(x + 4, y + 17, x + 7, y + 11);

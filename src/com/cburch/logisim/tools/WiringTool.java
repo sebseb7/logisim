@@ -37,6 +37,7 @@ import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -50,6 +51,7 @@ import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.gui.generic.Callout;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Action;
@@ -247,6 +249,7 @@ public final class WiringTool extends Tool {
     case KeyEvent.VK_SPACE:
       if (!pending || direction == AIMLESS)
         return;
+      hintCount = 35;
       candidates.clear();
       extraWireFromSplitting = null;
       if (anchor.x == cur.x || anchor.y == cur.y) {
@@ -263,6 +266,7 @@ public final class WiringTool extends Tool {
     case KeyEvent.VK_BACK_SPACE:
       if (!pending || wires.isEmpty())
         return;
+      hintCount = 35;
       backup(canvas);
       break;
     case KeyEvent.VK_ESCAPE:
@@ -419,6 +423,9 @@ public final class WiringTool extends Tool {
     cur = Location.create(newX, newY);
     updateDirection();
 
+    if (Math.abs(cur.x - anchor.x) > 40 && Math.abs(cur.y - anchor.y) > 40)
+      displayHint(canvas, cornerPoint());
+
     if (wires.isEmpty() && !candidates.isEmpty() && !cur.equals(origin)) {
       for (Wire w : candidates) {
         if (!w.contains(cur))
@@ -489,6 +496,7 @@ public final class WiringTool extends Tool {
 
   @Override
   public void mouseReleased(Canvas canvas, Graphics g, MouseEvent e) {
+    hideHint();
     if (!pending)
       return;
     pending = false;
@@ -608,4 +616,45 @@ public final class WiringTool extends Tool {
     reset();
   }
 
+  private Callout tip = null;
+  private boolean doneTip = false;
+
+  private void hideHint() {
+    doneTip = false;
+    if (tip == null)
+      return;
+    tip.hide();
+    tip = null;
+  }
+
+  private static int hintCount = 0;
+
+  private void displayHint(Canvas canvas, Location p) {
+    if (doneTip) // once per wiring event
+      return;
+    doneTip = true;
+    // hint on wiring events 15 20 25 30 35, 
+    if (hintCount > 35)
+      return;
+    hintCount++;
+    int round = AppPreferences.WIRING_TOOL_TIP.get();
+    if (round > 0 && hintCount > 35) {
+      AppPreferences.WIRING_TOOL_TIP.set(round - 1);
+      return;
+    }
+    if (round <= 0 || hintCount < 15 || hintCount % 5 != 0)
+      return;
+
+    tip = new Callout(S.get("wiringTip"));
+    if (p.x >= Math.max(cur.x, anchor.x) && p.y >= Math.max(cur.y, anchor.y))
+      tip.show(canvas, p.x, p.y, Callout.SE, Callout.DURATION);
+    else if (p.x <= Math.min(cur.x, anchor.x) && p.y <= Math.min(cur.y, anchor.y))
+      tip.show(canvas, p.x, p.y, Callout.NW, Callout.DURATION);
+    else if (p.x >= Math.max(cur.x, anchor.x) && p.y <= Math.min(cur.y, anchor.y))
+      tip.show(canvas, p.x, p.y, Callout.NE, Callout.DURATION);
+    else if (p.x <= Math.min(cur.x, anchor.x) && p.y >= Math.max(cur.y, anchor.y))
+      tip.show(canvas, p.x, p.y, Callout.SW, Callout.DURATION);
+    else
+      tip = null;
+  }
 }
