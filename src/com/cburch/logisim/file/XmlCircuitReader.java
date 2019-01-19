@@ -49,6 +49,7 @@ import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
@@ -161,6 +162,8 @@ public class XmlCircuitReader extends CircuitTransaction {
   public static Wire parseWire(Element elt) throws XmlReaderException {
     Location pt0 = parseWireEnd(elt, "from");
     Location pt1 = parseWireEnd(elt, "to");
+    if (pt0.equals(pt1))
+      throw new XmlReaderException(S.get("wireLengthZeroError"));
     return Wire.create(pt0, pt1);
   }
 
@@ -182,6 +185,8 @@ public class XmlCircuitReader extends CircuitTransaction {
       reader.addErrors(e, circData.circuit.getName() + ".static");
     }
 
+    HashMap<Bounds, Component> componentsAt = new HashMap<>();
+    ArrayList<Component> overlapComponents = new ArrayList<>();
     for (Element sub_elt : XmlIterator.forChildElements(elt)) {
       String sub_elt_name = sub_elt.getTagName();
       if (sub_elt_name.equals("comp")) {
@@ -196,7 +201,19 @@ public class XmlCircuitReader extends CircuitTransaction {
             if (comp == null)
               throw new XmlReaderException(S.fmt("compUnknownError", sub_elt.getAttribute("name")));
           }
-          mutator.add(dest, comp);
+          Bounds bds = comp.getBounds();
+          Component conflict = componentsAt.get(bds);
+          if (conflict != null) {
+            // oops... overlapping components...
+            reader.addError(S.fmt("fileComponentOverlapError", 
+                  conflict.getFactory().getName()+conflict.getLocation(),
+                  comp.getFactory().getName()+conflict.getLocation()),
+                  circData.circuit.getName());
+            overlapComponents.add(comp);
+          } else {
+            componentsAt.put(bds, comp);
+            mutator.add(dest, comp);
+          }
         } catch (XmlReaderException e) {
           reader.addErrors(e, circData.circuit.getName() + "."
               + toComponentString(sub_elt));
@@ -209,6 +226,18 @@ public class XmlCircuitReader extends CircuitTransaction {
               + toWireString(sub_elt));
         }
       }
+    }
+    for (Component comp : overlapComponents) {
+      Bounds bds = comp.getBounds();
+      int d = 0;
+      do {
+        d += 10;
+      } while (componentsAt.get(bds.translate(d, d)) != null);
+      Location loc = comp.getLocation().translate(d, d);
+      AttributeSet attrs = (AttributeSet) comp.getAttributeSet().clone();
+      comp = comp.getFactory().createComponent(loc, attrs);
+      componentsAt.put(comp.getBounds(), comp);
+      mutator.add(dest, comp);
     }
   }
 
