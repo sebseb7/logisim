@@ -479,6 +479,8 @@ public final class SelectTool extends Tool {
           canvas.setErrorMessage(S.getter("cannotModifyError"));
         } else if (proj.getSelection().hasConflictWhenMoved(dx, dy)) {
           canvas.setErrorMessage(S.getter("exclusiveError"));
+        } else if (proj.getSelection().hasOverlapWhenMoved(dx, dy)) {
+          canvas.setErrorMessage(S.getter("overlapError"));
         } else {
           boolean connect = shouldConnect(canvas, e.getModifiersEx());
           drawConnections = false;

@@ -458,6 +458,14 @@ public class AddTool extends Tool {
         return;
       }
 
+      for (Component comp2 : circ.getAllContaining(loc)) {
+        Bounds b = comp2.getBounds();
+        if (b.equals(bds)) {
+          canvas.setErrorMessage(S.getter("overlapError"));
+          return;
+        }
+      }
+
       try {
         CircuitMutation mutation = new CircuitMutation(circ);
         mutation.add(c);

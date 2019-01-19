@@ -197,7 +197,8 @@ class SelectionBase {
       }
 
       if (bds.getX() + dx >= 0 && bds.getY() + dy >= 0
-          && !hasConflictTranslated(components, dx, dy, true)) {
+          && !hasConflictTranslated(components, dx, dy, true)
+          && !hasOverlapTranslated(components, dx, dy, true)) {
         return copyComponents(components, dx, dy);
       }
     }
@@ -288,27 +289,34 @@ class SelectionBase {
     if (circuit == null)
       return false;
     for (Component comp : components) {
-      if (!(comp instanceof Wire)) {
-        for (EndData endData : comp.getEnds()) {
-          if (endData != null && endData.isExclusive()) {
-            Location endLoc = endData.getLocation().translate(dx,
-                dy);
-            Component conflict = circuit.getExclusive(endLoc);
-            if (conflict != null) {
-              if (selfConflicts || !components.contains(conflict))
-                return true;
-            }
-          }
+      if ((comp instanceof Wire))
+        continue;
+      for (EndData endData : comp.getEnds()) {
+        if (endData != null && endData.isExclusive()) {
+          Location endLoc = endData.getLocation().translate(dx, dy);
+          Component conflict = circuit.getExclusive(endLoc);
+          if (conflict != null && (selfConflicts || !components.contains(conflict)))
+            return true;
         }
-        Location newLoc = comp.getLocation().translate(dx, dy);
-        Bounds newBounds = comp.getBounds().translate(dx, dy);
-        for (Component comp2 : circuit.getAllContaining(newLoc)) {
-          Bounds bds = comp2.getBounds();
-          if (bds.equals(newBounds)) {
-            if (selfConflicts || !components.contains(comp2))
-              return true;
-          }
-        }
+      }
+    }
+    return false;
+  }
+
+  private boolean hasOverlapTranslated(Collection<Component> components,
+      int dx, int dy, boolean selfConflicts) {
+    Circuit circuit = proj.getCurrentCircuit();
+    if (circuit == null)
+      return false;
+    for (Component comp : components) {
+      if ((comp instanceof Wire))
+        continue;
+      Location newLoc = comp.getLocation().translate(dx, dy);
+      Bounds newBounds = comp.getBounds().translate(dx, dy);
+      for (Component comp2 : circuit.getAllContaining(newLoc)) {
+        Bounds bds = comp2.getBounds();
+        if (bds.equals(newBounds) && (selfConflicts || !components.contains(comp2)))
+          return true;
       }
     }
     return false;
@@ -316,6 +324,10 @@ class SelectionBase {
 
   public boolean hasConflictWhenMoved(int dx, int dy) {
     return hasConflictTranslated(unionSet, dx, dy, false);
+  }
+
+  public boolean hasOverlapWhenMoved(int dx, int dy) {
+    return hasOverlapTranslated(unionSet, dx, dy, false);
   }
 
   void pasteHelper(CircuitMutation xn, Collection<Component> comps) {
