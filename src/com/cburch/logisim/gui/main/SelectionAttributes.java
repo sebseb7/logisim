@@ -263,7 +263,7 @@ class SelectionAttributes extends AbstractAttributeSet {
     } else if (selected.isEmpty() && circ != null) {
       // This case is detected in AttrTableSelectionModel.isRowValueEditable(),
       // so we never end up here. We can handle it easy enough anyway.
-      System.out.println("never happens");
+      System.err.println("never happens");
       return circ.getStaticAttributes().isReadOnly(attr);
     } else {
       if (selected.size() > 1 && attr == CircuitAttributes.NAME_ATTR)

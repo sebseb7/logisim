@@ -33,6 +33,7 @@ import static com.cburch.logisim.gui.main.Strings.S;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitAttributes;
+import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSets;
@@ -68,7 +69,7 @@ class AttrTableComponentModel extends AttributeSetTableModel {
   @Override
   public String getTitle() {
     String label = comp.getAttributeSet().getValue(StdAttr.LABEL);
-    Location loc = comp.getLocation();
+    Location loc = comp instanceof Wire ? null : comp.getLocation();
     String s = comp.getFactory().getDisplayName();
     if (label != null && label.length() > 0)
       s += " \"" + label + "\"";
@@ -98,7 +99,7 @@ class AttrTableComponentModel extends AttributeSetTableModel {
         err = S.get("variableNameNotAcceptable");
     }
     if (err != null) {
-      System.out.println("new name err: " + err);
+      System.err.println("new name err: " + err);
       // try { throw new Exception(); } catch (Exception e) { e.printStackTrace(); }
       throw new AttrTableSetException(err);
     }

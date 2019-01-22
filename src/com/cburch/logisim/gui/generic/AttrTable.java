@@ -139,7 +139,7 @@ public class AttrTable extends JPanel implements LocaleListener {
 
     public void fireEditingStopped() {
       ChangeEvent e = new ChangeEvent(AttrTable.this);
-      for (CellEditorListener l : new ArrayList<CellEditorListener>( listeners))
+      for (CellEditorListener l : new ArrayList<CellEditorListener>(listeners))
         l.editingStopped(e);
     }
 
@@ -476,10 +476,8 @@ public class AttrTable extends JPanel implements LocaleListener {
 
     void fireTableChanged() {
       TableModelEvent e = new TableModelEvent(this);
-      for (TableModelListener l : new ArrayList<TableModelListener>(
-            listeners)) {
+      for (TableModelListener l : new ArrayList<TableModelListener>(listeners))
         l.tableChanged(e);
-      }
     }
 
     @Override

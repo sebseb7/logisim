@@ -289,9 +289,6 @@ public class Selection extends SelectionBase {
     return lifted;
   }
 
-  //
-  // query methods
-  //
   public boolean isEmpty() {
     return selected.isEmpty() && lifted.isEmpty();
   }

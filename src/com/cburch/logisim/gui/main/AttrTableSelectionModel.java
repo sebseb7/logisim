@@ -109,12 +109,11 @@ class AttrTableSelectionModel extends AttributeSetTableModel
     }
   }
 
-  //
-  // Selection.Listener methods
   public void selectionChanged(Event event) {
     fireTitleChanged();
     if (!frame.getEditorView().equals(Frame.EDIT_APPEARANCE)) {
       frame.setAttrTableModel(this);
+      fireStructureChanged();
     }
   }
 
@@ -164,4 +163,5 @@ class AttrTableSelectionModel extends AttributeSetTableModel
       project.doAction(act);
     }
   }
+
 }
