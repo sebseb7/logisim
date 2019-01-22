@@ -259,6 +259,10 @@ public class LayoutEditHandler extends EditHandler
 
   @Override
   public void paste() {
+    paste(frame);
+  }
+
+  public static void paste(Frame frame) {
     Project proj = frame.getProject();
     Selection sel = frame.getCanvas().getSelection();
     selectSelectTool(proj);
@@ -300,6 +304,10 @@ public class LayoutEditHandler extends EditHandler
 
   @Override
   public void selectAll() {
+    selectAll(frame);
+  }
+
+  public static void selectAll(Frame frame) {
     Project proj = frame.getProject();
     Selection sel = frame.getCanvas().getSelection();
     selectSelectTool(proj);
@@ -309,7 +317,7 @@ public class LayoutEditHandler extends EditHandler
     proj.repaintCanvas();
   }
 
-  private void selectSelectTool(Project proj) {
+  private static void selectSelectTool(Project proj) {
     for (Library sub : proj.getLogisimFile().getLibraries()) {
       if (sub instanceof Base) {
         Base base = (Base) sub;

@@ -37,6 +37,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -48,10 +50,13 @@ import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.gui.main.Canvas;
+import com.cburch.logisim.gui.main.LayoutClipboard;
+import com.cburch.logisim.gui.main.LayoutEditHandler;
 import com.cburch.logisim.gui.main.Selection;
 import com.cburch.logisim.gui.main.SelectionActions;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.util.StringUtil;
 
 public final class MenuTool extends Tool {
   private static class MenuComponent extends JPopupMenu implements ActionListener {
@@ -59,6 +64,9 @@ public final class MenuTool extends Tool {
     Project proj;
     Circuit circ;
     Component comp;
+    JMenuItem cut = new JMenuItem(S.get("compCutItem"));
+    JMenuItem copy = new JMenuItem(S.get("compCopyItem"));
+    JMenuItem dup = new JMenuItem(S.get("compDuplicateItem"));
     JMenuItem del = new JMenuItem(S.get("compDeleteItem"));
     JMenuItem attrs = new JMenuItem(S.get("compShowAttrItem"));
     JMenuItem rotate = new JMenuItem(S.get("compRotate"));
@@ -69,37 +77,60 @@ public final class MenuTool extends Tool {
       this.comp = comp;
       boolean canChange = proj.getLogisimFile().contains(circ);
 
-      if (comp.getAttributeSet().containsAttribute(StdAttr.FACING)) {
-        add(rotate);
-        rotate.addActionListener(this);
-      }
-
+      add(cut);
+      cut.addActionListener(this);
+      cut.setEnabled(canChange);
+      add(copy);
+      copy.addActionListener(this);
+      copy.setEnabled(canChange);
+      add(dup);
+      dup.addActionListener(this);
+      dup.setEnabled(canChange);
       add(del);
       del.addActionListener(this);
       del.setEnabled(canChange);
+      addSeparator();
+
+      if (comp.getAttributeSet().containsAttribute(StdAttr.FACING)) {
+        add(rotate);
+        rotate.setEnabled(canChange);
+        rotate.addActionListener(this);
+      }
+
       add(attrs);
       attrs.addActionListener(this);
     }
 
     public void actionPerformed(ActionEvent e) {
+      Collection<Component> comps = Collections.singletonList(comp);
       Object src = e.getSource();
-      if (src == del) {
-        Circuit circ = proj.getCurrentCircuit();
-        CircuitMutation xn = new CircuitMutation(circ);
+      if (src == copy) {
+        LayoutClipboard.forComponents.set(proj, comps);
+        return;
+      }
+      CircuitMutation xn = new CircuitMutation(circ);
+      if (src == cut) {
+        LayoutClipboard.forComponents.set(proj, comps);
         xn.remove(comp);
         proj.doAction(xn.toAction(S.getter(
-                "removeComponentAction", comp.getFactory()
-                .getDisplayGetter())));
+                "removeComponentAction", comp.getFactory().getDisplayGetter())));
+      } else if (src == dup) {
+        Map<Component, Component> m = Selection.copyComponents(circ, comps);
+        Component newComp = m.get(comp);
+        xn.add(newComp);
+        proj.doAction(xn.toAction(S.getter(
+                "duplicateComponentAction", comp.getFactory().getDisplayGetter())));
+      } else if (src == del) {
+        xn.remove(comp);
+        proj.doAction(xn.toAction(S.getter(
+                "removeComponentAction", comp.getFactory().getDisplayGetter())));
       } else if (src == attrs) {
         proj.getFrame().viewComponentAttributes(circ, comp);
       } else if (src == rotate) {
-        Circuit circ = proj.getCurrentCircuit();
-        CircuitMutation xn = new CircuitMutation(circ);
         Direction d = comp.getAttributeSet().getValue(StdAttr.FACING);
         xn.set(comp, StdAttr.FACING, d.getRight());
         proj.doAction(xn.toAction(S.getter(
-                "rotateComponentAction", comp.getFactory()
-                .getDisplayGetter())));
+                "rotateComponentAction", comp.getFactory().getDisplayGetter())));
       }
     }
   }
@@ -107,9 +138,11 @@ public final class MenuTool extends Tool {
   private static class MenuSelection extends JPopupMenu implements ActionListener {
     private static final long serialVersionUID = 1L;
     Project proj;
-    JMenuItem del = new JMenuItem(S.get("selDeleteItem"));
     JMenuItem cut = new JMenuItem(S.get("selCutItem"));
     JMenuItem copy = new JMenuItem(S.get("selCopyItem"));
+    JMenuItem dup = new JMenuItem(S.get("selDuplicateItem"));
+    JMenuItem del = new JMenuItem(S.get("selDeleteItem"));
+    JMenuItem rotate = new JMenuItem(S.get("selRotateItem"));
 
     MenuSelection(Project proj) {
       this.proj = proj;
@@ -119,23 +152,91 @@ public final class MenuTool extends Tool {
       cut.setEnabled(canChange);
       add(copy);
       copy.addActionListener(this);
+      add(dup);
+      dup.addActionListener(this);
+      dup.setEnabled(canChange);
       add(del);
       del.addActionListener(this);
       del.setEnabled(canChange);
+
+      for (Component comp : proj.getSelection().getComponents()) {
+        // hmmmm... allow rotate if any allow it, or only if all allow it?
+        // if (comp instanceof Wire)
+        //  continue;
+        if (comp.getAttributeSet().containsAttribute(StdAttr.FACING)) {
+          addSeparator();
+          add(rotate);
+          rotate.addActionListener(this);
+          rotate.setEnabled(canChange);
+          break;
+        }
+      }
     }
 
     public void actionPerformed(ActionEvent e) {
       Object src = e.getSource();
       Selection sel = proj.getSelection();
-      if (src == del) {
-        proj.doAction(SelectionActions.delete(sel));
-      } else if (src == cut) {
+      if (src == cut)
         SelectionActions.doCut(proj, sel);
-      } else if (src == copy) {
+      else if (src == copy)
         SelectionActions.doCopy(proj, sel);
+      else if (src == dup)
+        proj.doAction(SelectionActions.duplicate(sel));
+      else if (src == del)
+        proj.doAction(SelectionActions.delete(sel));
+      else if (src == rotate) {
+        Circuit circ = proj.getCurrentCircuit();
+        CircuitMutation xn = new CircuitMutation(circ);
+        int n = 0;
+        Component singleton = null;
+        for (Component comp : sel.getComponents()) {
+          // hmmmm... allow rotate if any allow it, or only if all allow it?
+          // if (comp instanceof Wire)
+          //  continue;
+          if (comp.getAttributeSet().containsAttribute(StdAttr.FACING)) {
+            singleton = comp;
+            Direction d = comp.getAttributeSet().getValue(StdAttr.FACING);
+            xn.set(comp, StdAttr.FACING, d.getRight());
+            n++;
+          }
+        }
+        proj.doAction(xn.toAction(
+              n == 1
+              ? S.getter("rotateComponentAction", singleton.getFactory().getDisplayGetter())
+              : S.getter("rotateSelectionAction", StringUtil.constantGetter(n))));
       }
     }
+  }
 
+  private static class MenuCircuit extends JPopupMenu implements ActionListener {
+    private static final long serialVersionUID = 1L;
+    Project proj;
+    Circuit circ;
+
+    JMenuItem paste = new JMenuItem(S.get("circuitPasteItem"));
+    JMenuItem all = new JMenuItem(S.get("circuitSelectAllItem"));
+
+    MenuCircuit(Project proj, Circuit circ) {
+      this.proj = proj;
+      this.circ = circ;
+      boolean canChange = proj.getLogisimFile().contains(circ);
+
+      add(paste);
+      paste.addActionListener(this);
+      paste.setEnabled(canChange && !LayoutClipboard.forComponents.isEmpty());
+      addSeparator();
+      add(all);
+      all.addActionListener(this);
+      all.setEnabled(canChange);
+    }
+
+    public void actionPerformed(ActionEvent e) {
+      Object src = e.getSource();
+      if (src == paste)
+        LayoutEditHandler.paste(proj.getFrame());
+      else if (src == all)
+        LayoutEditHandler.selectAll(proj.getFrame());
+    }
   }
 
   private MenuTool() { }
@@ -160,6 +261,14 @@ public final class MenuTool extends Tool {
     return "Menu Tool";
   }
 
+  private JPopupMenu menuFor(Canvas canvas, Component comp) {
+    JPopupMenu menu = new MenuComponent(canvas.getProject(), canvas.getCircuit(), comp);
+    MenuExtender extender = (MenuExtender) comp.getFeature(MenuExtender.class);
+    if (extender != null)
+      extender.configureMenu(menu, canvas.getProject());
+    return menu;
+  }
+
   @Override
   public void mousePressed(Canvas canvas, Graphics g, MouseEvent e) {
     int x = e.getX();
@@ -169,36 +278,21 @@ public final class MenuTool extends Tool {
     JPopupMenu menu;
     Project proj = canvas.getProject();
     Selection sel = proj.getSelection();
-    Collection<Component> in_sel = sel.getComponentsContaining(pt, g);
-    if (!in_sel.isEmpty()) {
-      Component comp = in_sel.iterator().next();
-      if (sel.getComponents().size() > 1) {
-        menu = new MenuSelection(proj);
-      } else {
-        menu = new MenuComponent(proj, canvas.getCircuit(), comp);
-        MenuExtender extender = (MenuExtender) comp
-            .getFeature(MenuExtender.class);
-        if (extender != null)
-          extender.configureMenu(menu, proj);
-      }
+    Collection<Component> selClicked = sel.getComponentsContaining(pt, g);
+    if (!selClicked.isEmpty() && sel.getComponents().size() > 1) {
+      menu = new MenuSelection(proj);
+    } else if (!selClicked.isEmpty()) {
+      menu = menuFor(canvas, selClicked.iterator().next());
     } else {
-      Collection<Component> cl = canvas.getCircuit().getAllContaining(pt,
-          g);
-      if (!cl.isEmpty()) {
-        Component comp = cl.iterator().next();
-        menu = new MenuComponent(proj, canvas.getCircuit(), comp);
-        MenuExtender extender = (MenuExtender) comp
-            .getFeature(MenuExtender.class);
-        if (extender != null)
-          extender.configureMenu(menu, proj);
-      } else {
-        menu = null;
-      }
+      Collection<Component> clicked = canvas.getCircuit().getAllContaining(pt, g);
+      if (!clicked.isEmpty())
+        menu = menuFor(canvas, clicked.iterator().next());
+      else
+        menu = new MenuCircuit(proj, canvas.getCircuit());
     }
 
-    if (menu != null) {
+    if (menu != null)
       canvas.showPopupMenu(menu, x, y);
-    }
   }
 
   @Override

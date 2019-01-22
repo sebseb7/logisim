@@ -36,10 +36,10 @@ import java.awt.FontMetrics;
 import com.cburch.logisim.data.Bounds;
 
 public class StringUtil {
-  public static StringGetter constantGetter(final String value) {
+  public static <T> StringGetter constantGetter(final T value) {
     return new StringGetter() {
       public String toString() {
-        return value;
+        return value.toString();
       }
     };
   }

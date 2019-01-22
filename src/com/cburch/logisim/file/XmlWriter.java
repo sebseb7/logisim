@@ -36,12 +36,12 @@ import java.io.OutputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -410,7 +410,7 @@ public class XmlWriter {
     return ret;
   }
 
-  private void scanSelection(Set<Component> sel,
+  private void scanSelection(Collection<Component> sel,
     HashSet<Library> usedLibs, HashSet<Circuit> usedCircs, HashSet<VhdlContent> usedVhdl) {
     for (Component c : sel) {
       if (c instanceof Wire)
@@ -459,8 +459,8 @@ public class XmlWriter {
 
     if (sel instanceof Circuit)
       scanSelection(((Circuit)sel).getNonWires(), usedLibs, usedCircs, usedVhdl);
-    else if (sel instanceof Set<?>)
-      scanSelection((Set<Component>)sel, usedLibs, usedCircs, usedVhdl);
+    else if (sel instanceof Collection<?>)
+      scanSelection((Collection<Component>)sel, usedLibs, usedCircs, usedVhdl);
     // else: todo: no current way to track vhdl dependencies
 
     for (Library lib : usedLibs) {
@@ -478,9 +478,9 @@ public class XmlWriter {
     } else if (sel instanceof VhdlContent) {
       e.setAttribute("type", "vhdl"); // not used by parser
       e.appendChild(fromVhdl((VhdlContent)sel));
-    } else if (sel instanceof Set<?>) {
+    } else if (sel instanceof Collection<?>) {
       e.setAttribute("type", "components"); // not used by parser
-      Set<Component> csel = (Set<Component>)sel;
+      Collection<Component> csel = (Collection<Component>)sel;
       for (Component c : csel) {
         if (c instanceof Wire)
           e.appendChild(fromWire((Wire)c));

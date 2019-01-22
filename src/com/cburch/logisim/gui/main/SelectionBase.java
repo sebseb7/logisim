@@ -159,11 +159,10 @@ class SelectionBase {
     }
   }
 
-  private HashMap<Component, Component> copyComponents(
+  public static HashMap<Component, Component> copyComponents(Circuit circuit,
       Collection<Component> components) {
     // determine translation offset where we can legally place the clipboard
-    int dx;
-    int dy;
+    int dx, dy;
     Bounds bds = computeBounds(components);
     for (int index = 0;; index++) {
       // compute offset to try: We try points along successively larger
@@ -197,14 +196,14 @@ class SelectionBase {
       }
 
       if (bds.getX() + dx >= 0 && bds.getY() + dy >= 0
-          && !hasConflictTranslated(components, dx, dy, true)
-          && !hasOverlapTranslated(components, dx, dy, true)) {
+          && !hasConflictTranslated(circuit, components, dx, dy, true)
+          && !hasOverlapTranslated(circuit, components, dx, dy, true)) {
         return copyComponents(components, dx, dy);
       }
     }
   }
 
-  private HashMap<Component, Component> copyComponents(
+  private static HashMap<Component, Component> copyComponents(
       Collection<Component> components, int dx, int dy) {
     HashMap<Component, Component> ret = new HashMap<Component, Component>();
     for (Component comp : components) {
@@ -227,9 +226,8 @@ class SelectionBase {
   }
 
   void deleteAllHelper(CircuitMutation xn) {
-    for (Component comp : selected) {
+    for (Component comp : selected)
       xn.remove(comp);
-    }
     selected.clear();
     lifted.clear();
     fireSelectionChanged();
@@ -283,9 +281,8 @@ class SelectionBase {
     return bounds;
   }
 
-  private boolean hasConflictTranslated(Collection<Component> components,
-      int dx, int dy, boolean selfConflicts) {
-    Circuit circuit = proj.getCurrentCircuit();
+  private static boolean hasConflictTranslated(Circuit circuit,
+      Collection<Component> components, int dx, int dy, boolean selfConflicts) {
     if (circuit == null)
       return false;
     for (Component comp : components) {
@@ -303,9 +300,8 @@ class SelectionBase {
     return false;
   }
 
-  private boolean hasOverlapTranslated(Collection<Component> components,
-      int dx, int dy, boolean selfConflicts) {
-    Circuit circuit = proj.getCurrentCircuit();
+  private static boolean hasOverlapTranslated(Circuit circuit,
+      Collection<Component> components, int dx, int dy, boolean selfConflicts) {
     if (circuit == null)
       return false;
     for (Component comp : components) {
@@ -323,17 +319,20 @@ class SelectionBase {
   }
 
   public boolean hasConflictWhenMoved(int dx, int dy) {
-    return hasConflictTranslated(unionSet, dx, dy, false);
+    Circuit circuit = proj.getCurrentCircuit();
+    return hasConflictTranslated(circuit, unionSet, dx, dy, false);
   }
 
   public boolean hasOverlapWhenMoved(int dx, int dy) {
-    return hasOverlapTranslated(unionSet, dx, dy, false);
+    Circuit circuit = proj.getCurrentCircuit();
+    return hasOverlapTranslated(circuit, unionSet, dx, dy, false);
   }
 
   void pasteHelper(CircuitMutation xn, Collection<Component> comps) {
     clear(xn);
 
-    Map<Component, Component> newLifted = copyComponents(comps);
+    Circuit circuit = proj.getCurrentCircuit();
+    Map<Component, Component> newLifted = copyComponents(circuit, comps);
     lifted.addAll(newLifted.values());
     fireSelectionChanged();
   }
