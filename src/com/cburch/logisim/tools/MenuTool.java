@@ -89,9 +89,9 @@ public final class MenuTool extends Tool {
       add(del);
       del.addActionListener(this);
       del.setEnabled(canChange);
-      addSeparator();
 
       if (comp.getAttributeSet().containsAttribute(StdAttr.FACING)) {
+        addSeparator();
         add(rotate);
         rotate.setEnabled(canChange);
         rotate.addActionListener(this);
