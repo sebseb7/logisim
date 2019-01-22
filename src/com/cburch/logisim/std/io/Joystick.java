@@ -35,7 +35,9 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 
+import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -47,6 +49,7 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
+import com.cburch.logisim.std.arith.Comparator;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 
@@ -67,7 +70,8 @@ public class Joystick extends InstanceFactory {
 
     @Override
     public void mouseReleased(InstanceState state, MouseEvent e) {
-      updateState(state, 0, 0);
+      if (state.getAttributeValue(RETURN_TO_CENTER))
+        updateState(state, 0, 0);
     }
 
     @Override
@@ -77,35 +81,26 @@ public class Joystick extends InstanceFactory {
         state = new State(0, 0);
         painter.setData(state);
       }
+      Graphics g = painter.getGraphics();
       Location loc = painter.getLocation();
       int x = loc.getX();
       int y = loc.getY();
-      Graphics g = painter.getGraphics();
-      g.setColor(Color.WHITE);
-      g.fillRect(x - 20, y, 10, 10);
-      GraphicsUtil.switchToWidth(g, 3);
-      g.setColor(Color.BLACK);
       int dx = state.xPos;
       int dy = state.yPos;
-      int x0 = x - 15 + (dx > 5 ? 1 : dx < -5 ? -1 : 0);
-      int y0 = y + 5 + (dy > 5 ? 1 : dy < 0 ? -1 : 0);
-      int x1 = x - 15 + dx;
-      int y1 = y + 5 + dy;
-      g.drawLine(x0, y0, x1, y1);
       Color ballColor = painter.getAttributeValue(Io.ATTR_COLOR);
-      Joystick.drawBall(g, x1, y1, ballColor, true);
+      drawBall(g, x, y, dx, dy, ballColor, true);
     }
 
     private void updateState(InstanceState state, int dx, int dy) {
       State s = (State) state.getData();
-      if (dx < -14)
-        dx = -14;
-      if (dy < -14)
-        dy = -14;
-      if (dx > 14)
-        dx = 14;
-      if (dy > 14)
-        dy = 14;
+      if (dx < -15)
+        dx = -15;
+      if (dy < -15)
+        dy = -15;
+      if (dx > 15)
+        dx = 15;
+      if (dy > 15)
+        dy = 15;
       if (s == null) {
         s = new State(dx, dy);
         state.setData(s);
@@ -136,28 +131,42 @@ public class Joystick extends InstanceFactory {
     }
   }
 
-  private static void drawBall(Graphics g, int x, int y, Color c,
-      boolean inColor) {
-    if (inColor) {
-      g.setColor(c == null ? Color.RED : c);
-    } else {
-      int hue = c == null ? 128 : (c.getRed() + c.getGreen() + c
-          .getBlue()) / 3;
-      g.setColor(new Color(hue, hue, hue));
+  private static void drawBall(Graphics g, int x, int y, int dx, int dy,
+      Color c, boolean inColor) {
+    if (inColor && c == null) {
+      c = Color.RED;
+    } else if (!inColor) {
+      int hue = c == null ? 128 : (c.getRed() + c.getGreen() + c.getBlue()) / 3;
+      c = new Color(hue, hue, hue);
     }
-    GraphicsUtil.switchToWidth(g, 1);
-    g.fillOval(x - 4, y - 4, 8, 8);
+    int x0 = x - 15 + (dx > 5 ? 1 : dx < -5 ? -1 : 0);
+    int y0 = y + 5 + (dy > 5 ? 1 : dy < 0 ? -1 : 0);
+    int x1 = x - 15 + dx;
+    int y1 = y + 5 + dy;
+    g.setColor(Color.WHITE);
+    g.fillRect(x - 20, y, 10, 10);
+    GraphicsUtil.switchToWidth(g, 3);
     g.setColor(Color.BLACK);
-    g.drawOval(x - 4, y - 4, 8, 8);
+    g.drawLine(x0, y0, x1, y1);
+    g.setColor(c);
+    GraphicsUtil.switchToWidth(g, 1);
+    g.fillOval(x1 - 4, y1 - 4, 8, 8);
+    g.setColor(Color.BLACK);
+    g.drawOval(x1 - 4, y1 - 4, 8, 8);
   }
 
-  static final Attribute<BitWidth> ATTR_WIDTH = Attributes.forBitWidth(
-      "bits", S.getter("ioBitWidthAttr"), 2, 5);
+  public static final AttributeOption SIGNED_OPTION = Comparator.SIGNED_OPTION;
+  public static final AttributeOption UNSIGNED_OPTION = Comparator.UNSIGNED_OPTION;
+  public static final Attribute<AttributeOption> MODE_ATTR = Comparator.MODE_ATTRIBUTE;
+  public static final Attribute<Boolean> RETURN_TO_CENTER
+      = Attributes.forBoolean("returnToCenter", S.getter("returnToCenter"));
+  static final Attribute<BitWidth> ATTR_WIDTH
+      = Attributes.forBitWidth("bits", S.getter("ioBitWidthAttr"), 2, 5);
 
   public Joystick() {
     super("Joystick", S.getter("joystickComponent"));
-    setAttributes(new Attribute[] { ATTR_WIDTH, Io.ATTR_COLOR },
-        new Object[] { BitWidth.create(4), Color.RED });
+    setAttributes(new Attribute[] { ATTR_WIDTH, MODE_ATTR, RETURN_TO_CENTER, Io.ATTR_COLOR },
+        new Object[] { BitWidth.create(4), UNSIGNED_OPTION, true, Color.RED });
     setKeyConfigurator(new BitWidthConfigurator(ATTR_WIDTH, 2, 5));
     setOffsetBounds(Bounds.create(-30, -10, 30, 30));
     setIconName("joystick.gif");
@@ -182,7 +191,10 @@ public class Joystick extends InstanceFactory {
     Graphics g = painter.getGraphics();
     g.drawRoundRect(x - 30, y - 10, 30, 30, 8, 8);
     g.drawRoundRect(x - 28, y - 8, 26, 26, 4, 4);
-    drawBall(g, x - 15, y + 5, painter.getAttributeValue(Io.ATTR_COLOR),
+    State state = (State) painter.getData();
+    int dx = state == null ? 0 : state.xPos;
+    int dy = state == null ? 0 : state.yPos;
+    drawBall(g, x, y, dx, dy, painter.getAttributeValue(Io.ATTR_COLOR),
         painter.shouldDrawColor());
     painter.drawPorts();
   }
@@ -190,27 +202,33 @@ public class Joystick extends InstanceFactory {
   @Override
   public void propagate(InstanceState state) {
     BitWidth bits = state.getAttributeValue(ATTR_WIDTH);
-    int dx;
-    int dy;
     State s = (State) state.getData();
-    if (s == null) {
-      dx = 0;
-      dy = 0;
-    } else {
-      dx = s.xPos;
-      dy = s.yPos;
-    }
+    int xpos = s == null ? 0 : s.xPos;
+    int ypos = s == null ? 0 : s.yPos;
 
-    int steps = (1 << bits.getWidth()) - 1;
-    dx = (dx + 14) * steps / 29 + 1;
-    dy = (dy + 14) * steps / 29 + 1;
-    if (bits.getWidth() > 4) {
-      if (dx >= steps / 2)
-        dx++;
-      if (dy >= steps / 2)
-        dy++;
+    // If bitWidth = 2, output =                   [1 (2) 3 ]
+    // If bitWidth = 3, output =               [1 2 3 (4) 5 6 7 ]
+    // If bitWidth = 4, output =       [1 2 3 4 5 6 7 (8) 9 A B C D E F ]
+    // If bitWidth = 5, output = [1 2 3 4 ... 13 14 15 (16) 17 18 19 ... 28 29 30 31 ]
+
+    // If bitWidth = 3, max = 7
+    //   -15 <= pos <= +15
+    //   0 <= (pos + 15) * max <= 30 * max
+    //   0 <= (pos + 15) * max / 31 < max
+    //   1 <= (pos + 15) * max / 31 <= max
+    int max = (1 << bits.getWidth()) - 1;
+    int xout = (xpos + 15) * max / 31 + 1;
+    int yout = (ypos + 15) * max / 31 + 1;
+    if (state.getAttributeValue(MODE_ATTR) == SIGNED_OPTION) {
+      xout -= (max+1)/2;
+      yout -= (max+1)/2;
     }
-    state.setPort(0, Value.createKnown(bits, dx), 1);
-    state.setPort(1, Value.createKnown(bits, dy), 1);
+    state.setPort(0, Value.createKnown(bits, xout), 1);
+    state.setPort(1, Value.createKnown(bits, yout), 1);
+  }
+
+  @Override
+  protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
+    instance.fireInvalidated();
   }
 }
