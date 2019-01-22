@@ -68,7 +68,7 @@ public final class MenuTool extends Tool {
     JMenuItem copy = new JMenuItem(S.get("compCopyItem"));
     JMenuItem dup = new JMenuItem(S.get("compDuplicateItem"));
     JMenuItem del = new JMenuItem(S.get("compDeleteItem"));
-    JMenuItem attrs = new JMenuItem(S.get("compShowAttrItem"));
+    // JMenuItem attrs = new JMenuItem(S.get("compShowAttrItem"));
     JMenuItem rotate = new JMenuItem(S.get("compRotate"));
 
     MenuComponent(Project proj, Circuit circ, Component comp) {
@@ -97,8 +97,8 @@ public final class MenuTool extends Tool {
         rotate.addActionListener(this);
       }
 
-      add(attrs);
-      attrs.addActionListener(this);
+      // add(attrs);
+      // attrs.addActionListener(this);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -124,8 +124,8 @@ public final class MenuTool extends Tool {
         xn.remove(comp);
         proj.doAction(xn.toAction(S.getter(
                 "removeComponentAction", comp.getFactory().getDisplayGetter())));
-      } else if (src == attrs) {
-        proj.getFrame().viewComponentAttributes(circ, comp);
+      // } else if (src == attrs) {
+      //  proj.getFrame().viewComponentAttributes(circ, comp);
       } else if (src == rotate) {
         Direction d = comp.getAttributeSet().getValue(StdAttr.FACING);
         xn.set(comp, StdAttr.FACING, d.getRight());
