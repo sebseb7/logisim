@@ -31,19 +31,25 @@
 package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
+import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.event.MouseEvent;
+import java.awt.event.KeyEvent;
 
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.data.Direction;
+import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
+import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
@@ -81,6 +87,62 @@ public class Random extends InstanceFactory {
     }
   }
 
+  public static class Poker extends InstancePoker {
+    boolean isPressed = true;
+
+    private boolean isInside(InstanceState state, MouseEvent e) {
+      BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
+      int width = (dataWidth == null ? 8 : dataWidth.getWidth());
+      Location loc = state.getInstance().getLocation();
+      int x = loc.getX();
+      int y = loc.getY();
+      if (state.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
+        int side = width <= 16 ? 2 + 20 - 5*((width+3)/4) : 2 ;
+        int top = 1;
+        int bot = width <= 16 ? 20 : 5;
+        return x+side <= e.getX() && e.getX() <= x+40-side
+            && y+top <= e.getY() && e.getY() <= y+40-bot;
+      } else {
+        int side = 2 + 80 - 10*((width+3)/4);
+        int top = 70;
+        int bot = 1;
+        return x+side <= e.getX() && e.getX() <= x+80-side
+            && y+top <= e.getY() && e.getY() <= y+90-bot;
+      }
+    }
+
+    @Override
+    public void mousePressed(InstanceState state, MouseEvent e) {
+      isPressed = isInside(state, e);
+    }
+
+    @Override
+    public void mouseReleased(InstanceState state, MouseEvent e) {
+      if (isPressed && isInside(state, e)) {
+        StateData data = (StateData) state.getData();
+        if (data == null)
+          return;
+        data.step();
+        state.fireInvalidated();
+      }
+      isPressed = false;
+    }
+
+    @Override
+    public void keyTyped(InstanceState state, KeyEvent e) { }
+
+    @Override
+    public void keyPressed(InstanceState state, KeyEvent e) {
+      StateData data = (StateData) state.getData();
+      if (data == null)
+        return;
+      if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+        if (data.reset(state.getAttributeValue(ATTR_SEED)))
+          state.fireInvalidated();
+      }
+    }
+  }
+
   private static class StateData extends ClockState implements InstanceData {
     private final static long multiplier = 0x5DEECE66DL;
     private final static long addend = 0xBL;
@@ -89,14 +151,16 @@ public class Random extends InstanceFactory {
     private long initSeed;
     private long curSeed;
     private int value;
+    private boolean isResetting;
 
     public StateData(Object seed) {
       reset(seed);
     }
 
-    void reset(Object seed) {
-      long start = seed instanceof Integer ? ((Integer) seed).intValue()
-          : 0;
+    boolean reset(Object seed) {
+      if (isResetting)
+        return false;
+      long start = seed instanceof Integer ? ((Integer) seed).intValue() : 0;
       if (start == 0) {
         // Prior to 2.7.0, this would reset to the seed at the time of
         // the StateData's creation. It seems more likely that what
@@ -109,6 +173,12 @@ public class Random extends InstanceFactory {
       this.initSeed = start;
       this.curSeed = start;
       this.value = (int) start;
+      this.isResetting = true;
+      return true;
+    }
+
+    void doneReset() {
+      this.isResetting = false;
     }
 
     void step() {
@@ -121,39 +191,41 @@ public class Random extends InstanceFactory {
 
   static final Attribute<Integer> ATTR_SEED = Attributes.forInteger("seed",
       S.getter("randomSeedAttr"));
+
   static final int OUT = 0;
   static final int CK = 1;
-
   static final int NXT = 2;
-
   static final int RST = 3;
 
   public Random() {
     super("Random", S.getter("randomComponent"));
     setAttributes(new Attribute[] { StdAttr.WIDTH, ATTR_SEED,
-      StdAttr.EDGE_TRIGGER, StdAttr.LABEL, StdAttr.LABEL_FONT },
+      StdAttr.EDGE_TRIGGER, StdAttr.LABEL, StdAttr.LABEL_FONT,
+      StdAttr.APPEARANCE, },
       new Object[] { BitWidth.create(8), Integer.valueOf(0),
-        StdAttr.TRIG_RISING, "", StdAttr.DEFAULT_LABEL_FONT });
+        StdAttr.TRIG_RISING, "", StdAttr.DEFAULT_LABEL_FONT,
+        StdAttr.APPEAR_CLASSIC,});
     setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
 
-    setOffsetBounds(Bounds.create(0, 0, 80, 90));
     setIconName("random.gif");
+    setInstancePoker(Poker.class);
     setInstanceLogger(Logger.class);
-
-    Port[] ps = new Port[4];
-    ps[OUT] = new Port(80, 80, Port.OUTPUT, StdAttr.WIDTH);
-    ps[CK] = new Port(0, 50, Port.INPUT, 1);
-    ps[NXT] = new Port(0, 40, Port.INPUT, 1);
-    ps[RST] = new Port(0, 30, Port.INPUT, 1);
-    ps[OUT].setToolTip(S.getter("randomQTip"));
-    ps[CK].setToolTip(S.getter("randomClockTip"));
-    ps[NXT].setToolTip(S.getter("randomNextTip"));
-    ps[RST].setToolTip(S.getter("randomResetTip"));
-    setPorts(ps);
   }
 
   @Override
+  public Bounds getOffsetBounds(AttributeSet attrs) {
+    if (attrs.getValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
+      return Bounds.create(0, 0, 40, 40);
+    } else {
+      return Bounds.create(0, 0, 80, 90);
+    }
+  }
+
+
+  @Override
   protected void configureNewInstance(Instance instance) {
+    instance.addAttributeListener();
+    updatePorts(instance);
     Bounds bds = instance.getBounds();
     instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, bds.getX()
         + bds.getWidth() / 2, bds.getY() - 3, GraphicsUtil.H_CENTER,
@@ -222,6 +294,66 @@ public class Random extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
+    if (painter.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC)
+      paintInstanceClassic(painter);
+    else
+      paintInstanceEvolution(painter);
+  }
+
+  public void paintInstanceClassic(InstancePainter painter) {
+    Graphics g = painter.getGraphics();
+    Bounds bds = painter.getBounds();
+    StateData state = (StateData) painter.getData();
+    BitWidth widthVal = painter.getAttributeValue(StdAttr.WIDTH);
+    int width = widthVal == null ? 8 : widthVal.getWidth();
+
+    // determine text to draw in label
+    String a;
+    String b = null;
+    if (painter.getShowState()) {
+      int val = state == null ? 0 : state.value;
+      String str = StringUtil.toHexString(width, val);
+      if (str.length() <= 4) {
+        a = str;
+      } else {
+        int split = str.length() - 4;
+        a = str.substring(0, split);
+        b = str.substring(split);
+      }
+    } else {
+      a = S.get("randomLabel");
+      b = S.fmt("randomWidthLabel", "" + widthVal.getWidth());
+    }
+
+    // draw boundary, label
+    painter.drawBounds();
+    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
+    painter.drawLabel();
+
+    // draw input and output ports
+    if (b == null)
+      painter.drawPort(OUT, "Q", Direction.WEST);
+    else
+      painter.drawPort(OUT);
+    g.setColor(Color.GRAY);
+    painter.drawPort(RST, "0", Direction.SOUTH);
+    painter.drawPort(NXT, S.get("memEnableLabel"), Direction.EAST);
+    g.setColor(Color.BLACK);
+    painter.drawClock(CK, Direction.NORTH);
+
+    // draw contents
+    if (b == null) {
+      GraphicsUtil.drawText(g, MemState.FONT, a, bds.getX() + 20, bds.getY() + 4,
+          GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
+    } else {
+      GraphicsUtil.drawText(g, MemState.FONT, a, bds.getX() + 20, bds.getY() + 3,
+          GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
+      GraphicsUtil.drawText(g, MemState.FONT, b, bds.getX() + 20, bds.getY() + 15,
+          GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
+    }
+  }
+
+  public void paintInstanceEvolution(InstancePainter painter) {
     Bounds bds = painter.getBounds();
     int x = bds.getX();
     int y = bds.getY();
@@ -246,15 +378,45 @@ public class Random extends InstanceFactory {
 
     BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
     Object triggerType = state.getAttributeValue(StdAttr.EDGE_TRIGGER);
-    boolean triggered = data.updateClock(state.getPortValue(CK),
-        triggerType);
+    boolean triggered = data.updateClock(state.getPortValue(CK), triggerType);
 
     if (state.getPortValue(RST) == Value.TRUE) {
-      data.reset(state.getAttributeValue(ATTR_SEED));
-    } else if (triggered && state.getPortValue(NXT) != Value.FALSE) {
-      data.step();
+      if (!data.reset(state.getAttributeValue(ATTR_SEED)))
+        return; // avoid oscillation while resetting
+    } else {
+      data.doneReset();
+      if (triggered && state.getPortValue(NXT) != Value.FALSE)
+        data.step();
     }
 
     state.setPort(OUT, Value.createKnown(dataWidth, data.value), 4);
+  }
+
+  private void updatePorts(Instance instance) {
+    Port[] ps = new Port[4];
+    if (instance.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
+      ps[OUT] = new Port(40, 20, Port.OUTPUT, StdAttr.WIDTH);
+      ps[CK] = new Port(10, 40, Port.INPUT, 1);
+      ps[NXT] = new Port(0, 30, Port.INPUT, 1);
+      ps[RST] = new Port(30, 40, Port.INPUT, 1);
+    } else {
+      ps[OUT] = new Port(80, 80, Port.OUTPUT, StdAttr.WIDTH);
+      ps[CK] = new Port(0, 50, Port.INPUT, 1);
+      ps[NXT] = new Port(0, 40, Port.INPUT, 1);
+      ps[RST] = new Port(0, 30, Port.INPUT, 1);
+    }
+    ps[OUT].setToolTip(S.getter("randomQTip"));
+    ps[CK].setToolTip(S.getter("randomClockTip"));
+    ps[NXT].setToolTip(S.getter("randomNextTip"));
+    ps[RST].setToolTip(S.getter("randomResetTip"));
+    instance.setPorts(ps);
+  }
+
+  @Override
+  protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
+    if (attr == StdAttr.APPEARANCE) {
+      instance.recomputeBounds();
+      updatePorts(instance);
+    }
   }
 }
