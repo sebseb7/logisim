@@ -127,7 +127,7 @@ public final class TextTool extends Tool {
       caretCreatingText = false;
       caret = null;
 
-      if (a != null)
+      if (a != null && !a.isEmpty())
         proj.doAction(a);
     }
   }

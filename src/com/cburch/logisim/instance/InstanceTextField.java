@@ -109,11 +109,10 @@ public class InstanceTextField
     return field == null ? Bounds.EMPTY_BOUNDS : field.getBounds(g);
   }
 
-  public Action getCommitAction(Circuit circuit, String oldText,
-      String newText) {
-    SetAttributeAction act = new SetAttributeAction(circuit,
-        S.getter("changeLabelAction"));
-    act.set(comp, labelAttr, newText);
+  public Action getCommitAction(Circuit circuit, String oldText, String newText) {
+    SetAttributeAction act = new SetAttributeAction(circuit, S.getter("changeLabelAction"));
+    if ((oldText == null) != (newText == null) || (newText != null && !newText.equals(oldText)))
+      act.set(comp, labelAttr, newText);
     return act;
   }
 
@@ -147,12 +146,7 @@ public class InstanceTextField
     return labelAttr != null || fontAttr != null;
   }
 
-  public void textChanged(TextFieldEvent e) {
-    String oldText = e.getOldText();
-    String newText = e.getText();
-    if (!newText.equals(oldText))
-      comp.getAttributeSet().setAttr(labelAttr, newText);
-  }
+  public void textChanged(TextFieldEvent e) { }
 
   void update(Attribute<String> labelAttr, Attribute<Font> fontAttr, int x,
       int y, int halign, int valign, boolean multiline) {

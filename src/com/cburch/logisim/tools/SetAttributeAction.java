@@ -92,6 +92,7 @@ public class SetAttributeAction extends Action {
     return nameGetter.toString();
   }
 
+  @Override
   public boolean isEmpty() {
     return comps.isEmpty();
   }

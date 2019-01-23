@@ -41,5 +41,7 @@ public abstract class Action {
 
   public boolean shouldAppendTo(Action other) { return false; }
 
+  public boolean isEmpty() { return false; }
+
   public abstract void undo(Project proj);
 }

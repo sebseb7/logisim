@@ -249,8 +249,7 @@ class CircuitChange {
     case SET:
       return CircuitChange.set(circuit, comp, attr, newValue, oldValue);
     case SET_FOR_CIRCUIT:
-      return CircuitChange.setForCircuit(circuit, attr, newValue,
-          oldValue);
+      return CircuitChange.setForCircuit(circuit, attr, newValue, oldValue);
     case REPLACE:
       return CircuitChange.replace(circuit,
           ((ReplacementMap) newValue).getInverseMap());
@@ -261,5 +260,19 @@ class CircuitChange {
 
   public int getType() {
     return type;
+  }
+
+  public String toString() {
+    switch (type) {
+    case CLEAR: return "CLEAR " + comps.size() + " comps";
+    case ADD: return "ADD " + comp;
+    case ADD_ALL: return "ADD_ALL " + comps.size() + " comps";
+    case REMOVE: return "REMOVE " + comp;
+    case REMOVE_ALL: return "REMOVE_ALL " + comps.size() + " comps";
+    case REPLACE: return "REPLACE ...";
+    case SET: return "SET " + attr + " = " + newValue +" from " + oldValue;
+    case SET_FOR_CIRCUIT: return "SET_FOR_CIRCUIT " + attr + " = " + newValue +" from " + oldValue;
+    default: return "CircuitChange("+type+")";
+    }
   }
 }

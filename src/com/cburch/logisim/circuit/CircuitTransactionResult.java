@@ -56,7 +56,10 @@ public class CircuitTransactionResult {
     String s = "CircuitTransactionResult affecting...";
     for (Circuit c : getModifiedCircuits()) {
       s += "\n    - circuit " + c + " with replacements...";
-      s += "\n" +getReplacementMap(c);
+      s += "\n" + getReplacementMap(c);
+      s += "\n      and changes...";
+      for (CircuitChange cc : mutator.getChangeLogFor(c))
+        s += "\n" + cc;
     }
     return s;
   }

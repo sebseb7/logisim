@@ -94,6 +94,15 @@ class CircuitMutatorImpl implements CircuitMutator {
     return replacements.get(circuit);
   }
 
+  Collection<CircuitChange> getChangeLogFor(Circuit circuit) {
+    ArrayList<CircuitChange> l = new ArrayList<>();
+    for (CircuitChange cc : log) {
+      if (cc.getCircuit() == circuit)
+        l.add(cc);
+    }
+    return l;
+  }
+
   CircuitTransaction getReverseTransaction() {
     CircuitMutation ret = new CircuitMutation();
     ArrayList<CircuitChange> log = this.log;
@@ -154,8 +163,7 @@ class CircuitMutatorImpl implements CircuitMutator {
     }
   }
 
-  public void setForCircuit(Circuit circuit, Attribute<?> attr,
-      Object newValue) {
+  public void setForCircuit(Circuit circuit, Attribute<?> attr, Object newValue) {
     @SuppressWarnings("unchecked")
     Attribute<Object> a = (Attribute<Object>) attr;
     AttributeSet attrs = circuit.getStaticAttributes();

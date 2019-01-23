@@ -75,8 +75,7 @@ public abstract class CircuitTransaction {
       // split
       Collection<Circuit> modified = mutator.getModifiedCircuits();
       for (Circuit circuit : modified) {
-        CircuitMutatorImpl circMutator = circuit.getLocker()
-            .getMutator();
+        CircuitMutatorImpl circMutator = circuit.getLocker().getMutator();
         if (circMutator == mutator) {
           CircuitPins pins = circuit.getAppearance().getCircuitPins();
           ReplacementMap repl = mutator.getReplacementMap(circuit);
