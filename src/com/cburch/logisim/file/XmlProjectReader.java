@@ -823,6 +823,31 @@ class XmlProjectReader extends XmlReader {
         }
       }
     }
+    /*
+    if (version.compareTo(LogisimVersion.get(4, 0, 0)) < 0) {
+      String memLibName = null;
+      for (Element libElt : XmlIterator.forChildElements(root, "lib")) {
+        String desc = libElt.getAttribute("desc");
+        String name = libElt.getAttribute("name");
+        if (name != null && desc != null && desc.equals("#Memory")) {
+          memLibName = name;
+          break;
+        }
+      }
+      for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
+        if (memLibName != null) {
+          for (Element compElt : XmlIterator.forChildElements(circElt, "comp")) {
+            String lib = compElt.getAttribute("lib");
+            String name = compElt.getAttribute("name");
+            if (lib == null || name == null || !lib.equals(memLibName))
+              continue;
+            if (name.equals("Register"))
+              setDefaultAttribute(doc, compElt, "showInTab", "false");
+          }
+        }
+      }
+    }
+    */
   }
 
   private void addBuiltinLibrariesIfMissing(Document doc, Element root) {

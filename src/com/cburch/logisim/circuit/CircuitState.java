@@ -186,14 +186,14 @@ public class CircuitState implements InstanceData {
 
   private CircuitState parentState = null; // parent in tree of CircuitStates
   private Component parentComp = null; // subcircuit component containing this state
-  private HashSet<CircuitState> substates = new HashSet<CircuitState>();
+  private HashSet<CircuitState> substates = new HashSet<>();
 
   private CircuitWires.State wireData = null;
-  private HashMap<Component, Object> componentData = new HashMap<Component, Object>();
-  private Map<Location, Value> values = new HashMap<Location, Value>();
-  private CopyOnWriteArraySet<Component> dirtyComponents = new CopyOnWriteArraySet<Component>();
-  private CopyOnWriteArraySet<Location> dirtyPoints = new CopyOnWriteArraySet<Location>();
-  HashMap<Location, SetData> causes = new HashMap<Location, SetData>();
+  private HashMap<Component, Object> componentData = new HashMap<>();
+  private Map<Location, Value> values = new HashMap<>();
+  private CopyOnWriteArraySet<Component> dirtyComponents = new CopyOnWriteArraySet<>();
+  private CopyOnWriteArraySet<Location> dirtyPoints = new CopyOnWriteArraySet<>();
+  HashMap<Location, SetData> causes = new HashMap<>();
 
   private static int lastId = 0;
   private int id = lastId++;

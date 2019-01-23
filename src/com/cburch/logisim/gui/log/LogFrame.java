@@ -172,7 +172,7 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
   private static final long serialVersionUID = 1L;
   private Simulator curSimulator = null;
   private Model curModel;
-  private Map<CircuitState, Model> modelMap = new HashMap<CircuitState, Model>();
+  private Map<CircuitState, Model> modelMap = new HashMap<>();
   private MyListener myListener = new MyListener();
   private MyChangeListener myChangeListener = new MyChangeListener();
 

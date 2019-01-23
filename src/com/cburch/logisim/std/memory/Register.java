@@ -139,8 +139,8 @@ public class Register extends InstanceFactory implements DynamicElementProvider 
 
   static final int Ysize = 90;
 
-  public static final Attribute<Boolean> ATTR_SHOW_IN_TAB = Attributes
-      .forBoolean("showInTab", S.getter("registerShowInTab"));
+  public static final Attribute<Boolean> ATTR_SHOW_IN_TAB
+      = Attributes.forBoolean("showInTab", S.getter("registerShowInTab"));
 
   public Register() {
     super("Register", S.getter("registerComponent"));
@@ -148,7 +148,7 @@ public class Register extends InstanceFactory implements DynamicElementProvider 
       StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR,
       ATTR_SHOW_IN_TAB, StdAttr.APPEARANCE},
       new Object[] { BitWidth.create(8), StdAttr.TRIG_RISING, "",
-        Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK, false,
+        Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK, true,
         StdAttr.APPEAR_CLASSIC});
     setKeyConfigurator(JoinedConfigurator.create(
           new BitWidthConfigurator(StdAttr.WIDTH),
