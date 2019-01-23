@@ -166,8 +166,6 @@ public class Circuit implements AttributeDefaultProvider {
   private ArrayList<Component> clocks = new ArrayList<Component>();
   private CircuitLocker locker;
 
-  // final static Logger logger = LoggerFactory.getLogger(Circuit.class);
-
   private WeakHashMap<Component, Circuit> circuitsUsingThis;
   private Netlist MyNetList;
   private boolean Annotated;
@@ -692,7 +690,6 @@ public class Circuit implements AttributeDefaultProvider {
   }
 
   void mutatorAdd(Component c) {
-    // logger.debug("mutatorAdd: {}", c);
 
     locker.checkForWritePermission("add", this);
 
@@ -751,7 +748,6 @@ public class Circuit implements AttributeDefaultProvider {
   }
 
   void mutatorRemove(Component c) {
-    //logger.debug("mutatorRemove: {}", c);
 
     locker.checkForWritePermission("remove", this);
 

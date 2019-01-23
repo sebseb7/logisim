@@ -38,17 +38,12 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Socket client to talk to the binder.
  *
  * @author christian.mueller@heig-vd.ch
  */
 public class SocketClient {
-
-  final static Logger logger = LoggerFactory.getLogger(SocketClient.class);
 
   private static ServerSocket server = null;
 
@@ -65,7 +60,7 @@ public class SocketClient {
       try {
         server = new ServerSocket(0);
       } catch (IOException e) {
-        logger.error("Cannot create server socket");
+        System.err.println("Cannot create server socket");
         e.printStackTrace();
         return;
       }
@@ -93,7 +88,7 @@ public class SocketClient {
     try {
       return socket_reader.readLine();
     } catch (Exception e) {
-      logger.error("Cannot read from socket : {}", e.getMessage());
+      System.err.printf("Cannot read from socket : %s\n", e.getMessage());
       return null;
     }
   }
@@ -103,7 +98,7 @@ public class SocketClient {
     try {
       socket_writer.println(message);
     } catch (Exception e) {
-      logger.error("Cannot write {} to socket {}", message,
+      System.err.printf("Cannot write %s to socket %s\n", message,
           e.getMessage());
     }
   }
@@ -123,7 +118,7 @@ public class SocketClient {
       return;
 
     } catch (IOException e) {
-      logger.error("Error at accepting new client");
+      System.err.println("Error at accepting new client");
     }
     connected = false;
   }

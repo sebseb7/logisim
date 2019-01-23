@@ -39,9 +39,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.HashMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cburch.logisim.analyze.model.TruthTable;
 import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.circuit.Analyze;
@@ -140,8 +137,7 @@ public class TtyInterface {
       precision = 0.0000001;
     hertz = (int) (hertz / precision) * precision;
     String hertzStr = hertz == (int) hertz ? "" + (int) hertz : "" + hertz;
-    Object[] paramArray = { S.get("ttySpeedMsg"), hertzStr, tickCount, elapse };
-    logger.info("{}", paramArray);
+    System.out.println(S.fmt("ttySpeedMsg", hertzStr, tickCount, elapse));
   }
 
   private static void displayStatistics(LogisimFile file) {
@@ -305,11 +301,11 @@ public class TtyInterface {
     try {
       file = loader.openLogisimFile(fileToOpen, args.getSubstitutions());
     } catch (LoadCanceledByUser e) {
-      logger.error("{}", S.fmt("ttyLoadCanceled", fileToOpen.getName()));
+      System.out.println(S.fmt("ttyLoadCanceled", fileToOpen.getName()));
       System.exit(-1);
       return;
     } catch (LoadFailedException e) {
-      logger.error("{}", S.fmt("ttyLoadError", fileToOpen.getName()));
+      System.out.println(S.fmt("ttyLoadError", fileToOpen.getName()));
       System.exit(-1);
       return;
     }
@@ -401,11 +397,11 @@ public class TtyInterface {
       try {
         boolean loaded = loadRam(circState, loadfile);
         if (!loaded) {
-          logger.error("{}", S.get("loadNoRamError"));
+          System.out.println(S.get("loadNoRamError"));
           System.exit(-1);
         }
       } catch (IOException e) {
-        logger.error("{}: {}", S.get("loadIoError"), e.toString());
+        System.out.println(S.get("loadIoError") + ": " + e.toString());
         System.exit(-1);
       }
     }
@@ -427,7 +423,7 @@ public class TtyInterface {
       keyboardStates = new ArrayList<InstanceState>();
       boolean ttyFound = prepareForTty(circState, keyboardStates);
       if (!ttyFound) {
-        logger.error("{}", S.get("ttyNoTtyError"));
+        System.out.println(S.get("ttyNoTtyError"));
         System.exit(-1);
       }
       if (keyboardStates.isEmpty()) {
@@ -494,9 +490,9 @@ public class TtyInterface {
       ensureLineTerminated();
     if (showHalt || retCode != 0) {
       if (retCode == 0) {
-        logger.error("{}", S.get("ttyHaltReasonPin"));
+        System.out.println(S.get("ttyHaltReasonPin"));
       } else if (retCode == 1) {
-        logger.error("{}", S.get("ttyHaltReasonOscillation"));
+        System.out.println(S.get("ttyHaltReasonOscillation"));
       }
     }
     if (showSpeed) {
@@ -649,8 +645,6 @@ public class TtyInterface {
     lastIsNewline = c == '\n';
     System.out.print(c); // OK
   }
-
-  final static Logger logger = LoggerFactory.getLogger(TtyInterface.class);
 
   public static final int FORMAT_TABLE = 1;
 

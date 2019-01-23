@@ -30,18 +30,12 @@
 
 package com.cburch.logisim.instance;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.gui.log.Loggable;
 
 class InstanceLoggerAdapter implements Loggable {
-
-  final static Logger loggerS = LoggerFactory
-      .getLogger(InstanceLoggerAdapter.class);
 
   private InstanceComponent comp;
   private InstanceLogger logger;
@@ -55,11 +49,11 @@ class InstanceLoggerAdapter implements Loggable {
       this.state = new InstanceStateImpl(null, comp);
     } catch (Exception t) {
       String className = loggerClass.getName();
-      loggerS.error("Error while instantiating logger {}: {}", className,
+      System.err.printf("Error while instantiating logger %s: %s\n", className,
           t.getClass().getName());
       String msg = t.getMessage();
       if (msg != null)
-        loggerS.error("  ({})", msg); // OK
+        System.err.printf("  (%s)\n", msg); // OK
       logger = null;
     }
   }

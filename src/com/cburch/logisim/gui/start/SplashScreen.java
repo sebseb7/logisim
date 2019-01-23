@@ -44,9 +44,6 @@ import javax.swing.JProgressBar;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class SplashScreen extends JWindow implements ActionListener {
 
   private static class Marker {
@@ -58,8 +55,6 @@ public class SplashScreen extends JWindow implements ActionListener {
       this.message = message;
     }
   }
-
-  final static Logger logger = LoggerFactory.getLogger(SplashScreen.class);
 
   private static final long serialVersionUID = 1L;
   public static final int LIBRARIES = 0;
@@ -135,9 +130,8 @@ public class SplashScreen extends JWindow implements ActionListener {
     inClose = true;
     setVisible(false);
     inClose = false;
-    if (PRINT_TIMES) {
-      logger.info("{} closed", System.currentTimeMillis() - startTime);
-    }
+    if (PRINT_TIMES)
+      System.out.printf("%s closed\n", System.currentTimeMillis() - startTime);
     markers = null;
   }
 
@@ -150,14 +144,12 @@ public class SplashScreen extends JWindow implements ActionListener {
           progress.setValue(marker.count);
         }
       });
-      if (PRINT_TIMES) {
-        logger.info("{} {}", System.currentTimeMillis() - startTime,
+      if (PRINT_TIMES)
+        System.out.printf("%s %s\n", System.currentTimeMillis() - startTime,
             marker.message);
-      }
     } else {
-      if (PRINT_TIMES) {
-        logger.info("{} ??", System.currentTimeMillis() - startTime);
-      }
+      if (PRINT_TIMES)
+        System.out.printf("%s ??\n", System.currentTimeMillis() - startTime);
     }
   }
 

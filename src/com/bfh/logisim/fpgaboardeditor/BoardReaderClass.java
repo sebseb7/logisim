@@ -45,8 +45,6 @@ import javax.swing.JLabel;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -55,9 +53,6 @@ import org.w3c.dom.NodeList;
 import com.cburch.logisim.proj.Projects;
 
 public class BoardReaderClass {
-
-	final static Logger logger = LoggerFactory
-			.getLogger(BoardReaderClass.class);
 
 	private String myfilename;
 	private DocumentBuilderFactory factory;
@@ -188,8 +183,8 @@ public class BoardReaderClass {
 			ProcessComponentList(CompList, result);
 			return result;
 		} catch (Exception e) {
-			logger.error(
-					"Exceptions not handled yet in GetBoardInformation(), but got an exception: {}",
+			System.err.printf(
+					"Exceptions not handled yet in GetBoardInformation(), but got an exception: %s\n",
 					e.getMessage());
 			/* TODO: handle exceptions */
 			return null;

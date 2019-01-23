@@ -35,9 +35,6 @@ import java.util.List;
 
 import javax.swing.Icon;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.util.StringGetter;
@@ -61,9 +58,6 @@ public class FactoryDescription {
     }
     return Arrays.asList(tools);
   }
-
-  final static Logger logger = LoggerFactory
-      .getLogger(FactoryDescription.class);
 
   private String name;
   private StringGetter displayName;
@@ -144,7 +138,7 @@ public class FactoryDescription {
         else
           msg = msg + ": " + name;
       }
-      logger.error("Error while {}", msg);
+      System.err.printf("Error while %s\n", msg);
       factory = null;
       factoryLoadAttempted = true;
       return null;

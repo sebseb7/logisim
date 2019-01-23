@@ -42,9 +42,6 @@ import java.util.Scanner;
 
 import javax.swing.JOptionPane;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cburch.logisim.tools.MessageBox;
 
 /**
@@ -60,8 +57,6 @@ public class TclWrapper {
   public enum TclWrapperState {
     STOPPED, STARTING, RUNNING
   }
-
-  final static Logger logger = LoggerFactory.getLogger(TclWrapper.class);
 
   final private static String TCL_PATH = System.getProperty("java.io.tmpdir")
       + "/logisim/tcl/";
@@ -116,8 +111,7 @@ public class TclWrapper {
             Paths.get(TCL_PATH + "tcl_wrapper.tcl"),
             StandardCopyOption.REPLACE_EXISTING);
       } catch (IOException e) {
-        logger.error("Cannot copy TCL wrapper file : {}",
-            e.getMessage());
+        System.err.printf("Cannot copy TCL wrapper file : %s\n", e.getMessage());
         e.printStackTrace();
       }
       fileExists = true;
@@ -148,8 +142,7 @@ public class TclWrapper {
       process = builder.start();
     } catch (IOException e) {
       e.printStackTrace();
-      logger.error("Cannot run TCL wrapper for TCL console : {}",
-          e.getMessage());
+      System.err.printf("Cannot run TCL wrapper for TCL console : %s\n", e.getMessage());
 
       return;
     }

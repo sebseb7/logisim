@@ -36,9 +36,6 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.data.Attribute;
@@ -66,8 +63,6 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
   public static int SymbolWidth(int NrOfBits) {
     return 150 + ((NrOfBits - 8) / 5) * 10;
   }
-
-  final static Logger logger = LoggerFactory.getLogger(Counter.class);
 
   static final AttributeOption ON_GOAL_WRAP = new AttributeOption("wrap",
       "wrap", S.getter("counterGoalWrap"));
@@ -513,7 +508,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
           } else if (onGoal == ON_GOAL_CONT) {
             newVal = (UpCount) ? oldVal + 1 : oldVal - 1;
           } else {
-            logger.error("Invalid goal attribute {}", onGoal);
+            System.err.printf("Invalid goal attribute %s\n", onGoal);
             newVal = ld ? max : 0;
           }
         } else {

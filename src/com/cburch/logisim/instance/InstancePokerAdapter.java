@@ -34,9 +34,6 @@ import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentUserEvent;
@@ -47,9 +44,6 @@ import com.cburch.logisim.tools.Caret;
 import com.cburch.logisim.tools.Pokable;
 
 class InstancePokerAdapter extends AbstractCaret implements Pokable {
-
-  final static Logger logger = LoggerFactory
-      .getLogger(InstancePokerAdapter.class);
 
   private InstanceComponent comp;
   private Canvas canvas;
@@ -125,11 +119,11 @@ class InstancePokerAdapter extends AbstractCaret implements Pokable {
   private void handleError(Throwable t,
       Class<? extends InstancePoker> pokerClass) {
     String className = pokerClass.getName();
-    logger.error("Error while instantiating poker {}: {}", className, t
-        .getClass().getName());
+    System.err.printf("Error while instantiating poker %s: %s\n", className,
+        t.getClass().getName());
     String msg = t.getMessage();
     if (msg != null)
-      logger.error("  ({})", msg); // OK
+      System.err.printf("  (%s)\n", msg); // OK
   }
 
   @Override

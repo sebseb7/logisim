@@ -46,9 +46,6 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
 import com.cburch.logisim.circuit.Circuit;
@@ -80,8 +77,6 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.draw.model.CanvasObject;
 
 public class VhdlEntity extends InstanceFactory implements HdlModelListener {
-
-  final static Logger logger = LoggerFactory.getLogger(VhdlEntity.class);
 
   public static final Attribute<String> NAME_ATTR = Attributes.forString(
       "vhdlEntity", S.getter("vhdlEntityName"));
@@ -364,11 +359,11 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
       writer.print(content);
       writer.close();
     } catch (FileNotFoundException e) {
-      logger.error("Could not create vhdl file: {}", e.getMessage());
+      System.err.printf("Could not create vhdl file: %s\n", e.getMessage());
       e.printStackTrace();
       return;
     } catch (UnsupportedEncodingException e) {
-      logger.error("Could not create vhdl file: {}", e.getMessage());
+      System.err.printf("Could not create vhdl file: %s\n", e.getMessage());
       e.printStackTrace();
       return;
     }

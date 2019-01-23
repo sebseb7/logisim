@@ -44,9 +44,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import javax.swing.SwingUtilities;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.EndData;
@@ -184,8 +181,6 @@ class CircuitWires {
       return Value.create(ret);
     }
   }
-
-  final static Logger logger = LoggerFactory.getLogger(CircuitWires.class);
 
   // user-given data
   private HashSet<Wire> wires = new HashSet<Wire>();
@@ -611,7 +606,7 @@ class CircuitWires {
         masterBundleMap = ret;
       } catch (Exception t) {
         ret.invalidate();
-        logger.error("{}", t.getLocalizedMessage());
+        System.err.println(t.getLocalizedMessage());
       }
       return ret;
     } else {

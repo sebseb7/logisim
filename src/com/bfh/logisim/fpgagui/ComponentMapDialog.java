@@ -69,8 +69,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -311,9 +309,6 @@ public class ComponentMapDialog implements ActionListener,
 			return Strings.get("XMLFileFilter"); // TODO: language adaptation
 		}
 	}
-
-	final static Logger logger = LoggerFactory
-			.getLogger(ComponentMapDialog.class);
 
 	private JDialog panel;
 	private boolean doneAssignment = false;
@@ -723,8 +718,8 @@ public class ComponentMapDialog implements ActionListener,
 						BoardPic.getHeight());
 			} catch (Exception e) {
 				/* TODO: handle exceptions */
-				logger.error(
-						"Exceptions not handled yet in Load(), but got an exception: {}",
+				System.err.printf(
+						"Exceptions not handled yet in Load(), but got an exception: %s\n",
 						e.getMessage());
 			}
 		}
@@ -829,8 +824,8 @@ public class ComponentMapDialog implements ActionListener,
 				aTransformer.transform(src, dest);
 			} catch (Exception e) {
 				/* TODO: handle exceptions */
-				logger.error(
-						"Exceptions not handled yet in Save(), but got an exception: {}",
+				System.err.printf(
+						"Exceptions not handled yet in Save(), but got an exception: %s\n",
 						e.getMessage());
 			}
 		}

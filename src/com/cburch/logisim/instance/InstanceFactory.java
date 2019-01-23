@@ -37,9 +37,6 @@ import java.util.List;
 
 import javax.swing.Icon;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.AbstractComponentFactory;
@@ -66,8 +63,6 @@ import com.cburch.logisim.util.UnmodifiableList;
  * only one ComponentFactory created for any particular category.
  */
 public abstract class InstanceFactory extends AbstractComponentFactory {
-
-  final static Logger logger = LoggerFactory.getLogger(InstanceFactory.class);
 
   private String name;
   private StringGetter displayName;
@@ -249,19 +244,16 @@ public abstract class InstanceFactory extends AbstractComponentFactory {
   private boolean isClassOk(Class<?> sub, Class<?> sup) {
     boolean isSub = sup.isAssignableFrom(sub);
     if (!isSub) {
-      logger.error("{}  must be a subclass of {}", sub.getName(),
-          sup.getName());
+      System.err.printf("%s must be a subclass of %s\n", sub.getName(), sup.getName());
       return false;
     }
     try {
       sub.getConstructor(new Class[0]);
       return true;
     } catch (SecurityException e) {
-      logger.error("{} needs its no-args constructor to be public",
-          sub.getName());
+      System.err.printf("%s needs its no-args constructor to be public\n", sub.getName());
     } catch (NoSuchMethodException e) {
-      logger.error("{} is missing a no-arguments constructor",
-          sub.getName());
+      System.err.printf("%s is missing a no-arguments constructor\n", sub.getName());
     }
     return true;
   }

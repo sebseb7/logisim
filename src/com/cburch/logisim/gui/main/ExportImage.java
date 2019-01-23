@@ -62,9 +62,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.ComponentDrawContext;
@@ -322,7 +319,7 @@ public class ExportImage {
           S.getter("exportJpgFilter"), new String[] { "jpg",
             "jpeg", "jpe", "jfi", "jfif", "jfi" });
     default:
-      logger.error("Unexpected image format; aborted!");
+      System.err.println("Unexpected image format; aborted!");
       return null;
     }
   }
@@ -410,8 +407,6 @@ public class ExportImage {
         scale, printerView, monitor).start();
 
   }
-
-  final static Logger logger = LoggerFactory.getLogger(ExportImage.class);
 
   private static final int SLIDER_DIVISIONS = 6;
 

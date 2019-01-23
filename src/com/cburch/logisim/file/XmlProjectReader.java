@@ -44,8 +44,6 @@ import java.util.UUID;
 
 import javax.swing.JOptionPane;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -457,7 +455,7 @@ class XmlProjectReader extends XmlReader {
     String label = initialLabel;
 
     if (label.isEmpty()) {
-      logger.warn("Empty label is not a valid VHDL label");
+      System.err.println("Warning: Empty label is not a valid VHDL label");
       label = "L_";
     }
 
@@ -1064,5 +1062,4 @@ class XmlProjectReader extends XmlReader {
     }
   }
 
-  public static final Logger logger = LoggerFactory.getLogger(XmlProjectReader.class);
 }

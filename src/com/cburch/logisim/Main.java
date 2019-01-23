@@ -36,9 +36,6 @@ import java.io.Writer;
 
 import javax.swing.JOptionPane;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cburch.logisim.gui.start.Startup;
 
 public class Main {
@@ -64,8 +61,6 @@ public class Main {
 
   public static boolean headless = false;
   public static boolean MacOS = false;
-
-  final static Logger logger = LoggerFactory.getLogger(Main.class);
 
   public static final LogisimVersion VERSION = LogisimVersion.get(4, 0, 0, "HC"); // candidate
   public static final String VERSION_NAME = VERSION.toString();

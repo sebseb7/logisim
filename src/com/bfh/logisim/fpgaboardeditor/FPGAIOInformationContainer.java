@@ -47,8 +47,6 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -172,9 +170,6 @@ public class FPGAIOInformationContainer {
 		}
 		return result;
 	};
-
-	final static Logger logger = LoggerFactory
-			.getLogger(FPGAIOInformationContainer.class);
 
 	private IOComponentTypes MyType;
 	private long MyIdentifier;
@@ -314,7 +309,7 @@ public class FPGAIOInformationContainer {
 		boolean PinsComplete = true;
 		for (int i = 0; i < NrOfPins; i++) {
 			if (!MyPinLocations.containsKey(i)) {
-				logger.warn("Bizar missing pin {} of component!", i);
+				System.err.printf("Bizar missing pin %s of component!n", i);
 				PinsComplete = false;
 			}
 		}
@@ -440,8 +435,8 @@ public class FPGAIOInformationContainer {
 			return result;
 		} catch (Exception e) {
 			/* TODO: handle exceptions */
-			logger.error(
-					"Exceptions not handled yet in GetDocumentElement(), but got an exception: {}",
+			System.err.printf(
+					"Exceptions not handled yet in GetDocumentElement(), but got an exception: %s\n",
 					e.getMessage());
 		}
 		return null;

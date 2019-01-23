@@ -40,9 +40,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitMutation;
 import com.cburch.logisim.circuit.Wire;
@@ -77,8 +74,6 @@ class SelectionBase {
         ComponentFactory.SHOULD_SNAP, comp.getAttributeSet());
     return shouldSnapValue == null ? true : shouldSnapValue.booleanValue();
   }
-
-  final static Logger logger = LoggerFactory.getLogger(SelectionBase.class);
 
   static final Set<Component> NO_COMPONENTS = Collections.emptySet();
 
@@ -339,23 +334,23 @@ class SelectionBase {
 
   // debugging methods
   public void print() {
-    logger.debug(" shouldSnap: {}", shouldSnap());
+    System.out.printf(" shouldSnap: %s\n", shouldSnap());
 
     boolean hasPrinted = false;
     for (Component comp : selected) {
       if (hasPrinted)
-        logger.debug("       : {}  [{}]", comp, comp.hashCode());
+        System.out.printf("       : %s  [%s]\n", comp, comp.hashCode());
       else
-        logger.debug(" select: {}  [{}]", comp, comp.hashCode());
+        System.out.printf(" select: %s  [%s]\n", comp, comp.hashCode());
       hasPrinted = true;
     }
 
     hasPrinted = false;
     for (Component comp : lifted) {
       if (hasPrinted)
-        logger.debug("       : {}  [{}]", comp, comp.hashCode());
+        System.out.printf("       : %s  [%s]\n", comp, comp.hashCode());
       else
-        logger.debug(" lifted: {}  [{}]", comp, comp.hashCode());
+        System.out.printf(" lifted: %s  [%s]\n", comp, comp.hashCode());
       hasPrinted = true;
     }
   }

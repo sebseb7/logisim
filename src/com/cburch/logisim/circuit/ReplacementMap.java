@@ -40,9 +40,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cburch.logisim.comp.Component;
 
 // When a circuit change is finished (CircuitEvent.TRANSACTION_DONE), the result
@@ -54,8 +51,6 @@ import com.cburch.logisim.comp.Component;
 // can have no images (meaning it was just deleted outright), and an item b can
 // have no pre-images (meaning it was added out of thin air).
 public class ReplacementMap {
-
-  final static Logger logger = LoggerFactory.getLogger(ReplacementMap.class);
 
   private boolean frozen; // prevents further changes to mappings
   private HashMap<Component, HashSet<Component>> map;
@@ -131,9 +126,8 @@ public class ReplacementMap {
       Component c = e.getKey();
       if (!inverse.containsKey(c)) {
         HashSet<Component> bs = e.getValue();
-        if (!bs.isEmpty()) {
-          logger.error("Internal error: component replaced but not represented");
-        }
+        if (!bs.isEmpty())
+          System.err.println("Internal error: component replaced but not represented");
         inverse.put(c, new HashSet<Component>(3));
       }
     }
