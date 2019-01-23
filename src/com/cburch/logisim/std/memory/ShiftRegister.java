@@ -74,7 +74,7 @@ public class ShiftRegister extends InstanceFactory {
       Register.ATTR_SHOW_IN_TAB, StdAttr.APPEARANCE },
       new Object[] { BitWidth.ONE, Integer.valueOf(8), Boolean.TRUE,
         StdAttr.TRIG_RISING, "", StdAttr.DEFAULT_LABEL_FONT, 
-        true, StdAttr.APPEAR_FPGA });
+        true, StdAttr.APPEAR_CLASSIC });
     setKeyConfigurator(JoinedConfigurator
         .create(new IntegerConfigurator(ATTR_LENGTH, 1, 32, 0),
           new BitWidthConfigurator(StdAttr.WIDTH)));

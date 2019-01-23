@@ -812,7 +812,8 @@ class XmlProjectReader extends XmlReader {
             if (name.equals("J-K Flip-Flop") || name.equals("S-R Flip-Flop")
                 || name.equals("T Flip-Flop") || name.equals("D Flip-Flop")
                 || name.equals("RAM") || name.equals("ROM")
-                || name.equals("Register") || name.equals("Shift Register")) {
+                || name.equals("Register") || name.equals("Shift Register")
+                || name.equals("Counter")) {
               setDefaultAttribute(doc, compElt, "appearance", "classic");
             }
             if (name.equals("J-K Flip-Flop") || name.equals("S-R Flip-Flop")
