@@ -34,7 +34,7 @@ package com.cburch.logisim.util;
  * Allows immutable objects to be cached in memory in order to reduce the
  * creation of duplicate objects.
  */
-public class Cache {
+public class Cache<E> {
   private int mask;
   private Object[] data;
 
@@ -50,15 +50,15 @@ public class Cache {
     mask = data.length - 1;
   }
 
-  public Object get(int hashCode) {
-    return data[hashCode & mask];
+  public E get(int hashCode) {
+    return (E)data[hashCode & mask];
   }
 
-  public Object get(Object value) {
+  public E get(E value) {
     if (value == null)
       return null;
     int code = value.hashCode() & mask;
-    Object ret = data[code];
+    E ret = (E)data[code];
     if (ret != null && ret.equals(value)) {
       return ret;
     } else {
@@ -67,7 +67,7 @@ public class Cache {
     }
   }
 
-  public void put(int hashCode, Object value) {
+  public void put(int hashCode, E value) {
     if (value != null) {
       data[hashCode & mask] = value;
     }

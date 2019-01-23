@@ -57,13 +57,10 @@ public class Value {
       value = value & mask & ~unknown & ~error;
 
       int hashCode = 31 * (31 * (31 * width + error) + unknown) + value;
-      Object cached = cache.get(hashCode);
-      if (cached != null) {
-        Value val = (Value) cached;
-        if (val.value == value && val.width == width
+      Value val = cache.get(hashCode);
+      if (val != null && val.value == value && val.width == width
             && val.error == error && val.unknown == unknown)
           return val;
-      }
       Value ret = new Value(width, error, unknown, value);
       cache.put(hashCode, ret);
       return ret;
@@ -220,20 +217,20 @@ public class Value {
     }
   }
 
-  public static final Value FALSE = new Value(1, 0, 0, 0);
+  private static final Cache<Value> cache = new Cache<>();
 
+  // these are not cached, instead they are checked explicitly in create()
+  public static final Value FALSE = new Value(1, 0, 0, 0);
   public static final Value TRUE = new Value(1, 0, 0, 1);
   public static final Value UNKNOWN = new Value(1, 0, 1, 0);
   public static final Value ERROR = new Value(1, 1, 0, 0);
   public static final Value NIL = new Value(0, 0, 0, 0);
+
   public static final int MAX_WIDTH = 32;
   public static final Color NIL_COLOR = Color.GRAY;
   public static final Color FALSE_COLOR = new Color(0, 100, 0);
-
   public static final Color TRUE_COLOR = new Color(0, 210, 0);
-
   public static final Color UNKNOWN_COLOR = new Color(40, 40, 255);
-
   public static final Color ERROR_COLOR = new Color(192, 0, 0);
 
   public static final Color WIDTH_ERROR_COLOR = new Color(255, 123, 0);
@@ -243,13 +240,12 @@ public class Value {
 
   public static final Color MULTI_COLOR = Color.BLACK;
 
-  private static final Cache cache = new Cache();
 
   private final int width;
-
   private final int error;
   private final int unknown;
   private final int value;
+
   private Value(int width, int error, int unknown, int value) {
     // To ensure that the one-bit values are unique, this should be called
     // only

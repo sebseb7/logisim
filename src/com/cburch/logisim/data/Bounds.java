@@ -42,18 +42,15 @@ import com.cburch.logisim.util.Cache;
 public class Bounds {
   public static Bounds create(int x, int y, int wid, int ht) {
     int hashCode = 13 * (31 * (31 * x + y) + wid) + ht;
-    Object cached = cache.get(hashCode);
-    if (cached != null) {
-      Bounds bds = (Bounds) cached;
-      if (bds.x == x && bds.y == y && bds.wid == wid && bds.ht == ht)
+    Bounds bds = cache.get(hashCode);
+    if (bds != null && bds.x == x && bds.y == y && bds.wid == wid && bds.ht == ht)
         return bds;
-    }
     Bounds ret = new Bounds(x, y, wid, ht);
     cache.put(hashCode, ret);
     return ret;
   }
 
-  public static Bounds create(java.awt.Rectangle rect) {
+  public static Bounds create(Rectangle rect) {
     return create(rect.x, rect.y, rect.width, rect.height);
   }
 
@@ -61,9 +58,9 @@ public class Bounds {
     return create(pt.getX(), pt.getY(), 1, 1);
   }
 
-  public static Bounds EMPTY_BOUNDS = new Bounds(0, 0, 0, 0);
+  private static final Cache<Bounds> cache = new Cache<>();
 
-  private static final Cache cache = new Cache();
+  public static Bounds EMPTY_BOUNDS = create(0, 0, 0, 0);
 
   private final int x;
   private final int y;
@@ -306,5 +303,9 @@ public class Bounds {
     if (dx == 0 && dy == 0)
       return this;
     return create(x + dx, y + dy, wid, ht);
+  }
+
+  public boolean isEmpty() {
+    return ht == 0 && wid == 0;
   }
 }

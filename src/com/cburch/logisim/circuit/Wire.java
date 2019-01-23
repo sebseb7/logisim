@@ -71,7 +71,23 @@ public final class Wire
   }
 
   public static Wire create(Location e0, Location e1) {
-    return (Wire) cache.get(new Wire(e0, e1));
+    if (e0.equals(e1)) {
+      try { throw new IllegalArgumentException("wire with zero length"); }
+      catch (Exception e) { e.printStackTrace(); }
+    }
+    boolean is_x_equal = e0.x == e1.x;
+    if ((is_x_equal && e0.y > e1.y) || (!is_x_equal && e0.x > e1.x)) {
+      Location p = e0;
+      e0 = e1;
+      e1 = p;
+    }
+    int hashCode = e0.hashCode() * 31 + e1.hashCode();
+    Wire w = cache.get(hashCode);
+    if (w != null && w.e0.equals(e0) && w.e1.equals(e1))
+      return w;
+    Wire ret = new Wire(is_x_equal, e0, e1);
+    cache.put(hashCode, ret);
+    return ret;
   }
 
   /** Stroke width when drawing wires. */
@@ -95,38 +111,20 @@ public final class Wire
   private static final List<Attribute<?>> ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { dir_attr, len_attr });
 
-  private static final Cache cache = new Cache();
+  private static final Cache<Wire> cache = new Cache<>();
 
   final Location e0, e1;
   final boolean is_x_equal;
 
-  private Wire(Location e0, Location e1) {
-    this.is_x_equal = e0.x == e1.x;
-    if (is_x_equal) {
-      if (e0.y > e1.y) {
-        this.e0 = e1;
-        this.e1 = e0;
-      } else {
-        this.e0 = e0;
-        this.e1 = e1;
-      }
-    } else {
-      if (e0.x > e1.x) {
-        this.e0 = e1;
-        this.e1 = e0;
-      } else {
-        this.e0 = e0;
-        this.e1 = e1;
-      }
-    }
+  private Wire(boolean is_x_equal, Location e0, Location e1) {
+    this.is_x_equal = is_x_equal;
+    this.e0 = e0;
+    this.e1 = e1;
   }
 
   public void addAttributeListener(AttributeListener l) {
   }
 
-  //
-  // Component methods
-  //
   // (Wire never issues ComponentEvents, so we don't need to track listeners)
   public void addComponentListener(ComponentListener e) {
   }

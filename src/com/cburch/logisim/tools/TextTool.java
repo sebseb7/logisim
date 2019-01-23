@@ -97,17 +97,21 @@ public final class TextTool extends Tool {
       Project proj = caretCanvas.getProject();
       if (caretCreatingText) {
         if (!isEmpty) {
+          // Adding new Text component
+          caretComponent.getAttributeSet().setAttr(Text.ATTR_TEXT, val);
           CircuitMutation xn = new CircuitMutation(caretCircuit);
           xn.add(caretComponent);
           a = xn.toAction(S.getter("addComponentAction",
                 Text.FACTORY.getDisplayGetter()));
         } else {
-          a = null; // don't add the blank text field
+          // Ignore adding new blank Text component
+          a = null;
         }
       } else {
         if (isEmpty && caretComponent.getFactory() instanceof Text) {
+          // Removing existing Text component (user removed all text)
           CircuitMutation xn = new CircuitMutation(caretCircuit);
-          xn.add(caretComponent);
+          xn.remove(caretComponent);
           a = xn.toAction(S.getter("removeComponentAction",
                 Text.FACTORY.getDisplayGetter()));
         } else {
@@ -115,6 +119,7 @@ public final class TextTool extends Tool {
           if (obj == null) { // should never happen
             a = null;
           } else {
+            // Change Text or Label or other EditableText  
             TextEditable editable = (TextEditable) obj;
             a = editable.getCommitAction(caretCircuit,
                 e.getOldText(), e.getText());
@@ -132,8 +137,8 @@ public final class TextTool extends Tool {
     }
   }
 
-  private static final Cursor cursor = Cursor
-      .getPredefinedCursor(Cursor.TEXT_CURSOR);
+  private static final Cursor cursor
+      = Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR);
 
   private MyListener listener = new MyListener();
   private AttributeSet attrs;
@@ -284,8 +289,7 @@ public final class TextTool extends Tool {
 
     // First search in selection.
     for (Component comp : proj.getSelection().getComponentsContaining(loc, g)) {
-      TextEditable editable = (TextEditable) comp
-          .getFeature(TextEditable.class);
+      TextEditable editable = (TextEditable) comp.getFeature(TextEditable.class);
       if (editable != null) {
         caret = editable.getTextCaret(event);
         if (caret != null) {
@@ -300,8 +304,7 @@ public final class TextTool extends Tool {
     // Then search in circuit
     if (caret == null) {
       for (Component comp : circ.getAllContaining(loc, g)) {
-        TextEditable editable = (TextEditable) comp
-            .getFeature(TextEditable.class);
+        TextEditable editable = (TextEditable) comp.getFeature(TextEditable.class);
         if (editable != null) {
           caret = editable.getTextCaret(event);
           if (caret != null) {
@@ -314,15 +317,14 @@ public final class TextTool extends Tool {
       }
     }
 
-    // if nothing found, create a new label
+    // if nothing found, create a new Text component
     if (caret == null) {
       if (loc.getX() < 0 || loc.getY() < 0)
         return;
       AttributeSet copy = (AttributeSet) attrs.clone();
       caretComponent = Text.FACTORY.createComponent(loc, copy);
       caretCreatingText = true;
-      TextEditable editable = (TextEditable) caretComponent
-          .getFeature(TextEditable.class);
+      TextEditable editable = (TextEditable) caretComponent.getFeature(TextEditable.class);
       if (editable != null) {
         caret = editable.getTextCaret(event);
         proj.getFrame().viewComponentAttributes(circ, caretComponent);

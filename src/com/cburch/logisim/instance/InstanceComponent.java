@@ -411,8 +411,9 @@ public final class InstanceComponent
   }
 
   public String toString() {
-    String label = attrs.getValue(StdAttr.LABEL);
+    InstanceTextField field = textField;
+    String label =  field != null ? field.getText() : attrs.getValue(StdAttr.LABEL);
     return "InstanceComponent{factory="+factory.getName()
-        +",loc=("+loc+"),label="+label+"}@"+super.toString();
+        +",loc="+loc+",label="+label+"}@"+super.toString();
   }
 }

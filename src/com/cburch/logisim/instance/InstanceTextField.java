@@ -168,6 +168,10 @@ public class InstanceTextField
     updateField(attrs);
   }
 
+  public String getText() {
+    return comp.getAttributeSet().getValue(labelAttr);
+  }
+
   private void updateField(AttributeSet attrs) {
     String text = attrs.getValue(labelAttr);
     if (text == null || text.equals("")) {

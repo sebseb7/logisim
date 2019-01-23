@@ -44,15 +44,12 @@ import com.cburch.logisim.util.Cache;
 public class Location implements Comparable<Location> {
   public static Location create(int x, int y) {
     int hashCode = 31 * x + y;
-    Object ret = cache.get(hashCode);
-    if (ret != null) {
-      Location loc = (Location) ret;
-      if (loc.x == x && loc.y == y)
-        return loc;
-    }
-    Location loc = new Location(hashCode, x, y);
-    cache.put(hashCode, loc);
-    return loc;
+    Location loc = cache.get(hashCode);
+    if (loc != null && loc.x == x && loc.y == y)
+      return loc;
+    Location ret = new Location(hashCode, x, y);
+    cache.put(hashCode, ret);
+    return ret;
   }
 
   public static Location parse(String value) {
@@ -79,7 +76,7 @@ public class Location implements Comparable<Location> {
     return Location.create(x, y);
   }
 
-  private static final Cache cache = new Cache();
+  private static final Cache<Location> cache = new Cache<>();
   private final int hashCode;
 
   public final int x, y;
@@ -222,5 +219,5 @@ public class Location implements Comparable<Location> {
     Collections.sort(list, CompareVertical);
   }
 
-  public static final Location ORIGIN = Location.create(0, 0);
+  public static final Location ORIGIN = create(0, 0);
 }

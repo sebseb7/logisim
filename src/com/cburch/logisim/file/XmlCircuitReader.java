@@ -202,7 +202,7 @@ public class XmlCircuitReader extends CircuitTransaction {
               throw new XmlReaderException(S.fmt("compUnknownError", sub_elt.getAttribute("name")));
           }
           Bounds bds = comp.getBounds();
-          Component conflict = componentsAt.get(bds);
+          Component conflict = bds.isEmpty() ? null : componentsAt.get(bds);
           if (conflict != null) {
             // oops... overlapping components...
             reader.addError(S.fmt("fileComponentOverlapError", 
@@ -211,7 +211,10 @@ public class XmlCircuitReader extends CircuitTransaction {
                   circData.circuit.getName());
             overlapComponents.add(comp);
           } else {
-            componentsAt.put(bds, comp);
+            if (!bds.isEmpty())
+              componentsAt.put(bds, comp);
+            else
+              System.out.println("Note: empty bounds for " + comp);
             mutator.add(dest, comp);
           }
         } catch (XmlReaderException e) {

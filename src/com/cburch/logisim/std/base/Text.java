@@ -143,9 +143,6 @@ public class Text extends InstanceFactory {
         attrs.getHorizontalAlign(), attrs.getVerticalAlign(), true);
   }
 
-  //
-  // methods for instances
-  //
   @Override
   protected void configureNewInstance(Instance instance) {
     configureLabel(instance);
