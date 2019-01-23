@@ -83,6 +83,11 @@ public abstract class ManagedComponent extends AbstractComponent {
     }
   }
 
+  @Override
+  public void fireInvalidated() {
+    fireComponentInvalidated(new ComponentEvent(this));
+  }
+
   protected void fireComponentInvalidated(ComponentEvent e) {
     for (ComponentListener l : listeners) {
       l.componentInvalidated(e);

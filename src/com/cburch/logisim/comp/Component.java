@@ -41,7 +41,7 @@ import com.cburch.logisim.data.Location;
 // Tentative Design Notes (3 of 3): There are only four known things that
 // implement the Component interface. One is InstanceComponent (with it's
 // matching twin helper Instance). Another is Wire. The other two are Slitter
-// and Video, which both descent from ManagedComponent, which descends from
+// and Video, which both descend from ManagedComponent, which descends from
 // AbstractComponent, which implements the Component interface. Seems a bit
 // overkill, no?
 //
@@ -68,6 +68,8 @@ public interface Component extends Location.At {
   public boolean contains(Location pt, Graphics g);
 
   public void draw(ComponentDrawContext context);
+
+  default public void drawLabel(ComponentDrawContext context) { }
 
   public boolean endsAt(Location pt);
 
@@ -115,4 +117,6 @@ public interface Component extends Location.At {
   public void propagate(CircuitState state);
 
   public void removeComponentListener(ComponentListener l);
+
+  default public void fireInvalidated() { }
 }

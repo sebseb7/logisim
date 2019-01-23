@@ -62,6 +62,8 @@ public interface ComponentFactory extends AttributeDefaultProvider {
   public void drawGhost(ComponentDrawContext context, Color color, int x,
       int y, AttributeSet attrs);
 
+  default public void drawLabel(ComponentDrawContext context) { }
+
   public Object getDefaultAttributeValue(Attribute<?> attr, LogisimVersion ver);
 
   public StringGetter getDisplayGetter();

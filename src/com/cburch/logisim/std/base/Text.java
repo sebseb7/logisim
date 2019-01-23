@@ -36,6 +36,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
+import com.cburch.logisim.comp.ComponentDrawContext;;
 import com.cburch.logisim.comp.TextField;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
@@ -47,11 +48,12 @@ import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
+import com.cburch.logisim.tools.CustomHandles;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.StringUtil;
 
-public class Text extends InstanceFactory {
+public class Text extends InstanceFactory implements CustomHandles {
 
   private static class MultilineAttribute extends Attribute<String> {
     MultilineAttribute(String name, StringGetter disp) {
@@ -190,6 +192,10 @@ public class Text extends InstanceFactory {
   //
   @Override
   public void paintGhost(InstancePainter painter) {
+    paint(painter, true);
+  }
+
+  public void paint(InstancePainter painter, boolean border) {
     TextAttributes attrs = (TextAttributes) painter.getAttributeSet();
     String text = attrs.getText();
     if (text == null || text.equals(""))
@@ -210,16 +216,37 @@ public class Text extends InstanceFactory {
         instance.recomputeBounds();
     }
 
+    if (border) {
+      Bounds bds = painter.getBounds();
+      g.drawRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
+    }
     GraphicsUtil.drawText(g, font, lines, loc.getX(), loc.getY(), halign, valign);
   }
 
   @Override
   public void paintInstance(InstancePainter painter) {
     painter.getGraphics().setColor(Color.BLACK);
-    paintGhost(painter);
+    paint(painter, false);
   }
 
   @Override
   public void propagate(InstanceState state) {
+  }
+
+  @Override
+  public Object getInstanceFeature(Instance instance, Object key) {
+    if (key == CustomHandles.class)
+      return this;
+    return null;
+  }
+
+  @Override
+  public void drawHandles(ComponentDrawContext context) {
+    Graphics g = context.getGraphics();
+    g.setColor(Color.GRAY);
+    InstancePainter painter = context.getInstancePainter();
+    Bounds bds = painter.getBounds();
+    g.drawRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
+    painter.drawHandles();
   }
 }

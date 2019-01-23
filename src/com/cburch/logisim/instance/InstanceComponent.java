@@ -231,14 +231,11 @@ public final class InstanceComponent
   //
   public void draw(ComponentDrawContext context) {
     InstancePainter painter = context.getInstancePainter();
-    painter.setInstance(this);
+    painter.setComponent(this);
     factory.paintInstance(painter);
   }
 
-  //
-  // methods for InstancePainter
-  //
-  void drawLabel(ComponentDrawContext context) {
+  public void drawLabel(ComponentDrawContext context) {
     InstanceTextField field = textField;
     if (field != null)
       field.draw(this, context);
@@ -272,7 +269,8 @@ public final class InstanceComponent
     }
   }
 
-  void fireInvalidated() {
+  @Override
+  public void fireInvalidated() {
     EventSourceWeakSupport<ComponentListener> ls = listeners;
     if (ls != null) {
       ComponentEvent e = null;

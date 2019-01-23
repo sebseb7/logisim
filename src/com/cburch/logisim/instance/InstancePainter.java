@@ -35,7 +35,9 @@ import java.awt.Graphics;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.WireSet;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
+import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
@@ -44,31 +46,34 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.proj.Project;
 
+// This is more like ComponentPainter maybe?
 public class InstancePainter implements InstanceState {
   private ComponentDrawContext context;
-  private InstanceComponent comp;
-  private InstanceFactory factory;
+  private Component comp;
+  private ComponentFactory factory;
   private AttributeSet attrs;
 
-  public InstancePainter(ComponentDrawContext context,
-      InstanceComponent instance) {
+  public InstancePainter(ComponentDrawContext context, Component comp) {
     this.context = context;
-    this.comp = instance;
+    this.comp = comp;
   }
 
   //
   // helper methods for drawing common elements in components
   //
   public void drawBounds() {
-    context.drawBounds(comp);
+    if (comp != null)
+      context.drawBounds(comp);
   }
 
   public void drawClock(int i, Direction dir) {
-    context.drawClock(comp, i, dir);
+    if (comp != null)
+      context.drawClock(comp, i, dir);
   }
 
   public void drawClockSymbol(int xpos, int ypos) {
-    context.drawClockSymbol(comp, xpos, ypos);
+    if (comp != null)
+      context.drawClockSymbol(comp, xpos, ypos);
   }
 
   public void drawDongle(int x, int y) {
@@ -84,25 +89,28 @@ public class InstancePainter implements InstanceState {
   }
 
   public void drawHandles() {
-    context.drawHandles(comp);
+    if (comp != null)
+      context.drawHandles(comp);
   }
 
   public void drawLabel() {
-    if (comp != null) {
+    if (comp != null)
       comp.drawLabel(context);
-    }
   }
 
   public void drawPort(int i) {
-    context.drawPin(comp, i);
+    if (comp != null)
+      context.drawPin(comp, i);
   }
 
   public void drawPort(int i, String label, Direction dir) {
-    context.drawPin(comp, i, label, dir);
+    if (comp != null)
+      context.drawPin(comp, i, label, dir);
   }
 
   public void drawPorts() {
-    context.drawPins(comp);
+    if (comp != null)
+      context.drawPins(comp);
   }
 
   public void drawRectangle(Bounds bds, String label) {
@@ -114,24 +122,22 @@ public class InstancePainter implements InstanceState {
     context.drawRectangle(x, y, width, height, label);
   }
 
+  @Override
   public void fireInvalidated() {
-    comp.fireInvalidated();
+    if (comp != null)
+      comp.fireInvalidated();
   }
 
   public AttributeSet getAttributeSet() {
-    InstanceComponent c = comp;
-    return c == null ? attrs : c.getAttributeSet();
+    return comp == null ? attrs : comp.getAttributeSet();
   }
 
   public <E> E getAttributeValue(Attribute<E> attr) {
-    InstanceComponent c = comp;
-    AttributeSet as = c == null ? attrs : c.getAttributeSet();
-    return as.getValue(attr);
+    return getAttributeSet().getValue(attr);
   }
 
   public Bounds getBounds() {
-    InstanceComponent c = comp;
-    return c == null ? factory.getOffsetBounds(attrs) : c.getBounds();
+    return comp == null ? factory.getOffsetBounds(attrs) : comp.getBounds();
   }
 
   public Circuit getCircuit() {
@@ -140,11 +146,9 @@ public class InstancePainter implements InstanceState {
 
   public InstanceData getData() {
     CircuitState circState = context.getCircuitState();
-    if (circState == null || comp == null) {
+    if (circState == null || comp == null)
       throw new UnsupportedOperationException("InstancePainter.getData without state");
-    } else {
-      return (InstanceData) circState.getData(comp);
-    }
+    return (InstanceData) circState.getData(comp);
   }
 
   public java.awt.Component getDestination() {
@@ -152,7 +156,12 @@ public class InstancePainter implements InstanceState {
   }
 
   public InstanceFactory getFactory() {
-    return comp == null ? factory : (InstanceFactory) comp.getFactory();
+    if (comp instanceof InstanceComponent)
+      return (InstanceFactory)comp.getFactory();
+    else if (factory instanceof InstanceFactory)
+      return (InstanceFactory)factory;
+    else
+      return null;
   }
 
   public Object getGateShape() {
@@ -174,22 +183,24 @@ public class InstancePainter implements InstanceState {
   // methods related to the instance
   //
   public Instance getInstance() {
-    InstanceComponent c = comp;
-    return c == null ? null : c.getInstance();
+    return comp instanceof InstanceComponent
+        ? ((InstanceComponent)comp).getInstance() :  null;
+  }
+
+  public Component getComponent() {
+    return comp;
   }
 
   public Location getLocation() {
-    InstanceComponent c = comp;
-    return c == null ? Location.create(0, 0) : c.getLocation();
+    return comp == null ? Location.create(0, 0) : comp.getLocation();
   }
 
   public Bounds getOffsetBounds() {
-    InstanceComponent c = comp;
-    if (c == null) {
+    if (comp == null) {
       return factory.getOffsetBounds(attrs);
     } else {
-      Location loc = c.getLocation();
-      return c.getBounds().translate(-loc.getX(), -loc.getY());
+      Location loc = comp.getLocation();
+      return comp.getBounds().translate(-loc.getX(), -loc.getY());
     }
   }
 
@@ -198,10 +209,9 @@ public class InstancePainter implements InstanceState {
   }
 
   public Value getPortValue(int portIndex) {
-    InstanceComponent c = comp;
     CircuitState s = context.getCircuitState();
-    if (c != null && s != null) {
-      return s.getValue(c.getEnd(portIndex).getLocation());
+    if (comp != null && s != null) {
+      return s.getValue(comp.getEnd(portIndex).getLocation());
     } else {
       return Value.UNKNOWN;
     }
@@ -238,22 +248,21 @@ public class InstancePainter implements InstanceState {
 
   public void setData(InstanceData value) {
     CircuitState circState = context.getCircuitState();
-    if (circState == null || comp == null) {
-      throw new UnsupportedOperationException(
-          "setData on InstancePainter");
-    } else {
-      circState.setData(comp, value);
-    }
+    if (circState == null || comp == null)
+      throw new UnsupportedOperationException("setData on InstancePainter");
+    circState.setData(comp, value);
   }
 
-  void setFactory(InstanceFactory factory, AttributeSet attrs) {
+  void setFactory(ComponentFactory factory, AttributeSet attrs) {
     this.comp = null;
     this.factory = factory;
     this.attrs = attrs;
   }
 
-  void setInstance(InstanceComponent value) {
-    this.comp = value;
+  public void setComponent(Component comp) {
+    this.comp = comp;
+    this.factory = null;
+    this.attrs = null;
   }
 
   public void setPort(int portIndex, Value value, int delay) {

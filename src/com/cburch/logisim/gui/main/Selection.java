@@ -179,6 +179,7 @@ public class Selection extends SelectionBase {
 
         Graphics g_new = g.create();
         context.setGraphics(g_new);
+        context.getInstancePainter().setComponent(c);
         c.getFactory().drawGhost(context, Color.GRAY, loc.getX(),
             loc.getY(), c.getAttributeSet());
         g_new.dispose();
@@ -189,13 +190,12 @@ public class Selection extends SelectionBase {
       if (!suppressHandles.contains(comp) && !hidden.contains(comp)) {
         Graphics g_new = g.create();
         context.setGraphics(g_new);
-        CustomHandles handler = (CustomHandles) comp
-            .getFeature(CustomHandles.class);
-        if (handler == null) {
-          context.drawHandles(comp);
-        } else {
+        context.getInstancePainter().setComponent(comp);
+        CustomHandles handler = (CustomHandles) comp.getFeature(CustomHandles.class);
+        if (handler != null)
           handler.drawHandles(context);
-        }
+        else
+          context.drawHandles(comp);
         g_new.dispose();
       }
     }
@@ -215,6 +215,7 @@ public class Selection extends SelectionBase {
       int x = loc.getX() + dx;
       int y = loc.getY() + dy;
       context.setGraphics(g.create());
+      context.getInstancePainter().setComponent(comp);
       comp.getFactory().drawGhost(context, Color.gray, x, y, attrs);
       context.getGraphics().dispose();
     }
