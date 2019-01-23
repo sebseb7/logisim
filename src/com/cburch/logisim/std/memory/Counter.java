@@ -85,6 +85,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
       .forOption("ongoal", S.getter("counterGoalAttr"),
           new AttributeOption[] { ON_GOAL_WRAP, ON_GOAL_STAY,
             ON_GOAL_CONT, ON_GOAL_LOAD });
+
   static final int DELAY = 8;
   static final int OUT = 0;
   static final int IN = 1;

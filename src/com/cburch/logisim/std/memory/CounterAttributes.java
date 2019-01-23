@@ -30,11 +30,7 @@
 
 package com.cburch.logisim.std.memory;
 
-import java.util.List;
-
-import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Direction;
@@ -45,10 +41,12 @@ class CounterAttributes extends AttributeSets.ArrayBacked {
   public CounterAttributes() {
     super(new Attribute<?>[] { StdAttr.WIDTH,
       Counter.ATTR_MAX, Counter.ATTR_ON_GOAL, StdAttr.EDGE_TRIGGER,
-      StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_LOC, StdAttr.APPEARANCE },
+      StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_LOC, 
+      Register.ATTR_SHOW_IN_TAB, StdAttr.APPEARANCE },
       new Object[] { BitWidth.create(8), Integer.valueOf(0xFF),
         Counter.ON_GOAL_WRAP, StdAttr.TRIG_RISING, "",
-        StdAttr.DEFAULT_LABEL_FONT, Direction.NORTH, StdAttr.APPEAR_CLASSIC});
+        StdAttr.DEFAULT_LABEL_FONT, Direction.NORTH,
+        true, StdAttr.APPEAR_CLASSIC});
   }
   
   @Override

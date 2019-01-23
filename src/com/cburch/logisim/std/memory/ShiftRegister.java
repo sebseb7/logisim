@@ -70,9 +70,11 @@ public class ShiftRegister extends InstanceFactory {
   public ShiftRegister() {
     super("Shift Register", S.getter("shiftRegisterComponent"));
     setAttributes(new Attribute[] { StdAttr.WIDTH, ATTR_LENGTH, ATTR_LOAD,
-      StdAttr.EDGE_TRIGGER, StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.APPEARANCE },
+      StdAttr.EDGE_TRIGGER, StdAttr.LABEL, StdAttr.LABEL_FONT,
+      Register.ATTR_SHOW_IN_TAB, StdAttr.APPEARANCE },
       new Object[] { BitWidth.ONE, Integer.valueOf(8), Boolean.TRUE,
-        StdAttr.TRIG_RISING, "", StdAttr.DEFAULT_LABEL_FONT, StdAttr.APPEAR_FPGA });
+        StdAttr.TRIG_RISING, "", StdAttr.DEFAULT_LABEL_FONT, 
+        true, StdAttr.APPEAR_FPGA });
     setKeyConfigurator(JoinedConfigurator
         .create(new IntegerConfigurator(ATTR_LENGTH, 1, 32, 0),
           new BitWidthConfigurator(StdAttr.WIDTH)));
