@@ -52,6 +52,43 @@ public class Projects {
     @Override
     public void windowActivated(WindowEvent event) {
       mostRecentFrame = (Frame) event.getSource();
+      moveToFront(mostRecentFrame);
+    }
+
+    @Override
+    public void windowDeiconified(WindowEvent event) {
+      mostRecentFrame = (Frame) event.getSource();
+      moveToFront(mostRecentFrame);
+    }
+
+    @Override
+    public void windowIconified(WindowEvent event) {
+      moveToBack((Frame)event.getSource());
+    }
+
+    private int findProject(Frame frame) {
+      for (int i = 0; i < openProjects.size(); i++) {
+        Project proj = openProjects.get(i);
+        if (proj.getFrame() == frame)
+          return i;
+      }
+      return -1;
+    }
+
+    private void moveToFront(Frame frame) {
+      int i = findProject(frame);
+      if (i < 0)
+        return;
+      Project proj = openProjects.remove(i);
+      openProjects.add(0, proj);
+    }
+
+    private void moveToBack(Frame frame) {
+      int i = findProject(frame);
+      if (i < 0)
+        return;
+      Project proj = openProjects.remove(i);
+      openProjects.add(proj);
     }
 
     @Override
@@ -209,6 +246,9 @@ public class Projects {
 
   private static final MyListener myListener = new MyListener();
 
+  // openProjects is maintained in order of most recent activation order:
+  //  - activate brings to front
+  //  - minimize sends to back
   private static ArrayList<Project> openProjects = new ArrayList<Project>();
 
   private static Frame mostRecentFrame = null;

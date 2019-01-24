@@ -33,7 +33,6 @@ import static com.cburch.logisim.gui.main.Strings.S;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitAttributes;
-import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSets;
@@ -41,7 +40,6 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.gui.generic.AttrTableSetException;
 import com.cburch.logisim.gui.generic.AttributeSetTableModel;
 import com.cburch.logisim.gui.menu.ProjectCircuitActions;
-import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.SetAttributeAction;
 import com.cburch.logisim.util.SyntaxChecker;
@@ -68,14 +66,7 @@ class AttrTableComponentModel extends AttributeSetTableModel {
 
   @Override
   public String getTitle() {
-    String label = comp.getAttributeSet().getValue(StdAttr.LABEL);
-    Location loc = comp instanceof Wire ? null : comp.getLocation();
-    String s = comp.getFactory().getDisplayName();
-    if (label != null && label.length() > 0)
-      s += " \"" + label + "\"";
-    else if (loc != null)
-      s += " " + loc;
-    return s;
+    return comp.getDisplayName();
   }
 
   @Override

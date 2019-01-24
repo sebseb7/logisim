@@ -550,6 +550,11 @@ public class Project {
   }
 
   public void setFrame(Frame value) {
+    if (value == null || frame != null) {
+      try { throw new IllegalStateException(String.format("set frame old=%s\nand frame new=%s\n", frame, value)); }
+      catch (Exception e) { e.printStackTrace(); }
+    }
+    // Todo: simplify: oldValue should always be null here, new value always non-null.
     if (frame == value)
       return;
     Frame oldValue = frame;
@@ -631,26 +636,4 @@ public class Project {
     }
   }
 
-  // Search for matching text
-  // - Find on current circuit / current vhdl, vs global search
-  // - Replace?
-  // Things to search:
-  // - vhdl entity contents (entity.getContents...)
-  // - circuit contents (circ.nonWires...)
-  // - circuit name CircuitAttributes.NAME_ATTR
-  // - vhdl name VhdlEntity.NAME_ATTR
-  // - toolbar contents (layout toolbar getItems)
-  // - standard label attributes on various components (except Pin, Tunnel) StdAttr.LABEL
-  // - circuit shared label attributes CircuitAttributes.CIRCUIT_LABEL_ATTR
-  // - text components Text.ATTR_TEXT
-  // - tunnel names StdAttr.LABEL
-  // - pin names StdAttr.LABEL
-  // - later: memory data ? as bytes? as strings? as hex?
-  
-  // Search for matching components and attributes (e.g. find all 8-wide multiplexors)
-  // - Find on current circuit vs global search
-  // Things to search:
-  // - circuits
-  // - toolbar
-  // - mouse mappings
 }

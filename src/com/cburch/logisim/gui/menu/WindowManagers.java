@@ -40,10 +40,10 @@ import java.util.List;
 
 import javax.swing.JFrame;
 
-import com.cburch.logisim.Main;
 import com.cburch.logisim.analyze.gui.AnalyzerManager;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
+import com.cburch.logisim.gui.find.FindManager;
 import com.cburch.logisim.gui.prefs.PreferencesFrame;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
@@ -111,6 +111,7 @@ public class WindowManagers {
     if (!initialized) {
       initialized = true;
       AnalyzerManager.initialize();
+      FindManager.initialize();
       PreferencesFrame.initializeManager();
       Projects.propertyChangeProducer.addPropertyChangeListener(Projects.projectListProperty, myListener);
       computeListeners();

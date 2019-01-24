@@ -34,9 +34,11 @@ import java.awt.Graphics;
 import java.util.List;
 
 import com.cburch.logisim.circuit.CircuitState;
+import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.instance.StdAttr;
 
 // Tentative Design Notes (3 of 3): There are only four known things that
 // implement the Component interface. One is InstanceComponent (with it's
@@ -119,4 +121,15 @@ public interface Component extends Location.At {
   public void removeComponentListener(ComponentListener l);
 
   default public void fireInvalidated() { }
+
+  default public String getDisplayName() {
+    String label = getAttributeSet().getValue(StdAttr.LABEL);
+    Location loc = this instanceof Wire ? null : getLocation();
+    String s = getFactory().getDisplayName();
+    if (label != null && label.length() > 0)
+      s += " \"" + label + "\"";
+    else if (loc != null)
+      s += " " + loc;
+    return s;
+  }
 }

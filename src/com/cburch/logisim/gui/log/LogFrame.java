@@ -308,9 +308,8 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
 
   @Override
   public void setVisible(boolean value) {
-    if (value) {
+    if (value)
       windowManager.frameOpened(this);
-    }
     super.setVisible(value);
   }
 

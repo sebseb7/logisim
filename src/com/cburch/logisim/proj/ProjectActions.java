@@ -132,9 +132,10 @@ public class ProjectActions {
   private static Frame createFrame(Frame sourceProjectFrame, Project newProject) {
     if (sourceProjectFrame != null)
         sourceProjectFrame.savePreferences();
-    Frame newFrame = new Frame(newProject);
-    newProject.setFrame(newFrame);
-    return newFrame;
+    return new Frame(newProject);
+    // Frame newFrame = new Frame(newProject);
+    // newProject.setFrame(newFrame);
+    // return newFrame;
   }
 
   public static LogisimFile createNewFile(Component errReportFrame) {
