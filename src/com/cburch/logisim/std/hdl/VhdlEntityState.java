@@ -67,7 +67,7 @@ class VhdlEntityState
     try {
       VhdlEntityState ret = (VhdlEntityState) super.clone();
       ret.parent = null;
-      ret.content = content.clone();
+      // ret.content = content.clone();
       ret.content.addHdlModelListener(ret);
       return ret;
     } catch (CloneNotSupportedException e) {

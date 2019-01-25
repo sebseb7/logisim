@@ -242,62 +242,66 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
       // todo: regexp here?
       if (text.equals(""))
         return;
+      LibrarySource src = new LibrarySource(proj, new ArrayList<Library>(), proj.getLogisimFile());
       if (top.inSheet.isSelected() || top.inCircuit.isSelected()) {
         Circuit circ = proj.getCurrentCircuit();
         HdlModel hdl = proj.getCurrentHdl();
         if (circ != null) {
           String source = proj.getLogisimFile().getName() + ", " + circ.getName();
           if (top.inCircuit.isSelected()) {
-            searchAttributes(text, circ.getStaticAttributes(), source);
-            searchCircuit(text, circ, source, new HashSet<Object>());
+            searchAttributes(text, circ.getStaticAttributes(), source, src);
+            searchCircuit(text, circ, source, new HashSet<Object>(), src.forCircuit(circ));
           } else {
-            searchCircuit(text, circ, source, null); // non recursive
+            searchCircuit(text, circ, source, null, src.forCircuit(circ)); // non recursive
           }
         } else if (hdl != null) {
           String source = proj.getLogisimFile().getName() + ", " + hdl.getName();
-          searchHdl(text, hdl, source);
+          searchHdl(text, hdl, source, src.forHdl(hdl));
         }
       } else if (top.inProject.isSelected()) {
         HashSet<Library> searched = new HashSet<>();
-        searchLibrary(text, proj.getLogisimFile(), proj.getLogisimFile().getName(), searched);
+        searchLibrary(text, proj.getLogisimFile(), proj.getLogisimFile().getName(), searched, src);
       } else {
         HashSet<Library> searched = new HashSet<>();
         for (Project p : projects)
-          searchLibrary(text, p.getLogisimFile(), p.getLogisimFile().getName(), searched);
+          searchLibrary(text, p.getLogisimFile(), p.getLogisimFile().getName(), searched,
+              new LibrarySource(p, new ArrayList<Library>(), p.getLogisimFile()));
       }
     }
 
-    void searchLibrary(String text, Library lib, String source, HashSet<Library> searched) {
+    void searchLibrary(String text, Library lib, String source, HashSet<Library> searched,
+        LibrarySource src) {
       if (searched.contains(lib))
         return;
       searched.add(lib);
-      searchText(text, lib.getDisplayName(), source, S.get("matchLibraryName"));
+      searchText(text, lib.getDisplayName(), source, S.get("matchLibraryName"), src);
       for (Tool tool : lib.getTools()) {
         String subsource = source + ", " + tool.getDisplayName();
-        searchAttributes(text, tool.getAttributeSet(), subsource);
+        searchAttributes(text, tool.getAttributeSet(), subsource, src.forTool(tool));
         if (!(tool instanceof AddTool))
           continue;
         AddTool t = (AddTool)tool;
         if (t.getFactory() instanceof SubcircuitFactory) {
           Circuit circ = ((SubcircuitFactory)t.getFactory()).getSubcircuit();
-          searchCircuit(text, circ, subsource, null); // non-recursive
+          searchCircuit(text, circ, subsource, null, src.forCircuit(circ)); // non-recursive
         } else if (t.getFactory() instanceof VhdlEntity) {
           VhdlContent vhdl = ((VhdlEntity)t.getFactory()).getContent();
-          searchHdl(text, vhdl, subsource);
+          searchHdl(text, vhdl, subsource, src.forHdl(vhdl));
         }
       }
       for (Library sublib : lib.getLibraries()) {
         String subsource = source + ", " + lib.getDisplayName();
-        searchLibrary(text, sublib, subsource, searched);
+        searchLibrary(text, sublib, subsource, searched, src.forLibrary(sublib));
       }
     }
 
-    void searchCircuit(String text, Circuit circ, String source, HashSet<Object> searched) {
+    void searchCircuit(String text, Circuit circ, String source, HashSet<Object> searched,
+        CircuitSource src) {
       if (searched != null && searched.contains(circ))
         return;
       for (Component comp : circ.getNonWires()) {
         String subsource = source + "/" + comp.getDisplayName();
-        searchAttributes(text, comp.getAttributeSet(), subsource);
+        searchAttributes(text, comp.getAttributeSet(), subsource, src);
       }
       if (searched == null)
         return; // non-recursive
@@ -310,20 +314,21 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
             continue;
           searched.add(vhdl);
           String subsource = source + "/" + comp.getDisplayName();
-          searchHdl(text, vhdl, subsource);
+          searchHdl(text, vhdl, subsource, src.findHdl(vhdl));
         } else if (factory instanceof SubcircuitFactory) {
           String subsource = source + "/" + comp.getDisplayName();
-          searchCircuit(text, ((SubcircuitFactory)factory).getSubcircuit(), subsource, searched);
+          Circuit subcirc = ((SubcircuitFactory)factory).getSubcircuit();
+          searchCircuit(text, subcirc, subsource, searched, src.findCircuit(subcirc));
         }
       }
     }
 
-    void searchHdl(String text, HdlModel hdl, String source) {
+    void searchHdl(String text, HdlModel hdl, String source, HdlSource src) {
       String code = hdl.getContent();
-      searchText(text, code, source, null /*use line number*/);
+      searchText(text, code, source, null /*use line number*/, src);
     }
 
-    void searchAttributes(String text, AttributeSet as, String source) {
+    void searchAttributes(String text, AttributeSet as, String source, Source src) {
       // if (as.contains(StdAttr.LABEL))
       //   search(text, as.getValue(StdAttr.LABEL), name + " label");
       // if (as.contains(CircuitAttributes.NAME_ATTR))
@@ -337,22 +342,23 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
       for (Attribute<?> a : as.getAttributes()) {
         Object o = as.getValue(a);
         if (o instanceof String && a == Text.ATTR_TEXT)
-          searchText(text, (String)o, source, null /* use line number */);
+          searchText(text, (String)o, source, null /* use line number */, src);
         else if (o instanceof String)
-          searchText(text, (String)o, source, a.getDisplayName());
+          searchText(text, (String)o, source, a.getDisplayName(), src);
       }
     }
 
-    void searchText(String text, String content, String source, String context) {
+    void searchText(String text, String content, String source, String context, Source src) {
       int n = text.length();
       int s = content.indexOf(text);
       while (s >= 0) {
         String c = context;
+        int lineno = -1;
         if (c == null) { // use line number
-          int p = lineNumber(content, s);
-          c = p > 0 ? S.fmt("matchTextLine", (p+1)) : S.get("matchTextContent");
+          lineno = lineNumber(content, s);
+          c = lineno >= 0 ? S.fmt("matchTextLine", lineno) : S.get("matchTextContent");
         }
-        add(new Result(content, s, s+n, source, c));
+        add(new Result(content, s, s+n, source, c, lineno, src));
         s = content.indexOf(text, s+1);
       }
     }
@@ -376,7 +382,6 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
     return n;
   }
 
-
   static String escapeHtml(String s) {
     StringBuilder out = new StringBuilder(Math.max(16, s.length()));
     for (int i = 0; i < s.length(); i++) {
@@ -392,16 +397,123 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
     return out.toString();
   }
 
+  private interface Source { 
+    // Result makeResult(String match, int s, int e, String source, String context, int lineno);
+  }
+
+  private static class ToolSource implements Source {
+    Project proj;
+    ArrayList<Library> libPath;
+    Tool tool;
+    ToolSource(Project proj, ArrayList<Library> libPath, Tool tool) {
+      this.proj = proj;
+      this.libPath = libPath;
+      this.tool = tool;
+    }
+  }
+
+  private static class HdlSource implements Source {
+    Project proj;
+    ArrayList<Library> libPath;
+    HdlModel hdl;
+    HdlSource(Project proj, ArrayList<Library> libPath, HdlModel hdl) {
+      this.proj = proj;
+      this.libPath = libPath;
+      this.hdl = hdl;
+    }
+  }
+
+  private static class LibrarySource implements Source {
+    Project proj;
+    ArrayList<Library> libPath;
+    ArrayList<Library> subPath;
+    Library lib;
+    LibrarySource(Project proj, ArrayList<Library> libPath, Library lib) {
+      this.proj = proj;
+      this.libPath = libPath;
+      this.lib = lib;
+      subPath = new ArrayList<Library>();
+      subPath.addAll(libPath);
+      subPath.add(lib);
+    }
+    CircuitSource forCircuit(Circuit circ) {
+      return new CircuitSource(proj, subPath, circ);
+    }
+    HdlSource forHdl(HdlModel hdl) {
+      return new HdlSource(proj, subPath, hdl);
+    }
+    ToolSource forTool(Tool tool) {
+      return new ToolSource(proj, subPath, tool);
+    }
+    LibrarySource forLibrary(Library sublib) {
+      return new LibrarySource(proj, subPath, sublib);
+    }
+  }
+
+  private static class CircuitSource implements Source {
+    Project proj;
+    ArrayList<Library> libPath;
+    Circuit circ;
+    CircuitSource(Project proj, ArrayList<Library> libPath, Circuit circ) {
+      this.proj = proj;
+      this.libPath = libPath;
+      this.circ = circ;
+    }
+
+    CircuitSource findCircuit(Circuit subcirc) {
+      ComponentFactory f = subcirc.getSubcircuitFactory();
+      Library lib = libPath.get(libPath.size()-1);
+      if (lib.contains(f))
+        return new CircuitSource(proj, libPath, subcirc);
+      ArrayList<Library> copy = new ArrayList<>();
+      copy.addAll(libPath);
+      findFactory(copy, f);
+      return new CircuitSource(proj, copy, subcirc);
+    }
+
+    HdlSource findHdl(HdlModel hdl) {
+      if (!(hdl instanceof VhdlContent))
+        throw new IllegalArgumentException("hdl isn't vhdl? " + hdl);
+      ComponentFactory f = ((VhdlContent)hdl).getEntityFactory();
+      Library lib = libPath.get(libPath.size()-1);
+      if (lib.contains(f))
+        return new HdlSource(proj, libPath, hdl);
+      ArrayList<Library> copy = new ArrayList<>();
+      copy.addAll(libPath);
+      findFactory(copy, f);
+      return new HdlSource(proj, copy, hdl);
+    }
+
+    static boolean findFactory(ArrayList<Library> p, ComponentFactory f) {
+      Library lib = p.get(p.size()-1);
+      if (lib.contains(f))
+        return true;
+      for (Library sublib : lib.getLibraries()) {
+        p.add(sublib);
+        if (findFactory(p, f))
+          return true;
+        p.remove(sublib);
+      }
+      return false;
+    }
+
+  }
+
   private static class Result {
     String match;
     int s, e;
     String source, context;
-    Result(String match, int s, int e, String source, String context) {
+    int lineno;
+    Source src;
+
+    Result(String match, int s, int e, String source, String context, int lineno, Source src) {
       this.match = match;
       this.s = s;
       this.e = e;
       this.source = source;
       this.context = context;
+      this.lineno = lineno;
+      this.src = src;
     }
 
     static final String b = "<font color=\"#820a0a\"><b>";

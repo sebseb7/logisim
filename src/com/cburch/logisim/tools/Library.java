@@ -32,6 +32,7 @@ package com.cburch.logisim.tools;
 
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -90,6 +91,14 @@ public abstract class Library {
   }
 
   public abstract List<? extends Tool> getTools();
+
+  public List<? extends Tool> getToolsAndSublibraryTools() {
+    ArrayList<Tool> allTools = new ArrayList<>();
+    allTools.addAll(getTools());
+    for (Library sublib : getLibraries())
+      allTools.addAll(sublib.getToolsAndSublibraryTools());
+    return allTools;
+  }
 
   public int indexOf(ComponentFactory query) {
     int index = -1;

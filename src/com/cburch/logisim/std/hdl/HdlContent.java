@@ -36,7 +36,7 @@ import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
-public abstract class HdlContent implements HdlModel, Cloneable {
+public abstract class HdlContent implements HdlModel /*, Cloneable */ {
 
   protected static <T> T[] concat(T[] first, T[] second) {
     T[] result = Arrays.copyOf(first, first.length + second.length);
@@ -72,18 +72,18 @@ public abstract class HdlContent implements HdlModel, Cloneable {
   //   circlisteners.remove(l);
   // }
 
-  @Override
-  public HdlContent clone() throws CloneNotSupportedException {
-    HdlContent ret = (HdlContent) super.clone();
-    ret.listeners = null;
-    int n = 0;
-    if (listeners != null) {
-      for (HdlModelListener l : listeners) {
-        n++;
-      }
-    }
-    return ret;
-  }
+  // @Override
+  // public HdlContent clone() throws CloneNotSupportedException {
+  //   HdlContent ret = (HdlContent) super.clone();
+  //   ret.listeners = null;
+  //   int n = 0;
+  //   if (listeners != null) {
+  //     for (HdlModelListener l : listeners) {
+  //       n++;
+  //     }
+  //   }
+  //   return ret;
+  // }
 
   public String toString() {
     String s = super.toString() + " " + listeners;

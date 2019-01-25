@@ -134,23 +134,29 @@ public class VhdlContent extends HdlContent {
   protected String libraries;
   protected String architecture;
   private LogisimFile logiFile;
+  private VhdlEntity entityFactory;
 
   protected VhdlContent(String name, LogisimFile file) {
     logiFile = file;
     this.name = name;
     ports = new ArrayList<VhdlParser.PortDescription>();
+    entityFactory = new VhdlEntity(this);
   }
 
-  public VhdlContent clone() {
-    try {
-      VhdlContent ret = (VhdlContent) super.clone();
-      ret.content = new StringBuffer(this.content);
-      ret.valid = this.valid;
-      return ret;
-    } catch (CloneNotSupportedException ex) {
-      return this;
-    }
+  public VhdlEntity getEntityFactory() {
+    return entityFactory;
   }
+
+  // public VhdlContent clone() {
+  //   try {
+  //     VhdlContent ret = (VhdlContent) super.clone();
+  //     ret.content = new StringBuffer(this.content);
+  //     ret.valid = this.valid;
+  //     return ret;
+  //   } catch (CloneNotSupportedException ex) {
+  //     return this;
+  //   }
+  // }
 
   @Override
   public boolean compare(HdlModel model) {
