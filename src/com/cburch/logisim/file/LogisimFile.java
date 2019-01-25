@@ -226,7 +226,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
   }
 
   public void addVhdlContent(VhdlContent content, int index) {
-    AddTool tool = new AddTool(null, new VhdlEntity(content));
+    AddTool tool = new AddTool(null, content.getEntityFactory());
     tools.add(index, tool);
     fireEvent(LibraryEvent.ADD_TOOL, tool);
     com.cburch.logisim.tools.FactoryAttributes s =
@@ -489,30 +489,28 @@ public class LogisimFile extends Library implements LibraryEventSource {
   }
 
   public String getUnloadLibraryMessage(Library lib) {
-    HashSet<ComponentFactory> factories = new HashSet<ComponentFactory>();
-    for (Tool tool : lib.getTools()) {
-      if (tool instanceof AddTool) {
-        factories.add(((AddTool) tool).getFactory());
-      }
-    }
+    List<? extends Tool> libTools = lib.getToolsAndSublibraryTools();
 
-    for (Circuit circuit : getCircuits()) {
-      for (Component comp : circuit.getNonWires()) {
-        if (factories.contains(comp.getFactory())) {
+    // fixme: this isn't right either...
+    // if lib provides a tool (e.g. TextTool), but some other library also
+    // provides the same tool, we should still allow it to be removed.
+    HashSet<ComponentFactory> factories = new HashSet<>();
+    for (Tool tool : libTools)
+      if (tool instanceof AddTool)
+        factories.add(((AddTool)tool).getFactory());
+
+    for (Circuit circuit : getCircuits())
+      for (Component comp : circuit.getNonWires())
+        if (factories.contains(comp.getFactory()))
           return S.fmt("unloadUsedError", circuit.getName());
-        }
-      }
-    }
 
     ToolbarData tb = options.getToolbarData();
     MouseMappings mm = options.getMouseMappings();
-    for (Tool t : lib.getTools()) {
-      if (tb.usesToolFromSource(t)) {
+    for (Tool t : libTools) {
+      if (tb.usesToolFromSource(t))
         return S.get("unloadToolbarError");
-      }
-      if (mm.usesToolFromSource(t)) {
+      if (mm.usesToolFromSource(t))
         return S.get("unloadMappingError");
-      }
     }
 
     return null;

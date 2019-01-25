@@ -172,7 +172,7 @@ public class XmlClipReader extends XmlReader {
 
     private Tool addMissingVhdl(String name, Element elt) throws XmlReaderException {
       VhdlContent contents = VhdlContent.parse(name, elt.getTextContent(), file);
-      Tool tool = new AddTool(null, new VhdlEntity(contents));
+      Tool tool = new AddTool(null, contents.getEntityFactory());
       tools.put(name, tool);
       vhdl.put(name, contents);
       return tool;

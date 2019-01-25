@@ -307,14 +307,14 @@ public class XmlWriter {
     Library lib = findLibrary(source);
     String lib_name;
     if (lib == null) {
-      showError(source.getName() + " component not found");
+      showError(S.fmt("componentLibraryMissingError", source.getName()));
       return null;
     } else if (lib == file) {
       lib_name = null;
     } else {
       lib_name = libs.get(lib);
       if (lib_name == null) {
-        showError("unknown library within file");
+        showError(S.fmt("componentLibraryUnregisteredError", lib.getName(), source.getName()));
         return null;
       }
     }
@@ -531,14 +531,14 @@ public class XmlWriter {
     Library lib = findLibrary(tool);
     String lib_name;
     if (lib == null) {
-      showError(S.fmt("xmlToolNotFound", tool.getDisplayName()));
+      showError(S.fmt("toolLibraryMissingError", tool.getDisplayName()));
       return null;
     } else if (lib == file) {
       lib_name = null;
     } else {
       lib_name = libs.get(lib);
       if (lib_name == null) {
-        showError(S.fmt("toolLibraryMissingError", tool.getDisplayName()));
+        showError(S.fmt("toolLibraryUnregisteredError", lib.getName(), tool.getDisplayName()));
         return null;
       }
     }
