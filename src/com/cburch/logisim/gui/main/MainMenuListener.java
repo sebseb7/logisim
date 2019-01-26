@@ -79,37 +79,6 @@ public class MainMenuListener extends MenuListener {
     }
   }
 
-  // if toolbox tool selected, use that, otherwise use current circuit/hdl
-  private Circuit getSelectedCircuit() {
-    Project proj = frame == null ? null : frame.getProject();
-    if (proj == null)
-      return null;
-    Tool tool = frame.getSelectedToolboxTool();
-    if (tool instanceof AddTool && proj.getLogisimFile().containsFromSource(tool)) {
-      ComponentFactory f = ((AddTool)tool).getFactory();
-      if (f instanceof SubcircuitFactory)
-        return ((SubcircuitFactory)f).getSubcircuit();
-    } else if (tool == null && frame.getSelectedToolboxLibrary() == null) {
-      return proj.getCurrentCircuit();
-    }
-    return null;
-  }
-
-  private HdlModel getSelectedHdl() {
-    Project proj = frame == null ? null : frame.getProject();
-    if (proj == null)
-      return null;
-    Tool tool = frame.getSelectedToolboxTool();
-    if (tool instanceof AddTool && proj.getLogisimFile().containsFromSource(tool)) {
-      ComponentFactory f = ((AddTool)tool).getFactory();
-      if (f instanceof VhdlEntity)
-        return ((VhdlEntity)f).getContent();
-    } else if (tool == null && frame.getSelectedToolboxLibrary() == null) {
-      return proj.getCurrentHdl();
-    }
-    return null;
-  }
-
   protected class ProjectMenuListener implements ProjectListener, LibraryListener,
         ActionListener, PropertyChangeListener, CanvasModelListener {
     public void actionPerformed(ActionEvent event) {
@@ -120,8 +89,8 @@ public class MainMenuListener extends MenuListener {
       LogisimFile file = proj.getLogisimFile();
       if (file == null)
         return;
-      Circuit circ = getSelectedCircuit();
-      HdlModel hdl = getSelectedHdl();
+      Circuit circ = proj.getCurrentCircuit();
+      HdlModel hdl = proj.getCurrentHdl();
       if (src == LogisimMenuBar.ADD_CIRCUIT) {
         ProjectCircuitActions.doAddCircuit(proj);
       } else if (src == LogisimMenuBar.ADD_VHDL) {
@@ -179,8 +148,8 @@ public class MainMenuListener extends MenuListener {
     public void computeEnabled() {
       Project proj = frame == null ? null : frame.getProject();
       LogisimFile file = proj == null ? null : proj.getLogisimFile();
-      Circuit circ = getSelectedCircuit();
-      HdlModel hdl = getSelectedHdl();
+      Circuit circ = proj == null ? null : proj.getCurrentCircuit();
+      HdlModel hdl = proj == null ? null : proj.getCurrentHdl();
       int circIndex = file == null || circ == null ? -1 : file.indexOfCircuit(circ);
       int hdlIndex = file == null || hdl == null ? -1 : file.indexOfHdl(hdl);
       int curIndex = circIndex >= 0 ? circIndex : hdlIndex;
@@ -226,7 +195,7 @@ public class MainMenuListener extends MenuListener {
       Project proj = frame.getProject();
       LogisimFile file = proj.getLogisimFile();
       // todo: custom appearance for vhdl components
-      Circuit circ = getSelectedCircuit();
+      Circuit circ = proj.getCurrentCircuit();
       boolean viewingAppearance = frame.getEditorView().equals(Frame.EDIT_APPEARANCE);
       boolean canRevert = file.contains(circ) && viewingAppearance
           && !circ.getAppearance().isDefaultAppearance();

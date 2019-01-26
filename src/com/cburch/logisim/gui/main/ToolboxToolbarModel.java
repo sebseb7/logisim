@@ -63,7 +63,7 @@ class ToolboxToolbarModel extends AbstractToolbarModel
         S.getter("projectMoveToolDownTip"));
     itemAppearance = new LogisimToolbarItem(menu, "projapp.gif",
         LogisimMenuBar.TOGGLE_APPEARANCE,
-        S.getter("projectEditAppearanceTip"));
+        S.getter("projectToggleAppearanceTip"));
     itemDelete = new LogisimToolbarItem(menu, "projdel.gif",
         LogisimMenuBar.REMOVE_TOOL,
         S.getter("projectRemoveToolTip"));

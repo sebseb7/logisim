@@ -120,10 +120,12 @@ public class ProjectExplorer extends JTree implements LocaleListener {
         boldFont = new Font(plainFont.getFontName(), Font.BOLD, plainFont.getSize());
       }
       ret.setFont(plainFont);
-      ret.setBackground(Color.WHITE);
+      // if (!selected)
+      //   ret.setBackground(Color.WHITE);
       if (ret instanceof JComponent) {
         JComponent comp = (JComponent) ret;
         comp.setToolTipText(null);
+        comp.setOpaque(false);
       }
       if (value instanceof ProjectExplorerToolNode) {
         ProjectExplorerToolNode toolNode = (ProjectExplorerToolNode) value;
@@ -144,9 +146,11 @@ public class ProjectExplorer extends JTree implements LocaleListener {
             else
               viewed = (vhdl != null && vhdl == proj.getFrame().getHdlEditorView());
           }
-          label.setFont(viewed ? boldFont : plainFont);
-          label.setBackground(viewed ? VIEWED_TOOL_COLOR : Color.WHITE);
-          label.setOpaque(true);
+          if (viewed) {
+            label.setFont(boldFont);
+            label.setBackground(VIEWED_TOOL_COLOR);
+            label.setOpaque(true);
+          }
           label.setText(tool.getDisplayName());
           label.setIcon(new ToolIcon(tool));
           label.setToolTipText(tool.getDescription());

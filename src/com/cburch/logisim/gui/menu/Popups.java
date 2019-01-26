@@ -146,7 +146,7 @@ public class Popups {
     static final String dup = "projectDuplicateVhdlItem";
 
     static final String editCode = "projectEditVhdlCodeItem";
-    static final String editAppearance = "projectEditVhdlAppearanceItem";
+    // static final String editAppearance = "projectEditVhdlAppearanceItem";
 
     VhdlPopup(Project proj, Tool tool, VhdlContent vhdl) {
       super(S.get("vhdlMenu"));
@@ -166,22 +166,24 @@ public class Popups {
         proj.setCurrentHdlModel(vhdl);
         proj.getFrame().setEditorView(Frame.EDIT_HDL);
       });
-      add(editAppearance, S.get(editAppearance), e -> {
-        proj.setCurrentHdlModel(vhdl);
-        proj.getFrame().setEditorView(Frame.EDIT_APPEARANCE);
-      });
+      // todo: vhdl custom appearance
+      // add(editAppearance, S.get(editAppearance), e -> {
+      //   proj.setCurrentHdlModel(vhdl);
+      //   proj.getFrame().setEditorView(Frame.EDIT_APPEARANCE);
+      // });
     }
 
     @Override
     protected boolean shouldEnable(Object tag) {
       boolean canChange = proj.getLogisimFile().contains(vhdl);
       LogisimFile file = proj.getLogisimFile();
-      if (tag == editAppearance)
-        return !(vhdl == proj.getCurrentHdl() &&
-            proj.getFrame().getEditorView().equals(Frame.EDIT_APPEARANCE));
-      else if (tag == editCode)
+      if (tag == editCode)
         return !(vhdl == proj.getCurrentHdl() &&
             proj.getFrame().getEditorView().equals(Frame.EDIT_HDL));
+      // todo: vhdl custom appearance
+      // else if (tag == editAppearance)
+      //   return !(vhdl == proj.getCurrentHdl() &&
+      //       proj.getFrame().getEditorView().equals(Frame.EDIT_APPEARANCE));
       else if (tag == cut || tag == delete)
         return canChange && proj.getDependencies().canRemove(vhdl);
       else if (tag == rename)
