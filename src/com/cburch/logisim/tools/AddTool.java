@@ -75,6 +75,7 @@ import com.cburch.logisim.tools.key.KeyConfigurationEvent;
 import com.cburch.logisim.tools.key.KeyConfigurationResult;
 import com.cburch.logisim.tools.key.KeyConfigurator;
 import com.cburch.logisim.util.DragDrop;
+import com.cburch.logisim.file.LogisimFileActions;
 
 public class AddTool extends Tool {
 
@@ -87,11 +88,10 @@ public class AddTool extends Tool {
   private static int SHOW_NONE = 0;
   private static int SHOW_GHOST = 1;
   private static int SHOW_ADD = 2;
-
   private static int SHOW_ADD_NO = 3;
 
-  private static Cursor cursor = Cursor
-      .getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
+  private static Cursor cursor
+      = Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
 
   private Class<? extends Library> libraryClass;
   private FactoryDescription description;
@@ -426,9 +426,11 @@ public class AddTool extends Tool {
   @Override
   public void mouseReleased(Canvas canvas, Graphics g, MouseEvent e) {
     Component added = null;
+    Project proj = canvas.getProject();
+    LogisimFile file = proj.getLogisimFile();
     if (state == SHOW_ADD) {
       Circuit circ = canvas.getCircuit();
-      if (!canvas.getProject().getLogisimFile().contains(circ))
+      if (!file.contains(circ))
         return;
       if (shouldSnap)
         Canvas.snapToGrid(e);
@@ -445,6 +447,24 @@ public class AddTool extends Tool {
       ComponentFactory source = getFactory();
       if (source == null)
         return;
+
+      Library libToPromote = file.findLibraryFor(source);
+      if (libToPromote == null) {
+        canvas.setErrorMessage(S.getter("nestedError"));
+        return;
+      }
+      if (libToPromote == file || file.getLibraries().contains(libToPromote))
+        libToPromote = null;
+      else {
+        int action = JOptionPane.showConfirmDialog(canvas,
+            S.fmt("promoteLibraryMessage", libToPromote.getDisplayName()),
+            S.get("promoteLibraryTitle"),
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.QUESTION_MESSAGE);
+        if (action != JOptionPane.OK_OPTION)
+          return;
+      }
+
       Component c = source.createComponent(loc, attrsCopy);
 
       if (circ.hasConflict(c)) {
@@ -467,11 +487,13 @@ public class AddTool extends Tool {
       }
 
       try {
+        if (libToPromote != null)
+          proj.doAction(LogisimFileActions.loadLibraries(new Library[] { libToPromote }));
         CircuitMutation mutation = new CircuitMutation(circ);
         mutation.add(c);
         Action action = mutation.toAction(S.getter(
               "addComponentAction", factory.getDisplayGetter()));
-        canvas.getProject().doAction(action);
+        proj.doAction(action);
         lastAddition = action;
         added = c;
       } catch (CircuitException ex) {
@@ -483,7 +505,6 @@ public class AddTool extends Tool {
       setState(canvas, SHOW_NONE);
     }
 
-    Project proj = canvas.getProject();
     Tool next = determineNext(proj);
     if (next != null) {
       proj.setTool(next);

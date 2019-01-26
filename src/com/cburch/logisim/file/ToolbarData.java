@@ -97,16 +97,10 @@ public class ToolbarData {
     toolListeners.add(l);
   }
 
-  //
-  // listener methods
-  //
   public void addToolbarListener(ToolbarListener l) {
     listeners.add(l);
   }
 
-  //
-  // modification methods
-  //
   public void copyFrom(ToolbarData other, LogisimFile file) {
     if (this == other)
       return;
@@ -120,7 +114,7 @@ public class ToolbarData {
       if (srcTool == null) {
         this.addSeparator();
       } else {
-        Tool toolCopy = file.findTool(srcTool);
+        Tool toolCopy = file.findEquivalentTool(srcTool);
         if (toolCopy != null) {
           Tool dstTool = toolCopy.cloneTool();
           AttributeSets.copy(srcTool.getAttributeSet(),
@@ -143,9 +137,6 @@ public class ToolbarData {
     return contents.get(index);
   }
 
-  //
-  // query methods
-  //
   public List<Tool> getContents() {
     return contents;
   }

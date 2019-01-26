@@ -248,7 +248,7 @@ class XmlProjectReader extends XmlReader {
 
       // last, configure AddTool attributes for circuits within the project
       for (CircuitData cd : circuitsData) {
-        AddTool tool = file.findTool(cd.circuit);
+        AddTool tool = file.findToolFor(cd.circuit);
         if (tool == null)
           continue;
         try {

@@ -313,23 +313,6 @@ public class LogisimFile extends Library implements LibraryEventSource {
     return false;
   }
 
-  private Tool findTool(Library lib, Tool query) {
-    for (Tool tool : lib.getTools()) {
-      if (tool.equals(query))
-        return tool;
-    }
-    return null;
-  }
-
-  public Tool findTool(Tool query) {
-    for (Library lib : getLibraries()) {
-      Tool ret = findTool(lib, query);
-      if (ret != null)
-        return ret;
-    }
-    return null;
-  }
-
   private void fireEvent(int action, Object data) {
     LibraryEvent e = new LibraryEvent(this, action, data);
     for (LibraryListener l : listeners) {
@@ -337,6 +320,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
     }
   }
 
+  // fixme: only for moving circuit. Why not indexOf?
   public AddTool getAddTool(Circuit circ) {
     for (AddTool tool : tools) {
       if (tool.getFactory() instanceof SubcircuitFactory) {
@@ -349,6 +333,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
     return null;
   }
 
+  // fixme: never used?
   public AddTool getAddTool(VhdlContent content) {
     for (AddTool tool : tools) {
       if (tool.getFactory() instanceof VhdlEntity) {
@@ -415,17 +400,8 @@ public class LogisimFile extends Library implements LibraryEventSource {
     return -1;
   }
 
-  public AddTool findTool(Circuit circ) {
-    for (int i = 0; i < tools.size(); i++) {
-      AddTool tool = tools.get(i);
-      if (tool.getFactory() instanceof SubcircuitFactory) {
-        SubcircuitFactory factory = (SubcircuitFactory) tool.getFactory();
-        if (factory.getSubcircuit() == circ) {
-          return tool;
-        }
-      }
-    }
-    return null;
+  public AddTool findToolFor(Circuit circ) {
+    return findToolFor(circ.getSubcircuitFactory());
   }
 
   public List<VhdlContent> getVhdlContents() {
@@ -489,11 +465,10 @@ public class LogisimFile extends Library implements LibraryEventSource {
   }
 
   public String getUnloadLibraryMessage(Library lib) {
+    List<? extends Tool> myTools = getToolsAndDirectLibraryTools();
     List<? extends Tool> libTools = lib.getToolsAndSublibraryTools();
+    libTools.removeAll(myTools);
 
-    // fixme: this isn't right either...
-    // if lib provides a tool (e.g. TextTool), but some other library also
-    // provides the same tool, we should still allow it to be removed.
     HashSet<ComponentFactory> factories = new HashSet<>();
     for (Tool tool : libTools)
       if (tool instanceof AddTool)

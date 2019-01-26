@@ -221,7 +221,7 @@ public class XmlWriter {
   private Document doc;
   private File destFile; // file being written, used to relativize library paths
   private String destDir; // dir path of circ file begin written, used to relativize paths of components
-  private HashMap<Library, String> libs = new HashMap<Library, String>();
+  private HashMap<Library, String> libIDs = new HashMap<>();
 
   private XmlWriter(LogisimFile file, Document doc, File destFile) {
     this.file = file;
@@ -305,23 +305,23 @@ public class XmlWriter {
   Element fromComponent(Component comp) {
     ComponentFactory source = comp.getFactory();
     Library lib = findLibrary(source);
-    String lib_name;
+    String lib_id;
     if (lib == null) {
       showError(S.fmt("componentLibraryMissingError", source.getName()));
       return null;
     } else if (lib == file) {
-      lib_name = null;
+      lib_id = null;
     } else {
-      lib_name = libs.get(lib);
-      if (lib_name == null) {
+      lib_id = libIDs.get(lib);
+      if (lib_id == null) {
         showError(S.fmt("componentLibraryUnregisteredError", lib.getName(), source.getName()));
         return null;
       }
     }
 
     Element ret = doc.createElement("comp");
-    if (lib_name != null)
-      ret.setAttribute("lib", lib_name);
+    if (lib_id != null)
+      ret.setAttribute("lib", lib_id);
     ret.setAttribute("name", source.getName());
     ret.setAttribute("loc", comp.getLocation().toString());
     addAttributeSetContent(ret, comp.getAttributeSet(), comp.getFactory());
@@ -330,9 +330,9 @@ public class XmlWriter {
 
   Element fromLibrary(Library lib) {
     Element ret = doc.createElement("lib");
-    if (libs.containsKey(lib))
+    if (libIDs.containsKey(lib))
       return null;
-    String name = "" + libs.size();
+    String lib_id = "" + libIDs.size();
     String desc = destFile != null
         ? LibraryManager.instance.getRelativeDescriptor(destFile, lib)
         : LibraryManager.instance.getAbsoluteDescriptor(lib);
@@ -340,8 +340,8 @@ public class XmlWriter {
       showError("internal error: missing library: " + lib.getName());
       return null;
     }
-    libs.put(lib, name);
-    ret.setAttribute("name", name);
+    libIDs.put(lib, lib_id);
+    ret.setAttribute("name", lib_id);
     ret.setAttribute("desc", desc);
     for (Tool t : lib.getTools()) {
       AttributeSet attrs = t.getAttributeSet();
@@ -402,7 +402,7 @@ public class XmlWriter {
     ret.appendChild(fromToolbarData());
 
     for (Circuit circ : file.getCircuits()) {
-      ret.appendChild(fromCircuit(circ, file.findTool(circ)));
+      ret.appendChild(fromCircuit(circ, file.findToolFor(circ)));
     }
     for (VhdlContent vhdl : file.getVhdlContents()) {
       ret.appendChild(fromVhdl(vhdl));
@@ -474,7 +474,7 @@ public class XmlWriter {
     Element e = doc.createElement("selection");
     if (sel instanceof Circuit) {
       e.setAttribute("type", "circuit"); // not used by parser
-      e.appendChild(fromCircuit((Circuit)sel, file.findTool((Circuit)sel)));
+      e.appendChild(fromCircuit((Circuit)sel, file.findToolFor((Circuit)sel)));
     } else if (sel instanceof VhdlContent) {
       e.setAttribute("type", "vhdl"); // not used by parser
       e.appendChild(fromVhdl((VhdlContent)sel));
@@ -501,7 +501,7 @@ public class XmlWriter {
     ret.appendChild(e);
 
     for (Circuit circ : usedCircs)
-      ret.appendChild(fromCircuit(circ, file.findTool(circ)));
+      ret.appendChild(fromCircuit(circ, file.findToolFor(circ)));
     for (VhdlContent vhdl : usedVhdl)
       ret.appendChild(fromVhdl(vhdl));
     return ret;
@@ -529,23 +529,23 @@ public class XmlWriter {
 
   Element fromTool(Tool tool) {
     Library lib = findLibrary(tool);
-    String lib_name;
+    String lib_id;
     if (lib == null) {
       showError(S.fmt("toolLibraryMissingError", tool.getDisplayName()));
       return null;
     } else if (lib == file) {
-      lib_name = null;
+      lib_id = null;
     } else {
-      lib_name = libs.get(lib);
-      if (lib_name == null) {
+      lib_id = libIDs.get(lib);
+      if (lib_id == null) {
         showError(S.fmt("toolLibraryUnregisteredError", lib.getName(), tool.getDisplayName()));
         return null;
       }
     }
 
     Element elt = doc.createElement("tool");
-    if (lib_name != null)
-      elt.setAttribute("lib", lib_name);
+    if (lib_id != null)
+      elt.setAttribute("lib", lib_id);
     elt.setAttribute("name", tool.getName());
     addAttributeSetContent(elt, tool.getAttributeSet(), tool);
     return elt;

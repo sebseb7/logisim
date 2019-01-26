@@ -187,6 +187,7 @@ public class ProjectCircuitActions {
     analyzer.toFront();
   }
 
+  // fixme: what about vhdl?
   public static void doMoveCircuit(Project proj, Circuit cur, int delta) {
     AddTool tool = proj.getLogisimFile().getAddTool(cur);
     if (tool != null) {

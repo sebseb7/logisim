@@ -57,9 +57,6 @@ public class MouseMappings {
     map = new HashMap<Integer, Tool>();
   }
 
-  //
-  // listener methods
-  //
   public void addMouseMappingsListener(MouseMappingsListener l) {
     listeners.add(l);
   }
@@ -72,9 +69,6 @@ public class MouseMappings {
     return false;
   }
 
-  //
-  // modification methods
-  //
   public void copyFrom(MouseMappings other, LogisimFile file) {
     if (this == other)
       return;
@@ -82,7 +76,7 @@ public class MouseMappings {
     this.map.clear();
     for (Integer mods : other.map.keySet()) {
       Tool srcTool = other.map.get(mods);
-      Tool dstTool = file.findTool(srcTool);
+      Tool dstTool = file.findEquivalentTool(srcTool);
       if (dstTool != null) {
         dstTool = dstTool.cloneTool();
         AttributeSets.copy(srcTool.getAttributeSet(),

@@ -362,7 +362,7 @@ public class Canvas extends JPanel
       }
     }
 
-    private Tool findTool(List<? extends Tool> opts) {
+    private Tool pickSomeTool(List<? extends Tool> opts) {
       Tool ret = null;
       for (Tool o : opts) {
         if (ret == null && o != null) {
@@ -392,14 +392,13 @@ public class Canvas extends JPanel
         }
 
         if (proj.getTool() == event.getData()) {
-          Tool next = findTool(proj.getLogisimFile().getOptions()
-              .getToolbarData().getContents());
+          Tool next = pickSomeTool(
+              proj.getLogisimFile().getOptions().getToolbarData().getContents());
           if (next == null) {
             for (Library lib : proj.getLogisimFile().getLibraries()) {
-              next = findTool(lib.getTools());
-              if (next != null) {
+              next = pickSomeTool(lib.getTools());
+              if (next != null)
                 break;
-              }
             }
           }
           proj.setTool(next);

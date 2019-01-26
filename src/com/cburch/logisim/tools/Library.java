@@ -47,6 +47,57 @@ import com.cburch.logisim.gui.main.LayoutClipboard;
 import com.cburch.logisim.util.DragDrop;
 
 public abstract class Library {
+
+  public boolean directlyContains(ComponentFactory query) {
+    if (contains(query))
+      return true;
+    for (Library lib : getLibraries())
+      if (lib.contains(query))
+        return true;
+    return false;
+  }
+
+  public Library findLibraryFor(ComponentFactory query) {
+    // depth 0 first
+    if (contains(query))
+      return this;
+    // depth 1 next
+    for (Library lib : getLibraries())
+      if (lib.contains(query))
+        return lib;
+    // depth 2 or more next, with no particular preference
+    for (Library lib : getLibraries()) {
+      Library sublib = lib.findNestedLibraryFor(query);
+      if (sublib != null)
+        return sublib;
+    }
+    return null;
+  }
+
+  private Library findNestedLibraryFor(ComponentFactory query) {
+    for (Library lib : getLibraries()) {
+      if (lib.contains(query))
+        return lib;
+      Library sublib = lib.findNestedLibraryFor(query);
+      if (sublib != null)
+        return sublib;
+    }
+    return null;
+  }
+
+  public Tool findEquivalentTool(Tool query) {
+    for (Tool tool : getTools()) {
+      if (tool.equals(query))
+        return tool;
+    }
+    for (Library lib : getLibraries()) {
+      Tool tool = lib.findEquivalentTool(query);
+      if (tool != null)
+        return tool;
+    }
+    return null;
+  }
+
   public boolean contains(ComponentFactory query) {
     return indexOf(query) >= 0;
   }
@@ -100,6 +151,14 @@ public abstract class Library {
     return allTools;
   }
 
+  public List<? extends Tool> getToolsAndDirectLibraryTools() {
+    ArrayList<Tool> allTools = new ArrayList<>();
+    allTools.addAll(getTools());
+    for (Library sublib : getLibraries())
+      allTools.addAll(sublib.getTools());
+    return allTools;
+  }
+
   public int indexOf(ComponentFactory query) {
     int index = -1;
     for (Tool obj : getTools()) {
@@ -111,6 +170,22 @@ public abstract class Library {
       }
     }
     return -1;
+  }
+
+  public AddTool findToolFor(ComponentFactory query) {
+    for (Tool obj : getTools()) {
+      if (obj instanceof AddTool) {
+        AddTool tool = (AddTool) obj;
+        if (tool.getFactory() == query)
+          return tool;
+      }
+    }
+    for (Library lib : getLibraries()) {
+      AddTool tool = lib.findToolFor(query);
+      if (tool != null)
+        return tool;
+    }
+    return null;
   }
 
   public boolean isDirty() {

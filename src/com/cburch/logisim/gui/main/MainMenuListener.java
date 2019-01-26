@@ -86,6 +86,7 @@ public class MainMenuListener extends MenuListener {
       } else if (src == LogisimMenuBar.IMPORT_VHDL) {
         ProjectCircuitActions.doImportVhdl(proj);
       } else if (src == LogisimMenuBar.MOVE_CIRCUIT_UP) {
+        // fixme: what about vhdl?
         ProjectCircuitActions.doMoveCircuit(proj, cur, -1);
       } else if (src == LogisimMenuBar.MOVE_CIRCUIT_DOWN) {
         ProjectCircuitActions.doMoveCircuit(proj, cur, 1);
