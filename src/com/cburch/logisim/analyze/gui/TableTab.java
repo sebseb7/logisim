@@ -701,6 +701,7 @@ class TableTab extends AnalyzerTab {
       setEnabled(LogisimMenuBar.DELETE, sel);
       setEnabled(LogisimMenuBar.DUPLICATE, false);
       setEnabled(LogisimMenuBar.SELECT_ALL, table.getRowCount() > 0);
+      setEnabled(LogisimMenuBar.SEARCH, false);
       setEnabled(LogisimMenuBar.RAISE, false);
       setEnabled(LogisimMenuBar.LOWER, false);
       setEnabled(LogisimMenuBar.RAISE_TOP, false);

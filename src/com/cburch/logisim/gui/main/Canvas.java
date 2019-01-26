@@ -68,6 +68,7 @@ import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.circuit.WidthIncompatibilityData;
 import com.cburch.logisim.circuit.WireSet;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.comp.ComponentUserEvent;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeEvent;
@@ -377,21 +378,19 @@ public class Canvas extends JPanel
     @Override
     public void libraryChanged(LibraryEvent event) {
       if (event.getAction() == LibraryEvent.REMOVE_TOOL) {
-        Object t = event.getData();
+        Object tool = event.getData();
         Circuit circ = null;
-        if (t instanceof AddTool) {
-          t = ((AddTool) t).getFactory();
-          if (t instanceof SubcircuitFactory) {
-            circ = ((SubcircuitFactory) t).getSubcircuit();
-          }
+        if (tool instanceof AddTool) {
+          ComponentFactory f = ((AddTool) tool).getFactory();
+          if (f instanceof SubcircuitFactory)
+            circ = ((SubcircuitFactory) f).getSubcircuit();
         }
 
-        if (t == proj.getCurrentCircuit() && t != null) {
-          proj.setCurrentCircuit(proj.getLogisimFile()
-              .getMainCircuit());
+        if (circ == proj.getCurrentCircuit() && circ != null) {
+          proj.setCurrentCircuit(proj.getLogisimFile().getMainCircuit());
         }
 
-        if (proj.getTool() == event.getData()) {
+        if (proj.getTool() == tool) {
           Tool next = pickSomeTool(
               proj.getLogisimFile().getOptions().getToolbarData().getContents());
           if (next == null) {

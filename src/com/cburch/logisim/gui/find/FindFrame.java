@@ -31,81 +31,57 @@
 package com.cburch.logisim.gui.find;
 import static com.cburch.logisim.gui.find.Strings.S;
 
-import java.awt.Font;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.Color;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.AbstractListModel;
-import javax.swing.UIManager;
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.Icon;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.ListSelectionModel;
-import javax.swing.JButton;
-import javax.swing.BoxLayout;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JList;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
-import javax.swing.JRadioButton;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.ButtonGroup;
-import javax.swing.JList;
 
+import com.cburch.hdl.HdlModel;
+import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.SubcircuitFactory;
-import com.cburch.logisim.circuit.CircuitState;
-import com.cburch.logisim.proj.Projects;
+import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
-import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.comp.ComponentFactory;
-import com.cburch.logisim.comp.Component;
-import com.cburch.logisim.tools.AddTool;
-import com.cburch.logisim.tools.Tool;
-import com.cburch.logisim.tools.Library;
-import com.cburch.logisim.circuit.Wire;
-import com.cburch.logisim.std.hdl.VhdlEntity;
-import com.cburch.logisim.std.base.Text;
-import com.cburch.hdl.HdlModel;
-import com.cburch.logisim.std.hdl.VhdlContent;
-import com.cburch.logisim.circuit.Simulator;
-import com.cburch.logisim.file.LibraryEvent;
-import com.cburch.logisim.file.LibraryListener;
-import com.cburch.logisim.gui.chrono.ChronoPanel;
 import com.cburch.logisim.gui.generic.LFrame;
-import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.gui.generic.WrapLayout;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.proj.ProjectEvent;
-import com.cburch.logisim.proj.ProjectListener;
+import com.cburch.logisim.proj.Projects;
+import com.cburch.logisim.std.base.Text;
+import com.cburch.logisim.std.hdl.VhdlContent;
+import com.cburch.logisim.std.hdl.VhdlEntity;
+import com.cburch.logisim.tools.AddTool;
+import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
-import com.cburch.logisim.gui.generic.WrapLayout;
 
 public class FindFrame extends LFrame.Dialog implements LocaleListener {
   // maybe use LFrame.SubWindow instead?
@@ -192,8 +168,6 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
     boxes.add(scrollPane, gc);
 
     contents.add(boxes, BorderLayout.CENTER);
-
-    setPreferredSize(new Dimension(350, 600));
 
     top.go.addActionListener(e -> model.update());
 
@@ -572,6 +546,37 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
 
   }
 
+  private void setLocationRelativeTo(Project proj) {
+      // Try to place to right of circuit window, or at least near right of screen,
+      // using same height as circuit window.
+      Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
+      Rectangle r = proj.getFrame().getBounds();
+      int w = 350;
+      int h = Math.max(450, r.height);
+      int x = r.x + r.width;
+      int y = r.y;
+      if (x + w > d.width) { // too small to right of circuit
+        if (r.x >= w) // plenty of room to left of circuit
+          x = r.x - w;
+        else if (r.x > d.width - w) // circuit is near right of screen
+          x = 0;
+        else // circuit is near left of screen
+          x = d.width - w;
+      }
+      setLocation(x, y);
+      setPreferredSize(new Dimension(w, h));
+      setMinimumSize(new Dimension(250, 300));
+  }
+
+  public static void showFindFrame(Project proj) {
+    FindFrame finder = FindManager.getFindFrame(proj.getFrame());
+    if (!finder.isVisible()) {
+      finder.setLocationRelativeTo(proj);
+      finder.setVisible(true);
+    }
+    finder.toFront();
+  }
+
   // Search for matching text
   // - Find on current circuit / current vhdl, vs global search
   // - Replace?
@@ -587,6 +592,8 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
   // - tunnel names StdAttr.LABEL
   // - pin names StdAttr.LABEL
   // - later: memory data ? as bytes? as strings? as hex?
+
+  // todo: search appearance elements, toolbars, mouse mappings
   
   // Search for matching components and attributes (e.g. find all 8-wide multiplexors)
   // - Find on current circuit vs global search
@@ -597,6 +604,7 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
 
   public static void main(String[] args) throws Exception {
     FindFrame frame = new FindFrame();
+    frame.setPreferredSize(new Dimension(350, 600));
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     frame.pack();
     frame.setVisible(true);

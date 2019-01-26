@@ -71,6 +71,7 @@ public class LogisimMenuBar extends JMenuBar {
   public static final LogisimMenuItem DELETE = new LogisimMenuItem("Delete");
   public static final LogisimMenuItem DUPLICATE = new LogisimMenuItem("Duplicate");
   public static final LogisimMenuItem SELECT_ALL = new LogisimMenuItem("SelectAll");
+  public static final LogisimMenuItem SEARCH = new LogisimMenuItem("Search");
   public static final LogisimMenuItem RAISE = new LogisimMenuItem("Raise");
   public static final LogisimMenuItem LOWER = new LogisimMenuItem("Lower");
   public static final LogisimMenuItem RAISE_TOP = new LogisimMenuItem("RaiseTop");
@@ -80,7 +81,7 @@ public class LogisimMenuBar extends JMenuBar {
   public static final LogisimMenuItem[] EDIT_ITEMS = {
     // UNDO, REDO,
     CUT, COPY, PASTE,
-    DELETE, DUPLICATE, SELECT_ALL,
+    DELETE, DUPLICATE, SELECT_ALL, SEARCH,
     RAISE, LOWER, RAISE_TOP, LOWER_BOTTOM,
     ADD_CONTROL, REMOVE_CONTROL,
   };
@@ -88,10 +89,11 @@ public class LogisimMenuBar extends JMenuBar {
   public static final LogisimMenuItem ADD_VHDL = new LogisimMenuItem("AddVhdl");
   public static final LogisimMenuItem IMPORT_VHDL = new LogisimMenuItem("ImportVhdl");
   public static final LogisimMenuItem ADD_CIRCUIT = new LogisimMenuItem("AddCircuit");
-  public static final LogisimMenuItem MOVE_CIRCUIT_UP = new LogisimMenuItem("MoveCircuitUp");
-  public static final LogisimMenuItem MOVE_CIRCUIT_DOWN = new LogisimMenuItem("MoveCircuitDown");
+  public static final LogisimMenuItem ADD_TOOL = new LogisimMenuItem("AddTool");
+  public static final LogisimMenuItem MOVE_TOOL_UP = new LogisimMenuItem("MoveToolUp");
+  public static final LogisimMenuItem MOVE_TOOL_DOWN = new LogisimMenuItem("MoveToolDown");
   public static final LogisimMenuItem SET_MAIN_CIRCUIT = new LogisimMenuItem("SetMainCircuit");
-  public static final LogisimMenuItem REMOVE_CIRCUIT = new LogisimMenuItem("RemoveCircuit");
+  public static final LogisimMenuItem REMOVE_TOOL = new LogisimMenuItem("RemoveTool");
   public static final LogisimMenuItem EDIT_LAYOUT = new LogisimMenuItem("EditLayout");
   public static final LogisimMenuItem EDIT_APPEARANCE = new LogisimMenuItem("EditAppearance");
   public static final LogisimMenuItem TOGGLE_APPEARANCE = new LogisimMenuItem("ToggleEditLayoutAppearance");

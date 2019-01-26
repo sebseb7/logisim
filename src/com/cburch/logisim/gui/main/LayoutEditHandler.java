@@ -30,7 +30,6 @@
 
 package com.cburch.logisim.gui.main;
 
-import java.awt.datatransfer.Transferable;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
@@ -39,6 +38,7 @@ import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
+import com.cburch.logisim.gui.find.FindFrame;
 import com.cburch.logisim.gui.menu.EditHandler;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.ProjectCircuitActions;
@@ -117,6 +117,7 @@ public class LayoutEditHandler extends EditHandler
         || selProjTool // duplicate circuit or vhdl within project
         || selLibTool); // duplicate circuit or vhdl from library into project
     setEnabled(LogisimMenuBar.SELECT_ALL, true);
+    setEnabled(LogisimMenuBar.SEARCH, true);
     setEnabled(LogisimMenuBar.RAISE, false); // todo: move circuit/lib up
     setEnabled(LogisimMenuBar.LOWER, false); // todo: move circuit/lib down
     setEnabled(LogisimMenuBar.RAISE_TOP, false); // todo: move circuit/lib up
@@ -305,6 +306,11 @@ public class LayoutEditHandler extends EditHandler
   @Override
   public void selectAll() {
     selectAll(frame);
+  }
+
+  @Override
+  public void search() {
+    FindFrame.showFindFrame(frame.getProject());
   }
 
   public static void selectAll(Frame frame) {

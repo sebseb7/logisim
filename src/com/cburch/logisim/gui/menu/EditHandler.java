@@ -41,6 +41,8 @@ public abstract class EditHandler {
   public void duplicate() { }
   public void selectAll() { }
 
+  public void search() { }
+
   public void raise() { }
   public void lower() { }
   public void raiseTop() { }
@@ -82,6 +84,8 @@ public abstract class EditHandler {
       duplicate();
     else if (src == LogisimMenuBar.SELECT_ALL)
       selectAll();
+    else if (src == LogisimMenuBar.SEARCH)
+      search();
     else if (src == LogisimMenuBar.RAISE)
       raise();
     else if (src == LogisimMenuBar.LOWER)

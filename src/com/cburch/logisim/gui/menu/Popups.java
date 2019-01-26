@@ -124,7 +124,7 @@ public class Popups {
             proj.getFrame().getEditorView().equals(Frame.EDIT_APPEARANCE));
       else if (tag == editLayout)
         return !(circuit == proj.getCurrentCircuit() &&
-            !proj.getFrame().getEditorView().equals(Frame.EDIT_APPEARANCE));
+            proj.getFrame().getEditorView().equals(Frame.EDIT_LAYOUT));
       else if (tag == main)
         return canChange && file.getMainCircuit() != circuit;
       else if (tag == rename)
@@ -145,7 +145,8 @@ public class Popups {
     static final String delete = "projectRemoveVhdlItem";
     static final String dup = "projectDuplicateVhdlItem";
 
-    static final String edit = "projectEditVhdlItem";
+    static final String editCode = "projectEditVhdlCodeItem";
+    static final String editAppearance = "projectEditVhdlAppearanceItem";
 
     VhdlPopup(Project proj, Tool tool, VhdlContent vhdl) {
       super(S.get("vhdlMenu"));
@@ -161,15 +162,26 @@ public class Popups {
       add(dup, S.get(dup), e -> SelectionActions.doDuplicate(proj, vhdl));
       addSeparator();
 
-      add(edit, S.get(edit), e -> proj.setCurrentHdlModel(vhdl));
+      add(editCode, S.get(editCode), e -> {
+        proj.setCurrentHdlModel(vhdl);
+        proj.getFrame().setEditorView(Frame.EDIT_HDL);
+      });
+      add(editAppearance, S.get(editAppearance), e -> {
+        proj.setCurrentHdlModel(vhdl);
+        proj.getFrame().setEditorView(Frame.EDIT_APPEARANCE);
+      });
     }
 
     @Override
     protected boolean shouldEnable(Object tag) {
       boolean canChange = proj.getLogisimFile().contains(vhdl);
       LogisimFile file = proj.getLogisimFile();
-      if (tag == edit)
-        return vhdl != proj.getFrame().getHdlEditorView();
+      if (tag == editAppearance)
+        return !(vhdl == proj.getCurrentHdl() &&
+            proj.getFrame().getEditorView().equals(Frame.EDIT_APPEARANCE));
+      else if (tag == editCode)
+        return !(vhdl == proj.getCurrentHdl() &&
+            proj.getFrame().getEditorView().equals(Frame.EDIT_HDL));
       else if (tag == cut || tag == delete)
         return canChange && proj.getDependencies().canRemove(vhdl);
       else if (tag == rename)

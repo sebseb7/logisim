@@ -497,6 +497,7 @@ class MinimizedTab extends AnalyzerTab {
       setEnabled(LogisimMenuBar.DELETE, false);
       setEnabled(LogisimMenuBar.DUPLICATE, false);
       setEnabled(LogisimMenuBar.SELECT_ALL, false);
+      setEnabled(LogisimMenuBar.SEARCH, false);
       setEnabled(LogisimMenuBar.RAISE, false);
       setEnabled(LogisimMenuBar.LOWER, false);
       setEnabled(LogisimMenuBar.RAISE_TOP, false);

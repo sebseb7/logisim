@@ -125,20 +125,20 @@ public class LogisimFileActions {
     }
   }
 
-  private static class MoveCircuit extends Action {
+  private static class MoveTool extends Action {
     private AddTool tool;
     private int fromIndex;
     private int toIndex;
 
-    MoveCircuit(AddTool tool, int toIndex) {
+    MoveTool(AddTool tool, int toIndex) {
       this.tool = tool;
       this.toIndex = toIndex;
     }
 
     @Override
     public Action append(Action other) {
-      MoveCircuit ret = new MoveCircuit(tool,
-          ((MoveCircuit) other).toIndex);
+      MoveTool ret = new MoveTool(tool,
+          ((MoveTool) other).toIndex);
       ret.fromIndex = this.fromIndex;
       return ret.fromIndex == ret.toIndex ? null : ret;
     }
@@ -146,23 +146,23 @@ public class LogisimFileActions {
     @Override
     public void doIt(Project proj) {
       fromIndex = proj.getLogisimFile().getTools().indexOf(tool);
-      proj.getLogisimFile().moveCircuit(tool, toIndex);
+      proj.getLogisimFile().moveTool(tool, toIndex);
     }
 
     @Override
     public String getName() {
-      return S.get("moveCircuitAction");
+      return S.get("moveToolAction");
     }
 
     @Override
     public boolean shouldAppendTo(Action other) {
-      return other instanceof MoveCircuit
-          && ((MoveCircuit) other).tool == this.tool;
+      return other instanceof MoveTool
+          && ((MoveTool) other).tool == this.tool;
     }
 
     @Override
     public void undo(Project proj) {
-      proj.getLogisimFile().moveCircuit(tool, fromIndex);
+      proj.getLogisimFile().moveTool(tool, fromIndex);
     }
   }
 
@@ -428,8 +428,8 @@ public class LogisimFileActions {
     return new LoadLibraries(new Library[] { lib }, idx);
   }
 
-  public static Action moveCircuit(AddTool tool, int toIndex) {
-    return new MoveCircuit(tool, toIndex);
+  public static Action moveTool(AddTool tool, int toIndex) {
+    return new MoveTool(tool, toIndex);
   }
 
   public static Action moveLibrary(Library lib, int toIndex) {

@@ -391,6 +391,7 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
       setEnabled(LogisimMenuBar.DELETE, sel);
       setEnabled(LogisimMenuBar.DUPLICATE, false);
       setEnabled(LogisimMenuBar.SELECT_ALL, !empty);
+      setEnabled(LogisimMenuBar.SEARCH, false);
       setEnabled(LogisimMenuBar.RAISE, sel);
       setEnabled(LogisimMenuBar.LOWER, sel);
       setEnabled(LogisimMenuBar.RAISE_TOP, sel);

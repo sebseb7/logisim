@@ -53,20 +53,20 @@ class ToolboxToolbarModel extends AbstractToolbarModel
     this.frame = frame;
 
     itemAdd = new LogisimToolbarItem(menu, "projadd.gif",
-        LogisimMenuBar.ADD_CIRCUIT,
-        S.getter("projectAddCircuitTip"));
+        LogisimMenuBar.ADD_TOOL,
+        S.getter("projectAddToolTip"));
     itemUp = new LogisimToolbarItem(menu, "projup.gif",
-        LogisimMenuBar.MOVE_CIRCUIT_UP,
-        S.getter("projectMoveCircuitUpTip"));
+        LogisimMenuBar.MOVE_TOOL_UP,
+        S.getter("projectMoveToolUpTip"));
     itemDown = new LogisimToolbarItem(menu, "projdown.gif",
-        LogisimMenuBar.MOVE_CIRCUIT_DOWN,
-        S.getter("projectMoveCircuitDownTip"));
+        LogisimMenuBar.MOVE_TOOL_DOWN,
+        S.getter("projectMoveToolDownTip"));
     itemAppearance = new LogisimToolbarItem(menu, "projapp.gif",
         LogisimMenuBar.TOGGLE_APPEARANCE,
         S.getter("projectEditAppearanceTip"));
     itemDelete = new LogisimToolbarItem(menu, "projdel.gif",
-        LogisimMenuBar.REMOVE_CIRCUIT,
-        S.getter("projectRemoveCircuitTip"));
+        LogisimMenuBar.REMOVE_TOOL,
+        S.getter("projectRemoveToolTip"));
 
     items = UnmodifiableList.create(new ToolbarItem[] { itemAdd, itemUp,
       itemDown, itemAppearance, itemDelete, });

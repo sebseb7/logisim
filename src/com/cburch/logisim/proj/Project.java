@@ -601,7 +601,7 @@ public class Project {
   }
 
   public void setTool(Tool value) {
-    if (tool == value)
+    if (tool == value || hdlModel != null)
       return;
     Tool old = tool;
     Canvas canvas = frame.getCanvas();

@@ -37,28 +37,32 @@ import java.awt.GridBagLayout;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
+import com.cburch.hdl.HdlModel;
 import com.cburch.logisim.analyze.gui.Analyzer;
 import com.cburch.logisim.analyze.gui.AnalyzerManager;
-import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.analyze.model.AnalyzerModel;
+import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.circuit.Analyze;
 import com.cburch.logisim.circuit.AnalyzeException;
 import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.std.hdl.VhdlContent;
-import com.cburch.logisim.file.LogisimFileActions;
 import com.cburch.logisim.file.LogisimFile;
+import com.cburch.logisim.file.LogisimFileActions;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
@@ -99,8 +103,7 @@ public class ProjectCircuitActions {
   }
 
   public static void doAddCircuit(Project proj) {
-    String name = promptForCircuitName(proj.getFrame(),
-        proj.getLogisimFile(), "");
+    String name = promptForCircuitName(proj.getFrame(), proj.getLogisimFile(), "");
     if (name != null) {
       Circuit circuit = new Circuit(name, proj.getLogisimFile());
       proj.doAction(LogisimFileActions.addCircuit(circuit));
@@ -109,14 +112,34 @@ public class ProjectCircuitActions {
   }
 
   public static void doAddVhdl(Project proj) {
-    String name = promptForVhdlName(proj.getFrame(),
-        proj.getLogisimFile(), "");
+    String name = promptForVhdlName(proj.getFrame(), proj.getLogisimFile(), "");
     if (name != null) {
       VhdlContent content = VhdlContent.create(name, proj.getLogisimFile());
       if (content == null)
         return;
       proj.doAction(LogisimFileActions.addVhdl(content));
       proj.setCurrentHdlModel(content);
+    }
+  }
+
+  public static void doAddTool(Project proj) {
+    LogisimFile file = proj.getLogisimFile();
+    NameResult r = promptForNewName(proj.getFrame(), file, "", ASK_TOOL_NAME);
+    String name = r.name;
+    if (name == null)
+      return;
+    if (r.type == ASK_VHDL_NAME) {
+      if (VhdlContent.labelVHDLInvalidNotify(name, file))
+        return;
+      VhdlContent content = VhdlContent.create(name, file);
+      if (content == null)
+        return;
+      proj.doAction(LogisimFileActions.addVhdl(content));
+      proj.setCurrentHdlModel(content);
+    } else {
+      Circuit circuit = new Circuit(name, file);
+      proj.doAction(LogisimFileActions.addCircuit(circuit));
+      proj.setCurrentCircuit(circuit);
     }
   }
 
@@ -187,17 +210,31 @@ public class ProjectCircuitActions {
     analyzer.toFront();
   }
 
-  // fixme: what about vhdl?
-  public static void doMoveCircuit(Project proj, Circuit cur, int delta) {
-    AddTool tool = proj.getLogisimFile().getAddTool(cur);
-    if (tool != null) {
-      int oldPos = proj.getLogisimFile().indexOfCircuit(cur);
-      int newPos = oldPos + delta;
-      int toolsCount = proj.getLogisimFile().getTools().size();
-      if (newPos >= 0 && newPos < toolsCount) {
-        proj.doAction(LogisimFileActions.moveCircuit(tool, newPos));
-      }
-    }
+  public static void doMoveCircuit(Project proj, Circuit circ, int delta) {
+    LogisimFile file = proj.getLogisimFile();
+    int oldPos = file.indexOfCircuit(circ);
+    if (oldPos < 0)
+      return;
+    List<AddTool> tools = file.getTools();
+    int newPos = oldPos + delta;
+    if (newPos >= 0 && newPos < tools.size())
+      proj.doAction(LogisimFileActions.moveTool(tools.get(oldPos), newPos));
+  }
+
+  public static void doMoveHdl(Project proj, HdlModel hdl, int delta) {
+    if (hdl instanceof VhdlContent)
+      doMoveVhdl(proj, (VhdlContent)hdl, delta);
+  }
+
+  public static void doMoveVhdl(Project proj, VhdlContent vhdl, int delta) {
+    LogisimFile file = proj.getLogisimFile();
+    int oldPos = file.indexOfVhdl(vhdl);
+    if (oldPos < 0)
+      return;
+    List<AddTool> tools = file.getTools();
+    int newPos = oldPos + delta;
+    if (newPos >= 0 && newPos < tools.size())
+      proj.doAction(LogisimFileActions.moveTool(tools.get(oldPos), newPos));
   }
 
   public static void doRemoveCircuit(Project proj, Circuit circuit) {
@@ -217,11 +254,16 @@ public class ProjectCircuitActions {
     }
   }
 
+  public static void doRemoveHdl(Project proj, HdlModel hdl) {
+    if (hdl instanceof VhdlContent)
+      doRemoveVhdl(proj, (VhdlContent)hdl);
+  }
+
   public static void doRemoveVhdl(Project proj, VhdlContent vhdl) {
     if (!proj.getDependencies().canRemove(vhdl)) {
       JOptionPane.showMessageDialog(proj.getFrame(),
-          S.get("circuitRemoveUsedError"),
-          S.get("circuitRemoveErrorTitle"),
+          S.get("vhdlRemoveUsedError"),
+          S.get("vhdlRemoveErrorTitle"),
           JOptionPane.ERROR_MESSAGE);
     } else {
       proj.doAction(LogisimFileActions.removeVhdl(vhdl));
@@ -246,31 +288,62 @@ public class ProjectCircuitActions {
    */
   public static String promptForCircuitName(JFrame frame, Library lib,
       String initialValue) {
-    return promptForNewName(frame, lib, initialValue, false);
+    return promptForNewName(frame, lib, initialValue, ASK_CIRCUIT_NAME).name;
   }
 
   public static String promptForVhdlName(JFrame frame, LogisimFile file,
       String initialValue) {
-    String name = promptForNewName(frame, file, initialValue, true);
-    if (name == null)
+    String name = promptForNewName(frame, file, initialValue, ASK_VHDL_NAME).name;
+    if (name == null || VhdlContent.labelVHDLInvalidNotify(name, file))
       return null;
-    if (VhdlContent.labelVHDLInvalidNotify(name, file)) {
-      return null;
-    }
     return name;
   }
 
-  private static String promptForNewName(JFrame frame, Library lib,
-      String initialValue, boolean vhdl) {
+  private static int ASK_CIRCUIT_NAME = 1;
+  private static int ASK_VHDL_NAME = 2;
+  private static int ASK_TOOL_NAME = 3;
+  private static class NameResult {
+    String name;
+    int type;
+    NameResult(int t) { type = t; }
+  }
+
+  private static NameResult promptForNewName(JFrame frame, Library lib,
+      String initialValue, int type) {
     String title, prompt;
-    if (vhdl) {
+    if (type == ASK_VHDL_NAME) {
       title = S.get("vhdlNameDialogTitle");
       prompt = S.get("vhdlNamePrompt");
-    } else {
+    } else if (type == ASK_CIRCUIT_NAME) {
       title = S.get("circuitNameDialogTitle");
       prompt = S.get("circuitNamePrompt");
+    } else {
+      title = S.get("toolTypeNameDialogTitle");
+      prompt = S.get("circuitNamePrompt");
     }
+
     JLabel label = new JLabel(prompt);
+    JPanel typePanel = new JPanel();
+    NameResult result = new NameResult(type);
+    if (type == ASK_TOOL_NAME) {
+      JRadioButton circButton = new JRadioButton(S.get("toolAddDialogCircuitLabel"));
+      JRadioButton vhdlButton = new JRadioButton(S.get("toolAddDialogVhdlLabel"));
+      typePanel.add(circButton);
+      typePanel.add(vhdlButton);
+      ButtonGroup g = new ButtonGroup();
+      g.add(circButton);
+      g.add(vhdlButton);
+      circButton.setSelected(true);
+      circButton.addActionListener(e -> {
+        result.type = ASK_CIRCUIT_NAME;
+        label.setText(S.get("circuitNamePrompt"));
+      });
+      vhdlButton.addActionListener(e -> {
+        result.type = ASK_VHDL_NAME;
+        label.setText(S.get("vhdlNamePrompt"));
+      });
+    }
+
     final JTextField field = new JTextField(15);
     field.setText(initialValue);
     GridBagLayout gb = new GridBagLayout();
@@ -284,37 +357,37 @@ public class ProjectCircuitActions {
     gc.weightx = 1.0;
     gc.fill = GridBagConstraints.NONE;
     gc.anchor = GridBagConstraints.LINE_START;
+    gb.setConstraints(typePanel, gc);
+    panel.add(typePanel);
     gb.setConstraints(label, gc);
     panel.add(label);
     gb.setConstraints(field, gc);
     panel.add(field);
     gb.setConstraints(strut, gc);
     panel.add(strut);
+
     JOptionPane pane = new JOptionPane(panel, JOptionPane.QUESTION_MESSAGE,
         JOptionPane.OK_CANCEL_OPTION);
     pane.setInitialValue(field);
     JDialog dlog = pane.createDialog(frame, title);
     dlog.addWindowFocusListener(new WindowFocusListener() {
-      public void windowGainedFocus(WindowEvent arg0) {
-        field.requestFocus();
-      }
-
-      public void windowLostFocus(WindowEvent arg0) {
-      }
+      public void windowGainedFocus(WindowEvent arg0) { field.requestFocus(); }
+      public void windowLostFocus(WindowEvent arg0) { }
     });
-
     field.selectAll();
+
     dlog.pack();
     dlog.setVisible(true);
     field.requestFocusInWindow();
     Object action = pane.getValue();
     if (action == null || !(action instanceof Integer)
         || ((Integer) action).intValue() != JOptionPane.OK_OPTION) {
-      return null;
+      return result;
     }
 
     String name = field.getText().trim();
-    return validateCircuitName(frame, lib, name, vhdl);
+    result.name = validateCircuitName(frame, lib, name, result.type == ASK_VHDL_NAME);
+    return result;
   }
 
   public static String getNewNameErrors(Library lib, String name, boolean vhdl) {

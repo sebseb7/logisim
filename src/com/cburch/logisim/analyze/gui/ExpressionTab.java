@@ -511,6 +511,7 @@ class ExpressionTab extends AnalyzerTab {
       setEnabled(LogisimMenuBar.DELETE, editing);
       setEnabled(LogisimMenuBar.DUPLICATE, false);
       setEnabled(LogisimMenuBar.SELECT_ALL, editing);
+      setEnabled(LogisimMenuBar.SEARCH, false);
       setEnabled(LogisimMenuBar.RAISE, false);
       setEnabled(LogisimMenuBar.LOWER, false);
       setEnabled(LogisimMenuBar.RAISE_TOP, false);

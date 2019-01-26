@@ -52,6 +52,7 @@ import javax.xml.transform.TransformerException;
 
 import org.xml.sax.SAXException;
 
+import com.cburch.hdl.HdlModel;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
@@ -415,6 +416,12 @@ public class LogisimFile extends Library implements LibraryEventSource {
     return ret;
   }
 
+  public int indexOfHdl(HdlModel hdl) {
+    if (hdl instanceof VhdlContent)
+      return indexOfVhdl((VhdlContent)hdl);
+    return -1;
+  }
+
   public int indexOfVhdl(VhdlContent vhdl) {
     for (int i = 0; i < tools.size(); i++) {
       AddTool tool = tools.get(i);
@@ -508,7 +515,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
     }
   }
 
-  public void moveCircuit(AddTool tool, int index) {
+  public void moveTool(AddTool tool, int index) {
     int oldIndex = tools.indexOf(tool);
     if (oldIndex < 0) {
       tools.add(index, tool);

@@ -118,4 +118,5 @@ public class MenuListener {
   public boolean isEnabled(LogisimMenuItem item) {
     return menubar.isEnabled(item);
   }
+
 }

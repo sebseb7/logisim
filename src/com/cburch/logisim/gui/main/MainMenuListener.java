@@ -34,25 +34,31 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.List;
 
 import com.cburch.draw.model.CanvasModelEvent;
 import com.cburch.draw.model.CanvasModelListener;
+import com.cburch.hdl.HdlModel;
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.Simulator;
+import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.appear.RevertAppearanceAction;
 import com.cburch.logisim.gui.generic.CardPanel;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.gui.menu.MenuListener;
 import com.cburch.logisim.gui.menu.ProjectCircuitActions;
 import com.cburch.logisim.gui.menu.SimulateListener;
-import com.cburch.logisim.gui.menu.MenuListener;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
+import com.cburch.logisim.std.hdl.VhdlContent;
+import com.cburch.logisim.std.hdl.VhdlEntity;
+import com.cburch.logisim.tools.AddTool;
+import com.cburch.logisim.tools.Tool;
 
 public class MainMenuListener extends MenuListener {
 
@@ -73,78 +79,142 @@ public class MainMenuListener extends MenuListener {
     }
   }
 
+  // if toolbox tool selected, use that, otherwise use current circuit/hdl
+  private Circuit getSelectedCircuit() {
+    Project proj = frame == null ? null : frame.getProject();
+    if (proj == null)
+      return null;
+    Tool tool = frame.getSelectedToolboxTool();
+    if (tool instanceof AddTool && proj.getLogisimFile().containsFromSource(tool)) {
+      ComponentFactory f = ((AddTool)tool).getFactory();
+      if (f instanceof SubcircuitFactory)
+        return ((SubcircuitFactory)f).getSubcircuit();
+    } else if (tool == null && frame.getSelectedToolboxLibrary() == null) {
+      return proj.getCurrentCircuit();
+    }
+    return null;
+  }
+
+  private HdlModel getSelectedHdl() {
+    Project proj = frame == null ? null : frame.getProject();
+    if (proj == null)
+      return null;
+    Tool tool = frame.getSelectedToolboxTool();
+    if (tool instanceof AddTool && proj.getLogisimFile().containsFromSource(tool)) {
+      ComponentFactory f = ((AddTool)tool).getFactory();
+      if (f instanceof VhdlEntity)
+        return ((VhdlEntity)f).getContent();
+    } else if (tool == null && frame.getSelectedToolboxLibrary() == null) {
+      return proj.getCurrentHdl();
+    }
+    return null;
+  }
+
   protected class ProjectMenuListener implements ProjectListener, LibraryListener,
         ActionListener, PropertyChangeListener, CanvasModelListener {
     public void actionPerformed(ActionEvent event) {
       Object src = event.getSource();
       Project proj = frame.getProject();
-      Circuit cur = proj == null ? null : proj.getCurrentCircuit();
+      if (proj == null)
+        return;
+      LogisimFile file = proj.getLogisimFile();
+      if (file == null)
+        return;
+      Circuit circ = getSelectedCircuit();
+      HdlModel hdl = getSelectedHdl();
       if (src == LogisimMenuBar.ADD_CIRCUIT) {
         ProjectCircuitActions.doAddCircuit(proj);
       } else if (src == LogisimMenuBar.ADD_VHDL) {
         ProjectCircuitActions.doAddVhdl(proj);
       } else if (src == LogisimMenuBar.IMPORT_VHDL) {
         ProjectCircuitActions.doImportVhdl(proj);
-      } else if (src == LogisimMenuBar.MOVE_CIRCUIT_UP) {
-        // fixme: what about vhdl?
-        ProjectCircuitActions.doMoveCircuit(proj, cur, -1);
-      } else if (src == LogisimMenuBar.MOVE_CIRCUIT_DOWN) {
-        ProjectCircuitActions.doMoveCircuit(proj, cur, 1);
+      } else if (src == LogisimMenuBar.ADD_TOOL) {
+        ProjectCircuitActions.doAddTool(proj);
+      } else if (src == LogisimMenuBar.MOVE_TOOL_UP) {
+        if (circ != null && file.getCircuits().contains(circ))
+          ProjectCircuitActions.doMoveCircuit(proj, circ, -1);
+        else if (hdl != null && file.getVhdlContents().contains(hdl))
+          ProjectCircuitActions.doMoveHdl(proj, hdl, -1);
+      } else if (src == LogisimMenuBar.MOVE_TOOL_DOWN) {
+        if (circ != null && file.getCircuits().contains(circ))
+          ProjectCircuitActions.doMoveCircuit(proj, circ, 1);
+        else if (hdl != null && file.getVhdlContents().contains(hdl))
+          ProjectCircuitActions.doMoveHdl(proj, hdl, 1);
       } else if (src == LogisimMenuBar.SET_MAIN_CIRCUIT) {
-        ProjectCircuitActions.doSetAsMainCircuit(proj, cur);
-      } else if (src == LogisimMenuBar.REMOVE_CIRCUIT) {
-        ProjectCircuitActions.doRemoveCircuit(proj, cur);
+        ProjectCircuitActions.doSetAsMainCircuit(proj, circ);
+      } else if (src == LogisimMenuBar.REMOVE_TOOL) {
+        if (circ != null && file.getCircuits().contains(circ))
+          ProjectCircuitActions.doRemoveCircuit(proj, circ);
+        else if (hdl != null && file.getVhdlContents().contains(hdl))
+          ProjectCircuitActions.doRemoveHdl(proj, hdl);
       } else if (src == LogisimMenuBar.EDIT_LAYOUT) {
-        frame.setEditorView(Frame.EDIT_LAYOUT);
+        if (proj.getCurrentHdl() != null)
+          frame.setEditorView(Frame.EDIT_HDL);
+        else
+          frame.setEditorView(Frame.EDIT_LAYOUT);
       } else if (src == LogisimMenuBar.EDIT_APPEARANCE) {
         frame.setEditorView(Frame.EDIT_APPEARANCE);
       } else if (src == LogisimMenuBar.TOGGLE_APPEARANCE) {
-        boolean viewAppearance = frame.getEditorView().equals(Frame.EDIT_APPEARANCE);
-        frame.setEditorView(viewAppearance ? Frame.EDIT_LAYOUT : Frame.EDIT_APPEARANCE);
+        boolean viewingAppearance = frame.getEditorView().equals(Frame.EDIT_APPEARANCE);
+        if (circ != null)
+          frame.setEditorView(viewingAppearance ? Frame.EDIT_LAYOUT : Frame.EDIT_APPEARANCE);
+        // todo: custom appearance for vhdl components
+        // else
+        //   frame.setEditorView(viewAppearance ? Frame.EDIT_HDL : Frame.EDIT_APPEARANCE);
       } else if (src == LogisimMenuBar.REVERT_APPEARANCE) {
-        proj.doAction(new RevertAppearanceAction(cur));
+        if (circ != null && file.getCircuits().contains(circ))
+          proj.doAction(new RevertAppearanceAction(circ));
+        // todo: custom appearance for vhdl components
+        // else if (hdl != null && file.getVhdlContents().contains(hdl))
+        //   proj.doAction(new RevertAppearanceAction(hdl));
       } else if (src == LogisimMenuBar.ANALYZE_CIRCUIT) {
-        ProjectCircuitActions.doAnalyze(proj, cur);
+        if (circ != null)
+          ProjectCircuitActions.doAnalyze(proj, circ);
       } else if (src == LogisimMenuBar.CIRCUIT_STATS) {
-        StatisticsDialog.show(frame, proj.getLogisimFile(), cur);
+        if (circ != null)
+          StatisticsDialog.show(frame, file, circ);
       }
     }
 
     public void computeEnabled() {
       Project proj = frame == null ? null : frame.getProject();
       LogisimFile file = proj == null ? null : proj.getLogisimFile();
-      Circuit cur = proj == null ? null : proj.getCurrentCircuit();
-      int curIndex = file == null ? -1 : file.indexOfCircuit(cur);
-      boolean isProjectCircuit = curIndex >= 0;
+      Circuit circ = getSelectedCircuit();
+      HdlModel hdl = getSelectedHdl();
+      int circIndex = file == null || circ == null ? -1 : file.indexOfCircuit(circ);
+      int hdlIndex = file == null || hdl == null ? -1 : file.indexOfHdl(hdl);
+      int curIndex = circIndex >= 0 ? circIndex : hdlIndex;
       String editorView = frame == null ? "" : frame.getEditorView();
       boolean canSetMain = false;
       boolean canMoveUp = false;
       boolean canMoveDown = false;
       boolean canRemove = false;
       boolean canRevert = false;
-      boolean viewAppearance = editorView.equals(Frame.EDIT_APPEARANCE);
-      boolean viewLayout = editorView.equals(Frame.EDIT_LAYOUT);
-      if (isProjectCircuit) {
-        List<?> tools = proj.getLogisimFile().getTools();
-
-        canSetMain = proj.getLogisimFile().getMainCircuit() != cur;
+      boolean viewingAppearance = editorView.equals(Frame.EDIT_APPEARANCE);
+      boolean viewingLayout = editorView.equals(Frame.EDIT_LAYOUT);
+      if (curIndex >= 0) {
+        int n = file.getTools().size();
         canMoveUp = curIndex > 0;
-        canMoveDown = curIndex < tools.size() - 1;
-        canRemove = tools.size() > 1;
-        canRevert = viewAppearance
-            && !cur.getAppearance().isDefaultAppearance();
+        canMoveDown = curIndex < n - 1;
+        canRemove = curIndex == hdlIndex || file.getCircuits().size() > 1;
+      }
+      if (circIndex >= 0) {
+        canSetMain = file.getMainCircuit() != circ;
+        canRevert = viewingAppearance
+            && !circ.getAppearance().isDefaultAppearance();
       }
 
       menubar.setEnabled(LogisimMenuBar.ADD_CIRCUIT, true);
       menubar.setEnabled(LogisimMenuBar.ADD_VHDL, true);
       menubar.setEnabled(LogisimMenuBar.IMPORT_VHDL, true);
-      menubar.setEnabled(LogisimMenuBar.MOVE_CIRCUIT_UP, canMoveUp);
-      menubar.setEnabled(LogisimMenuBar.MOVE_CIRCUIT_DOWN, canMoveDown);
+      menubar.setEnabled(LogisimMenuBar.ADD_TOOL, true);
+      menubar.setEnabled(LogisimMenuBar.MOVE_TOOL_UP, canMoveUp);
+      menubar.setEnabled(LogisimMenuBar.MOVE_TOOL_DOWN, canMoveDown);
       menubar.setEnabled(LogisimMenuBar.SET_MAIN_CIRCUIT, canSetMain);
-      menubar.setEnabled(LogisimMenuBar.REMOVE_CIRCUIT, canRemove);
-      menubar.setEnabled(LogisimMenuBar.EDIT_LAYOUT, viewAppearance);
-      menubar.setEnabled(LogisimMenuBar.EDIT_APPEARANCE, viewLayout);
-      menubar.setEnabled(LogisimMenuBar.TOGGLE_APPEARANCE, true);
+      menubar.setEnabled(LogisimMenuBar.REMOVE_TOOL, canRemove);
+      menubar.setEnabled(LogisimMenuBar.EDIT_LAYOUT, viewingAppearance);
+      menubar.setEnabled(LogisimMenuBar.EDIT_APPEARANCE, viewingLayout);
+      menubar.setEnabled(LogisimMenuBar.TOGGLE_APPEARANCE, viewingLayout || viewingAppearance);
       menubar.setEnabled(LogisimMenuBar.REVERT_APPEARANCE, canRevert);
       menubar.setEnabled(LogisimMenuBar.ANALYZE_CIRCUIT, true);
       menubar.setEnabled(LogisimMenuBar.CIRCUIT_STATS, true);
@@ -155,13 +225,12 @@ public class MainMenuListener extends MenuListener {
       // do this separately since it can happen rather often
       Project proj = frame.getProject();
       LogisimFile file = proj.getLogisimFile();
-      Circuit cur = proj.getCurrentCircuit();
-      boolean isProjectCircuit = file.contains(cur);
-      boolean viewAppearance = frame.getEditorView().equals(Frame.EDIT_APPEARANCE);
-      boolean canRevert = isProjectCircuit && viewAppearance
-          && !cur.getAppearance().isDefaultAppearance();
-      boolean oldValue = menubar
-          .isEnabled(LogisimMenuBar.REVERT_APPEARANCE);
+      // todo: custom appearance for vhdl components
+      Circuit circ = getSelectedCircuit();
+      boolean viewingAppearance = frame.getEditorView().equals(Frame.EDIT_APPEARANCE);
+      boolean canRevert = file.contains(circ) && viewingAppearance
+          && !circ.getAppearance().isDefaultAppearance();
+      boolean oldValue = menubar.isEnabled(LogisimMenuBar.REVERT_APPEARANCE);
       if (canRevert != oldValue) {
         menubar.setEnabled(LogisimMenuBar.REVERT_APPEARANCE, canRevert);
         fireEnableChanged();
@@ -215,10 +284,11 @@ public class MainMenuListener extends MenuListener {
       menubar.addActionListener(LogisimMenuBar.ADD_CIRCUIT, this);
       menubar.addActionListener(LogisimMenuBar.ADD_VHDL, this);
       menubar.addActionListener(LogisimMenuBar.IMPORT_VHDL, this);
-      menubar.addActionListener(LogisimMenuBar.MOVE_CIRCUIT_UP, this);
-      menubar.addActionListener(LogisimMenuBar.MOVE_CIRCUIT_DOWN, this);
+      menubar.addActionListener(LogisimMenuBar.ADD_TOOL, this);
+      menubar.addActionListener(LogisimMenuBar.MOVE_TOOL_UP, this);
+      menubar.addActionListener(LogisimMenuBar.MOVE_TOOL_DOWN, this);
       menubar.addActionListener(LogisimMenuBar.SET_MAIN_CIRCUIT, this);
-      menubar.addActionListener(LogisimMenuBar.REMOVE_CIRCUIT, this);
+      menubar.addActionListener(LogisimMenuBar.REMOVE_TOOL, this);
       menubar.addActionListener(LogisimMenuBar.EDIT_LAYOUT, this);
       menubar.addActionListener(LogisimMenuBar.EDIT_APPEARANCE, this);
       menubar.addActionListener(LogisimMenuBar.TOGGLE_APPEARANCE, this);

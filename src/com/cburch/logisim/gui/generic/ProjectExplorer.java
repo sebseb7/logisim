@@ -120,6 +120,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
         boldFont = new Font(plainFont.getFontName(), Font.BOLD, plainFont.getSize());
       }
       ret.setFont(plainFont);
+      ret.setBackground(Color.WHITE);
       if (ret instanceof JComponent) {
         JComponent comp = (JComponent) ret;
         comp.setToolTipText(null);
@@ -144,6 +145,8 @@ public class ProjectExplorer extends JTree implements LocaleListener {
               viewed = (vhdl != null && vhdl == proj.getFrame().getHdlEditorView());
           }
           label.setFont(viewed ? boldFont : plainFont);
+          label.setBackground(viewed ? VIEWED_TOOL_COLOR : Color.WHITE);
+          label.setOpaque(true);
           label.setText(tool.getDisplayName());
           label.setIcon(new ToolIcon(tool));
           label.setToolTipText(tool.getDescription());
@@ -280,6 +283,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
   private static final String DIRTY_MARKER = "*";
 
   public static final Color MAGNIFYING_INTERIOR = new Color(200, 200, 255, 64);
+  public static final Color VIEWED_TOOL_COLOR = new Color(255, 255, 153);
 
   private Project proj;
   private MyListener myListener = new MyListener();

@@ -88,6 +88,7 @@ class MenuEdit extends Menu {
   private MenuItemImpl delete = new MenuItemImpl(this, LogisimMenuBar.DELETE);
   private MenuItemImpl dup = new MenuItemImpl(this, LogisimMenuBar.DUPLICATE);
   private MenuItemImpl selall = new MenuItemImpl(this, LogisimMenuBar.SELECT_ALL);
+  private MenuItemImpl search = new MenuItemImpl(this, LogisimMenuBar.SEARCH);
   private MenuItemImpl raise = new MenuItemImpl(this, LogisimMenuBar.RAISE);
   private MenuItemImpl lower = new MenuItemImpl(this, LogisimMenuBar.LOWER);
   private MenuItemImpl raiseTop = new MenuItemImpl(this, LogisimMenuBar.RAISE_TOP);
@@ -108,6 +109,7 @@ class MenuEdit extends Menu {
     delete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
     dup.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, menuMask));
     selall.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, menuMask));
+    search.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, menuMask));
     raise.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_UP, menuMask));
     lower.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, menuMask));
     raiseTop.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_UP, menuMask
@@ -125,6 +127,8 @@ class MenuEdit extends Menu {
     add(delete);
     add(dup);
     add(selall);
+    addSeparator();
+    add(search);
     addSeparator();
     add(raise);
     add(lower);
@@ -149,6 +153,7 @@ class MenuEdit extends Menu {
     menubar.registerItem(LogisimMenuBar.DELETE, delete);
     menubar.registerItem(LogisimMenuBar.DUPLICATE, dup);
     menubar.registerItem(LogisimMenuBar.SELECT_ALL, selall);
+    menubar.registerItem(LogisimMenuBar.SEARCH, search);
     menubar.registerItem(LogisimMenuBar.RAISE, raise);
     menubar.registerItem(LogisimMenuBar.LOWER, lower);
     menubar.registerItem(LogisimMenuBar.RAISE_TOP, raiseTop);
@@ -163,10 +168,10 @@ class MenuEdit extends Menu {
     setEnabled(menubar.getSaveProject() != null || cut.hasListeners()
         || copy.hasListeners() || paste.hasListeners()
         || delete.hasListeners() || dup.hasListeners()
-        || selall.hasListeners() || raise.hasListeners()
-        || lower.hasListeners() || raiseTop.hasListeners()
-        || lowerBottom.hasListeners() || addCtrl.hasListeners()
-        || remCtrl.hasListeners());
+        || selall.hasListeners() || search.hasListeners()
+        || raise.hasListeners() || lower.hasListeners()
+        || raiseTop.hasListeners() || lowerBottom.hasListeners()
+        || addCtrl.hasListeners() || remCtrl.hasListeners());
   }
 
   public void localeChanged() {
@@ -178,6 +183,7 @@ class MenuEdit extends Menu {
     delete.setText(S.get("editClearItem"));
     dup.setText(S.get("editDuplicateItem"));
     selall.setText(S.get("editSelectAllItem"));
+    search.setText(S.get("editSearchItem"));
     raise.setText(S.get("editRaiseItem"));
     lower.setText(S.get("editLowerItem"));
     raiseTop.setText(S.get("editRaiseTopItem"));

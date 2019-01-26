@@ -53,14 +53,14 @@ import com.cburch.logisim.gui.menu.ProjectLibraryActions;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
-import com.cburch.logisim.tools.EditTool;
-import com.cburch.logisim.tools.PokeTool;
-import com.cburch.logisim.tools.AddTool;
-import com.cburch.logisim.tools.Library;
-import com.cburch.logisim.tools.Tool;
-import com.cburch.logisim.std.hdl.VhdlEntity;
-import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.base.Base;
+import com.cburch.logisim.std.hdl.VhdlContent;
+import com.cburch.logisim.std.hdl.VhdlEntity;
+import com.cburch.logisim.tools.AddTool;
+import com.cburch.logisim.tools.EditTool;
+import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.tools.PokeTool;
+import com.cburch.logisim.tools.Tool;
 
 class ToolboxManip implements ProjectExplorer.Listener {
   private class MyListener implements ProjectListener, LibraryListener,
@@ -239,7 +239,7 @@ class ToolboxManip implements ProjectExplorer.Listener {
       targetIndex--;
     if (targetIndex == draggedIndex)
       return false;
-    proj.doAction(LogisimFileActions.moveCircuit(dragged, targetIndex));
+    proj.doAction(LogisimFileActions.moveTool(dragged, targetIndex));
     return true;
   }
 

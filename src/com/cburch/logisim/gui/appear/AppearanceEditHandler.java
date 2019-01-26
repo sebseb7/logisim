@@ -140,6 +140,7 @@ public class AppearanceEditHandler extends EditHandler
     setEnabled(LogisimMenuBar.DELETE, selHasRemovable && canChange);
     setEnabled(LogisimMenuBar.DUPLICATE, !selEmpty && canChange);
     setEnabled(LogisimMenuBar.SELECT_ALL, true);
+    setEnabled(LogisimMenuBar.SEARCH, true);
     setEnabled(LogisimMenuBar.RAISE, canRaise);
     setEnabled(LogisimMenuBar.LOWER, canLower);
     setEnabled(LogisimMenuBar.RAISE_TOP, canRaise);
