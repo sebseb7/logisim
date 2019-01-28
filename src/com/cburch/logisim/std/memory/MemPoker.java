@@ -67,7 +67,10 @@ public class MemPoker extends InstancePoker {
         data.setScroll(data.getScroll() - data.GetNrOfLineItems());
       } else if (c == 'R' || c == 'r') {
         data.getContents().clear();
+      } else {
+        return;
       }
+      e.consume();
     }
 
     @Override
@@ -85,7 +88,10 @@ public class MemPoker extends InstancePoker {
         data.setScroll(data.getScroll() - (data.GetNrOfLines() - 1) * data.GetNrOfLineItems());
       } else if (e.getKeyCode() == KeyEvent.VK_PAGE_DOWN) {
         data.setScroll(data.getScroll() + (data.GetNrOfLines() - 1) * data.GetNrOfLineItems());
+      } else {
+        return;
       }
+      e.consume();
     }
 
     @Override
@@ -140,7 +146,10 @@ public class MemPoker extends InstancePoker {
         moveTo(data, data.getCursor() - 1);
       } else if (c == 'R' || c == 'r') {
         data.getContents().clear();
+      } else {
+        return;
       }
+      e.consume();
     }
 
     @Override
@@ -158,10 +167,17 @@ public class MemPoker extends InstancePoker {
         moveTo(data, data.getCursor() - (data.GetNrOfLines() - 1) * data.GetNrOfLineItems());
       } else if (e.getKeyCode() == KeyEvent.VK_PAGE_DOWN) {
         moveTo(data, data.getCursor() + (data.GetNrOfLines() - 1) * data.GetNrOfLineItems());
+      } else {
+        return;
       }
+      e.consume();
     }
 
     private void moveTo(MemState data, long addr) {
+      if (addr < 0)
+        addr = 0;
+      else if (addr > data.getLastAddress())
+        addr = data.getLastAddress();
       if (data.isValidAddr(addr)) {
         data.setCursor(addr);
         data.scrollToShow(addr);
