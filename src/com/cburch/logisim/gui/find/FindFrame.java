@@ -271,6 +271,7 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
   // string for that part.
   private static final String COMPONENT_TYPE = S.get("matchComponentName");
 
+  private static final Pattern newline = Pattern.compile("\\R");
   private class Model extends AbstractListModel {
     String text;
     Pattern regex;
@@ -428,47 +429,95 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
     }
 
     void searchText(String content, String source, String context, Source src, Attribute a) {
-      Matcher m = regex.matcher(content);
-      while (m.find()) {
-        int s = m.start();
-        int e = m.end();
-        String c = context;
-        int lineno = -1;
-        if (c == null) { // use line number
-          lineno = lineNumber(content, s);
-          c = lineno >= 0 ? S.fmt("matchTextLine", lineno) : S.get("matchTextContent");
+      Matcher newlines = newline.matcher(content);
+      Matcher matches = regex.matcher(content);
+
+      int linestart = 0, lineend = content.length(), lineno = 1;
+      boolean multiline = newlines.find();
+      if (multiline)
+        lineend = newlines.end();
+
+      if (context == null && !multiline)
+        context = S.get("matchTextContent");
+
+      while (matches.find()) {
+        int s = matches.start();
+        int e = matches.end();
+        if (multiline && s >= lineend) {
+          context = null;
+          while (s >= lineend) {
+            lineno++;
+            linestart = lineend;
+            lineend = newlines.find() ? newlines.end() : content.length();
+          }
         }
-        add(new Result(content, s, e, source, c, lineno, src, a));
+        int ls = linestart;
+        int lns = lineno;
+        if (multiline && e > lineend) {
+          context = null;
+          while (e > lineend) {
+            lineno++;
+            linestart = lineend;
+            lineend = newlines.find() ? newlines.end() : content.length();
+          }
+        }
+        int lne = lineno;
+        int le = lineend;
+        if (context == null && lns == lne)
+          context = S.fmt("matchTextLine", lns);
+        else if (context == null)
+          context = S.fmt("matchTextLines", lns, lne);
+        add(new Result(content, ls, le, s, e, source, context, lns, src, a));
       }
+
+      // String lines = content.split("\\R", -1);
+      // int n = lines.length;
+      // if (context == null && lines.length == 0)
+      //   context = S.get("matchTextContent");
+      // for (int i = i; i < n; i++) {
+      //   String line = lines[i];
+      //   int lineno = i+1;
+      //   Matcher m = regex.matcher(line);
+      //   while (m.find()) {
+      //     int s = m.start();
+      //     int e = m.end();
+      //     String c = context != null ? context : S.fmt("matchTextLine", lineno);
+      //     add(new Result(line, s, e, source, c, lineno, src, a));
+      //   }
+      // }
     }
 
     void add(Result result) {
       data.add(result);
       fireIntervalAdded(this, data.size()-1, data.size());
     }
-
   }
 
-  static int lineNumber(String t, int s) {
-    int i = t.indexOf('\n');
-    if (i < 0)
-      return -1;
-    int n = 1;
-    while (i >= 0 && i < s) {
-      n++;
-      i = t.indexOf('\n', i+1);
-    }
-    return n;
-  }
+  // static int lineNumber(String t, int s) {
+  //   int i = t.indexOf('\n');
+  //   if (i < 0)
+  //     return -1;
+  //   int n = 1;
+  //   while (i >= 0 && i < s) {
+  //     n++;
+  //     i = t.indexOf('\n', i+1);
+  //   }
+  //   return n;
+  // }
 
   static String escapeHtml(String s) {
-    StringBuilder out = new StringBuilder(Math.max(16, s.length()));
-    for (int i = 0; i < s.length(); i++) {
+    int n = s.length();
+    StringBuilder out = new StringBuilder(Math.max(16, n));
+    for (int i = 0; i < n; i++) {
       char c = s.charAt(i);
       if (c > 127 || c == '"' || c == '<' || c == '>' || c == '&') {
         out.append("&#");
         out.append((int) c);
         out.append(';');
+      } else if (c == '\n' && !(i == n-1)) {
+        out.append("\\n"); // not really html-escape, but probably better for UI
+      } else if (c == '\r' && !(i == n-1 || (i == n-2 && s.charAt(i+1) == '\n'))) {
+        out.append("\\r"); // not really html-escape, but probably better for UI
       } else {
         out.append(c);
       }
@@ -605,16 +654,18 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
   }
 
   private static class Result {
-    String match;
-    int s, e;
+    String content, html;
+    int ls, le, s, e;
     String source, context;
     Attribute a; // null for Hdl content and library display name
     int lineno; // only for multi-line Text.ATTR_TEXT content
     Source src;
 
     Result() { }
-    Result(String match, int s, int e, String source, String context, int lineno, Source src, Attribute a) {
-      this.match = match;
+    Result(String content, int ls, int le, int s, int e, String source, String context, int lineno, Source src, Attribute a) {
+      this.content = content;
+      this.ls = ls;
+      this.le = le;
       this.s = s;
       this.e = e;
       this.source = source;
@@ -622,33 +673,40 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
       this.lineno = lineno;
       this.src = src;
       this.a = a;
-    }
+      int n = content.length();
+      String excerpt = (s == 0 && e == n) ? content : content.substring(s, e);
+      if (e-s >= 60)
+        excerpt = excerpt.substring(0, 20) + " ... " + excerpt.substring(e-s-20, e-s);
+      html = "<font color=\"#820a0a\"><b>"
+          + escapeHtml(excerpt)
+          + "</b></font>";
+      if ((s == 0 && e == n) || (s == ls && e == le))
+        return;
 
-    static final String b = "<font color=\"#820a0a\"><b>";
-    static final String d = "</b></font>";
+      n = le - ls;
+      int c = Math.min(n+10, 40);
+      if (n < 40 || n < (e-s)+10)
+        html = escapeHtml(content.substring(ls, s))
+            + html
+            + escapeHtml(content.substring(e, le));
+      else if (s < c/2)
+        html = escapeHtml(content.substring(ls, s))
+            + html
+            + escapeHtml(content.substring(e, e+c/2)) + "...";
+      else if (e >= le-c/2)
+        html = "..." + escapeHtml(content.substring(s-c/2, s))
+            + html
+            + escapeHtml(content.substring(e, le));
+      else
+        html = "..." + escapeHtml(content.substring(s-c/2, s))
+            + html
+            + escapeHtml(content.substring(e, e+c/2)) + "...";
+    }
 
     String toHtml() {
-      int n = match.length();
-      if (s == 0 && e == n)
-        return b + escapeHtml(match) + d;
-      else if (n < 40 || n < (e-s)+10)
-        return escapeHtml(match.substring(0, s))
-            + b + escapeHtml(match.substring(s, e)) + d
-            + escapeHtml(match.substring(e, n));
-      int c = Math.min(n+10, 40);
-      if (s < c/2)
-        return escapeHtml(match.substring(0, s))
-            + b + escapeHtml(match.substring(s, e)) + d
-            + escapeHtml(match.substring(e, e+c/2)) + "...";
-      else if (e >= n-c/2)
-        return "..." + escapeHtml(match.substring(s-c/2, s))
-            + b + escapeHtml(match.substring(s, e)) + d
-            + escapeHtml(match.substring(e, n));
-      else
-        return "..." + escapeHtml(match.substring(s-c/2, s))
-            + b + escapeHtml(match.substring(s, e)) + d
-            + escapeHtml(match.substring(e, e+c/2)) + "...";
+      return html;
     }
+
   }
 
   static final Color color = UIManager.getDefaults().getColor("Table.gridColor");
@@ -724,22 +782,22 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
   }
 
   // Search for matching text
-  // - Find on current circuit / current vhdl, vs global search
+  // x Find on current circuit / current vhdl, vs global search
   // - Replace?
   // Things to search:
-  // - vhdl entity contents (entity.getContents...)
-  // - circuit contents (circ.nonWires...)
-  // - circuit name CircuitAttributes.NAME_ATTR
-  // - vhdl name VhdlEntity.NAME_ATTR
+  // x vhdl entity contents (entity.getContents...)
+  // x circuit contents (circ.nonWires...)
+  // x circuit name CircuitAttributes.NAME_ATTR
+  // x vhdl name VhdlEntity.NAME_ATTR
   // - toolbar contents (layout toolbar getItems)
-  // - standard label attributes on various components (except Pin, Tunnel) StdAttr.LABEL
-  // - circuit shared label attributes CircuitAttributes.CIRCUIT_LABEL_ATTR
-  // - text components Text.ATTR_TEXT
-  // - tunnel names StdAttr.LABEL
-  // - pin names StdAttr.LABEL
+  // x standard label attributes on various components (except Pin, Tunnel) StdAttr.LABEL
+  // x circuit shared label attributes CircuitAttributes.CIRCUIT_LABEL_ATTR
+  // x text components Text.ATTR_TEXT
+  // x tunnel names StdAttr.LABEL
+  // x pin names StdAttr.LABEL
   // - later: memory data ? as bytes? as strings? as hex?
 
-  // todo: search appearance elements, toolbars, mouse mappings
+  // - todo: search appearance elements, toolbars, mouse mappings
   
   // Search for matching components and attributes (e.g. find all 8-wide multiplexors)
   // - Find on current circuit vs global search
