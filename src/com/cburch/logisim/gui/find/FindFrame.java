@@ -40,17 +40,21 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.AbstractListModel;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListCellRenderer;
-import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JList;
@@ -58,6 +62,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
@@ -70,8 +75,9 @@ import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Attributes;
+import com.cburch.logisim.gui.generic.DetailPanel;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.gui.generic.WrapLayout;
 import com.cburch.logisim.gui.main.Canvas;
@@ -90,21 +96,29 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
   // maybe use LFrame.SubWindow instead?
 
   private class TopPanel extends JPanel {
-    TitledBorder findBorder = BorderFactory.createTitledBorder("");
+    TitledBorder findTextBorder = BorderFactory.createTitledBorder("");
+    TitledBorder findRegexBorder = BorderFactory.createTitledBorder("");
     JTextField field = new JTextField();
     TitledBorder whereBorder = BorderFactory.createTitledBorder("");
+    TitledBorder howBorder = BorderFactory.createTitledBorder("");
     JRadioButton inSheet = new JRadioButton();
     JRadioButton inCircuit = new JRadioButton();
     JRadioButton inProject = new JRadioButton();
     JRadioButton inAll = new JRadioButton();
+    JCheckBox caseSensitive = new JCheckBox();
+    JRadioButton matchSubstring = new JRadioButton();
+    JRadioButton matchWord = new JRadioButton();
+    JRadioButton matchExact = new JRadioButton();
+    JRadioButton matchRegex = new JRadioButton();
     JButton go = new JButton();
+    DetailPanel options;
 
     TopPanel() {
       setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
       setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 
       JPanel input = new JPanel(new BorderLayout());
-      input.setBorder(findBorder);
+      input.setBorder(findTextBorder);
       input.add(field, BorderLayout.CENTER);
       add(input);
 
@@ -116,6 +130,20 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
       where.add(inAll);
       add(where);
 
+      JPanel how = new JPanel(new WrapLayout());
+      how.setBorder(howBorder);
+      how.add(caseSensitive);
+      how.add(matchSubstring);
+      how.add(matchWord);
+      how.add(matchExact);
+      how.add(matchRegex);
+      options = new DetailPanel("", how);
+      add(options);
+
+      matchRegex.addItemListener(e ->
+          input.setBorder(matchRegex.isSelected()
+            ? findRegexBorder : findTextBorder));
+
       JPanel cmd = new JPanel(new WrapLayout());
       cmd.add(go);
       add(cmd);
@@ -126,6 +154,14 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
       g.add(inProject);
       g.add(inAll);
       inSheet.setSelected(true);
+
+      caseSensitive.setSelected(true);
+      g = new ButtonGroup();
+      g.add(matchSubstring);
+      g.add(matchWord);
+      g.add(matchExact);
+      g.add(matchRegex);
+      matchSubstring.setSelected(true);
     }
   }
 
@@ -184,6 +220,16 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
     });
 
     results.addListSelectionListener(e -> reveal(results.getSelectedValue()));
+    results.addMouseListener(new MouseAdapter() {
+      public void mouseClicked(MouseEvent e) {
+        if (SwingUtilities.isLeftMouseButton(e)) {
+          int i = results.locationToIndex(e.getPoint());
+          if (i < 0 || i >= model.data.size())
+            return;
+          reveal(model.data.get(i));
+        }
+      }
+    });
 
     LocaleManager.addLocaleListener(this);
     localeChanged();
@@ -192,16 +238,29 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
   @Override
   public void localeChanged() {
     setTitle(S.get("findFrameTitle"));
-    top.findBorder.setTitle(S.get("findTextLabel"));
+    top.findTextBorder.setTitle(S.get("findTextLabel"));
+    top.findRegexBorder.setTitle(S.get("findRegexLabel"));
     top.whereBorder.setTitle(S.get("whereLabel"));
     top.inSheet.setText(S.get("inSheet"));
     top.inCircuit.setText(S.get("inCircuit"));
     top.inProject.setText(S.get("inProject"));
     top.inAll.setText(S.get("inAll"));
-    top.inSheet.setToolTipText(S.get("inSheet"));
-    top.inCircuit.setToolTipText(S.get("inCircuit"));
-    top.inProject.setToolTipText(S.get("inProject"));
-    top.inAll.setToolTipText(S.get("inAll"));
+    top.inSheet.setToolTipText(S.get("inSheetTip"));
+    top.inCircuit.setToolTipText(S.get("inCircuitTip"));
+    top.inProject.setToolTipText(S.get("inProjectTip"));
+    top.inAll.setToolTipText(S.get("inAllTip"));
+    top.howBorder.setTitle(S.get("matchType"));
+    top.caseSensitive.setText(S.get("caseSensitive"));
+    top.matchSubstring.setText(S.get("matchSubstring"));
+    top.matchWord.setText(S.get("matchWord"));
+    top.matchExact.setText(S.get("matchExact"));
+    top.matchRegex.setText(S.get("matchRegex"));
+    top.matchSubstring.setToolTipText(S.get("matchSubstringTip"));
+    top.matchWord.setToolTipText(S.get("matchWordTip"));
+    top.matchExact.setToolTipText(S.get("matchExactTip"));
+    top.matchRegex.setToolTipText(S.get("matchRegexTip"));
+    top.options.setTitle(S.get("matchOptions"));
+
     top.go.setText(S.get("findButtonLabel"));
   }
 
@@ -213,6 +272,9 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
   private static final String COMPONENT_TYPE = S.get("matchComponentName");
 
   private class Model extends AbstractListModel {
+    String text;
+    Pattern regex;
+
     ArrayList<Result> data = new ArrayList<>();
 
     void clearIfNoResults() {
@@ -239,14 +301,23 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
         fireIntervalRemoved(this, 0, n);
       }
       add(null); // null displays as result count
+      text = top.field.getText();
+      if (text.equals(""))
+        return;
+      int flags = 0;
+      flags |= top.caseSensitive.isSelected() ? 0 : Pattern.CASE_INSENSITIVE;
+      flags |= Pattern.MULTILINE;
+      if (top.matchSubstring.isSelected())
+        flags |= Pattern.LITERAL;
+      else if (top.matchWord.isSelected())
+        text = "\\b" + Pattern.quote(text) + "\\b";
+      else if (top.matchExact.isSelected())
+        text = "^" + Pattern.quote(text) + "$";
+      regex = Pattern.compile(text, flags);
       List<Project> projects = Projects.getOpenProjects();
       if (projects.isEmpty())
         return;
       Project proj = projects.get(0);
-      String text = top.field.getText();
-      // todo: regexp here?
-      if (text.equals(""))
-        return;
       LibrarySource src = new LibrarySource(proj, new ArrayList<Library>(), proj.getLogisimFile());
       if (top.inSheet.isSelected() || top.inCircuit.isSelected()) {
         Circuit circ = proj.getCurrentCircuit();
@@ -255,53 +326,57 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
           String source = proj.getLogisimFile().getName() + ", " + circ.getName();
           CircuitSource circSource = src.forCircuit(circ);
           if (top.inCircuit.isSelected()) {
-            searchAttributes(text, circ.getStaticAttributes(), source, circSource);
-            searchCircuit(text, circ, source, new HashSet<Object>(), circSource);
+            searchAttributes(circ.getStaticAttributes(), source, circSource);
+            searchCircuit(circ, source, new HashSet<Object>(), circSource);
           } else {
-            searchCircuit(text, circ, source, null, circSource); // non recursive
+            searchCircuit(circ, source, null, circSource); // non recursive
           }
         } else if (hdl != null) {
           String source = proj.getLogisimFile().getName() + ", " + hdl.getName();
-          searchHdl(text, hdl, source, src.forHdl(hdl));
+          searchHdl(hdl, source, src.forHdl(hdl));
         }
       } else if (top.inProject.isSelected()) {
         HashSet<Library> searched = new HashSet<>();
-        searchLibrary(text, proj.getLogisimFile(), proj.getLogisimFile().getName(), searched, src);
+        searchLibrary(proj.getLogisimFile(), proj.getLogisimFile().getName(), searched, src);
       } else {
         HashSet<Library> searched = new HashSet<>();
         for (Project p : projects)
-          searchLibrary(text, p.getLogisimFile(), p.getLogisimFile().getName(), searched,
+          searchLibrary(p.getLogisimFile(), p.getLogisimFile().getName(), searched,
               new LibrarySource(p, new ArrayList<Library>(), p.getLogisimFile()));
       }
     }
 
-    void searchLibrary(String text, Library lib, String source, HashSet<Library> searched,
+    void searchLibrary(Library lib, String source, HashSet<Library> searched,
         LibrarySource src) {
       if (searched.contains(lib))
         return;
       searched.add(lib);
-      searchText(text, lib.getDisplayName(), source, S.get("matchLibraryName"), src, null);
+      searchText(lib.getDisplayName(), source, S.get("matchLibraryName"), src, null);
       for (Tool tool : lib.getTools()) {
         String subsource = source + ", " + tool.getDisplayName();
-        searchAttributes(text, tool.getAttributeSet(), subsource, src.forTool(tool));
+        Source toolSrc = src.forTool(tool);
+        searchAttributes(tool.getAttributeSet(), subsource, toolSrc);
         if (!(tool instanceof AddTool))
           continue;
         AddTool t = (AddTool)tool;
         if (t.getFactory() instanceof SubcircuitFactory) {
           Circuit circ = ((SubcircuitFactory)t.getFactory()).getSubcircuit();
-          searchCircuit(text, circ, subsource, null, src.forCircuit(circ)); // non-recursive
+          searchCircuit(circ, subsource, null, src.forCircuit(circ)); // non-recursive
         } else if (t.getFactory() instanceof VhdlEntity) {
           VhdlContent vhdl = ((VhdlEntity)t.getFactory()).getContent();
-          searchHdl(text, vhdl, subsource, src.forHdl(vhdl));
+          searchHdl(vhdl, subsource, src.forHdl(vhdl));
+        } else {
+          searchText(t.getFactory().getDisplayName(),
+              subsource, COMPONENT_TYPE, toolSrc, null);
         }
       }
       for (Library sublib : lib.getLibraries()) {
         String subsource = source + ", " + lib.getDisplayName();
-        searchLibrary(text, sublib, subsource, searched, src.forLibrary(sublib));
+        searchLibrary(sublib, subsource, searched, src.forLibrary(sublib));
       }
     }
 
-    void searchCircuit(String text, Circuit circ, String source, HashSet<Object> searched,
+    void searchCircuit(Circuit circ, String source, HashSet<Object> searched,
         CircuitSource src) {
       if (searched != null && searched.contains(circ))
         return;
@@ -309,10 +384,10 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
         String compName = comp.getDisplayName();
         String subsource = source + "/" + compName;
         Source compSrc = src.forComponent(comp);
-        searchAttributes(text, comp.getAttributeSet(), subsource, compSrc);
+        searchAttributes(comp.getAttributeSet(), subsource, compSrc);
         if (!(comp.getFactory() instanceof SubcircuitFactory
               || comp.getFactory() instanceof VhdlEntity))
-          searchText(text, comp.getFactory().getDisplayName(),
+          searchText(comp.getFactory().getDisplayName(),
               subsource, COMPONENT_TYPE, compSrc, null);
       }
       if (searched == null)
@@ -326,52 +401,44 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
             continue;
           searched.add(vhdl);
           String subsource = source + "/" + comp.getDisplayName();
-          searchHdl(text, vhdl, subsource, src.findHdl(vhdl));
+          searchHdl(vhdl, subsource, src.findHdl(vhdl));
         } else if (factory instanceof SubcircuitFactory) {
           String subsource = source + "/" + comp.getDisplayName();
           Circuit subcirc = ((SubcircuitFactory)factory).getSubcircuit();
-          searchCircuit(text, subcirc, subsource, searched, src.findCircuit(subcirc));
+          searchCircuit(subcirc, subsource, searched, src.findCircuit(subcirc));
         }
       }
     }
 
-    void searchHdl(String text, HdlModel hdl, String source, HdlSource src) {
+    void searchHdl(HdlModel hdl, String source, HdlSource src) {
       String code = hdl.getContent();
-      searchText(text, code, source, null /*use line number*/, src, null);
+      searchText(code, source, null /*use line number*/, src, null);
     }
 
-    void searchAttributes(String text, AttributeSet as, String source, Source src) {
-      // if (as.contains(StdAttr.LABEL))
-      //   search(text, as.getValue(StdAttr.LABEL), name + " label");
-      // if (as.contains(CircuitAttributes.NAME_ATTR))
-      //   search(text, as.getValue(CircuitAttributes.NAME_ATTR), name + " circuit name");
-      // if (as.contains(CircuitAttributes.CIRCUIT_LABEL_ATTR))
-      //   search(text, as.getValue(CircuitAttributes.CIRCUIT_LABEL_ATTR), name + " circuit shared label");
-      // if (as.contains(CircuitAttributes.CIRCUIT_VHDL_PATH))
-      //   search(text, as.getValue(CircuitAttributes.CIRCUIT_VHDL_PATH), name + " circuit vhdl path");
+    void searchAttributes(AttributeSet as, String source, Source src) {
       if (as == null)
         return;
       for (Attribute<?> a : as.getAttributes()) {
         Object o = as.getValue(a);
         if (o instanceof String && a == Text.ATTR_TEXT)
-          searchText(text, (String)o, source, null /* use line number */, src, a);
+          searchText((String)o, source, null /* use line number */, src, a);
         else if (o instanceof String)
-          searchText(text, (String)o, source, a.getDisplayName(), src, a);
+          searchText((String)o, source, a.getDisplayName(), src, a);
       }
     }
 
-    void searchText(String text, String content, String source, String context, Source src, Attribute a) {
-      int n = text.length();
-      int s = content.indexOf(text);
-      while (s >= 0) {
+    void searchText(String content, String source, String context, Source src, Attribute a) {
+      Matcher m = regex.matcher(content);
+      while (m.find()) {
+        int s = m.start();
+        int e = m.end();
         String c = context;
         int lineno = -1;
         if (c == null) { // use line number
           lineno = lineNumber(content, s);
           c = lineno >= 0 ? S.fmt("matchTextLine", lineno) : S.get("matchTextContent");
         }
-        add(new Result(content, s, s+n, source, c, lineno, src, a));
-        s = content.indexOf(text, s+1);
+        add(new Result(content, s, e, source, c, lineno, src, a));
       }
     }
 
@@ -409,47 +476,46 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
     return out.toString();
   }
 
-  private interface Source { 
-    public void reveal(int lineno, Attribute a);
+  private static abstract class Source<E> { 
+    Project proj;
+    ArrayList<Library> path;
+    E leaf;
+
+    Source(Project r, ArrayList<Library> p, E l) {
+      proj = r;
+      path = p;
+      leaf = l;
+    }
+
+    abstract void reveal(Result r);
   }
 
-  private static class ToolSource implements Source {
-    Project proj;
-    ArrayList<Library> libPath;
-    Tool tool;
+  private static class ToolSource extends Source<Tool> {
     ToolSource(Project proj, ArrayList<Library> libPath, Tool tool) {
-      this.proj = proj;
-      this.libPath = libPath;
-      this.tool = tool;
+      super(proj, libPath, tool);
     }
-    public void reveal(int lineno, Attribute a) {
-      System.out.printf("ToolSource reveal: %s %s\n", lineno, a);
+    public void reveal(Result r) {
+      proj.getFrame().revealInExplorer(path, leaf);
     }
   }
 
-  private static class HdlSource implements Source {
-    Project proj;
-    ArrayList<Library> libPath;
-    HdlModel hdl;
+  private static class HdlSource extends Source<HdlModel> {
     HdlSource(Project proj, ArrayList<Library> libPath, HdlModel hdl) {
-      this.proj = proj;
-      this.libPath = libPath;
-      this.hdl = hdl;
+      super(proj, libPath, hdl);
     }
-    public void reveal(int lineno, Attribute a) {
-      System.out.printf("HdlSource reveal: %s %s\n", lineno, a);
+    public void reveal(Result r) {
+      if (proj.getCurrentHdl() != leaf)
+        proj.setCurrentHdlModel(leaf);
+      if (r.lineno < 0)
+        return;
+      proj.getFrame().getHdlContentView().setCaretPosition(r.s);
     }
   }
 
-  private static class LibrarySource implements Source {
-    Project proj;
-    ArrayList<Library> libPath;
+  private static class LibrarySource extends Source<Library> {
     ArrayList<Library> subPath;
-    Library lib;
     LibrarySource(Project proj, ArrayList<Library> libPath, Library lib) {
-      this.proj = proj;
-      this.libPath = libPath;
-      this.lib = lib;
+      super(proj, libPath, lib);
       subPath = new ArrayList<Library>();
       subPath.addAll(libPath);
       subPath.add(lib);
@@ -466,29 +532,23 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
     LibrarySource forLibrary(Library sublib) {
       return new LibrarySource(proj, subPath, sublib);
     }
-    public void reveal(int lineno, Attribute a) {
-      proj.getFrame().toFront();
-      proj.getFrame().revealLibrary(libPath, lib);
+    public void reveal(Result r) {
+      proj.getFrame().revealInExplorer(path, leaf);
     }
   }
 
-  private static class CircuitSource implements Source {
-    Project proj;
-    ArrayList<Library> libPath;
-    Circuit circ;
+  private static class CircuitSource extends Source<Circuit> {
     CircuitSource(Project proj, ArrayList<Library> libPath, Circuit circ) {
-      this.proj = proj;
-      this.libPath = libPath;
-      this.circ = circ;
+      super(proj, libPath, circ);
     }
 
     CircuitSource findCircuit(Circuit subcirc) {
       ComponentFactory f = subcirc.getSubcircuitFactory();
-      Library lib = libPath.get(libPath.size()-1);
+      Library lib = path.get(path.size()-1);
       if (lib.contains(f))
-        return new CircuitSource(proj, libPath, subcirc);
+        return new CircuitSource(proj, path, subcirc);
       ArrayList<Library> copy = new ArrayList<>();
-      copy.addAll(libPath);
+      copy.addAll(path);
       findFactory(copy, f);
       return new CircuitSource(proj, copy, subcirc);
     }
@@ -497,11 +557,11 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
       if (!(hdl instanceof VhdlContent))
         throw new IllegalArgumentException("hdl isn't vhdl? " + hdl);
       ComponentFactory f = ((VhdlContent)hdl).getEntityFactory();
-      Library lib = libPath.get(libPath.size()-1);
+      Library lib = path.get(path.size()-1);
       if (lib.contains(f))
-        return new HdlSource(proj, libPath, hdl);
+        return new HdlSource(proj, path, hdl);
       ArrayList<Library> copy = new ArrayList<>();
-      copy.addAll(libPath);
+      copy.addAll(path);
       findFactory(copy, f);
       return new HdlSource(proj, copy, hdl);
     }
@@ -520,33 +580,27 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
     }
 
     ComponentSource forComponent(Component comp) {
-      return new ComponentSource(this, comp);
+      return new ComponentSource(proj, path, leaf, comp);
     }
 
-    public void reveal(int lineno, Attribute a) {
-      System.out.printf("CircuitSource reveal: %s %s\n", lineno, a);
-    }
-
-    void reveal(Component comp, Attribute a) {
-      proj.getFrame().toFront();
-      if (proj.getCurrentCircuit() != circ)
-        proj.setCurrentCircuit(circ);
-      Canvas canvas = proj.getFrame().getCanvas();
-      canvas.setHaloedComponent(circ, comp);
-      canvas.zoomScrollTo(comp.getBounds().toRectangle());
+    public void reveal(Result r) {
+      proj.getFrame().revealInExplorer(path, leaf);
     }
   }
 
-  private static class ComponentSource implements Source {
-    CircuitSource circSource;
-    Component comp;
-    ComponentSource(CircuitSource cs, Component c) {
-      circSource = cs;
-      comp = c;
+  private static class ComponentSource extends Source<Component> {
+    Circuit circ;
+    ComponentSource(Project proj, ArrayList<Library> libPath, Circuit circ, Component comp) {
+      super(proj, libPath, comp);
+      this.circ = circ;
     }
 
-    public void reveal(int lineno, Attribute a) {
-      circSource.reveal(comp, a);
+    public void reveal(Result r) {
+      if (proj.getCurrentCircuit() != circ)
+        proj.setCurrentCircuit(circ);
+      Canvas canvas = proj.getFrame().getCanvas();
+      canvas.setHaloedComponent(circ, leaf);
+      canvas.zoomScrollTo(leaf.getBounds().toRectangle());
     }
   }
 
@@ -627,15 +681,13 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
     }
   }
 
-  // Result revealed = null;
+  Result revealed = null;
   private void reveal(Result r) {
-    // if (revealed == r)
-    //   return;
-    // revealed = r;
+    revealed = r;
     if (r != null) {
-      // Canvas canvas = proj.getFrame().getCanvas();
-      // canvas.setHaloedComponent(circ, comp);
-      r.src.reveal(r.lineno, r.a);
+      r.src.proj.getFrame().toFront();
+      r.src.proj.getFrame().getCanvas().setHaloedComponent(null, null);
+      r.src.reveal(r);
     }
   }
 

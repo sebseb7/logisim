@@ -276,6 +276,7 @@ class ProjectExplorerModel implements TreeModel, ProjectListener {
   }
 
   public Node<?> findObject(List<?> candidatePath, Object obj) {
+    for (Object o : candidatePath)
     if (root == null || root.value == obj)
       return root;
     Node<?> node = root;
@@ -283,6 +284,8 @@ class ProjectExplorerModel implements TreeModel, ProjectListener {
     if (found != null)
       return found;
     for (Object o : candidatePath) {
+      if (node.value == o)
+        continue;
       node = node.getChildWithValue(o);
       if (node == null)
         return null;

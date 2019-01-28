@@ -81,7 +81,7 @@ class Toolbox extends JPanel {
     return explorer.getSelectedTool();
   }
 
-  public void revealLibrary(List<Library> libPath, Library lib) {
-    explorer.revealLibrary(libPath, lib);
+  public void reveal(List<Library> libPath, Object obj) {
+    explorer.reveal(libPath, obj);
   }
 }

@@ -630,10 +630,15 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     clearSelection();
   }
 
-  public void revealLibrary(List<Library> libPath, Library lib) {
+  public void reveal(List<Library> libPath, Object obj) {
     ProjectExplorerModel model = (ProjectExplorerModel) getModel();
-    ProjectExplorerModel.Node<?> node = model.findObject(libPath, lib);
-    if (node != null)
-      setSelectionPath(model.getPath(node));
+    ProjectExplorerModel.Node<?> node = model.findObject(libPath, obj);
+    if (node != null) {
+      TreePath path = model.getPath(node);
+      scrollPathToVisible(path);
+      setSelectionPath(path);
+    }
+    else
+      System.out.println("Oops: object not found: " + obj);
   }
 }

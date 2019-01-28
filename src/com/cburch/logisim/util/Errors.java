@@ -189,25 +189,24 @@ public class Errors {
       gc.gridy = 1;
       gb.setConstraints(button, gc);
       details.add(button);
-      button.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent event) {
-          if (errPane.isShowing()) {
-            button.setIcon(iconClosed);
-            details.remove(errPane);
-          } else {
-            button.setIcon(iconOpen);
-            gc.fill = GridBagConstraints.BOTH;
-            gc.weightx = gc.weighty = 1;
-            gc.gridy = 2;
-            gb.setConstraints(errPane, gc);
-            details.add(errPane);
-          }
-          details.revalidate();
-          JDialog topFrame = (JDialog)SwingUtilities.getWindowAncestor(details);
-          topFrame.pack();
-          details.repaint();
+      button.addActionListener(e -> {
+        if (errPane.isShowing()) {
+          button.setIcon(iconClosed);
+          details.remove(errPane);
+        } else {
+          button.setIcon(iconOpen);
+          gc.fill = GridBagConstraints.BOTH;
+          gc.weightx = gc.weighty = 1;
+          gc.gridy = 2;
+          gb.setConstraints(errPane, gc);
+          details.add(errPane);
         }
-      });
+        details.revalidate();
+        JDialog topFrame = (JDialog)SwingUtilities.getWindowAncestor(details);
+        topFrame.pack();
+        details.repaint();
+      }
+      );
       msg = details;
     }
     JDialog dialog = new JDialogOk(title, false) {

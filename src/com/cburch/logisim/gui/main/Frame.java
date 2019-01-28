@@ -729,13 +729,17 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     return toolbox == null ? null : toolbox.getSelectedTool();
   }
 
-  public void revealLibrary(List<Library> libPath, Library lib) {
-    if (toolbox != null)
-      toolbox.revealLibrary(libPath, lib);
-  }
-
   public void fireLibrarySelected() {
     layoutEditHandler.computeEnabled();
+  }
+
+  public void revealInExplorer(List<Library> libPath, Object obj) {
+    if (toolbox != null)
+      toolbox.reveal(libPath, obj);
+  }
+
+  public HdlContentView getHdlContentView() {
+    return hdlEditor;
   }
 
 }

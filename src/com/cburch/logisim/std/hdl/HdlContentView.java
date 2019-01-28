@@ -323,4 +323,8 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
     }
   }
 
+  public void setCaretPosition(int s) {
+    editor.setCaretPosition(s);
+  }
+
 }
