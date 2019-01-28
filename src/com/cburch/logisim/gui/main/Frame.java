@@ -35,8 +35,9 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.Graphics;
+import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
@@ -46,9 +47,9 @@ import java.awt.Rectangle;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Ellipse2D;
-import java.awt.Font;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -726,6 +727,11 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
 
   public Tool getSelectedToolboxTool() {
     return toolbox == null ? null : toolbox.getSelectedTool();
+  }
+
+  public void revealLibrary(List<Library> libPath, Library lib) {
+    if (toolbox != null)
+      toolbox.revealLibrary(libPath, lib);
   }
 
   public void fireLibrarySelected() {

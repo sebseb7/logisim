@@ -283,9 +283,6 @@ public class Canvas extends JPanel
       }
     }
 
-    //
-    // PopupMenuListener mtehods
-    //
     @Override
     public void popupMenuCanceled(PopupMenuEvent e) {
       menu_on = false;
@@ -1134,7 +1131,7 @@ public class Canvas extends JPanel
     viewport.setErrorMessage(message, color);
   }
 
-  void setHaloedComponent(Circuit circ, Component comp) {
+  public void setHaloedComponent(Circuit circ, Component comp) {
     painter.setHaloedComponent(circ, comp);
   }
 
@@ -1177,6 +1174,28 @@ public class Canvas extends JPanel
     int newx = (int) Math.round(e.getX() / zoom);
     int newy = (int) Math.round(e.getY() / zoom);
     e.translatePoint(newx - oldx, newy - oldy);
+  }
+
+  public void zoomScrollTo(Rectangle r) {
+    r.grow(40, 40); // give some wiggle room on all sides
+    Rectangle v = getViewableRect();
+    ZoomModel zoomModel = proj.getFrame().getZoomModel();
+    double zoom = zoomModel.getZoomFactor();
+    while ((v.width < r.width+40 || v.height < r.height) && zoom > 0.2) {
+      zoom = Math.max(0.2, zoom - 0.1);
+      zoomModel.setZoomFactor(zoom);
+      v = getViewableRect();
+    }
+    if (v.contains(r))
+      return;
+    if (r.x < v.x)
+      canvasPane.getHorizontalScrollBar().setValue((int)(zoom * r.x));
+    else if (r.x + r.width > v.x + v.width)
+      canvasPane.getHorizontalScrollBar().setValue((int)(zoom * (r.x + r.width - v.width)));
+    if (r.y < v.y)
+      canvasPane.getVerticalScrollBar().setValue((int)(zoom * r.y));
+    else if (r.y + r.height > v.y + v.height)
+      canvasPane.getVerticalScrollBar().setValue((int)(zoom * (r.y + r.height - v.height)));
   }
 
 }

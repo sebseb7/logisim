@@ -32,6 +32,7 @@ package com.cburch.logisim.gui.main;
 
 import java.awt.BorderLayout;
 
+import java.util.List;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
@@ -78,5 +79,9 @@ class Toolbox extends JPanel {
 
   public Tool getSelectedTool() {
     return explorer.getSelectedTool();
+  }
+
+  public void revealLibrary(List<Library> libPath, Library lib) {
+    explorer.revealLibrary(libPath, lib);
   }
 }

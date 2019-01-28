@@ -246,7 +246,7 @@ class CanvasPainter implements PropertyChangeListener {
     }
   }
 
-  void setHaloedComponent(Circuit circ, Component comp) {
+  public void setHaloedComponent(Circuit circ, Component comp) {
     if (comp == haloedComponent)
       return;
     Graphics g = canvas.getGraphics();
@@ -256,9 +256,6 @@ class CanvasPainter implements PropertyChangeListener {
     exposeHaloedComponent(g);
   }
 
-  //
-  // mutator methods
-  //
   void setHighlightedWires(WireSet value) {
     highlightedWires = value == null ? WireSet.EMPTY : value;
   }

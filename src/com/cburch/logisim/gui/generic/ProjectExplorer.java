@@ -34,6 +34,7 @@ package com.cburch.logisim.gui.generic;
  * Code taken from Cornell's version of Logisim:
  * http://www.cs.cornell.edu/courses/cs3410/2015sp/
  */
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -50,6 +51,7 @@ import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
@@ -626,5 +628,12 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 
   public void clearExplorerSelection() {
     clearSelection();
+  }
+
+  public void revealLibrary(List<Library> libPath, Library lib) {
+    ProjectExplorerModel model = (ProjectExplorerModel) getModel();
+    ProjectExplorerModel.Node<?> node = model.findObject(libPath, lib);
+    if (node != null)
+      setSelectionPath(model.getPath(node));
   }
 }

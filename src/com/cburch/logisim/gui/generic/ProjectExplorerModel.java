@@ -96,6 +96,15 @@ class ProjectExplorerModel implements TreeModel, ProjectListener {
       return -1;
     }
 
+    public Node<?> getChildWithValue(Object value) {
+      if (children == null)
+        return null;
+      for (int i = 0; i < children.size(); i++)
+        if (children.get(i).value == value)
+          return children.get(i);
+      return null;
+    }
+
     public boolean isLeaf() {
       return children == null || children.isEmpty();
     }
@@ -262,6 +271,24 @@ class ProjectExplorerModel implements TreeModel, ProjectListener {
       Node<?> match = findObject(child, value);
       if (match != null)
         return match;
+    }
+    return null;
+  }
+
+  public Node<?> findObject(List<?> candidatePath, Object obj) {
+    if (root == null || root.value == obj)
+      return root;
+    Node<?> node = root;
+    Node<?> found = node.getChildWithValue(obj);
+    if (found != null)
+      return found;
+    for (Object o : candidatePath) {
+      node = node.getChildWithValue(o);
+      if (node == null)
+        return null;
+      found = node.getChildWithValue(obj);
+      if (found != null)
+        return found;
     }
     return null;
   }
