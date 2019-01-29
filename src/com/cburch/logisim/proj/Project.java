@@ -275,6 +275,18 @@ public class Project {
     }
   }
 
+  public void removeCircuitState(CircuitState cs) {
+    Circuit circ = cs.getCircuit();
+    allRootStates.remove(cs);
+    recentRootState.remove(circ, cs);
+    if (cs == circuitState) {
+      if (!allRootStates.isEmpty())
+        setCircuitState(allRootStates.get(0));
+      else
+        setCurrentCircuit(circ);
+    }
+  }
+
   public Circuit getCurrentCircuit() {
     return circuitState == null ? null : circuitState.getCircuit();
   }
@@ -514,7 +526,9 @@ public class Project {
     }
     hdlModel = null;
     circuitState = value;
-    if (circuitState.getParentState() == null) {
+    if (!circuitState.isSubstate()) {
+      if (!allRootStates.contains(circuitState))
+        allRootStates.add(circuitState);
       recentRootState.put(newCircuit, circuitState);
     }
     simulator.setCircuitState(circuitState);
@@ -536,11 +550,8 @@ public class Project {
 
   public void setCurrentCircuit(Circuit circuit) {
     CircuitState circState = recentRootState.get(circuit);
-    if (circState == null) {
+    if (circState == null)
       circState = new CircuitState(this, circuit);
-      recentRootState.put(circuit, circState);
-      allRootStates.add(circState);
-    }
     setCircuitState(circState);
   }
 

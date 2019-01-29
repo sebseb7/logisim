@@ -59,7 +59,6 @@ import com.cburch.logisim.file.LoadedLibrary;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.log.Loggable;
 import com.cburch.logisim.gui.main.Frame;
-import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.memory.Register;

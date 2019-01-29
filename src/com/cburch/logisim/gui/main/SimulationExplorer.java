@@ -35,13 +35,17 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.tree.TreePath;
 
 import com.cburch.draw.toolbar.Toolbar;
+import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.gui.menu.MenuListener;
+import com.cburch.logisim.gui.menu.Popups;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
@@ -73,30 +77,32 @@ class SimulationExplorer extends JPanel
     ToolTipManager.sharedInstance().registerComponent(tree);
   }
 
+  public CircuitState getCircuitStateForLocation(int x, int y) {
+    TreePath path = tree.getPathForLocation(x, y);
+    Object last = path == null ? null : path.getLastPathComponent();
+    if (last instanceof SimulationTreeCircuitNode)
+      return ((SimulationTreeCircuitNode)last).getCircuitState();
+    return null;
+  }
+
+
   private void checkForPopup(MouseEvent e) {
     if (e.isPopupTrigger()) {
-      // todo:
-      //   TreePath path = getPathForLocation(e.getX(), e.getY());
-      //   if (path != null && listener != null) {
-      //     JPopupMenu menu = listener.menuRequested(new Event(path));
-      //     if (menu != null) {
-      //       menu.show(ProjectExplorer.this, e.getX(), e.getY());
-      //     }
-      //   }
+      SwingUtilities.convertMouseEvent(this, e, tree);
+      CircuitState cs = getCircuitStateForLocation(e.getX(), e.getY());
+      if (cs != null) {
+        JPopupMenu menu = Popups.forCircuitState(project, cs);
+        if (menu != null)
+          menu.show(tree, e.getX(), e.getY());
+      }
     }
   }
 
   public void mouseClicked(MouseEvent e) {
     if (e.getClickCount() == 2) {
-      TreePath path = tree.getPathForLocation(e.getX(), e.getY());
-      if (path != null) {
-        Object last = path.getLastPathComponent();
-        if (last instanceof SimulationTreeCircuitNode) {
-          SimulationTreeCircuitNode node;
-          node = (SimulationTreeCircuitNode) last;
-          project.setCircuitState(node.getCircuitState());
-        }
-      }
+      CircuitState cs = getCircuitStateForLocation(e.getX(), e.getY());
+      if (cs != null)
+        project.setCircuitState(cs);
     }
   }
 

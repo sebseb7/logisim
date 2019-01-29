@@ -312,6 +312,13 @@ public class CircuitState implements InstanceData {
     return parentState;
   }
 
+  public CircuitState getAncestorState() {
+    CircuitState ancestor = this;
+    while (ancestor.parentState != null)
+      ancestor = ancestor.parentState;
+    return ancestor;
+  }
+
   public Project getProject() {
     return proj;
   }
@@ -455,7 +462,7 @@ public class CircuitState implements InstanceData {
     }
   }
 
-  void reset() {
+  public void reset() {
     temporaryClock = null;
     wireData = null;
     for (Iterator<Component> it = componentData.keySet().iterator(); it.hasNext();) {
