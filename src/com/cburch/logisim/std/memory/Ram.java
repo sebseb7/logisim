@@ -148,8 +148,9 @@ public class Ram extends Mem {
 
     @Override
     public BitWidth getBitWidth(InstanceState state, Object option) {
-      MemState s = (MemState)state.getData();
-      return BitWidth.create(s.getDataBits());
+      int dataBits = state.getAttributeValue(DATA_ATTR).getWidth();
+      int dataLines = lineSize(state.getAttributeSet());
+      return BitWidth.create(dataBits * dataLines);
     }
 
     @Override
