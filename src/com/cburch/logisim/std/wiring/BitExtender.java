@@ -75,7 +75,6 @@ public class BitExtender extends InstanceFactory {
       ATTR_TYPE },
       new Object[] { BitWidth.create(8), BitWidth.create(16),
         ATTR_TYPE.parse("sign") });
-    setFacingAttribute(StdAttr.FACING);
     setKeyConfigurator(JoinedConfigurator.create(new BitWidthConfigurator(
             ATTR_OUT_WIDTH), new BitWidthConfigurator(ATTR_IN_WIDTH, 1,
               Value.MAX_WIDTH, 0)));
