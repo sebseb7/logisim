@@ -29,6 +29,7 @@
  */
 
 package com.cburch.logisim.gui.main;
+import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.util.List;
 import java.util.HashMap;
@@ -42,7 +43,7 @@ class SimulationTreeTopNode extends SimulationTreeNode {
       List<CircuitState> allRootStates) {
     super(model, null);
     for (CircuitState state : allRootStates)
-      children.add(new SimulationTreeCircuitNode(model, null, state, null));
+      children.add(new SimulationTreeCircuitNode(model, this, state, null));
   }
 
   public void updateSimulationList(List<CircuitState> allRootStates) {
@@ -61,18 +62,18 @@ class SimulationTreeTopNode extends SimulationTreeNode {
       TreeNode node = old.get(state);
       if (node == null) {
         changed = true;
-        node = new SimulationTreeCircuitNode(model, null, state, null);
+        node = new SimulationTreeCircuitNode(model, this, state, null);
       } else if (oldPos.get(state) != i++) {
         changed = true;
       }
       children.add(node);
     }
     if (changed)
-      model.fireStructureChanged(this);
+      fireStructureChanged();
   }
 
   @Override
   public String toString() {
-    return "Active Simulations";
+    return S.get("activeSimulations");
   }
 }

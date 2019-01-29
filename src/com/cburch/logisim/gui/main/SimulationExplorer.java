@@ -37,6 +37,7 @@ import java.awt.event.MouseListener;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.ToolTipManager;
 import javax.swing.tree.TreePath;
 
 import com.cburch.draw.toolbar.Toolbar;
@@ -68,11 +69,20 @@ class SimulationExplorer extends JPanel
     tree.setToggleClickCount(3);
     add(new JScrollPane(tree), BorderLayout.CENTER);
     proj.addProjectListener(this);
+
+    ToolTipManager.sharedInstance().registerComponent(tree);
   }
 
   private void checkForPopup(MouseEvent e) {
     if (e.isPopupTrigger()) {
-      ; // do nothing
+      // todo:
+      //   TreePath path = getPathForLocation(e.getX(), e.getY());
+      //   if (path != null && listener != null) {
+      //     JPopupMenu menu = listener.menuRequested(new Event(path));
+      //     if (menu != null) {
+      //       menu.show(ProjectExplorer.this, e.getX(), e.getY());
+      //     }
+      //   }
     }
   }
 
@@ -90,11 +100,9 @@ class SimulationExplorer extends JPanel
     }
   }
 
-  public void mouseEntered(MouseEvent e) {
-  }
+  public void mouseEntered(MouseEvent e) { }
 
-  public void mouseExited(MouseEvent e) {
-  }
+  public void mouseExited(MouseEvent e) { }
 
   public void mousePressed(MouseEvent e) {
     requestFocus();
@@ -111,9 +119,8 @@ class SimulationExplorer extends JPanel
       model.updateSimulationList(project.getRootCircuitStates());
       model.setCurrentView(project.getCircuitState());
       TreePath path = model.mapToPath(project.getCircuitState());
-      if (path != null) {
+      if (path != null)
         tree.scrollPathToVisible(path);
-      }
     }
   }
 }

@@ -55,12 +55,11 @@ class SimulationTreeCircuitNode extends SimulationTreeNode
     }
   }
 
-  private SimulationTreeCircuitNode parent;
   private CircuitState circuitState;
   private Component subcircComp;
 
   public SimulationTreeCircuitNode(SimulationTreeModel model,
-      SimulationTreeCircuitNode parent, CircuitState circuitState,
+      SimulationTreeNode parent, CircuitState circuitState,
       Component subcircComp) {
     super(model, parent);
     this.circuitState = circuitState;
@@ -75,28 +74,21 @@ class SimulationTreeCircuitNode extends SimulationTreeNode
     computeChildren();
   }
 
-  //
-  // AttributeListener methods
   public void attributeListChanged(AttributeEvent e) {
   }
 
   public void attributeValueChanged(AttributeEvent e) {
     Object attr = e.getAttribute();
-    if (attr == CircuitAttributes.CIRCUIT_LABEL_ATTR
-        || attr == StdAttr.LABEL) {
-      model.fireNodeChanged(this);
-    }
+    if (attr == CircuitAttributes.CIRCUIT_LABEL_ATTR || attr == StdAttr.LABEL)
+      fireAppearanceChanged();
   }
 
   public void circuitChanged(CircuitEvent event) {
     int action = event.getAction();
-    if (action == CircuitEvent.ACTION_SET_NAME) {
-      model.fireNodeChanged(this);
-    } else {
-      if (computeChildren()) {
-        model.fireStructureChanged(this);
-      }
-    }
+    if (action == CircuitEvent.ACTION_SET_NAME)
+      fireAppearanceChanged();
+    else if (computeChildren())
+      fireStructureChanged(); // fixme: use add/remove instead to preserve expand state
   }
 
   public int compare(Component a, Component b) {

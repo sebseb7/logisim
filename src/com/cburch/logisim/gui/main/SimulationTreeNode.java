@@ -85,4 +85,23 @@ public class SimulationTreeNode implements TreeNode {
   public boolean isLeaf() {
     return false;
   }
+
+  // Subclasses should call this when this node's appearance (icon, label,
+  // etc.) has changed. It will fire the appropriate TreeModelEvent.
+  public void fireAppearanceChanged() {
+    if (parent == null) {
+      model.fire(model.getPath(this), new int[0], null,
+          (l,e) -> l.treeNodesChanged(e));
+    } else {
+      int[] indices = new int[] { parent.getIndex(this) };
+      SimulationTreeNode[] nodes = new SimulationTreeNode[] { this };
+      model.fire(model.getPath(parent), indices, nodes,
+          (l,e) -> l.treeNodesChanged(e));
+    }
+  }
+
+  public void fireStructureChanged() {
+    model.fire(model.getPath(this), new int[0], null,
+        (l,e) -> l.treeStructureChanged(e));
+  }
 }

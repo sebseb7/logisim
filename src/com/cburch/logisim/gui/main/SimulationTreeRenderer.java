@@ -29,12 +29,15 @@
  */
 
 package com.cburch.logisim.gui.main;
+import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Font;
 import java.awt.Graphics;
 
 import javax.swing.Icon;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
@@ -83,22 +86,41 @@ public class SimulationTreeRenderer extends DefaultTreeCellRenderer {
 
   private static final long serialVersionUID = 1L;
 
+  Font plainFont, boldFont;
+
   @Override
   public Component getTreeCellRendererComponent(JTree tree, Object value,
       boolean selected, boolean expanded, boolean leaf, int row,
       boolean hasFocus) {
     Component ret = super.getTreeCellRendererComponent(tree, value,
         selected, expanded, leaf, row, hasFocus);
-    SimulationTreeModel model = (SimulationTreeModel) tree.getModel();
-    if (ret instanceof JLabel) {
-      JLabel label = (JLabel) ret;
-      if (value instanceof SimulationTreeNode) {
-        SimulationTreeNode node = (SimulationTreeNode) value;
-        ComponentFactory factory = node.getComponentFactory();
-        if (factory != null) {
-          label.setIcon(new RendererIcon(factory,
-                node.isCurrentView(model)));
+    if (plainFont == null) {
+      plainFont = ret.getFont();
+      boldFont = new Font(plainFont.getFontName(), Font.BOLD, plainFont.getSize());
+    }
+    ret.setFont(plainFont);
+    if (ret instanceof JComponent) {
+      JComponent comp = (JComponent) ret;
+      comp.setToolTipText(null);
+      comp.setOpaque(false);
+    }
+    if (!(ret instanceof JLabel))
+      return ret;
+    JLabel label = (JLabel) ret;
+    if (value instanceof SimulationTreeNode) {
+      SimulationTreeNode node = (SimulationTreeNode) value;
+      SimulationTreeModel model = (SimulationTreeModel) tree.getModel();
+      ComponentFactory factory = node.getComponentFactory();
+      if (factory != null) {
+        boolean viewed = node.isCurrentView(model);
+        if (viewed) {
+          label.setFont(boldFont);
+          label.setBackground(ProjectExplorer.VIEWED_TOOL_COLOR);
+          label.setOpaque(true);
         }
+        label.setText(node.toString()); // resizes when bold
+        label.setIcon(new RendererIcon(factory, viewed));
+        label.setToolTipText(S.fmt("simulationToolTip", factory.getDisplayName()));
       }
     }
     return ret;

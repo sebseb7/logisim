@@ -110,6 +110,23 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 
     Font plainFont, boldFont;
 
+    private boolean isCurrentView(Tool tool) {
+      if (tool instanceof AddTool && proj != null && proj.getFrame() != null) {
+        Circuit circ = null;
+        VhdlContent vhdl = null;
+        ComponentFactory fact = ((AddTool) tool).getFactory(false);
+        if (fact instanceof SubcircuitFactory)
+          circ = ((SubcircuitFactory) fact).getSubcircuit();
+        else if (fact instanceof VhdlEntity)
+          vhdl = ((VhdlEntity)fact).getContent();
+        if (proj.getFrame().getHdlEditorView() == null)
+          return (circ != null && circ == proj.getCurrentCircuit());
+        else
+          return (vhdl != null && vhdl == proj.getFrame().getHdlEditorView());
+      }
+      return false;
+    }
+
     @Override
     public java.awt.Component getTreeCellRendererComponent(JTree tree,
         Object value, boolean selected, boolean expanded, boolean leaf,
@@ -122,52 +139,32 @@ public class ProjectExplorer extends JTree implements LocaleListener {
         boldFont = new Font(plainFont.getFontName(), Font.BOLD, plainFont.getSize());
       }
       ret.setFont(plainFont);
-      // if (!selected)
-      //   ret.setBackground(Color.WHITE);
       if (ret instanceof JComponent) {
         JComponent comp = (JComponent) ret;
         comp.setToolTipText(null);
         comp.setOpaque(false);
       }
+      if (!(ret instanceof JLabel))
+        return ret;
+      JLabel label = (JLabel)ret;
       if (value instanceof ProjectExplorerToolNode) {
         ProjectExplorerToolNode toolNode = (ProjectExplorerToolNode) value;
         Tool tool = toolNode.getValue();
-        if (ret instanceof JLabel) {
-          JLabel label = (JLabel)ret;
-          boolean viewed = false;
-          if (tool instanceof AddTool && proj != null && proj.getFrame() != null) {
-            Circuit circ = null;
-            VhdlContent vhdl = null;
-            ComponentFactory fact = ((AddTool) tool).getFactory(false);
-            if (fact instanceof SubcircuitFactory)
-              circ = ((SubcircuitFactory) fact).getSubcircuit();
-            else if (fact instanceof VhdlEntity)
-              vhdl = ((VhdlEntity)fact).getContent();
-            if (proj.getFrame().getHdlEditorView() == null)
-              viewed = (circ != null && circ == proj.getCurrentCircuit());
-            else
-              viewed = (vhdl != null && vhdl == proj.getFrame().getHdlEditorView());
-          }
-          if (viewed) {
-            label.setFont(boldFont);
-            label.setBackground(VIEWED_TOOL_COLOR);
-            label.setOpaque(true);
-          }
-          label.setText(tool.getDisplayName());
-          label.setIcon(new ToolIcon(tool));
-          label.setToolTipText(tool.getDescription());
+        if (isCurrentView(tool)) {
+          label.setFont(boldFont);
+          label.setBackground(VIEWED_TOOL_COLOR);
+          label.setOpaque(true);
         }
+        label.setText(tool.getDisplayName());
+        label.setIcon(new ToolIcon(tool));
+        label.setToolTipText(tool.getDescription());
       } else if (value instanceof ProjectExplorerLibraryNode) {
         ProjectExplorerLibraryNode libNode = (ProjectExplorerLibraryNode) value;
         Library lib = libNode.getValue();
-
-        if (ret instanceof JLabel) {
-          String text = lib.getDisplayName();
-          if (lib.isDirty())
-            text += DIRTY_MARKER;
-
-          ((JLabel) ret).setText(text);
-        }
+        String text = lib.getDisplayName();
+        if (lib.isDirty())
+          text += DIRTY_MARKER;
+        label.setText(text);
       }
       return ret;
     }

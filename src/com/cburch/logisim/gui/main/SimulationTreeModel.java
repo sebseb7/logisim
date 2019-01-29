@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import javax.swing.event.EventListenerList;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
@@ -44,61 +45,41 @@ import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
 
 public class SimulationTreeModel implements TreeModel {
-  private ArrayList<TreeModelListener> listeners;
+  private EventListenerList listeners = new EventListenerList();
   private SimulationTreeTopNode root;
   private CircuitState currentView;
 
   public SimulationTreeModel(List<CircuitState> allRootStates) {
-    this.listeners = new ArrayList<TreeModelListener>();
     this.root = new SimulationTreeTopNode(this, allRootStates);
     this.currentView = null;
   }
 
   public void addTreeModelListener(TreeModelListener l) {
-    listeners.add(l);
+    listeners.add(TreeModelListener.class, l);
   }
 
-  private TreePath findPath(Object node) {
+  public TreePath getPath(Object node) {
     ArrayList<Object> path = new ArrayList<Object>();
     Object current = node;
     while (current instanceof TreeNode) {
       path.add(0, current);
       current = ((TreeNode) current).getParent();
     }
-    if (current != null) {
+    if (current != null)
       path.add(0, current);
-    }
     return new TreePath(path.toArray());
   }
 
-  protected void fireNodeChanged(Object node) {
-    TreeModelEvent e = new TreeModelEvent(this, findPath(node));
-    for (TreeModelListener l : listeners) {
-      l.treeNodesChanged(e);
-    }
-  }
-
-  protected void fireStructureChanged(Object node) {
-    TreeModelEvent e = new TreeModelEvent(this, findPath(node));
-    for (TreeModelListener l : listeners) {
-      l.treeStructureChanged(e);
-    }
-  }
-
   public Object getChild(Object parent, int index) {
-    if (parent instanceof TreeNode) {
+    if (parent instanceof TreeNode)
       return ((TreeNode) parent).getChildAt(index);
-    } else {
-      return null;
-    }
+    return null;
   }
 
   public int getChildCount(Object parent) {
-    if (parent instanceof TreeNode) {
+    if (parent instanceof TreeNode)
       return ((TreeNode) parent).getChildCount();
-    } else {
-      return 0;
-    }
+    return 0;
   }
 
   public CircuitState getCurrentView() {
@@ -106,11 +87,9 @@ public class SimulationTreeModel implements TreeModel {
   }
 
   public int getIndexOfChild(Object parent, Object child) {
-    if (parent instanceof TreeNode && child instanceof TreeNode) {
+    if (parent instanceof TreeNode && child instanceof TreeNode)
       return ((TreeNode) parent).getIndex((TreeNode) child);
-    } else {
-      return -1;
-    }
+    return -1;
   }
 
   public Object getRoot() {
@@ -118,11 +97,9 @@ public class SimulationTreeModel implements TreeModel {
   }
 
   public boolean isLeaf(Object node) {
-    if (node instanceof TreeNode) {
+    if (node instanceof TreeNode)
       return ((TreeNode) node).getChildCount() == 0;
-    } else {
-      return true;
-    }
+    return true;
   }
 
   public void updateSimulationList(List<CircuitState> allRootStates) {
@@ -181,7 +158,7 @@ public class SimulationTreeModel implements TreeModel {
   }
 
   public void removeTreeModelListener(TreeModelListener l) {
-    listeners.remove(l);
+    listeners.remove(TreeModelListener.class, l);
   }
 
   public void setCurrentView(CircuitState value) {
@@ -191,15 +168,32 @@ public class SimulationTreeModel implements TreeModel {
 
       SimulationTreeCircuitNode node1 = mapToNode(oldView);
       if (node1 != null)
-        fireNodeChanged(node1);
+        node1.fireAppearanceChanged();
 
       SimulationTreeCircuitNode node2 = mapToNode(value);
       if (node2 != null)
-        fireNodeChanged(node2);
+        node2.fireAppearanceChanged();
     }
   }
 
   public void valueForPathChanged(TreePath path, Object newValue) {
     throw new UnsupportedOperationException();
+  }
+  
+  public interface EventDispatcher {
+    void dispatch(TreeModelListener listener, TreeModelEvent e);
+  }
+
+  public void fire(TreePath path, int[] indices,
+      SimulationTreeNode[] nodes, EventDispatcher call) {
+    Object[] list = listeners.getListenerList();
+    TreeModelEvent e = null;
+    for (int i = list.length - 2; i >= 0; i -= 2) {
+      if (list[i] == TreeModelListener.class) {
+        if (e == null)
+          e = new TreeModelEvent(this, path, indices, nodes);
+        call.dispatch((TreeModelListener)list[i+1], e);
+      }
+    }
   }
 }

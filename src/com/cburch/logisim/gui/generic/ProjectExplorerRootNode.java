@@ -30,8 +30,6 @@
 
 package com.cburch.logisim.gui.generic;
 
-import java.util.Enumeration;
-
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.std.base.Base;
 
