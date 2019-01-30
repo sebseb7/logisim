@@ -163,9 +163,9 @@ public class LibraryManager {
 //  }
 
   // Logisim .circ files contain some embedded file paths, e.g. for external
-  // libraries ("file#foo.circ" or "jar#foo.jar"), and for some tcl-related or
+  // libraries ("file#foo.circ" or "jar#foo.jar"), and for some
   // hdl-related components. When user adds an external library (todo: or
-  // chooses a path for tcl-related or hdl-related components), we don't know if
+  // chooses a path for hdl-related components), we don't know if
   // the user would prefer to embed a relative path (i.e. relative to the
   // directory containing the .circ file, or to the current working directory),
   // or an absolute path. The pros and cons depend on the situation:

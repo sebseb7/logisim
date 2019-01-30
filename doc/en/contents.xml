@@ -168,10 +168,6 @@
 		<tocitem target="base_menu" text="Menu Tool" image="icon_menu" />
 		<tocitem target="base_label" text="Text" image="icon_label" />
 	  </tocitem>
-      <tocitem target="tcl" text="TCL library">
-          <tocitem target="tcl_reds_console" text="REDS console" image="icon_reds_console" />
-          <tocitem target="tcl_generic" text="Generic" image="icon_generic" />
-      </tocitem>
 	</tocitem>
 </tocitem>
 </toc>

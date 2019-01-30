@@ -79,18 +79,6 @@ public class Loader implements LibraryLoader {
     }
   }
 
-  private static class TclFileFilter extends FileFilter {
-    @Override
-    public boolean accept(File f) {
-      return f.isDirectory() || f.getName().endsWith(".tcl");
-    }
-
-    @Override
-    public String getDescription() {
-      return S.get("tclFileFilter");
-    }
-  }
-
   private static class TxtFileFilter extends FileFilter {
     @Override
     public boolean accept(File f) {
@@ -119,7 +107,6 @@ public class Loader implements LibraryLoader {
 
   public static final FileFilter JAR_FILTER = new JarFileFilter();
   public static final FileFilter TXT_FILTER = new TxtFileFilter();
-  public static final FileFilter TCL_FILTER = new TclFileFilter();
   public static final FileFilter VHDL_FILTER = new VhdlFileFilter();
 
   private Component parent;

@@ -145,9 +145,6 @@
 	<mapID target="base_text" url="en/html/libs/base/text.html" />
 	<mapID target="base_menu" url="en/html/libs/base/menu.html" />
     <mapID target="base_label" url="en/html/libs/base/label.html" />
-    <mapID target="tcl" url="en/html/libs/tcl/index.html" />
-    <mapID target="tcl_reds_console" url="en/html/libs/tcl/reds_console.html" />
-    <mapID target="tcl_generic" url="en/html/libs/tcl/generic.html" />
 
 	<mapID target="icon_poke" url="en/icons/poke.gif" />
 	<mapID target="icon_edit" url="en/icons/select.gif" />

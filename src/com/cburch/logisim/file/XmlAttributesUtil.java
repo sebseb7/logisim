@@ -62,20 +62,10 @@ public class XmlAttributesUtil {
           Element a = doc.createElement("a");
           a.setAttribute("name", attr.getName());
           String value = attr.toStandardString(val);
-          if (attr.getName().equals("filePath")
-              && outFilepath != null) { // for tcl console file path
-            // fixme: 
-            Path outFP = Paths.get(outFilepath);
-            Path attrValP = Paths.get(value);
-            value = (outFP.relativize(attrValP)).toString();
-            a.setAttribute("val", value);
-          } else {
-            if (value.indexOf("\n") >= 0) {
-              a.appendChild(doc.createTextNode(value));
-            } else {
-              a.setAttribute("val", attr.toStandardString(val));
-            }
-          }
+          if (value.indexOf("\n") >= 0)
+            a.appendChild(doc.createTextNode(value));
+          else
+            a.setAttribute("val", attr.toStandardString(val));
           elt.appendChild(a);
         }
       }

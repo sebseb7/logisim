@@ -203,13 +203,10 @@ class XmlReader {
         } else {
           String attrName = attrElt.getAttribute("name");
           String attrVal;
-          if (attrElt.hasAttribute("val")) {
+          if (attrElt.hasAttribute("val"))
             attrVal = attrElt.getAttribute("val");
-            if (attrName.equals("filePath")) // De-relativize the path
-              attrVal = Paths.get(srcDirPath, attrVal).toString();
-          } else {
+          else
             attrVal = attrElt.getTextContent();
-          }
           attrsDefined.put(attrName, attrVal);
         }
       }

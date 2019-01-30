@@ -782,7 +782,7 @@ class XmlProjectReader extends XmlReader {
       }
 
       repairForWiringLibrary(doc, root);
-      repairForLegacyLibrary(doc, root);
+      repairByEradicatingLibrary(doc, root, "Legacy", "#Legacy");
     }
     if (version.compareTo(LogisimVersion.get(2, 7, 2)) < 0) {
       addBuiltinLibrariesIfMissing(doc, root);
@@ -847,6 +847,9 @@ class XmlProjectReader extends XmlReader {
       }
     }
     */
+    // if (version.compareTo(LogisimVersion.get(4, 0, 0)) < 0) {
+      repairByEradicatingLibrary(doc, root, "TCL", "#TCL");
+    // }
   }
 
   private void addBuiltinLibrariesIfMissing(Document doc, Element root) {
@@ -927,37 +930,39 @@ class XmlProjectReader extends XmlReader {
     }
   }
 
-  private void repairForLegacyLibrary(Document doc, Element root) {
-    Element legacyElt = null;
-    String legacyLabel = null;
+  private void repairByEradicatingLibrary(Document doc, Element root,
+      String libDisplayName, String libTag) {
+    Element lib = null;
+    String libId = null;
     for (Element libElt : XmlIterator.forChildElements(root, "lib")) {
       String desc = libElt.getAttribute("desc");
-      String label = libElt.getAttribute("name");
-      if (desc != null && desc.equals("#Legacy")) {
-        legacyElt = libElt;
-        legacyLabel = label;
+      String id = libElt.getAttribute("name");
+      if (desc != null && desc.equals(libTag)) {
+        lib = libElt;
+        libId = id;
+        break;
       }
     }
+    if (lib == null)
+      return;
 
-    if (legacyElt != null) {
-      root.removeChild(legacyElt);
+    root.removeChild(lib);
 
-      ArrayList<Element> toRemove = new ArrayList<>();
-      findLibraryUses(toRemove, legacyLabel,
-          XmlIterator.forDescendantElements(root, "comp"));
-      boolean componentsRemoved = !toRemove.isEmpty();
-      findLibraryUses(toRemove, legacyLabel,
-          XmlIterator.forDescendantElements(root, "tool"));
-      for (Element elt : toRemove) {
-        elt.getParentNode().removeChild(elt);
-      }
-      if (componentsRemoved) {
-        String error = "Some components have been deleted;"
-            + " the Legacy library is no longer supported.";
-        Element elt = doc.createElement("message");
-        elt.setAttribute("value", error);
-        root.appendChild(elt);
-      }
+    ArrayList<Element> toRemove = new ArrayList<>();
+    findLibraryUses(toRemove, libId,
+        XmlIterator.forDescendantElements(root, "comp"));
+    boolean componentsRemoved = !toRemove.isEmpty();
+    findLibraryUses(toRemove, libId,
+        XmlIterator.forDescendantElements(root, "tool"));
+
+    for (Element elt : toRemove)
+      elt.getParentNode().removeChild(elt);
+
+    if (componentsRemoved) {
+      String error = S.fmt("libNoLongerSupported", libDisplayName);
+      Element elt = doc.createElement("message");
+      elt.setAttribute("value", error);
+      root.appendChild(elt);
     }
   }
 

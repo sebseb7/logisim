@@ -57,6 +57,26 @@
         <java jar="logisim-evolution.jar" fork="true"/>
     </target>
 
+    <target name="helpdocs">
+        <antcall target="helpdocs_for_lang"><param name="lang" value="de"/></antcall>
+        <antcall target="helpdocs_for_lang"><param name="lang" value="el"/></antcall>
+        <antcall target="helpdocs_for_lang"><param name="lang" value="en"/></antcall>
+        <antcall target="helpdocs_for_lang"><param name="lang" value="es"/></antcall>
+        <antcall target="helpdocs_for_lang"><param name="lang" value="fr"/></antcall>
+        <antcall target="helpdocs_for_lang"><param name="lang" value="pt"/></antcall>
+        <antcall target="helpdocs_for_lang"><param name="lang" value="ru"/></antcall>
+    </target>
+
+    <target name="helpdocs_for_lang">
+        <exec dir="doc" executable="jhindexer">
+            <arg value="-locale"/>
+            <arg value="${lang}"/>
+            <arg value="-db"/>
+            <arg value="search_lookup_${lang}"/>
+            <arg value="${lang}"/>
+        </exec>
+    </target>
+
     <property environment="env" />
     <taskdef name="bundleapp"
         classname="com.oracle.appbundler.AppBundlerTask"   
