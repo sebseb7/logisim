@@ -32,8 +32,6 @@ package com.cburch.logisim.gui.main;
 import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.util.List;
-import java.util.HashMap;
-import javax.swing.tree.TreeNode;
 
 import com.cburch.logisim.circuit.CircuitState;
 
@@ -46,30 +44,30 @@ class SimulationTreeTopNode extends SimulationTreeNode {
       children.add(new SimulationTreeCircuitNode(model, this, state, null));
   }
 
-  public void updateSimulationList(List<CircuitState> allRootStates) {
-    boolean changed = false;
-    HashMap<CircuitState, TreeNode> old = new HashMap<>();
-    HashMap<CircuitState, Integer> oldPos = new HashMap<>();
-    int i = 0;
-    for (TreeNode node : children) {
-      CircuitState state = ((SimulationTreeCircuitNode)node).getCircuitState();
-      old.put(state, node);
-      oldPos.put(state, i++);
-    }
+  public void clear() {
     children.clear();
-    i = 0;
-    for (CircuitState state : allRootStates) {
-      TreeNode node = old.get(state);
-      if (node == null) {
-        changed = true;
-        node = new SimulationTreeCircuitNode(model, this, state, null);
-      } else if (oldPos.get(state) != i++) {
-        changed = true;
+    fireStructureChanged();
+  }
+
+  public SimulationTreeNode addState(CircuitState state) {
+    int i = children.size();
+    SimulationTreeNode node = new SimulationTreeCircuitNode(model, this, state, null);
+    children.add(node);
+    model.fire(model.getPath(this), new int[] { i }, new SimulationTreeNode[] { node },
+        (l,e) -> l.treeNodesInserted(e));
+    return node;
+  }
+
+  public void removeState(CircuitState state) {
+    for (int i = 0; i < children.size(); i++) {
+      SimulationTreeCircuitNode node = (SimulationTreeCircuitNode)children.get(i);
+      if (node.getCircuitState() == state) {
+        children.remove(i);
+        model.fire(model.getPath(this), new int[] { i }, new SimulationTreeNode[] { node },
+            (l,e) -> l.treeNodesRemoved(e));
+        break;
       }
-      children.add(node);
     }
-    if (changed)
-      fireStructureChanged();
   }
 
   @Override

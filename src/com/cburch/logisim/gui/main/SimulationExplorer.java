@@ -75,6 +75,20 @@ class SimulationExplorer extends JPanel
     proj.addProjectListener(this);
 
     ToolTipManager.sharedInstance().registerComponent(tree);
+
+    Object root = model.getRoot();
+    for (int i = 0; i < model.getChildCount(root); i++)
+      expand((SimulationTreeNode)model.getChild(root, i));
+  }
+
+  private void expand(SimulationTreeNode node) {
+    TreePath path = model.getPath(node);
+    if (path == null)
+      return;
+    int i = tree.getRowForPath(path);
+    if (i < 0)
+      return;
+    tree.expandRow(i);
   }
 
   public CircuitState getCircuitStateForLocation(int x, int y) {
@@ -122,11 +136,17 @@ class SimulationExplorer extends JPanel
   public void projectChanged(ProjectEvent event) {
     int action = event.getAction();
     if (action == ProjectEvent.ACTION_SET_STATE) {
-      model.updateSimulationList(project.getRootCircuitStates());
       model.setCurrentView(project.getCircuitState());
       TreePath path = model.mapToPath(project.getCircuitState());
       if (path != null)
         tree.scrollPathToVisible(path);
+    } else if (action == ProjectEvent.ACTION_CLEAR_STATES) {
+      model.clear();
+    } else if (action == ProjectEvent.ACTION_ADD_STATE) {
+      SimulationTreeNode node = model.addState((CircuitState)event.getData());
+      expand(node);
+    } else if (action == ProjectEvent.ACTION_DELETE_STATE) {
+      model.removeState((CircuitState)event.getData());
     }
   }
 }

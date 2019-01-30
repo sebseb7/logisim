@@ -379,18 +379,8 @@ public class Popups {
           cs.getAncestorState().reset();
         proj.repaintCanvas();
       });
-      add(dup, S.get(dup), e -> {
-        proj.setCircuitState(cs.cloneState());
-      });
-      add(delete, S.get(delete), e -> { });
-    }
-
-    @Override
-    protected boolean shouldEnable(Object tag) {
-      if (tag == delete)
-        return !active;
-      else
-        return true;
+      add(dup, S.get(dup), e -> { proj.setCircuitState(cs.cloneState()); });
+      add(delete, S.get(delete), e -> { proj.removeCircuitState(cs.getAncestorState()); });
     }
 
   }

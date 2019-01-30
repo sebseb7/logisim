@@ -147,7 +147,7 @@ public class ExportImage {
     ((Graphics2D) g).scale(scale, scale);
     ((Graphics2D) g).translate(-bds.getX(), -bds.getY());
 
-    CircuitState circuitState = canvas.getProject().getCircuitState(circuit);
+    CircuitState circuitState = canvas.getProject().getCircuitStateForPrinting(circuit);
     ComponentDrawContext context = new ComponentDrawContext(canvas,
         circuit, circuitState, base, g, printerView);
     circuit.draw(context, null);

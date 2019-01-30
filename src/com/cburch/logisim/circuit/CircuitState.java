@@ -612,4 +612,8 @@ public class CircuitState implements InstanceData {
   public String toString() {
     return "State" + id + "[" + circuit.getName() + "]";
   }
+
+  public int getId() {
+    return id;
+  }
 }

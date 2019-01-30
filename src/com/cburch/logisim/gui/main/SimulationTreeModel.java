@@ -102,9 +102,9 @@ public class SimulationTreeModel implements TreeModel {
     return true;
   }
 
-  public void updateSimulationList(List<CircuitState> allRootStates) {
-    root.updateSimulationList(allRootStates);
-  }
+  public void clear() { root.clear(); }
+  public SimulationTreeNode addState(CircuitState cs) { return root.addState(cs); }
+  public void removeState(CircuitState cs) { root.removeState(cs); }
 
   protected SimulationTreeNode mapComponentToNode(Component comp) {
     return null;

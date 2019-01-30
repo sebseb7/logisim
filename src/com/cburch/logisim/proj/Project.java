@@ -258,26 +258,24 @@ public class Project {
     return allRootStates;
   }
 
-  public CircuitState getCircuitState(Circuit circuit) {
-    // This is only used for printing and exporting things, so let's use
-    // the current state, if it is the right circuit, even if it is not
-    // a root state. Otherwise let's use the most recent root state.
-    if (circuitState != null && circuitState.getCircuit() == circuit) {
+  public CircuitState getCircuitStateForPrinting(Circuit circuit) {
+    // This is only used for printing and exporting things, so let's use the
+    // current state, if it is the right circuit, even if it is not a root
+    // state. Otherwise use the most recent root state, if there is one.
+    // Otherwise, just make a fresh blank state, but don't record it as a new
+    // simulation.
+    if (circuitState != null && circuitState.getCircuit() == circuit)
       return circuitState;
-    } else {
-      CircuitState ret = recentRootState.get(circuit);
-      if (ret == null) {
-        ret = new CircuitState(this, circuit);
-        recentRootState.put(circuit, ret);
-        allRootStates.add(ret);
-      }
+    CircuitState ret = recentRootState.get(circuit);
+    if (ret != null)
       return ret;
-    }
+    return new CircuitState(this, circuit);
   }
 
   public void removeCircuitState(CircuitState cs) {
     Circuit circ = cs.getCircuit();
     allRootStates.remove(cs);
+    fireEvent(ProjectEvent.ACTION_DELETE_STATE, cs);
     recentRootState.remove(circ, cs);
     if (cs == circuitState) {
       if (!allRootStates.isEmpty())
@@ -527,8 +525,10 @@ public class Project {
     hdlModel = null;
     circuitState = value;
     if (!circuitState.isSubstate()) {
-      if (!allRootStates.contains(circuitState))
+      if (!allRootStates.contains(circuitState)) {
         allRootStates.add(circuitState);
+        fireEvent(ProjectEvent.ACTION_ADD_STATE, circuitState);
+      }
       recentRootState.put(newCircuit, circuitState);
     }
     simulator.setCircuitState(circuitState);
@@ -590,6 +590,7 @@ public class Project {
     file = value;
     recentRootState.clear();
     allRootStates.clear();
+    fireEvent(ProjectEvent.ACTION_CLEAR_STATES, null);
     // todo: close and dispose of orphaned ram hex window instances.
     dependencies = new Dependencies(file);
     undoLog.clear();

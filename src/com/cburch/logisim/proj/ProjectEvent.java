@@ -48,6 +48,9 @@ public class ProjectEvent {
   public static final int REPAINT_REQUEST = 10; // canvas should be repainted
   public static final int REDO_START = 11;
   public static final int REDO_COMPLETE = 12;
+  public final static int ACTION_ADD_STATE = 13; // new root circuit state created
+  public final static int ACTION_DELETE_STATE = 14; // old root circuit state removed
+  public final static int ACTION_CLEAR_STATES = 15; // clear all old root circuit states
 
   private int action;
   private Project proj;

@@ -164,14 +164,14 @@ class SimulationTreeCircuitNode extends SimulationTreeNode
     if (subcircComp != null) {
       String label = subcircComp.getAttributeSet()
           .getValue(StdAttr.LABEL);
-      if (label != null && !label.equals("")) {
+      if (label != null && !label.equals(""))
         return label;
-      }
     }
     String ret = circuitState.getCircuit().getName();
-    if (subcircComp != null) {
+    if (subcircComp != null)
       ret += subcircComp.getLocation();
-    }
+    if (!circuitState.isSubstate())
+      ret += " [simulation "+circuitState.getId()+"]";
     return ret;
   }
 }

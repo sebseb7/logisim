@@ -84,7 +84,7 @@ public class Print {
         return Printable.NO_SUCH_PAGE;
 
       Circuit circ = circuits.get(pageIndex);
-      CircuitState circState = proj.getCircuitState(circ);
+      CircuitState circState = proj.getCircuitStateForPrinting(circ);
       Graphics2D g = (Graphics2D)base.create();
       FontMetrics fm = g.getFontMetrics();
       String head = (header != null && !header.equals("")) ? format(
