@@ -54,6 +54,9 @@ public class Wiring extends Library {
         GATE_TOP_LEFT, GATE_BOTTOM_RIGHT });
 
   private static FactoryDescription[] DESCRIPTIONS = {
+    new FactoryDescription("Bit Extender",
+        S.getter("extenderComponent"), "extender.gif",
+        "BitExtender"),
     new FactoryDescription("Power", S.getter("powerComponent"),
         "power.gif", "Power"),
     new FactoryDescription("Ground", S.getter("groundComponent"),
@@ -64,9 +67,7 @@ public class Wiring extends Library {
     new FactoryDescription("Transmission Gate",
         S.getter("transmissionGateComponent"),
         "transmis.gif", "TransmissionGate"),
-    new FactoryDescription("Bit Extender",
-        S.getter("extenderComponent"), "extender.gif",
-        "BitExtender"), };
+  };
 
   private List<Tool> tools = null;
 
@@ -91,10 +92,10 @@ public class Wiring extends Library {
       ret.add(new AddTool(Wiring.class, Pin.FACTORY));
       ret.add(new AddTool(Wiring.class, Probe.FACTORY));
       ret.add(new AddTool(Wiring.class, Tunnel.FACTORY));
-      ret.add(new AddTool(Wiring.class, PullResistor.FACTORY));
       ret.add(new AddTool(Wiring.class, Clock.FACTORY));
       ret.add(new AddTool(Wiring.class, Constant.FACTORY));
       ret.addAll(FactoryDescription.getTools(Wiring.class, DESCRIPTIONS));
+      ret.add(new AddTool(Wiring.class, PullResistor.FACTORY));
       tools = ret;
     }
     return tools;
