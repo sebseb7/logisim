@@ -110,6 +110,8 @@ public class LogisimMenuBar extends JMenuBar {
   public static final LogisimMenuItem TICK_ENABLE = new LogisimMenuItem("TickEnable");
   public static final LogisimMenuItem TICK_HALF = new LogisimMenuItem("TickHalf");
   public static final LogisimMenuItem TICK_FULL = new LogisimMenuItem("TickFull");
+  public static final LogisimMenuItem SIMULATE_ADD_STATE = new LogisimMenuItem("AddCircuitState");
+  public static final LogisimMenuItem SIMULATE_DELETE_STATE = new LogisimMenuItem("DeleteCircuitState");
 
   private LFrame parent;
   private MyListener listener;

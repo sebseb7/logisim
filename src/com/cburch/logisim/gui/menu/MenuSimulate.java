@@ -142,6 +142,14 @@ public class MenuSimulate extends Menu {
         sim.tick(2);
       } else if (src == ticksEnabled || src == LogisimMenuBar.TICK_ENABLE) {
         sim.setAutoTicking(!sim.isAutoTicking());
+      } else if (src == addSim || src == LogisimMenuBar.SIMULATE_ADD_STATE) {
+        CircuitState state = proj.getCircuitState();
+        if (state != null)
+          proj.setCircuitState(state.cloneState()); // for now, duplicate b/c easy
+      } else if (src == delSim || src == LogisimMenuBar.SIMULATE_DELETE_STATE) {
+        CircuitState state = proj.getCircuitState();
+        if (state != null)
+          proj.removeCircuitState(state);
       }
     }
 
@@ -265,6 +273,7 @@ public class MenuSimulate extends Menu {
   private MenuItemCheckImpl ticksEnabled;
   private MenuItemImpl tickHalf;
   private MenuItemImpl tickFull;
+  private MenuItemImpl addSim, delSim;
   private JMenu tickFreq = new JMenu();
   private TickFrequencyChoice[] tickFreqs = new TickFrequencyChoice[SupportedTickFrequencies.length];
   private JMenu downStateMenu = new JMenu();
@@ -286,6 +295,8 @@ public class MenuSimulate extends Menu {
     ticksEnabled = new MenuItemCheckImpl(this, LogisimMenuBar.TICK_ENABLE);
     tickHalf = new MenuItemImpl(this, LogisimMenuBar.TICK_HALF);
     tickFull = new MenuItemImpl(this, LogisimMenuBar.TICK_FULL);
+    addSim = new MenuItemImpl(this, LogisimMenuBar.SIMULATE_ADD_STATE);
+    delSim = new MenuItemImpl(this, LogisimMenuBar.SIMULATE_DELETE_STATE);
 
     menubar.registerItem(LogisimMenuBar.SIMULATE_RUN_TOGGLE, runToggle);
     menubar.registerItem(LogisimMenuBar.SIMULATE_STEP, step);
@@ -296,6 +307,8 @@ public class MenuSimulate extends Menu {
     menubar.registerItem(LogisimMenuBar.TICK_ENABLE, ticksEnabled);
     menubar.registerItem(LogisimMenuBar.TICK_HALF, tickHalf);
     menubar.registerItem(LogisimMenuBar.TICK_FULL, tickFull);
+    menubar.registerItem(LogisimMenuBar.SIMULATE_ADD_STATE, addSim);
+    menubar.registerItem(LogisimMenuBar.SIMULATE_DELETE_STATE, delSim);
 
     int menuMask = getToolkit().getMenuShortcutKeyMask();
     runToggle.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, menuMask));
@@ -350,6 +363,8 @@ public class MenuSimulate extends Menu {
     menubar.addActionListener(LogisimMenuBar.TICK_ENABLE, myListener);
     menubar.addActionListener(LogisimMenuBar.TICK_HALF, myListener);
     menubar.addActionListener(LogisimMenuBar.TICK_FULL, myListener);
+    menubar.addActionListener(LogisimMenuBar.SIMULATE_ADD_STATE, myListener);
+    menubar.addActionListener(LogisimMenuBar.SIMULATE_DELETE_STATE, myListener);
     // runToggle.addActionListener(myListener);
     reset.addActionListener(myListener);
     // step.addActionListener(myListener);
@@ -384,6 +399,8 @@ public class MenuSimulate extends Menu {
     downStateMenu.setEnabled(present);
     tickHalf.setEnabled(present);
     tickFull.setEnabled(present);
+    addSim.setEnabled(present);
+    delSim.setEnabled(present);
     ticksEnabled.setEnabled(present);
     tickFreq.setEnabled(present);
     menubar.fireEnableChanged();
@@ -398,6 +415,8 @@ public class MenuSimulate extends Menu {
     vhdl_sim_files.setText(S.get("simulateGenVhdlFilesItem"));
     tickHalf.setText(S.get("simulateTickHalfItem"));
     tickFull.setText(S.get("simulateTickFullItem"));
+    addSim.setText(S.get("simulateAddState"));
+    delSim.setText(S.get("simulateDeleteState"));
     ticksEnabled.setText(S.get("simulateTickItem"));
     tickFreq.setText(S.get("simulateTickFreqMenu"));
     for (int i = 0; i < tickFreqs.length; i++) {

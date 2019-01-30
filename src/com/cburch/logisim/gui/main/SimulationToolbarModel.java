@@ -52,6 +52,8 @@ public class SimulationToolbarModel extends AbstractToolbarModel
   private LogisimToolbarItem tickEnable;
   private LogisimToolbarItem tickHalf;
   private LogisimToolbarItem tickFull;
+  private LogisimToolbarItem addSim;
+  private LogisimToolbarItem delSim;
   private List<ToolbarItem> items;
 
   public SimulationToolbarModel(Project project, MenuListener menu) {
@@ -67,9 +69,13 @@ public class SimulationToolbarModel extends AbstractToolbarModel
         LogisimMenuBar.TICK_HALF, S.getter("simulateTickHalfTip"));
     tickFull = new LogisimToolbarItem(menu, "tickfull.png",
         LogisimMenuBar.TICK_FULL, S.getter("simulateTickFullTip"));
+    addSim = new LogisimToolbarItem(menu, "projadd.gif",
+        LogisimMenuBar.SIMULATE_ADD_STATE, S.getter("addCircuitState"));
+    delSim = new LogisimToolbarItem(menu, "projdel.gif",
+        LogisimMenuBar.SIMULATE_DELETE_STATE, S.getter("deleteCircuitState"));
 
     items = UnmodifiableList.create(new ToolbarItem[] {
-      simRunToggle, simStep, tickEnable, tickHalf, tickFull, });
+      simRunToggle, simStep, tickEnable, tickHalf, tickFull, addSim, delSim });
 
     menu.getMenuBar().addEnableListener(this);
     stateChanged(null);
