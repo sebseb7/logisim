@@ -87,7 +87,10 @@ public class Io extends Library {
         S.getter("dotMatrixComponent"), "dotmat.gif",
         "DotMatrix"),
     new FactoryDescription("TTY", S.getter("ttyComponent"),
-        "tty.gif", "Tty"), };
+        "tty.gif", "Tty"),
+    new FactoryDescription("FileViewer", S.getter("fileViewerComponent"),
+        "fileviewer.gif", "FileViewer"),
+  };
 
   private List<Tool> tools = null;
 

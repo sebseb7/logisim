@@ -30,11 +30,8 @@
 package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.io.File;
-import java.io.IOException;
 import java.util.WeakHashMap;
 
 import com.cburch.hex.HexModel;
@@ -47,7 +44,6 @@ import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
-import com.cburch.logisim.gui.hex.HexFile;
 import com.cburch.logisim.gui.hex.HexFrame;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
@@ -62,18 +58,13 @@ import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringGetter;
 
 public abstract class Mem extends InstanceFactory {
-  // Note: The code is meant to be able to handle up to 32-bit addresses, but
-  // it
+  // Note: The code is meant to be able to handle up to 32-bit addresses, but it
   // hasn't been debugged thoroughly. There are two definite changes I would
-  // make if I were to extend the address bits: First, there would need to be
-  // some
-  // modification to the memory's graphical representation, because there
-  // isn't
-  // room in the box to include such long memory addresses with the current
-  // font
+  // make if I were to extend the address bits: First, there would need to be some
+  // modification to the memory's graphical representation, because there isn't
+  // room in the box to include such long memory addresses with the current font
   // size. And second, I'd alter the MemContents class's PAGE_SIZE_BITS
-  // constant
-  // to 14 so that its "page table" isn't quite so big.
+  // constant to 14 so that its "page table" isn't quite so big.
 
   static class MemListener implements HexModelListener {
 
@@ -175,9 +166,7 @@ public abstract class Mem extends InstanceFactory {
     g.drawLine(xpos + 45, ypos + 23, xpos + 45, ypos + 30);
     g.drawLine(xpos + 40, ypos + 35, xpos + 45, ypos + 30);
     String size = Integer.toString((1 << NrAddressBits) - 1);
-    Font font = g.getFont();
-    FontMetrics fm = g.getFontMetrics(font);
-    int StrSize = fm.stringWidth(size);
+    int StrSize = g.getFontMetrics(g.getFont()).stringWidth(size);
     g.drawLine(xpos + 60, ypos + 20, xpos + 60 + StrSize, ypos + 20);
     GraphicsUtil.drawText(g, "0", xpos + 60 + (StrSize / 2), ypos + 19,
         GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);

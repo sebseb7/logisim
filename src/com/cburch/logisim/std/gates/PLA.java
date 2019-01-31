@@ -92,7 +92,7 @@ class PLA extends InstanceFactory {
 
   private static class TruthTableAttribute extends Attribute<PLATable> {
     public TruthTableAttribute() {
-      super("table", S.getter("Program"));
+      super("table", S.getter("plaProgram"));
     }
 
     @Override
@@ -104,7 +104,7 @@ class PLA extends InstanceFactory {
 
     @Override
     public String toDisplayString(PLATable value) {
-      return S.get("(click to edit)");
+      return S.get("plaClickToEdit");
     }
 
     @Override
