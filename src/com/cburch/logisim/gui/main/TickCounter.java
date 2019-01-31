@@ -155,8 +155,6 @@ class TickCounter implements Simulator.Listener {
       long te = t;
       double ticks = tick - (bucketTick[s] + 1);
       rate = 1000.0 * ticks / (te - ts);
-      // System.out.printf("s=%d e=%d n=%d ticks=%s time=%d rate=%s\n",
-      //     s, e, n, ticks, te-ts, rate);
     }
   }
 }
