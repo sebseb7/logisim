@@ -379,7 +379,7 @@ public class Popups {
           cs.getAncestorState().reset();
         proj.repaintCanvas();
       });
-      add(dup, S.get(dup), e -> { proj.setCircuitState(cs.cloneState()); });
+      add(dup, S.get(dup), e -> { proj.setCircuitState(cs.cloneAsNewRootState()); });
       add(delete, S.get(delete), e -> { proj.removeCircuitState(cs.getAncestorState()); });
     }
 

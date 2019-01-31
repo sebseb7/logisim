@@ -249,6 +249,14 @@ public class InstancePainter implements InstanceState {
     circState.setData(comp, value);
   }
 
+  @Override
+  public CircuitState createCircuitSubstateFor(Circuit circ) {
+    CircuitState circState = context.getCircuitState();
+    if (circState == null || comp == null)
+      throw new UnsupportedOperationException("createCircuitSubstateFor on InstancePainter");
+    return circState.createCircuitSubstateFor(comp, circ);
+  }
+
   void setFactory(ComponentFactory factory, AttributeSet attrs) {
     this.comp = null;
     this.factory = factory;

@@ -100,8 +100,7 @@ public class CircuitState implements InstanceData {
           markPointAsDirty(w.getEnd0());
           markPointAsDirty(w.getEnd1());
         } else {
-          if (base != null)
-            base.checkComponentEnds(CircuitState.this, comp);
+          base.checkComponentEnds(CircuitState.this, comp);
           dirtyComponents.remove(comp);
         }
       }
@@ -126,16 +125,12 @@ public class CircuitState implements InstanceData {
 //          @SuppressWarnings("unchecked")
 //          Collection<Component> comps = (Collection<Component>) data;
 //          markComponentsDirty(comps);
-//          if (base != null) {
-//            for (Component comp : comps) {
-//              base.checkComponentEnds(CircuitState.this, comp);
-//            }
-//          }
+//          for (Component comp : comps)
+//            base.checkComponentEnds(CircuitState.this, comp);
 //        } else {
 //          Component comp = (Component) event.getData();
 //          markComponentAsDirty(comp);
-//          if (base != null)
-//            base.checkComponentEnds(CircuitState.this, comp);
+//          base.checkComponentEnds(CircuitState.this, comp);
 //        }
 //      }
       else if (action == CircuitEvent.ACTION_INVALIDATE) {
@@ -147,8 +142,7 @@ public class CircuitState implements InstanceData {
         proj.getSimulator().addPendingInput(CircuitState.this, comp);
 
         // TODO detemine if this should really be missing
-        // if (base != null)
-        //   base.checkComponentEnds(CircuitState.this, comp);
+        // base.checkComponentEnds(CircuitState.this, comp);
       } else if (action == CircuitEvent.TRANSACTION_DONE) {
         ReplacementMap map = event.getResult().getReplacementMap(circuit);
         if (map == null)
@@ -180,15 +174,15 @@ public class CircuitState implements InstanceData {
   }
 
   private MyCircuitListener myCircuitListener = new MyCircuitListener();
-  private Propagator base = null; // base of tree of CircuitStates
-  private Project proj; // project where circuit liespr
+  private Propagator base; // inherited from base of tree of CircuitStates
+  private Project proj; // project containing this circuit
   private Circuit circuit; // circuit being simulated
 
-  private CircuitState parentState = null; // parent in tree of CircuitStates
-  private Component parentComp = null; // subcircuit component containing this state
+  private CircuitState parentState; // parent in tree of CircuitStates
+  private Component parentComp; // subcircuit component containing this state
   private HashSet<CircuitState> substates = new HashSet<>();
 
-  private CircuitWires.State wireData = null;
+  private CircuitWires.State wireData;
   private HashMap<Component, Object> componentData = new HashMap<>();
   private Map<Location, Value> values = new HashMap<>();
   private CopyOnWriteArraySet<Component> dirtyComponents = new CopyOnWriteArraySet<>();
@@ -198,38 +192,46 @@ public class CircuitState implements InstanceData {
   private static int lastId = 0;
   private int id = lastId++;
 
-  public CircuitState(Project proj, Circuit circuit) {
+  private CircuitState(Project proj, Circuit circuit, Propagator prop) {
     this.proj = proj;
     this.circuit = circuit;
+    this.base = prop != null ? prop : new Propagator(this);
     circuit.addCircuitListener(myCircuitListener);
+    markAllComponentsDirty();
   }
+
+  // public boolean containsKey(Location pt) {
+  //   return values.containsKey(pt);
+  // }
 
   @Override
   public CircuitState clone() {
-    return cloneState();
+    try { throw new Exception("*** why? ***"); }
+    catch (Exception e) { e.printStackTrace(); }
+    return cloneAsNewRootState();
   }
 
-  public CircuitState cloneState() {
-    CircuitState ret = new CircuitState(proj, circuit);
-    ret.copyFrom(this, new Propagator(ret));
-    ret.parentComp = null;
+  public static CircuitState createRootState(Project proj, Circuit circuit) {
+    return new CircuitState(proj, circuit, null /* make new Propagator */);
+  }
+
+  public CircuitState cloneAsNewRootState() {
+    CircuitState ret = new CircuitState(proj, circuit, null /* make new Propatator */);
+    ret.copyFrom(this);
+    ret.parentComp = null; // detatch from old parent component and state
     ret.parentState = null;
     return ret;
   }
 
-  public boolean containsKey(Location pt) {
-    return values.containsKey(pt);
-  }
-
-  private void copyFrom(CircuitState src, Propagator base) {
-    this.base = base;
+  private void copyFrom(CircuitState src) {
+    // this.base = ... DO NOT COPY propagator, as this circuit has its own already.
     this.parentComp = src.parentComp;
     this.parentState = src.parentState;
-    HashMap<CircuitState, CircuitState> substateData = new HashMap<CircuitState, CircuitState>();
+    HashMap<CircuitState, CircuitState> substateData = new HashMap<>();
     this.substates = new HashSet<CircuitState>();
     for (CircuitState oldSub : src.substates) {
-      CircuitState newSub = new CircuitState(src.proj, oldSub.circuit);
-      newSub.copyFrom(oldSub, base);
+      CircuitState newSub = new CircuitState(src.proj, oldSub.circuit, this.base);
+      newSub.copyFrom(oldSub);
       newSub.parentState = this;
       this.substates.add(newSub);
       substateData.put(oldSub, newSub);
@@ -266,13 +268,9 @@ public class CircuitState implements InstanceData {
   }
 
   public void drawOscillatingPoints(ComponentDrawContext context) {
-    if (base != null)
-      base.drawOscillatingPoints(context);
+    base.drawOscillatingPoints(context);
   }
 
-  //
-  // public methods
-  //
   public Circuit getCircuit() {
     return circuit;
   }
@@ -324,10 +322,6 @@ public class CircuitState implements InstanceData {
   }
 
   public Propagator getPropagator() {
-    if (base == null) {
-      base = new Propagator(this);
-      markAllComponentsDirty();
-    }
     return base;
   }
 
@@ -356,16 +350,10 @@ public class CircuitState implements InstanceData {
     return wireData;
   }
 
-  //
-  // methods for other classes within package
-  //
   public boolean isSubstate() {
     return parentState != null;
   }
 
-  //
-  // private methods
-  //
   private void markAllComponentsDirty() {
     dirtyComponents.addAll(circuit.getNonWires());
   }
@@ -422,9 +410,8 @@ public class CircuitState implements InstanceData {
     }
 
     CircuitState[] subs = new CircuitState[substates.size()];
-    for (CircuitState substate : substates.toArray(subs)) {
+    for (CircuitState substate : substates.toArray(subs))
       substate.processDirtyComponents();
-    }
   }
 
   void processDirtyPoints() {
@@ -457,9 +444,8 @@ public class CircuitState implements InstanceData {
     }
 
     CircuitState[] subs = new CircuitState[substates.size()];
-    for (CircuitState substate : substates.toArray(subs)) {
+    for (CircuitState substate : substates.toArray(subs))
       substate.processDirtyPoints();
-    }
   }
 
   public void reset() {
@@ -487,36 +473,33 @@ public class CircuitState implements InstanceData {
     }
   }
 
+  public CircuitState createCircuitSubstateFor(Component comp, Circuit circ) {
+      CircuitState oldState = (CircuitState)componentData.get(comp);
+      if (oldState != null && oldState.parentComp == comp) {
+        // fixme: Does this ever happen?
+        System.out.println("removed stale circuitstate");
+        substates.remove(oldState);
+        oldState.parentState = null;
+        oldState.parentComp = null;
+      }
+      CircuitState newState = new CircuitState(proj, circ, base);
+      substates.add(newState);
+      newState.parentState = this;
+      newState.parentComp = comp;
+      componentData.put(comp, newState);
+      return newState;
+  }
+
   public void setData(Component comp, Object data) {
     if (data instanceof CircuitState) {
-      CircuitState oldState = (CircuitState) componentData.get(comp);
-      CircuitState newState = (CircuitState) data;
-      if (oldState != newState) {
-        // There's something new going on with this subcircuit.
-        // Maybe the subcircuit is new, or perhaps it's being
-        // removed.
-        if (oldState != null && oldState.parentComp == comp) {
-          // it looks like it's being removed
-          substates.remove(oldState);
-          oldState.parentState = null;
-          oldState.parentComp = null;
-        }
-        if (newState != null && newState.parentState != this) {
-          // this is the first time I've heard about this CircuitState
-          substates.add(newState);
-          newState.base = this.base;
-          newState.parentState = this;
-          newState.parentComp = comp;
-          newState.markAllComponentsDirty();
-        }
-      }
+      // fixme: should never happen?
+      System.out.println("setData with circuitstate... should never happen");
     }
     componentData.put(comp, data);
   }
 
   public void setValue(Location pt, Value val, Component cause, int delay) {
-    if (base != null)
-      base.setValue(this, pt, val, cause, delay);
+    base.setValue(this, pt, val, cause, delay);
   }
 
   void setValueByWire(Location p, Value v) {
@@ -540,7 +523,7 @@ public class CircuitState implements InstanceData {
       // NOTE: this will cause a double-propagation on components
       // whose outputs have just changed.
 
-      if (found && base != null)
+      if (found)
         base.locationTouched(this, p);
     }
   }

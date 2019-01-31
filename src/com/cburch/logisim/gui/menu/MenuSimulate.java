@@ -145,7 +145,7 @@ public class MenuSimulate extends Menu {
       } else if (src == addSim || src == LogisimMenuBar.SIMULATE_ADD_STATE) {
         CircuitState state = proj.getCircuitState();
         if (state != null)
-          proj.setCircuitState(state.cloneState()); // for now, duplicate b/c easy
+          proj.setCircuitState(state.cloneAsNewRootState()); // for now, duplicate b/c easy
       } else if (src == delSim || src == LogisimMenuBar.SIMULATE_DELETE_STATE) {
         CircuitState state = proj.getCircuitState();
         if (state != null)

@@ -216,7 +216,7 @@ public class Analyze {
     Entry[][] columns = new Entry[outputNames.size()][rowCount];
 
     for (int i = 0; i < rowCount; i++) {
-      CircuitState circuitState = new CircuitState(proj, circuit);
+      CircuitState circuitState = CircuitState.createRootState(proj, circuit);
       int incol = 0;
       for (int j = 0; j < inputPins.size(); j++) {
         Instance pin = inputPins.get(j);

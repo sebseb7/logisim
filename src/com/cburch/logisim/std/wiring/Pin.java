@@ -314,7 +314,7 @@ public class Pin extends InstanceFactory {
             JOptionPane.OK_CANCEL_OPTION,
             JOptionPane.WARNING_MESSAGE);
         if (choice == JOptionPane.OK_OPTION) {
-          circState = circState.cloneState();
+          circState = circState.cloneAsNewRootState();
           canvas.getProject().setCircuitState(circState);
           state = circState.getInstanceState(state.getInstance());
         } else {

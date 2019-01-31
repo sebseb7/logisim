@@ -71,6 +71,11 @@ public class InstanceStateImpl implements InstanceState {
     return circuitState;
   }
 
+  @Override
+  public CircuitState createCircuitSubstateFor(Circuit circ) {
+    return circuitState.createCircuitSubstateFor(component, circ);
+  }
+
   public InstanceData getData() {
     if (circuitState == null)
       return null;

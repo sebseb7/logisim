@@ -269,7 +269,7 @@ public class Project {
     CircuitState ret = recentRootState.get(circuit);
     if (ret != null)
       return ret;
-    return new CircuitState(this, circuit);
+    return CircuitState.createRootState(this, circuit);
   }
 
   public void removeCircuitState(CircuitState cs) {
@@ -551,7 +551,7 @@ public class Project {
   public void setCurrentCircuit(Circuit circuit) {
     CircuitState circState = recentRootState.get(circuit);
     if (circState == null)
-      circState = new CircuitState(this, circuit);
+      circState = CircuitState.createRootState(this, circuit);
     setCircuitState(circState);
   }
 

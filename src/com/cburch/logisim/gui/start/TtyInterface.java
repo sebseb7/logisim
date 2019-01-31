@@ -389,7 +389,7 @@ public class TtyInterface {
       return 0;
     }
 
-    CircuitState circState = new CircuitState(proj, circuit);
+    CircuitState circState = CircuitState.createRootState(proj, circuit);
     // we have to do our initial propagation before the simulation starts -
     // it's necessary to populate the circuit with substates.
     circState.getPropagator().propagate();
@@ -595,7 +595,7 @@ public class TtyInterface {
     HashMap<Instance, Value> valueMap = new HashMap<>();
     for (int i = 0; i < rowCount; i++) {
       valueMap.clear();
-      CircuitState circuitState = new CircuitState(proj, circuit);
+      CircuitState circuitState = CircuitState.createRootState(proj, circuit);
       int incol = 0;
       for (int j = 0; j < inputPins.size(); j++) {
         Instance pin = inputPins.get(j);

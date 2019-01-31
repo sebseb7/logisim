@@ -407,9 +407,8 @@ public class Canvas extends JPanel
             last = state;
             state = state.getParentState();
           }
-          if (state != null) {
-            getProject().setCircuitState(last.cloneState());
-          }
+          if (state != null)
+            getProject().setCircuitState(last.cloneAsNewRootState());
         }
       }
     }
