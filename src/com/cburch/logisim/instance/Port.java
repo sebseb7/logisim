@@ -84,7 +84,7 @@ public class Port {
   private int dx;
   private int dy;
   private int type;
-  private BitWidth widthFixed;
+  private int widthFixed;
 
   private Attribute<BitWidth> widthAttr;
 
@@ -101,7 +101,7 @@ public class Port {
     this.dx = dx;
     this.dy = dy;
     this.type = toType(type);
-    this.widthFixed = null;
+    this.widthFixed = -1; // -1 means use attr instead
     this.widthAttr = attr;
     this.exclude = toExclusive(exclude);
     this.toolTip = null;
@@ -115,7 +115,7 @@ public class Port {
     this.dx = dx;
     this.dy = dy;
     this.type = toType(type);
-    this.widthFixed = bits;
+    this.widthFixed = bits.getWidth();
     this.widthAttr = null;
     this.exclude = toExclusive(exclude);
     this.toolTip = null;
@@ -129,8 +129,8 @@ public class Port {
     this(dx, dy, type, BitWidth.create(bits), exclude);
   }
 
-  public BitWidth getFixedBitWidth() {
-    return widthFixed == null ? BitWidth.UNKNOWN : widthFixed;
+  public int getFixedBitWidth() {
+    return widthFixed;
   }
 
   public String getToolTip() {
@@ -152,14 +152,15 @@ public class Port {
 
   public EndData toEnd(Location loc, AttributeSet attrs) {
     Location pt = loc.translate(dx, dy);
-    if (widthFixed != null) {
-      return new EndData(pt, widthFixed, type, exclude);
-    } else {
+    if (widthFixed >= 0) {
+      return new EndData(pt, BitWidth.create(widthFixed), type, exclude);
+    } else if (widthAttr != null) {
       Object val = attrs.getValue(widthAttr);
-      if (!(val instanceof BitWidth)) {
-        throw new IllegalArgumentException("Width attribute not set");
-      }
+      if (!(val instanceof BitWidth))
+        throw new IllegalStateException("Width attribute not set");
       return new EndData(pt, (BitWidth) val, type, exclude);
+    } else {
+      throw new IllegalStateException("Port has no fixed width or width attribute");
     }
   }
 }

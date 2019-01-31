@@ -50,6 +50,7 @@ import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Attributes;
@@ -260,16 +261,14 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
       VhdlSimulator vhdlSimulator = state.getProject().getVhdlSimulator();
 
-      for (Port p : state.getInstance().getPorts()) {
-        int index = state.getPortIndex(p);
-        Value val = state.getPortValue(index);
-
+      List<Port> ports = state.getInstance().getPorts();
+      int n = ports.size();
+      for (int i = 0; i < n; i++) {
+        Port p = ports.get(i);
+        Value val = state.getPortValue(i);
         String vhdlEntityName = getHDLTopName(state.getAttributeSet());
-
         String message = p.getType() + ":" + vhdlEntityName + "_"
-            + p.getToolTip() + ":" + val.toBinaryString() + ":"
-            + index;
-
+            + p.getToolTip() + ":" + val.toBinaryString() + ":" + i;
         vhdlSimulator.send(message);
       }
 
@@ -282,9 +281,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
           && !server_response.equals("sync")) {
 
         String[] parameters = server_response.split("\\:");
-
         String busValue = parameters[1];
-
         Value vector_values[] = new Value[busValue.length()];
 
         int k = busValue.length() - 1;
@@ -312,26 +309,17 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
             Value.create(vector_values), 1);
       }
 
-      /* VhdlSimulation stopped/disabled */
-    } else {
-
-      for (Port p : state.getInstance().getPorts()) {
-        int index = state.getPortIndex(p);
-
-        /* If it is an output */
-        if (p.getType() == 2) {
-          Value vector_values[] = new Value[p.getFixedBitWidth()
-              .getWidth()];
-          for (int k = 0; k < p.getFixedBitWidth().getWidth(); k++) {
-            vector_values[k] = Value.UNKNOWN;
-          }
-
-          state.setPort(index, Value.create(vector_values), 1);
+    } else { // VhdlSimulation stopped or disabled
+      List<Port> ports = state.getInstance().getPorts();
+      int n = ports.size();
+      for (int i = 0; i < n; i++) {
+        Port p = ports.get(i);
+        if (p.getType() == EndData.OUTPUT_ONLY) {
+          int w = p.getFixedBitWidth();
+          if (w > 0)
+            state.setPort(i, Value.createUnknown(w), 1);
         }
       }
-
-      new UnsupportedOperationException(
-          "VHDL component simulation is not supported. This could be because there is no Questasim/Modelsim simulation server running.");
     }
   }
 

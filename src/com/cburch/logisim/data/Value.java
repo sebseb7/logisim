@@ -109,6 +109,10 @@ public class Value {
     return Value.create(bits.getWidth(), 0, -1, 0);
   }
 
+  public static Value createUnknown(int bits) {
+    return Value.create(bits, 0, -1, 0);
+  }
+
   /**
    * Code taken from Cornell's version of Logisim:
    * http://www.cs.cornell.edu/courses/cs3410/2015sp/

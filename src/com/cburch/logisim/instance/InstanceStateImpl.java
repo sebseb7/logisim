@@ -93,10 +93,6 @@ public class InstanceStateImpl implements InstanceState {
     }
   }
 
-  public int getPortIndex(Port port) {
-    return this.getInstance().getPorts().indexOf(port);
-  }
-
   public Value getPortValue(int portIndex) {
     EndData data = component.getEnd(portIndex);
     return circuitState.getValue(data.getLocation());

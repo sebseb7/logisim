@@ -48,8 +48,6 @@ public interface InstanceState {
 
   public Instance getInstance();
 
-  public int getPortIndex(Port port);
-
   public Value getPortValue(int portIndex);
 
   public Project getProject();

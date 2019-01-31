@@ -204,10 +204,6 @@ public class InstancePainter implements InstanceState {
     }
   }
 
-  public int getPortIndex(Port port) {
-    return this.getInstance().getPorts().indexOf(port);
-  }
-
   public Value getPortValue(int portIndex) {
     CircuitState s = context.getCircuitState();
     if (comp != null && s != null) {
