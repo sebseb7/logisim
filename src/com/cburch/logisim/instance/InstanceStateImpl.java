@@ -72,25 +72,21 @@ public class InstanceStateImpl implements InstanceState {
   }
 
   public InstanceData getData() {
-    InstanceData ret = (InstanceData) circuitState.getData(component);
-    return (ret);
+    if (circuitState == null)
+      return null;
+    return (InstanceData)circuitState.getData(component);
   }
 
   public InstanceFactory getFactory() {
-    if (component instanceof InstanceComponent) {
-      InstanceComponent comp = (InstanceComponent) component;
-      return (InstanceFactory) comp.getFactory();
-    } else {
-      return null;
-    }
+    if (component instanceof InstanceComponent)
+      return (InstanceFactory)((InstanceComponent)component).getFactory();
+    return null;
   }
 
   public Instance getInstance() {
-    if (component instanceof InstanceComponent) {
+    if (component instanceof InstanceComponent)
       return ((InstanceComponent) component).getInstance();
-    } else {
-      return null;
-    }
+    return null;
   }
 
   public Value getPortValue(int portIndex) {

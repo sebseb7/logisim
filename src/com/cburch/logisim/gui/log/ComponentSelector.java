@@ -54,6 +54,7 @@ import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.Pin;
@@ -260,30 +261,31 @@ public class ComponentSelector extends JTable {
       // todo: hide from display any unselectable things that also have no children
       for (Component c : circ.getNonWires()) {
         // For DRIVEABLE_CLOCKS do not recurse into subcircuits
-        if (c.getFactory() instanceof SubcircuitFactory && mode != DRIVEABLE_CLOCKS) {
+        ComponentFactory factory = c.getFactory();
+        if (factory instanceof SubcircuitFactory && mode != DRIVEABLE_CLOCKS) {
           subcircs.add(c);
           continue;
         }
+        if (mode == ACTUAL_CLOCKS && !(factory instanceof Clock))
+            continue;
         Loggable log = (Loggable)c.getFeature(Loggable.class);
         if (log == null)
           continue;
-        BitWidth bw = log.getBitWidth(null);
-        if (bw == null)
-          bw = c.getAttributeSet().getValue(StdAttr.WIDTH);
-        int w = bw.getWidth();
-        if (mode != ANY_SIGNAL && w != 1)
-          continue; // signal is too wide to be a used as a clock
         if (mode == DRIVEABLE_CLOCKS) {
           // For now, we only allow input Pins. In principle, we could allow
           // buttons, switches, or any other kind of 1-bit input. Note that we
           // don't bother looking for Clocks here, since this is only used by
           // main simulator when there are no clocks anywhere in the circuit.
-          if (!(c.getFactory() instanceof Pin && log.isInput(null)))
-            continue;
-        } else if (mode == ACTUAL_CLOCKS) {
-          if (!(c.getFactory() instanceof Clock))
+          if (!(factory instanceof Pin && log.isInput(null)))
             continue;
         }
+        BitWidth bw = log.getBitWidth(null);
+        if (bw == null)
+          bw = c.getAttributeSet().getValue(StdAttr.WIDTH);
+        if (bw == null)
+          continue;
+        if (mode != ANY_SIGNAL && bw.getWidth() != 1)
+          continue; // signal is too wide to be a used as a clock
         ComponentNode toAdd = findChildFor(c);
         if (toAdd == null) {
           toAdd = new ComponentNode(this, c);
