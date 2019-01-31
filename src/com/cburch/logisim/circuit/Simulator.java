@@ -416,14 +416,42 @@ public class Simulator {
   private ArrayList<Listener> listeners = new ArrayList<>();
   private Object lock = new Object();
 
+  // private class Dummy extends UniquelyNamedThread {
+  //   Dummy() { super("dummy"); }
+  //   public void run() {
+  //     try {
+  //       while(true) {
+  //         Thread.sleep(6000);
+  //         long t = System.currentTimeMillis();
+  //         long e = t + 6000;
+  //         long sum = 0;
+  //         while (t < e) {
+  //           t = System.currentTimeMillis();
+  //           sum += (t % 100);
+  //         }
+  //         System.out.printf("t=%d sum=%d\n", t, sum);
+  //       }
+  //     } catch (Exception e) { }
+  //   }
+  // }
+
   public Simulator() {
     simThread = new SimThread(this);
+    // UniquelyNamedThread dummy1= new Dummy();
+    // UniquelyNamedThread dummy2 = new Dummy();
+    // UniquelyNamedThread dummy3 = new Dummy();
 
     try {
       simThread.setPriority(simThread.getPriority() - 1);
+    //   dummy1.setPriority(dummy1.getPriority() - 1);
+    //   dummy2.setPriority(dummy2.getPriority() - 1);
+    //   dummy3.setPriority(dummy3.getPriority() - 1);
     } catch (IllegalArgumentException | SecurityException e) { }
 
     simThread.start();
+    // dummy1.start();
+    // dummy2.start();
+    // dummy3.start();
 
     setTickFrequency(AppPreferences.TICK_FREQUENCY.get().doubleValue());
   }

@@ -193,7 +193,7 @@ class CircuitWires {
   // derived data
   private Bounds bounds = Bounds.EMPTY_BOUNDS;
 
-  private BundleMap masterBundleMap = null;
+  private volatile BundleMap masterBundleMap = null;
 
   CircuitWires() {
   }
@@ -595,15 +595,23 @@ class CircuitWires {
   // the components and wires, so to avoid deadlock, only the AWT should
   // create the new bundle map.
 
+  private class BundleMapGetter implements Runnable {
+    BundleMap result;
+    public void run() {
+      result = getBundleMap();
+    }
+  }
+
   /*synchronized*/ private BundleMap getBundleMap() {
+    BundleMap ret = masterBundleMap; // volatile read by AWT or simulation thread
+    if (ret != null)
+      return ret;
     if (SwingUtilities.isEventDispatchThread()) {
       // AWT event thread.
-      if (masterBundleMap != null)
-        return masterBundleMap;
-      BundleMap ret = new BundleMap();
+      ret = new BundleMap();
       try {
         computeBundleMap(ret);
-        masterBundleMap = ret;
+        masterBundleMap = ret; // volatile write by AWT thread
       } catch (Exception t) {
         ret.invalidate();
         System.err.println(t.getLocalizedMessage());
@@ -612,13 +620,12 @@ class CircuitWires {
     } else {
       // Simulation thread.
       try {
-        final BundleMap ret[] = new BundleMap[1];
-        SwingUtilities.invokeAndWait(new Runnable() {
-          public void run() { ret[0] = getBundleMap(); }
-        });
-        return ret[0];
-      } catch (Exception e) {
-        BundleMap ret = new BundleMap();
+        BundleMapGetter awtThread = new BundleMapGetter();
+        SwingUtilities.invokeAndWait(awtThread);
+        return awtThread.result;
+      } catch (Exception t) {
+        System.err.println(t.getLocalizedMessage());
+        ret = new BundleMap();
         ret.invalidate();
         return ret;
       }
@@ -725,7 +732,7 @@ class CircuitWires {
   // query methods
   //
   boolean isMapVoided() {
-    return masterBundleMap == null;
+    return masterBundleMap == null; // volatile read by simulation thread
   }
 
   //
@@ -903,6 +910,6 @@ class CircuitWires {
     // This should really only be called by AWT thread, but main() also
     // calls it during startup. It should not be called by the simulation
     // thread.
-    masterBundleMap = null;
+    masterBundleMap = null; // volatile write by AWT thread (and sometimes main/startup)
   }
 }
