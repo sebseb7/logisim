@@ -155,7 +155,8 @@ public class Simulator {
       _propagator = value;
       _manualTicksRequested = 0;
       _manualStepsRequested = 0;
-      notifyAll();
+      if (Thread.currentThread() != this)
+        notifyAll();
       return true;
     }
     
@@ -167,7 +168,8 @@ public class Simulator {
         _manualStepsRequested = 0; // manual steps not allowed in autoPropagating mode
       else
         _nudgeRequested = false; // nudges not allowed in single-step mode
-      notifyAll();
+      if (Thread.currentThread() != this)
+        notifyAll();
       return true;
     }
 
@@ -175,7 +177,8 @@ public class Simulator {
       if (_autoTicking == value)
         return false;
       _autoTicking = value;
-      notifyAll();
+      if (Thread.currentThread() != this)
+        notifyAll();
       return true;
     }
 
@@ -184,39 +187,45 @@ public class Simulator {
         return false;
       _autoTickFreq = freq;
       _autoTickNanos = freq <= 0 ? 0 : (long)Math.round(1e9 / (2*_autoTickFreq));
-      notifyAll();
+      if (Thread.currentThread() != this)
+        notifyAll();
       return true;
     }
 
     synchronized void requestStep() {
       _manualStepsRequested++;
       _autoPropagating = false;
-      notifyAll();
+      if (Thread.currentThread() != this)
+        notifyAll();
     }
 
     synchronized void requestTick(int count) {
       _manualTicksRequested += count;
-      notifyAll();
+      if (Thread.currentThread() != this)
+        notifyAll();
     }
 
     synchronized void requestReset() {
       _resetRequested = true;
       _manualTicksRequested = 0;
       _manualStepsRequested = 0;
-      notifyAll();
+      if (Thread.currentThread() != this)
+        notifyAll();
     }
 
     synchronized boolean requestNudge() {
       if (!_autoPropagating)
         return false;
       _nudgeRequested = true;
-      notifyAll();
+      if (Thread.currentThread() != this)
+        notifyAll();
       return true;
     }
 
     synchronized void requestShutDown() {
       _complete = true;
-      notifyAll();
+      if (Thread.currentThread() != this)
+        notifyAll();
     }
 
     int cnt;
