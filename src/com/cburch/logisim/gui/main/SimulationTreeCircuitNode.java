@@ -87,7 +87,7 @@ class SimulationTreeCircuitNode extends SimulationTreeNode
     int action = event.getAction();
     if (action == CircuitEvent.ACTION_SET_NAME)
       fireAppearanceChanged();
-    else if (computeChildren())
+    else if (action != CircuitEvent.ACTION_INVALIDATE && computeChildren())
       fireStructureChanged(); // fixme: use add/remove instead to preserve expand state
   }
 

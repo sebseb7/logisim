@@ -516,18 +516,6 @@ public class Canvas extends JPanel
     }
 
     void paintContents(Graphics g) {
-      /*
-       * TODO this is for the SimulatorPrototype class int speed =
-       * proj.getSimulator().getSimulationSpeed(); String speedStr; if
-       * (speed >= 10000000) { speedStr = (speed / 1000000) + " MHz"; }
-       * else if (speed >= 1000000) { speedStr = (speed / 100000) / 10.0 +
-       * " MHz"; } else if (speed >= 10000) { speedStr = (speed / 1000) +
-       * " kHz"; } else if (speed >= 10000) { speedStr = (speed / 100) /
-       * 10.0 + " kHz"; } else { speedStr = speed + " Hz"; } FontMetrics
-       * fm = g.getFontMetrics(); g.drawString(speedStr, getWidth() - 10 -
-       * fm.stringWidth(speedStr), getHeight() - 10);
-       */
-      
       int msgY = getHeight() - 23;
       StringGetter message = errorMessage;
       if (message != null) {
