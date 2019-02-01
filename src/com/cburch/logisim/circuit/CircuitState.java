@@ -112,7 +112,8 @@ public class CircuitState implements InstanceData {
         substates.clear();
         wireData = null;
         componentData.clear();
-        values.clear();
+        values.clear(); // slow path
+        clearFastpathGrid(); // fast path
         dirtyComponents.clear();
         dirtyPoints.clear();
         causes.clear();
@@ -189,6 +190,10 @@ public class CircuitState implements InstanceData {
   private CopyOnWriteArraySet<Location> dirtyPoints = new CopyOnWriteArraySet<>();
   HashMap<Location, SetData> causes = new HashMap<>();
 
+  private static final int FASTPATH_GRID_WIDTH = 200;
+  private static final int FASTPATH_GRID_HEIGHT = 200;
+  private Value[][] fastpath_grid = new Value[FASTPATH_GRID_HEIGHT][FASTPATH_GRID_WIDTH];
+
   private static int lastId = 0;
   private int id = lastId++;
 
@@ -199,10 +204,6 @@ public class CircuitState implements InstanceData {
     circuit.addCircuitListener(myCircuitListener);
     markAllComponentsDirty();
   }
-
-  // public boolean containsKey(Location pt) {
-  //   return values.containsKey(pt);
-  // }
 
   @Override
   public CircuitState clone() {
@@ -262,7 +263,12 @@ public class CircuitState implements InstanceData {
     if (src.wireData != null) {
       this.wireData = (CircuitWires.State) src.wireData.clone();
     }
+    this.values.clear(); // slow path
     this.values.putAll(src.values);
+    for(int y = 0; y < FASTPATH_GRID_HEIGHT; y++) { // fast path
+      System.arraycopy(src.fastpath_grid[y], 0,
+          this.fastpath_grid[y], 0, FASTPATH_GRID_WIDTH);
+    }
     this.dirtyComponents.addAll(src.dirtyComponents);
     this.dirtyPoints.addAll(src.dirtyPoints);
   }
@@ -333,17 +339,25 @@ public class CircuitState implements InstanceData {
     return substates;
   }
 
-  public Value getValue(Location pt) {
-    Value ret = values.get(pt);
+  public Value getValue(Location p) {
+    Value ret = getValueByWire(p);
     if (ret != null)
       return ret;
-
-    BitWidth wid = circuit.getWidth(pt);
-    return Value.createUnknown(wid);
+    return Value.createUnknown(circuit.getWidth(p));
   }
 
   Value getValueByWire(Location p) {
-    return values.get(p);
+    if (p.x % 10 == 0 && p.y % 10 == 0
+        && p.x < FASTPATH_GRID_WIDTH*10
+        && p.y < FASTPATH_GRID_HEIGHT*10) {
+      // fast path
+      int x = p.x/10;
+      int y = p.y/10;
+      return fastpath_grid[y][x];
+    } else {
+      // slow path
+      return values.get(p);
+    }
   }
 
   CircuitWires.State getWireData() {
@@ -462,7 +476,8 @@ public class CircuitState implements InstanceData {
         it.remove();
       }
     }
-    values.clear();
+    values.clear(); // slow path
+    clearFastpathGrid(); // fast path
     dirtyComponents.clear();
     dirtyPoints.clear();
     causes.clear();
@@ -477,7 +492,7 @@ public class CircuitState implements InstanceData {
       CircuitState oldState = (CircuitState)componentData.get(comp);
       if (oldState != null && oldState.parentComp == comp) {
         // fixme: Does this ever happen?
-        System.out.println("removed stale circuitstate");
+        System.out.println("fixme: removed stale circuitstate... should never happen");
         substates.remove(oldState);
         oldState.parentState = null;
         oldState.parentComp = null;
@@ -493,7 +508,7 @@ public class CircuitState implements InstanceData {
   public void setData(Component comp, Object data) {
     if (data instanceof CircuitState) {
       // fixme: should never happen?
-      System.out.println("setData with circuitstate... should never happen");
+      System.out.println("fixme: setData with circuitstate... should never happen");
     }
     componentData.put(comp, data);
   }
@@ -502,15 +517,46 @@ public class CircuitState implements InstanceData {
     base.setValue(this, pt, val, cause, delay);
   }
 
+  private void clearFastpathGrid() {
+    for (int y = 0; y < FASTPATH_GRID_HEIGHT; y++)
+      for (int x = 0; x < FASTPATH_GRID_WIDTH; x++)
+        fastpath_grid[y][x] = null;
+  }
+
+
+  // for CircuitWires - to set value at point
   void setValueByWire(Location p, Value v) {
-    // for CircuitWires - to set value at point
     boolean changed;
-    if (v == Value.NIL) {
-      Object old = values.remove(p);
-      changed = (old != null && old != Value.NIL);
+    if (p.x % 10 == 0 && p.y % 10 == 0
+        && p.x < FASTPATH_GRID_WIDTH*10
+        && p.y < FASTPATH_GRID_HEIGHT*10) {
+      // fast path
+      int x = p.x/10;
+      int y = p.y/10;
+      if (v == Value.NIL) {
+        if (fastpath_grid[y][x] != null) {
+          changed = true;
+          fastpath_grid[y][x] = null;
+        } else {
+          changed = false;
+        }
+      } else {
+        if (!v.equals(fastpath_grid[y][x])) {
+          changed = true;
+          fastpath_grid[y][x] = v;
+        } else {
+          changed = false;
+        }
+      }
     } else {
-      Object old = values.put(p, v);
-      changed = !v.equals(old);
+      // slow path
+      if (v == Value.NIL) {
+        Object old = values.remove(p);
+        changed = (old != null && old != Value.NIL);
+      } else {
+        Object old = values.put(p, v);
+        changed = !v.equals(old);
+      }
     }
     if (changed) {
       boolean found = false;
