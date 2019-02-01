@@ -59,7 +59,8 @@ import com.cburch.logisim.tools.key.DirectionConfigurator;
 
 public class Keyboard extends InstanceFactory {
   public static class Poker extends InstancePoker {
-    public void draw(InstancePainter painter) {
+    @Override
+    public void paint(InstancePainter painter) {
       KeyboardData data = getKeyboardState(painter);
       Bounds bds = painter.getInstance().getBounds();
       Graphics g = painter.getGraphics();
@@ -97,6 +98,9 @@ public class Keyboard extends InstanceFactory {
       boolean used = true;
       synchronized (data) {
         switch (e.getKeyCode()) {
+        case KeyEvent.VK_BACK_SPACE:
+          changed = data.backspace();
+          break;
         case KeyEvent.VK_DELETE:
           changed = data.delete();
           break;
@@ -128,7 +132,7 @@ public class Keyboard extends InstanceFactory {
       char ch = e.getKeyChar();
       boolean changed = false;
       if (ch != KeyEvent.CHAR_UNDEFINED) {
-        if (!Character.isISOControl(ch) || ch == '\b' || ch == '\n'
+        if (!Character.isISOControl(ch) || /* ch == '\b' || */ ch == '\n'
             || ch == FORM_FEED) {
           synchronized (data) {
             changed = data.insert(ch);
@@ -143,8 +147,9 @@ public class Keyboard extends InstanceFactory {
 
   public static void addToBuffer(InstanceState state, char[] newChars) {
     KeyboardData keyboardData = getKeyboardState(state);
-    for (int i = 0; i < newChars.length; i++) {
-      keyboardData.insert(newChars[i]);
+    synchronized(keyboardData) {
+      for (int i = 0; i < newChars.length; i++)
+        keyboardData.insert(newChars[i]);
     }
   }
 
@@ -182,8 +187,8 @@ public class Keyboard extends InstanceFactory {
   protected static final int AVL = 3;
   protected static final int OUT = 4;
 
-  private static final int DELAY0 = 9;
-  private static final int DELAY1 = 11;
+  private static final int DELAY0 = 9; // 1; 1;
+  private static final int DELAY1 = 11; // 2; 1;
 
   static final int WIDTH = 145;
 
@@ -376,11 +381,7 @@ public class Keyboard extends InstanceFactory {
       KeyboardData state = getKeyboardState(painter);
       synchronized (state) {
         str = state.toString();
-        for (int i = state.getNextSpecial(0); i >= 0; i = state
-            .getNextSpecial(i + 1)) {
-          char c = state.getChar(i);
-          specials.add(Integer.valueOf(c << 16 | i));
-        }
+        specials.addAll(state.getSpecials());
         if (!state.isDisplayValid()) {
           fm = g.getFontMetrics(DEFAULT_FONT);
           state.updateDisplay(fm);
@@ -388,10 +389,8 @@ public class Keyboard extends InstanceFactory {
         dispStart = state.getDisplayStart();
         dispEnd = state.getDisplayEnd();
       }
-
-      if (str.length() > 0) {
+      if (str.length() > 0)
         drawBuffer(g, fm, str, dispStart, dispEnd, specials, bds);
-      }
     } else {
       int len = getBufferLength(painter.getAttributeValue(ATTR_BUFFER));
       String str = S.fmt("keybDesc", "" + len);
@@ -422,11 +421,16 @@ public class Keyboard extends InstanceFactory {
         } else {
           go = lastClock == Value.FALSE && clock == Value.TRUE;
         }
-        if (go)
-          state.dequeue();
+        if (go) {
+          char d = state.dequeue();
+          if (d != '\0')
+            System.out.printf("discard: 0x%x\n", (int)d);
+        }
       }
 
-      c = state.getChar(0);
+      c = state.getCurrentChar();
+      if (c != '\0')
+        System.out.printf("out: 0x%x\n", (int)c);
     }
     int w = getWidth(circState.getAttributeValue(ATTR_WIDTH));
     Value out = Value.createKnown(BitWidth.create(w), c & (w == 7 ? 0x7F : 0xFF)); // always 7 bit clean instead?
