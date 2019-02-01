@@ -80,6 +80,8 @@ class ProbeAttributes extends AbstractAttributeSet {
       return (E) labelfont;
     if (attr == RadixOption.ATTRIBUTE)
       return (E) radix;
+    if (attr == StdAttr.WIDTH)
+      return (E) width; // not part of our list, but used by SignalInfo
     return null;
   }
 

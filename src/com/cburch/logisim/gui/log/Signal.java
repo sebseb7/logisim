@@ -91,6 +91,8 @@ public class Signal {
   }
 
   public void extend(Value v, long duration) {
+    if (v.getWidth() == 0)
+      v = Value.createUnknown(info.getWidth());
     if (v.getWidth() != info.getWidth())
       System.out.printf("*** notice: value width mismatch for %s: width=%d bits, newVal=%s (%d bits)\n",
           info, info.getWidth(), v, v.getWidth());

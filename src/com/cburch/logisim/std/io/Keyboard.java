@@ -423,14 +423,10 @@ public class Keyboard extends InstanceFactory {
         }
         if (go) {
           char d = state.dequeue();
-          if (d != '\0')
-            System.out.printf("discard: 0x%x\n", (int)d);
         }
       }
 
       c = state.getCurrentChar();
-      if (c != '\0')
-        System.out.printf("out: 0x%x\n", (int)c);
     }
     int w = getWidth(circState.getAttributeValue(ATTR_WIDTH));
     Value out = Value.createKnown(BitWidth.create(w), c & (w == 7 ? 0x7F : 0xFF)); // always 7 bit clean instead?

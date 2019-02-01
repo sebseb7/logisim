@@ -275,6 +275,7 @@ public class SignalInfo implements AttributeListener, CircuitListener, Location.
       bw = log.getBitWidth(option);
     if (bw == null)
       bw = path[n-1].getAttributeSet().getValue(StdAttr.WIDTH);
+
     int w = bw.getWidth();
     if (w != width) {
       changed = true;

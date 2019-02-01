@@ -182,8 +182,7 @@ public class Probe extends InstanceFactory {
   //
   @Override
   protected void configureNewInstance(Instance instance) {
-    instance.setPorts(new Port[] { new Port(0, 0, Port.INPUT,
-          BitWidth.UNKNOWN) });
+    instance.setPorts(new Port[] { new Port(0, 0, Port.INPUT, BitWidth.UNKNOWN) });
     instance.addAttributeListener();
     instance.computeLabelTextField(Instance.AVOID_LEFT);
   }
@@ -282,12 +281,10 @@ public class Probe extends InstanceFactory {
       } else {
         oldData.curValue = newValue;
       }
-      int oldWidth = oldValue == null ? 1 : oldValue.getBitWidth()
-          .getWidth();
+      int oldWidth = oldValue == null ? 1 : oldValue.getBitWidth().getWidth();
       int newWidth = newValue.getBitWidth().getWidth();
       if (oldWidth != newWidth) {
-        ProbeAttributes attrs = (ProbeAttributes) state
-            .getAttributeSet();
+        ProbeAttributes attrs = (ProbeAttributes) state.getAttributeSet();
         attrs.width = newValue.getBitWidth();
         state.getInstance().recomputeBounds();
         state.getInstance().computeLabelTextField(Instance.AVOID_LEFT);

@@ -322,16 +322,14 @@ public class Register extends InstanceFactory implements DynamicElementProvider 
 
     BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
     Object triggerType = state.getAttributeValue(StdAttr.TRIGGER);
-    boolean triggered = data.updateClock(state.getPortValue(CK),
-        triggerType);
+    boolean triggered = data.updateClock(state.getPortValue(CK), triggerType);
 
     if (state.getPortValue(CLR) == Value.TRUE) {
       data.value = 0;
     } else if (triggered && state.getPortValue(EN) != Value.FALSE) {
       Value in = state.getPortValue(IN);
-      if (in.isFullyDefined()) {
+      if (in.isFullyDefined())
         data.value = in.toIntValue();
-      }
     }
 
     state.setPort(OUT, Value.createKnown(dataWidth, data.value), DELAY);
