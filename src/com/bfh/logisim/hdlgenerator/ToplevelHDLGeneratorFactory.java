@@ -191,11 +191,35 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				int PinPinId = 0;
 				for (int MapOffset = 0; MapOffset < MyMaps.size(); MapOffset++) {
 					String map = MyMaps.get(MapOffset);
+					boolean Invert = MyIOComponents.RequiresToplevelInversion(CompId, map);
+          if (MyIOComponents.IsDisconnectedOutput(map)) {
+            continue; // do nothing, vhdl will warn but will optimize away the signal
+          } else if (!MyIOComponents.IsDeviceSignal(map)) {
+            int NrOfBits = MyIOComponents.GetNrOfSyntheticBits(map);
+            int constinput = MyIOComponents.GetSyntheticInputValue(map);
+            for (int PinId = 0; PinId < NrOfBits; PinId++) {
+              Temp.setLength(0);
+              Temp.append("   " + Preamble);
+              Temp.append("s_"
+                  + CorrectLabel.getCorrectLabel(ThisPin
+                    .getAttributeSet().getValue(StdAttr.LABEL)));
+              if (ThisPin.getEnd(0).getWidth().getWidth() > 1) {
+                Temp.append(BracketOpen + PinPinId + BracketClose);
+              }
+              PinPinId++;
+              Temp.append(AssignOperator);
+              if (Invert) {
+                Temp.append(NotOperator);
+              }
+              Temp.append("'" + ((constinput>>PinId) & 1) + "'");
+              Temp.append(";");
+              Contents.add(Temp.toString());
+            }
+            continue; // do nothing, vhdl will warn but will optimize away the signal
+          }
 					int InputId = MyIOComponents.GetFPGAInputPinId(map);
 					int OutputId = MyIOComponents.GetFPGAOutputPinId(map);
 					int NrOfPins = MyIOComponents.GetNrOfPins(map);
-					boolean Invert = MyIOComponents.RequiresToplevelInversion(
-							CompId, map);
 					for (int PinId = 0; PinId < NrOfPins; PinId++) {
 						Temp.setLength(0);
 						Temp.append("   " + Preamble);
@@ -428,11 +452,11 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				Wires.put(SName, NrOfBits);
 			}
 		}
-                NetlistComponent dynClock = Nets.GetDynamicClock();
-                if (dynClock != null) {
-                    int w = dynClock.GetComponent().getAttributeSet().getValue(DynamicClock.WIDTH_ATTR).getWidth();
-                    Wires.put("s_LOGISIM_DYNAMIC_CLOCK", w);
-                }
+    NetlistComponent dynClock = Nets.GetDynamicClock();
+    if (dynClock != null) {
+      int w = dynClock.GetComponent().getAttributeSet().getValue(DynamicClock.WIDTH_ATTR).getWidth();
+      Wires.put("s_LOGISIM_DYNAMIC_CLOCK", w);
+    }
 		return Wires;
 	}
 

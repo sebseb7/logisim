@@ -155,4 +155,41 @@ public class IOComponentInformationContainer {
 		NrOfInputBubbles = nb;
 		InputBubbleLabels = labels;
 	}
+
+//   private ArrayList<FPGAIOInformationContainer.IOComponentTypes> allMapTypes() {
+//     ArrayList<FPGAIOInformationContainer.IOComponentTypes> all = new ArrayList<>();
+//     all.add(MainMapType);
+//     all.addAll(AlternateMapTypes);
+//     return all;
+//   }
+
+//     for (FPGAIOInformationContainer.IOComponentTypes t : allMapTypes())
+//       switch(t) {
+//       case Pin:
+//       case Bus:
+//       case PortIO:
+//       case Button:
+//       case DIPSwitch:
+//       }
+
+  public boolean CanBeAllOnesInput() {
+    return (NrOfInputBubbles > 0 || NrOfInOutBubbles > 0) && NrOfOutputBubbles == 0;
+  }
+
+  public boolean CanBeAllZerosInput() {
+    return (NrOfInputBubbles > 0 || NrOfInOutBubbles > 0) && NrOfOutputBubbles == 0;
+  }
+
+  public boolean CanBeConstantInput() {
+    return (NrOfInputBubbles > 0 || NrOfInOutBubbles > 0) && NrOfOutputBubbles == 0;
+  }
+
+  // public boolean CanBeUndefinedInput() {
+  //   return (NrOfInputBubbles > 0 || NrOfInOutBubbles > 0) && NrOfOutputBubbles == 0;
+  // }
+
+  public boolean CanBeDisconnectedOutput() {
+    return NrOfInputBubbles == 0 && (NrOfInOutBubbles > 0 || NrOfOutputBubbles > 0);
+  }
+
 }

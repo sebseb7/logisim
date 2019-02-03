@@ -56,7 +56,7 @@ public class NetlistComponent {
 	private Map<String, BoardRectangle> BoardMaps;
 	private Map<ArrayList<String>, Boolean> AlternateMapEnabled;
 	private Map<ArrayList<String>, Boolean> AlternateMapLocked;
-	private Map<String, String> CurrentMapType;
+	// private Map<String, String> CurrentMapType;
 
 	public NetlistComponent(Component Ref) {
 		nr_of_ends = Ref.getEnds().size();
@@ -98,35 +98,28 @@ public class NetlistComponent {
 		} else {
 			if (Ref.getFactory() instanceof Pin) {
 				int NrOfBits = Ref.getEnd(0).getWidth().getWidth();
-				FPGAIOInformationContainer.IOComponentTypes MainType = (NrOfBits > 1) ? FPGAIOInformationContainer.IOComponentTypes.Bus
+				FPGAIOInformationContainer.IOComponentTypes MainType =
+            (NrOfBits > 1)
+            ? FPGAIOInformationContainer.IOComponentTypes.Bus
 						: FPGAIOInformationContainer.IOComponentTypes.Pin;
 				if (Ref.getEnd(0).isInput() && Ref.getEnd(0).isOutput()) {
-					MyIOInformation = new IOComponentInformationContainer(0, 0,
-							NrOfBits, MainType);
+					MyIOInformation = new IOComponentInformationContainer(0, 0, NrOfBits, MainType);
 					if (NrOfBits > 1) {
-						MyIOInformation
-								.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
+						MyIOInformation.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
 					}
-					MyIOInformation
-							.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.PortIO);
+					MyIOInformation.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.PortIO);
 				} else if (Ref.getEnd(0).isInput()) {
-					MyIOInformation = new IOComponentInformationContainer(0,
-							NrOfBits, 0, MainType);
+					MyIOInformation = new IOComponentInformationContainer(0, NrOfBits, 0, MainType);
 					if (NrOfBits > 1) {
-						MyIOInformation
-								.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
+						MyIOInformation.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
 					}
-					MyIOInformation
-							.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.LED);
+					MyIOInformation.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.LED);
 				} else {
-					MyIOInformation = new IOComponentInformationContainer(
-							NrOfBits, 0, 0, MainType);
+					MyIOInformation = new IOComponentInformationContainer(NrOfBits, 0, 0, MainType);
 					if (NrOfBits > 1) {
-						MyIOInformation
-								.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
+						MyIOInformation.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
 					}
-					MyIOInformation
-							.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Button);
+					MyIOInformation.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Button);
 				}
 			} else {
 				MyIOInformation = null;
@@ -137,7 +130,7 @@ public class NetlistComponent {
 		BoardMaps = new HashMap<String, BoardRectangle>();
 		AlternateMapEnabled = new HashMap<ArrayList<String>, Boolean>();
 		AlternateMapLocked = new HashMap<ArrayList<String>, Boolean>();
-		CurrentMapType = new HashMap<String, String>();
+		// CurrentMapType = new HashMap<String, String>();
 	}
 
 	public void AddGlobalBubbleID(ArrayList<String> HierarchyName,
@@ -167,9 +160,9 @@ public class NetlistComponent {
 		GlobalIds.put(HierarchyName, thisInfo);
 	}
 
-	public void addMap(String MapName, BoardRectangle map, String MapType) {
+	public void addMap(String MapName, BoardRectangle map /* , String MapType */) {
 		BoardMaps.put(MapName, map);
-		CurrentMapType.put(MapName, MapType);
+		// CurrentMapType.put(MapName, MapType);
 	}
 
 	public boolean AlternateMappingEnabled(ArrayList<String> key) {
@@ -301,9 +294,9 @@ public class NetlistComponent {
 		return BoardMaps.get(MapName);
 	}
 
-	public String getMapType(String MapName) {
-		return CurrentMapType.get(MapName);
-	}
+	// public String getMapType(String MapName) {
+	// 	return CurrentMapType.get(MapName);
+	// }
 
 	public boolean hasConnection(Net RootNet, byte BitIndex) {
 		for (ConnectionEnd search : Ends) {
@@ -328,7 +321,7 @@ public class NetlistComponent {
 
 	public void removeMap(String MapName) {
 		BoardMaps.remove(MapName);
-		CurrentMapType.remove(MapName);
+		// CurrentMapType.remove(MapName);
 	}
 
 	public boolean setEnd(int index, ConnectionEnd End) {

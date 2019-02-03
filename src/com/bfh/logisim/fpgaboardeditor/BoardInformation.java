@@ -101,14 +101,14 @@ public class BoardInformation {
 		return result;
 	}
 
-	public String GetComponentType(BoardRectangle rect) {
+	/* public String GetComponentType(BoardRectangle rect) {
 		for (FPGAIOInformationContainer comp : MyComponents) {
 			if (comp.GetRectangle().equals(rect)) {
 				return comp.GetType().toString();
 			}
 		}
 		return FPGAIOInformationContainer.IOComponentTypes.Unknown.toString();
-	}
+	} */
 
 	public String getDriveStrength(BoardRectangle rect) {
 		for (FPGAIOInformationContainer comp : MyComponents) {

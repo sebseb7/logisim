@@ -45,9 +45,10 @@ import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgaboardeditor.BoardInformation;
 import com.bfh.logisim.fpgaboardeditor.BoardRectangle;
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer.IOComponentTypes;
+import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.fpgaboardeditor.PinActivity;
+import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 import com.cburch.logisim.std.io.DipSwitch;
 import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.std.wiring.Pin;
@@ -110,8 +111,10 @@ public class MappableResourcesContainer {
 		for (ArrayList<String> key : myMappableResources.keySet()) {
 			NetlistComponent comp = myMappableResources.get(key);
 			for (String Map : GetMapNamesList(key, comp)) {
-				FPGAIOInformationContainer BoardComp = currentUsedBoard
-						.GetComponent(comp.getMap(Map));
+        BoardRectangle r = comp.getMap(Map);
+        if (!r.isDeviceSignal())
+          continue;
+				FPGAIOInformationContainer BoardComp = currentUsedBoard.GetComponent(r);
 				if (BoardComp.GetType().equals(IOComponentTypes.Pin)) {
 					if (comp.getEnd(0).IsOutputEnd()) {
 						fpgaInputsList.put(Map, nrOfFPGAInputPins);
@@ -121,8 +124,7 @@ public class MappableResourcesContainer {
 						nrOfFPGAOutputPins++;
 					}
 				} else {
-					int NrOfPins = IOComponentTypes
-							.GetFPGAInputRequirement(BoardComp.GetType());
+					int NrOfPins = IOComponentTypes.GetFPGAInputRequirement(BoardComp.GetType());
 					if (NrOfPins != 0) {
 						fpgaInputsList.put(Map, nrOfFPGAInputPins);
 						if (BoardComp.GetType().equals(
@@ -141,8 +143,7 @@ public class MappableResourcesContainer {
 						fpgaOutputsList.put(Map, nrOfFPGAOutputPins);
 						nrOfFPGAOutputPins += NrOfPins;
 					}
-					NrOfPins = IOComponentTypes
-							.GetFPGAInOutRequirement(BoardComp.GetType());
+					NrOfPins = IOComponentTypes.GetFPGAInOutRequirement(BoardComp.GetType());
 					if (NrOfPins != 0) {
 						fpgaInOutsList.put(Map, nrOfFPGAInOutPins);
 						if (BoardComp.GetType().equals(IOComponentTypes.PortIO)) {
@@ -230,9 +231,12 @@ public class MappableResourcesContainer {
 				return Contents;
 			}
 			BoardRectangle rect = mappedList.get(Map);
-			FPGAIOInformationContainer Comp = currentUsedBoard
-					.GetComponent(rect);
-			Contents.addAll(Comp.GetPinlocStrings(FPGAVendor, "in", InputId));
+      if (rect.isDeviceSignal()) {
+        FPGAIOInformationContainer Comp = currentUsedBoard.GetComponent(rect);
+        Contents.addAll(Comp.GetPinlocStrings(FPGAVendor, "in", InputId));
+      } else {
+        return null;
+      }
 		}
 		for (String Map : fpgaInOutsList.keySet()) {
 			int InOutId = fpgaInOutsList.get(Map);
@@ -241,9 +245,12 @@ public class MappableResourcesContainer {
 				return Contents;
 			}
 			BoardRectangle rect = mappedList.get(Map);
-			FPGAIOInformationContainer Comp = currentUsedBoard
-					.GetComponent(rect);
-			Contents.addAll(Comp.GetPinlocStrings(FPGAVendor, "inout", InOutId));
+      if (rect.isDeviceSignal()) {
+        FPGAIOInformationContainer Comp = currentUsedBoard.GetComponent(rect);
+        Contents.addAll(Comp.GetPinlocStrings(FPGAVendor, "inout", InOutId));
+      } else {
+        return null;
+      }
 		}
 		for (String Map : fpgaOutputsList.keySet()) {
 			int OutputId = fpgaOutputsList.get(Map);
@@ -252,9 +259,12 @@ public class MappableResourcesContainer {
 				return Contents;
 			}
 			BoardRectangle rect = mappedList.get(Map);
-			FPGAIOInformationContainer Comp = currentUsedBoard
-					.GetComponent(rect);
-			Contents.addAll(Comp.GetPinlocStrings(FPGAVendor, "out", OutputId));
+      if (rect.isDeviceSignal()) {
+        FPGAIOInformationContainer Comp = currentUsedBoard.GetComponent(rect);
+        Contents.addAll(Comp.GetPinlocStrings(FPGAVendor, "out", OutputId));
+      } else {
+        return null;
+      }
 		}
 		return Contents;
 	}
@@ -300,18 +310,15 @@ public class MappableResourcesContainer {
 			name.append(hiername.get(i));
 		}
 		if (comp.AlternateMappingEnabled(hiername)) {
-			for (int i = 0; i < comp.GetIOInformationContainer()
-					.GetNrOfInports(); i++) {
+			for (int i = 0; i < comp.GetIOInformationContainer().GetNrOfInports(); i++) {
 				result.add(name.toString() + "#"
 						+ comp.GetIOInformationContainer().GetInportLabel(i));
 			}
-			for (int i = 0; i < comp.GetIOInformationContainer()
-					.GetNrOfInOutports(); i++) {
+			for (int i = 0; i < comp.GetIOInformationContainer().GetNrOfInOutports(); i++) {
 				result.add(name.toString() + "#"
 						+ comp.GetIOInformationContainer().GetInOutportLabel(i));
 			}
-			for (int i = 0; i < comp.GetIOInformationContainer()
-					.GetNrOfOutports(); i++) {
+			for (int i = 0; i < comp.GetIOInformationContainer().GetNrOfOutports(); i++) {
 				result.add(name.toString() + "#"
 						+ comp.GetIOInformationContainer().GetOutportLabel(i));
 			}
@@ -325,10 +332,35 @@ public class MappableResourcesContainer {
 		return mappedList.values();
 	}
 
+  public boolean IsDeviceSignal(String MapName) {
+		// if (mappedList.containsKey(MapName))
+    return mappedList.get(MapName).isDeviceSignal();
+    // return false;
+  }
+
+  public int GetSyntheticInputValue(String MapName) {
+		// if (mappedList.containsKey(MapName))
+    return mappedList.get(MapName).getSyntheticInputValue();
+    // return 0;
+  }
+
+  public int GetNrOfSyntheticBits(String MapName) {
+		// if (mappedList.containsKey(MapName))
+    return mappedList.get(MapName).GetNrOfSyntheticBits();
+    // return 0;
+  }
+
+  public boolean IsDisconnectedOutput(String MapName) {
+		// if (mappedList.containsKey(MapName))
+    return mappedList.get(MapName).isDisconnectedOutput();
+  }
+
 	public int GetNrOfPins(String MapName) {
 		if (mappedList.containsKey(MapName)) {
-			FPGAIOInformationContainer BoardComp = currentUsedBoard
-					.GetComponent(mappedList.get(MapName));
+      BoardRectangle rect = mappedList.get(MapName);
+      if (!rect.isDeviceSignal())
+        return -1;
+      FPGAIOInformationContainer BoardComp = currentUsedBoard.GetComponent(rect);
 			if (BoardComp.GetType().equals(IOComponentTypes.DIPSwitch)) {
 				return BoardComp.getNrOfPins();
 			} else if (BoardComp.GetType().equals(IOComponentTypes.PortIO)) {
@@ -352,6 +384,12 @@ public class MappableResourcesContainer {
 		return nrOfFPGAOutputPins;
 	}
 
+  public IOComponentInformationContainer getTypeFor(String DisplayName) {
+		ArrayList<String> key = GetHierarchyKey(DisplayName);
+		NetlistComponent comp = myMappableResources.get(key);
+    return comp.GetIOInformationContainer();
+  }
+
 	public ArrayList<BoardRectangle> GetSelectableItemsList(String DisplayName,
 			BoardInformation BoardInfo) {
 		ArrayList<BoardRectangle> List;
@@ -362,22 +400,22 @@ public class MappableResourcesContainer {
 				+ comp.GetIOInformationContainer().GetNrOfOutports();
 		/* first check main map type */
 		if (!comp.AlternateMappingEnabled(key)) {
-			List = BoardInfo.GetIoComponentsOfType(comp
-					.GetIOInformationContainer().GetMainMapType(), pinNeeded);
+			List = BoardInfo.GetIoComponentsOfType(
+          comp.GetIOInformationContainer().GetMainMapType(),
+          pinNeeded);
 			if (!List.isEmpty()) {
-				return RemoveUsedItems(List, 0);
+				return RemoveUsedItems(List /*, 0*/);
 			}
 		}
 		List = new ArrayList<BoardRectangle>();
 		int MapId = 0;
 		IOComponentTypes MapType;
 		do {
-			MapType = comp.GetIOInformationContainer().GetAlternateMapType(
-					MapId);
+			MapType = comp.GetIOInformationContainer().GetAlternateMapType(MapId);
 			List.addAll(BoardInfo.GetIoComponentsOfType(MapType, 0));
 			MapId++;
 		} while (MapType != IOComponentTypes.Unknown);
-		return RemoveUsedItems(List, pinNeeded);
+		return RemoveUsedItems(List /*, pinNeeded*/);
 	}
 
 	public String GetToplevelName() {
@@ -399,21 +437,16 @@ public class MappableResourcesContainer {
 			if (!((comp.GetComponent().getFactory() instanceof Pin) && (comp
 					.GetComponent().getEnd(0).getWidth().getWidth() > 1))) {
 				/* for each component we first check the main map type */
-				String MainMapType = comp.GetIOInformationContainer()
-						.GetMainMapType().toString();
+				String MainMapType = comp.GetIOInformationContainer().GetMainMapType().toString();
 				if (BoardComponents.containsKey(MainMapType)) {
 					/* okay it exists lets see if we have enough of those */
 					if (BoardComponents.get(MainMapType).size() > 0) {
 						if (comp.GetComponent().getFactory() instanceof PortIO
 								|| comp.GetComponent().getFactory() instanceof DipSwitch) {
 							/* Care of Port and Dip as their size may vary */
-							int NrOfBCRequired = comp
-									.GetIOInformationContainer()
-									.GetNrOfInports()
-									+ comp.GetIOInformationContainer()
-											.GetNrOfOutports()
-									+ comp.GetIOInformationContainer()
-											.GetNrOfInOutports();
+							int NrOfBCRequired = comp.GetIOInformationContainer().GetNrOfInports()
+                  + comp.GetIOInformationContainer().GetNrOfOutports()
+									+ comp.GetIOInformationContainer().GetNrOfInOutports();
 							int bestComponentIdx = getBestComponent(
 									BoardComponents.get(MainMapType),
 									NrOfBCRequired);
@@ -451,12 +484,9 @@ public class MappableResourcesContainer {
 						.GetAlternateMapType(AltMapId).toString();
 				if (!AltMapType.equals(IOComponentTypes.Unknown.toString())) {
 					if (BoardComponents.containsKey(AltMapType)) {
-						int NrOfBCRequired = comp.GetIOInformationContainer()
-								.GetNrOfInports()
-								+ comp.GetIOInformationContainer()
-										.GetNrOfOutports()
-								+ comp.GetIOInformationContainer()
-										.GetNrOfInOutports();
+						int NrOfBCRequired = comp.GetIOInformationContainer().GetNrOfInports()
+								+ comp.GetIOInformationContainer().GetNrOfOutports()
+								+ comp.GetIOInformationContainer().GetNrOfInOutports();
 						if (NrOfBCRequired <= BoardComponents.get(AltMapType)
 								.size()) {
 							// BoardComponents.put(AltMapType,
@@ -492,14 +522,21 @@ public class MappableResourcesContainer {
 		return true;
 	}
 
-	public void Map(String comp, BoardRectangle item, String Maptype) {
+	public void Map(String comp, BoardRectangle item /*, String Maptype*/) {
 		ArrayList<String> key = GetHierarchyKey(comp);
 		NetlistComponent MapComp = myMappableResources.get(key);
 		if (MapComp == null) {
 			System.err.printf("Internal error! comp: %s, key: %s\n", comp, key);
 			return;
 		}
-		MapComp.addMap(DisplayNametoMapName(comp), item, Maptype);
+    if (!item.isDeviceSignal()) {
+      IOComponentInformationContainer info = MapComp.GetIOInformationContainer();
+      item.SetNrOfSyntheticBits(
+          info.GetNrOfInports() +
+          info.GetNrOfOutports() +
+          info.GetNrOfInOutports());
+    }
+		MapComp.addMap(DisplayNametoMapName(comp), item /*, Maptype */);
 		rebuildMappedLists();
 	}
 
@@ -532,9 +569,9 @@ public class MappableResourcesContainer {
 			if (key.get(0).equals(currentBoardName)) {
 				NetlistComponent comp = myMappableResources.get(key);
 				/*
-				 * we can have two different situations: 1) A multipin component
-				 * is mapped to a multipin resource. 2) A multipin component is
-				 * mapped to multiple singlepin resources.
+				 * we can have two different situations:
+         *   1) A multipin component is mapped to a multipin resource.
+         *   2) A multipin component is mapped to multiple singlepin resources.
 				 */
 				/* first we handle the single pin version */
 				boolean hasmap = false;
@@ -572,7 +609,7 @@ public class MappableResourcesContainer {
 	 * **************************************
 	 */
 	private ArrayList<BoardRectangle> RemoveUsedItems(
-			ArrayList<BoardRectangle> List, int pinNeeded) {
+			ArrayList<BoardRectangle> List /*, int pinNeeded */) {
 		Iterator<BoardRectangle> ListIterator = List.iterator();
 		while (ListIterator.hasNext()) {
 			BoardRectangle current = ListIterator.next();
@@ -595,12 +632,16 @@ public class MappableResourcesContainer {
 		if (!myMappableResources.containsKey(ComponentIdentifier)) {
 			return false;
 		}
-		FPGAIOInformationContainer BoardComp = currentUsedBoard
-				.GetComponent(mappedList.get(MapName));
+    BoardRectangle r = mappedList.get(MapName);
+    boolean BoardActiveHigh;
+    if (r.isDeviceSignal()) {
+      FPGAIOInformationContainer BoardComp = currentUsedBoard.GetComponent(r);
+      BoardActiveHigh = (BoardComp.GetActivityLevel() == PinActivity.ActiveHigh);
+    } else {
+      BoardActiveHigh = true;
+    }
 		NetlistComponent Comp = myMappableResources.get(ComponentIdentifier);
-		boolean BoardActiveHigh = (BoardComp.GetActivityLevel() == PinActivity.ActiveHigh);
-		boolean CompActiveHigh = Comp.GetComponent().getFactory()
-				.ActiveOnHigh(Comp.GetComponent().getAttributeSet());
+		boolean CompActiveHigh = Comp.GetComponent().getFactory().ActiveOnHigh(Comp.GetComponent().getAttributeSet());
 		boolean Invert = BoardActiveHigh ^ CompActiveHigh;
 		return Invert;
 	}
@@ -620,18 +661,18 @@ public class MappableResourcesContainer {
 		}
 	}
 
-	public void TryMap(String DisplayName, BoardRectangle rect, String Maptype) {
+	public void TryMap(String DisplayName, BoardRectangle rect /*, String Maptype*/) {
 		ArrayList<String> key = GetHierarchyKey(DisplayName);
 		if (!myMappableResources.containsKey(key)) {
 			return;
 		}
 		if (UnmappedList().contains(DisplayName)) {
-			Map(DisplayName, rect, Maptype);
+			Map(DisplayName, rect /*, Maptype*/);
 			return;
 		}
 		myMappableResources.get(key).ToggleAlternateMapping(key);
 		if (UnmappedList().contains(DisplayName)) {
-			Map(DisplayName, rect, Maptype);
+			Map(DisplayName, rect /*, Maptype*/);
 			return;
 		}
 		myMappableResources.get(key).ToggleAlternateMapping(key);

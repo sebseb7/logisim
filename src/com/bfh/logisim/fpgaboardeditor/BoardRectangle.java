@@ -37,19 +37,51 @@ public class BoardRectangle {
 	private int Height;
 	private boolean IsActiveHigh = true;
 	private String Label;
+  private String kind;
+  int val; // only for constant kind
+  int synthetic_bits; // only for non-device kind
 
 	public BoardRectangle(int x, int y, int w, int h) {
+    kind = "device";
 		this.set(x, y, w, h);
 	}
+
+	private BoardRectangle(String kind, int val) {
+		this.set(0, 0, 0, 0);
+    this.kind = kind;
+    this.val = val;
+    this.Label = kind.equals("constant") ? String.format("0x%x", val) : kind;
+	}
+  public static BoardRectangle constant(int val) {
+    return new BoardRectangle("constant", val);
+  }
+
+  public static BoardRectangle ones() { return new BoardRectangle("ones", -1); }
+  public static BoardRectangle zeros() { return new BoardRectangle("zeros", 0); }
+  // public static undefined() { return new BoardRectangle("undefined", -1); }
+  public static BoardRectangle disconnected() { return new BoardRectangle("disconnected", -2); }
 
 	@Override
 	public boolean equals(Object rect) {
 		if (!(rect instanceof BoardRectangle))
 			return false;
 		BoardRectangle Rect = (BoardRectangle) rect;
-		return ((Rect.getHeight() == Height) && (Rect.getWidth() == Width)
+    if (kind.equals("constant") && val != Rect.val)
+      return false;
+		return (Rect.kind.equals(kind)
+        && (Rect.getHeight() == Height) && (Rect.getWidth() == Width)
 				&& (Rect.getXpos() == xPosition) && (Rect.getYpos() == yPosition));
 	}
+
+  public boolean isDeviceSignal() { return "device".equals(kind); }
+  public boolean isAllOnesInput() { return "ones".equals(kind); }
+  public boolean isAllZerosInput() { return "zeros".equals(kind); }
+  public boolean isConstantInput() { return "constant".equals(kind); }
+  // public boolean isUndefinedInput() { return "undefined".equals(kind); }
+  public boolean isDisconnectedOutput() { return "disconnected".equals(kind); }
+  public int getSyntheticInputValue() {
+    return val;
+  }
 
 	public int getHeight() {
 		return Height;
@@ -154,4 +186,11 @@ public class BoardRectangle {
 		this.Label = Label;
 	}
 
+  public void SetNrOfSyntheticBits(int b) {
+    synthetic_bits = b;
+  }
+
+  public int GetNrOfSyntheticBits() {
+    return synthetic_bits;
+  }
 }
