@@ -2,6 +2,38 @@
     logisim-evolution : Ant build configuration file
 
     Original code by Adrien Lescourt - 10.2011
+
+Notes on Java Versions [4 Feb 2019]:
+
+We now make extensive use of Java 8 features (e.g. default methods in
+interfaces). Unfortunately, the com.apple.eawt classes that we rely on for Mac
+OS compatability are not available for Java 8, and it does not seem likely they
+ever will be available for Java 8 or any later versions of Java. The
+recommendation appears to be to instead migrate to Java 9's where there is
+built-in support (e.g. "Desktop" classes) for most of the things com. Recent
+license changes by Oracle, however, seem to mean we can't make use of Oracle's
+commercial license JDK version 8+ with long term support. Their nearly
+functionally identical build of the OpenJDK version 8+ would work, but each
+version of that will be supported for apparently only six months and perhaps not
+even be available after that. I can't support version migration that often.
+
+Among OpenJDK version 8+ builds, it seems there are several reasonable choices
+that will provide 3+ years of security patches and long-term
+support/availability: Azul, Amazon's Corretta, AdoptOpenJDK, RedHat, etc. There
+does not appear to be significant distinguishing factors here, so I will be
+using AdoptOpenJDK for now. This leaves the choice of version. Java 8 is
+techically a LTS release, and Java 9, 10, and 11 are not. On the other hand,
+Java 11 seems to be where the activity is, and should make future migrations
+easier.
+
+In summary:
+ - Java 7 and below: lack functional interfaces, default methods, etc.
+ - Java 8: missing support for com.apple.eawt needed for Mac OS builds.
+ - Oracle JDK 9+: incompatible license terms.
+ - Oracle OpenJDK 9+ builds: no long-term patches, uncertain availability.
+ - AdoptOpenJDK (or other third-party) OpenJDK 9 or 10 build: fine.
+ - AdoptOpenJDK (or other third-party) OpenJDK 11 build: best, most recent.
+
 -->
 
 <project name="logisim-evolution">
@@ -28,7 +60,7 @@
             toFile="src/com/cburch/logisim/gui/start/MacOsAdapter.java">
         </copy>
         <depend srcdir="src" destdir="bin" cache="depcache" closure="no"/>
-        <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" source="8" target="8" classpath="libs/xswingx.jar:libs/lablib-checkboxtree-3.3.jar:libs/colorpicker.jar:libs/fontchooser.jar:libs/jh.jar:libs/MRJAdapter.jar:libs/rsyntaxtextarea-stripped.jar" />
+        <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" source="11" target="11" classpath="libs/xswingx.jar:libs/lablib-checkboxtree-3.3.jar:libs/colorpicker.jar:libs/fontchooser.jar:libs/jh.jar:libs/MRJAdapter.jar:libs/rsyntaxtextarea-stripped.jar" />
     </target>
 	
     <target name="jar" depends="compile">
@@ -122,7 +154,7 @@
 
     <target name="gray-compile" depends="gray-clean,jar">
         <mkdir dir="gray-bin"/>
-        <javac srcdir="gray-src" includeantruntime="false" destdir="gray-bin" debug="true" source="8" target="8" classpath="logisim-evolution.jar" />
+        <javac srcdir="gray-src" includeantruntime="false" destdir="gray-bin" debug="true" source="11" target="11" classpath="logisim-evolution.jar" />
     </target>
 	
     <target name="gray-jar" depends="gray-compile">
