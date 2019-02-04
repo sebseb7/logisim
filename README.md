@@ -1,11 +1,16 @@
 logisim-evolution (Holy Cross Edition)
 ======================================
 
-You can get the latest version of Logisim-evolution (Holy Cross Edition) here:
+You can get the latest *stable version* of Logisim-evolution (Holy Cross Edition) here:
 
 [![Download for Windows](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-windows.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.1hc.exe) 
 [![Download for Mac](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-mac.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.1hc.dmg)
 [![Download for Linux](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-linux.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.1hc.jar)
+
+A newer *development snapshot* with many new features and bug fixes can be found here:
+
+[![Download for Windows](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-windows.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-4.0.0hc.exe) 
+[![Download for Linux](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-linux.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-4.0.0hc.jar)
 
 Windows and Mac versions will work only on Windows or Mac. The
 platform-independent JAR file should work on any platform. To run the JAR file,
