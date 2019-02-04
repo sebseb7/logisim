@@ -1093,9 +1093,9 @@ public class FPGACommanderGui implements ActionListener {
 		 */
 		MyMappableResources = new MappableResourcesContainer(
 				MyBoardInformation, RootNetlist);
-		if (!MyMappableResources.IsMappable(BoardComponents, MyReporter)) {
-			return false;
-		}
+		// if (!MyMappableResources.IsMappable(BoardComponents, MyReporter)) {
+		// 	return false;
+		// }
 
 		MapPannel.SetBoardInformation(MyBoardInformation);
 		MapPannel.SetMappebleComponents(MyMappableResources);

@@ -426,101 +426,101 @@ public class MappableResourcesContainer {
 		return !mappedList.isEmpty();
 	}
 
-	public boolean IsMappable(Map<String, ArrayList<Integer>> BoardComponents,
-			FPGAReport MyReporter) {
-		for (ArrayList<String> key : myMappableResources.keySet()) {
-			NetlistComponent comp = myMappableResources.get(key);
-			/*
-			 * we have a special case: a pinbus of the toplevel, this one has
-			 * never a mainmaptype, so we should skip the test
-			 */
-			if (!((comp.GetComponent().getFactory() instanceof Pin) && (comp
-					.GetComponent().getEnd(0).getWidth().getWidth() > 1))) {
-				/* for each component we first check the main map type */
-				String MainMapType = comp.GetIOInformationContainer().GetMainMapType().toString();
-				if (BoardComponents.containsKey(MainMapType)) {
-					/* okay it exists lets see if we have enough of those */
-					if (BoardComponents.get(MainMapType).size() > 0) {
-						if (comp.GetComponent().getFactory() instanceof PortIO
-								|| comp.GetComponent().getFactory() instanceof DipSwitch) {
-							/* Care of Port and Dip as their size may vary */
-							int NrOfBCRequired = comp.GetIOInformationContainer().GetNrOfInports()
-                  + comp.GetIOInformationContainer().GetNrOfOutports()
-									+ comp.GetIOInformationContainer().GetNrOfInOutports();
-							int bestComponentIdx = getBestComponent(
-									BoardComponents.get(MainMapType),
-									NrOfBCRequired);
-							if (bestComponentIdx > -1) {
-								BoardComponents.get(MainMapType).remove(
-										bestComponentIdx);
-								continue;
-							}
-						} else {
-							/*
-							 * no Problem, we have enough of those , we allocate
-							 * and decrease
-							 */
-							BoardComponents.get(MainMapType)
-									.remove(BoardComponents.get(MainMapType)
-											.size() - 1);
-							continue;
-						}
-					}
-				} else {
-					/*
-					 * The board does not have the main type, hence we have
-					 * anyways to use alternate mapping
-					 */
-					comp.ToggleAlternateMapping(key);
-					comp.LockAlternateMapping(key);
-				}
-			}
-			/* Here we check if the component can be mapped to an alternate map */
-			int AltMapId = 0;
-			String AltMapType;
-			boolean found = false;
-			do {
-				AltMapType = comp.GetIOInformationContainer()
-						.GetAlternateMapType(AltMapId).toString();
-				if (!AltMapType.equals(IOComponentTypes.Unknown.toString())) {
-					if (BoardComponents.containsKey(AltMapType)) {
-						int NrOfBCRequired = comp.GetIOInformationContainer().GetNrOfInports()
-								+ comp.GetIOInformationContainer().GetNrOfOutports()
-								+ comp.GetIOInformationContainer().GetNrOfInOutports();
-						if (NrOfBCRequired <= BoardComponents.get(AltMapType)
-								.size()) {
-							// BoardComponents.put(AltMapType,
-							// BoardComponents.get(AltMapType) -
-							// NrOfBCRequired);
-							for (int i = 0; i < NrOfBCRequired; i++) {
-								BoardComponents.get(AltMapType)
-										.remove(BoardComponents.get(AltMapType)
-												.size() - 1);
-							}
-							found = true;
-							break;
-						}
-					}
-				}
-				AltMapId++;
-			} while (!AltMapType.equals(IOComponentTypes.Unknown.toString()));
-			if (!found) {
-				if (comp.AlternateMappingEnabled(key)) {
-					comp.UnlockAlternateMapping(key);
-					comp.ToggleAlternateMapping(key);
-				}
-				MyReporter
-						.AddError("The Target board "
-								+ currentBoardName
-								+ " does not have enough IO resources to map the design!");
-				MyReporter.AddError("The component \""
-						+ MapNametoDisplayName(GetMapNamesList(key, comp)
-								.get(0)) + "\" cannot be placed!");
-				return false;
-			}
-		}
-		return true;
-	}
+	// public boolean IsMappable(Map<String, ArrayList<Integer>> BoardComponents,
+	// 		FPGAReport MyReporter) {
+	// 	for (ArrayList<String> key : myMappableResources.keySet()) {
+	// 		NetlistComponent comp = myMappableResources.get(key);
+	// 		/*
+	// 		 * we have a special case: a pinbus of the toplevel, this one has
+	// 		 * never a mainmaptype, so we should skip the test
+	// 		 */
+	// 		if (!((comp.GetComponent().getFactory() instanceof Pin) && (comp
+	// 				.GetComponent().getEnd(0).getWidth().getWidth() > 1))) {
+	// 			/* for each component we first check the main map type */
+	// 			String MainMapType = comp.GetIOInformationContainer().GetMainMapType().toString();
+	// 			if (BoardComponents.containsKey(MainMapType)) {
+	// 				/* okay it exists lets see if we have enough of those */
+	// 				if (BoardComponents.get(MainMapType).size() > 0) {
+	// 					if (comp.GetComponent().getFactory() instanceof PortIO
+	// 							|| comp.GetComponent().getFactory() instanceof DipSwitch) {
+	// 						/* Care of Port and Dip as their size may vary */
+	// 						int NrOfBCRequired = comp.GetIOInformationContainer().GetNrOfInports()
+  //                 + comp.GetIOInformationContainer().GetNrOfOutports()
+	// 								+ comp.GetIOInformationContainer().GetNrOfInOutports();
+	// 						int bestComponentIdx = getBestComponent(
+	// 								BoardComponents.get(MainMapType),
+	// 								NrOfBCRequired);
+	// 						if (bestComponentIdx > -1) {
+	// 							BoardComponents.get(MainMapType).remove(
+	// 									bestComponentIdx);
+	// 							continue;
+	// 						}
+	// 					} else {
+	// 						/*
+	// 						 * no Problem, we have enough of those , we allocate
+	// 						 * and decrease
+	// 						 */
+	// 						BoardComponents.get(MainMapType)
+	// 								.remove(BoardComponents.get(MainMapType)
+	// 										.size() - 1);
+	// 						continue;
+	// 					}
+	// 				}
+	// 			} else {
+	// 				/*
+	// 				 * The board does not have the main type, hence we have
+	// 				 * anyways to use alternate mapping
+	// 				 */
+	// 				comp.ToggleAlternateMapping(key);
+	// 				comp.LockAlternateMapping(key);
+	// 			}
+	// 		}
+	// 		/* Here we check if the component can be mapped to an alternate map */
+	// 		int AltMapId = 0;
+	// 		String AltMapType;
+	// 		boolean found = false;
+	// 		do {
+	// 			AltMapType = comp.GetIOInformationContainer()
+	// 					.GetAlternateMapType(AltMapId).toString();
+	// 			if (!AltMapType.equals(IOComponentTypes.Unknown.toString())) {
+	// 				if (BoardComponents.containsKey(AltMapType)) {
+	// 					int NrOfBCRequired = comp.GetIOInformationContainer().GetNrOfInports()
+	// 							+ comp.GetIOInformationContainer().GetNrOfOutports()
+	// 							+ comp.GetIOInformationContainer().GetNrOfInOutports();
+	// 					if (NrOfBCRequired <= BoardComponents.get(AltMapType)
+	// 							.size()) {
+	// 						// BoardComponents.put(AltMapType,
+	// 						// BoardComponents.get(AltMapType) -
+	// 						// NrOfBCRequired);
+	// 						for (int i = 0; i < NrOfBCRequired; i++) {
+	// 							BoardComponents.get(AltMapType)
+	// 									.remove(BoardComponents.get(AltMapType)
+	// 											.size() - 1);
+	// 						}
+	// 						found = true;
+	// 						break;
+	// 					}
+	// 				}
+	// 			}
+	// 			AltMapId++;
+	// 		} while (!AltMapType.equals(IOComponentTypes.Unknown.toString()));
+	// 		if (!found) {
+	// 			if (comp.AlternateMappingEnabled(key)) {
+	// 				comp.UnlockAlternateMapping(key);
+	// 				comp.ToggleAlternateMapping(key);
+	// 			}
+	// 			MyReporter
+	// 					.AddError("The Target board "
+	// 							+ currentBoardName
+	// 							+ " does not have enough IO resources to map the design!");
+	// 			MyReporter.AddError("The component \""
+	// 					+ MapNametoDisplayName(GetMapNamesList(key, comp)
+	// 							.get(0)) + "\" cannot be placed!");
+	// 			return false;
+	// 		}
+	// 	}
+	// 	return true;
+	// }
 
 	public void Map(String comp, BoardRectangle item /*, String Maptype*/) {
 		ArrayList<String> key = GetHierarchyKey(comp);

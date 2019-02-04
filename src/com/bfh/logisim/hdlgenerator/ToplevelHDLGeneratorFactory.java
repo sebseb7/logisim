@@ -195,8 +195,9 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
           if (MyIOComponents.IsDisconnectedOutput(map)) {
             continue; // do nothing, vhdl will warn but will optimize away the signal
           } else if (!MyIOComponents.IsDeviceSignal(map)) {
-            int NrOfBits = MyIOComponents.GetNrOfSyntheticBits(map);
+            int NrOfBits = 1; // MyIOComponents.GetNrOfSyntheticBits(map);
             int constinput = MyIOComponents.GetSyntheticInputValue(map);
+            System.out.printf("%d synthetic bits for %s, val = 0x%x\n", NrOfBits, map, constinput);
             for (int PinId = 0; PinId < NrOfBits; PinId++) {
               Temp.setLength(0);
               Temp.append("   " + Preamble);
