@@ -324,7 +324,7 @@ public class Loader implements LibraryLoader {
 
   public void setMainFile(File value) {
     if (!value.isAbsolute())
-      throw new IllegalArgumentException("must be absolute");
+      value = value.getAbsoluteFile();
     mainFile = value;
   }
 
