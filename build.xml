@@ -83,11 +83,11 @@
         classpath="build-libs/appbundler-1.0ome.jar" />
     <target name="mac-bundle">
         <bundleapp outputdirectory="."
-            name="Logisim-Evolution 3.1.1 HC"
-            displayname="Logisim Evolution 3.1.1 HC"
+            name="Logisim-Evolution 4.0.0 HC"
+            displayname="Logisim Evolution 4.0.0 HC"
             identifier="com.cburch.logisim.Main"
             signature="LGSM"
-            shortversion="3.1.1-hc"
+            shortversion="4.0.0-hc"
             icon="logisim.icns"
             mainclassname="com.cburch.logisim.Main">
             <runtime dir="${env.JAVA_HOME}" />
@@ -111,7 +111,7 @@
     <target name="mac-dmg">
         <exec executable="appdmg">
             <arg value="mac-appdmg-spec.json"/>
-            <arg value="Logisim-Evolution 3.1.1 HC.dmg"/>
+            <arg value="Logisim-Evolution 4.0.0 HC.dmg"/>
         </exec>
     </target>
 
