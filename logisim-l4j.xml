@@ -3,7 +3,7 @@
   <dontWrapJar>false</dontWrapJar>
   <headerType>gui</headerType>
   <jar>C:\Users\kwalsh\Downloads\logisim-evolution.jar</jar>
-  <outfile>C:\Users\kwalsh\Downloads\logisim-evolution-3.0.0hc.exe</outfile>
+  <outfile>C:\Users\kwalsh\Downloads\logisim-evolution-4.0.0hc.exe</outfile>
   <errTitle></errTitle>
   <cmdLine></cmdLine>
   <chdir>.</chdir>
