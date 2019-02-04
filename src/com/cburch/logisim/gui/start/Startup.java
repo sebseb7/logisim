@@ -38,6 +38,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.awt.Desktop;
+import java.awt.desktop.QuitStrategy;
 import java.awt.GraphicsEnvironment;
 
 import javax.swing.UIManager;
@@ -50,6 +52,7 @@ import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.gui.main.Print;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.WindowManagers;
+import com.cburch.logisim.gui.prefs.PreferencesFrame;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;
@@ -58,18 +61,6 @@ import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.MacCompatibility;
 
 public class Startup {
-
-  static void doOpen(File file) { // used by mac-os adapter
-    if (startupTemp != null) {
-      startupTemp.doOpenFile(file);
-    }
-  }
-
-  static void doPrint(File file) { // used by mac-os adapter
-    if (startupTemp != null) {
-      startupTemp.doPrintFile(file);
-    }
-  }
 
   private static final int ONEPARAM = 1;
   private static final int TWOPARAM = 2;
@@ -155,9 +146,8 @@ public class Startup {
     }
 
     Startup ret = new Startup();
-    startupTemp = ret;
     if (!Main.headless)
-      registerHandler();
+      ret.registerDesktop();
 
     if (doClearPreferences)
       AppPreferences.clear();
@@ -349,31 +339,56 @@ public class Startup {
     System.exit(0);
   }
 
-  private static void registerHandler() {
-    String prop = System.getProperty("os.name");
-    if (prop != null && prop.toLowerCase().contains("os x") && System.getProperty("mrj.version") == null) {
-      // MRJ is no longer present on OS X, but we want MRJAdapter to keep working for now.
-      System.setProperty("mrj.version", "99.0.0");
-    }
+  private void registerDesktop() {
     try {
-      Class<?> needed1 = Class.forName("com.apple.eawt.Application");
-      if (needed1 == null) {
+      if (!Desktop.isDesktopSupported()) {
+        System.out.println("Note [0]: no desktop support");
         return;
       }
-      Class<?> needed2 = Class
-          .forName("com.apple.eawt.ApplicationAdapter");
-      if (needed2 == null) {
-        return;
-      }
-      MacOsAdapter.register();
-      MacOsAdapter.addListeners(true);
-    } catch (ClassNotFoundException e) {
-      return;
-    } catch (Exception t) {
-      try {
-        MacOsAdapter.addListeners(false);
-      } catch (Exception t2) {
-      }
+      Desktop desktop = Desktop.getDesktop();
+
+      if (desktop.isSupported(Desktop.Action.APP_SUDDEN_TERMINATION))
+        desktop.disableSuddenTermination();
+      else
+        System.out.println("Note [1]: no support to prevent sudden termination");
+
+      if (desktop.isSupported(Desktop.Action.APP_QUIT_STRATEGY))
+        desktop.setQuitStrategy(QuitStrategy.CLOSE_ALL_WINDOWS);
+      else
+        System.out.println("Note [2]: no support to control quit strategy");
+
+      // setQuitHandler(QuitHandler quitHandler); ... ProjectActions.doQuit()
+
+      if (desktop.isSupported(Desktop.Action.APP_OPEN_FILE))
+        desktop.setOpenFileHandler(e -> { 
+          for (File file : e.getFiles())
+            doOpenFile(file);
+        });
+      else
+        System.out.println("Note [3]: no support for desktop file opening");
+
+      if (desktop.isSupported(Desktop.Action.APP_PRINT_FILE))
+        desktop.setPrintFileHandler(e -> { 
+          for (File file : e.getFiles())
+            doPrintFile(file);
+        });
+      else
+        System.out.println("Note [4]: no support for desktop file printing");
+
+      if (desktop.isSupported(Desktop.Action.APP_PREFERENCES))
+        desktop.setPreferencesHandler(e -> PreferencesFrame.showPreferences());
+      else
+        System.out.println("Note [5]: no support for desktop preferences");
+
+      if (desktop.isSupported(Desktop.Action.APP_ABOUT))
+        desktop.setAboutHandler(e -> About.showAboutDialog(null));
+      else
+        System.out.println("Note [6]: no support for desktop about screen");
+
+      // desktop.setDefaultMenuBar(JMenuBar menuBar);
+
+    } catch (Exception e) {
+      e.printStackTrace();
     }
   }
 
@@ -392,7 +407,6 @@ public class Startup {
     System.exit(1);
   }
 
-  private static Startup startupTemp = null;
   // based on command line
   boolean headlessTty, headlessPng, headlessList;
   String headlessPngCircuits[];

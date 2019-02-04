@@ -53,12 +53,14 @@ In summary:
 
     <target name="compile" depends="clean">
         <mkdir dir="bin"/>
+        <!--
         <condition property="platform" value="mac" else="nonmac">
             <os family="Mac"/>
         </condition>
         <copy file="src/com/cburch/logisim/gui/start/MacOsAdapter.java_${platform}"
             toFile="src/com/cburch/logisim/gui/start/MacOsAdapter.java">
         </copy>
+        -->
         <depend srcdir="src" destdir="bin" cache="depcache" closure="no"/>
         <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" source="11" target="11" classpath="libs/xswingx.jar:libs/lablib-checkboxtree-3.3.jar:libs/colorpicker.jar:libs/fontchooser.jar:libs/jh.jar:libs/MRJAdapter.jar:libs/rsyntaxtextarea-stripped.jar" />
     </target>
