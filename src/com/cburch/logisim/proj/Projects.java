@@ -100,7 +100,7 @@ public class Projects {
         projectRemoved(proj, frame, this);
       }
       if (openProjects.isEmpty()
-          && !MacCompatibility.isSwingUsingScreenMenuBar()) {
+          && !MacCompatibility.quitAfterLastWindowClosed()) {
         ProjectActions.doQuit();
       }
     }

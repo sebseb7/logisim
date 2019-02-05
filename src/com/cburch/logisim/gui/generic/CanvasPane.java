@@ -159,7 +159,7 @@ public class CanvasPane extends JScrollPane {
     this.listener = new Listener();
     this.zoomListener = new ZoomListener();
     this.zoomModel = null;
-    if (MacCompatibility.mrjVersion >= 0.0) {
+    if (MacCompatibility.alwaysUseScrollbars()) {
       setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
       setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
     }

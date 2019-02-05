@@ -58,7 +58,6 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.LocaleManager;
-import com.cburch.logisim.util.MacCompatibility;
 
 public class Startup {
 
@@ -339,13 +338,14 @@ public class Startup {
     System.exit(0);
   }
 
+  Desktop desktop;
   private void registerDesktop() {
     try {
       if (!Desktop.isDesktopSupported()) {
         System.out.println("Note [0]: no desktop support");
         return;
       }
-      Desktop desktop = Desktop.getDesktop();
+      desktop = Desktop.getDesktop();
 
       if (desktop.isSupported(Desktop.Action.APP_SUDDEN_TERMINATION))
         desktop.disableSuddenTermination();
@@ -384,8 +384,6 @@ public class Startup {
         desktop.setAboutHandler(e -> About.showAboutDialog(null));
       else
         System.out.println("Note [6]: no support for desktop about screen");
-
-      // desktop.setDefaultMenuBar(JMenuBar menuBar);
 
     } catch (Exception e) {
       e.printStackTrace();
@@ -528,9 +526,16 @@ public class Startup {
     if (showSplash)
       monitor.setProgress(SplashScreen.GUI_INIT);
     WindowManagers.initialize();
-    if (MacCompatibility.isSwingUsingScreenMenuBar()) {
-      MacCompatibility.setFramelessJMenuBar(new LogisimMenuBar(null, null, null, null));
+	if (desktop != null
+      && desktop.isSupported(Desktop.Action.APP_MENU_BAR)) {
+      LogisimMenuBar menubar = new LogisimMenuBar(null, null, null, null);
+	  try {
+        desktop.setDefaultMenuBar(menubar);
+	  } catch (Exception e) {
+		  e.printStackTrace();
+	  }
     } else {
+      System.out.println("Note [7]: no desktop menubar support");
       new LogisimMenuBar(null, null, null, null);
       // most of the time occupied here will be in loading menus, which
       // will occur eventually anyway; we might as well do it when the

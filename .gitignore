@@ -12,6 +12,7 @@ bin/
 gray-bin/
 src/com/cburch/logisim/gui/start/MacOsAdapter.java
 depcache/
+java-runtime/
 
 # additional libraries
 !libs/*.jar
