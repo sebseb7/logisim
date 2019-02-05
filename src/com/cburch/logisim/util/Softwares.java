@@ -39,8 +39,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -86,8 +84,7 @@ public final class Softwares {
         if (reader != null)
           reader.close();
       } catch (IOException ex) {
-        Logger.getLogger(Softwares.class.getName()).log(Level.SEVERE,
-            null, ex);
+        ex.printStackTrace();
       }
     }
   }
@@ -246,8 +243,7 @@ public final class Softwares {
         if (reader != null)
           reader.close();
       } catch (IOException ex) {
-        Logger.getLogger(Softwares.class.getName()).log(Level.SEVERE,
-            null, ex);
+        ex.printStackTrace();
       }
     }
 
