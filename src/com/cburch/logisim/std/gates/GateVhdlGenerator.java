@@ -29,7 +29,6 @@
  */
 package com.cburch.logisim.std.gates;
 
-import java.util.ArrayList;
 import java.util.SortedMap;
 
 import com.bfh.logisim.designrulecheck.Netlist;

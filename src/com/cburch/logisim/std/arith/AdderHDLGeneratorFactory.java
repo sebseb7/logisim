@@ -29,137 +29,98 @@
  */
 package com.cburch.logisim.std.arith;
 
-import java.util.ArrayList;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
 
 public class AdderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
+  
+  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
+  protected final static int GENERIC_PARAM_EXTENDEDBITS = -2;
 
-  final private static String NrOfBitsStr = "NrOfBits";
-  final private static int NrOfBitsId = -1;
-  final private static String ExtendedBitsStr = "ExtendedBits";
-  final private static int ExtendedBitsId = -2;
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
 
   @Override
-  public String getComponentStringIdentifier() {
-    return "ADDER2C";
+  public String getComponentStringIdentifier() { return "ADDER2C"; }
+
+  @Override
+  public String GetSubDir() { return "arithmetic"; }
+
+  @Override
+  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
+    list.put("DataA", w);
+    list.put("DataB", w);
+    list.put("CarryIn", 1);
   }
 
   @Override
-  public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
-    int inputbits = (attrs.getValue(StdAttr.WIDTH).getWidth() == 1) ? 1
-        : NrOfBitsId;
-    Inputs.put("DataA", inputbits);
-    Inputs.put("DataB", inputbits);
-    Inputs.put("CarryIn", 1);
-    return Inputs;
+  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
+    list.put("Result", w);
+    list.put("CarryOut", 1);
   }
 
   @Override
-  public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
-      AttributeSet attrs, FPGAReport Reporter, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    int nrOfBits = attrs.getValue(StdAttr.WIDTH).getWidth();
-    if (HDLType.equals(Settings.VHDL)) {
-      Contents.add("   s_extended_dataA <= \"0\"&DataA;");
-      Contents.add("   s_extended_dataB <= \"0\"&DataB;");
-      Contents.add("   s_sum_result     <= std_logic_vector(unsigned(s_extended_dataA)+");
-      Contents.add("                                        unsigned(s_extended_dataB)+");
-      Contents.add("                                        (\"\"&CarryIn));");
-      Contents.add("");
-      if (nrOfBits == 1) {
-        Contents.add("   Result <= s_sum_result(0);");
-      } else {
-        Contents.add("   Result <= s_sum_result( (" + NrOfBitsStr
-            + "-1) DOWNTO 0 );");
-      }
-      Contents.add("   CarryOut <= s_sum_result(" + ExtendedBitsStr
-          + "-1);");
+	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
+    int w = width(attrs);
+    if (w > 1)
+      list.put(GENERIC_PARAM_BUSWIDTH, "BusWidth");
+    list.put(GENERIC_PARAM_EXTENDEDBITS, "ExtendedBits");
+  }
+
+  @Override
+  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    int w = width(attrs);
+    if (w > 1)
+      list.put("BusWidth", w);
+    list.put("ExtendedBits", w + 1);
+  }
+
+  @Override
+  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+    list.putAll(GetNetMap("DataA", true, info, 0, err, lang, nets));
+    list.putAll(GetNetMap("DataB", true, info, 1, err, lang, nets));
+    list.putAll(GetNetMap("Result", true, info, 2, err, lang, nets));
+    list.putAll(GetNetMap("CarryIn", true, info, 3, err, lang, nets));
+    list.putAll(GetNetMap("CarryOut", true, info, 4, err, lang, nets));
+  }
+
+  @Override
+  public void wires(SortedMap<String, Integer> list, AttributeSet attrs, Netlist nets) {
+    list.put("s_A", GENERIC_PARAM_EXTENDEDBITS);
+    list.put("s_B", GENERIC_PARAM_EXTENDEDBITS);
+    list.put("s_R", GENERIC_PARAM_EXTENDEDBITS);
+  }
+  // fixme: EXTENDEDBITS is only needed b/c we have no way of saying "BusWidth+1 if BusWidth is defined otherwise 2"
+  
+  @Override
+  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
+    out.indent();
+    int w = width(attrs);
+    if (out.isVhdl) {
+      out.stmt("s_A <= \"0\" & DataA;");
+      out.stmt("s_B <= \"0\" & DataB;");
+      out.stmt("s_R <= std_logic_vector(unsigned(s_A) + unsigned(s_B)+ (\"\" & CarryIn));");
+      out.stmt("");
+      if (w == 1)
+        out.stmt("Result <= s_R(0);");
+      else
+        out.stmt("Result <= s_R((BusWidth-1) DOWNTO 0);");
+      out.stmt("CarryOut <= s_R(BusWidth);");
     } else {
-      Contents.add("    assign   {CarryOut,Result} = DataA + DataB + CarryIn;");
+      out.stmt("assign {CarryOut, Result} = DataA + DataB + CarryIn;");
     }
-    return Contents;
   }
 
-  @Override
-  public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-    int outputbits = (attrs.getValue(StdAttr.WIDTH).getWidth() == 1) ? 1
-        : NrOfBitsId;
-    Outputs.put("Result", outputbits);
-    Outputs.put("CarryOut", 1);
-    return Outputs;
+  protected int width(AttributeSet attrs) {
+    return attrs.getValue(StdAttr.WIDTH).getWidth();
   }
-
-  @Override
-  public SortedMap<Integer, String> GetParameterList(AttributeSet attrs) {
-    SortedMap<Integer, String> Parameters = new TreeMap<Integer, String>();
-    int outputbits = attrs.getValue(StdAttr.WIDTH).getWidth();
-    if (outputbits > 1)
-      Parameters.put(NrOfBitsId, NrOfBitsStr);
-    Parameters.put(ExtendedBitsId, ExtendedBitsStr);
-    return Parameters;
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetParameterMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter) {
-    SortedMap<String, Integer> ParameterMap = new TreeMap<String, Integer>();
-    int nrOfBits = ComponentInfo.GetComponent().getEnd(0).getWidth()
-        .getWidth();
-    ParameterMap.put(ExtendedBitsStr, nrOfBits + 1);
-    if (nrOfBits > 1)
-      ParameterMap.put(NrOfBitsStr, nrOfBits);
-    return ParameterMap;
-  }
-
-  @Override
-  public SortedMap<String, String> GetPortMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-    SortedMap<String, String> PortMap = new TreeMap<String, String>();
-    PortMap.putAll(GetNetMap("DataA", true, ComponentInfo, 0, Reporter,
-          HDLType, Nets));
-    PortMap.putAll(GetNetMap("DataB", true, ComponentInfo, 1, Reporter,
-          HDLType, Nets));
-    PortMap.putAll(GetNetMap("Result", true, ComponentInfo, 2, Reporter,
-          HDLType, Nets));
-    PortMap.putAll(GetNetMap("CarryIn", true, ComponentInfo, 3, Reporter,
-          HDLType, Nets));
-    PortMap.putAll(GetNetMap("CarryOut", true, ComponentInfo, 4, Reporter,
-          HDLType, Nets));
-    return PortMap;
-  }
-
-  @Override
-  public String GetSubDir() {
-    return "arithmetic";
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetWireList(AttributeSet attrs,
-      Netlist Nets) {
-    SortedMap<String, Integer> Wires = new TreeMap<String, Integer>();
-    Wires.put("s_extended_dataA", ExtendedBitsId);
-    Wires.put("s_extended_dataB", ExtendedBitsId);
-    Wires.put("s_sum_result", ExtendedBitsId);
-    return Wires;
-  }
-
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-      char Vendor) {
-    return true;
-  }
-
 }
