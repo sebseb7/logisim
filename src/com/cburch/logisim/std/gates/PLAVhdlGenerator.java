@@ -73,7 +73,7 @@ public class PLAVhdlGenerator extends AbstractHDLGeneratorFactory {
   }
   
   @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char vendor) { return true; }
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char vendor) { return lang.equals("VHDL"); }
 
   @Override
   public String getComponentStringIdentifier() { return "PLA"; }
