@@ -66,6 +66,11 @@ public interface AttributeSet {
 
   // getValue() returns null if attr was not found
   public <V> V getValue(Attribute<V> attr);
+
+  public default <V> V getValueOrElse(Attribute<V> attr, V valueIfUnset) {
+    V v = getValue(attr);
+    return v == null ? valueIfUnset : v;
+  }
   
   // Note: changeAttr() and setAttr() must not fail by putting up a dialog. Any
   // validation must be done before these are called. Worst case, these can

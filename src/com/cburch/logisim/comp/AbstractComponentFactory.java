@@ -54,7 +54,7 @@ public abstract class AbstractComponentFactory implements ComponentFactory {
   private static final Icon toolIcon = Icons.getIcon("subcirc.gif");
 
   private AttributeSet defaultSet;
-  protected HDLGeneratorFactory MyHDLGenerator;
+  protected HDLGeneratorFactory MyHDLGenerator, MyVhdlGenerator, MyVerilogGenerator;
   protected IOComponentInformationContainer MyIOInformation;
 
   protected AbstractComponentFactory() {
@@ -108,10 +108,16 @@ public abstract class AbstractComponentFactory implements ComponentFactory {
 
   public HDLGeneratorFactory getHDLGenerator(String HDLIdentifier,
       AttributeSet attrs, char Vendor) {
-    if (HDLSupportedComponent(HDLIdentifier, attrs, Vendor))
-      return MyHDLGenerator;
-    else
+    if (HDLSupportedComponent(HDLIdentifier, attrs, Vendor)) {
+      if (HDLIdentifier.equals("VHDL") && MyVhdlGenerator != null)
+        return MyVhdlGenerator;
+      else if (HDLIdentifier.equals("Verilog") && MyVerilogGenerator != null)
+        return MyVerilogGenerator;
+      else
+        return MyHDLGenerator;
+    } else {
       return null;
+    }
   }
 
   public String getHDLName(AttributeSet attrs) {

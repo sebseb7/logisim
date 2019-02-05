@@ -50,8 +50,8 @@ import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
 import com.bfh.logisim.settings.Settings;
-import com.bfh.logisim.library.DynamicClock;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 
 public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 	
@@ -867,9 +867,10 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		SortedMap<String, Integer> InOuts = new TreeMap<String, Integer>();
 		return InOuts;
 	}
+	
+  public void inputs(SortedMap<String, Integer> list, Netlist TheNetlist, AttributeSet attrs) { }
 
-	public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
-			AttributeSet attrs) {
+	public SortedMap<String, Integer> GetInputList(Netlist TheNetlist, AttributeSet attrs) {
 		/*
 		 * This method returns a map list of all the inputs of a black-box. The
 		 * String Parameter represents the Name, and the Integer parameter
@@ -877,7 +878,8 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		 * vector of bits where the value is the "key" of the parameter map 0 Is
 		 * an invalid value and must not be used
 		 */
-		SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
+		SortedMap<String, Integer> Inputs = new TreeMap<>();
+    inputs(Inputs, TheNetlist, attrs);
 		return Inputs;
 	}
 
@@ -905,6 +907,8 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		return null;
 	}
 
+  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) { }
+
 	public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
 			AttributeSet attrs, FPGAReport Reporter, String HDLType) {
 		/*
@@ -912,6 +916,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		 * used for both VHDL and VERILOG.
 		 */
 		ArrayList<String> Contents = new ArrayList<String>();
+    behavior(new Hdl(HDLType, Reporter), TheNetlist, attrs);
 		return Contents;
 	}
 
@@ -956,8 +961,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 				} else {
 					NetMap.put(
 							SourceName,
-							GetZeroVector(NrOfBits, FloatingPinTiedToGround,
-									HDLType));
+							GetZeroVector(NrOfBits, FloatingPinTiedToGround, HDLType));
 				}
 			} else {
 				/*
@@ -988,9 +992,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 								} else {
 									NetMap.put(
 											SourceNetName.toString(),
-											GetZeroVector(1,
-													FloatingPinTiedToGround,
-													HDLType));
+											GetZeroVector(1, FloatingPinTiedToGround, HDLType));
 								}
 							} else {
 								/*
@@ -1035,8 +1037,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 								if (IsOutput) {
 									SeperateSignals.add("1'bz");
 								} else {
-									SeperateSignals.add(GetZeroVector(1,
-											FloatingPinTiedToGround, HDLType));
+									SeperateSignals.add(GetZeroVector(1, FloatingPinTiedToGround, HDLType));
 								}
 							} else {
 								/*
@@ -1132,9 +1133,10 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		/* In this method you can specify the number of own defined Types */
 		return 0;
 	}
+	
+  public void outputs(SortedMap<String, Integer> list, Netlist TheNetlist, AttributeSet attrs) { }
 
-	public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
-			AttributeSet attrs) {
+	public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist, AttributeSet attrs) {
 		/*
 		 * This method returns a map list of all the outputs of a black-box. The
 		 * String Parameter represents the Name, and the Integer parameter
@@ -1143,8 +1145,11 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		 * an invalid value and must not be used
 		 */
 		SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
+    outputs(Outputs, TheNetlist, attrs);
 		return Outputs;
 	}
+
+	public void params(SortedMap<Integer, String> list, AttributeSet attrs) { }
 
 	public SortedMap<Integer, String> GetParameterList(AttributeSet attrs) {
 		/*
@@ -1154,8 +1159,12 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		 * In VHDL all parameters are assumed to be INTEGER.
 		 */
 		SortedMap<Integer, String> Parameters = new TreeMap<Integer, String>();
+    params(Parameters, attrs);
 		return Parameters;
 	}
+	
+  public void paramValues(SortedMap<String, Integer> list, Netlist Nets,
+			NetlistComponent ComponentInfo, FPGAReport Reporter) { }
 
 	public SortedMap<String, Integer> GetParameterMap(Netlist Nets,
 			NetlistComponent ComponentInfo, FPGAReport Reporter) {
@@ -1165,17 +1174,20 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		 * and the Integer its assigned value
 		 */
 		SortedMap<String, Integer> ParameterMap = new TreeMap<String, Integer>();
+    paramValues(ParameterMap, Nets, ComponentInfo, Reporter);
 		return ParameterMap;
 	}
+	
+  public void portValues(SortedMap<String, String> list, Netlist Nets, NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) { }
 
-	public SortedMap<String, String> GetPortMap(Netlist Nets,
-			NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
+	public SortedMap<String, String> GetPortMap(Netlist Nets, NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
 		/*
 		 * This method returns the assigned input/outputs of the component, the
 		 * key is the name of the input/output (bit), and the value represent
 		 * the connected net.
 		 */
 		SortedMap<String, String> PortMap = new TreeMap<String, String>();
+    portValues(PortMap, Nets, ComponentInfo, Reporter, HDLType);
 		return PortMap;
 	}
 
@@ -1406,8 +1418,9 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		return Contents;
 	}
 
-	public SortedMap<String, Integer> GetWireList(AttributeSet attrs,
-			Netlist Nets) {
+	public void wires(SortedMap<String, Integer> list, AttributeSet attrs, Netlist Nets) { }
+
+	public SortedMap<String, Integer> GetWireList(AttributeSet attrs, Netlist Nets) {
 		/*
 		 * This method returns a map list of all the wires/signals used in the
 		 * black-box. The String Parameter represents the Name, and the Integer
@@ -1417,12 +1430,12 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		 * single bit "wire" is transformed to std_logic, all the others are
 		 * std_logic_vectors
 		 */
-		SortedMap<String, Integer> Wires = new TreeMap<String, Integer>();
+		SortedMap<String, Integer> Wires = new TreeMap<>();
+    wires(Wires, attrs, Nets);
 		return Wires;
 	}
 
-	public String GetZeroVector(int NrOfBits, boolean FloatingPinTiedToGround,
-			String HDLType) {
+	public String GetZeroVector(int NrOfBits, boolean FloatingPinTiedToGround, String HDLType) {
 		StringBuffer Contents = new StringBuffer();
 		if (HDLType.equals(Settings.VHDL)) {
 			String FillValue = (FloatingPinTiedToGround) ? "0" : "1";
@@ -1459,8 +1472,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		return Contents.toString();
 	}
 
-	public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-			char Vendor) {
+	public boolean HDLTargetSupported(String HDLType, AttributeSet attrs, char Vendor) {
 		return false;
 	}
 
@@ -1468,8 +1480,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		return false;
 	}
 
-	public boolean IsOnlyInlined(String HDLType,
-			FPGAIOInformationContainer.IOComponentTypes map) {
+	public boolean IsOnlyInlined(String HDLType, FPGAIOInformationContainer.IOComponentTypes map) {
 		return true;
 	}
 

@@ -29,17 +29,7 @@
  */
 package com.cburch.logisim.std.gates;
 
-import java.util.ArrayList;
-import java.util.SortedMap;
-import java.util.TreeMap;
-
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
-import com.cburch.logisim.instance.StdAttr;
 
 public class GateVerilogGenerator extends GateVhdlGenerator {
 

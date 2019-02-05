@@ -31,7 +31,6 @@ package com.cburch.logisim.std.gates;
 
 import java.util.ArrayList;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
@@ -70,9 +69,6 @@ public class GateVhdlGenerator extends AbstractHDLGeneratorFactory {
   static GateVhdlGenerator forNor() { return new GateVhdlGenerator(false, "OR", true); }
   static GateVhdlGenerator forXor() { return new GateVhdlGenerator(false, "XOR", false); }
   static GateVhdlGenerator forXnor() { return new GateVhdlGenerator(false, "XOR", true); }
-
-  @Override
-  public String getComponentStringIdentifier() { return "GATE"; }
 
   protected void unaryOp(Hdl out) {
     if (!invertOutput)
@@ -145,11 +141,8 @@ public class GateVhdlGenerator extends AbstractHDLGeneratorFactory {
       out.stmt("s_in_%d <= NOT(Input_%d) WHEN s_mask(%d) = '1' ELSE Input_%d;", i, i, i, i);
   }
 
-
   @Override
-  public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist, AttributeSet attrs, FPGAReport err, String lang) {
-
-    Hdl out = new Hdl(Hdl.Lang.VHDL);
+  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
     out.indent();
 
     int n = attrs.getValueOrElse(GateAttributes.ATTR_INPUTS, 1);
@@ -165,16 +158,22 @@ public class GateVhdlGenerator extends AbstractHDLGeneratorFactory {
       oneHot(out, n);
     else 
       naryOp(out, n);
-
-    return out;
   }
 
-  // Subdirectory where vhdl files will be saved.
+  // Vestigial.
+  @Override
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char vendor) { return true; }
+
+  // Used for naming files.
+  @Override
+  public String getComponentStringIdentifier() { return "GATE"; }
+
+  // Subdirectory where files will be saved.
   @Override
   public String GetSubDir() { return "gates"; }
 
-  // {SignalName, SignalWidth} for each input parameter, where
-  // negative SignalWidth means use width is defined by corresponding generic parameter.
+  // {SignalName, SignalWidth} for each input port, where negative SignalWidth
+  // means use width is defined by corresponding generic parameter.
   @Override
   public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
     int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
@@ -183,8 +182,8 @@ public class GateVhdlGenerator extends AbstractHDLGeneratorFactory {
       list.put("Input_"+i, w);
   }
 
-  // {SignalName, SignalWidth} for each output parameter, where
-  // negative SignalWidth means use width is defined by corresponding generic parameter.
+  // {SignalName, SignalWidth} for each output port, where negative SignalWidth
+  // means use width is defined by corresponding generic parameter.
   @Override
   public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
     int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
@@ -236,21 +235,14 @@ public class GateVhdlGenerator extends AbstractHDLGeneratorFactory {
   // {SignalName, SignalWidth} for signals internally by this entity, where
   // negative SignalWidth means use width is defined by corresponding generic parameter.
   @Override
-  public SortedMap<String, Integer> GetWireList(AttributeSet attrs, Netlist nets) {
-    SortedMap<String, Integer> Wires = new TreeMap<>();
+  public void wires(SortedMap<String, Integer> list, AttributeSet attrs, Netlist nets) {
     int n = attrs.getValueOrElse(GateAttributes.ATTR_INPUTS, 1);
     if (n > 1) {
       boolean is_bus = width(attrs) > 1;
       for (int i = 1; i <= n; i++)
-        Wires.put("s_in_"+i, is_bus ? GENERIC_PARAM_BUSWIDTH : 1);
-      Wires.put("s_mask", n);
+        list.put("s_in_"+i, is_bus ? GENERIC_PARAM_BUSWIDTH : 1);
+      list.put("s_mask", n);
     }
-    return Wires;
-  }
-
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) {
-    return true;
   }
 
   protected int width(AttributeSet attrs) {

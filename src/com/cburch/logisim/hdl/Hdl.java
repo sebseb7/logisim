@@ -32,33 +32,39 @@ package com.cburch.logisim.hdl;
 
 import java.util.ArrayList;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
+
 public class Hdl extends ArrayList<String> {
   
   public enum Lang { VHDL, Verilog }
   public final Lang lang;
+
   public final boolean isVhdl, isVerilog;
+  public final FPGAReport err;
 
   private int indent = 0;
   private String tab = "";
   private StringBuffer buf = new StringBuffer();
   private ArrayList<Integer> align = new ArrayList<>();
 
-  public Hdl(String oldHdlType) {
-    if (oldHdlType.equals("VHDL"))
-      lang = Lang.VHDL;
-    else if (oldHdlType.equals("Verilog"))
-      lang = Lang.Verilog;
+  public Hdl(String lang, FPGAReport err) {
+    if (lang.equals("VHDL"))
+      this.lang = Lang.VHDL;
+    else if (lang.equals("Verilog"))
+      this.lang = Lang.Verilog;
     else
-      throw new IllegalArgumentException("Unrecognized HDL: " + oldHdlType);
-    this.isVhdl = lang == Lang.VHDL;
-    this.isVerilog = lang == Lang.Verilog;
+      throw new IllegalArgumentException("Unrecognized HDL: " + lang);
+    this.isVhdl = this.lang == Lang.VHDL;
+    this.isVerilog = this.lang == Lang.Verilog;
+    this.err = err;
   }
 
-  public Hdl(Lang lang) {
-    this.lang = lang;
-    this.isVhdl = lang == Lang.VHDL;
-    this.isVerilog = lang == Lang.Verilog;
-  }
+  // public Hdl(Lang lang) {
+  //   this.lang = lang;
+  //   this.isVhdl = lang == Lang.VHDL;
+  //   this.isVerilog = lang == Lang.Verilog;
+  //   this.err = null;
+  // }
 
   // public Vhdl(String filename) throws IOException {
   // }
