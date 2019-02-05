@@ -29,125 +29,100 @@
  */
 package com.cburch.logisim.std.arith;
 
-import java.util.ArrayList;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
+import com.cburch.logisim.instance.StdAttr;
 
 public class MultiplierHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
-  final private static String NrOfBitsStr = "NrOfBits";
-  final private static int NrOfBitsId = -1;
-  final private static String CalcBitsStr = "NrOfCalcBits";
-  final private static int CalcBitsId = -2;
+
+  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
+  protected final static int GENERIC_PARAM_EXTENDEDBITS = -2;
+
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return lang.equals("VHDL"); }
 
   @Override
-  public String getComponentStringIdentifier() {
-    return "MULT";
+  public String getComponentStringIdentifier() { return "MULT"; }
+
+  @Override
+  public String GetSubDir() { return "arithmetic"; }
+
+  @Override
+  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("DataA", GENERIC_PARAM_BUSWIDTH);
+    list.put("DataB", GENERIC_PARAM_BUSWIDTH);
+    list.put("CarryIn", GENERIC_PARAM_BUSWIDTH);
   }
 
   @Override
-  public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
-    Inputs.put("INP_A", NrOfBitsId);
-    Inputs.put("INP_B", NrOfBitsId);
-    Inputs.put("Cin", NrOfBitsId);
-    return Inputs;
+  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("ProductLo", GENERIC_PARAM_BUSWIDTH);
+    list.put("ProductHi", GENERIC_PARAM_BUSWIDTH);
   }
 
   @Override
-  public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
-      AttributeSet attrs, FPGAReport Reporter, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    if (HDLType.equals(Settings.VHDL)) {
-      if (attrs.getValue(Multiplier.MODE_ATTR).equals(Multiplier.UNSIGNED_OPTION)) {
-        Contents.add("   s_mult_result <= std_logic_vector(unsigned(INP_A)*unsigned(INP_B));");
-        Contents.add("   s_extended_Cin(" + CalcBitsStr + "-1 DOWNTO " + NrOfBitsStr + ") <= (OTHERS => '0');");
-        Contents.add("   s_extended_Cin(" + NrOfBitsStr + "-1 DOWNTO 0) <= Cin;");
-        Contents.add("   s_new_result  <= std_logic_vector(unsigned(s_mult_result) + unsigned(s_extended_Cin));");
-        Contents.add("   Mult_hi       <= s_new_result(" + CalcBitsStr + "-1 DOWNTO " + NrOfBitsStr + ");");
-        Contents.add("   Mult_lo       <= s_new_result(" + NrOfBitsStr + "-1 DOWNTO 0);");
-      } else {
-        Contents.add("   s_mult_result <= std_logic_vector(signed(INP_A)*signed(INP_B));");
-        Contents.add("   s_extended_Cin(" + CalcBitsStr + "-1 DOWNTO " + NrOfBitsStr + ") <= (OTHERS => '0');");
-        Contents.add("   s_extended_Cin(" + NrOfBitsStr + "-1 DOWNTO 0) <= Cin;");
-        Contents.add("   s_new_result  <= std_logic_vector(signed(s_mult_result) + signed(s_extended_Cin));");
-        Contents.add("   Mult_hi       <= s_new_result(" + CalcBitsStr + "-1 DOWNTO " + NrOfBitsStr + ");");
-        Contents.add("   Mult_lo       <= s_new_result(" + NrOfBitsStr + "-1 DOWNTO 0);");
-      }
+	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
+    list.put(GENERIC_PARAM_BUSWIDTH, "BusWidth");
+    list.put(GENERIC_PARAM_EXTENDEDBITS, "ExtendedBits");
+  }
+
+  @Override
+  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
+    // TODO(kwalsh) - null the upper if not connected, or add a parameter
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    int w = width(attrs);
+    list.put("BusWidth", w);
+    list.put("ExtendedBits", 2*w);
+  }
+
+  @Override
+  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+    list.putAll(GetNetMap("DataA", true, info, Multiplier.IN0, err, lang, nets));
+    list.putAll(GetNetMap("DataB", true, info, Multiplier.IN1, err, lang, nets));
+    list.putAll(GetNetMap("Upper", true, info, Multiplier.C_IN, err, lang, nets));
+    list.putAll(GetNetMap("ProductLo", true, info, Multiplier.OUT, err, lang, nets));
+    list.putAll(GetNetMap("ProductHi", true, info, Multiplier.C_OUT, err, lang, nets));
+  }
+
+  @Override
+  public void wires(SortedMap<String, Integer> list, AttributeSet attrs, Netlist nets) {
+    list.put("s_mul", GENERIC_PARAM_EXTENDEDBITS);
+    list.put("s_cin", GENERIC_PARAM_EXTENDEDBITS);
+    list.put("s_res", GENERIC_PARAM_EXTENDEDBITS);
+  }
+  // fixme: EXTENDEDBITS is only needed b/c we have no way of saying "BusWidth+1 if BusWidth is defined otherwise 2"
+  
+  @Override
+  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
+    System.out.println("BUG?!?! sign/unsigned needs to be a generic param?!");
+    out.indent();
+    int w = width(attrs);
+    if (attrs.getValue(Multiplier.MODE_ATTR).equals(Multiplier.UNSIGNED_OPTION)) {
+      out.stmt("s_cin(ExtendedBits-1 DOWNTO BusWidth) <= (OTHERS => '0');");
+      out.stmt("s_cin(BusWidth-1 DOWNTO 0)            <= Cin;");
+      out.stmt("s_mul <= std_logic_vector(unsigned(DataA) * unsigned(DataB));");
+      out.stmt("s_res <= std_logic_vector(unsigned(s_mul) + unsigned(s_cin));");
+      out.stmt("");
+      out.stmt("ProductHi <= s_res(ExtendedBits-1 DOWNTO BusWidth);");
+      out.stmt("ProductLo <= s_res(BusWidth-1 DOWNTO 0);");
+    } else {
+      out.stmt("s_cin(ExtendedBits-1 DOWNTO BusWidth) <= (OTHERS => '0');");
+      out.stmt("s_cin(BusWidth-1 DOWNTO 0)            <= Cin;");
+      out.stmt("s_mul <= std_logic_vector(signed(DataA) * signed(DataB));");
+      out.stmt("s_res <= std_logic_vector(signed(s_mul) + signed(s_cin));");
+      out.stmt("");
+      out.stmt("ProductHi <= s_res(ExtendedBits-1 DOWNTO BusWidth);");
+      out.stmt("ProductLo <= s_res(BusWidth-1 DOWNTO 0);");
     }
-    return Contents;
   }
 
-  @Override
-  public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-    Outputs.put("Mult_lo", NrOfBitsId);
-    Outputs.put("Mult_hi", NrOfBitsId);
-    return Outputs;
-  }
-
-  @Override
-  public SortedMap<Integer, String> GetParameterList(AttributeSet attrs) {
-    SortedMap<Integer, String> Parameters = new TreeMap<Integer, String>();
-    Parameters.put(NrOfBitsId, NrOfBitsStr);
-    Parameters.put(CalcBitsId, CalcBitsStr);
-    return Parameters;
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetParameterMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter) {
-    SortedMap<String, Integer> ParameterMap = new TreeMap<String, Integer>();
-    int NrOfBits = ComponentInfo.GetComponent().getAttributeSet()
-        .getValue(Multiplier.WIDTH_ATTR).getWidth();
-    ParameterMap.put(NrOfBitsStr, NrOfBits);
-    ParameterMap.put(CalcBitsStr, 2 * NrOfBits);
-    return ParameterMap;
-  }
-
-  @Override
-  public SortedMap<String, String> GetPortMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-    SortedMap<String, String> PortMap = new TreeMap<String, String>();
-    PortMap.putAll(GetNetMap("INP_A", true, ComponentInfo, Multiplier.IN0,
-          Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("INP_B", true, ComponentInfo, Multiplier.IN1,
-          Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("Cin", true, ComponentInfo, Multiplier.C_IN,
-          Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("Mult_lo", true, ComponentInfo,
-          Multiplier.OUT, Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("Mult_hi", true, ComponentInfo,
-          Multiplier.C_OUT, Reporter, HDLType, Nets));
-    return PortMap;
-  }
-
-  @Override
-  public String GetSubDir() {
-    return "arithmetic";
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetWireList(AttributeSet attrs,
-      Netlist Nets) {
-    SortedMap<String, Integer> Wires = new TreeMap<String, Integer>();
-    Wires.put("s_mult_result", CalcBitsId);
-    Wires.put("s_extended_Cin", CalcBitsId);
-    Wires.put("s_new_result", CalcBitsId);
-    return Wires;
-  }
-
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs, char Vendor) {
-    return HDLType.equals(Settings.VHDL);
+  protected int width(AttributeSet attrs) {
+    return attrs.getValue(StdAttr.WIDTH).getWidth();
   }
 
 }

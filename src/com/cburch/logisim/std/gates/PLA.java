@@ -303,7 +303,7 @@ class PLA extends InstanceFactory {
   @Override
   public boolean HDLSupportedComponent(String HDLIdentifier, AttributeSet attrs, char Vendor) {
     if (MyHDLGenerator == null)
-      MyHDLGenerator = new PLAHDLGeneratorFactory();
+      MyHDLGenerator = new PLAVhdlGenerator();
     return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
   }
 

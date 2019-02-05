@@ -153,7 +153,7 @@ public class GateVhdlGenerator extends AbstractHDLGeneratorFactory {
       unaryOp(out);
     else if (n == 2)
       binaryOp(out);
-    else if (attrs.getValueOrElse(GateAttributes.ATTR_XOR, GateAttributes.XOR_ODD) == GateAttributes.XOR_ODD)
+    else if (attrs.getValue(GateAttributes.ATTR_XOR) == GateAttributes.XOR_ODD)
       oneHot(out, n);
     else 
       naryOp(out, n);

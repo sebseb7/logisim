@@ -29,166 +29,116 @@
  */
 package com.cburch.logisim.std.arith;
 
-import java.util.ArrayList;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
 
 public class ComparatorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
+  
+  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
+  protected final static int GENERIC_PARAM_TWOSCOMPLEMENT = -2;
 
-  final private static String NrOfBitsStr = "NrOfBits";
-  final private static int NrOfBitsId = -1;
-  final private static String TwosComplementStr = "TwosComplement";
-  final private static int TwosComplementId = -2;
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
 
   @Override
-  public String getComponentStringIdentifier() {
-    return "Comparator";
+  public String getComponentStringIdentifier() { return "COMPARATOR"; }
+
+  @Override
+  public String GetSubDir() { return "arithmetic"; }
+
+  @Override
+  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
+    list.put("DataA", w);
+    list.put("DataB", w);
   }
 
   @Override
-  public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
-    int inputbits = (attrs.getValue(StdAttr.WIDTH).getWidth() == 1) ? 1
-        : NrOfBitsId;
-    Inputs.put("DataA", inputbits);
-    Inputs.put("DataB", inputbits);
-    return Inputs;
+  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("A_GT_B", 1);
+    list.put("A_EQ_B", 1);
+    list.put("A_LT_B", 1);
   }
 
   @Override
-  public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
-      AttributeSet attrs, FPGAReport Reporter, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    int nrOfBits = attrs.getValue(StdAttr.WIDTH).getWidth();
-    if (HDLType.equals(Settings.VHDL)) {
-      if (nrOfBits == 1) {
-        Contents.add("   A_EQ_B <= DataA XNOR DataB;");
-        Contents.add("   A_LT_B <= DataA AND NOT(DataB) WHEN "
-            + TwosComplementStr + " = 1 ELSE NOT(DataA) AND DataB;");
-        Contents.add("   A_GT_B <= NOT(DataA) AND DataB WHEN "
-            + TwosComplementStr + " = 1 ELSE DataA AND NOT(DataB);");
-      } else {
-        Contents.add("   s_signed_less      <= '1' WHEN signed(DataA) < signed(DataB) ELSE '0';");
-        Contents.add("   s_unsigned_less    <= '1' WHEN unsigned(DataA) < unsigned(DataB) ELSE '0';");
-        Contents.add("   s_signed_greater   <= '1' WHEN signed(DataA) > signed(DataB) ELSE '0';");
-        Contents.add("   s_unsigned_greater <= '1' WHEN unsigned(DataA) > unsigned(DataB) ELSE '0';");
-        Contents.add("");
-        Contents.add("   A_EQ_B <= '1' WHEN DataA = DataB ELSE '0';");
-        Contents.add("   A_GT_B <= s_signed_greater WHEN "
-            + TwosComplementStr + "=1 ELSE s_unsigned_greater;");
-        Contents.add("   A_LT_B <= s_signed_less    WHEN "
-            + TwosComplementStr + "=1 ELSE s_unsigned_less;");
-      }
-    } else {
-      if (nrOfBits == 1) {
-        Contents.add("   assign A_EQ_B = (DataA == DataB);");
-        Contents.add("   assign A_LT_B = (DataA < DataB);");
-        Contents.add("   assign A_GT_B = (DataA > DataB);");
-      } else {
-        Contents.add("   assign s_signed_less      = ($signed(DataA) < $signed(DataB));");
-        Contents.add("   assign s_unsigned_less    = (DataA < DataB);");
-        Contents.add("   assign s_signed_greater   = ($signed(DataA) > $signed(DataB));");
-        Contents.add("   assign s_unsigned_greater = (DataA > DataB);");
-        Contents.add("");
-        Contents.add("   assign A_EQ_B = (DataA == DataB);");
-        Contents.add("   assign A_GT_B = (" + TwosComplementStr
-            + "==1) ? s_signed_greater : s_unsigned_greater;");
-        Contents.add("   assign A_LT_B = (" + TwosComplementStr
-            + "==1) ? s_signed_less : s_unsigned_less;");
-      }
+	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
+    int w = width(attrs);
+    if (w > 1)
+      list.put(GENERIC_PARAM_BUSWIDTH, "BusWidth");
+    list.put(GENERIC_PARAM_TWOSCOMPLEMENT, "TwosComplement");
+  }
+
+  @Override
+  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    int w = width(attrs);
+    if (w > 1)
+      list.put("BusWidth", w);
+    boolean is_signed = attrs.getValue(Comparator.MODE_ATTRIBUTE) == Comparator.SIGNED_OPTION;
+    list.put("TwosComplement", is_signed ? 1 : 0);
+  }
+
+  @Override
+  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+    list.putAll(GetNetMap("DataA", true, info, 0, err, lang, nets));
+    list.putAll(GetNetMap("DataB", true, info, 1, err, lang, nets));
+    list.putAll(GetNetMap("A_GT_B", true, info, 2, err, lang, nets));
+    list.putAll(GetNetMap("A_EQ_B", true, info, 3, err, lang, nets));
+    list.putAll(GetNetMap("A_LT_B", true, info, 4, err, lang, nets));
+  }
+
+  @Override
+  public void wires(SortedMap<String, Integer> list, AttributeSet attrs, Netlist nets) {
+    if (width(attrs) > 1) {
+      list.put("s_slt", 1);
+      list.put("s_ult", 1);
+      list.put("s_sgt", 1);
+      list.put("s_ugt", 1);
     }
-    return Contents;
   }
 
   @Override
-  public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-    Outputs.put("A_GT_B", 1);
-    Outputs.put("A_EQ_B", 1);
-    Outputs.put("A_LT_B", 1);
-    return Outputs;
-  }
-
-  @Override
-  public SortedMap<Integer, String> GetParameterList(AttributeSet attrs) {
-    SortedMap<Integer, String> Parameters = new TreeMap<Integer, String>();
-    int inputbits = attrs.getValue(StdAttr.WIDTH).getWidth();
-    if (inputbits > 1) {
-      Parameters.put(NrOfBitsId, NrOfBitsStr);
+  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
+    out.indent();
+    int w = width(attrs);
+    if (out.isVhdl && w == 1) {
+      out.stmt("A_EQ_B <= DataA XNOR DataB;");
+      out.stmt("A_LT_B <= DataA AND NOT(DataB) WHEN TwosComplement = 1 ELSE");
+      out.stmt("          NOT(DataA) AND DataB;");
+      out.stmt("A_GT_B <= NOT(DataA) AND DataB WHEN TwosComplement = 1 ELSE");
+      out.stmt("          DataA AND NOT(DataB);");
+    } else if (out.isVhdl) {
+      out.stmt("s_slt <= '1' WHEN signed(DataA) < signed(DataB) ELSE '0';");
+      out.stmt("s_ult <= '1' WHEN unsigned(DataA) < unsigned(DataB) ELSE '0';");
+      out.stmt("s_sgt <= '1' WHEN signed(DataA) > signed(DataB) ELSE '0';");
+      out.stmt("s_ugt <= '1' WHEN unsigned(DataA) > unsigned(DataB) ELSE '0';");
+      out.stmt("");
+      out.stmt("A_EQ_B <= '1' WHEN DataA = DataB ELSE '0';");
+      out.stmt("A_GT_B <= s_sgt WHEN TwosComplement = 1 ELSE s_ugt;");
+      out.stmt("A_LT_B <= s_slt WHEN TwosComplement = 1 ELSE s_ult;");
+    } else if (out.isVerilog && w == 1) {
+      out.stmt("assign A_EQ_B = (DataA == DataB);");
+      out.stmt("assign A_LT_B = (DataA < DataB);");
+      out.stmt("assign A_GT_B = (DataA > DataB);");
+    } else if (out.isVerilog) {
+      out.stmt("assign s_slt = ($signed(DataA) < $signed(DataB));");
+      out.stmt("assign s_ult = (DataA < DataB);");
+      out.stmt("assign s_sgt = ($signed(DataA) > $signed(DataB));");
+      out.stmt("assign s_ugt = (DataA > DataB);");
+      out.stmt("");
+      out.stmt("assign A_EQ_B = (DataA == DataB);");
+      out.stmt("assign A_GT_B = (TwosComplement == 1) ? s_sgt : s_ugt;");
+      out.stmt("assign A_LT_B = (TwosComplement == 1) ? s_slt : s_ult;");
     }
-    Parameters.put(TwosComplementId, TwosComplementStr);
-    return Parameters;
   }
 
-  @Override
-  public SortedMap<String, Integer> GetParameterMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter) {
-    SortedMap<String, Integer> ParameterMap = new TreeMap<String, Integer>();
-    int nrOfBits = ComponentInfo.GetComponent().getEnd(0).getWidth()
-        .getWidth();
-    int IsSigned = 0;
-    AttributeSet attrs = ComponentInfo.GetComponent().getAttributeSet();
-    if (attrs.containsAttribute(Comparator.MODE_ATTRIBUTE)) {
-      if (attrs.getValue(Comparator.MODE_ATTRIBUTE).equals(
-            Comparator.SIGNED_OPTION))
-        IsSigned = 1;
-    }
-    if (nrOfBits > 1) {
-      ParameterMap.put(NrOfBitsStr, nrOfBits);
-    }
-    ParameterMap.put(TwosComplementStr, IsSigned);
-    return ParameterMap;
-  }
-
-  @Override
-  public SortedMap<String, String> GetPortMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-    SortedMap<String, String> PortMap = new TreeMap<String, String>();
-    PortMap.putAll(GetNetMap("DataA", true, ComponentInfo, 0, Reporter,
-          HDLType, Nets));
-    PortMap.putAll(GetNetMap("DataB", true, ComponentInfo, 1, Reporter,
-          HDLType, Nets));
-    PortMap.putAll(GetNetMap("A_GT_B", true, ComponentInfo, 2, Reporter,
-          HDLType, Nets));
-    PortMap.putAll(GetNetMap("A_EQ_B", true, ComponentInfo, 3, Reporter,
-          HDLType, Nets));
-    PortMap.putAll(GetNetMap("A_LT_B", true, ComponentInfo, 4, Reporter,
-          HDLType, Nets));
-    return PortMap;
-  }
-
-  @Override
-  public String GetSubDir() {
-    return "arithmetic";
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetWireList(AttributeSet attrs,
-      Netlist Nets) {
-    SortedMap<String, Integer> Wires = new TreeMap<String, Integer>();
-    int inputbits = attrs.getValue(StdAttr.WIDTH).getWidth();
-    if (inputbits > 1) {
-      Wires.put("s_signed_less", 1);
-      Wires.put("s_unsigned_less", 1);
-      Wires.put("s_signed_greater", 1);
-      Wires.put("s_unsigned_greater", 1);
-    }
-    return Wires;
-  }
-
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-      char Vendor) {
-    return true;
+  protected int width(AttributeSet attrs) {
+    return attrs.getValue(StdAttr.WIDTH).getWidth();
   }
 }
