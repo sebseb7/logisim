@@ -34,7 +34,6 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.util.ArrayList;
 
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
@@ -45,17 +44,6 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.util.GraphicsUtil;
 
 class OddParityGate extends AbstractGate {
-  private class XorGateHDLGeneratorFactory extends AbstractGateHDLGenerator {
-    @Override
-    public ArrayList<String> GetLogicFunction(int nr_of_inputs,
-        int bitwidth, boolean is_one_hot, String HDLType) {
-      ArrayList<String> Contents = new ArrayList<String>();
-      Contents.addAll(GetParity(false, nr_of_inputs, bitwidth > 1,
-            HDLType));
-      Contents.add("");
-      return Contents;
-    }
-  }
 
   public static OddParityGate FACTORY = new OddParityGate();
 
@@ -86,11 +74,12 @@ class OddParityGate extends AbstractGate {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (MyHDLGenerator == null)
-      MyHDLGenerator = new XorGateHDLGeneratorFactory();
-    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  public boolean HDLSupportedComponent(String HDLIdentifier, AttributeSet attrs, char Vendor) {
+    if (MyVhdlGenerator == null)
+      MyVhdlGenerator = GateVhdlGenerator.forXor();
+    if (MyVerilogGenerator == null)
+      MyVerilogGenerator = GateVerilogGenerator.forXor();
+    return true;
   }
 
   @Override

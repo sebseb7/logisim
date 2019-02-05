@@ -34,12 +34,10 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.util.ArrayList;
 
 import javax.swing.Icon;
 
 import com.bfh.logisim.designrulecheck.CorrectLabel;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.circuit.ExpressionComputer;
@@ -65,21 +63,6 @@ import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.Icons;
 
 class NotGate extends InstanceFactory {
-
-  private class NotGateHDLGeneratorFactory extends AbstractGateHDLGenerator {
-    @Override
-    public ArrayList<String> GetLogicFunction(int nr_of_inputs,
-        int bitwidth, boolean is_one_hot, String HDLType) {
-      ArrayList<String> Contents = new ArrayList<String>();
-      if (HDLType.equals(Settings.VHDL))
-        Contents.add("   Result <= NOT(Input_1);");
-      else
-        Contents.add("   assign Result = ~(Input_1);");
-      Contents.add("");
-      return Contents;
-    }
-
-  }
 
   static void configureLabel(Instance instance, boolean isRectangular,
       Location control) {
@@ -223,11 +206,12 @@ class NotGate extends InstanceFactory {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (MyHDLGenerator == null)
-      MyHDLGenerator = new NotGateHDLGeneratorFactory();
-    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  public boolean HDLSupportedComponent(String HDLIdentifier, AttributeSet attrs, char Vendor) {
+    if (MyVhdlGenerator == null)
+      MyVhdlGenerator = GateVhdlGenerator.forNot();
+    if (MyVerilogGenerator == null)
+      MyVerilogGenerator = GateVerilogGenerator.forNot();
+    return true;
   }
 
   @Override

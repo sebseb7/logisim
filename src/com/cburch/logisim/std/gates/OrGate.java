@@ -32,9 +32,7 @@ package com.cburch.logisim.std.gates;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Graphics;
-import java.util.ArrayList;
 
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.data.AttributeSet;
@@ -46,38 +44,6 @@ import com.cburch.logisim.tools.WireRepairData;
 import com.cburch.logisim.util.GraphicsUtil;
 
 class OrGate extends AbstractGate {
-  private class OrGateHDLGeneratorFactory extends AbstractGateHDLGenerator {
-    @Override
-    public ArrayList<String> GetLogicFunction(int nr_of_inputs,
-        int bitwidth, boolean is_one_hot, String HDLType) {
-      ArrayList<String> Contents = new ArrayList<String>();
-      String Preamble = (HDLType.equals(Settings.VHDL) ? "" : "assign ");
-      String OrOperation = (HDLType.equals(Settings.VHDL) ? " OR" : " |");
-      String AssignOperation = (HDLType.equals(Settings.VHDL) ? " <= "
-          : " = ");
-      StringBuffer OneLine = new StringBuffer();
-      OneLine.append("   " + Preamble + "Result" + AssignOperation);
-      int TabWidth = OneLine.length();
-      boolean first = true;
-      for (int i = 0; i < nr_of_inputs; i++) {
-        if (!first) {
-          OneLine.append(OrOperation);
-          Contents.add(OneLine.toString());
-          OneLine.setLength(0);
-          while (OneLine.length() < TabWidth) {
-            OneLine.append(" ");
-          }
-        } else {
-          first = false;
-        }
-        OneLine.append("s_real_input_" + Integer.toString(i + 1));
-      }
-      OneLine.append(";");
-      Contents.add(OneLine.toString());
-      Contents.add("");
-      return Contents;
-    }
-  }
 
   public static OrGate FACTORY = new OrGate();
 
@@ -109,11 +75,12 @@ class OrGate extends AbstractGate {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (MyHDLGenerator == null)
-      MyHDLGenerator = new OrGateHDLGeneratorFactory();
-    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  public boolean HDLSupportedComponent(String HDLIdentifier, AttributeSet attrs, char Vendor) {
+    if (MyVhdlGenerator == null)
+      MyVhdlGenerator = GateVhdlGenerator.forOr();
+    if (MyVerilogGenerator == null)
+      MyVerilogGenerator = GateVerilogGenerator.forOr();
+    return true;
   }
 
   @Override

@@ -32,9 +32,7 @@ package com.cburch.logisim.std.gates;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Graphics;
-import java.util.ArrayList;
 
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.data.AttributeSet;
@@ -44,45 +42,6 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.util.GraphicsUtil;
 
 class AndGate extends AbstractGate {
-  private class AndGateHDLGeneratorFactory extends AbstractGateHDLGenerator {
-    @Override
-    public boolean GetFloatingValue(boolean is_inverted) {
-      return is_inverted;
-    }
-
-    @Override
-    public ArrayList<String> GetLogicFunction(int nr_of_inputs,
-        int bitwidth, boolean is_one_hot, String HDLType) {
-      ArrayList<String> Contents = new ArrayList<String>();
-      String Preamble = (HDLType.equals(Settings.VHDL) ? "" : "assign ");
-      String AndOperation = (HDLType.equals(Settings.VHDL) ? " AND"
-          : " &");
-      String AssignOperation = (HDLType.equals(Settings.VHDL) ? " <= "
-          : " = ");
-      StringBuffer OneLine = new StringBuffer();
-      OneLine.append("   " + Preamble + "Result" + AssignOperation);
-      int TabWidth = OneLine.length();
-      boolean first = true;
-      for (int i = 0; i < nr_of_inputs; i++) {
-        if (!first) {
-          OneLine.append(AndOperation);
-          Contents.add(OneLine.toString());
-          OneLine.setLength(0);
-          while (OneLine.length() < TabWidth) {
-            OneLine.append(" ");
-          }
-        } else {
-          first = false;
-        }
-        OneLine.append("s_real_input_" + Integer.toString(i + 1));
-      }
-      OneLine.append(";");
-      Contents.add(OneLine.toString());
-      Contents.add("");
-      return Contents;
-    }
-
-  }
 
   public static AndGate FACTORY = new AndGate();
 
@@ -113,11 +72,12 @@ class AndGate extends AbstractGate {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (MyHDLGenerator == null)
-      MyHDLGenerator = new AndGateHDLGeneratorFactory();
-    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  public boolean HDLSupportedComponent(String HDLIdentifier, AttributeSet attrs, char Vendor) {
+    if (MyVhdlGenerator == null)
+      MyVhdlGenerator = GateVhdlGenerator.forAnd();
+    if (MyVerilogGenerator == null)
+      MyVerilogGenerator = GateVerilogGenerator.forAnd();
+    return true;
   }
 
   @Override
