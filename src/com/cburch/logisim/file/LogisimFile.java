@@ -58,15 +58,14 @@ import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.proj.Projects;
+import com.cburch.logisim.std.hdl.VhdlContent;
+import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.EventSourceWeakSupport;
-import com.cburch.logisim.util.MacCompatibility;
 import com.cburch.logisim.util.UniquelyNamedThread;
-import com.cburch.logisim.std.hdl.VhdlContent;
-import com.cburch.logisim.std.hdl.VhdlEntity;
 
 public class LogisimFile extends Library implements LibraryEventSource {
 
@@ -626,10 +625,13 @@ public class LogisimFile extends Library implements LibraryEventSource {
 
     FileOutputStream fwrite = null;
     try {
-      try {
-        MacCompatibility.setFileCreatorAndType(dest, "LGSM", "circ");
-      } catch (IOException e) {
-      }
+      // Java 8+ does not appear to support this feature. Is it even needed?
+      // if (Main.MacOS) {
+      //   try {
+      //     MRJAdapter.setFileCreatorAndType(dest, "LGSM", "circ");
+      //   } catch (IOException e) {
+      //   }
+      // }
       fwrite = new FileOutputStream(dest);
       write(fwrite, dest);
       setName(toProjectName(dest));

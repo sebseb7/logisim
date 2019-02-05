@@ -108,10 +108,8 @@ public final class Softwares {
   private static String[] loadQuesta() {
     String[] questaProgs = { "vcom", "vsim", "vmap", "vlib" };
 
-    String osname = System.getProperty("os.name");
-    if (osname == null)
-      throw new IllegalArgumentException("no os.name");
-    else if (osname.toLowerCase().contains("windows"))
+    String osname = System.getProperty("os.name", "generic").toLowerCase();
+    if (osname.contains("windows"))
       for (int i = 0; i < questaProgs.length; i++)
         questaProgs[i] += ".exe";
 

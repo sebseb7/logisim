@@ -61,6 +61,11 @@ public class Main {
 
   public static boolean headless = false;
   public static boolean MacOS = false;
+  public static boolean AlwaysUseScrollbars = false;
+  public static boolean AboutMenuAutomaticallyPresent = false;
+  public static boolean PreferencesMenuAutomaticallyPresent = false;
+  public static boolean QuitMenuAutomaticallyPresent = false;
+  public static boolean HasWindowlessMenubar = false;
 
   public static final LogisimVersion VERSION = LogisimVersion.get(4, 0, 0, "HC"); // candidate
   public static final String VERSION_NAME = VERSION.toString();

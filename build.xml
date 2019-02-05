@@ -112,6 +112,7 @@ In summary:
         </exec>
     </target>
 
+    <!--
     <property environment="env" />
     <taskdef name="bundleapp"
         classname="com.oracle.appbundler.AppBundlerTask"   
@@ -131,24 +132,27 @@ In summary:
                 icon="circfile.icns"
                 name="Logisim Circuit"
                 role="editor">
-                <!-- handlerRank="owner" -->
+                <! - - handlerRank="owner" - - >
             </bundledocument>
             <bundledocument extensions="xml"
                 name="Maybe Logisim Circuit"
                 role="editor">
-                <!-- handlerRank="alternative" -->
+                <! - - handlerRank="alternative" - - >
             </bundledocument>
             <option value="-Xdock:name=Logisim-Evolution"/>
             <option value="-Dcom.apple.mrj.application.apple.menu.about.name=Logisim-Evolution"/>
         </bundleapp>
     </target>
+    -->
 
+    <!--
     <target name="mac-dmg">
         <exec executable="appdmg">
             <arg value="mac-appdmg-spec.json"/>
             <arg value="Logisim-Evolution 4.0.0 HC.dmg"/>
         </exec>
     </target>
+    -->
 
     <target name="gray-clean">
         <delete file="logisim-gray.jar"/>

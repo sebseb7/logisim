@@ -46,6 +46,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.KeyStroke;
 
+import com.cburch.logisim.Main;
+
 public class WindowMenu extends JMenu {
   private class MyListener implements LocaleListener, ActionListener {
     public void actionPerformed(ActionEvent e) {
@@ -84,8 +86,7 @@ public class WindowMenu extends JMenu {
       WindowMenu.this.setText(S.get("windowMenu"));
       minimize.setText(S.get("windowMinimizeItem"));
       close.setText(S.get("windowCloseItem"));
-      zoom.setText(MacCompatibility.isQuitAutomaticallyPresent()
-          ? S.get("windowZoomItemMac") : S.get("windowZoomItem"));
+      zoom.setText(Main.MacOS ? S.get("windowZoomItemMac") : S.get("windowZoomItem"));
     }
   }
 

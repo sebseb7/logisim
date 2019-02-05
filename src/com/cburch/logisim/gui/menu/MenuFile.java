@@ -41,12 +41,12 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 
+import com.cburch.logisim.Main;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.gui.prefs.PreferencesFrame;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;
 import com.cburch.logisim.proj.Projects;
-import com.cburch.logisim.util.MacCompatibility;
 
 class MenuFile extends Menu implements ActionListener {
   private static final long serialVersionUID = 1L;
@@ -89,11 +89,11 @@ class MenuFile extends Menu implements ActionListener {
     addSeparator();
     add(exportImage);
     add(print);
-    if (!MacCompatibility.isPreferencesAutomaticallyPresent()) {
+    if (!Main.PreferencesMenuAutomaticallyPresent) {
       addSeparator();
       add(prefs);
     }
-    if (!MacCompatibility.isQuitAutomaticallyPresent()) {
+    if (!Main.QuitMenuAutomaticallyPresent) {
       addSeparator();
       add(quit);
     }
@@ -152,10 +152,11 @@ class MenuFile extends Menu implements ActionListener {
       if (result != 2) {
         // Get the list of open projects
         List<Project> pl = Projects.getOpenProjects();
-        if (pl.size() == 1) { //  && !Main.MacOS ?
+        if (pl.size() <= 1 && !Main.HasWindowlessMenubar) {
           // Since we have a single window open, before closing the current
           // project open a new empty one, to avoid having no remaining windows.
-          // todo: maybe don't do this on mac?
+          // This isn't needed if (like on MacOS) there is a menubar even when
+          // there are no windows.
           ProjectActions.doNew(frame);
         }
 

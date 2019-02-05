@@ -37,14 +37,13 @@ import java.util.Locale;
 
 import javax.help.HelpSet;
 import javax.help.JHelp;
-import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
+import com.cburch.logisim.Main;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.gui.start.About;
-import com.cburch.logisim.util.MacCompatibility;
 
 class MenuHelp extends JMenu implements ActionListener {
 
@@ -70,7 +69,7 @@ class MenuHelp extends JMenu implements ActionListener {
     add(tutorial);
     add(guide);
     add(library);
-    if (!MacCompatibility.isAboutAutomaticallyPresent()) {
+    if (!Main.AboutMenuAutomaticallyPresent) {
       addSeparator();
       add(about);
     }

@@ -143,6 +143,9 @@ public class Startup {
       // Initialize graphics acceleration if appropriate
       AppPreferences.handleGraphicsAcceleration();
     }
+    
+    String osname = System.getProperty("os.name", "generic").toLowerCase();
+    Main.MacOS = osname.startsWith("mac") || osname.startsWith("darwin");
 
     Startup ret = new Startup();
     if (!Main.headless)
@@ -339,7 +342,11 @@ public class Startup {
   }
 
   Desktop desktop;
+
   private void registerDesktop() {
+
+    Main.AlwaysUseScrollbars = Main.MacOS;
+
     try {
       if (!Desktop.isDesktopSupported()) {
         System.out.println("Note [0]: no desktop support");
@@ -352,10 +359,12 @@ public class Startup {
       else
         System.out.println("Note [1]: no support to prevent sudden termination");
 
-      if (desktop.isSupported(Desktop.Action.APP_QUIT_STRATEGY))
+      if (desktop.isSupported(Desktop.Action.APP_QUIT_STRATEGY)) {
         desktop.setQuitStrategy(QuitStrategy.CLOSE_ALL_WINDOWS);
-      else
+        Main.QuitMenuAutomaticallyPresent = true;
+      } else {
         System.out.println("Note [2]: no support to control quit strategy");
+      }
 
       // setQuitHandler(QuitHandler quitHandler); ... ProjectActions.doQuit()
 
@@ -375,15 +384,19 @@ public class Startup {
       else
         System.out.println("Note [4]: no support for desktop file printing");
 
-      if (desktop.isSupported(Desktop.Action.APP_PREFERENCES))
+      if (desktop.isSupported(Desktop.Action.APP_PREFERENCES)) {
         desktop.setPreferencesHandler(e -> PreferencesFrame.showPreferences());
-      else
+        Main.PreferencesMenuAutomaticallyPresent = true;
+      } else {
         System.out.println("Note [5]: no support for desktop preferences");
+      }
 
-      if (desktop.isSupported(Desktop.Action.APP_ABOUT))
+      if (desktop.isSupported(Desktop.Action.APP_ABOUT)) {
         desktop.setAboutHandler(e -> About.showAboutDialog(null));
-      else
+        Main.AboutMenuAutomaticallyPresent = true;
+      } else {
         System.out.println("Note [6]: no support for desktop about screen");
+      }
 
     } catch (Exception e) {
       e.printStackTrace();
@@ -526,14 +539,15 @@ public class Startup {
     if (showSplash)
       monitor.setProgress(SplashScreen.GUI_INIT);
     WindowManagers.initialize();
-	if (desktop != null
-      && desktop.isSupported(Desktop.Action.APP_MENU_BAR)) {
+    if (desktop != null
+        && desktop.isSupported(Desktop.Action.APP_MENU_BAR)) {
       LogisimMenuBar menubar = new LogisimMenuBar(null, null, null, null);
-	  try {
+      try {
         desktop.setDefaultMenuBar(menubar);
-	  } catch (Exception e) {
-		  e.printStackTrace();
-	  }
+        Main.HasWindowlessMenubar = true;
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
     } else {
       System.out.println("Note [7]: no desktop menubar support");
       new LogisimMenuBar(null, null, null, null);
