@@ -44,6 +44,7 @@ public class ComparatorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_TWOSCOMPLEMENT = -2;
 
+  @Override
   public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
 
   @Override

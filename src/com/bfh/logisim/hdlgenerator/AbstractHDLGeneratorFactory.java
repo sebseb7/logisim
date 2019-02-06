@@ -1191,8 +1191,9 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		return PortMap;
 	}
 
-	public SortedMap<String, Integer> GetRegList(AttributeSet attrs,
-			String HDLType) {
+	public void registers(SortedMap<String, Integer> list, AttributeSet attrs, String HDLType) { }
+
+	public SortedMap<String, Integer> GetRegList(AttributeSet attrs, String HDLType) {
 		/*
 		 * This method returns a map list of all the registers/flipflops used in
 		 * the black-box. The String Parameter represents the Name, and the
@@ -1203,6 +1204,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		 * both GetRegList or GetWireList
 		 */
 		SortedMap<String, Integer> Regs = new TreeMap<String, Integer>();
+    registers(Regs, attrs, HDLType);
 		return Regs;
 	}
 

@@ -29,188 +29,150 @@
  */
 package com.cburch.logisim.std.plexers;
 
-import java.util.ArrayList;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 
-public class PriorityEncoderHDLGeneratorFactory
-  extends AbstractHDLGeneratorFactory {
+public class PriorityEncoderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  private static final String NrOfSelectBitsStr = "NrOfSelectBits";
-  private static final int NrOfSelectBitsId = -1;
-  private static final String NrOfInputBitsStr = "NrOfInputBits";
-  private static final int NrOfInputBitsId = -2;
+  protected final static int GENERIC_PARAM_WIDTH_SEL = -1;
+  protected final static int GENERIC_PARAM_WIDTH_IN = -2;
 
   @Override
-  public String getComponentStringIdentifier() {
-    return "PRIENC";
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
+
+  @Override
+  public String getComponentStringIdentifier() { return "PRIENC"; }
+
+  @Override
+  public String GetSubDir() { return "plexers"; }
+
+  @Override
+  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("Enable", 1);
+    list.put("In", GENERIC_PARAM_WIDTH_IN);
   }
 
   @Override
-  public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
-    Inputs.put("enable", 1);
-    Inputs.put("input_vector", NrOfInputBitsId);
-    return Inputs;
+  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("Sel", 1);
+    list.put("EnableOut", 1);
+    list.put("Address", GENERIC_PARAM_WIDTH_SEL);
   }
 
   @Override
-  public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
-      AttributeSet attrs, FPGAReport Reporter, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    if (HDLType.equals(Settings.VHDL)) {
-      Contents.add("   -- Output Signals");
-      Contents.add("   GroupSelect <= NOT(s_in_is_zero) AND enable;");
-      Contents.add("   EnableOut   <= s_in_is_zero AND enable;");
-      Contents.add("   Address     <= (OTHERS => '0') WHEN enable = '0' ELSE");
-      Contents.add("                  s_address(" + NrOfSelectBitsStr
-          + "-1 DOWNTO 0);");
-      Contents.add("");
-      Contents.add("   -- Control Signals ");
-      Contents.add("   s_in_is_zero  <= '1' WHEN input_vector = std_logic_vector(to_unsigned(0,"
-          + NrOfInputBitsStr + ")) ELSE '0';");
-      Contents.add("");
-      Contents.add("   -- Processes");
-      Contents.add("   make_addr : PROCESS( input_vector , v_select_1_vector , v_select_2_vector , v_select_3_vector , v_select_4_vector )");
-      Contents.add("   BEGIN");
-      Contents.add("      v_select_1_vector(32 DOWNTO "
-          + NrOfInputBitsStr + ")  <= (OTHERS => '0');");
-      Contents.add("      v_select_1_vector(" + NrOfInputBitsStr
-          + "-1 DOWNTO 0) <= input_vector;");
-      Contents.add("      IF (v_select_1_vector(31 DOWNTO 16) = X\"0000\") THEN s_address(4)      <= '0';");
-      Contents.add("                                                          v_select_2_vector <= v_select_1_vector(15 DOWNTO 0);");
-      Contents.add("                                                     ELSE s_address(4)      <= '1';");
-      Contents.add("                                                          v_select_2_vector <= v_select_1_vector(31 DOWNTO 16);");
-      Contents.add("      END IF;");
-      Contents.add("      IF (v_select_2_vector(15 DOWNTO 8) = X\"00\") THEN s_address(3)      <= '0';");
-      Contents.add("                                                       v_select_3_vector <= v_select_2_vector(7 DOWNTO 0);");
-      Contents.add("                                                  ELSE s_address(3)      <= '1';");
-      Contents.add("                                                       v_select_3_vector <= v_select_2_vector(15 DOWNTO 8);");
-      Contents.add("      END IF;");
-      Contents.add("      IF (v_select_3_vector(7 DOWNTO 4) = X\"0\") THEN s_address(2)      <= '0';");
-      Contents.add("                                                     v_select_4_vector <= v_select_3_vector(3 DOWNTO 0);");
-      Contents.add("                                                ELSE s_address(2)      <= '1';");
-      Contents.add("                                                     v_select_4_vector <= v_select_3_vector(7 DOWNTO 4);");
-      Contents.add("      END IF;");
-      Contents.add("      IF (v_select_4_vector(3 DOWNTO 2) = \"00\") THEN s_address(1) <= '0';");
-      Contents.add("                                                     s_address(0) <= v_select_4_vector(1);");
-      Contents.add("                                                ELSE s_address(1) <= '1';");
-      Contents.add("                                                     s_address(0) <= v_select_4_vector(3);");
-      Contents.add("      END IF;");
-      Contents.add("   END PROCESS make_addr;");
+	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
+    list.put(GENERIC_PARAM_WIDTH_IN, "SelWidth");
+    list.put(GENERIC_PARAM_WIDTH_SEL, "InWidth");
+  }
+
+  @Override
+  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    int ws = selWidth(attrs);
+    list.put("SelWidth", ws);
+    list.put("InWidth", 1 << ws);
+  }
+
+  @Override
+  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    int ws = selWidth(attrs);
+    int n = (1 << ws);
+    if (lang.equals("VHDL")) {
+      for (int i = n - 1; i >= 0; i--)
+        list.putAll(GetNetMap("In("+i+")", true, info, i, err, lang, nets));
     } else {
-      Contents.add("   assign GroupSelect = ~s_in_is_zero&enable;");
-      Contents.add("   assign EnableOut = s_in_is_zero&enable;");
-      Contents.add("   assign Address = (~enable) ? 0 : s_address["
-          + NrOfSelectBitsStr + "-1:0];");
-      Contents.add("   assign s_in_is_zero = (input_vector == 0) ? 1'b1 : 1'b0;");
-      Contents.add("");
-      Contents.add("   assign v_select_1_vector[32:" + NrOfInputBitsStr
-          + "] = 0;");
-      Contents.add("   assign v_select_1_vector[" + NrOfInputBitsStr
-          + "-1:0] = input_vector;");
-      Contents.add("   assign s_address[4] = (v_select_1_vector[31:16] == 0) ? 1'b0 : 1'b1;");
-      Contents.add("   assign v_select_2_vector = (v_select_1_vector[31:16] == 0) ? v_select_1_vector[15:0] : v_select_1_vector[31:16];");
-      Contents.add("   assign s_address[3] = (v_select_2_vector[15:8] == 0) ? 1'b0 : 1'b1;");
-      Contents.add("   assign v_select_3_vector = (v_select_2_vector[15:8] == 0) ? v_select_2_vector[7:0] : v_select_2_vector[15:8];");
-      Contents.add("   assign s_address[2] = (v_select_3_vector[7:4] == 0) ? 1'b0 : 1'b1;");
-      Contents.add("   assign v_select_4_vector = (v_select_3_vector[7:4] == 0) ? v_select_3_vector[3:0] : v_select_2_vector[7:4];");
-      Contents.add("   assign s_address[1] = (v_select_4_vector[3:2] == 0) ? 1'b0 : 1'b1;");
-      Contents.add("   assign s_address[0] = (v_select_4_vector[3:2] == 0) ? v_select_4_vector[1] : v_select_4_vector[3];");
+      String[] p = new String[n];
+      for (int i = n - 1; i >= 0; i--)
+        p[n-i-1] = GetNetName(info, i, true, lang, nets);
+      list.put("In", String.join(", ", p));
     }
-    return Contents;
+    list.putAll(GetNetMap("Enable", false, info, n + PriorityEncoder.EN_IN, err, lang, nets));
+    list.putAll(GetNetMap("Sel", true, info, n + PriorityEncoder.GS, err, lang, nets));
+    list.putAll(GetNetMap("EnableOut", true, info, n + PriorityEncoder.EN_OUT, err, lang, nets));
+    list.putAll(GetNetMap("Address", true, info, n + PriorityEncoder.OUT, err, lang, nets));
   }
 
   @Override
-  public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-    Outputs.put("GroupSelect", 1);
-    Outputs.put("EnableOut", 1);
-    Outputs.put("Address", NrOfSelectBitsId);
-    return Outputs;
+  public void wires(SortedMap<String, Integer> list, AttributeSet attrs, Netlist nets) {
+    list.put("s_in_is_zero", 1);
+    list.put("s_addr", 5);
+    list.put("v_sel_1", 33);
+    list.put("v_sel_2", 16);
+    list.put("v_sel_3", 8);
+    list.put("v_sel_4", 4);
   }
 
   @Override
-  public SortedMap<Integer, String> GetParameterList(AttributeSet attrs) {
-    SortedMap<Integer, String> Parameters = new TreeMap<Integer, String>();
-    Parameters.put(NrOfSelectBitsId, NrOfSelectBitsStr);
-    Parameters.put(NrOfInputBitsId, NrOfInputBitsStr);
-    return Parameters;
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetParameterMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter) {
-    SortedMap<String, Integer> ParameterMap = new TreeMap<String, Integer>();
-    int nr_of_bits = ComponentInfo.NrOfEnds() - 4;
-    int nr_of_select_bits = ComponentInfo.GetComponent()
-        .getEnd(nr_of_bits + PriorityEncoder.OUT).getWidth().getWidth();
-    ParameterMap.put(NrOfSelectBitsStr, nr_of_select_bits);
-    ParameterMap.put(NrOfInputBitsStr, 1 << nr_of_select_bits);
-    return ParameterMap;
-  }
-
-  @Override
-  public SortedMap<String, String> GetPortMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-    SortedMap<String, String> PortMap = new TreeMap<String, String>();
-    int nr_of_bits = ComponentInfo.NrOfEnds() - 4;
-    PortMap.putAll(GetNetMap("enable", false, ComponentInfo, nr_of_bits
-          + PriorityEncoder.EN_IN, Reporter, HDLType, Nets));
-    StringBuffer VectorList = new StringBuffer();
-    for (int i = nr_of_bits - 1; i >= 0; i--) {
-      if (HDLType.equals(Settings.VHDL))
-        PortMap.putAll(GetNetMap("input_vector(" + Integer.toString(i)
-              + ")", true, ComponentInfo, i, Reporter, HDLType, Nets));
-      else {
-        if (VectorList.length() > 0)
-          VectorList.append(",");
-        VectorList.append(GetNetName(ComponentInfo, i, true, HDLType,
-              Nets));
-      }
+  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
+    out.indent();
+    if (out.isVhdl) {
+      out.stmt("Sel       <= Enable AND NOT(s_in_is_zero);");
+      out.stmt("EnableOut <= Enable AND s_in_is_zero;");
+      out.stmt("Address   <= (others => '0') WHEN Enable = '0' ELSE");
+      out.stmt("             s_addr(SelWidth-1 DOWNTO 0);");
+      out.stmt("");
+      out.stmt("s_in_is_zero <= '1' WHEN In = std_logic(to_unsigned(0, InWidth)) ELSE '0';");
+      out.stmt("");
+      out.stmt("make_addr : PROCESS( In, v_sel_1, v_sel_2, v_sel_3, v_sel_4 )");
+      out.stmt("BEGIN");
+      out.stmt("  v_sel_1(32 DOWNTO InWidth)  <= (others => '0');");
+      out.stmt("  v_sel_1(InWidth-1 DOWNTO 0) <= In;");
+      out.stmt("  IF (v_sel_1(31 DOWNTO 16) = X\"0000\") THEN");
+      out.stmt("    s_addr(4) <= '0';");
+      out.stmt("    v_sel_2   <= v_sel_1(15 DOWNTO 0);");
+      out.stmt("  ELSE");
+      out.stmt("    s_addr(4) <= '1';");
+      out.stmt("    v_sel_2   <= v_sel_1(31 DOWNTO 16);");
+      out.stmt("  END IF;");
+      out.stmt("  IF (v_sel_2(15 DOWNTO 8) = X\"00\") THEN");
+      out.stmt("    s_addr(3) <= '0';");
+      out.stmt("    v_sel_3   <= v_sel_2(7 DOWNTO 0);");
+      out.stmt("  ELSE");
+      out.stmt("    s_addr(3) <= '1';");
+      out.stmt("    v_sel_3   <= v_sel_2(15 DOWNTO 8);");
+      out.stmt("  END IF;");
+      out.stmt("  IF (v_sel_3(7 DOWNTO 4) = X\"0\") THEN");
+      out.stmt("    s_addr(2) <= '0';");
+      out.stmt("    v_sel_4   <= v_sel_3(3 DOWNTO 0);");
+      out.stmt("  ELSE");
+      out.stmt("    s_addr(2) <= '1';");
+      out.stmt("    v_sel_4   <= v_sel_3(7 DOWNTO 4);");
+      out.stmt("  END IF;");
+      out.stmt("  IF (v_sel_4(3 DOWNTO 2) = \"00\") THEN");
+      out.stmt("     s_addr(1) <= '0';");
+      out.stmt("     s_addr(0) <= v_sel_4(1);");
+      out.stmt("  ELSE");
+      out.stmt("     s_addr(1) <= '1';");
+      out.stmt("     s_addr(0) <= v_sel_4(3);");
+      out.stmt("  END IF;");
+      out.stmt("END PROCESS make_addr;");
+    } else {
+      out.stmt("assign Sel       = Enable & ~s_in_is_zero;");
+      out.stmt("assign EnableOut = Enable & s_in_is_zero;");
+      out.stmt("assign Address   = (~Enable) ? 0 : s_addr[SelWidth-1:0];");
+      out.stmt("assign s_in_is_zero = (In == 0) ? 1'b1 : 1'b0;");
+      out.stmt("");
+      out.stmt("assign v_sel_1[32:InWidth] = 0;");
+      out.stmt("assign v_sel_1[InWidth-1:0] = In;");
+      out.stmt("assign s_addr[4] = (v_sel_1[31:16] == 0) ? 1'b0 : 1'b1;");
+      out.stmt("assign v_sel_2 = (v_sel_1[31:16] == 0) ? v_sel_1[15:0] : v_sel_1[31:16];");
+      out.stmt("assign s_addr[3] = (v_sel_2[15:8] == 0) ? 1'b0 : 1'b1;");
+      out.stmt("assign v_sel_3 = (v_sel_2[15:8] == 0) ? v_sel_2[7:0] : v_sel_2[15:8];");
+      out.stmt("assign s_addr[2] = (v_sel_3[7:4] == 0) ? 1'b0 : 1'b1;");
+      out.stmt("assign v_sel_4 = (v_sel_3[7:4] == 0) ? v_sel_3[3:0] : v_sel_2[7:4];");
+      out.stmt("assign s_addr[1] = (v_sel_4[3:2] == 0) ? 1'b0 : 1'b1;");
+      out.stmt("assign s_addr[0] = (v_sel_4[3:2] == 0) ? v_sel_4[1] : v_sel_4[3];");
     }
-    if (HDLType.equals(Settings.VERILOG))
-      PortMap.put("input_vector", VectorList.toString());
-    PortMap.putAll(GetNetMap("GroupSelect", true, ComponentInfo, nr_of_bits
-          + PriorityEncoder.GS, Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("EnableOut", true, ComponentInfo, nr_of_bits
-          + PriorityEncoder.EN_OUT, Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("Address", true, ComponentInfo, nr_of_bits
-          + PriorityEncoder.OUT, Reporter, HDLType, Nets));
-    return PortMap;
   }
 
-  @Override
-  public String GetSubDir() {
-    return "plexers";
+  protected int selWidth(AttributeSet attrs) {
+    return attrs.getValue(Plexers.ATTR_SELECT).getWidth();
   }
-
-  @Override
-  public SortedMap<String, Integer> GetWireList(AttributeSet attrs,
-      Netlist Nets) {
-    SortedMap<String, Integer> Wires = new TreeMap<String, Integer>();
-    Wires.put("s_in_is_zero", 1);
-    Wires.put("s_address", 5);
-    Wires.put("v_select_1_vector", 33);
-    Wires.put("v_select_2_vector", 16);
-    Wires.put("v_select_3_vector", 8);
-    Wires.put("v_select_4_vector", 4);
-    return Wires;
-  }
-
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-      char Vendor) {
-    return true;
-  }
-
 }

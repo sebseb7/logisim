@@ -43,6 +43,7 @@ public class NegatorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
 
+  @Override
   public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
 
   @Override

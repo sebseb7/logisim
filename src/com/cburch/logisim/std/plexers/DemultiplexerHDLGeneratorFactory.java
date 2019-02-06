@@ -29,143 +29,104 @@
  */
 package com.cburch.logisim.std.plexers;
 
-import java.util.ArrayList;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
 
-public class DemultiplexerHDLGeneratorFactory
-  extends AbstractHDLGeneratorFactory {
+public class DemultiplexerHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  private static final String NrOfBitsStr = "NrOfBits";
-  private static final int NrOfBitsId = -1;
+  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
 
   @Override
-  public String getComponentStringIdentifier() {
-    return "DEMUX";
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
+
+  @Override
+  public String getComponentStringIdentifier() { return "DEMUX"; }
+
+  @Override
+  public String GetSubDir() { return "plexers"; }
+
+  @Override
+  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
+    list.put("DataIn", w);
+    list.put("Enable", 1);
+    list.put("Sel", selWidth(attrs));
   }
 
   @Override
-  public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
-    int NrOfBits = (attrs.getValue(StdAttr.WIDTH).getWidth() == 1) ? 1
-        : NrOfBitsId;
-    int nr_of_select_bits = attrs.getValue(Plexers.ATTR_SELECT).getWidth();
-    Inputs.put("DemuxIn", NrOfBits);
-    Inputs.put("Enable", 1);
-    Inputs.put("Sel", nr_of_select_bits);
-    return Inputs;
+  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
+    int ws = selWidth(attrs);
+    for (int i = 0; i < (1 << ws); i++)
+      list.put("Out_"+i, w);
   }
 
   @Override
-  public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
-      AttributeSet attrs, FPGAReport Reporter, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    String Space = "  ";
-    int nr_of_select_bits = attrs.getValue(Plexers.ATTR_SELECT).getWidth();
-    int num_outputs = (1 << nr_of_select_bits);
-    for (int i = 0; i < num_outputs; i++) {
-      if (i == 10) {
-        Space = " ";
-      }
-      String binValue = IntToBin(i, nr_of_select_bits, HDLType);
-      if (HDLType.equals(Settings.VHDL)) {
-        Contents.add("   DemuxOut_" + i + Space
-            + "<= DemuxIn WHEN sel = " + binValue + " AND");
-        if (attrs.getValue(StdAttr.WIDTH).getWidth() > 1) {
-          Contents.add("                               Enable = '1' ELSE (OTHERS => '0');");
+	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
+    int w = width(attrs);
+    if (w > 1)
+      list.put(GENERIC_PARAM_BUSWIDTH, "BusWidth");
+  }
+
+  @Override
+  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    int w = width(attrs);
+    if (w > 1)
+      list.put("BusWidth", w);
+  }
+
+  @Override
+  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
+    int ws = selWidth(attrs);
+    int n = (1 << ws);
+    for (int i = 0; i < n; i++)
+      list.putAll(GetNetMap("Out_"+i, true, info, i, err, lang, nets));
+    list.putAll(GetNetMap("Sel", true, info, n, err, lang, nets));
+    if (attrs.getValue(Plexers.ATTR_ENABLE)) {
+      list.putAll(GetNetMap("Enable", false, info, n + 1, err, lang, nets));
+    } else {
+      list.put("Enable", lang.equals("VHDL") ? "'1'" : "1'b1");
+      n--;
+    }
+    list.putAll(GetNetMap("DataIn", true, info, n+2, err, lang, nets));
+  }
+
+  @Override
+  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
+    out.indent();
+    int w = width(attrs);
+    int ws = selWidth(attrs);
+    int n = (1 << ws);
+    for (int i = 0; i < n; i++) {
+      String s = IntToBin(i, ws, out.isVhdl ? "VHDL" : "Verilog");
+      if (out.isVhdl) {
+        if (w == 1) {
+          out.stmt("Out_%d <= DataIn WHEN Sel = %d AND Enable = '1' ELSE '0';", i, s);
         } else {
-          Contents.add("                               Enable = '1' ELSE '0';");
+          out.stmt("Out_%d <= DataIn WHEN Sel = %d AND Enable = '1' ELSE (others => '0');", i, s);
         }
       } else {
-        Contents.add("   assign DemuxOut_" + Integer.toString(i)
-            + Space + " = (Enable&(sel == " + binValue
-            + " )) ? DemuxIn : 0;");
+        out.stmt("assign Out_%d = (Enable & (Sel == %d)) ? DataIn : 0;", i, s);
       }
     }
-    return Contents;
   }
 
-  @Override
-  public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-    int NrOfBits = (attrs.getValue(StdAttr.WIDTH).getWidth() == 1) ? 1
-        : NrOfBitsId;
-    int nr_of_select_bits = attrs.getValue(Plexers.ATTR_SELECT).getWidth();
-    for (int i = 0; i < (1 << nr_of_select_bits); i++) {
-      Outputs.put("DemuxOut_" + Integer.toString(i), NrOfBits);
-    }
-    return Outputs;
+
+  protected int selWidth(AttributeSet attrs) {
+    return attrs.getValue(Plexers.ATTR_SELECT).getWidth();
   }
 
-  @Override
-  public SortedMap<Integer, String> GetParameterList(AttributeSet attrs) {
-    SortedMap<Integer, String> Parameters = new TreeMap<Integer, String>();
-    int NrOfBits = attrs.getValue(StdAttr.WIDTH).getWidth();
-    if (NrOfBits > 1)
-      Parameters.put(NrOfBitsId, NrOfBitsStr);
-    return Parameters;
+  protected int width(AttributeSet attrs) {
+    return attrs.getValue(StdAttr.WIDTH).getWidth();
   }
-
-  @Override
-  public SortedMap<String, Integer> GetParameterMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter) {
-    SortedMap<String, Integer> ParameterMap = new TreeMap<String, Integer>();
-    int NrOfBits = ComponentInfo.GetComponent().getAttributeSet()
-        .getValue(StdAttr.WIDTH).getWidth();
-    if (NrOfBits > 1)
-      ParameterMap.put(NrOfBitsStr, NrOfBits);
-    return ParameterMap;
-  }
-
-  @Override
-  public SortedMap<String, String> GetPortMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-    SortedMap<String, String> PortMap = new TreeMap<String, String>();
-    int nr_of_select_bits = ComponentInfo.GetComponent().getAttributeSet()
-        .getValue(Plexers.ATTR_SELECT).getWidth();
-    int select_input_index = (1 << nr_of_select_bits);
-    // begin with connecting all outputs of demultiplexer
-    for (int i = 0; i < select_input_index; i++)
-      PortMap.putAll(GetNetMap("DemuxOut_" + Integer.toString(i), true,
-            ComponentInfo, i, Reporter, HDLType, Nets));
-    // now select..
-    PortMap.putAll(GetNetMap("Sel", true, ComponentInfo,
-          select_input_index, Reporter, HDLType, Nets));
-    // now connect enable input...
-    if (ComponentInfo.GetComponent().getAttributeSet()
-        .getValue(Plexers.ATTR_ENABLE).booleanValue()) {
-      PortMap.putAll(GetNetMap("Enable", false, ComponentInfo,
-            select_input_index + 1, Reporter, HDLType, Nets));
-    } else {
-      String SetBit = (HDLType.equals(Settings.VHDL)) ? "'1'" : "1'b1";
-      PortMap.put("Enable", SetBit);
-      select_input_index--; // decrement pin index because enable doesn't exist...
-    }
-    // finally input
-    PortMap.putAll(GetNetMap("DemuxIn", true, ComponentInfo,
-          select_input_index + 2, Reporter, HDLType, Nets));
-    return PortMap;
-  }
-
-  @Override
-  public String GetSubDir() {
-    return "plexers";
-  }
-
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-      char Vendor) {
-    return true;
-  }
-
 }
