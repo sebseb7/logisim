@@ -35,93 +35,63 @@ import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 
-public class AbstractConstantHDLGeneratorFactory
+public abstract class AbstractConstantHDLGeneratorFactory
   extends AbstractHDLGeneratorFactory {
 
-  public int GetConstant(AttributeSet attrs) {
-    return 0;
-  }
-
-  private String GetConvertOperator(int value, int nr_of_bits, String HDLType) {
-    if (HDLType.equals(Settings.VHDL)) {
-      if (nr_of_bits == 1)
-        return "'"+Integer.toString(value)+"'";
-      return "std_logic_vector(to_unsigned(" + Integer.toString(value) + ","
-          + Integer.toString(nr_of_bits) + "))";
-    } else {
-      return Integer.toString(nr_of_bits) + "'d"
-          + Integer.toString(value);
-    }
-  }
+  @Override
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
 
   @Override
-  public ArrayList<String> GetInlinedCode(Netlist Nets, Long ComponentId,
-      NetlistComponent ComponentInfo, FPGAReport Reporter,
-      String CircuitName, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    String Preamble = (HDLType.equals(Settings.VHDL)) ? "" : "assign ";
-    String AssignOperator = (HDLType.equals(Settings.VHDL)) ? " <= "
-        : " = ";
-    int NrOfBits = ComponentInfo.GetComponent().getEnd(0).getWidth()
-        .getWidth();
-    if (ComponentInfo.EndIsConnected(0)) {
-      int ConstantValue = GetConstant(ComponentInfo.GetComponent()
-          .getAttributeSet());
-      if (ComponentInfo.GetComponent().getEnd(0).getWidth().getWidth() == 1) {
-        /* Single Port net */
-        Contents.add("   " + Preamble
-            + GetNetName(ComponentInfo, 0, true, HDLType, Nets)
-            + AssignOperator
-            + GetConvertOperator(ConstantValue, 1, HDLType) + ";");
-        Contents.add("");
-      } else {
-        if (Nets.IsContinuesBus(ComponentInfo, 0)) {
-          /* easy case */
-          Contents.add("   "
-              + Preamble
-              + GetBusNameContinues(ComponentInfo, 0, HDLType,
-                Nets)
-              + AssignOperator
-              + GetConvertOperator(ConstantValue, NrOfBits,
-                HDLType) + ";");
-          Contents.add("");
-        } else {
-          /* we have to enumerate all bits */
-          int mask = 1;
-          String ConstValue = (HDLType.equals(Settings.VHDL)) ? "'0'"
-              : "1'b0";
-          for (byte bit = 0; bit < NrOfBits; bit++) {
-            if ((mask & ConstantValue) != 0)
-              ConstValue = (HDLType.equals(Settings.VHDL)) ? "'1'"
-                  : "1'b1";
-            else
-              ConstValue = (HDLType.equals(Settings.VHDL)) ? "'0'"
-                  : "1'b0";
-            mask <<= 1;
-            Contents.add("   "
-                + Preamble
-                + GetBusEntryName(ComponentInfo, 0, true, bit,
-                  HDLType, Nets) + AssignOperator
-                + ConstValue + ";");
-          }
-          Contents.add("");
+  public boolean IsOnlyInlined(String lang) { return true; }
+
+  @Override
+  public ArrayList<String> GetInlinedCode(Netlist nets, Long id,
+      NetlistComponent info, FPGAReport err, String circName, String lang) {
+
+    Hdl out = new Hdl(lang, err);
+    out.indent();
+
+    if (!info.EndIsConnected(0))
+      return out;
+    
+    int w = info.GetComponent().getEnd(0).getWidth().getWidth();
+    int val = getConstant(info.GetComponent().getAttributeSet());
+
+    if (lang.equals("VHDL")) {
+      if (w == 1) { // easy case: single bit
+        String name = GetNetName(info, 0, true, lang, nets);
+        out.stmt("%s <= '%d';", name, val);
+      } else if (nets.IsContinuesBus(info, 0)) { // another easy case
+        String name = GetBusNameContinues(info, 0, lang, nets);
+        out.stmt("%s <= std_logic_vector(to_unsigned(%d,%d));", name, val, w);
+      } else { // worst case: we have to enumerate all bits
+        for (byte bit = 0; bit < w; bit++) {
+          String name = GetBusEntryName(info, 0, true, bit, lang, nets);
+          out.stmt("%s <= '%d';", name, (val>>>bit)&1);
+        }
+      }
+    } else {
+      if (w == 1) { // easy case: single bit
+        String name = GetNetName(info, 0, true, lang, nets);
+        out.stmt("%s <= 1'b%d';", name, val);
+      } else if (nets.IsContinuesBus(info, 0)) { // another easy case
+        String name = GetBusNameContinues(info, 0, lang, nets);
+        out.stmt("%s = %d'd%d;", name, w, val);
+      } else { // worst case: we have to enumerate all bits
+        for (byte bit = 0; bit < w; bit++) {
+          String name = GetBusEntryName(info, 0, true, bit, lang, nets);
+          out.stmt("%s = 1'b%d;", name, (val>>>bit)&1);
         }
       }
     }
-    return Contents;
+    
+    out.stmt("");
+    return out;
   }
 
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-      char Vendor) {
-    return true;
-  }
+  public abstract int getConstant(AttributeSet attrs);
 
-  @Override
-  public boolean IsOnlyInlined(String HDLType) {
-    return true;
-  }
 }

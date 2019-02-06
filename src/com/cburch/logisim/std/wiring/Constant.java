@@ -121,14 +121,6 @@ public class Constant extends InstanceFactory {
     }
   }
 
-  private class ConstantHDLGeneratorFactory
-    extends AbstractConstantHDLGeneratorFactory {
-    @Override
-    public int GetConstant(AttributeSet attrs) {
-      return attrs.getValue(Constant.ATTR_VALUE);
-    }
-  }
-
   public static final Attribute<Integer> ATTR_VALUE = Attributes
       .forHexInteger("value", S.getter("constantValueAttr"));
 
@@ -190,7 +182,11 @@ public class Constant extends InstanceFactory {
   public boolean HDLSupportedComponent(String HDLIdentifier,
       AttributeSet attrs, char Vendor) {
     if (MyHDLGenerator == null)
-      MyHDLGenerator = new ConstantHDLGeneratorFactory();
+      MyHDLGenerator = new AbstractConstantHDLGeneratorFactory() {
+        public int getConstant(AttributeSet attrs) {
+          return attrs.getValue(Constant.ATTR_VALUE);
+        }
+      };
     return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
   }
 

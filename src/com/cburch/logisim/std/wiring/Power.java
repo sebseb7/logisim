@@ -55,18 +55,6 @@ import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 
 public class Power extends InstanceFactory {
-  private class PowerHDLGeneratorFactory
-    extends AbstractConstantHDLGeneratorFactory {
-    @Override
-    public int GetConstant(AttributeSet attrs) {
-      int ConstantValue = 0;
-      for (int bit = 0; bit < attrs.getValue(StdAttr.WIDTH).getWidth(); bit++) {
-        ConstantValue <<= 1;
-        ConstantValue |= 1;
-      }
-      return ConstantValue;
-    }
-  }
 
   public Power() {
     super("Power", S.getter("powerComponent"));
@@ -116,10 +104,14 @@ public class Power extends InstanceFactory {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
+  public boolean HDLSupportedComponent(String HDLIdentifier, AttributeSet attrs, char Vendor) {
     if (MyHDLGenerator == null)
-      MyHDLGenerator = new PowerHDLGeneratorFactory();
+      MyHDLGenerator = new AbstractConstantHDLGeneratorFactory() {
+        public int getConstant(AttributeSet attrs) {
+          int w = attrs.getValue(StdAttr.WIDTH).getWidth();
+          return (1 << w) - 1; // vector of ones
+        }
+      };
     return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
   }
 

@@ -108,7 +108,11 @@ public class Ground extends InstanceFactory {
   public boolean HDLSupportedComponent(String HDLIdentifier,
       AttributeSet attrs, char Vendor) {
     if (MyHDLGenerator == null)
-      MyHDLGenerator = new AbstractConstantHDLGeneratorFactory();
+      MyHDLGenerator = new AbstractConstantHDLGeneratorFactory() {
+        public int getConstant(AttributeSet attrs) {
+          return attrs.getValue(Constant.ATTR_VALUE);
+        }
+      };
     return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
   }
 

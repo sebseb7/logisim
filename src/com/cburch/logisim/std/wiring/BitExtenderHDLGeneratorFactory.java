@@ -35,104 +35,71 @@ import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 
 public class BitExtenderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   @Override
-  public ArrayList<String> GetInlinedCode(Netlist Nets, Long ComponentId,
-      NetlistComponent ComponentInfo, FPGAReport Reporter,
-      String CircuitName, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    String Preamble = (HDLType.equals(Settings.VHDL)) ? "" : "assign ";
-    String AssignOperator = (HDLType.equals(Settings.VHDL)) ? " <= "
-        : " = ";
-    String ZeroBit = (HDLType.equals(Settings.VHDL)) ? "'0'" : "1'b0";
-    String SetBit = (HDLType.equals(Settings.VHDL)) ? "'1'" : "1'b1";
-    int NrOfPins = ComponentInfo.NrOfEnds();
-    for (int i = 1; i < NrOfPins; i++) {
-      if (!ComponentInfo.EndIsConnected(i)) {
-        Reporter.AddError("Bit Extender component has floating input connection in circuit \""
-            + CircuitName + "\"!");
-        return Contents;
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
+
+  @Override
+  public boolean IsOnlyInlined(String lang) { return true; }
+
+  @Override
+  public ArrayList<String> GetInlinedCode(Netlist nets, Long id,
+      NetlistComponent info, FPGAReport err, String circName, String lang) {
+
+    Hdl out = new Hdl(lang, err);
+    out.indent();
+
+    boolean vhdl = lang.equals("VHDL");
+    String zero = vhdl ? "'0'" : "1'b0";
+    String one = vhdl ? "'1'" : "1'b1";
+    String assn = vhdl ? "%s <= %s;" : "assign %s = %s;";
+
+    // checks input and signinput too
+    for (int i = 1; i < info.NrOfEnds(); i++) {
+      if (!info.EndIsConnected(i)) {
+        err.AddError("Bit Extender has floating input in circuit \"" + circName + "\"");
+        return out;
       }
     }
-    if (ComponentInfo.GetComponent().getEnd(0).getWidth().getWidth() == 1) {
-      /* Special case: Single bit output */
-      Contents.add("   " + Preamble
-          + GetNetName(ComponentInfo, 0, true, HDLType, Nets)
-          + AssignOperator
-          + GetNetName(ComponentInfo, 1, true, HDLType, Nets));
-      Contents.add("");
+
+    // fixme: difference b/w info.getEnd() and info.GetComponent().getEnd() ?!?
+    int wo = info.GetComponent().getEnd(0).getWidth().getWidth();
+    int wi = info.GetComponent().getEnd(1).getWidth().getWidth();
+    // int wi2 = info.getEnd(1).NrOfBits();
+    String type = (String) info.GetComponent().getAttributeSet().getValue(BitExtender.ATTR_TYPE).getValue();
+
+    String e = "";
+    if (type.equals("zero"))
+      e = zero;
+    else if (type.equals("one"))
+      e = one;
+    else if (type.equals("sign") && wi == 1)
+      e = GetNetName(info, 1, true, lang, nets); // fixme: GetBusEntryName should handle this
+    else if (type.equals("sign"))
+      e = GetBusEntryName(info, 1, true, wi - 1, lang, nets);
+    else if (type.equals("input"))
+      e = GetNetName(info, 2, true, lang, nets);
+
+    if (wo == 1) {
+      String name = GetNetName(info, 0, true, lang, nets);
+      out.stmt(assn, name, GetNetName(info, 1, true, lang, nets));
     } else {
-      /*
-       * We make ourselves life easy, we just enumerate through all the
-       * bits
-       */
-      StringBuffer Replacement = new StringBuffer();
-      String type = (String) ComponentInfo.GetComponent()
-          .getAttributeSet().getValue(BitExtender.ATTR_TYPE)
-          .getValue();
-      if (type.equals("zero"))
-        Replacement.append(ZeroBit);
-      if (type.equals("one"))
-        Replacement.append(SetBit);
-      if (type.equals("sign")) {
-        if (ComponentInfo.getEnd(1).NrOfBits() > 1) {
-          Replacement.append(GetBusEntryName(ComponentInfo, 1, true,
-                ComponentInfo.GetComponent().getEnd(1).getWidth()
-                .getWidth() - 1, HDLType, Nets));
-        } else {
-          Replacement.append(GetNetName(ComponentInfo, 1, true,
-                HDLType, Nets));
-        }
+      for (int bit = 0; bit < wo; bit++) {
+        String name = GetBusEntryName(info, 0, true, bit, lang, nets);
+        if (bit == 0 && wi == 1)
+          out.stmt(assn, name, GetNetName(info, 1, true, lang, nets) + ";");
+        else if (bit < wi)
+          out.stmt(assn, name, GetBusEntryName(info, 1, true, bit, lang, nets));
+        else
+          out.stmt(assn, name, e);
       }
-      if (type.equals("input"))
-        Replacement.append(GetNetName(ComponentInfo, 2, true, HDLType,
-              Nets));
-      for (int bit = 0; bit < ComponentInfo.GetComponent().getEnd(0)
-          .getWidth().getWidth(); bit++) {
-        if (bit < ComponentInfo.GetComponent().getEnd(1).getWidth()
-            .getWidth()) {
-          if (ComponentInfo.getEnd(1).NrOfBits() > 1) {
-            Contents.add("   "
-                + Preamble
-                + GetBusEntryName(ComponentInfo, 0, true, bit,
-                  HDLType, Nets)
-                + AssignOperator
-                + GetBusEntryName(ComponentInfo, 1, true, bit,
-                  HDLType, Nets) + ";");
-          } else {
-            Contents.add("   "
-                + Preamble
-                + GetBusEntryName(ComponentInfo, 0, true, bit,
-                  HDLType, Nets)
-                + AssignOperator
-                + GetNetName(ComponentInfo, 1, true, HDLType,
-                  Nets) + ";");
-          }
-        } else {
-          Contents.add("   "
-              + Preamble
-              + GetBusEntryName(ComponentInfo, 0, true, bit,
-                HDLType, Nets) + AssignOperator
-              + Replacement.toString() + ";");
-        }
-      }
-      Contents.add("");
     }
-    return Contents;
-  }
 
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-      char Vendor) {
-    return true;
-  }
-
-  @Override
-  public boolean IsOnlyInlined(String HDLType) {
-    return true;
+    out.stmt("");
+    return out;
   }
 }
