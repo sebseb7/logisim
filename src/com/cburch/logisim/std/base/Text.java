@@ -175,8 +175,7 @@ public class Text extends InstanceFactory implements CustomHandles {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
+  public boolean HDLSupportedComponent(String HDLIdentifier, AttributeSet attrs, char Vendor) {
     return true;
   }
 
@@ -187,9 +186,6 @@ public class Text extends InstanceFactory implements CustomHandles {
     }
   }
 
-  //
-  // graphics methods
-  //
   @Override
   public void paintGhost(InstancePainter painter) {
     paint(painter, true);
