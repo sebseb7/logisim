@@ -273,6 +273,15 @@ abstract class AbstractFlipFlop extends InstanceFactory {
     return CompleteName.toString();
   }
 
+  protected abstract AbstractFlipFlopHDLGeneratorFactory getHdlGenerator();
+
+  @Override
+  public boolean HDLSupportedComponent(String HDLIdentifier, AttributeSet attrs, char Vendor) {
+    if (MyHDLGenerator == null)
+      MyHDLGenerator = getHdlGenerator();
+    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  }
+
   //
   // abstract methods intended to be implemented in subclasses
   //

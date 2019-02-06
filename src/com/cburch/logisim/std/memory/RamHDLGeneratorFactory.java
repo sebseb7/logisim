@@ -41,34 +41,107 @@ import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class RamHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  private static final int MemArrayId = -1;
+  private static final int TYPE_MEM_ARRAY = -1;
 
   @Override
-  public String getComponentStringIdentifier() {
-    return "RAM";
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) {
+    Object dbus = attrs.getValue(RamAttributes.ATTR_DBUS);
+    boolean separate = dbus == RamAttributes.BUS_SEP;
+    Object trigger = attrs.getValue(StdAttr.TRIGGER);
+    boolean asynch = trigger == StdAttr.TRIG_HIGH || trigger == StdAttr.TRIG_LOW;
+    return lang.equals("VHDL") && separate && !asynch;
   }
 
   @Override
-  public SortedMap<String, Integer> GetInputList(Netlist TheNetlist, AttributeSet attrs) {
-    SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
-    int NrOfBits = attrs.getValue(Mem.DATA_ATTR).getWidth();
+  public String getComponentStringIdentifier() { return "RAM"; }
+
+  @Override
+  public String GetSubDir() { return "memory"; }
+
+  @Override
+  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
     int n = Mem.lineSize(attrs);
-    Inputs.put("Address", attrs.getValue(Mem.ADDR_ATTR).getWidth());
+    list.put("Address", addrWidth(attrs));
     for (int i = 0; i < n; i++)
-      Inputs.put("DataIn"+i, NrOfBits);
-    Inputs.put("WE", 1);
-    Inputs.put("Clock", 1);
-    Inputs.put("Tick", 1);
+      list.put("DataIn"+i, dataWidth(attrs));
+    list.put("WE", 1);
+    list.put("Clock", 1);
+    list.put("Tick", 1);
     for (int i = 0; i < n && n > 1; i++)
-      Inputs.put("LE"+i, 1);
-    return Inputs;
+      list.put("LE"+i, 1);
+  }
+
+  @Override
+  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    int n = Mem.lineSize(attrs);
+    for (int i = 0; i < n; i++)
+      list.put("DataOut"+i, dataWidth(attrs));
+  }
+
+  @Override
+  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+
+    int n = Mem.lineSize(attrs);
+    int DATA1 = Mem.MEM_INPUTS; // (n-1) of them
+    int DATAOUT[] = { Mem.DATA, DATA1, DATA1+1, DATA1+2 };
+    int DIN0 = DATA1+(n-1); // (n) of them
+    int DATAIN[] = { DIN0, DIN0+1, DIN0+2, DIN0+3 };
+    int CLK = (DIN0 + n); // 1, always
+    int WE = CLK+1; // 1, always
+    int LE = WE+1; // (datalines) of them, only if multiple data lines
+
+    list.putAll(GetNetMap("Address", true, info, Mem.ADDR, err, lang, nets));
+    for (int i = 0; i < n; i++)
+      list.putAll(GetNetMap("DataIn"+i, true, info, DATAIN[i], err, lang, nets));
+    list.putAll(GetNetMap("WE", true, info, WE, err, lang, nets));
+    for (int i = 0; i < n && n > 1; i++)
+      list.putAll(GetNetMap("LE"+i, false, info, LE+i, err, lang, nets));
+
+    String BracketOpen = (lang.equals("VHDL")) ? "(" : "[";
+    String BracketClose = (lang.equals("VHDL")) ? ")" : "]";
+
+    boolean vhdl = lang.equals("VHDL");
+    String zero = vhdl ? "'0'" : "1'b0";
+    String one = vhdl ? "'1'" : "1'b1";
+    String idx = vhdl ? "(%d)" : "[%]"; // fixme: these should be in base class at minimum!
+
+    boolean hasClk = info.EndIsConnected(CLK);
+    if (!hasClk)
+      err.AddSevereWarning("Component \"RAM\" in circuit \""
+          + nets.getCircuitName() + "\" has no clock connection");
+    
+    String clk = GetClockNetName(info, CLK, nets);
+    boolean gatedClk = clk.equals("");
+    if (gatedClk)
+      err.AddSevereWarning("Component \"RAM\" in circuit \""
+          + nets.getCircuitName() + "\" has a none-clock-component forced clock!\n"
+          + "   Functional differences between Logisim simulation and hardware can be expected!");
+
+    if (!hasClk) {
+      list.put("Clock", zero);
+      list.put("Tick", zero);
+    } else if (gatedClk) {
+      list.putAll(GetNetMap("Clock", true, info, CLK, err, lang, nets));
+      list.put("Tick", one);
+    } else {
+      list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
+      if (nets.RequiresGlobalClockConnection())
+        list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
+      else if (attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_RISING)
+        list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.PositiveEdgeTickIndex));
+      else
+        list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.NegativeEdgeTickIndex));
+    }
+    for (int i = 0; i < n; i++)
+      list.putAll(GetNetMap("DataOut"+i, true, info, DATAOUT[i], err, lang, nets));
   }
 
   @Override
@@ -77,8 +150,8 @@ public class RamHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       return null;
     }
     Map<String, ArrayList<String>> m = new HashMap<String, ArrayList<String>>();
-    int dataLines = Mem.lineSize(attrs);
-    for (int i = 0; i < dataLines; i++) {
+    int n = Mem.lineSize(attrs);
+    for (int i = 0; i < n; i++) {
       ArrayList<String> contents = MemInitData(attrs, i);
       m.put("s_mem"+i+"_contents", contents);
     }
@@ -87,7 +160,7 @@ public class RamHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   private ArrayList<String> MemInitData(AttributeSet attrs, int offset) {
     int skip = Mem.lineSize(attrs);
-    int width = attrs.getValue(Mem.DATA_ATTR).getWidth();
+    int width = dataWidth(attrs);
     MemContents c = null; // attrs.getValue(Ram.CONTENTS_ATTR); FIXME, if possible ?!?!
     ArrayList<String> out = new ArrayList<String>();
     out.add("-- Memory initialization data line " + offset);
@@ -109,157 +182,78 @@ public class RamHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   }
 
   @Override
-  public SortedMap<String, Integer> GetMemList(AttributeSet attrs, String HDLType) {
-    SortedMap<String, Integer> Mems = new TreeMap<String, Integer>();
-    if (HDLType.equals(Settings.VHDL)) {
-      int dataLines = Mem.lineSize(attrs);
-      for (int i = 0; i < dataLines; i++)
-        Mems.put("s_mem"+i+"_contents", MemArrayId);
-    }
-    return Mems;
+  public SortedMap<String, Integer> GetMemList(AttributeSet attrs, String lang) {
+    SortedMap<String, Integer> list = new TreeMap<String, Integer>();
+    int n = Mem.lineSize(attrs);
+    for (int i = 0; i < n; i++)
+      list.put("s_mem"+i+"_contents", TYPE_MEM_ARRAY);
+    return list;
   }
 
   @Override
-  public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
-      AttributeSet attrs, FPGAReport Reporter, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    int dataLines = Mem.lineSize(attrs);
-    if (HDLType.equals(Settings.VHDL)) {
-      Contents.addAll(MakeRemarkBlock("Here the actual memorie(s) is(are) defined", 3, HDLType));
-      if (dataLines == 1) {
-        Contents.add("   Mem0 : PROCESS( Clock, DataIn0, Address, WE, Tick )");
-        Contents.add("   BEGIN");
-        Contents.add("      IF (Clock'event AND (Clock = '1')) THEN");
-        Contents.add("         IF (WE = '1' and Tick = '1') THEN");
-        Contents.add("            s_mem0_contents(to_integer(unsigned(Address))) <= DataIn0;");
-        Contents.add("         ELSE");
-        Contents.add("             DataOut0 <= s_mem0_contents(to_integer(unsigned(Address)));");
-        Contents.add("         END IF;");
-        Contents.add("      END IF;");
-        Contents.add("   END PROCESS Mem0;");
-      } else {
-        int sa = (dataLines == 4 ? 2 : dataLines == 2 ? 1 : 0);
-        for (int i = 0; i < dataLines; i++) {
-          Contents.add("   Mem"+i+" : PROCESS( Clock, DataIn"+i+", Address, WE, LE"+i+", Tick )");
-          Contents.add("   BEGIN");
-          Contents.add("      IF (Clock'event AND (Clock = '1')) THEN");
-          Contents.add("         IF (WE = '1' and LE"+i+" = '1' and Tick = '1') THEN");
-          Contents.add("            s_mem"+i+"_contents(to_integer(shift_right(unsigned(Address),"+sa+"))) <= DataIn"+i+";");
-          Contents.add("         ELSE");
-          Contents.add("             DataOut"+i+" <= s_mem"+i+"_contents(to_integer(shift_right(unsigned(Address),"+sa+")));");
-          Contents.add("         END IF;");
-          Contents.add("      END IF;");
-          Contents.add("   END PROCESS Mem"+i+";");
-        }
+  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
+    out.indent();
+    int n = Mem.lineSize(attrs);
+    if (n == 1) {
+      out.stmt("Mem0 : PROCESS( Clock, DataIn0, Address, WE, Tick )");
+      out.stmt("BEGIN");
+      out.stmt("   IF (Clock'event AND (Clock = '1')) THEN");
+      out.stmt("      IF (WE = '1' and Tick = '1') THEN");
+      out.stmt("         s_mem0_contents(to_integer(unsigned(Address))) <= DataIn0;");
+      out.stmt("      ELSE");
+      out.stmt("          DataOut0 <= s_mem0_contents(to_integer(unsigned(Address)));");
+      out.stmt("      END IF;");
+      out.stmt("   END IF;");
+      out.stmt("END PROCESS Mem0;");
+    } else {
+      int sa = (n == 4 ? 2 : n == 2 ? 1 : 0);
+      for (int i = 0; i < n; i++) {
+        out.stmt("Mem%d : PROCESS( Clock, DataIn%d, Address, WE, LE%d, Tick )", i, i, i);
+        out.stmt("BEGIN");
+        out.stmt("   IF (Clock'event AND (Clock = '1')) THEN");
+        out.stmt("      IF (WE = '1' and LE%d = '1' and Tick = '1') THEN", i);
+        out.stmt("         s_mem%d_contents(to_integer(shift_right(unsigned(Address),%d))) <= DataIn%d;", i, sa, i);
+        out.stmt("      ELSE");
+        out.stmt("          DataOut%d <= s_mem%d_contents(to_integer(shift_right(unsigned(Address),%d)));", i, i, sa);
+        out.stmt("      END IF;");
+        out.stmt("   END IF;");
+        out.stmt("END PROCESS Mem%d;", i);
       }
     }
-    return Contents;
   }
 
   @Override
-  public int GetNrOfTypes(Netlist TheNetlist, AttributeSet attrs, String HDLType) {
+  public int GetNrOfTypes(Netlist TheNetlist, AttributeSet attrs, String lang) {
     return 1;
   }
 
   @Override
-  public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist, AttributeSet attrs) {
-    SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-    int dataLines = Mem.lineSize(attrs);
-    for (int i = 0; i < dataLines; i++)
-      Outputs.put("DataOut"+i, attrs.getValue(Mem.DATA_ATTR).getWidth());
-    return Outputs;
-  }
-
-  @Override
-  public SortedMap<String, String> GetPortMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-    AttributeSet attrs = ComponentInfo.GetComponent().getAttributeSet();
-
-    int dataLines = Mem.lineSize(attrs);
-    int DATA1 = Mem.MEM_INPUTS; // (dataLines-1) of them
-    int DATAOUT[] = { Mem.DATA, DATA1, DATA1+1, DATA1+2 };
-    int DIN0 = DATA1+(dataLines-1); // (dataLines) of them
-    int DATAIN[] = { DIN0, DIN0+1, DIN0+2, DIN0+3 };
-    int CLK = (DIN0 + dataLines); // 1, always
-    int WE = CLK+1; // 1, always
-    int LE = WE+1; // (datalines) of them, only if multiple data lines
-
-    SortedMap<String, String> PortMap = new TreeMap<String, String>();
-    PortMap.putAll(GetNetMap("Address", true, ComponentInfo, Mem.ADDR, Reporter, HDLType, Nets));
-    for (int i = 0; i < dataLines; i++)
-      PortMap.putAll(GetNetMap("DataIn"+i, true, ComponentInfo, DATAIN[i], Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("WE", true, ComponentInfo, WE, Reporter, HDLType, Nets));
-    for (int i = 0; i < dataLines && dataLines > 1; i++)
-      PortMap.putAll(GetNetMap("LE"+i, false, ComponentInfo, LE+i, Reporter, HDLType, Nets));
-
-    String SetBit = (HDLType.equals(Settings.VHDL)) ? "'1'" : "1'b1";
-    String ZeroBit = (HDLType.equals(Settings.VHDL)) ? "'0'" : "1'b0";
-    String BracketOpen = (HDLType.equals(Settings.VHDL)) ? "(" : "[";
-    String BracketClose = (HDLType.equals(Settings.VHDL)) ? ")" : "]";
-    if (!ComponentInfo.EndIsConnected(CLK)) {
-      Reporter.AddError("Component \"RAM\" in circuit \"" + Nets.getCircuitName() + "\" has no clock connection!");
-      PortMap.put("Clock", ZeroBit);
-      PortMap.put("Tick", ZeroBit);
-    } else {
-      String ClockNetName = GetClockNetName(ComponentInfo, CLK, Nets);
-      if (ClockNetName.isEmpty()) {
-        Reporter.AddSevereWarning("Component \"RAM\" in circuit \""
-            + Nets.getCircuitName()
-            + "\" has a none-clock-component forced clock!\n"
-            + "        Functional differences between Logisim simulation and hardware can be expected!");
-        PortMap.putAll(GetNetMap("Clock", true, ComponentInfo, CLK, Reporter, HDLType, Nets));
-        PortMap.put("Tick", SetBit);
-      } else {
-        int ClockBusIndex;
-        if (Nets.RequiresGlobalClockConnection()) {
-          ClockBusIndex = ClockHDLGeneratorFactory.GlobalClockIndex;
-        } else {
-          ClockBusIndex = (attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_RISING)
-              ? ClockHDLGeneratorFactory.PositiveEdgeTickIndex
-              : ClockHDLGeneratorFactory.NegativeEdgeTickIndex;
-        }
-        PortMap.put("Clock", ClockNetName + BracketOpen + ClockHDLGeneratorFactory.GlobalClockIndex + BracketClose);
-        PortMap.put("Tick", ClockNetName + BracketOpen + ClockBusIndex + BracketClose);
-      }
-    }
-    for (int i = 0; i < dataLines; i++)
-      PortMap.putAll(GetNetMap("DataOut"+i, true, ComponentInfo, DATAOUT[i], Reporter, HDLType, Nets));
-    return PortMap;
-  }
-
-  @Override
-  public String GetSubDir() {
-    return "memory";
-  }
-
-  @Override
   public String GetType(int TypeNr) {
-    if (TypeNr == MemArrayId) return "MEMORY_ARRAY";
-    else return "";
+    if (TypeNr == TYPE_MEM_ARRAY)
+      return "MEMORY_ARRAY";
+    else
+      return "";
   }
 
   @Override
-  public SortedSet<String> GetTypeDefinitions(Netlist TheNetlist, AttributeSet attrs, String HDLType) {
-    SortedSet<String> MyTypes = new TreeSet<String>();
-    if (HDLType.equals(Settings.VHDL)) {
-      int NrOfBits = attrs.getValue(Mem.DATA_ATTR).getWidth();
-      int NrOfAddressLines = attrs.getValue(Mem.ADDR_ATTR).getWidth();
-      int RamEntries = (1 << NrOfAddressLines);
-      MyTypes.add("TYPE MEMORY_ARRAY"
-          + " IS ARRAY (" + (RamEntries-1) + " DOWNTO 0)"
-          + " OF std_logic_vector(" + (NrOfBits-1) + " DOWNTO 0)");
-    }
-    return MyTypes;
+  public SortedSet<String> GetTypeDefinitions(Netlist TheNetlist, AttributeSet attrs, String lang) {
+    SortedSet<String> list = new TreeSet<String>();
+    int wd = dataWidth(attrs);
+    int wa = addrWidth(attrs);
+    int rows = (1 << wa);
+    list.add("TYPE MEMORY_ARRAY"
+        + " IS ARRAY (" + (rows-1) + " DOWNTO 0)"
+        + " OF std_logic_vector(" + (wd-1) + " DOWNTO 0)");
+    return list;
   }
 
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs, char Vendor) {
-    Object busVal = attrs.getValue(RamAttributes.ATTR_DBUS);
-    boolean separate = busVal == null ? true : busVal
-        .equals(RamAttributes.BUS_SEP);
-    Object trigger = attrs.getValue(StdAttr.TRIGGER);
-    boolean asynch = trigger.equals(StdAttr.TRIG_HIGH)
-        || trigger.equals(StdAttr.TRIG_LOW);
-    return HDLType.equals(Settings.VHDL) && separate && !asynch;
+  protected int addrWidth(AttributeSet attrs) {
+    return attrs.getValue(Mem.ADDR_ATTR).getWidth();
   }
+
+  protected int dataWidth(AttributeSet attrs) {
+    return attrs.getValue(Mem.DATA_ATTR).getWidth();
+  }
+
+
 }

@@ -29,218 +29,62 @@
  */
 package com.cburch.logisim.std.memory;
 
-import java.util.ArrayList;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class CounterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  private final static String NrOfBitsStr = "width";
-  private final static int NrOfBitsId = -1;
-  private final static String MaxValStr = "max_val";
-  private final static int MaxValId = -2;
-  private final static String ActiveEdgeStr = "ClkEdge";
-  private final static int ActiveEdgeId = -3;
-  private final static String ModeStr = "mode";
-  private final static int ModeId = -4;
+  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
+  protected final static int GENERIC_PARAM_MAXVAL = -2;
+  protected final static int GENERIC_PARAM_CLKEDGE = -3;
+  protected final static int GENERIC_PARAM_MODE = -4;
 
   @Override
-  public String getComponentStringIdentifier() {
-    return "COUNTER";
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
+
+  @Override
+  public String getComponentStringIdentifier() { return "COUNTER"; }
+
+  @Override
+  public String GetSubDir() { return "memory"; }
+
+  @Override
+  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("GlobalClock", 1);
+    list.put("ClockEnable", 1);
+    list.put("LoadData", GENERIC_PARAM_BUSWIDTH);
+    list.put("clear", 1);
+    list.put("load", 1);
+    list.put("Up_n_Down", 1);
+    list.put("Enable", 1);
   }
 
   @Override
-  public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
-    Inputs.put("GlobalClock", 1);
-    Inputs.put("ClockEnable", 1);
-    Inputs.put("LoadData", NrOfBitsId);
-    Inputs.put("clear", 1);
-    Inputs.put("load", 1);
-    Inputs.put("Up_n_Down", 1);
-    Inputs.put("Enable", 1);
-    return Inputs;
+  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("CountValue", GENERIC_PARAM_BUSWIDTH);
+    list.put("CompareOut", 1);
   }
 
   @Override
-  public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
-      AttributeSet attrs, FPGAReport Reporter, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    Contents.addAll(MakeRemarkBlock(
-          "Functionality of the counter:\\ __Load_Count_|_mode\\ ____0____0___|_halt\\ "
-          + "____0____1___|_count_up_(default)\\ ____1____0___|load\\ ____1____1___|_count_down",
-          3, HDLType));
-    if (HDLType.equals(Settings.VHDL)) {
-      Contents.add("");
-      Contents.add("   CompareOut   <= s_carry;");
-      Contents.add("   CountValue   <= s_counter_value;");
-      Contents.add("");
-      Contents.add("   make_carry : PROCESS( Up_n_Down ,");
-      Contents.add("                         s_counter_value )");
-      Contents.add("   BEGIN");
-      Contents.add("      IF (Up_n_Down = '0') THEN");
-      Contents.add("         IF (s_counter_value = std_logic_vector(to_unsigned(0,width))) THEN");
-      Contents.add("            s_carry <= '1';");
-      Contents.add("                                                               ELSE");
-      Contents.add("            s_carry <= '0';");
-      Contents.add("         END IF; -- Down counting");
-      Contents.add("                           ELSE");
-      Contents.add("         IF (s_counter_value = std_logic_vector(to_unsigned(max_val,width))) THEN");
-      Contents.add("            s_carry <= '1';");
-      Contents.add("                                                                     ELSE");
-      Contents.add("            s_carry <= '0';");
-      Contents.add("         END IF; -- Up counting");
-      Contents.add("      END IF;");
-      Contents.add("   END PROCESS make_carry;");
-      Contents.add("");
-      Contents.add("   s_real_enable <= '0' WHEN (load = '0' AND enable = '0') -- Counter disabled");
-      Contents.add("                             OR");
-      Contents.add("                             (mode = 1 AND s_carry = '1' AND load = '0') -- Stay at value situation");
-      Contents.add("                        ELSE ClockEnable;");
-      Contents.add("");
-      Contents.add("   make_next_value : PROCESS( load , Up_n_Down , s_counter_value ,");
-      Contents.add("                              LoadData , s_carry )");
-      Contents.add("      VARIABLE v_downcount : std_logic;         ");
-      Contents.add("   BEGIN");
-      Contents.add("      v_downcount := NOT(Up_n_Down);");
-      Contents.add("      IF ((load = '1') OR -- load condition");
-      Contents.add("          (mode = 3 AND s_carry = '1')    -- Wrap load condition");
-      Contents.add("         ) THEN s_next_counter_value <= LoadData;");
-      Contents.add("           ELSE");
-      Contents.add("         CASE (mode) IS");
-      Contents.add("            WHEN  0     => IF (s_carry = '1') THEN");
-      Contents.add("                              IF (v_downcount = '1') THEN ");
-      Contents.add("                                 s_next_counter_value <= std_logic_vector(to_unsigned(max_val,width));");
-      Contents.add("                                                     ELSE ");
-      Contents.add("                                 s_next_counter_value <= (OTHERS => '0');");
-      Contents.add("                              END IF;");
-      Contents.add("                                              ELSE");
-      Contents.add("                              IF (v_downcount = '1') THEN ");
-      Contents.add("                                 s_next_counter_value <= std_logic_vector(unsigned(s_counter_value) - 1);");
-      Contents.add("                                                     ELSE ");
-      Contents.add("                                 s_next_counter_value <= std_logic_vector(unsigned(s_counter_value) + 1);");
-      Contents.add("                              END IF;");
-      Contents.add("                           END IF;");
-      Contents.add("            WHEN OTHERS => IF (v_downcount = '1') THEN ");
-      Contents.add("                              s_next_counter_value <= std_logic_vector(unsigned(s_counter_value) - 1);");
-      Contents.add("                                                  ELSE ");
-      Contents.add("                              s_next_counter_value <= std_logic_vector(unsigned(s_counter_value) + 1);");
-      Contents.add("                           END IF;");
-      Contents.add("         END CASE;");
-      Contents.add("      END IF;");
-      Contents.add("   END PROCESS make_next_value;");
-      Contents.add("");
-      Contents.add("   make_flops : PROCESS( GlobalClock , s_real_enable , clear , s_next_counter_value )");
-      Contents.add("      VARIABLE temp : std_logic_vector(0 DOWNTO 0);");
-      Contents.add("   BEGIN");
-      Contents.add("      temp := std_logic_vector(to_unsigned("+ActiveEdgeStr+",1));");
-      Contents.add("      IF (clear = '1') THEN s_counter_value <= (OTHERS => '0');");
-      Contents.add("      ELSIF (GlobalClock'event AND (GlobalClock = temp(0))) THEN");
-      Contents.add("         IF (s_real_enable = '1') THEN s_counter_value <= s_next_counter_value;");
-      Contents.add("         END IF;");
-      Contents.add("      END IF;");
-      Contents.add("   END PROCESS make_flops;");
-    } else {
-      Contents.add("");
-      Contents.add("   assign CompareOut = s_carry;");
-      Contents.add("   assign CountValue = ("+ActiveEdgeStr+") ? s_counter_value : s_counter_value_neg_edge;");
-      Contents.add("");
-      Contents.add("   always@(*)");
-      Contents.add("   begin");
-      Contents.add("      if (Up_n_Down)");
-      Contents.add("         begin");
-      Contents.add("            if ("+ActiveEdgeStr+")");
-      Contents.add("               s_carry = (s_counter_value == max_val) ? 1'b1 : 1'b0;");
-      Contents.add("            else");
-      Contents.add("               s_carry = (s_counter_value_neg_edge == max_val) ? 1'b1 : 1'b0;");
-      Contents.add("         end");
-      Contents.add("      else");
-      Contents.add("         begin");
-      Contents.add("            if ("+ActiveEdgeStr+")");
-      Contents.add("               s_carry = (s_counter_value == 0) ? 1'b1 : 1'b0;");
-      Contents.add("            else");
-      Contents.add("               s_carry = (s_counter_value_neg_edge == 0) ? 1'b1 : 1'b0;");
-      Contents.add("         end");
-      Contents.add("   end");
-      Contents.add("");
-      Contents.add("   assign s_real_enable = ((~(load)&~(Enable))|");
-      Contents.add("                           ((mode==1)&s_carry&~(load))) ? 1'b0 : ClockEnable;");
-      Contents.add("");
-      Contents.add("   always @(*)");
-      Contents.add("   begin");
-      Contents.add("      if ((load)|((mode==3)&s_carry))");
-      Contents.add("         s_next_counter_value = LoadData;");
-      Contents.add("      else if ((mode==0)&s_carry&Up_n_Down)");
-      Contents.add("         s_next_counter_value = 0;");
-      Contents.add("      else if ((mode==0)&s_carry)");
-      Contents.add("         s_next_counter_value = max_val;");
-      Contents.add("      else if (Up_n_Down)");
-      Contents.add("         begin");
-      Contents.add("            if ("+ActiveEdgeStr+")");
-      Contents.add("               s_next_counter_value = s_counter_value + 1;");
-      Contents.add("            else");
-      Contents.add("               s_next_counter_value = s_counter_value_neg_edge + 1;");
-      Contents.add("         end");
-      Contents.add("      else");
-      Contents.add("         begin");
-      Contents.add("            if ("+ActiveEdgeStr+")");
-      Contents.add("               s_next_counter_value = s_counter_value - 1;");
-      Contents.add("            else");
-      Contents.add("               s_next_counter_value = s_counter_value_neg_edge - 1;");
-      Contents.add("         end");
-      Contents.add("   end");
-      Contents.add("");
-      Contents.add("   always @(posedge GlobalClock or posedge clear)");
-      Contents.add("   begin");
-      Contents.add("       if (clear) s_counter_value <= 0;");
-      Contents.add("       else if (s_real_enable) s_counter_value <= s_next_counter_value;");
-      Contents.add("   end");
-      Contents.add("");
-      Contents.add("   always @(negedge GlobalClock or posedge clear)");
-      Contents.add("   begin");
-      Contents.add("       if (clear) s_counter_value_neg_edge <= 0;");
-      Contents.add("       else if (s_real_enable) s_counter_value_neg_edge <= s_next_counter_value;");
-      Contents.add("   end");
-      Contents.add("");
-    }
-    return Contents;
+	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
+    list.put(GENERIC_PARAM_BUSWIDTH, "BusWidth");
+    list.put(GENERIC_PARAM_MAXVAL, "MaxVal");
+    list.put(GENERIC_PARAM_CLKEDGE, "ClkEdge");
+    list.put(GENERIC_PARAM_MODE, "Mode");
   }
 
   @Override
-  public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-    Outputs.put("CountValue", NrOfBitsId);
-    Outputs.put("CompareOut", 1);
-    return Outputs;
-  }
-
-  @Override
-  public SortedMap<Integer, String> GetParameterList(AttributeSet attrs) {
-    SortedMap<Integer, String> Parameters = new TreeMap<Integer, String>();
-    Parameters.put(NrOfBitsId, NrOfBitsStr);
-    Parameters.put(MaxValId, MaxValStr);
-    Parameters.put(ActiveEdgeId, ActiveEdgeStr);
-    Parameters.put(ModeId, ModeStr);
-    return Parameters;
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetParameterMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter) {
-    SortedMap<String, Integer> ParameterMap = new TreeMap<String, Integer>();
-    AttributeSet attrs = ComponentInfo.GetComponent().getAttributeSet();
-    int mode = 0;
+  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    int mode;
     if (attrs.containsAttribute(Counter.ATTR_ON_GOAL)) {
       if (attrs.getValue(Counter.ATTR_ON_GOAL) == Counter.ON_GOAL_STAY)
         mode = 1;
@@ -248,49 +92,47 @@ public class CounterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
         mode = 2;
       else if (attrs.getValue(Counter.ATTR_ON_GOAL) == Counter.ON_GOAL_LOAD)
         mode = 3;
+      else
+        mode = 0;
     } else {
       mode = 1;
     }
-    ParameterMap.put(NrOfBitsStr, attrs.getValue(StdAttr.WIDTH).getWidth());
-    ParameterMap
-        .put(MaxValStr, attrs.getValue(Counter.ATTR_MAX).intValue());
-    int ClkEdge = 1;
-    if (GetClockNetName(ComponentInfo, Counter.CK, Nets).isEmpty()
-        && attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING)
-      ClkEdge = 0;
-    ParameterMap.put(ActiveEdgeStr, ClkEdge);
-    ParameterMap.put(ModeStr, mode);
-    return ParameterMap;
+    list.put("BusWidth", width(attrs));
+    list.put("MaxVal", attrs.getValue(Counter.ATTR_MAX).intValue());
+    boolean activelo = GetClockNetName(info, Counter.CK, nets).isEmpty()
+        && attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING;
+    list.put("ClkEdge", activelo ? 0 : 1);
+    list.put("Mode", mode);
   }
 
   @Override
-  public SortedMap<String, String> GetPortMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-    SortedMap<String, String> PortMap = new TreeMap<String, String>();
-    String ZeroBit = (HDLType.equals(Settings.VHDL)) ? "'0'" : "1'b0";
-    String SetBit = (HDLType.equals(Settings.VHDL)) ? "'1'" : "1'b1";
-    String BracketOpen = (HDLType.equals(Settings.VHDL)) ? "(" : "[";
-    String BracketClose = (HDLType.equals(Settings.VHDL)) ? ")" : "]";
-    AttributeSet attrs = ComponentInfo.GetComponent().getAttributeSet();
-    if (!ComponentInfo.EndIsConnected(Counter.CK)) {
-      Reporter.AddSevereWarning("Component \"Counter\" in circuit \""
-          + Nets.getCircuitName() + "\" has no clock connection");
-      PortMap.put("GlobalClock", ZeroBit);
-      PortMap.put("ClockEnable", ZeroBit);
+  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+    
+    boolean vhdl = lang.equals("VHDL");
+    String zero = vhdl ? "'0'" : "1'b0";
+    String one = vhdl ? "'1'" : "1'b1";
+    String idx = vhdl ? "(%d)" : "[%]"; // fixme: these should be in base class at minimum!
+
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    int w = width(attrs);
+
+    if (!info.EndIsConnected(Counter.CK)) {
+      err.AddSevereWarning("Component \"Counter\" in circuit \""
+          + nets.getCircuitName() + "\" has no clock connection");
+      list.put("GlobalClock", zero);
+      list.put("ClockEnable", zero);
     } else {
-      String ClockNetName = GetClockNetName(ComponentInfo, Counter.CK,
-          Nets);
-      if (ClockNetName.isEmpty()) {
-        Reporter.AddSevereWarning("Component \"Counter\" in circuit \""
-            + Nets.getCircuitName()
+      String clk = GetClockNetName(info, Counter.CK, nets);
+      if (clk.isEmpty()) {
+        err.AddSevereWarning("Component \"Counter\" in circuit \""
+            + nets.getCircuitName()
             + "\" has a none-clock-component forced clock!\n"
             + "        Functional differences between Logisim simulation and hardware can be expected!");
-        PortMap.putAll(GetNetMap("GlobalClock", true, ComponentInfo,
-              Counter.CK, Reporter, HDLType, Nets));
-        PortMap.put("ClockEnable", SetBit);
+        list.putAll(GetNetMap("GlobalClock", true, info, Counter.CK, err, lang, nets));
+        list.put("ClockEnable", one);
       } else {
         int ClockBusIndex = ClockHDLGeneratorFactory.DerivedClockIndex;
-        if (Nets.RequiresGlobalClockConnection()) {
+        if (nets.RequiresGlobalClockConnection()) {
           ClockBusIndex = ClockHDLGeneratorFactory.GlobalClockIndex;
         } else {
           if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_LOW)
@@ -300,81 +142,180 @@ public class CounterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
           else if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING)
             ClockBusIndex = ClockHDLGeneratorFactory.InvertedDerivedClockIndex;
         }
-        PortMap.put(
-            "GlobalClock",
-            ClockNetName
-            + BracketOpen
-            + Integer
-            .toString(ClockHDLGeneratorFactory.GlobalClockIndex)
-            + BracketClose);
-        PortMap.put(
-            "ClockEnable",
-            ClockNetName + BracketOpen
-            + Integer.toString(ClockBusIndex)
-            + BracketClose);
+        list.put("GlobalClock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
+        list.put("ClockEnable", String.format(clk+idx, ClockBusIndex));
       }
     }
-    String Input = "LoadData";
-    if (HDLType.equals(Settings.VHDL)
-        & (ComponentInfo.GetComponent().getAttributeSet()
-          .getValue(StdAttr.WIDTH).getWidth() == 1))
-      Input += "(0)";
-    PortMap.putAll(GetNetMap(Input, true, ComponentInfo, Counter.IN,
-          Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("clear", true, ComponentInfo, Counter.CLR,
-          Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("load", true, ComponentInfo, Counter.LD,
-          Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("Enable", false, ComponentInfo, Counter.EN,
-          Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("Up_n_Down", false, ComponentInfo, Counter.UD,
-          Reporter, HDLType, Nets));
-    String Output = "CountValue";
-    if (HDLType.equals(Settings.VHDL)
-        & (ComponentInfo.GetComponent().getAttributeSet()
-          .getValue(StdAttr.WIDTH).getWidth() == 1))
-      Output += "(0)";
-    PortMap.putAll(GetNetMap(Output, true, ComponentInfo, Counter.OUT,
-          Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("CompareOut", true, ComponentInfo,
-          Counter.CARRY, Reporter, HDLType, Nets));
-    return PortMap;
+    String ld = "LoadData" + (vhdl & (w == 1) ? "(0)" : "");
+    list.putAll(GetNetMap(ld, true, info, Counter.IN, err, lang, nets));
+    list.putAll(GetNetMap("clear", true, info, Counter.CLR, err, lang, nets));
+    list.putAll(GetNetMap("load", true, info, Counter.LD, err, lang, nets));
+    list.putAll(GetNetMap("Enable", false, info, Counter.EN, err, lang, nets));
+    list.putAll(GetNetMap("Up_n_Down", false, info, Counter.UD, err, lang, nets));
+
+    String cv = "CountValue" + (vhdl & (w == 1) ? "(0)" : "");
+    list.putAll(GetNetMap(cv, true, info, Counter.OUT, err, lang, nets));
+    list.putAll(GetNetMap("CompareOut", true, info, Counter.CARRY, err, lang, nets));
+  }
+
+
+  @Override
+  public void wires(SortedMap<String, Integer> list, AttributeSet attrs, Netlist nets) {
+    list.put("s_real_enable", 1);
   }
 
   @Override
-  public SortedMap<String, Integer> GetRegList(AttributeSet attrs,
-      String HDLType) {
-    SortedMap<String, Integer> Regs = new TreeMap<String, Integer>();
-    Regs.put("s_next_counter_value", NrOfBitsId); // for verilog generation
-    // in explicite process
-    Regs.put("s_carry", 1); // for verilog generation in explicite process
-    Regs.put("s_counter_value", NrOfBitsId);
-    if (HDLType.equals(Settings.VERILOG))
-      Regs.put("s_counter_value_neg_edge", NrOfBitsId);
-    return Regs;
+  public void registers(SortedMap<String, Integer> list, AttributeSet attrs, String lang) {
+    list.put("s_next_counter_value", GENERIC_PARAM_BUSWIDTH); // verilog ?
+    list.put("s_carry", 1); // verilog ?
+    list.put("s_counter_value", GENERIC_PARAM_BUSWIDTH);
+    if (lang.equals("Verilog"))
+      list.put("s_counter_value_neg_edge", GENERIC_PARAM_BUSWIDTH);
   }
-
+  
   @Override
-  public String GetSubDir() {
-    /*
-     * this method returns the module directory where the HDL code needs to
-     * be placed
-     */
-    return "memory";
+  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
+    String lang = out.isVhdl ? "VHLD" : "Verilog";
+    out.addAll(MakeRemarkBlock(
+          "Functionality of the counter:\\ __Load_Count_|_mode\\ ____0____0___|_halt\\ "
+          + "____0____1___|_count_up_(default)\\ ____1____0___|load\\ ____1____1___|_count_down",
+          3, lang));
+    if (out.isVhdl) {
+      out.stmt("");
+      out.stmt("   CompareOut   <= s_carry;");
+      out.stmt("   CountValue   <= s_counter_value;");
+      out.stmt("");
+      out.stmt("   make_carry : PROCESS( Up_n_Down ,");
+      out.stmt("                         s_counter_value )");
+      out.stmt("   BEGIN");
+      out.stmt("      IF (Up_n_Down = '0') THEN");
+      out.stmt("         IF (s_counter_value = std_logic_vector(to_unsigned(0,width))) THEN");
+      out.stmt("            s_carry <= '1';");
+      out.stmt("         ELSE");
+      out.stmt("            s_carry <= '0';");
+      out.stmt("         END IF; -- Down counting");
+      out.stmt("                           ELSE");
+      out.stmt("         IF (s_counter_value = std_logic_vector(to_unsigned(max_val,width))) THEN");
+      out.stmt("            s_carry <= '1';");
+      out.stmt("         ELSE");
+      out.stmt("            s_carry <= '0';");
+      out.stmt("         END IF; -- Up counting");
+      out.stmt("      END IF;");
+      out.stmt("   END PROCESS make_carry;");
+      out.stmt("");
+      out.stmt("   s_real_enable <= '0' WHEN (load = '0' AND enable = '0') -- Counter disabled");
+      out.stmt("                             OR");
+      out.stmt("                             (mode = 1 AND s_carry = '1' AND load = '0') -- Stay at value situation");
+      out.stmt("                        ELSE ClockEnable;");
+      out.stmt("");
+      out.stmt("   make_next_value : PROCESS( load , Up_n_Down , s_counter_value ,");
+      out.stmt("                              LoadData , s_carry )");
+      out.stmt("      VARIABLE v_downcount : std_logic;         ");
+      out.stmt("   BEGIN");
+      out.stmt("      v_downcount := NOT(Up_n_Down);");
+      out.stmt("      IF ((load = '1') OR -- load condition");
+      out.stmt("          (mode = 3 AND s_carry = '1')    -- Wrap load condition");
+      out.stmt("         ) THEN s_next_counter_value <= LoadData;");
+      out.stmt("           ELSE");
+      out.stmt("         CASE (mode) IS");
+      out.stmt("            WHEN  0     => IF (s_carry = '1') THEN");
+      out.stmt("                              IF (v_downcount = '1') THEN ");
+      out.stmt("                                 s_next_counter_value <= std_logic_vector(to_unsigned(max_val,width));");
+      out.stmt("                                                     ELSE ");
+      out.stmt("                                 s_next_counter_value <= (OTHERS => '0');");
+      out.stmt("                              END IF;");
+      out.stmt("                                              ELSE");
+      out.stmt("                              IF (v_downcount = '1') THEN ");
+      out.stmt("                                 s_next_counter_value <= std_logic_vector(unsigned(s_counter_value) - 1);");
+      out.stmt("                                                     ELSE ");
+      out.stmt("                                 s_next_counter_value <= std_logic_vector(unsigned(s_counter_value) + 1);");
+      out.stmt("                              END IF;");
+      out.stmt("                           END IF;");
+      out.stmt("            WHEN OTHERS => IF (v_downcount = '1') THEN ");
+      out.stmt("                              s_next_counter_value <= std_logic_vector(unsigned(s_counter_value) - 1);");
+      out.stmt("                                                  ELSE ");
+      out.stmt("                              s_next_counter_value <= std_logic_vector(unsigned(s_counter_value) + 1);");
+      out.stmt("                           END IF;");
+      out.stmt("         END CASE;");
+      out.stmt("      END IF;");
+      out.stmt("   END PROCESS make_next_value;");
+      out.stmt("");
+      out.stmt("   make_flops : PROCESS( GlobalClock , s_real_enable , clear , s_next_counter_value )");
+      out.stmt("      VARIABLE temp : std_logic_vector(0 DOWNTO 0);");
+      out.stmt("   BEGIN");
+      out.stmt("      temp := std_logic_vector(to_unsigned(ClkEdge,1));");
+      out.stmt("      IF (clear = '1') THEN s_counter_value <= (OTHERS => '0');");
+      out.stmt("      ELSIF (GlobalClock'event AND (GlobalClock = temp(0))) THEN");
+      out.stmt("         IF (s_real_enable = '1') THEN s_counter_value <= s_next_counter_value;");
+      out.stmt("         END IF;");
+      out.stmt("      END IF;");
+      out.stmt("   END PROCESS make_flops;");
+    } else {
+      out.stmt("");
+      out.stmt("   assign CompareOut = s_carry;");
+      out.stmt("   assign CountValue = (ClkEdge) ? s_counter_value : s_counter_value_neg_edge;");
+      out.stmt("");
+      out.stmt("   always@(*)");
+      out.stmt("   begin");
+      out.stmt("      if (Up_n_Down)");
+      out.stmt("         begin");
+      out.stmt("            if (ClkEdge)");
+      out.stmt("               s_carry = (s_counter_value == max_val) ? 1'b1 : 1'b0;");
+      out.stmt("            else");
+      out.stmt("               s_carry = (s_counter_value_neg_edge == max_val) ? 1'b1 : 1'b0;");
+      out.stmt("         end");
+      out.stmt("      else");
+      out.stmt("         begin");
+      out.stmt("            if (ClkEdge)");
+      out.stmt("               s_carry = (s_counter_value == 0) ? 1'b1 : 1'b0;");
+      out.stmt("            else");
+      out.stmt("               s_carry = (s_counter_value_neg_edge == 0) ? 1'b1 : 1'b0;");
+      out.stmt("         end");
+      out.stmt("   end");
+      out.stmt("");
+      out.stmt("   assign s_real_enable = ((~(load)&~(Enable))|");
+      out.stmt("                           ((mode==1)&s_carry&~(load))) ? 1'b0 : ClockEnable;");
+      out.stmt("");
+      out.stmt("   always @(*)");
+      out.stmt("   begin");
+      out.stmt("      if ((load)|((mode==3)&s_carry))");
+      out.stmt("         s_next_counter_value = LoadData;");
+      out.stmt("      else if ((mode==0)&s_carry&Up_n_Down)");
+      out.stmt("         s_next_counter_value = 0;");
+      out.stmt("      else if ((mode==0)&s_carry)");
+      out.stmt("         s_next_counter_value = max_val;");
+      out.stmt("      else if (Up_n_Down)");
+      out.stmt("         begin");
+      out.stmt("            if (ClkEdge)");
+      out.stmt("               s_next_counter_value = s_counter_value + 1;");
+      out.stmt("            else");
+      out.stmt("               s_next_counter_value = s_counter_value_neg_edge + 1;");
+      out.stmt("         end");
+      out.stmt("      else");
+      out.stmt("         begin");
+      out.stmt("            if (ClkEdge)");
+      out.stmt("               s_next_counter_value = s_counter_value - 1;");
+      out.stmt("            else");
+      out.stmt("               s_next_counter_value = s_counter_value_neg_edge - 1;");
+      out.stmt("         end");
+      out.stmt("   end");
+      out.stmt("");
+      out.stmt("   always @(posedge GlobalClock or posedge clear)");
+      out.stmt("   begin");
+      out.stmt("       if (clear) s_counter_value <= 0;");
+      out.stmt("       else if (s_real_enable) s_counter_value <= s_next_counter_value;");
+      out.stmt("   end");
+      out.stmt("");
+      out.stmt("   always @(negedge GlobalClock or posedge clear)");
+      out.stmt("   begin");
+      out.stmt("       if (clear) s_counter_value_neg_edge <= 0;");
+      out.stmt("       else if (s_real_enable) s_counter_value_neg_edge <= s_next_counter_value;");
+      out.stmt("   end");
+      out.stmt("");
+    }
   }
 
-  @Override
-  public SortedMap<String, Integer> GetWireList(AttributeSet attrs,
-      Netlist Nets) {
-    SortedMap<String, Integer> Wires = new TreeMap<String, Integer>();
-    Wires.put("s_real_enable", 1);
-    return Wires;
+  protected int width(AttributeSet attrs) {
+    return attrs.getValue(StdAttr.WIDTH).getWidth();
   }
-
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-      char Vendor) {
-    return true;
-  }
-
 }

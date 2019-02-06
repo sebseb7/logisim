@@ -172,16 +172,13 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 				}
 				Contents.add("");
 			}
-			ArrayList<String> Comps = GetComponentDeclarationSection(
-					TheNetlist, attrs);
+			ArrayList<String> Comps = GetComponentDeclarationSection( TheNetlist, attrs);
 			if (!Comps.isEmpty()) {
-				Contents.addAll(MakeRemarkBlock(
-						"Here all used components are defined", 3, HDLType));
+				Contents.addAll(MakeRemarkBlock("Here all used components are defined", 3, HDLType));
 				Contents.addAll(Comps);
 				Contents.add("");
 			}
-			Contents.addAll(MakeRemarkBlock(
-					"Here all used signals are defined", 3, HDLType));
+			Contents.addAll(MakeRemarkBlock("Here all used signals are defined", 3, HDLType));
 			for (String Wire : WireList.keySet()) {
 				OneLine.append(Wire);
 				while (OneLine.length() < SallignmentSize) {
@@ -263,8 +260,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 			}
 			Contents.add("");
 			Contents.add("BEGIN");
-			Contents.addAll(GetModuleFunctionality(TheNetlist, attrs, Reporter,
-					HDLType));
+			Contents.addAll(GetModuleFunctionality(TheNetlist, attrs, Reporter, HDLType));
 			Contents.add("END PlatformIndependent;");
 		} else {
 			String Preamble = "module " + ComponentName + "( ";
@@ -452,8 +448,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 			if (!firstline) {
 				Contents.add("");
 			}
-			Contents.addAll(GetModuleFunctionality(TheNetlist, attrs, Reporter,
-					HDLType));
+			Contents.addAll(GetModuleFunctionality(TheNetlist, attrs, Reporter, HDLType));
 			Contents.add("");
 			Contents.add("endmodule");
 		}

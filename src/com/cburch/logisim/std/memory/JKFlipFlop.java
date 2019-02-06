@@ -31,57 +31,9 @@
 package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.settings.Settings;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Value;
 
 public class JKFlipFlop extends AbstractFlipFlop {
-  private class JKFFHDLGeneratorFactory
-    extends AbstractFlipFlopHDLGeneratorFactory {
-    @Override
-    public String ComponentName() {
-      return "J-K Flip-Flop";
-    }
-
-    @Override
-    public Map<String, String> GetInputMaps(NetlistComponent ComponentInfo,
-        Netlist Nets, FPGAReport Reporter, String HDLType) {
-      Map<String, String> PortMap = new HashMap<String, String>();
-      PortMap.putAll(GetNetMap("J", true, ComponentInfo, 0, Reporter,
-            HDLType, Nets));
-      PortMap.putAll(GetNetMap("K", true, ComponentInfo, 1, Reporter,
-            HDLType, Nets));
-      return PortMap;
-    }
-
-    @Override
-    public Map<String, Integer> GetInputPorts() {
-      Map<String, Integer> Inputs = new HashMap<String, Integer>();
-      Inputs.put("J", 1);
-      Inputs.put("K", 1);
-      return Inputs;
-    }
-
-    @Override
-    public ArrayList<String> GetUpdateLogic(String HDLType) {
-      ArrayList<String> Contents = new ArrayList<String>();
-      if (HDLType.endsWith(Settings.VHDL)) {
-        Contents.add("   s_next_state <= (NOT(s_current_state_reg) AND J) OR");
-        Contents.add("                   (s_current_state_reg AND NOT(K));");
-      } else {
-        Contents.add("   assign s_next_state = (~(s_current_state_reg)&J)|");
-        Contents.add("                         (s_current_state_reg&~(K));");
-      }
-      return Contents;
-    }
-  }
 
   public JKFlipFlop() {
     super("J-K Flip-Flop", "jkFlipFlop.gif", S.getter("jkFlipFlopComponent"), 2, false);
@@ -111,11 +63,12 @@ public class JKFlipFlop extends AbstractFlipFlop {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (MyHDLGenerator == null)
-      MyHDLGenerator = new JKFFHDLGeneratorFactory();
-    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  protected AbstractFlipFlopHDLGeneratorFactory getHdlGenerator() {
+    return new AbstractFlipFlopHDLGeneratorFactory(
+        "JKFF", "J-K Flip-Flip",
+        new String[]{ "J", "K" },
+        "s_next_state <= (NOT(s_current_state_reg) AND J) OR (s_current_state_reg AND NOT(K));",
+        "assign s_next_state = (~(s_current_state_reg)&J) | (s_current_state_reg&~(K));");
   }
 
 }

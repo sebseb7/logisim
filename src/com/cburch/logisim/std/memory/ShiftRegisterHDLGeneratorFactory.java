@@ -29,536 +29,355 @@
  */
 package com.cburch.logisim.std.memory;
 
-import java.util.ArrayList;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.Map;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.SortedMap;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.FileWriter;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
-public class ShiftRegisterHDLGeneratorFactory
-  extends AbstractHDLGeneratorFactory {
-
-  private static final String ActiveLevelStr = "ActiveLevel";
-  private static final int ActiveLevelId = -1;
-  private static final String NrOfBitsStr = "NrOfBits";
-  private static final int NrOfBitsId = -2;
-  private static final String NrOfStagesStr = "NrOfStages";
-  private static final int NrOfStagesId = -3;
-  private static final String NrOfParBitsStr = "NrOfParBits";
-  private static final int NrOfParBitsId = -4;
+public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   @Override
-  public ArrayList<String> GetArchitecture(Netlist TheNetlist,
-      AttributeSet attrs, Map<String, File> MemInitFiles, String ComponentName, FPGAReport Reporter,
-      String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    Contents.addAll(FileWriter.getGenerateRemark(ComponentName, HDLType,
-          TheNetlist.projName()));
-    if (HDLType.equals(Settings.VHDL)) {
-      Contents.add("ARCHITECTURE NoPlatformSpecific OF SingleBitShiftReg IS");
-      Contents.add("");
-      Contents.add("   SIGNAL s_state_reg  : std_logic_vector( ("
-          + NrOfStagesStr + "-1) DOWNTO 0 );");
-      Contents.add("   SIGNAL s_state_next : std_logic_vector( ("
-          + NrOfStagesStr + "-1) DOWNTO 0 );");
-      Contents.add("");
-      Contents.add("BEGIN");
-      Contents.add("   Q        <= s_state_reg;");
-      Contents.add("   ShiftOut <= s_state_reg(" + NrOfStagesStr + "-1);");
-      Contents.add("");
-      Contents.add("   s_state_next <= D WHEN ParLoad = '1' ELSE s_state_reg(("
-          + NrOfStagesStr + "-2) DOWNTO 0)&ShiftIn;");
-      Contents.add("");
-      Contents.add("   make_state : PROCESS(Clock, ShiftEnable, Tick, Reset, s_state_next, ParLoad)");
-      Contents.add("      VARIABLE temp : std_logic_vector( 0 DOWNTO 0 );");
-      Contents.add("   BEGIN");
-      Contents.add("      temp := std_logic_vector(to_unsigned("+ActiveLevelStr+ ",1));");
-      Contents.add("      IF (Reset = '1') THEN s_state_reg <= (OTHERS => '0');");
-      Contents.add("      ELSIF (Clock'event AND (Clock = temp(0) )) THEN");
-      Contents.add("         IF (((ShiftEnable = '1') OR (ParLoad = '1')) AND (Tick = '1')) THEN");
-      Contents.add("            s_state_reg <= s_state_next;");
-      Contents.add("         END IF;");
-      Contents.add("      END IF;");
-      Contents.add("   END PROCESS make_state;");
-      Contents.add("END NoPlatformSpecific;");
-      Contents.add("");
-      Contents.add("");
-      Contents.add("");
+  public ArrayList<String> GetArchitecture(Netlist TheNetlist, AttributeSet attrs,
+      Map<String, File> MemInitFiles, String ComponentName, FPGAReport err, String lang) {
+    ArrayList<String> C = new ArrayList<String>();
+    C.addAll(FileWriter.getGenerateRemark(ComponentName, lang, TheNetlist.projName()));
+    if (lang.equals("VHDL")) {
+      C.add("ARCHITECTURE NoPlatformSpecific OF SingleBitShiftReg IS");
+      C.add("   SIGNAL s_state_reg  : std_logic_vector(Stages-1 DOWNTO 0);");
+      C.add("   SIGNAL s_state_next : std_logic_vector(Stages-1 DOWNTO 0);");
+      C.add("BEGIN");
+      C.add("   Q        <= s_state_reg;");
+      C.add("   ShiftOut <= s_state_reg(Stages-1);");
+      C.add("");
+      C.add("   s_state_next <= D WHEN ParLoad = '1' ELSE s_state_reg((Stages-2) DOWNTO 0)&ShiftIn;");
+      C.add("");
+      C.add("   make_state : PROCESS(Clock, ShiftEnable, Tick, Reset, s_state_next, ParLoad)");
+      C.add("      VARIABLE temp : std_logic_vector( 0 DOWNTO 0 );");
+      C.add("   BEGIN");
+      C.add("      temp := std_logic_vector(to_unsigned("+"Trigger"+ ",1));");
+      C.add("      IF (Reset = '1') THEN s_state_reg <= (OTHERS => '0');");
+      C.add("      ELSIF (Clock'event AND (Clock = temp(0) )) THEN");
+      C.add("         IF (((ShiftEnable = '1') OR (ParLoad = '1')) AND (Tick = '1')) THEN");
+      C.add("            s_state_reg <= s_state_next;");
+      C.add("         END IF;");
+      C.add("      END IF;");
+      C.add("   END PROCESS make_state;");
+      C.add("END NoPlatformSpecific;");
     } else {
-      Contents.add("module SingleBitShiftReg ( Reset,");
-      Contents.add("                           Tick,");
-      Contents.add("                           Clock,");
-      Contents.add("                           ShiftEnable,");
-      Contents.add("                           ParLoad,");
-      Contents.add("                           ShiftIn,");
-      Contents.add("                           D,");
-      Contents.add("                           ShiftOut,");
-      Contents.add("                           Q);");
-      Contents.add("");
-      Contents.add("   parameter " + NrOfStagesStr + " = 1;");
-      Contents.add("   parameter " + ActiveLevelStr + " = 1;");
-      Contents.add("");
-      Contents.add("   input Reset;");
-      Contents.add("   input Tick;");
-      Contents.add("   input Clock;");
-      Contents.add("   input ShiftEnable;");
-      Contents.add("   input ParLoad;");
-      Contents.add("   input ShiftIn;");
-      Contents.add("   input[" + NrOfStagesStr + ":0] D;");
-      Contents.add("   output ShiftOut;");
-      Contents.add("   output[" + NrOfStagesStr + ":0] Q;");
-      Contents.add("");
-      Contents.add("   wire[" + NrOfStagesStr + ":0] s_state_next;");
-      Contents.add("   reg[" + NrOfStagesStr + ":0] s_state_reg;");
-      Contents.add("   reg[" + NrOfStagesStr
-          + ":0] s_state_reg_neg_edge;");
-      Contents.add("");
-      Contents.add("   assign Q        = (" + ActiveLevelStr
-          + ") ? s_state_reg : s_state_reg_neg_edge;");
-      Contents.add("   assign ShiftOut = (" + ActiveLevelStr
-          + ") ? s_state_reg[" + NrOfStagesStr
-          + "-1] : s_state_reg_neg_edge[" + NrOfStagesStr + "-1];");
-      Contents.add("   assign s_state_next = (ParLoad) ? D :");
-      Contents.add("                         (" + ActiveLevelStr
-          + ") ? {s_state_reg[" + NrOfStagesStr + "-2:1],ShiftIn} :");
-      Contents.add("                                                {s_state_reg_neg_edge["
-          + NrOfStagesStr + "-2:1],ShiftIn};");
-      Contents.add("");
-      Contents.add("   always @(posedge Clock or posedge Reset)");
-      Contents.add("   begin");
-      Contents.add("      if (Reset) s_state_reg <= 0;");
-      Contents.add("      else if ((ShiftEnable|ParLoad)&Tick) s_state_reg <= s_state_next;");
-      Contents.add("   end");
-      Contents.add("");
-      Contents.add("   always @(negedge Clock or posedge Reset)");
-      Contents.add("   begin");
-      Contents.add("      if (Reset) s_state_reg_neg_edge <= 0;");
-      Contents.add("      else if ((ShiftEnable|ParLoad)&Tick) s_state_reg_neg_edge <= s_state_next;");
-      Contents.add("   end");
-      Contents.add("");
-      Contents.add("endmodule");
-      Contents.add("");
-      Contents.add("");
-      Contents.add("");
+      C.add("module SingleBitShiftReg ( Reset, Tick, Clock, ShiftEnable, ParLoad, ");
+      C.add("                           ShiftIn, D, ShiftOut, Q );");
+      C.add("   parameter Stages = 1;");
+      C.add("   parameter Trigger = 1;");
+      C.add("");
+      C.add("   input Reset;");
+      C.add("   input Tick;");
+      C.add("   input Clock;");
+      C.add("   input ShiftEnable;");
+      C.add("   input ParLoad;");
+      C.add("   input ShiftIn;");
+      C.add("   input[Stages:0] D;");
+      C.add("   output ShiftOut;");
+      C.add("   output[Stages:0] Q;");
+      C.add("");
+      C.add("   wire[Stages:0] s_state_next;");
+      C.add("   reg[Stages:0] s_state_reg;");
+      C.add("   reg[Stages:0] s_state_reg_neg_edge;");
+      C.add("");
+      C.add("   assign Q            = (Trigger) ? s_state_reg : s_state_reg_neg_edge;");
+      C.add("   assign ShiftOut     = (Trigger) ? s_state_reg[Stages-1] : s_state_reg_neg_edge[Stages-1];");
+      C.add("   assign s_state_next = (ParLoad) ? D :");
+      C.add("                         (Trigger) ? {s_state_reg[Stages-2:1],ShiftIn} :");
+      C.add("                                     {s_state_reg_neg_edge[Stages-2:1],ShiftIn};");
+      C.add("");
+      C.add("   always @(posedge Clock or posedge Reset)");
+      C.add("   begin");
+      C.add("      if (Reset) s_state_reg <= 0;");
+      C.add("      else if ((ShiftEnable|ParLoad)&Tick) s_state_reg <= s_state_next;");
+      C.add("   end");
+      C.add("");
+      C.add("   always @(negedge Clock or posedge Reset)");
+      C.add("   begin");
+      C.add("      if (Reset) s_state_reg_neg_edge <= 0;");
+      C.add("      else if ((ShiftEnable|ParLoad)&Tick) s_state_reg_neg_edge <= s_state_next;");
+      C.add("   end");
+      C.add("");
+      C.add("endmodule");
     }
-    Contents.addAll(super.GetArchitecture(TheNetlist, attrs, null, ComponentName,
-          Reporter, HDLType));
-    return Contents;
+    C.add("");
+    C.add("");
+    C.add("");
+    C.addAll(super.GetArchitecture(TheNetlist, attrs, null, ComponentName, err, lang));
+    return C;
   }
 
   @Override
-  public ArrayList<String> GetComponentDeclarationSection(Netlist TheNetlist,
-      AttributeSet attrs) {
-    ArrayList<String> Components = new ArrayList<String>();
-    Components.add("   COMPONENT SingleBitShiftReg");
-    Components.add("      GENERIC ( " + ActiveLevelStr + " : INTEGER;");
-    Components.add("                " + NrOfStagesStr + " : INTEGER);");
-    Components.add("      PORT ( Reset       : IN  std_logic;");
-    Components.add("             Tick        : IN  std_logic;");
-    Components.add("             Clock       : IN  std_logic;");
-    Components.add("             ShiftEnable : IN  std_logic;");
-    Components.add("             ParLoad     : IN  std_logic;");
-    Components.add("             ShiftIn     : IN  std_logic;");
-    Components.add("             D           : IN  std_logic_vector( ("
-        + NrOfStagesStr + "-1) DOWNTO 0 );");
-    Components.add("             ShiftOut    : OUT std_logic;");
-    Components.add("             Q           : OUT std_logic_vector( ("
-        + NrOfStagesStr + "-1) DOWNTO 0 ));");
-    Components.add("   END COMPONENT;");
-    return Components;
-  }
-
-  @Override
-  public String getComponentStringIdentifier() {
-    return "SHIFTER";
+  public ArrayList<String> GetComponentDeclarationSection(Netlist TheNetlist, AttributeSet attrs) {
+    ArrayList<String> C = new ArrayList<String>();
+    C.add("   COMPONENT SingleBitShiftReg");
+    C.add("      GENERIC ( Trigger : INTEGER;");
+    C.add("                Stages : INTEGER);");
+    C.add("      PORT ( Reset       : IN  std_logic;");
+    C.add("             Tick        : IN  std_logic;");
+    C.add("             Clock       : IN  std_logic;");
+    C.add("             ShiftEnable : IN  std_logic;");
+    C.add("             ParLoad     : IN  std_logic;");
+    C.add("             ShiftIn     : IN  std_logic;");
+    C.add("             D           : IN  std_logic_vector(Stages-1 DOWNTO 0);");
+    C.add("             ShiftOut    : OUT std_logic;");
+    C.add("             Q           : OUT std_logic_vector(Stages-1 DOWNTO 0));");
+    C.add("   END COMPONENT;");
+    return C;
   }
 
   @Override
   public ArrayList<String> GetEntity(Netlist TheNetlist, AttributeSet attrs,
-      String ComponentName, FPGAReport Reporter, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    if (HDLType.equals(Settings.VHDL)) {
-      Contents.addAll(FileWriter.getGenerateRemark(ComponentName,
-            Settings.VHDL, TheNetlist.projName()));
-      Contents.addAll(FileWriter.getExtendedLibrary());
-      Contents.add("ENTITY SingleBitShiftReg IS");
-      Contents.add("   GENERIC ( " + ActiveLevelStr + " : INTEGER;");
-      Contents.add("             " + NrOfStagesStr + " : INTEGER);");
-      Contents.add("   PORT ( Reset       : IN  std_logic;");
-      Contents.add("          Tick        : IN  std_logic;");
-      Contents.add("          Clock       : IN  std_logic;");
-      Contents.add("          ShiftEnable : IN  std_logic;");
-      Contents.add("          ParLoad     : IN  std_logic;");
-      Contents.add("          ShiftIn     : IN  std_logic;");
-      Contents.add("          D           : IN  std_logic_vector( ("
-          + NrOfStagesStr + "-1) DOWNTO 0 );");
-      Contents.add("          ShiftOut    : OUT std_logic;");
-      Contents.add("          Q           : OUT std_logic_vector( ("
-          + NrOfStagesStr + "-1) DOWNTO 0 ));");
-      Contents.add("END SingleBitShiftReg;");
-      Contents.add("");
-      Contents.add("");
-      Contents.add("");
+      String ComponentName, FPGAReport err, String lang) {
+    ArrayList<String> C = new ArrayList<String>();
+    if (lang.equals("VHDL")) {
+      C.addAll(FileWriter.getGenerateRemark(ComponentName, "VHDL", TheNetlist.projName()));
+      C.addAll(FileWriter.getExtendedLibrary());
+      C.add("ENTITY SingleBitShiftReg IS");
+      C.add("   GENERIC ( Trigger : INTEGER;");
+      C.add("             Stages : INTEGER);");
+      C.add("   PORT ( Reset       : IN  std_logic;");
+      C.add("          Tick        : IN  std_logic;");
+      C.add("          Clock       : IN  std_logic;");
+      C.add("          ShiftEnable : IN  std_logic;");
+      C.add("          ParLoad     : IN  std_logic;");
+      C.add("          ShiftIn     : IN  std_logic;");
+      C.add("          D           : IN  std_logic_vector(Stages-1 DOWNTO 0);");
+      C.add("          ShiftOut    : OUT std_logic;");
+      C.add("          Q           : OUT std_logic_vector(Stages-1 DOWNTO 0));");
+      C.add("END SingleBitShiftReg;");
+      C.add("");
+      C.add("");
+      C.add("");
     }
-    Contents.addAll(super.GetEntity(TheNetlist, attrs, ComponentName,
-          Reporter, HDLType));
-    return Contents;
+    C.addAll(super.GetEntity(TheNetlist, attrs, ComponentName, err, lang));
+    return C;
+  }
+
+  protected final static int GENERIC_PARAM_TRIGGER = -1;
+  protected final static int GENERIC_PARAM_BUSWIDTH = -2;
+  protected final static int GENERIC_PARAM_STAGES = -3;
+  protected final static int GENERIC_PARAM_BITS = -4;
+
+  @Override
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
+
+  @Override
+  public String getComponentStringIdentifier() { return "SHIFTER"; }
+
+  @Override
+  public String GetSubDir() { return "memory"; }
+
+  @Override
+  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("Reset", 1);
+    list.put("Tick", 1);
+    list.put("Clock", 1);
+    list.put("ShiftEnable", 1);
+    list.put("ParLoad", 1);
+    list.put("ShiftIn", GENERIC_PARAM_BUSWIDTH);
+    list.put("D", GENERIC_PARAM_BITS);
   }
 
   @Override
-  public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
-    Inputs.put("Reset", 1);
-    Inputs.put("Tick", 1);
-    Inputs.put("Clock", 1);
-    Inputs.put("ShiftEnable", 1);
-    Inputs.put("ParLoad", 1);
-    Inputs.put("ShiftIn", NrOfBitsId);
-    Inputs.put("D", NrOfParBitsId);
-    return Inputs;
+  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("ShiftOut", GENERIC_PARAM_BUSWIDTH);
+    list.put("Q", GENERIC_PARAM_BITS);
   }
 
   @Override
-  public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
-      AttributeSet attrs, FPGAReport Reporter, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    if (HDLType.equals(Settings.VHDL)) {
-      Contents.add("   GenBits : FOR n IN (" + NrOfBitsStr
-          + "-1) DOWNTO 0 GENERATE");
-      Contents.add("      OneBit : SingleBitShiftReg");
-      Contents.add("      GENERIC MAP ( " + ActiveLevelStr + " => "
-          + ActiveLevelStr + ",");
-      Contents.add("                    " + NrOfStagesStr + " => "
-          + NrOfStagesStr + " )");
-      Contents.add("      PORT MAP ( Reset       => Reset,");
-      Contents.add("                 Tick        => Tick,");
-      Contents.add("                 Clock       => Clock,");
-      Contents.add("                 ShiftEnable => ShiftEnable,");
-      Contents.add("                 ParLoad     => ParLoad,");
-      Contents.add("                 ShiftIn     => ShiftIn(n),");
-      Contents.add("                 D           => D( ((n+1)*"
-          + NrOfStagesStr + ")-1 DOWNTO (n*" + NrOfStagesStr + ")),");
-      Contents.add("                 ShiftOut    => ShiftOut(n),");
-      Contents.add("                 Q           => Q( ((n+1)*"
-          + NrOfStagesStr + ")-1 DOWNTO (n*" + NrOfStagesStr + ")));");
-      Contents.add("   END GENERATE genbits;");
+  public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
+    list.put(GENERIC_PARAM_TRIGGER, "Trigger");
+    list.put(GENERIC_PARAM_BUSWIDTH, "BusWidth");
+    list.put(GENERIC_PARAM_STAGES, "Stages");
+    list.put(GENERIC_PARAM_BITS, "Bits");
+  }
+
+  @Override
+  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    int w = width(attrs);
+    int n = stages(attrs);
+
+    boolean gatedClk = GetClockNetName(info, ShiftRegister.CK, nets).equals("");
+    if (gatedClk)
+      err.AddWarning("Found a gated clock for component \"Shift Register\" in circuit \"" + nets.getCircuitName() + "\"");
+    boolean activelo = attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING;
+
+    list.put("Trigger", activelo && gatedClk ? 0 : 1);
+    list.put("BusWidth", w);
+    list.put("Stages", n);
+    list.put("Bits", w * n);
+  }
+
+  @Override
+  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    int w = width(attrs);
+    int n = stages(attrs);
+    boolean hasClk = info.EndIsConnected(ShiftRegister.CK);
+    if (!hasClk)
+      err.AddSevereWarning("Component \"Shift Register\" in circuit \""
+          + nets.getCircuitName() + "\" has no clock connection");
+
+    String clk = GetClockNetName(info, ShiftRegister.CK, nets);
+    boolean gatedClk = clk.equals("");
+    boolean activelo = attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING;
+    boolean parallel = attrs.getValue(ShiftRegister.ATTR_LOAD);
+
+    boolean vhdl = lang.equals("VHDL");
+    String zero = vhdl ? "'0'" : "1'b0";
+    String one = vhdl ? "'1'" : "1'b1";
+    String idx = vhdl ? "(%d)" : "[%]"; // fixme: these should be in base class at minimum!
+
+    list.putAll(GetNetMap("Reset", true, info, ShiftRegister.CLR, err, lang, nets));
+
+    if (!hasClk) {
+      list.put("Clock", zero);
+      list.put("Tick", zero);
+    } else if (!gatedClk) {
+      list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
+      if (nets.RequiresGlobalClockConnection())
+        list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
+      else if (activelo)
+        list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.NegativeEdgeTickIndex));
+      else
+        list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.PositiveEdgeTickIndex));
     } else {
-      Contents.add("   genvar n;");
-      Contents.add("   generate");
-      Contents.add("      for (n = 0 ; n < " + NrOfBitsStr
-          + "-1 ; n =n+1)");
-      Contents.add("      begin:Bit");
-      Contents.add("         SingleBitShiftReg #(." + ActiveLevelStr
-          + "(" + ActiveLevelStr + "),");
-      Contents.add("                             ." + NrOfStagesStr + "("
-          + NrOfStagesStr + "))");
-      Contents.add("            OneBit (.Reset(Reset),");
-      Contents.add("                    .Tick(Tick),");
-      Contents.add("                    .Clock(Clock),");
-      Contents.add("                    .ShiftEnable(ShiftEnable),");
-      Contents.add("                    .ParLoad(ParLoad),");
-      Contents.add("                    .ShiftIn(ShiftIn[n]),");
-      Contents.add("                    .D(D[((n+1)*" + NrOfStagesStr
-          + ")-1:(n*" + NrOfStagesStr + ")]),");
-      Contents.add("                    .ShiftOut(ShiftOut[n]),");
-      Contents.add("                    .Q(Q[((n+1)*" + NrOfStagesStr
-          + ")-1:(n*" + NrOfStagesStr + ")]));");
-      Contents.add("      end");
-      Contents.add("   endgenerate");
+      list.put("Tick", one);
+      if (gatedClk)
+        list.put("Clock", GetNetName(info, ShiftRegister.CK, true, lang, nets));
+      else if (activelo)
+        list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.InvertedDerivedClockIndex));
+      else
+        list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.DerivedClockIndex));
     }
-    return Contents;
-  }
 
-  @Override
-  public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-    Outputs.put("ShiftOut", NrOfBitsId);
-    Outputs.put("Q", NrOfParBitsId);
-    return Outputs;
-  }
+    list.putAll(GetNetMap("ShiftEnable", false, info, ShiftRegister.SH, err, lang, nets));
 
-  @Override
-  public SortedMap<Integer, String> GetParameterList(AttributeSet attrs) {
-    SortedMap<Integer, String> Parameters = new TreeMap<Integer, String>();
-    Parameters.put(ActiveLevelId, ActiveLevelStr);
-    Parameters.put(NrOfBitsId, NrOfBitsStr);
-    Parameters.put(NrOfStagesId, NrOfStagesStr);
-    Parameters.put(NrOfParBitsId, NrOfParBitsStr);
-    return Parameters;
-  }
+    if (parallel)
+      list.putAll(GetNetMap("ParLoad", true, info, ShiftRegister.LD, err, lang, nets));
+    else
+      list.put("ParLoad", zero);
 
-  @Override
-  public SortedMap<String, Integer> GetParameterMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter) {
-    SortedMap<String, Integer> ParameterMap = new TreeMap<String, Integer>();
-    AttributeSet attrs = ComponentInfo.GetComponent().getAttributeSet();
-    int ActiveLevel = 1;
-    Boolean GatedClock = false;
-    Boolean ActiveLow = false;
-    String ClockNetName = GetClockNetName(ComponentInfo, ShiftRegister.CK,
-        Nets);
-    if (ClockNetName.isEmpty()) {
-      GatedClock = true;
-      Reporter.AddWarning("Found a gated clock for component \"Shift Register\" in circuit \""
-          + Nets.getCircuitName() + "\"");
-    }
-    ActiveLow = attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING;
-    if (GatedClock && ActiveLow) {
-      ActiveLevel = 0;
-    }
-    int NrOfBits = attrs.getValue(StdAttr.WIDTH).getWidth();
-    int NrOfStages = attrs.getValue(ShiftRegister.ATTR_LENGTH);
-    ParameterMap.put(ActiveLevelStr, ActiveLevel);
-    ParameterMap.put(NrOfBitsStr, NrOfBits);
-    ParameterMap.put(NrOfStagesStr, NrOfStages);
-    ParameterMap.put(NrOfParBitsStr, NrOfBits * NrOfStages);
-    return ParameterMap;
-  }
+    String si = "ShiftIn" + (vhdl & (w == 1) ? "(0)" : "");
+    list.putAll(GetNetMap(si, true, info, ShiftRegister.IN, err, lang, nets));
+    String so = "ShiftOut" + (vhdl & (w == 1) ? "(0)" : "");
+    list.putAll(GetNetMap(so, true, info, ShiftRegister.OUT, err, lang, nets));
 
-  @Override
-  public SortedMap<String, String> GetPortMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-    SortedMap<String, String> PortMap = new TreeMap<String, String>();
-    Boolean GatedClock = false;
-    Boolean HasClock = true;
-    Boolean ActiveLow = false;
-    String ZeroBit = (HDLType.equals(Settings.VHDL)) ? "'0'" : "1'b0";
-    String SetBit = (HDLType.equals(Settings.VHDL)) ? "'1'" : "1'b1";
-    String BracketOpen = (HDLType.equals(Settings.VHDL)) ? "(" : "[";
-    String BracketClose = (HDLType.equals(Settings.VHDL)) ? ")" : "]";
-    AttributeSet attrs = ComponentInfo.GetComponent().getAttributeSet();
-    int NrOfBits = attrs.getValue(StdAttr.WIDTH).getWidth();
-    int NrOfStages = attrs.getValue(ShiftRegister.ATTR_LENGTH);
-    if (!ComponentInfo.EndIsConnected(ShiftRegister.CK)) {
-      Reporter.AddSevereWarning("Component \"Shift Register\" in circuit \""
-          + Nets.getCircuitName() + "\" has no clock connection");
-      HasClock = false;
-    }
-    String ClockNetName = GetClockNetName(ComponentInfo, ShiftRegister.CK,
-        Nets);
-    GatedClock = ClockNetName.isEmpty();
-    ActiveLow = attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING;
-    Boolean HasParallelLoad = attrs.getValue(ShiftRegister.ATTR_LOAD)
-        .booleanValue();
-    PortMap.putAll(GetNetMap("Reset", true, ComponentInfo,
-          ShiftRegister.CLR, Reporter, HDLType, Nets));
-    if (HasClock && !GatedClock) {
-      if (Nets.RequiresGlobalClockConnection()) {
-        PortMap.put(
-            "Tick",
-            ClockNetName
-            + BracketOpen
-            + Integer
-            .toString(ClockHDLGeneratorFactory.GlobalClockIndex)
-            + BracketClose);
-      } else {
-        if (ActiveLow)
-          PortMap.put(
-              "Tick",
-              ClockNetName
-              + BracketOpen
-              + Integer
-              .toString(ClockHDLGeneratorFactory.NegativeEdgeTickIndex)
-              + BracketClose);
-        else
-          PortMap.put(
-              "Tick",
-              ClockNetName
-              + BracketOpen
-              + Integer
-              .toString(ClockHDLGeneratorFactory.PositiveEdgeTickIndex)
-              + BracketClose);
-      }
-      PortMap.put(
-          "Clock",
-          ClockNetName
-          + BracketOpen
-          + Integer
-          .toString(ClockHDLGeneratorFactory.GlobalClockIndex)
-          + BracketClose);
-    } else if (!HasClock) {
-      PortMap.put("Tick", ZeroBit);
-      PortMap.put("Clock", ZeroBit);
-    } else {
-      PortMap.put("Tick", SetBit);
-      if (!GatedClock) {
-        if (ActiveLow)
-          PortMap.put(
-              "Clock",
-              ClockNetName
-              + BracketOpen
-              + Integer
-              .toString(ClockHDLGeneratorFactory.InvertedDerivedClockIndex)
-              + BracketClose);
-        else
-          PortMap.put(
-              "Clock",
-              ClockNetName
-              + BracketOpen
-              + Integer
-              .toString(ClockHDLGeneratorFactory.DerivedClockIndex)
-              + BracketClose);
-      } else {
-        PortMap.put(
-            "Clock",
-            GetNetName(ComponentInfo, ShiftRegister.CK, true,
-              HDLType, Nets));
-      }
-    }
-    PortMap.putAll(GetNetMap("ShiftEnable", false, ComponentInfo,
-          ShiftRegister.SH, Reporter, HDLType, Nets));
-    if (HasParallelLoad) {
-      PortMap.putAll(GetNetMap("ParLoad", true, ComponentInfo,
-            ShiftRegister.LD, Reporter, HDLType, Nets));
-    } else {
-      PortMap.put("ParLoad", ZeroBit);
-    }
-    String ShiftName = "ShiftIn";
-    if (HDLType.equals(Settings.VHDL) & (NrOfBits == 1))
-      ShiftName += "(0)";
-    PortMap.putAll(GetNetMap(ShiftName, true, ComponentInfo,
-          ShiftRegister.IN, Reporter, HDLType, Nets));
-    if (HasParallelLoad) {
-      StringBuffer Vector = new StringBuffer();
-      if (NrOfBits == 1) {
-        if (HDLType.equals(Settings.VHDL)) {
-          for (int i = 0; i < NrOfStages; i++) {
-            PortMap.putAll(GetNetMap(
-                  "D" + BracketOpen + Integer.toString(i)
-                  + BracketClose, true, ComponentInfo,
-                  6 + 2 * i, Reporter, HDLType, Nets));
-          }
-          int NrOfOutStages = NrOfStages - 1;
-          if (attrs.getValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
-            NrOfOutStages = NrOfStages;
-          }
-          for (int i = 0; i < NrOfOutStages; i++) {
-            PortMap.putAll(GetNetMap(
-                  "Q" + BracketOpen + Integer.toString(i)
-                  + BracketClose, true, ComponentInfo,
-                  7 + 2 * i, Reporter, HDLType, Nets));
-            PortMap.put(
-                "Q" + BracketOpen
-                + Integer.toString(NrOfStages - 1)
-                + BracketClose, "OPEN");
-          }
-        } else {
-          for (int i = 0; i < NrOfStages; i++) {
-            if (Vector.length() != 0)
-              Vector.append(",");
-            Vector.append(GetNetName(ComponentInfo, 6 + 2 * i,
-                  true, HDLType, Nets));
-          }
-          PortMap.put("D", Vector.toString());
-          Vector.setLength(0);
-          for (int i = 0; i < NrOfStages - 1; i++) {
-            if (Vector.length() != 0)
-              Vector.append(",");
-            Vector.append(GetNetName(ComponentInfo, 7 + 2 * i,
-                  true, HDLType, Nets));
-          }
-          Vector.append(", ");
-          PortMap.put("Q", Vector.toString());
+    System.out.println("todo: confirm open for last port, esp for verilog");
+    if (parallel && w == 1) {
+      if (vhdl) {
+        for (int i = 0; i < n; i++) {
+          list.putAll(GetNetMap(String.format("D"+idx, i), true, info, 6 + 2 * i, err, lang, nets));
+          if (i == n-1 && attrs.getValue(StdAttr.APPEARANCE) != StdAttr.APPEAR_CLASSIC)
+            list.put(String.format("Q"+idx, i), "OPEN");
+          else
+            list.putAll(GetNetMap(String.format("Q"+idx, i), true, info, 7 + 2 * i, err, lang, nets));
         }
       } else {
-        if (HDLType.equals(Settings.VHDL)) {
-          for (int bit = 0; bit < NrOfBits; bit++) {
-            for (int i = 0; i < NrOfStages; i++) {
-              PortMap.put(
-                  "D"
-                  + BracketOpen
-                  + Integer.toString(bit * NrOfStages
-                    + i) + BracketClose,
-                  GetBusEntryName(ComponentInfo, 6 + 2 * i,
-                    true, bit, HDLType, Nets));
-            }
+        // fixme: helper/utility for this
+        String[] p = new String[n];
+        for (int i = 0; i < n; i++)
+          p[i] = GetNetName(info, 6 + 2 * i, true, lang, nets);
+        list.put("D", String.join(", ", p));
+        for (int i = 0; i < n - 1; i++)
+          p[i] = GetNetName(info, 7 + 2 * i, true, lang, nets);
+        list.put("Q", String.join(", ", p));
+      }
+    } else if (parallel) {
+      boolean lastBitMissing = attrs.getValue(StdAttr.APPEARANCE) != StdAttr.APPEAR_CLASSIC;
+      if (vhdl) {
+        for (int bit = 0; bit < w; bit++) {
+          for (int i = 0; i < n; i++)
+            list.put(String.format("D"+idx, bit * n + i), GetBusEntryName(info, 6 + 2 * i, true, bit, lang, nets));
+          for (int i = 0; i < n; i++) {
+            if (i == n-1 && lastBitMissing)
+              list.put(String.format("Q"+idx, bit * n + i), "OPEN");
+            else
+              list.put(String.format("Q"+idx, bit * n + i), GetBusEntryName(info, 7 + 2 * i, true, bit, lang, nets));
           }
-          for (int bit = 0; bit < NrOfBits; bit++) {
-            for (int i = 0; i < NrOfStages - 1; i++) {
-              PortMap.put(
-                  "Q"
-                  + BracketOpen
-                  + Integer.toString(bit * NrOfStages
-                    + i) + BracketClose,
-                  GetBusEntryName(ComponentInfo, 7 + 2 * i,
-                    true, bit, HDLType, Nets));
-            }
-            PortMap.put(
-                "Q"
-                + BracketOpen
-                + Integer.toString((bit + 1)
-                  * NrOfStages - 1)
-                + BracketClose, "OPEN");
-          }
-        } else {
-          Vector.setLength(0);
-          for (int bit = 0; bit < NrOfBits; bit++) {
-            for (int i = 0; i < NrOfStages; i++) {
-              if (Vector.length() != 0)
-                Vector.append(",");
-              Vector.append(GetBusEntryName(ComponentInfo,
-                    6 + 2 * i, true, bit, HDLType, Nets));
-            }
-          }
-          PortMap.put("D", Vector.toString());
-          Vector.setLength(0);
-          for (int bit = 0; bit < NrOfBits; bit++) {
-            for (int i = 0; i < NrOfStages - 1; i++) {
-              if (Vector.length() != 0)
-                Vector.append(",");
-              Vector.append(GetBusEntryName(ComponentInfo,
-                    7 + 2 * i, true, bit, HDLType, Nets));
-            }
-            Vector.append(", ");
-          }
-          PortMap.put("Q", Vector.toString());
         }
+      } else {
+        String[] p = new String[n*w];
+        for (int bit = 0; bit < w; bit++)
+          for (int i = 0; i < n; i++)
+            p[bit * n + i] = GetBusEntryName(info, 6 + 2 * i, true, bit, lang, nets);
+        list.put("D", String.join(", ", p));
+        for (int bit = 0; bit < w; bit++) {
+          for (int i = 0; i < n; i++) {
+            if (i == n-1 && lastBitMissing)
+              p[bit * n + i] = "";
+            else
+              p[bit * n + i] = GetBusEntryName(info, 7 + 2 * i, true, bit, lang, nets);
+          }
+        }
+        list.put("Q", String.join(", ", p));
       }
     } else {
-      PortMap.put("Q", (HDLType.equals(Settings.VHDL)) ? "OPEN" : "");
-      StringBuffer Temp = new StringBuffer();
-      if (HDLType.equals(Settings.VERILOG)) {
-        Temp.append("0");
-      } else {
-        Temp.append("\"");
-        for (int i = 0; i < NrOfBits * NrOfStages; i++)
-          Temp.append("0");
-        Temp.append("\"");
-      }
-      PortMap.put("D", Temp.toString());
+      list.put("Q", vhdl ? "OPEN" : "");
+      String zeros = vhdl ? "\"" + ("0".repeat(w*n)) + "\"" : "0";
+      list.put("D", zeros);
     }
-    String ShiftOut = "ShiftOut";
-    if (HDLType.equals(Settings.VHDL) & (NrOfBits == 1))
-      ShiftOut += "(0)";
-    PortMap.putAll(GetNetMap(ShiftOut, true, ComponentInfo,
-          ShiftRegister.OUT, Reporter, HDLType, Nets));
-    return PortMap;
   }
 
   @Override
-  public String GetSubDir() {
-    /*
-     * this method returns the module sub-directory where the HDL code is
-     * placed
-     */
-    return "memory";
+  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
+    if (out.isVhdl) {
+      out.stmt("   GenBits : FOR n IN (BusWidth-1) DOWNTO 0 GENERATE");
+      out.stmt("      OneBit : SingleBitShiftReg");
+      out.stmt("      GENERIC MAP ( Trigger => Trigger,");
+      out.stmt("                    Stages => Stages )");
+      out.stmt("      PORT MAP ( Reset       => Reset,");
+      out.stmt("                 Tick        => Tick,");
+      out.stmt("                 Clock       => Clock,");
+      out.stmt("                 ShiftEnable => ShiftEnable,");
+      out.stmt("                 ParLoad     => ParLoad,");
+      out.stmt("                 ShiftIn     => ShiftIn(n),");
+      out.stmt("                 D           => D((n+1)*Stages-1 DOWNTO n*Stages),");
+      out.stmt("                 ShiftOut    => ShiftOut(n),");
+      out.stmt("                 Q           => Q((n+1)*Stages-1 DOWNTO n*Stages));");
+      out.stmt("   END GENERATE genbits;");
+    } else {
+      out.stmt("   genvar n;");
+      out.stmt("   generate");
+      out.stmt("      for (n = 0 ; n < BusWidth-1 ; n =n+1)");
+      out.stmt("      begin:Bit");
+      out.stmt("         SingleBitShiftReg #(.Trigger(Trigger),");
+      out.stmt("                             .Stages(Stages))");
+      out.stmt("            OneBit (.Reset(Reset),");
+      out.stmt("                    .Tick(Tick),");
+      out.stmt("                    .Clock(Clock),");
+      out.stmt("                    .ShiftEnable(ShiftEnable),");
+      out.stmt("                    .ParLoad(ParLoad),");
+      out.stmt("                    .ShiftIn(ShiftIn[n]),");
+      out.stmt("                    .D(D[((n+1)*Stages)-1:(n*Stages)]),");
+      out.stmt("                    .ShiftOut(ShiftOut[n]),");
+      out.stmt("                    .Q(Q[((n+1)*Stages)-1:(n*Stages)]));");
+      out.stmt("      end");
+      out.stmt("   endgenerate");
+    }
   }
 
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-      char Vendor) {
-    return true;
+  protected int width(AttributeSet attrs) {
+    return attrs.getValue(StdAttr.WIDTH).getWidth();
   }
+
+  protected int stages(AttributeSet attrs) {
+    return attrs.getValue(ShiftRegister.ATTR_LENGTH);
+  }
+
 }

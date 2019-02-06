@@ -29,291 +29,204 @@
  */
 package com.cburch.logisim.std.memory;
 
-import java.util.ArrayList;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class RegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  private static final String NrOfBitsStr = "NrOfBits";
-  private static final int NrOfBitsId = -1;
-  private static final String ActiveLevelStr = "ActiveLevel";
-  private static final int ActiveLevelId = -2;
+  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
+  protected final static int GENERIC_PARAM_ACTIVELEVEL = -2;
 
   @Override
-  public String getComponentStringIdentifier() {
-    return "REGISTER_FILE";
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
+
+  @Override
+  public String getComponentStringIdentifier() { return "REGISTER"; }
+
+  @Override
+  public String GetSubDir() { return "memory"; }
+
+  @Override
+  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("Reset", 1);
+    list.put("ClockEnable", 1);
+    list.put("Tick", 1);
+    list.put("Clock", 1);
+    list.put("D", GENERIC_PARAM_BUSWIDTH);
   }
 
   @Override
-  public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
-    Inputs.put("Reset", 1);
-    Inputs.put("ClockEnable", 1);
-    Inputs.put("Tick", 1);
-    Inputs.put("Clock", 1);
-    Inputs.put("D", NrOfBitsId);
-    return Inputs;
+  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("Q", GENERIC_PARAM_BUSWIDTH);
   }
 
   @Override
-  public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
-      AttributeSet attrs, FPGAReport Reporter, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    if (HDLType.equals(Settings.VHDL)) {
-      Contents.add("   Q <= s_state_reg;");
-      Contents.add("");
-      Contents.add("   make_memory : PROCESS( clock , Reset , ClockEnable , Tick , D )");
-      Contents.add("   BEGIN");
-      Contents.add("      IF (Reset = '1') THEN s_state_reg <= (OTHERS => '0');");
-      if (IsFlipFlop(attrs)) {
-        Contents.add("      ELSIF ("+ActiveLevelStr+" = 1) THEN");
-        Contents.add("         IF (Clock'event AND (Clock = '1')) THEN");
-        Contents.add("            IF (ClockEnable = '1' AND Tick = '1') THEN");
-        Contents.add("               s_state_reg <= D;");
-        Contents.add("            END IF;");
-        Contents.add("         END IF;");
-        Contents.add("      ELSIF ("+ActiveLevelStr+" = 0) THEN");
-        Contents.add("         IF (Clock'event AND (Clock = '0')) THEN");
-        Contents.add("         IF (ClockEnable = '1' AND Tick = '1') THEN");
-        Contents.add("               s_state_reg <= D;");
-        Contents.add("            END IF;");
-        Contents.add("         END IF;");
+	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
+    list.put(GENERIC_PARAM_ACTIVELEVEL, "ActiveLevel");
+    list.put(GENERIC_PARAM_BUSWIDTH, "BusWidth");
+  }
 
-        /////
-        //Contents.add("      ELSIF (Clock'event AND (Clock = std_logic_vector(to_unsigned("
-        //    + ActiveLevelStr + ",1)) )) THEN");
-      } else {
-        Contents.add("      ELSIF ("+ActiveLevelStr+" = 1) THEN");
-        Contents.add("         IF (Clock = '1') THEN");
-        Contents.add("            IF (ClockEnable = '1' AND Tick = '1') THEN");
-        Contents.add("               s_state_reg <= D;");
-        Contents.add("            END IF;");
-        Contents.add("         END IF;");
-        Contents.add("      ELSIF ("+ActiveLevelStr+" = 0) THEN");
-        Contents.add("         IF (Clock = '0') THEN");
-        Contents.add("            IF (ClockEnable = '1' AND Tick = '1') THEN");
-        Contents.add("               s_state_reg <= D;");
-        Contents.add("            END IF;");
-        Contents.add("         END IF;");
-        //Contents.add("      ELSIF (Clock = std_logic_vector(to_unsigned("
-        //    + ActiveLevelStr + ",1)) ) THEN");
-      }
-      //Contents.add("         IF (ClockEnable = '1' AND Tick = '1') THEN");
-      //Contents.add("            s_state_reg <= D;");
-      //Contents.add("         END IF;");
-      Contents.add("      END IF;");
-      Contents.add("   END PROCESS make_memory;");
+  @Override
+  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    int w = width(attrs);
+
+    boolean gatedClk = GetClockNetName(info, Register.CK, nets).equals("");
+    // fixme: differs from ShiftRegister and others
+    if (gatedClk && edgeTriggered(attrs))
+      err.AddWarning("Found a gated clock for component \"Register\" in circuit \""
+          + nets.getCircuitName() + "\"");
+
+    boolean activelo = gatedClk &&
+        (attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
+         || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW);
+
+    list.put("ActiveLevel", activelo ? 0 : 1);
+    list.put("BusWidth", w);
+  }
+
+  @Override
+  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    int w = width(attrs);
+    boolean hasClk = info.EndIsConnected(Register.CK);
+    if (!hasClk)
+      err.AddSevereWarning("Component \"Register\" in circuit \""
+          + nets.getCircuitName() + "\" has no clock connection");
+
+    String clk = GetClockNetName(info, Register.CK, nets);
+    boolean gatedClk = clk.equals("");
+    boolean activelo = attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING
+        || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW;
+
+    boolean vhdl = lang.equals("VHDL");
+    String zero = vhdl ? "'0'" : "1'b0";
+    String one = vhdl ? "'1'" : "1'b1";
+    String idx = vhdl ? "(%d)" : "[%]"; // fixme: these should be in base class at minimum!
+
+    list.putAll(GetNetMap("Reset", true, info, Register.CLR, err, lang, nets));
+    list.putAll(GetNetMap("ClockEnable", false, info, Register.EN, err, lang, nets));
+
+    if (!hasClk) {
+      list.put("Tick", zero);
+      list.put("Clock", zero);
+    } else if (!gatedClk && edgeTriggered(attrs)) {
+      list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
+      if (nets.RequiresGlobalClockConnection())
+        list.put("Tick", one);
+      else if (activelo)
+        list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.NegativeEdgeTickIndex));
+      else
+        list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.PositiveEdgeTickIndex));
     } else {
-      if (!IsFlipFlop(attrs)) {
-        Contents.add("   assign Q = s_state_reg;");
-        Contents.add("");
-        Contents.add("   always @(*)");
-        Contents.add("   begin");
-        Contents.add("      if (Reset) s_state_reg <= 0;");
-        Contents.add("      else if ((Clock==" + ActiveLevelStr
-            + ")&ClockEnable&Tick) s_state_reg <= D;");
-        Contents.add("   end");
+      list.put("Tick", one);
+      if (!gatedClk && activelo)
+        list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.InvertedDerivedClockIndex));
+      else if (!gatedClk)
+        list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.DerivedClockIndex));
+      else
+        list.put("Clock", GetNetName(info, Register.CK, true, lang, nets));
+    }
+    String d = "D" + (vhdl && w == 1 ? "(0)" : "");
+    String q = "Q" + (vhdl && w == 1 ? "(0)" : "");
+    list.putAll(GetNetMap(d, true, info, Register.IN, err, lang, nets));
+    list.putAll(GetNetMap(q, true, info, Register.OUT, err, lang, nets));
+  }
+
+  @Override
+  public void registers(SortedMap<String, Integer> list, AttributeSet attrs, String lang) {
+    System.out.println("BUG? (here and elsewhere)... trigger dependence");
+    list.put("s_state_reg", GENERIC_PARAM_BUSWIDTH);
+    if (lang.equals("Verilog") & edgeTriggered(attrs))
+      list.put("s_state_reg_neg_edge", GENERIC_PARAM_BUSWIDTH);
+  }
+
+  @Override
+  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
+    if (out.isVhdl) {
+      out.stmt("   Q <= s_state_reg;");
+      out.stmt("");
+      out.stmt("   make_memory : PROCESS( clock , Reset , ClockEnable , Tick , D )");
+      out.stmt("   BEGIN");
+      out.stmt("      IF (Reset = '1') THEN s_state_reg <= (OTHERS => '0');");
+      if (edgeTriggered(attrs)) {
+        out.stmt("      ELSIF (ActiveLevel = 1) THEN");
+        out.stmt("         IF (Clock'event AND (Clock = '1')) THEN");
+        out.stmt("            IF (ClockEnable = '1' AND Tick = '1') THEN");
+        out.stmt("               s_state_reg <= D;");
+        out.stmt("            END IF;");
+        out.stmt("         END IF;");
+        out.stmt("      ELSIF (ActiveLevel = 0) THEN");
+        out.stmt("         IF (Clock'event AND (Clock = '0')) THEN");
+        out.stmt("         IF (ClockEnable = '1' AND Tick = '1') THEN");
+        out.stmt("               s_state_reg <= D;");
+        out.stmt("            END IF;");
+        out.stmt("         END IF;");
+        //out.stmt("      ELSIF (Clock'event AND (Clock = std_logic_vector(to_unsigned("
+        //    + "ActiveLevel,1)) )) THEN");
       } else {
-        Contents.add("   assign Q = (" + ActiveLevelStr
-            + ") ? s_state_reg : s_state_reg_neg_edge;");
-        Contents.add("");
-        Contents.add("   always @(posedge Clock or posedge Reset)");
-        Contents.add("   begin");
-        Contents.add("      if (Reset) s_state_reg <= 0;");
-        Contents.add("      else if (ClockEnable&Tick) s_state_reg <= D;");
-        Contents.add("   end");
-        Contents.add("");
-        Contents.add("   always @(negedge Clock or posedge Reset)");
-        Contents.add("   begin");
-        Contents.add("      if (Reset) s_state_reg_neg_edge <= 0;");
-        Contents.add("      else if (ClockEnable&Tick) s_state_reg_neg_edge <= D;");
-        Contents.add("   end");
+        out.stmt("      ELSIF (ActiveLevel = 1) THEN");
+        out.stmt("         IF (Clock = '1') THEN");
+        out.stmt("            IF (ClockEnable = '1' AND Tick = '1') THEN");
+        out.stmt("               s_state_reg <= D;");
+        out.stmt("            END IF;");
+        out.stmt("         END IF;");
+        out.stmt("      ELSIF (ActiveLevel = 0) THEN");
+        out.stmt("         IF (Clock = '0') THEN");
+        out.stmt("            IF (ClockEnable = '1' AND Tick = '1') THEN");
+        out.stmt("               s_state_reg <= D;");
+        out.stmt("            END IF;");
+        out.stmt("         END IF;");
+        //out.stmt("      ELSIF (Clock = std_logic_vector(to_unsigned("
+        //    + "ActiveLevel,1)) ) THEN");
       }
-    }
-    return Contents;
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-    Outputs.put("Q", NrOfBitsId);
-    return Outputs;
-  }
-
-  @Override
-  public SortedMap<Integer, String> GetParameterList(AttributeSet attrs) {
-    SortedMap<Integer, String> Parameters = new TreeMap<Integer, String>();
-    Parameters.put(ActiveLevelId, ActiveLevelStr);
-    Parameters.put(NrOfBitsId, NrOfBitsStr);
-    return Parameters;
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetParameterMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter) {
-    SortedMap<String, Integer> ParameterMap = new TreeMap<String, Integer>();
-    int ActiveLevel = 1;
-    Boolean GatedClock = false;
-    Boolean ActiveLow = false;
-    AttributeSet attrs = ComponentInfo.GetComponent().getAttributeSet();
-    String ClockNetName = GetClockNetName(ComponentInfo, Register.CK, Nets);
-    if (ClockNetName.isEmpty()) {
-      GatedClock = true;
-      if (IsFlipFlop(attrs))
-        Reporter.AddWarning("Found a gated clock for component \"Register\" in circuit \""
-            + Nets.getCircuitName() + "\"");
-    }
-    if (attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
-        || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW)
-      ActiveLow = true;
-
-    if (GatedClock && ActiveLow) {
-      ActiveLevel = 0;
-    }
-    ParameterMap.put(ActiveLevelStr, ActiveLevel);
-    ParameterMap.put(NrOfBitsStr,
-        ComponentInfo.GetComponent().getEnd(Register.IN).getWidth()
-        .getWidth());
-    return ParameterMap;
-  }
-
-  @Override
-  public SortedMap<String, String> GetPortMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-    SortedMap<String, String> PortMap = new TreeMap<String, String>();
-    Boolean GatedClock = false;
-    Boolean HasClock = true;
-    Boolean ActiveLow = false;
-    String ZeroBit = (HDLType.equals(Settings.VHDL)) ? "'0'" : "1'b0";
-    String SetBit = (HDLType.equals(Settings.VHDL)) ? "'1'" : "1'b1";
-    String BracketOpen = (HDLType.equals(Settings.VHDL)) ? "(" : "[";
-    String BracketClose = (HDLType.equals(Settings.VHDL)) ? ")" : "]";
-    AttributeSet attrs = ComponentInfo.GetComponent().getAttributeSet();
-    if (!ComponentInfo.EndIsConnected(Register.CK)) {
-      Reporter.AddSevereWarning("Component \"Register\" in circuit \""
-          + Nets.getCircuitName() + "\" has no clock connection");
-      HasClock = false;
-    }
-    String ClockNetName = GetClockNetName(ComponentInfo, Register.CK, Nets);
-    if (ClockNetName.isEmpty()) {
-      GatedClock = true;
-    }
-    if (attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
-        || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW)
-      ActiveLow = true;
-    PortMap.putAll(GetNetMap("Reset", true, ComponentInfo, Register.CLR,
-          Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("ClockEnable", false, ComponentInfo,
-          Register.EN, Reporter, HDLType, Nets));
-
-    if (HasClock && !GatedClock && IsFlipFlop(attrs)) {
-      if (Nets.RequiresGlobalClockConnection()) {
-        PortMap.put("Tick", SetBit);
-      } else {
-        if (ActiveLow)
-          PortMap.put(
-              "Tick",
-              ClockNetName
-              + BracketOpen
-              + Integer
-              .toString(ClockHDLGeneratorFactory.NegativeEdgeTickIndex)
-              + BracketClose);
-        else
-          PortMap.put(
-              "Tick",
-              ClockNetName
-              + BracketOpen
-              + Integer
-              .toString(ClockHDLGeneratorFactory.PositiveEdgeTickIndex)
-              + BracketClose);
-      }
-      PortMap.put(
-          "Clock",
-          ClockNetName
-          + BracketOpen
-          + Integer
-          .toString(ClockHDLGeneratorFactory.GlobalClockIndex)
-          + BracketClose);
-    } else if (!HasClock) {
-      PortMap.put("Tick", ZeroBit);
-      PortMap.put("Clock", ZeroBit);
+      //out.stmt("         IF (ClockEnable = '1' AND Tick = '1') THEN");
+      //out.stmt("            s_state_reg <= D;");
+      //out.stmt("         END IF;");
+      out.stmt("      END IF;");
+      out.stmt("   END PROCESS make_memory;");
     } else {
-      PortMap.put("Tick", SetBit);
-      if (!GatedClock) {
-        if (ActiveLow)
-          PortMap.put(
-              "Clock",
-              ClockNetName
-              + BracketOpen
-              + Integer
-              .toString(ClockHDLGeneratorFactory.InvertedDerivedClockIndex)
-              + BracketClose);
-        else
-          PortMap.put(
-              "Clock",
-              ClockNetName
-              + BracketOpen
-              + Integer
-              .toString(ClockHDLGeneratorFactory.DerivedClockIndex)
-              + BracketClose);
+      if (!edgeTriggered(attrs)) {
+        out.stmt("   assign Q = s_state_reg;");
+        out.stmt("");
+        out.stmt("   always @(*)");
+        out.stmt("   begin");
+        out.stmt("      if (Reset) s_state_reg <= 0;");
+        out.stmt("      else if ((Clock==ActiveLevel)&ClockEnable&Tick) s_state_reg <= D;");
+        out.stmt("   end");
       } else {
-        PortMap.put(
-            "Clock",
-            GetNetName(ComponentInfo, Register.CK, true, HDLType,
-              Nets));
+        out.stmt("   assign Q = (ActiveLevel) ? s_state_reg : s_state_reg_neg_edge;");
+        out.stmt("");
+        out.stmt("   always @(posedge Clock or posedge Reset)");
+        out.stmt("   begin");
+        out.stmt("      if (Reset) s_state_reg <= 0;");
+        out.stmt("      else if (ClockEnable&Tick) s_state_reg <= D;");
+        out.stmt("   end");
+        out.stmt("");
+        out.stmt("   always @(negedge Clock or posedge Reset)");
+        out.stmt("   begin");
+        out.stmt("      if (Reset) s_state_reg_neg_edge <= 0;");
+        out.stmt("      else if (ClockEnable&Tick) s_state_reg_neg_edge <= D;");
+        out.stmt("   end");
       }
     }
-    String Input = "D";
-    String Output = "Q";
-    if (HDLType.equals(Settings.VHDL)
-        & (ComponentInfo.GetComponent().getAttributeSet()
-          .getValue(StdAttr.WIDTH).getWidth() == 1)) {
-      Input += "(0)";
-      Output += "(0)";
-    }
-    PortMap.putAll(GetNetMap(Input, true, ComponentInfo, Register.IN,
-          Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap(Output, true, ComponentInfo, Register.OUT,
-          Reporter, HDLType, Nets));
-    return PortMap;
   }
 
-  @Override
-  public SortedMap<String, Integer> GetRegList(AttributeSet attrs,
-      String HDLType) {
-    SortedMap<String, Integer> Regs = new TreeMap<String, Integer>();
-    Regs.put("s_state_reg", NrOfBitsId);
-    if (HDLType.equals(Settings.VERILOG) & IsFlipFlop(attrs))
-      Regs.put("s_state_reg_neg_edge", NrOfBitsId);
-    return Regs;
+  protected int width(AttributeSet attrs) {
+    return attrs.getValue(StdAttr.WIDTH).getWidth();
   }
 
-  @Override
-  public String GetSubDir() {
-    return "memory";
-  }
-
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-      char Vendor) {
-    return true;
-  }
-
-  private boolean IsFlipFlop(AttributeSet attrs) {
-    return ((attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING) || (attrs
-          .getValue(StdAttr.TRIGGER) == StdAttr.TRIG_RISING));
+  private boolean edgeTriggered(AttributeSet attrs) {
+    return ((attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING)
+        || (attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_RISING));
   }
 
 }

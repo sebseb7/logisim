@@ -29,30 +29,106 @@
  */
 package com.cburch.logisim.std.memory;
 
-import java.util.ArrayList;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 
 public class RomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   @Override
-  public String getComponentStringIdentifier() {
-    return "ROM";
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) {
+    return lang.equals("VHDL") || Mem.lineSize(attrs) == 1; // TODO: Verilog support
   }
 
   @Override
-  public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
-    Inputs.put("Address", attrs.getValue(Mem.ADDR_ATTR).getWidth());
-    return Inputs;
+  public String getComponentStringIdentifier() { return "ROM"; }
+
+  @Override
+  public String GetSubDir() { return "memory"; }
+
+  @Override
+  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("Address", addrWidth(attrs));
+  }
+
+  @Override
+  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    int w = dataWidth(attrs);
+    list.put("Data", w);
+    int n = Mem.lineSize(attrs);
+    for (int i = 1; i < n; i++)
+      list.put("Data"+i, w);
+  }
+
+  @Override
+  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+    list.putAll(GetNetMap("Address", true, info, Mem.ADDR, err, lang, nets));
+    list.putAll(GetNetMap("Data", true, info, Mem.DATA, err, lang, nets));
+    int n = Mem.lineSize(info.GetComponent().getAttributeSet());
+    for (int i = 1; i < n; i++)
+      list.putAll(GetNetMap("Data"+i, true, info, Mem.MEM_INPUTS+i-1, err, lang, nets));
+  }
+
+  @Override
+  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
+    MemContents rom = attrs.getValue(Rom.CONTENTS_ATTR);
+    int n = Mem.lineSize(attrs);
+    int wd = dataWidth(attrs);
+    int wa = addrWidth(attrs);
+    // int shift = (n == 4 ? 2 : n == 2 ? 1 : 0);
+    if (out.isVhdl) {
+      out.stmt("   MakeRom : PROCESS( Address )");
+      out.stmt("      BEGIN");
+      out.stmt("         CASE (Address) IS");
+      for (long addr = 0; addr < (1 << wa); addr += n) {
+        if (filled(rom, addr, n)) {
+          out.stmt("            WHEN %s =>\t Data <= %s;",
+              IntToBin(addr, wa, "VHDL"),
+              IntToBin(rom.get(addr), wd, "VHDL"));
+          for (int i = 1; i < n; i++)
+            out.cont(" \t Data%d <= %s;", i, IntToBin(rom.get(addr+i), wd, "VHDL"));
+        }
+      }
+      if (wd == 1) {
+        out.stmt("            WHEN others =>\t Data <= '0';");
+        for (int i = 1; i < n; i++)
+          out.cont(" \t Data%d <= '0';", i);
+      } else {
+        out.stmt("            WHEN others =>\t Data <= (others => '0');");
+        for (int i = 1; i < n; i++)
+          out.cont(" \t Data%d <= (others => '0');", i);
+      }
+      out.stmt("         END CASE;");
+      out.stmt("      END PROCESS MakeRom;");
+    } else {
+      // todo: support verilog with lineSize > 1
+      out.stmt("   reg[%d:0] Data;", wd - 1);
+      out.stmt("");
+      out.stmt("   always @ (Address)");
+      out.stmt("   begin");
+      out.stmt("      case(Address)");
+      for (long addr = 0; addr < (1 << wa); addr++) {
+        int data = rom.get(addr);
+        if (data != 0)
+          out.stmt("         %d : Data = %d;", addr, data);
+      }
+      out.stmt("         default : Data = 0;");
+      out.stmt("      endcase");
+      out.stmt("   end");
+    }
+  }
+
+  protected int addrWidth(AttributeSet attrs) {
+    return attrs.getValue(Mem.ADDR_ATTR).getWidth();
+  }
+
+  protected int dataWidth(AttributeSet attrs) {
+    return attrs.getValue(Mem.DATA_ATTR).getWidth();
   }
 
   static boolean filled(MemContents rom, long addr, int n) {
@@ -62,97 +138,4 @@ public class RomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     return false;
   }
 
-  @Override
-  public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
-      AttributeSet attrs, FPGAReport Reporter, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    MemContents rom = attrs.getValue(Rom.CONTENTS_ATTR);
-    int n = Mem.lineSize(attrs);
-    // int shift = (n == 4 ? 2 : n == 2 ? 1 : 0);
-    if (HDLType.equals(Settings.VHDL)) {
-      Contents.add("   MakeRom : PROCESS( Address )");
-      Contents.add("      BEGIN");
-      Contents.add("         CASE (Address) IS");
-      for (long addr = 0; addr < (1 << attrs.getValue(Mem.ADDR_ATTR).getWidth()); addr += n) {
-        if (filled(rom, addr, n)) {
-          Contents.add("            WHEN "
-              + IntToBin(addr, attrs.getValue(Mem.ADDR_ATTR).getWidth(), Settings.VHDL)
-              + " => Data <= "
-              + IntToBin(rom.get(addr), attrs.getValue(Mem.DATA_ATTR).getWidth(), Settings.VHDL)
-              + ";");
-          for (int i = 1; i < n; i++) {
-            Contents.add("                         "
-                + " Data"+i+" <= "
-                + IntToBin(rom.get(addr+i), attrs.getValue(Mem.DATA_ATTR).getWidth(), Settings.VHDL)
-                + ";");
-          }
-        }
-      }
-      if (attrs.getValue(Mem.DATA_ATTR).getWidth() == 1) {
-        Contents.add("            WHEN OTHERS => Data <= '0';");
-        for (int i = 1; i < n; i++) {
-          Contents.add("                           Data"+i+" <= '0';");
-        }
-      } else {
-        Contents.add("            WHEN OTHERS => Data <= (OTHERS => '0');");
-        for (int i = 1; i < n; i++) {
-          Contents.add("                           Data"+i+" <= (OTHERS => '0');");
-        }
-      }
-      Contents.add("         END CASE;");
-      Contents.add("      END PROCESS MakeRom;");
-    } else {
-      // todo: support lineSize > 1
-      Contents.add("   reg[" + Integer.toString(attrs.getValue(Mem.DATA_ATTR).getWidth() - 1) + ":0] Data;");
-      Contents.add("");
-      Contents.add("   always @ (Address)");
-      Contents.add("   begin");
-      Contents.add("      case(Address)");
-      for (long addr = 0; addr < (1 << attrs.getValue(Mem.ADDR_ATTR).getWidth()); addr++) {
-        if (rom.get(addr) != 0) {
-          Contents.add("         " + addr + " : Data = "
-              + rom.get(addr) + ";");
-        }
-      }
-      Contents.add("         default : Data = 0;");
-      Contents.add("      endcase");
-      Contents.add("   end");
-    }
-    return Contents;
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-    Outputs.put("Data", attrs.getValue(Mem.DATA_ATTR).getWidth());
-    int n = Mem.lineSize(attrs);
-    for (int i = 1; i < n; i++) {
-      Outputs.put("Data"+i, attrs.getValue(Mem.DATA_ATTR).getWidth());
-    }
-    return Outputs;
-  }
-
-  @Override
-  public SortedMap<String, String> GetPortMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-    SortedMap<String, String> PortMap = new TreeMap<String, String>();
-    PortMap.putAll(GetNetMap("Address", true, ComponentInfo, Mem.ADDR, Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("Data", true, ComponentInfo, Mem.DATA, Reporter, HDLType, Nets));
-    int n = Mem.lineSize(ComponentInfo.GetComponent().getAttributeSet());
-    for (int i = 1; i < n; i++) {
-      PortMap.putAll(GetNetMap("Data"+i, true, ComponentInfo, Mem.MEM_INPUTS+i-1, Reporter, HDLType, Nets));
-    }
-    return PortMap;
-  }
-
-  @Override
-  public String GetSubDir() {
-    return "memory";
-  }
-
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs, char Vendor) {
-    return HDLType.equals(Settings.VHDL) || (Mem.lineSize(attrs) == 1);
-  }
 }

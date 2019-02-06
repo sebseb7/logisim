@@ -31,53 +31,9 @@
 package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Value;
 
 public class TFlipFlop extends AbstractFlipFlop {
-  private class TFFHDLGeneratorFactory
-    extends AbstractFlipFlopHDLGeneratorFactory
-    implements HDLGeneratorFactory {
-    @Override
-    public String ComponentName() {
-      return "T Flip-Flop";
-    }
-
-    @Override
-    public Map<String, String> GetInputMaps(NetlistComponent ComponentInfo,
-        Netlist Nets, FPGAReport Reporter, String HDLType) {
-      Map<String, String> PortMap = new HashMap<String, String>();
-      PortMap.putAll(GetNetMap("T", true, ComponentInfo, 0, Reporter,
-            HDLType, Nets));
-      return PortMap;
-    }
-
-    @Override
-    public Map<String, Integer> GetInputPorts() {
-      Map<String, Integer> Inputs = new HashMap<String, Integer>();
-      Inputs.put("T", 1);
-      return Inputs;
-    }
-
-    @Override
-    public ArrayList<String> GetUpdateLogic(String HDLType) {
-      ArrayList<String> Contents = new ArrayList<String>();
-      if (HDLType.endsWith(Settings.VHDL))
-        Contents.add("   s_next_state <= s_current_state_reg XOR T;");
-      else
-        Contents.add("   assign s_next_state = s_current_state_reg^T;");
-      return Contents;
-    }
-  }
 
   public TFlipFlop() {
     super("T Flip-Flop", "tFlipFlop.gif", S.getter("tFlipFlopComponent"), 1, false);
@@ -100,11 +56,12 @@ public class TFlipFlop extends AbstractFlipFlop {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (MyHDLGenerator == null)
-      MyHDLGenerator = new TFFHDLGeneratorFactory();
-    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  protected AbstractFlipFlopHDLGeneratorFactory getHdlGenerator() {
+    return new AbstractFlipFlopHDLGeneratorFactory(
+        "TFF", "T Flip-Flip",
+        new String[]{ "T" },
+        "s_next_state <= s_current_state_reg XOR T;",
+        "assign s_next_state = s_current_state_reg ^ T;");
   }
 
 }
