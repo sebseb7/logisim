@@ -42,6 +42,14 @@ public class Hdl extends ArrayList<String> {
   public final boolean isVhdl, isVerilog;
   public final FPGAReport err;
 
+  public final String assn;
+  public final String bitAssn;
+  public final String assnBit;
+  public final String bitAssnBit;
+  public final String idx;
+  public final String zero;
+  public final String one;
+
   private int indent = 0;
   private String tab = "";
   private StringBuffer buf = new StringBuffer();
@@ -57,6 +65,23 @@ public class Hdl extends ArrayList<String> {
     this.isVhdl = this.lang == Lang.VHDL;
     this.isVerilog = this.lang == Lang.Verilog;
     this.err = err;
+    if (isVhdl) {
+      assn = "%s <= %s;";
+      bitAssn = "%s(%d) <= %s;";
+      assnBit = "%s <= %s(%d);";
+      bitAssnBit = "%s(%d) <= %s(%d);";
+      idx = "(%d)";
+      zero = "'0'";
+      one = "'1'";
+    } else {
+      assn = "assign %s = %s;";
+      bitAssn = "assign %s[%d] <= %s;";
+      assnBit = "assign %s <= %s[%d];";
+      bitAssnBit = "assign %s[%d] <= %s[%d];";
+      idx = "[%d]";
+      zero = "1b'0";
+      one = "1b'1";
+    }
   }
 
   // public Hdl(Lang lang) {
@@ -64,12 +89,6 @@ public class Hdl extends ArrayList<String> {
   //   this.isVhdl = lang == Lang.VHDL;
   //   this.isVerilog = lang == Lang.Verilog;
   //   this.err = null;
-  // }
-
-  // public Vhdl(String filename) throws IOException {
-  // }
-
-  // public void close() throws IOException {
   // }
 
   public void indent() {
@@ -134,6 +153,22 @@ public class Hdl extends ArrayList<String> {
     buf.append(line.substring(s));
     add(buf.toString());
     buf.setLength(0);
+  }
+
+  public void assign(String name, String val) {
+    stmt(assn, name, val);
+  }
+
+  public void assign(String name, int nameIdx, String val) {
+    stmt(bitAssn, name, nameIdx, val);
+  }
+
+  public void assign(String name, String val, int valIdx) {
+    stmt(assnBit, name, val, valIdx);
+  }
+
+  public void assign(String name, int nameIdx, String val, int valIdx) {
+    stmt(bitAssnBit, name, nameIdx, val, valIdx);
   }
 
 }

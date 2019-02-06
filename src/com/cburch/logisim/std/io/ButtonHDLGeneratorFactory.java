@@ -35,46 +35,28 @@ import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 
 public class ButtonHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   @Override
-  public ArrayList<String> GetInlinedCode(Netlist Nets, Long ComponentId,
-      NetlistComponent ComponentInfo, FPGAReport Reporter,
-      String CircuitName, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    String Preamble = (HDLType.equals(Settings.VHDL)) ? "" : "assign ";
-    String AssignOperator = (HDLType.equals(Settings.VHDL)) ? " <= "
-        : " = ";
-    String OpenBracket = (HDLType.equals(Settings.VHDL)) ? "(" : "[";
-    String CloseBracket = (HDLType.equals(Settings.VHDL)) ? ")" : "]";
-    for (int i = 0; i < ComponentInfo.NrOfEnds(); i++) {
-      if (ComponentInfo.EndIsConnected(i)) {
-        Contents.add("   "
-            + Preamble
-            + GetNetName(ComponentInfo, i, true, HDLType, Nets)
-            + AssignOperator
-            + HDLGeneratorFactory.LocalInputBubbleBusname
-            + OpenBracket
-            + Integer.toString(ComponentInfo
-              .GetLocalBubbleInputStartId() + i)
-            + CloseBracket + ";");
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
+
+  @Override
+  public boolean IsOnlyInlined(String lang) { return true; }
+
+  @Override
+  public ArrayList<String> GetInlinedCode(Netlist nets, Long id,
+      NetlistComponent info, FPGAReport err, String circName, String lang) {
+    Hdl out = new Hdl(lang, err);
+    int b = info.GetLocalBubbleInputStartId();
+    for (int i = 0; i < info.NrOfEnds(); i++) {
+      if (info.EndIsConnected(i)) {
+        String name = GetNetName(info, i, true, lang, nets);
+        out.assign(name, LocalInputBubbleBusname, b + i);
       }
     }
-    return Contents;
-  }
-
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-      char Vendor) {
-    return true;
-  }
-
-  @Override
-  public boolean IsOnlyInlined(String HDLType) {
-    return true;
+    return out;
   }
 }

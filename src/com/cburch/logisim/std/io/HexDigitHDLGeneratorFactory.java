@@ -40,94 +40,62 @@ import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.data.AttributeSet;
 
 public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   @Override
-  public String getComponentStringIdentifier() {
-    return "HEXDIGIT";
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) {
+    return lang.equals("VHDL");
   }
 
   @Override
-  public String GetSubDir() {
-    return "io";
+  public String getComponentStringIdentifier() { return "HEXDIGIT"; }
+
+  @Override
+  public String GetSubDir() { return "io"; }
+
+  @Override
+  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("Hex", 4);
+    list.put("DecimalPoint", 1);
   }
 
   @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs, char Vendor) {
-    return HDLType.equals(Settings.VHDL);
+  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("Segment_A", 1);
+    list.put("Segment_B", 1);
+    list.put("Segment_C", 1);
+    list.put("Segment_D", 1);
+    list.put("Segment_E", 1);
+    list.put("Segment_F", 1);
+    list.put("Segment_G", 1);
+    list.put("Segment_DP", 1);
   }
 
   @Override
-  public SortedMap<String, Integer> GetInputList(Netlist TheNetlist, AttributeSet attrs) {
-    SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
-    Inputs.put("Hex", 4);
-    Inputs.put("DecimalPoint", 1);
-    return Inputs;
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist, AttributeSet attrs) {
-    SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-    Outputs.put("Segment_A", 1);
-    Outputs.put("Segment_B", 1);
-    Outputs.put("Segment_C", 1);
-    Outputs.put("Segment_D", 1);
-    Outputs.put("Segment_E", 1);
-    Outputs.put("Segment_F", 1);
-    Outputs.put("Segment_G", 1);
-    Outputs.put("Segment_DP", 1);
-    return Outputs;
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetInOutList(Netlist TheNetlist, AttributeSet attrs) {
-    SortedMap<String, Integer> InOuts = new TreeMap<String, Integer>();
-    return InOuts;
-  }
-
-  @Override
-  public SortedMap<String, String> GetPortMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-    SortedMap<String, String> PortMap = new TreeMap<String, String>();
-
-    PortMap.putAll(GetNetMap("Hex", true, ComponentInfo, HexDigit.HEX, Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("DecimalPoint", true, ComponentInfo, HexDigit.DP, Reporter, HDLType, Nets));
-
+  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+    list.putAll(GetNetMap("Hex", true, info, HexDigit.HEX, err, lang, nets));
+    list.putAll(GetNetMap("DecimalPoint", true, info, HexDigit.DP, err, lang, nets));
     String pin = LocalOutputBubbleBusname;
-    int offset = ComponentInfo.GetLocalBubbleOutputStartId();
-    PortMap.put("Segment_A", pin + "(" + (offset+0) + ")");
-    PortMap.put("Segment_B", pin + "(" + (offset+1) + ")");
-    PortMap.put("Segment_C", pin + "(" + (offset+2) + ")");
-    PortMap.put("Segment_D", pin + "(" + (offset+3) + ")");
-    PortMap.put("Segment_E", pin + "(" + (offset+4) + ")");
-    PortMap.put("Segment_F", pin + "(" + (offset+5) + ")");
-    PortMap.put("Segment_G", pin + "(" + (offset+6) + ")");
-    PortMap.put("Segment_DP", pin + "(" + (offset+7) + ")");
-    return PortMap;
+    int b = info.GetLocalBubbleOutputStartId();
+    list.put("Segment_A", pin + "(" + (b+0) + ")");
+    list.put("Segment_B", pin + "(" + (b+1) + ")");
+    list.put("Segment_C", pin + "(" + (b+2) + ")");
+    list.put("Segment_D", pin + "(" + (b+3) + ")");
+    list.put("Segment_E", pin + "(" + (b+4) + ")");
+    list.put("Segment_F", pin + "(" + (b+5) + ")");
+    list.put("Segment_G", pin + "(" + (b+6) + ")");
+    list.put("Segment_DP", pin + "(" + (b+7) + ")");
   }
 
   @Override
-  public SortedMap<String, Integer> GetRegList(AttributeSet attrs, String HDLType) {
-    SortedMap<String, Integer> Regs = new TreeMap<String, Integer>();
-    return Regs;
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetWireList(AttributeSet attrs, Netlist Nets) {
-    SortedMap<String, Integer> Wires = new TreeMap<String, Integer>();
-    return Wires;
-  }
-
-  // #2
-  @Override
-  public ArrayList<String> GetEntity(Netlist TheNetlist, AttributeSet attrs,
-      String ComponentName, FPGAReport Reporter, String HDLType) {
+  public ArrayList<String> GetEntity(Netlist nets, AttributeSet attrs,
+      String ComponentName, FPGAReport err, String lang) {
+    // fixme: is this necessary? or maybe better?
     ArrayList<String> Contents = new ArrayList<String>();
-    Contents.addAll(FileWriter.getGenerateRemark(ComponentName,
-          Settings.VHDL, TheNetlist.projName()));
+    Contents.addAll(FileWriter.getGenerateRemark(ComponentName, "VHDL", nets.projName()));
     Contents.addAll(FileWriter.getExtendedLibrary());
     Contents.add("ENTITY " + ComponentName + " IS");
     Contents.add("   PORT ( ");
@@ -148,15 +116,14 @@ public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   }
 
   @Override
-  public ArrayList<String> GetArchitecture(Netlist TheNetlist,
+  public ArrayList<String> GetArchitecture(Netlist nets,
       AttributeSet attrs, Map<String, File> MemInitFiles, String ComponentName,
-      FPGAReport Reporter, String HDLType) {
-
+      FPGAReport err, String lang) {
+    // fixme: is this necessary? or maybe better?
     ArrayList<String> Contents = new ArrayList<String>();
-    if (HDLType.equals(Settings.VHDL)) {
-      Contents.addAll(FileWriter.getGenerateRemark(ComponentName,
-            HDLType, TheNetlist.projName()));
-      Contents.add("ARCHITECTURE PlatformIndependent OF " + ComponentName.toString() + " IS ");
+    if (lang.equals("VHDL")) {
+      Contents.addAll(FileWriter.getGenerateRemark(ComponentName, lang, nets.projName()));
+      Contents.add("ARCHITECTURE PlatformIndependent OF " + ComponentName + " IS ");
       Contents.add("  signal s_output_value : std_logic_vector(6 downto 0);");
       Contents.add("begin");
       Contents.add("   Segment_A <= s_output_value(0);");
@@ -187,7 +154,6 @@ public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       Contents.add("         WHEN \"1101\" => s_output_value <= \"1011110\";");
       Contents.add("         WHEN \"1110\" => s_output_value <= \"1111001\";");
       Contents.add("         WHEN \"1111\" => s_output_value <= \"1110001\";");
-      // Contents.add("         WHEN OTHERS => s_output_value <= \"-------\";");
       Contents.add("      END CASE;");
       Contents.add("   END PROCESS MakeSegs;");
       Contents.add("END PlatformIndependent;");

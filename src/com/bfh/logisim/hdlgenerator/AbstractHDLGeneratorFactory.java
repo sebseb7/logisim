@@ -159,8 +159,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 				Contents.addAll(libs);
 				Contents.add("");
 			}
-			Contents.add("ARCHITECTURE PlatformIndependent OF "
-					+ ComponentName.toString() + " IS ");
+			Contents.add("ARCHITECTURE PlatformIndependent OF " + ComponentName + " IS ");
 			Contents.add("");
 			int NrOfTypes = GetNrOfTypes(TheNetlist, attrs, HDLType);
 			if (NrOfTypes > 0) {
@@ -1248,9 +1247,9 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		String CompTab = (IsEntity) ? "" : "   ";
 		boolean first;
 		if (IsEntity) {
-			Contents.add("ENTITY " + ComponentName.toString() + " IS");
+			Contents.add("ENTITY " + ComponentName + " IS");
 		} else {
-			Contents.add("   COMPONENT " + ComponentName.toString());
+			Contents.add("   COMPONENT " + ComponentName);
 		}
 		if (!ParameterList.isEmpty()) {
 			OneLine.append(CompTab + "   GENERIC ( ");
@@ -1407,7 +1406,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 			Contents.add(OneLine.toString());
 		}
 		if (IsEntity) {
-			Contents.add("END " + ComponentName.toString() + ";");
+			Contents.add("END " + ComponentName + ";");
 		} else {
 			Contents.add("   END COMPONENT;");
 		}
