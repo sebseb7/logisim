@@ -29,104 +29,75 @@
  */
 package com.cburch.logisim.std.arith;
 
-import java.util.ArrayList;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
 
 public class NegatorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  final private static String NrOfBitsStr = "NrOfBits";
-  final private static int NrOfBitsId = -1;
+  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
+
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
 
   @Override
-  public String getComponentStringIdentifier() {
-    return "NEGATOR2C";
+  public String getComponentStringIdentifier() { return "NEGATOR2C"; }
+
+  @Override
+  public String GetSubDir() { return "arithmetic"; }
+
+  @Override
+  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
+    list.put("DataX", w);
   }
 
   @Override
-  public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
-    int inputbits = (attrs.getValue(StdAttr.WIDTH).getWidth() == 1) ? 1
-        : NrOfBitsId;
-    Inputs.put("DataX", inputbits);
-    return Inputs;
+  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
+    list.put("Result", w);
   }
 
   @Override
-  public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
-      AttributeSet attrs, FPGAReport Reporter, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    if (HDLType.equals(Settings.VHDL)) {
-      int nrOfBits = attrs.getValue(StdAttr.WIDTH).getWidth();
-      if (nrOfBits == 1)
-        Contents.add("   MinDataX <= DataX;");
-      else
-        Contents.add("   MinDataX <= std_logic_vector(unsigned(NOT(DataX)) + 1);");
-    } else {
-      Contents.add("   assign   MinDataX = -DataX;");
-    }
-    return Contents;
+	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
+    int w = width(attrs);
+    if (w > 1)
+      list.put(GENERIC_PARAM_BUSWIDTH, "BusWidth");
   }
 
   @Override
-  public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-    int outputbits = (attrs.getValue(StdAttr.WIDTH).getWidth() == 1) ? 1
-        : NrOfBitsId;
-    Outputs.put("MinDataX", outputbits);
-    return Outputs;
+  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    int w = width(attrs);
+    if (w > 1)
+      list.put("BusWidth", w);
+    list.put("ExtendedBits", w + 1);
   }
 
   @Override
-  public SortedMap<Integer, String> GetParameterList(AttributeSet attrs) {
-    SortedMap<Integer, String> Parameters = new TreeMap<Integer, String>();
-    int outputbits = attrs.getValue(StdAttr.WIDTH).getWidth();
-    if (outputbits > 1)
-      Parameters.put(NrOfBitsId, NrOfBitsStr);
-    return Parameters;
+  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+    list.putAll(GetNetMap("DataX", true, info, 0, err, lang, nets));
+    list.putAll(GetNetMap("Result", true, info, 1, err, lang, nets));
   }
 
   @Override
-  public SortedMap<String, Integer> GetParameterMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter) {
-    SortedMap<String, Integer> ParameterMap = new TreeMap<String, Integer>();
-    int nrOfBits = ComponentInfo.GetComponent().getEnd(0).getWidth()
-        .getWidth();
-    if (nrOfBits > 1)
-      ParameterMap.put(NrOfBitsStr, nrOfBits);
-    return ParameterMap;
+  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
+    out.indent();
+    int w = width(attrs);
+    if (out.isVhdl && w == 1)
+      out.stmt("Result <= DataX;");
+    else if (out.isVhdl)
+      out.stmt("Result <= std_logic_vector(unsigned(NOT(DataX))) + 1;");
+    else if (out.isVerilog)
+      out.stmt("assign Result = -DataX;");
   }
 
-  @Override
-  public SortedMap<String, String> GetPortMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-    SortedMap<String, String> PortMap = new TreeMap<String, String>();
-    PortMap.putAll(GetNetMap("DataX", true, ComponentInfo, 0, Reporter,
-          HDLType, Nets));
-    PortMap.putAll(GetNetMap("MinDataX", true, ComponentInfo, 1, Reporter,
-          HDLType, Nets));
-    return PortMap;
+  protected int width(AttributeSet attrs) {
+    return attrs.getValue(StdAttr.WIDTH).getWidth();
   }
-
-  @Override
-  public String GetSubDir() {
-    return "arithmetic";
-  }
-
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-      char Vendor) {
-    return true;
-  }
-
 }

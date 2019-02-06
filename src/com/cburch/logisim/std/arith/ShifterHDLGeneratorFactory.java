@@ -29,320 +29,177 @@
  */
 package com.cburch.logisim.std.arith;
 
-import java.util.ArrayList;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
 
 public class ShifterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  final private static String ShiftModeStr = "ShifterMode";
-  final private static int ShiftModeId = -1;
+  protected final static int GENERIC_PARAM_MODE = -1;
 
   @Override
-  public String getComponentStringIdentifier() {
-    return "Shifter";
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
+
+  @Override
+  public String getComponentStringIdentifier() { return "SHIFTER"; }
+
+  @Override
+  public String GetSubDir() { return "arithmetic"; }
+
+  @Override
+  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("DataA", width(attrs));
+    list.put("Shift", stages(attrs));
   }
 
   @Override
-  public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
-    Inputs.put("DataA", attrs.getValue(StdAttr.WIDTH).getWidth());
-    Inputs.put("ShiftAmount", getNrofShiftBits(attrs));
-    return Inputs;
+  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    list.put("Result", width(attrs));
   }
 
   @Override
-  public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
-      AttributeSet attrs, FPGAReport Reporter, String HDLType) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    int nrOfBits = attrs.getValue(StdAttr.WIDTH).getWidth();
-    if (HDLType.equals(Settings.VHDL)) {
-      Contents.add("   -----------------------------------------------------------------------------");
-      Contents.add("   --- ShifterMode represents when:                                          ---");
-      Contents.add("   --- 0 : Logical Shift Left                                                ---");
-      Contents.add("   --- 1 : Rotate Left                                                       ---");
-      Contents.add("   --- 2 : Logical Shift Right                                               ---");
-      Contents.add("   --- 3 : Arithmetic Shift Right                                            ---");
-      Contents.add("   --- 4 : Rotate Right                                                      ---");
-      Contents.add("   -----------------------------------------------------------------------------");
-      Contents.add("");
-      Contents.add("");
-      if (nrOfBits == 1) {
-        Contents.add("   Result <= DataA WHEN " + ShiftModeStr
-            + " = 1 OR");
-        Contents.add("                        " + ShiftModeStr
-            + " = 3 OR");
-        Contents.add("                        " + ShiftModeStr
-            + " = 4 ELSE DataA AND NOT(ShiftAmount);");
-      } else {
-        int stage;
-        for (stage = 0; stage < getNrofShiftBits(attrs); stage++) {
-          Contents.addAll(GetStageFunctionalityVHDL(stage, nrOfBits));
-        }
-        Contents.add("   -----------------------------------------------------------------------------");
-        Contents.add("   --- Here we assign the result                                             ---");
-        Contents.add("   -----------------------------------------------------------------------------");
-        Contents.add("");
-        Contents.add("   Result <= s_stage_"
-            + Integer.toString(getNrofShiftBits(attrs) - 1)
-            + "_result;");
-        Contents.add("");
-      }
-    } else {
-      Contents.add("   /***************************************************************************");
-      Contents.add("    ** ShifterMode represents when:                                          **");
-      Contents.add("    ** 0 : Logical Shift Left                                                **");
-      Contents.add("    ** 1 : Rotate Left                                                       **");
-      Contents.add("    ** 2 : Logical Shift Right                                               **");
-      Contents.add("    ** 3 : Arithmetic Shift Right                                            **");
-      Contents.add("    ** 4 : Rotate Right                                                      **");
-      Contents.add("    ***************************************************************************/");
-      Contents.add("");
-      Contents.add("");
-      if (nrOfBits == 1) {
-        Contents.add("   assign Result = ((" + ShiftModeStr
-            + " == 1)||");
-        Contents.add("                    (" + ShiftModeStr
-            + " == 3)||");
-        Contents.add("                    (" + ShiftModeStr
-            + " == 4)) ? DataA : DataA&(~ShiftAmount);");
-      } else {
-        int stage;
-        for (stage = 0; stage < getNrofShiftBits(attrs); stage++) {
-          Contents.addAll(GetStageFunctionalityVerilog(stage,
-                nrOfBits));
-        }
-        Contents.add("   /***************************************************************************");
-        Contents.add("    ** Here we assign the result                                             **");
-        Contents.add("    ***************************************************************************/");
-        Contents.add("");
-        Contents.add("   assign Result = s_stage_"
-            + Integer.toString(getNrofShiftBits(attrs) - 1)
-            + "_result;");
-        Contents.add("");
+	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
+    list.put(GENERIC_PARAM_MODE, "Mode");
+  }
+
+  @Override
+  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    Object mode = attrs.getValue(Shifter.ATTR_SHIFT);
+    if (mode == Shifter.SHIFT_LOGICAL_LEFT)
+      list.put("Mode", 0);
+    else if (mode == Shifter.SHIFT_ROLL_LEFT)
+      list.put("Mode", 1);
+    else if (mode == Shifter.SHIFT_LOGICAL_RIGHT)
+      list.put("Mode", 2);
+    else if (mode == Shifter.SHIFT_ARITHMETIC_RIGHT)
+      list.put("Mode", 3);
+    else if (mode == Shifter.SHIFT_ROLL_RIGHT)
+      list.put("Mode", 4);
+  }
+
+  @Override
+  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+    list.putAll(GetNetMap("DataA", true, info, Shifter.IN0, err, lang, nets));
+    list.putAll(GetNetMap("Shift", true, info, Shifter.IN1, err, lang, nets));
+    list.putAll(GetNetMap("Result", true, info, Shifter.OUT, err, lang, nets));
+  }
+
+  @Override
+  public void wires(SortedMap<String, Integer> list, AttributeSet attrs, Netlist nets) {
+    System.out.println("BUG?! width and num stages must be a param?!");
+    int w = width(attrs);
+    if (w > 1) {
+      int n = stages(attrs);
+      for (int i = 0; i < n; i++) {
+        list.put(String.format("s_%d_out", i), w);
+        list.put(String.format("s_%d_in", i), 1<<i);
       }
     }
-    return Contents;
   }
 
-  private int getNrofShiftBits(AttributeSet attrs) {
-    int inputbits = attrs.getValue(StdAttr.WIDTH).getWidth();
-    int shift = 1;
-    while ((1 << shift) < inputbits)
-      shift++;
-    return shift;
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-    int inputbits = attrs.getValue(StdAttr.WIDTH).getWidth();
-    Outputs.put("Result", inputbits);
-    return Outputs;
-  }
-
-  @Override
-  public SortedMap<Integer, String> GetParameterList(AttributeSet attrs) {
-    SortedMap<Integer, String> Parameters = new TreeMap<Integer, String>();
-    Parameters.put(ShiftModeId, ShiftModeStr);
-    return Parameters;
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetParameterMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter) {
-    SortedMap<String, Integer> ParameterMap = new TreeMap<String, Integer>();
-    Object shift = ComponentInfo.GetComponent().getAttributeSet()
-        .getValue(Shifter.ATTR_SHIFT);
-    if (shift == Shifter.SHIFT_LOGICAL_LEFT)
-      ParameterMap.put(ShiftModeStr, 0);
-    else if (shift == Shifter.SHIFT_ROLL_LEFT)
-      ParameterMap.put(ShiftModeStr, 1);
-    else if (shift == Shifter.SHIFT_LOGICAL_RIGHT)
-      ParameterMap.put(ShiftModeStr, 2);
-    else if (shift == Shifter.SHIFT_ARITHMETIC_RIGHT)
-      ParameterMap.put(ShiftModeStr, 3);
-    else
-      ParameterMap.put(ShiftModeStr, 4);
-    return ParameterMap;
-  }
-
-  @Override
-  public SortedMap<String, String> GetPortMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-    SortedMap<String, String> PortMap = new TreeMap<String, String>();
-    PortMap.putAll(GetNetMap("DataA", true, ComponentInfo, Shifter.IN0,
-          Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("ShiftAmount", true, ComponentInfo,
-          Shifter.IN1, Reporter, HDLType, Nets));
-    PortMap.putAll(GetNetMap("Result", true, ComponentInfo, Shifter.OUT,
-          Reporter, HDLType, Nets));
-    return PortMap;
-  }
-
-  private ArrayList<String> GetStageFunctionalityVerilog(int StageNumber,
-      int NrOfBits) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    int nr_of_bits_to_shift = (1 << StageNumber);
-    Contents.add("   /***************************************************************************");
-    Contents.add("    ** Here stage "
-        + StageNumber
-        + " of the binairy shift tree is defined                     **");
-    Contents.add("    ***************************************************************************/");
-    Contents.add("");
-    if (StageNumber == 0) {
-      Contents.add("   assign s_stage_0_shiftin = ((" + ShiftModeStr
-          + "== 1)||(" + ShiftModeStr + "==3)) ?");
-      Contents.add("                              DataA["
-          + Integer.toString(NrOfBits - 1) + "] :");
-      Contents.add("                              (" + ShiftModeStr
-          + "== 4) ? DataA[0] : 0;");
-      Contents.add("");
-      Contents.add("   assign s_stage_0_result  = (ShiftAmount == 0) ? DataA :");
-      Contents.add("                              ((" + ShiftModeStr
-          + "== 0) || (" + ShiftModeStr + "== 1)) ?");
-      Contents.add("                              {DataA["
-          + Integer.toString(NrOfBits - 2)
-          + ":0],s_stage_0_shiftin} :");
-      Contents.add("                              {s_stage_0_shiftin,DataA["
-          + Integer.toString(NrOfBits - 1) + ":1]};");
-      Contents.add("");
+  public void vhdlStageBehavior(Hdl out, int stage, int w) {
+    int amt = (1 << stage);
+    if (stage == 0) {
+      out.stmt("s_0_in <= DataA(%d) WHEN Mode = 1 OR Mode = 3 ELSE", w-1);
+      out.stmt("          DataA(0) WHEN Mode = 4 ELSE");
+      out.stmt("          '0';");
+      out.stmt("s_0_out <= DataA WHEN Shift%s = '0' ELSE", w == 2 ? "" : "(0)");
+      out.stmt("           DataA(%d DOWNTO 0) & s_0_in WHEN Mode = 0 OR Mode = 1 ELSE", w-2);
+      out.stmt("           s_0_in & DataA(%d DOWNTO 1);", w-1);
     } else {
-      Contents.add("   assign s_stage_" + StageNumber + "_shiftin = ("
-          + ShiftModeStr + "== 1) ?");
-      Contents.add("                              s_stage_"
-          + Integer.toString(StageNumber - 1) + "_result["
-          + Integer.toString(NrOfBits - 1) + ":"
-          + Integer.toString(NrOfBits - nr_of_bits_to_shift) + "] : ");
-      Contents.add("                              (" + ShiftModeStr
-          + "== 3) ?");
-      Contents.add("                              {"
-          + nr_of_bits_to_shift + "{s_stage_"
-          + Integer.toString(StageNumber - 1) + "_result["
-          + Integer.toString(NrOfBits - 1) + "]}} :");
-      Contents.add("                              (" + ShiftModeStr
-          + "== 4) ?");
-      Contents.add("                              s_stage_"
-          + Integer.toString(StageNumber - 1) + "_result["
-          + Integer.toString(nr_of_bits_to_shift - 1) + ":0] : 0;");
-      Contents.add("");
-      Contents.add("   assign s_stage_" + StageNumber
-          + "_result  = (ShiftAmount[" + StageNumber + "]==0) ?");
-      Contents.add("                              s_stage_"
-          + Integer.toString(StageNumber - 1) + "_result : ");
-      Contents.add("                              ((" + ShiftModeStr
-          + "== 0)||(" + ShiftModeStr + "== 1)) ?");
-      Contents.add("                              {s_stage_"
-          + Integer.toString(StageNumber - 1) + "_result["
-          + Integer.toString(NrOfBits - nr_of_bits_to_shift - 1)
-          + ":0],s_stage_" + StageNumber + "_shiftin} :");
-      Contents.add("                              {s_stage_"
-          + StageNumber + "_shiftin,s_stage_"
-          + Integer.toString(StageNumber - 1) + "_result["
-          + Integer.toString(NrOfBits - 1) + ":"
-          + Integer.toString(nr_of_bits_to_shift) + "]};");
-      Contents.add("");
+      out.stmt("s_%d_in <= s_%d_out(%d DOWNTO %d) WHEN Mode = 1 ELSE", stage, stage-1, w-1, w-amt);
+      out.stmt("          (others => s_%d_out(%d)) WHEN Mode = 3 ELSE", stage-1, w-1);
+      out.stmt("          s_%d_out(%d DOWNTO 0) WHEN Mode = 4 ELSE", stage-1, amt-1);
+      out.stmt("          (others => '0');");
+      out.stmt("s_%d_out <= s_%d_out WHEN SHift(%d) = '0' ELSE", stage, stage-1, stage);
+      out.stmt("           s_%d_out(%d DOWNTO 0) & s_%d_in WHEN Mode = 0 OR Mode = 1 ELSE", stage-1, w-amt-1, stage);
+      out.stmt("           s_%d_in & s_%d_out(%d DOWNTO %d);", stage, stage-1, w-1, amt);
     }
-    return Contents;
   }
 
-  private ArrayList<String> GetStageFunctionalityVHDL(int StageNumber,
-      int NrOfBits) {
-    ArrayList<String> Contents = new ArrayList<String>();
-    int nr_of_bits_to_shift = (1 << StageNumber);
-    Contents.add("   -----------------------------------------------------------------------------");
-    Contents.add("   --- Here stage "
-        + StageNumber
-        + " of the binairy shift tree is defined                     ---");
-    Contents.add("   -----------------------------------------------------------------------------");
-    Contents.add("");
-    if (StageNumber == 0) {
-      Contents.add("   s_stage_0_shiftin <= DataA("
-          + Integer.toString(NrOfBits - 1) + ") WHEN " + ShiftModeStr
-          + " = 1 OR " + ShiftModeStr + " = 3 ELSE");
-      Contents.add("                        DataA(0) WHEN "
-          + ShiftModeStr + " = 4 ELSE '0';");
-      Contents.add("");
-      Contents.add("   s_stage_0_result  <= DataA");
-      if (NrOfBits == 2)
-        Contents.add("                           WHEN ShiftAmount = '0' ELSE");
-      else
-        Contents.add("                           WHEN ShiftAmount(0) = '0' ELSE");
-      Contents.add("                        DataA("
-          + Integer.toString(NrOfBits - 2)
-          + " DOWNTO 0)&s_stage_0_shiftin");
-      Contents.add("                           WHEN " + ShiftModeStr
-          + " = 0 OR " + ShiftModeStr + " = 1 ELSE");
-      Contents.add("                        s_stage_0_shiftin&DataA("
-          + Integer.toString(NrOfBits - 1) + " DOWNTO 1);");
-      Contents.add("");
+  public void verilogStageBehavior(Hdl out, int stage, int w) {
+    int amt = (1 << stage);
+    if (stage == 0) {
+      out.stmt("assign s_0_in = ((Mode == 1) || (Mode == 3)) ? DataA[%d] :", w-1);
+      out.stmt("                 (Mode == 4)                 ? DataA[0] :");
+      out.stmt("                                               0;");
+      out.stmt("assign s_0_out = (Shift == 0)                 ? DataA :");
+      out.stmt("                 ((Mode == 0) || (Mode == 1)) ? { DataA[%d:0], s_0_in } :", w-2);
+      out.stmt("                                                { s_0_in, DataA[%d:1] };", w-1);
     } else {
-      Contents.add("   s_stage_" + StageNumber + "_shiftin <= s_stage_"
-          + Integer.toString(StageNumber - 1) + "_result( "
-          + Integer.toString(NrOfBits - 1) + " DOWNTO "
-          + Integer.toString(NrOfBits - nr_of_bits_to_shift)
-          + " ) WHEN " + ShiftModeStr + " = 1 ELSE");
-      Contents.add("                        (OTHERS => s_stage_"
-          + Integer.toString(StageNumber - 1) + "_result("
-          + Integer.toString(NrOfBits - 1) + ")) WHEN "
-          + ShiftModeStr + " = 3 ELSE");
-      Contents.add("                        s_stage_"
-          + Integer.toString(StageNumber - 1) + "_result( "
-          + Integer.toString(nr_of_bits_to_shift - 1)
-          + " DOWNTO 0 ) WHEN " + ShiftModeStr + " = 4 ELSE");
-      Contents.add("                        (OTHERS => '0');");
-      Contents.add("");
-      Contents.add("   s_stage_" + StageNumber + "_result  <= s_stage_"
-          + Integer.toString(StageNumber - 1) + "_result");
-      Contents.add("                           WHEN ShiftAmount("
-          + StageNumber + ") = '0' ELSE");
-      Contents.add("                        s_stage_"
-          + Integer.toString(StageNumber - 1) + "_result( "
-          + Integer.toString(NrOfBits - nr_of_bits_to_shift - 1)
-          + " DOWNTO 0 )&s_stage_" + StageNumber + "_shiftin");
-      Contents.add("                           WHEN " + ShiftModeStr
-          + " = 0 OR " + ShiftModeStr + " = 1 ELSE");
-      Contents.add("                        s_stage_" + StageNumber
-          + "_shiftin&s_stage_" + Integer.toString(StageNumber - 1)
-          + "_result( " + Integer.toString(NrOfBits - 1) + " DOWNTO "
-          + Integer.toString(nr_of_bits_to_shift) + " );");
-      Contents.add("");
+      out.stmt("assign s_%d_in = (Mode == 1) ? s_%d_out[%d:%d] : ", stage, stage-1, w-1, w-amt);
+      out.stmt("                (Mode == 3) ? { %d{s_%d_out[%d]} } :", amt, stage-1, w-1);
+      out.stmt("                (Mode == 4) ? s_%d_out[%d:0] :", stage-1, amt-1);
+      out.stmt("                              0;");
+      out.stmt("assign s_%d_out = (Shift[%d] == 0)             ? s_%d_out : ", stage, stage, stage-1);
+      out.stmt("                  ((Mode == 0) || (Mode == 1)) ? { s_%d_out[%d:0], s_%d_in } :", stage-1, w-amt-1, stage);
+      out.stmt("                                                 { s_%d_in, s_%d_out[%d:%d] };", stage, stage-1, w-1, amt);
     }
-    return Contents;
   }
-
+  
   @Override
-  public String GetSubDir() {
-    return "arithmetic";
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetWireList(AttributeSet attrs,
-      Netlist Nets) {
-    SortedMap<String, Integer> Wires = new TreeMap<String, Integer>();
-    int shift = getNrofShiftBits(attrs);
-    int loop;
-    for (loop = 0; loop < shift; loop++) {
-      Wires.put("s_stage_" + loop + "_result",
-          attrs.getValue(StdAttr.WIDTH).getWidth());
-      Wires.put("s_stage_" + loop + "_shiftin", 1 << loop);
+  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
+    System.out.println("BUG? need bus width param?");
+    out.indent();
+    int w = width(attrs);
+    int n = stages(attrs);
+    if (out.isVhdl) {
+      out.stmt("--- Accepted Mode Values:");
+      out.stmt("--- 0 : Logical Shift Left");
+      out.stmt("--- 1 : Rotate Left");
+      out.stmt("--- 2 : Logical Shift Right");
+      out.stmt("--- 3 : Arithmetic Shift Right");
+      out.stmt("--- 4 : Rotate Right");
+      out.stmt("");
+      if (n == 1) {
+        out.stmt("Result <= DataA WHEN Mode = 1 OR Mode = 3 OR Mode = 4 ELSE");
+        out.stmt("          DataA AND NOT(Shift);");
+      } else {
+        for (int i = 0; i < n; i++)
+          vhdlStageBehavior(out, i, w);
+        out.stmt("");
+        out.stmt("Result <= s_%d_out;", n-1);
+      }
+    } else {
+      out.stmt("/* Accepted Mode Values");
+      out.stmt(" * 0 : Logical Shift Left");
+      out.stmt(" * 1 : Rotate Left");
+      out.stmt(" * 2 : Logical Shift Right");
+      out.stmt(" * 3 : Arithmetic Shift Right");
+      out.stmt(" * 4 : Rotate Right");
+      out.stmt(" */");
+      out.stmt("");
+      if (n == 1) {
+        out.stmt("assign Result = ((Mode == 1) || (Mode == 3) || (Mode == 4)");
+        out.stmt("                ? DataA");
+        out.stmt("                : DataA & ~Shift;");
+      } else {
+        int stage;
+        for (int i = 0; i < n; i++)
+          verilogStageBehavior(out, i, w);
+        out.stmt("");
+        out.stmt("assign Result = s_%d_out;", n-1);
+      }
     }
-    return Wires;
   }
 
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-      char Vendor) {
-    return true;
+  protected int width(AttributeSet attrs) {
+    return attrs.getValue(StdAttr.WIDTH).getWidth();
   }
+
+  private int stages(AttributeSet attrs) {
+    int w = width(attrs);
+    int stages = 1;
+    while ((1 << stages) < w)
+      stages++;
+    return stages;
+  }
+
 }
