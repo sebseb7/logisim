@@ -30,135 +30,87 @@
 
 package com.cburch.logisim.std.hdl;
 
-import java.util.ArrayList;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.Map;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.SortedMap;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.FileWriter;
-import com.bfh.logisim.settings.Settings;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.instance.Port;
 
 public class VhdlHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   @Override
-  public ArrayList<String> GetArchitecture(Netlist TheNetlist,
-      AttributeSet attrs, Map<String, File> MemInitFiles, String ComponentName, FPGAReport Reporter,
-      String HDLType) {
-    ArrayList<String> contents = new ArrayList<String>();
-    contents.addAll(FileWriter.getGenerateRemark(ComponentName, HDLType,
-          TheNetlist.projName()));
-
-    VhdlContent content = ((VhdlEntityAttributes) attrs).getContent();
-    contents.add(content.getLibraries());
-    contents.add(content.getArchitecture());
-
-    return contents;
+  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) {
+    return lang.equals("VHDL");
   }
 
-  public SortedMap<String, Integer> GetParameterMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter) {
-    AttributeSet attrs = ComponentInfo.GetComponent().getAttributeSet();
-    VhdlContent content = ((VhdlEntityAttributes) attrs).getContent();
-    SortedMap<String, Integer> ParameterMap = new TreeMap<String, Integer>();
+  @Override
+  public String getComponentStringIdentifier() { return "VHDL"; }
+
+  @Override
+  public String GetSubDir() { return "circuit"; }
+
+  @Override
+  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    for (VhdlParser.PortDescription p : content(attrs).getPorts())
+      if (p.getType() == Port.INPUT)
+        list.put(p.getName(), p.getWidth().getWidth());
+  }
+
+  @Override
+  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
+    for (VhdlParser.PortDescription p : content(attrs).getPorts())
+      if (p.getType() == Port.OUTPUT)
+        list.put(p.getName(), p.getWidth().getWidth());
+  }
+
+  @Override
+	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
+    int id = -1;
+    for (VhdlContent.Generic g : content(attrs).getGenerics())
+      list.put(id--, g.getName());
+  }
+
+  @Override
+  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
+    VhdlContent content = content(attrs);
     for (Attribute<Integer> a : content.getGenericAttributes()) {
       VhdlEntityAttributes.VhdlGenericAttribute va = (VhdlEntityAttributes.VhdlGenericAttribute)a;
       VhdlContent.Generic g = va.getGeneric();
       Integer v = attrs.getValue(a);
-      if (v != null) {
-        ParameterMap.put(g.getName(), v);
-        /*
-           } else if (!g.hasDefaultValue()) {
-           FPGAReport.AddFatalError("VHDL entity instance " +
-           attrs.getValue(VhdlEntity.NAME_ATTR) +
-           " is missing parameter " +
-           g.getName() +", and "
-           + content.getName() + " does not provide " +
-           " a default value for this parameter.");
-           */
-      } else {
-        ParameterMap.put(g.getName(), g.getDefaultValue());
-      }
+      list.put(g.getName(), v != null ? v : g.getDefaultValue());
     }
-    return ParameterMap;
   }
-
-  public SortedMap<Integer, String> GetParameterList(AttributeSet attrs) {
-    VhdlContent content = ((VhdlEntityAttributes) attrs).getContent();
-    SortedMap<Integer, String> Parameters = new TreeMap<Integer, String>();
-    int i = -1;
-    for (VhdlContent.Generic g : content.getGenerics()) {
-      Parameters.put(i--, g.getName());
-    }
-    return Parameters;
-  }
-
+  
   @Override
-  public String getComponentStringIdentifier() {
-    return "VHDL";
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> inputs = new TreeMap<String, Integer>();
-
-    VhdlContent content = ((VhdlEntityAttributes) attrs).getContent();
-    for (VhdlParser.PortDescription p : content.getPorts()) {
-      if (p.getType() == Port.INPUT)
-        inputs.put(p.getName(), p.getWidth().getWidth());
-    }
-
-    return inputs;
-  }
-
-  @Override
-  public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
-      AttributeSet attrs) {
-    SortedMap<String, Integer> outputs = new TreeMap<String, Integer>();
-
-    VhdlContent content = ((VhdlEntityAttributes) attrs).getContent();
-    for (VhdlParser.PortDescription p : content.getPorts()) {
-      if (p.getType() == Port.OUTPUT)
-        outputs.put(p.getName(), p.getWidth().getWidth());
-    }
-
-    return outputs;
-  }
-
-  @Override
-  public SortedMap<String, String> GetPortMap(Netlist Nets,
-      NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
-    SortedMap<String, String> PortMap = new TreeMap<String, String>();
-
-    AttributeSet attrs = ComponentInfo.GetComponent().getAttributeSet();
-    VhdlContent content = ((VhdlEntityAttributes) attrs).getContent();
-
+  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+    AttributeSet attrs = info.GetComponent().getAttributeSet();
     int i = 0;
-    for (VhdlParser.PortDescription p : content.getPorts()) {
-      PortMap.putAll(GetNetMap(p.getName(), true,
-            ComponentInfo, i++, Reporter, HDLType, Nets));
-    }
-
-    return PortMap;
+    for (VhdlParser.PortDescription p : content(attrs).getPorts())
+      list.putAll(GetNetMap(p.getName(), true, info, i++, err, lang, nets));
   }
 
   @Override
-  public String GetSubDir() {
-    return "circuit";
+	public ArrayList<String> GetArchitecture(Netlist nets,
+			AttributeSet attrs, Map<String, File> memInitFiles,
+			String name, FPGAReport err, String lang) {
+		ArrayList<String> list = new ArrayList<>();
+    list.addAll(FileWriter.getGenerateRemark(name, lang, nets.projName()));
+    VhdlContent content = content(attrs);
+    list.add(content.getLibraries());
+    list.add(content.getArchitecture());
+    return list;
   }
 
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-      char Vendor) {
-    return HDLType.equals(Settings.VHDL);
+  private VhdlContent content(AttributeSet attrs) {
+    return ((VhdlEntityAttributes) attrs).getContent();
   }
-
 }
