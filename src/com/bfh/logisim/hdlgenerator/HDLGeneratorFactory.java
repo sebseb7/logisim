@@ -98,5 +98,5 @@ public abstract class HDLGeneratorFactory {
 
 	public abstract String GetRelativeDirectory(String HDLType);
 
-	public abstract boolean IsOnlyInlined(String HDLType);
+	public boolean IsOnlyInlined(/*String HDLType*/) { return false; }
 }

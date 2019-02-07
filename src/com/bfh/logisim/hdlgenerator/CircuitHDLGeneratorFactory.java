@@ -105,7 +105,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
         if (!(Worker instanceof AbstractHDLGeneratorFactory))
           throw new IllegalStateException();
         ((AbstractHDLGeneratorFactory)Worker).initHDLGen(MyNetList); /* stateful hdl gen */
-				if (!Worker.IsOnlyInlined(_lang)) {
+				if (!Worker.IsOnlyInlined(/*_lang*/)) {
 					if (!WriteEntity(
 							WorkingDir + Worker.GetRelativeDirectory(_lang),
 							Worker.GetEntity(/*MyNetList,*/ ThisComponent
@@ -244,7 +244,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 								Gate.GetComponent().getAttributeSet(),
 								FPGAClass.VendorUnknown);
 				if (Worker != null) {
-					if (!Worker.IsOnlyInlined(Settings.VHDL)) {
+					if (!Worker.IsOnlyInlined(/*Settings.VHDL*/)) {
 						Components.addAll(Worker.GetComponentInstantiation(
 								TheNetlist, Gate.GetComponent()
 										.getAttributeSet(), CompName,
@@ -586,7 +586,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
         throw new IllegalStateException();
       ((AbstractHDLGeneratorFactory)Worker).initHDLGen(TheNetlist); /* stateful hdl gen */
 			if (Worker != null) {
-				if (Worker.IsOnlyInlined(HDLType)) {
+				if (Worker.IsOnlyInlined(/*HDLType*/)) {
 					String InlinedName = comp.GetComponent().getFactory()
 							.getHDLName(comp.GetComponent().getAttributeSet());
 					String InlinedId = Worker.getComponentStringIdentifier();
@@ -622,7 +622,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 							comp.GetComponent().getAttributeSet(),
 							FPGAClass.VendorUnknown);
 			if (Worker != null) {
-				if (!Worker.IsOnlyInlined(HDLType)) {
+				if (!Worker.IsOnlyInlined(/*HDLType*/)) {
 					String CompName = comp.GetComponent().getFactory()
 							.getHDLName(comp.GetComponent().getAttributeSet());
 					String CompId = Worker.getComponentStringIdentifier();

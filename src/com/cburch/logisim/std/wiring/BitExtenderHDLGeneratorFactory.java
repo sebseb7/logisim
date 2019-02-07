@@ -45,7 +45,7 @@ public class BitExtenderHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
   }
 
   @Override
-  public boolean IsOnlyInlined(String lang) { return true; }
+  public boolean IsOnlyInlined(/*String lang*/) { return true; }
 
   @Override
   public ArrayList<String> GetInlinedCode(/*Netlist nets,*/ Long id,

@@ -1423,8 +1423,4 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 		return Wires;
 	}
 
-	public boolean IsOnlyInlined(String HDLType) {
-		return false;
-	}
-
 }
