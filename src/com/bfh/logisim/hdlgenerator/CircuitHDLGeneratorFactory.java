@@ -582,6 +582,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					.getHDLGenerator(HDLType, Reporter,
 							comp.GetComponent().getAttributeSet(),
 							FPGAClass.VendorUnknown);
+      if (!(Worker instanceof AbstractHDLGeneratorFactory))
+        throw new IllegalStateException();
+      ((AbstractHDLGeneratorFactory)Worker).initHDLGen(TheNetlist); /* stateful hdl gen */
 			if (Worker != null) {
 				if (Worker.IsOnlyInlined(HDLType)) {
 					String InlinedName = comp.GetComponent().getFactory()
@@ -600,8 +603,8 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
             Contents.addAll(out);
 						FirstLine = false;
 					}
-					Contents.addAll(Worker.GetInlinedCode(TheNetlist, id++,
-							comp, Reporter, InlinedName, HDLType));
+					Contents.addAll(Worker.GetInlinedCode(/*TheNetlist,*/ id++,
+							comp/*, Reporter*/, InlinedName/*, HDLType*/));
 					if (CompIds.containsKey(InlinedId)) {
 						CompIds.remove(InlinedId);
 					}

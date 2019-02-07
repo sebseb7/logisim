@@ -47,13 +47,14 @@ public class ButtonHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   public boolean IsOnlyInlined(String lang) { return true; }
 
   @Override
-  public ArrayList<String> GetInlinedCode(Netlist nets, Long id,
-      NetlistComponent info, FPGAReport err, String circName, String lang) {
-    Hdl out = new Hdl(lang, err);
+  public ArrayList<String> GetInlinedCode(/*Netlist nets,*/ Long id,
+      NetlistComponent info, /*FPGAReport err,*/ String circName /*, String lang*/) {
+    if (_nets == null) throw new IllegalStateException();
+    Hdl out = new Hdl(_lang, _err);
     int b = info.GetLocalBubbleInputStartId();
     for (int i = 0; i < info.NrOfEnds(); i++) {
       if (info.EndIsConnected(i)) {
-        String name = GetNetName(info, i, true, lang, nets);
+        String name = GetNetName(info, i, true, _lang, _nets);
         out.assign(name, LocalInputBubbleBusname, b + i);
       }
     }

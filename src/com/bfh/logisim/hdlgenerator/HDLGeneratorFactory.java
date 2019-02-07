@@ -88,12 +88,12 @@ public abstract class HDLGeneratorFactory {
 	public abstract ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ AttributeSet attrs,
 			String ComponentName /*, FPGAReport Reporter, String HDLType*/);
 
-	public abstract ArrayList<String> GetInlinedCode(Netlist Nets, Long ComponentId,
-			NetlistComponent ComponentInfo, FPGAReport Reporter,
-			String CircuitName, String HDLType);
+	public abstract ArrayList<String> GetInlinedCode(/*Netlist Nets,*/ Long ComponentId,
+			NetlistComponent ComponentInfo, /*FPGAReport Reporter,*/
+			String CircuitName /*, String HDLType*/);
 
-	public abstract ArrayList<String> GetInlinedCode(String HDLType,
-			ArrayList<String> ComponentIdentifier, FPGAReport Reporter,
+	public abstract ArrayList<String> GetInlinedCode(/*String HDLType,*/
+			ArrayList<String> ComponentIdentifier, /*FPGAReport Reporter,*/
 			MappableResourcesContainer MapInfo);
 
 	public abstract String GetRelativeDirectory(String HDLType);

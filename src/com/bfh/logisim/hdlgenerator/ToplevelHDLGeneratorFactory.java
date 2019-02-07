@@ -296,8 +296,8 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					Reporter.AddError("No generator for component "
 							+ CompId.toString());
 				} else {
-					Contents.addAll(Generator.GetInlinedCode(HDLType, CompId,
-							Reporter, MyIOComponents));
+					Contents.addAll(Generator.GetInlinedCode(/*HDLType,*/ CompId,
+							/*Reporter,*/ MyIOComponents));
 				}
 			} else if (MyIOComponents.GetComponent(CompId).GetComponent()
 					.getFactory() instanceof PortIO) {

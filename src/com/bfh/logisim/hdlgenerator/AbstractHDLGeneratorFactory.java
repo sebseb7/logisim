@@ -756,27 +756,27 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 		return new ArrayList<String>();
 	}
 
-	public ArrayList<String> GetInlinedCode(Netlist Nets, Long ComponentId,
-			NetlistComponent ComponentInfo, FPGAReport Reporter,
-			String CircuitName, String HDLType) {
+	public ArrayList<String> GetInlinedCode(/*Netlist Nets,*/ Long ComponentId,
+			NetlistComponent ComponentInfo, /*FPGAReport Reporter, */
+			String  CircuitName /*, String HDLType*/) {
 		ArrayList<String> Contents = new ArrayList<String>();
 		return Contents;
 	}
 
-	public ArrayList<String> GetInlinedCode(String HDLType,
-			ArrayList<String> ComponentIdentifier, FPGAReport Reporter,
+	public ArrayList<String> GetInlinedCode(/*String HDLType,*/
+			ArrayList<String> ComponentIdentifier, /*FPGAReport Reporter,*/
 			MappableResourcesContainer MapInfo) {
 		ArrayList<String> Contents = new ArrayList<String>();
-		String Preamble = (HDLType.equals(Settings.VHDL)) ? "" : "assign ";
-		String AssignOperator = (HDLType.equals(Settings.VHDL)) ? " <= "
+		String Preamble = (_lang.equals(Settings.VHDL)) ? "" : "assign ";
+		String AssignOperator = (_lang.equals(Settings.VHDL)) ? " <= "
 				: " = ";
-		String OpenBracket = (HDLType.equals(Settings.VHDL)) ? "(" : "[";
-		String CloseBracket = (HDLType.equals(Settings.VHDL)) ? ")" : "]";
-		String Inversion = (HDLType.equals(Settings.VHDL)) ? "NOT " : "~";
+		String OpenBracket = (_lang.equals(Settings.VHDL)) ? "(" : "[";
+		String CloseBracket = (_lang.equals(Settings.VHDL)) ? ")" : "]";
+		String Inversion = (_lang.equals(Settings.VHDL)) ? "NOT " : "~";
 		StringBuffer Temp = new StringBuffer();
 		NetlistComponent comp = MapInfo.GetComponent(ComponentIdentifier);
 		if (comp == null) {
-			Reporter.AddFatalError("Component not found, bizar");
+			_err.AddFatalError("Component not found, bizar");
 			return Contents;
 		}
 		ArrayList<String> bla = new ArrayList<String>();
@@ -784,7 +784,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 		bla.remove(0);
 		BubbleInformationContainer BubbleInfo = comp.GetGlobalBubbleId(bla);
 		if (BubbleInfo == null) {
-			Reporter.AddFatalError("Component has no bubble information, bizar! "
+			_err.AddFatalError("Component has no bubble information, bizar! "
 					+ bla.toString());
 			return Contents;
 		}
@@ -795,7 +795,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 		 */
 		ArrayList<String> MyMaps = MapInfo.GetMapNamesList(ComponentIdentifier);
 		if (MyMaps == null) {
-			Reporter.AddFatalError("Component has no map information, bizar! "
+			_err.AddFatalError("Component has no map information, bizar! "
 					+ ComponentIdentifier.toString());
 			return Contents;
 		}

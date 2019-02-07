@@ -49,10 +49,11 @@ public abstract class AbstractConstantHDLGeneratorFactory
   public boolean IsOnlyInlined(String lang) { return true; }
 
   @Override
-  public ArrayList<String> GetInlinedCode(Netlist nets, Long id,
-      NetlistComponent info, FPGAReport err, String circName, String lang) {
+  public ArrayList<String> GetInlinedCode(/*Netlist nets,*/ Long id,
+      NetlistComponent info, /*FPGAReport err,*/ String circName /*, String lang*/) {
+    if (_nets == null) throw new IllegalStateException();
 
-    Hdl out = new Hdl(lang, err);
+    Hdl out = new Hdl(_lang, _err);
     out.indent();
 
     if (!info.EndIsConnected(0))
@@ -61,29 +62,29 @@ public abstract class AbstractConstantHDLGeneratorFactory
     int w = info.GetComponent().getEnd(0).getWidth().getWidth();
     int val = getConstant(info.GetComponent().getAttributeSet());
 
-    if (lang.equals("VHDL")) {
+    if (_lang.equals("VHDL")) {
       if (w == 1) { // easy case: single bit
-        String name = GetNetName(info, 0, true, lang, nets);
+        String name = GetNetName(info, 0, true, _lang, _nets);
         out.stmt("%s <= '%d';", name, val);
-      } else if (nets.IsContinuesBus(info, 0)) { // another easy case
-        String name = GetBusNameContinues(info, 0, lang, nets);
+      } else if (_nets.IsContinuesBus(info, 0)) { // another easy case
+        String name = GetBusNameContinues(info, 0, _lang, _nets);
         out.stmt("%s <= std_logic_vector(to_unsigned(%d,%d));", name, val, w);
       } else { // worst case: we have to enumerate all bits
         for (byte bit = 0; bit < w; bit++) {
-          String name = GetBusEntryName(info, 0, true, bit, lang, nets);
+          String name = GetBusEntryName(info, 0, true, bit, _lang, _nets);
           out.stmt("%s <= '%d';", name, (val>>>bit)&1);
         }
       }
     } else {
       if (w == 1) { // easy case: single bit
-        String name = GetNetName(info, 0, true, lang, nets);
+        String name = GetNetName(info, 0, true, _lang, _nets);
         out.stmt("%s <= 1'b%d';", name, val);
-      } else if (nets.IsContinuesBus(info, 0)) { // another easy case
-        String name = GetBusNameContinues(info, 0, lang, nets);
+      } else if (_nets.IsContinuesBus(info, 0)) { // another easy case
+        String name = GetBusNameContinues(info, 0, _lang, _nets);
         out.stmt("%s = %d'd%d;", name, w, val);
       } else { // worst case: we have to enumerate all bits
         for (byte bit = 0; bit < w; bit++) {
-          String name = GetBusEntryName(info, 0, true, bit, lang, nets);
+          String name = GetBusEntryName(info, 0, true, bit, _lang, _nets);
           out.stmt("%s = 1'b%d;", name, (val>>>bit)&1);
         }
       }

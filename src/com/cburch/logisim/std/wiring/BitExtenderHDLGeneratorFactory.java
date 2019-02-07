@@ -48,13 +48,14 @@ public class BitExtenderHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
   public boolean IsOnlyInlined(String lang) { return true; }
 
   @Override
-  public ArrayList<String> GetInlinedCode(Netlist nets, Long id,
-      NetlistComponent info, FPGAReport err, String circName, String lang) {
+  public ArrayList<String> GetInlinedCode(/*Netlist nets,*/ Long id,
+      NetlistComponent info, /*FPGAReport err,*/ String circName /*, String lang*/) {
+    if (_nets == null) throw new IllegalStateException();
 
-    Hdl out = new Hdl(lang, err);
+    Hdl out = new Hdl(_lang, _err);
     out.indent();
 
-    boolean vhdl = lang.equals("VHDL");
+    boolean vhdl = _lang.equals("VHDL");
     String zero = vhdl ? "'0'" : "1'b0";
     String one = vhdl ? "'1'" : "1'b1";
     String assn = vhdl ? "%s <= %s;" : "assign %s = %s;";
@@ -62,7 +63,7 @@ public class BitExtenderHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
     // checks input and signinput too
     for (int i = 1; i < info.NrOfEnds(); i++) {
       if (!info.EndIsConnected(i)) {
-        err.AddError("Bit Extender has floating input in circuit \"" + circName + "\"");
+        _err.AddError("Bit Extender has floating input in circuit \"" + circName + "\"");
         return out;
       }
     }
@@ -79,22 +80,22 @@ public class BitExtenderHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
     else if (type.equals("one"))
       e = one;
     else if (type.equals("sign") && wi == 1)
-      e = GetNetName(info, 1, true, lang, nets); // fixme: GetBusEntryName should handle this
+      e = GetNetName(info, 1, true, _lang, _nets); // fixme: GetBusEntryName should handle this
     else if (type.equals("sign"))
-      e = GetBusEntryName(info, 1, true, wi - 1, lang, nets);
+      e = GetBusEntryName(info, 1, true, wi - 1, _lang, _nets);
     else if (type.equals("input"))
-      e = GetNetName(info, 2, true, lang, nets);
+      e = GetNetName(info, 2, true, _lang, _nets);
 
     if (wo == 1) {
-      String name = GetNetName(info, 0, true, lang, nets);
-      out.stmt(assn, name, GetNetName(info, 1, true, lang, nets));
+      String name = GetNetName(info, 0, true, _lang, _nets);
+      out.stmt(assn, name, GetNetName(info, 1, true, _lang, _nets));
     } else {
       for (int bit = 0; bit < wo; bit++) {
-        String name = GetBusEntryName(info, 0, true, bit, lang, nets);
+        String name = GetBusEntryName(info, 0, true, bit, _lang, _nets);
         if (bit == 0 && wi == 1)
-          out.stmt(assn, name, GetNetName(info, 1, true, lang, nets) + ";");
+          out.stmt(assn, name, GetNetName(info, 1, true, _lang, _nets) + ";");
         else if (bit < wi)
-          out.stmt(assn, name, GetBusEntryName(info, 1, true, bit, lang, nets));
+          out.stmt(assn, name, GetBusEntryName(info, 1, true, bit, _lang, _nets));
         else
           out.stmt(assn, name, e);
       }
