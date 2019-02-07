@@ -46,9 +46,8 @@ import com.cburch.logisim.instance.Port;
 
 public class VhdlHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) {
-    return lang.equals("VHDL");
+  public VhdlHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
   }
 
   @Override

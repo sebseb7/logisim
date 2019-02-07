@@ -40,8 +40,9 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class BitExtenderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
+  public BitExtenderHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
 
   @Override
   public boolean IsOnlyInlined(String lang) { return true; }

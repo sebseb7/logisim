@@ -46,7 +46,7 @@ import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 
-public class DynamicClock extends InstanceFactory{
+public class DynamicClock extends InstanceFactory {
 
 	private static final int SPEED = 0;
 
@@ -104,8 +104,6 @@ public class DynamicClock extends InstanceFactory{
 	@Override
 	public String getHDLName(AttributeSet attrs) { return null; }
 	
-	@Override
-	public boolean HDLSupportedComponent(String HDLIdentifier,
-			                             AttributeSet attrs,
-			                             char Vendor) { return true; }
+  @Override
+  public boolean HDLSpecialHandling() { return true; }
 }

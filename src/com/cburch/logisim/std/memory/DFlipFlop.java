@@ -31,6 +31,7 @@
 package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
 import com.cburch.logisim.data.Value;
 
 public class DFlipFlop extends AbstractFlipFlop {
@@ -50,8 +51,8 @@ public class DFlipFlop extends AbstractFlipFlop {
   }
 
   @Override
-  protected AbstractFlipFlopHDLGeneratorFactory getHdlGenerator() {
-    return new AbstractFlipFlopHDLGeneratorFactory(
+  protected AbstractFlipFlopHDLGeneratorFactory getHdlGenerator(String lang, FPGAReport err) {
+    return new AbstractFlipFlopHDLGeneratorFactory(lang, err,
           "DFF", "D Flip-Flip",
           new String[]{ "D" },
           "s_next_state <= D;",

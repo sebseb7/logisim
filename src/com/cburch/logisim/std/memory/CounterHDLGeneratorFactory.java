@@ -42,13 +42,14 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class CounterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
+  public CounterHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
+
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_MAXVAL = -2;
   protected final static int GENERIC_PARAM_CLKEDGE = -3;
   protected final static int GENERIC_PARAM_MODE = -4;
-
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
 
   @Override
   public String getComponentStringIdentifier() { return "COUNTER"; }
@@ -175,11 +176,13 @@ public class CounterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   
   @Override
   public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
-    String lang = out.isVhdl ? "VHLD" : "Verilog";
-    out.addAll(MakeRemarkBlock(
-          "Functionality of the counter:\\ __Load_Count_|_mode\\ ____0____0___|_halt\\ "
-          + "____0____1___|_count_up_(default)\\ ____1____0___|load\\ ____1____1___|_count_down",
-          3, lang));
+    out.comment("Counter functionality:");
+    out.comment("   Load Count | mode");
+    out.comment("   -----------|--------------------");
+    out.comment("     0    0   | halt");
+    out.comment("     0    1   | count up (default)");
+    out.comment("     1    0   | load");
+    out.comment("     1    1   | count down");
     if (out.isVhdl) {
       out.stmt("");
       out.stmt("   CompareOut   <= s_carry;");

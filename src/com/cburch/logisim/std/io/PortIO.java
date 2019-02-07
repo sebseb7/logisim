@@ -40,7 +40,9 @@ import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
+import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
+import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -48,21 +50,21 @@ import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
-import com.cburch.logisim.data.Value;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceData;
-import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
+import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.tools.key.DirectionConfigurator;
+import com.cburch.logisim.tools.key.IntegerConfigurator;
+import com.cburch.logisim.tools.key.JoinedConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringUtil;
-import com.cburch.logisim.tools.key.IntegerConfigurator;
-import com.cburch.logisim.tools.key.DirectionConfigurator;
-import com.cburch.logisim.tools.key.JoinedConfigurator;
 
 public class PortIO extends InstanceFactory {
 
@@ -302,14 +304,12 @@ public class PortIO extends InstanceFactory {
     }
   }
 
-
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (MyHDLGenerator == null) {
-      MyHDLGenerator = new PortHDLGeneratorFactory();
-    }
-    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
+    if (lang.equals("VHDL"))
+      return new PortHDLGeneratorFactory(lang, err);
+    else
+      return null;
   }
 
   @Override

@@ -47,7 +47,9 @@ import java.util.Map;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.CircuitHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -331,11 +333,8 @@ public class SubcircuitFactory extends InstanceFactory {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (MyHDLGenerator == null)
-      MyHDLGenerator = new CircuitHDLGeneratorFactory(this.source);
-    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
+    return new CircuitHDLGeneratorFactory(lang, err, this.source);
   }
 
   @Override

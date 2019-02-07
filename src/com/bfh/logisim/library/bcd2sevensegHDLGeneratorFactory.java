@@ -37,10 +37,15 @@ import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
 
 public class bcd2sevensegHDLGeneratorFactory extends AbstractHDLGeneratorFactory{
+
+  // todo: verilog support
+
+  public bcd2sevensegHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
 
 	@Override
 	public String getComponentStringIdentifier() {
@@ -131,11 +136,5 @@ public class bcd2sevensegHDLGeneratorFactory extends AbstractHDLGeneratorFactory
 		return "bfh";
 	}
 	
-	@Override
-	public boolean HDLTargetSupported( String HDLType,
-			                           AttributeSet attrs,
-			                           char Vendor) {
-		return HDLType.equals(Settings.VHDL);
-	}
 	
 }

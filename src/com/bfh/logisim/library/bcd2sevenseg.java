@@ -33,6 +33,8 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Graphics;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -43,7 +45,7 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 
-public class bcd2sevenseg extends InstanceFactory{
+public class bcd2sevenseg extends InstanceFactory {
 
 	static final int PER_DELAY = 1;
 	public static final int Segment_A = 0;
@@ -194,12 +196,12 @@ public class bcd2sevenseg extends InstanceFactory{
 				state.setPort(i, Value.createUnknown(BitWidth.create(1)), PER_DELAY);
 		}
 	}	
-	@Override
-	public boolean HDLSupportedComponent(String HDLIdentifier,
-			                             AttributeSet attrs,
-			                             char Vendor) {
-		if (MyHDLGenerator == null)
-			MyHDLGenerator = new bcd2sevensegHDLGeneratorFactory();
-		return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
-	}
+
+  @Override
+  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
+    if (lang.equals("VHDL"))
+      return new bcd2sevensegHDLGeneratorFactory(lang, err);
+    else
+      return null;
+  }
 }

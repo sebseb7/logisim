@@ -46,32 +46,18 @@ import com.bfh.logisim.designrulecheck.ConnectionPoint;
 import com.bfh.logisim.designrulecheck.Net;
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 
-public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
+public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
+
+  protected AbstractHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
 	
-	private static String IntToBin(long value, int nr_of_bits) {
-		StringBuffer out = new StringBuffer();
-		for (int i = nr_of_bits - 1; i >= 0; i--)
-			out.append(((value >>> i) & 1) == 0 ? '0' : '1');
-		return out.toString();
-	}
-
-	protected static String IntToBin(long value, int nr_of_bits, String HDLType) {
-		String s = IntToBin(value, nr_of_bits);
-		if (HDLType.equals(Settings.VHDL) && nr_of_bits == 1)
-			return "'" + s + "'";
-		else if (HDLType.equals(Settings.VHDL))
-			return "\"" + s + "\"";
-		else
-			return nr_of_bits + "'b" + s;
-	}
-
 	public static File WriteMemInitFile(String TargetDirectory,
 			ArrayList<String> Contents, String ComponentName,
 			String MemName,
@@ -126,8 +112,6 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		return FileWriter.WriteContents(OutFile, Contents, Reporter);
 	}
 
-	public final static int MaxLineLength = 80;
-
 	/* Here the common predefined methods are defined */
 	public boolean GenerateAllHDLDescriptions(Set<String> HandledComponents,
 			String WorkingDir, ArrayList<String> Hierarchy,
@@ -163,21 +147,25 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 			Contents.add("");
 			int NrOfTypes = GetNrOfTypes(TheNetlist, attrs, HDLType);
 			if (NrOfTypes > 0) {
-				Contents.addAll(MakeRemarkBlock(
-						"Here all private types are defined", 3, HDLType));
-				for (String ThisType : GetTypeDefinitions(TheNetlist, attrs,
-						HDLType)) {
+        Hdl out = new Hdl(HDLType, Reporter);
+        out.comment("definitions for private types");
+				Contents.addAll(out);
+				for (String ThisType : GetTypeDefinitions(TheNetlist, attrs, HDLType)) {
 					Contents.add("   " + ThisType + ";");
 				}
 				Contents.add("");
 			}
 			ArrayList<String> Comps = GetComponentDeclarationSection( TheNetlist, attrs);
 			if (!Comps.isEmpty()) {
-				Contents.addAll(MakeRemarkBlock("Here all used components are defined", 3, HDLType));
+        Hdl out = new Hdl(HDLType, Reporter);
+        out.comment("definitions for components");
+				Contents.addAll(out);
 				Contents.addAll(Comps);
 				Contents.add("");
 			}
-			Contents.addAll(MakeRemarkBlock("Here all used signals are defined", 3, HDLType));
+      Hdl out = new Hdl(HDLType, Reporter);
+      out.comment("definitions for signals");
+			Contents.addAll(out);
 			for (String Wire : WireList.keySet()) {
 				OneLine.append(Wire);
 				while (OneLine.length() < SallignmentSize) {
@@ -297,9 +285,9 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 			}
 			if (!ParameterList.isEmpty()) {
 				Contents.add("");
-				Contents.addAll(MakeRemarkBlock(
-						"Here all module parameters are defined with a dummy value",
-						3, HDLType));
+        Hdl out = new Hdl(HDLType, Reporter);
+        out.comment("definitions for module parameters (with dummy values)");
+				Contents.addAll(out);
 				for (int param : ParameterList.keySet()) {
 					Contents.add("   parameter "
 							+ ParameterList.get(param).toString() + " = 1;");
@@ -336,8 +324,9 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 				if (firstline) {
 					firstline = false;
 					Contents.add("");
-					Contents.addAll(MakeRemarkBlock(
-							"Here the inputs are defined", 3, HDLType));
+          Hdl out = new Hdl(HDLType, Reporter);
+          out.comment("definitions for inputs");
+					Contents.addAll(out);
 				}
 				Contents.add(OneLine.toString());
 			}
@@ -370,8 +359,9 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 				if (firstline) {
 					firstline = false;
 					Contents.add("");
-					Contents.addAll(MakeRemarkBlock(
-							"Here the outputs are defined", 3, HDLType));
+          Hdl out = new Hdl(HDLType, Reporter);
+          out.comment("definitions for outputs");
+					Contents.addAll(out);
 				}
 				Contents.add(OneLine.toString());
 			}
@@ -404,8 +394,9 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 				if (firstline) {
 					firstline = false;
 					Contents.add("");
-					Contents.addAll(MakeRemarkBlock(
-							"Here the internal wires are defined", 3, HDLType));
+          Hdl out = new Hdl(HDLType, Reporter);
+          out.comment("definitions for internal wires");
+					Contents.addAll(out);
 				}
 				Contents.add(OneLine.toString());
 			}
@@ -437,9 +428,9 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 				if (firstline) {
 					firstline = false;
 					Contents.add("");
-					Contents.addAll(MakeRemarkBlock(
-							"Here the internal registers are defined", 3,
-							HDLType));
+          Hdl out = new Hdl(HDLType, Reporter);
+          out.comment("definitions for internal registers");
+					Contents.addAll(out);
 				}
 				Contents.add(OneLine.toString());
 			}
@@ -457,6 +448,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 	public String GetBusEntryName(NetlistComponent comp, int EndIndex,
 			boolean FloatingNetTiedToGround, int bitindex, String HDLType,
 			Netlist TheNets) {
+    Hdl out = new Hdl(HDLType, null);
 		StringBuffer Contents = new StringBuffer();
 		String BracketOpen = (HDLType.equals(Settings.VHDL)) ? "(" : "[";
 		String BracketClose = (HDLType.equals(Settings.VHDL)) ? ")" : "]";
@@ -474,8 +466,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 							Contents.append("'bz");
 						}
 					} else {
-						Contents.append(GetZeroVector(1, // kwalsh: was ThisEnd.NrOfBits(),
-								FloatingNetTiedToGround, HDLType));
+						Contents.append(out.bit(!FloatingNetTiedToGround));
 					}
 				} else {
 					Net ConnectedNet = ThisEnd.GetConnection((byte) bitindex)
@@ -912,6 +903,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 	public Map<String, String> GetNetMap(String SourceName,
 			boolean FloatingPinTiedToGround, NetlistComponent comp,
 			int EndIndex, FPGAReport Reporter, String HDLType, Netlist TheNets) {
+    Hdl out = new Hdl(HDLType, null);
 		Map<String, String> NetMap = new HashMap<String, String>();
 		if ((EndIndex < 0) || (EndIndex >= comp.NrOfEnds())) {
 			Reporter.AddFatalError("INTERNAL ERROR: Component tried to index non-existing SolderPoint");
@@ -950,7 +942,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 				} else {
 					NetMap.put(
 							SourceName,
-							GetZeroVector(NrOfBits, FloatingPinTiedToGround, HDLType));
+							out.fill(!FloatingPinTiedToGround, NrOfBits));
 				}
 			} else {
 				/*
@@ -981,7 +973,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 								} else {
 									NetMap.put(
 											SourceNetName.toString(),
-											GetZeroVector(1, FloatingPinTiedToGround, HDLType));
+                      out.bit(!FloatingPinTiedToGround));
 								}
 							} else {
 								/*
@@ -1026,7 +1018,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 								if (IsOutput) {
 									SeperateSignals.add("1'bz");
 								} else {
-									SeperateSignals.add(GetZeroVector(1, FloatingPinTiedToGround, HDLType));
+									SeperateSignals.add(out.bit(!FloatingPinTiedToGround));
 								}
 							} else {
 								/*
@@ -1072,13 +1064,12 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 
 	public String GetNetName(NetlistComponent comp, int EndIndex,
 			boolean FloatingNetTiedToGround, String HDLType, Netlist MyNetlist) {
+    Hdl out = new Hdl(HDLType, null);
 		StringBuffer Contents = new StringBuffer();
-		String ZeroValue = (HDLType.equals(Settings.VHDL)) ? "'0'" : "1'b0";
-		String OneValue = (HDLType.equals(Settings.VHDL)) ? "'1'" : "1'b1";
 		String BracketOpen = (HDLType.equals(Settings.VHDL)) ? "(" : "[";
 		String BracketClose = (HDLType.equals(Settings.VHDL)) ? ")" : "]";
 		String Unconnected = (HDLType.equals(Settings.VHDL)) ? "OPEN" : "";
-		String FloatingValue = (FloatingNetTiedToGround) ? ZeroValue : OneValue;
+		String FloatingValue = out.bit(!FloatingNetTiedToGround);
 		if ((EndIndex >= 0) && (EndIndex < comp.NrOfEnds())) {
 			ConnectionEnd ThisEnd = comp.getEnd(EndIndex);
 			boolean IsOutput = ThisEnd.IsOutputEnd();
@@ -1218,7 +1209,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		return "";
 	}
 
-	public SortedSet<String> GetTypeDefinitions(Netlist TheNetlist,
+	protected SortedSet<String> GetTypeDefinitions(Netlist TheNetlist,
 			AttributeSet attrs, String HDLType) {
 		/*
 		 * This method returns all the type definitions used without the ending
@@ -1417,162 +1408,8 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 		return Wires;
 	}
 
-	public String GetZeroVector(int NrOfBits, boolean FloatingPinTiedToGround, String HDLType) {
-		StringBuffer Contents = new StringBuffer();
-		if (HDLType.equals(Settings.VHDL)) {
-			String FillValue = (FloatingPinTiedToGround) ? "0" : "1";
-			String HexFillValue = (FloatingPinTiedToGround) ? "0" : "F";
-			if (NrOfBits == 1) {
-				Contents.append("'" + FillValue + "'");
-			} else {
-				if ((NrOfBits % 4) > 0) {
-					Contents.append("\"");
-					for (int i = 0; i < (NrOfBits % 4); i++) {
-						Contents.append(FillValue);
-					}
-					Contents.append("\"");
-					if (NrOfBits > 3) {
-						Contents.append("&");
-					}
-				}
-				if ((NrOfBits / 4) > 0) {
-					Contents.append("X\"");
-					for (int i = 0; i < (NrOfBits / 4); i++) {
-						Contents.append(HexFillValue);
-					}
-					Contents.append("\"");
-				}
-			}
-		} else {
-			Contents.append(Integer.toString(NrOfBits) + "'d");
-			if (FloatingPinTiedToGround) {
-				Contents.append("0");
-			} else {
-				Contents.append("-1");
-			}
-		}
-		return Contents.toString();
-	}
-
-	public boolean HDLTargetSupported(String HDLType, AttributeSet attrs, char Vendor) {
-		return false;
-	}
-
 	public boolean IsOnlyInlined(String HDLType) {
 		return false;
 	}
 
-	public boolean IsOnlyInlined(String HDLType, FPGAIOInformationContainer.IOComponentTypes map) {
-		return true;
-	}
-
-	/* Here all global helper methods are defined */
-	protected ArrayList<String> MakeRemarkBlock(String RemarkText,
-			Integer NrOfIndentSpaces, String HDLType) {
-		int RemarkOverhead = (HDLType.equals(Settings.VHDL)) ? 3 : 4;
-		int MaxRemarkLength = MaxLineLength - 2 * RemarkOverhead
-				- NrOfIndentSpaces;
-		String[] RemarkWords = RemarkText.split(" ");
-		StringBuffer OneLine = new StringBuffer();
-		ArrayList<String> Contents = new ArrayList<String>();
-		int maxWordLength = 0;
-		for (int i = 0; i < RemarkWords.length; i++) {
-			if (RemarkWords[i].length() > maxWordLength) {
-				maxWordLength = RemarkWords[i].length();
-			}
-		}
-		if (MaxRemarkLength < maxWordLength) {
-			return Contents;
-		}
-		/* we start with generating the first remark line */
-		while (OneLine.length() < NrOfIndentSpaces) {
-			OneLine.append(" ");
-		}
-		for (int i = 0; i < MaxLineLength - NrOfIndentSpaces; i++) {
-			if (HDLType.equals(Settings.VHDL)) {
-				OneLine.append("-");
-			} else {
-				if (i == 0) {
-					OneLine.append("/");
-				} else {
-					if (i < (MaxLineLength - NrOfIndentSpaces - 1)) {
-						OneLine.append("*");
-					}
-				}
-			}
-		}
-		Contents.add(OneLine.toString());
-		OneLine.setLength(0);
-		/* Next we put the remark text block in 1 or multiple lines */
-		for (int word = 0; word < RemarkWords.length; word++) {
-			if ((OneLine.length() + RemarkWords[word].length() + RemarkOverhead) > (MaxLineLength - 1)) {
-				/* Next word does not fit, we end this line and create a new one */
-				while (OneLine.length() < (MaxLineLength - RemarkOverhead)) {
-					OneLine.append(" ");
-				}
-				if (HDLType.equals(Settings.VHDL)) {
-					OneLine.append(" --");
-				} else {
-					OneLine.append(" **");
-				}
-				Contents.add(OneLine.toString());
-				OneLine.setLength(0);
-			}
-			while (OneLine.length() < NrOfIndentSpaces) {
-				OneLine.append(" ");
-			}
-			if (OneLine.length() == NrOfIndentSpaces) {
-				/* we put the preamble */
-				if (HDLType.equals(Settings.VHDL)) {
-					OneLine.append("-- ");
-				} else {
-					OneLine.append(" ** ");
-				}
-			}
-			if (RemarkWords[word].endsWith("\\")) {
-				/* Forced new line */
-				OneLine.append(RemarkWords[word].substring(0,
-						RemarkWords[word].length() - 1));
-				while (OneLine.length() < (MaxLineLength - RemarkOverhead)) {
-					OneLine.append(" ");
-				}
-			} else {
-				OneLine.append(RemarkWords[word] + " ");
-			}
-		}
-		if (OneLine.length() > (NrOfIndentSpaces + RemarkOverhead)) {
-			/* we have an unfinished remark line */
-			while (OneLine.length() < (MaxLineLength - RemarkOverhead)) {
-				OneLine.append(" ");
-			}
-			if (HDLType.equals(Settings.VHDL)) {
-				OneLine.append(" --");
-			} else {
-				OneLine.append(" **");
-			}
-			Contents.add(OneLine.toString());
-			OneLine.setLength(0);
-		}
-		/* we end with generating the last remark line */
-		while (OneLine.length() < NrOfIndentSpaces) {
-			OneLine.append(" ");
-		}
-		for (int i = 0; i < MaxLineLength - NrOfIndentSpaces; i++) {
-			if (HDLType.equals(Settings.VHDL)) {
-				OneLine.append("-");
-			} else {
-				if (i == 0) {
-					OneLine.append(" ");
-				} else {
-					if (i == (MaxLineLength - NrOfIndentSpaces - 1)) {
-						OneLine.append("/");
-					} else {
-						OneLine.append("*");
-					}
-				}
-			}
-		}
-		Contents.add(OneLine.toString());
-		return Contents;
-	}
 }

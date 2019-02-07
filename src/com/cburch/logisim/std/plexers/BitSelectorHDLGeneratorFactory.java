@@ -40,13 +40,14 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class BitSelectorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
+  public BitSelectorHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
+
   protected final static int GENERIC_PARAM_WIDTH_IN = -1;
   protected final static int GENERIC_PARAM_WIDTH_OUT = -2;
   protected final static int GENERIC_PARAM_WIDTH_SEL = -3;
   protected final static int GENERIC_PARAM_EXTENDEDBITS = -4;
-
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
 
   @Override
   public String getComponentStringIdentifier() { return "BITSELECTOR"; }

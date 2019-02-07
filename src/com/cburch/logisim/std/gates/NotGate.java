@@ -37,6 +37,8 @@ import java.awt.Graphics2D;
 
 import javax.swing.Icon;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
@@ -206,12 +208,11 @@ class NotGate extends InstanceFactory {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier, AttributeSet attrs, char Vendor) {
-    if (MyVhdlGenerator == null)
-      MyVhdlGenerator = GateVhdlGenerator.forNot();
-    if (MyVerilogGenerator == null)
-      MyVerilogGenerator = GateVerilogGenerator.forNot();
-    return true;
+  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
+    if (lang.equals("VHDL"))
+      return GateVhdlGenerator.forNot(lang, err);
+    else
+      return GateVerilogGenerator.forNot(lang, err);
   }
 
   @Override

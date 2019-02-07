@@ -343,7 +343,7 @@ public class FPGACommanderGui implements ActionListener {
 		// HDL Type Button
 		HDLType.addItem(Settings.VHDL);
 		HDLType.addItem(Settings.VERILOG);
-                HDLType.setSelectedItem(MySettings.GetHDLType());
+    HDLType.setSelectedItem(MySettings.GetHDLType());
 		HDLType.setEnabled(true);
 		HDLType.addActionListener(this);
 		HDLType.setActionCommand("HDLType");
@@ -1290,7 +1290,7 @@ public class FPGACommanderGui implements ActionListener {
 		}
 		Set<String> GeneratedHDLComponents = new HashSet<String>();
 		HDLGeneratorFactory Worker = RootSheet.getSubcircuitFactory()
-				.getHDLGenerator(MySettings.GetHDLType(),
+				.getHDLGenerator(MySettings.GetHDLType(), MyReporter,
 						RootSheet.getStaticAttributes(),
 						MyBoardInformation.fpga.getVendor());
 		if (Worker == null) {
@@ -1316,6 +1316,7 @@ public class FPGACommanderGui implements ActionListener {
 
 		if (RootSheet.getNetList().NumberOfClockTrees() > 0) {
 			TickComponentHDLGeneratorFactory Ticker = new TickComponentHDLGeneratorFactory(
+          MySettings.GetHDLType(), MyReporter,
 					MyBoardInformation.fpga.getClockFrequency(),
 					TickPeriod);
 			if (!AbstractHDLGeneratorFactory.WriteEntity(
@@ -1344,7 +1345,7 @@ public class FPGACommanderGui implements ActionListener {
 					.get(0)
 					.getFactory()
 					.getHDLGenerator(
-							MySettings.GetHDLType(),
+							MySettings.GetHDLType(), MyReporter,
 							RootSheet.getNetList().GetAllClockSources().get(0)
 									.getAttributeSet(),
 							MyBoardInformation.fpga.getVendor());
@@ -1368,6 +1369,7 @@ public class FPGACommanderGui implements ActionListener {
 			}
 		}
 		Worker = new ToplevelHDLGeneratorFactory(
+        MySettings.GetHDLType(), MyReporter,
 				MyBoardInformation.fpga.getClockFrequency(),
 						TickPeriod, RootSheet, MyMappableResources,
                                                 skipHdl());

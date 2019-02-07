@@ -44,6 +44,12 @@ import com.cburch.logisim.data.BitWidth;
 
 public class bin2bcdHDLGeneratorFactory  extends AbstractHDLGeneratorFactory{
 
+  // todo: verilog support
+
+  public bin2bcdHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
+
 	final private static String NrOfBitsStr = "NrOfBits";
 	final private static int NrOfBitsId = -1;
 	
@@ -82,13 +88,6 @@ public class bin2bcdHDLGeneratorFactory  extends AbstractHDLGeneratorFactory{
 	@Override
 	public String GetSubDir() {
 		return "bfh";
-	}
-	
-	@Override
-	public boolean HDLTargetSupported( String HDLType,
-			                           AttributeSet attrs,
-			                           char Vendor) {
-		return HDLType.equals(Settings.VHDL);
 	}
 	
 	@Override

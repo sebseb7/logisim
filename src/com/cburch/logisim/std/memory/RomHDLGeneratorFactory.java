@@ -40,8 +40,11 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class RomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) {
+  public RomHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
+
+  static boolean supports(String lang, AttributeSet attrs, char vendor) {
     return lang.equals("VHDL") || Mem.lineSize(attrs) == 1; // TODO: Verilog support
   }
 
@@ -88,10 +91,9 @@ public class RomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       for (long addr = 0; addr < (1 << wa); addr += n) {
         if (filled(rom, addr, n)) {
           out.stmt("            WHEN %s =>\t Data <= %s;",
-              IntToBin(addr, wa, "VHDL"),
-              IntToBin(rom.get(addr), wd, "VHDL"));
+              out.literal(addr, wa), out.literal(rom.get(addr), wd));
           for (int i = 1; i < n; i++)
-            out.cont(" \t Data%d <= %s;", i, IntToBin(rom.get(addr+i), wd, "VHDL"));
+            out.cont(" \t Data%d <= %s;", i, out.literal(rom.get(addr+i), wd));
         }
       }
       if (wd == 1) {

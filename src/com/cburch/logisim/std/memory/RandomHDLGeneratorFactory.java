@@ -42,11 +42,12 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class RandomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
+  public RandomHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
+
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_SEED = -2;
-
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
 
   @Override
   public String getComponentStringIdentifier() { return "RNG"; }
@@ -162,7 +163,7 @@ public class RandomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   @Override
   public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
     String lang = out.isVhdl ? "VHLD" : "Verilog";
-    out.addAll(MakeRemarkBlock("This is a multicycle implementation of the Random Component", 3, lang));
+    out.comment("Multi-cycle random number generator component implementation");
     out.stmt("");
     if (out.isVhdl) {
       out.stmt("   Q            <= s_output_reg;");

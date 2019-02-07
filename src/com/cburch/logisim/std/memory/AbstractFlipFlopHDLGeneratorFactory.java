@@ -46,8 +46,9 @@ public class AbstractFlipFlopHDLGeneratorFactory extends AbstractHDLGeneratorFac
   private String[] inPorts;
   private String vhdlUpdate, verilogUpdate;
 
-  AbstractFlipFlopHDLGeneratorFactory(String name, String displayName,
+  AbstractFlipFlopHDLGeneratorFactory(String lang, FPGAReport err, String name, String displayName,
       String[] inPorts, String vhdlUpdate, String verilogUpdate) {
+    super(lang, err);
     this.name = name;
     this.displayName = displayName;
     this.inPorts = inPorts;
@@ -59,12 +60,6 @@ public class AbstractFlipFlopHDLGeneratorFactory extends AbstractHDLGeneratorFac
   
   @Override
   public String getComponentStringIdentifier() { return name; }
-
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) {
-    // TODO: HDL doesn't yet support enable pin
-    return !attrs.getValue(AbstractFlipFlop.ATTR_ENABLE);
-  }
 
   @Override
   public String GetSubDir() { return "memory"; }
@@ -208,7 +203,7 @@ public class AbstractFlipFlopHDLGeneratorFactory extends AbstractHDLGeneratorFac
       out.stmt("");
       out.stmt("   " + verilogUpdate);
       out.stmt("");
-      out.addAll(MakeRemarkBlock( "Here the initial register value is defined; for simulation only", 3, "Verilog"));
+      out.comment("define the initial state (hdl simulation only)");
       out.stmt("   initial");
       out.stmt("   begin");
       out.stmt("      s_current_state_reg = 0;");

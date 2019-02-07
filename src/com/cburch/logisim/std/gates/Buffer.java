@@ -35,7 +35,9 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
+import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.circuit.ExpressionComputer;
 import com.cburch.logisim.data.Attribute;
@@ -173,14 +175,12 @@ class Buffer extends InstanceFactory {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier, AttributeSet attrs, char Vendor) {
-    if (MyVhdlGenerator == null)
-      MyVhdlGenerator = GateVhdlGenerator.forBuffer();
-    if (MyVerilogGenerator == null)
-      MyVerilogGenerator = GateVerilogGenerator.forBuffer();
-    return true;
+  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
+    if (lang.equals("VHDL"))
+      return GateVhdlGenerator.forBuffer(lang, err);
+    else
+      return GateVerilogGenerator.forBuffer(lang, err);
   }
-
 
   @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {

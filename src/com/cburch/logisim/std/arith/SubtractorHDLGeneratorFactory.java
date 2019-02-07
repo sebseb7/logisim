@@ -41,11 +41,12 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class SubtractorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
+  public SubtractorHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
+
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_EXTENDEDBITS = -2;
-
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
 
   @Override
   public String getComponentStringIdentifier() { return "SUBTRACTOR2C"; }

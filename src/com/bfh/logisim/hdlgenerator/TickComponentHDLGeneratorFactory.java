@@ -37,10 +37,10 @@ import java.util.TreeMap;
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.settings.Settings;
 import com.bfh.logisim.library.DynamicClock;
+import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
-import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.hdl.Hdl;
 
 public class TickComponentHDLGeneratorFactory extends
 		AbstractHDLGeneratorFactory {
@@ -56,10 +56,10 @@ public class TickComponentHDLGeneratorFactory extends
 	public static final String FPGAClock = "FPGA_GlobalClock";
 	public static final String FPGATick = "s_FPGA_Tick";
 
-	public TickComponentHDLGeneratorFactory(long fpga_clock_frequency,
-			int tick_period/*
-								 * , boolean useFPGAClock
-								 */) {
+	public TickComponentHDLGeneratorFactory(
+      String lang, FPGAReport err,
+      long fpga_clock_frequency, int tick_period) {
+    super(lang, err);
 		FpgaClockFrequency = fpga_clock_frequency;
 		TickPeriod = tick_period;
 		// this.useFPGAClock = useFPGAClock;
@@ -89,8 +89,11 @@ public class TickComponentHDLGeneratorFactory extends
 		String Preamble = (HDLType.equals(Settings.VHDL)) ? "" : "assign ";
 		String AssignOperator = (HDLType.equals(Settings.VHDL)) ? "<=" : "=";
 		Contents.add("");
-		Contents.addAll(MakeRemarkBlock("Here the Output is defined", 3,
-				HDLType));
+    {
+    Hdl out = new Hdl(HDLType, Reporter);
+    out.comment("definitions for clock tick generator outputs");
+    Contents.addAll(out);
+    }
 		if (TheNetlist.RequiresGlobalClockConnection() || TickPeriod == 0) {
 			Contents.add("   " + Preamble + "FPGATick " + AssignOperator
 					+ " '1';");
@@ -109,8 +112,11 @@ public class TickComponentHDLGeneratorFactory extends
                 }
                 Contents.add("   " + Preamble + "FPGATick " + AssignOperator + " s_tick_reg;");
 		Contents.add("");
-		Contents.addAll(MakeRemarkBlock("Here the update logic is defined", 3,
-				HDLType));
+    {
+    Hdl out = new Hdl(HDLType, Reporter);
+    out.comment("definitions for clock tick generator update logic");
+    Contents.addAll(out);
+    }
 		if (HDLType.equals(Settings.VHDL)) {
 			Contents.add("   s_tick_next   <= '1' WHEN s_count_reg = std_logic_vector(to_unsigned(0,"
 					+ NrOfCounterBitsStr + ")) ELSE '0';");
@@ -122,8 +128,9 @@ public class TickComponentHDLGeneratorFactory extends
 			Contents.add("   assign s_tick_next  = (s_count_reg == 0) ? 1'b1 : 1'b0;");
 			Contents.add("   assign s_count_next = (s_count_reg == 0) ? ReloadValue-1 : s_count_reg-1;");
 			Contents.add("");
-			Contents.addAll(MakeRemarkBlock(
-					"Here the simulation only initial is defined", 3, HDLType));
+      Hdl out = new Hdl(HDLType, Reporter);
+      out.comment("definitions for initial state (hdl simulation only)");
+      Contents.addAll(out);
 			Contents.add("   initial");
 			Contents.add("   begin");
 			Contents.add("      s_count_reg = 0;");
@@ -131,8 +138,11 @@ public class TickComponentHDLGeneratorFactory extends
 			Contents.add("   end");
 			Contents.add("");
 		}
-		Contents.addAll(MakeRemarkBlock("Here the flipflops are defined", 3,
-				HDLType));
+    {
+    Hdl out = new Hdl(HDLType, Reporter);
+    out.comment("definitions for clock tick generator flip-flops");
+    Contents.addAll(out);
+    }
 		if (HDLType.equals(Settings.VHDL)) {
 			Contents.add("   make_tick : PROCESS( FPGAClock , s_tick_next )");
 			Contents.add("   BEGIN");
@@ -259,9 +269,4 @@ public class TickComponentHDLGeneratorFactory extends
 		return Wires;
 	}
 
-	@Override
-	public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-			char Vendor) {
-		return true;
-	}
 }

@@ -40,6 +40,10 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class PLAVhdlGenerator extends AbstractHDLGeneratorFactory {
 
+  public PLAVhdlGenerator(String lang, FPGAReport err) {
+    super(lang, err);
+  }
+
   private static String bits(char b[]) {
     String s = "";
     for (char c : b)
@@ -71,9 +75,6 @@ public class PLAVhdlGenerator extends AbstractHDLGeneratorFactory {
       out.cont("\t%s;", zeros(w));
     }
   }
-  
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char vendor) { return lang.equals("VHDL"); }
 
   @Override
   public String getComponentStringIdentifier() { return "PLA"; }

@@ -36,6 +36,8 @@ import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.event.KeyEvent;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -285,11 +287,8 @@ public class Random extends InstanceFactory {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (MyHDLGenerator == null)
-      MyHDLGenerator = new RandomHDLGeneratorFactory();
-    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
+    return new RandomHDLGeneratorFactory(lang, err);
   }
 
   @Override

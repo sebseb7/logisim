@@ -47,6 +47,10 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class KeyboardHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
+  public KeyboardHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
+
   @Override
   public String getComponentStringIdentifier() {
     return "KBD";
@@ -55,11 +59,6 @@ public class KeyboardHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   @Override
   public String GetSubDir() {
     return "io";
-  }
-
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs, char Vendor) {
-    return HDLType.equals(Settings.VHDL);
   }
 
   @Override

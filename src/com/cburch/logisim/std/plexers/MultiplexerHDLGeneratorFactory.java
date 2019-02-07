@@ -29,7 +29,6 @@
  */
 package com.cburch.logisim.std.plexers;
 
-import java.util.ArrayList;
 import java.util.SortedMap;
 
 import com.bfh.logisim.designrulecheck.Netlist;
@@ -42,10 +41,11 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class MultiplexerHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
+  public MultiplexerHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
 
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
+  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
 
   @Override
   public String getComponentStringIdentifier() { return "MUX"; }
@@ -132,7 +132,7 @@ public class MultiplexerHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
       out.stmt("ELSE");
       out.stmt("  CASE (Sel) IS");
       for (int i = 0; i < n; i++)
-        out.stmt("    WHEN %s => Out <= In_%d;", i<n-1 ? IntToBin(i, ws, lang) : "others", i);
+        out.stmt("    WHEN %s => Out <= In_%d;", i<n-1 ? out.literal(i, ws) : "others", i);
       out.stmt("  END CASE;");
       out.stmt("END IF;");
       out.dedent();
@@ -146,7 +146,7 @@ public class MultiplexerHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
       out.stmt("  if (~Enable) s_vec <= 0;");
       out.stmt("  else case (Sel)");
       for (int i = 0; i < n - 1; i++)
-        out.stmt("    %d : s_vec <= In_%d;", i<n-1 ? IntToBin(i, ws, lang) : "default", i);
+        out.stmt("    %d : s_vec <= In_%d;", i<n-1 ? out.literal(i, ws) : "default", i);
       out.stmt("  endcase");
       out.stmt("end");
     }

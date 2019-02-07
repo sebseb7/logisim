@@ -46,6 +46,12 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
+  // todo: verilog support
+
+  public PortHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
+
   private class InOutMap {
     private int end, start, size, busNr, endNr;
     private int type;
@@ -310,8 +316,4 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     return "io";
   }
 
-  @Override
-  public boolean HDLTargetSupported(String HDLType, AttributeSet attrs, char Vendor) {
-    return true;
-  }
 }

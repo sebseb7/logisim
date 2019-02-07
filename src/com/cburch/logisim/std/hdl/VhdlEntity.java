@@ -46,24 +46,26 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.EndData;
-import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.Attributes;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeOption;
+import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Attributes;
+import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.StringUtil;
@@ -166,11 +168,11 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (MyHDLGenerator == null)
-      MyHDLGenerator = new VhdlHDLGeneratorFactory();
-    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
+    if (lang.equals("VHDL"))
+      return new VhdlHDLGeneratorFactory(lang, err);
+    else
+      return null;
   }
 
   @Override

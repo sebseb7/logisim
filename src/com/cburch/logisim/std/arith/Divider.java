@@ -35,6 +35,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.math.BigInteger;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeOption;
@@ -124,11 +126,11 @@ public class Divider extends InstanceFactory {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (MyHDLGenerator == null)
-      MyHDLGenerator = new DividerHDLGeneratorFactory();
-    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
+    if (lang.equals("VHDL"))
+      return new DividerHDLGeneratorFactory(lang, err);
+    else
+      return null;
   }
 
   @Override

@@ -42,11 +42,12 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class RegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
+  public RegisterHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
+
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_ACTIVELEVEL = -2;
-
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
 
   @Override
   public String getComponentStringIdentifier() { return "REGISTER"; }

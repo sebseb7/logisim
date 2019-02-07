@@ -358,8 +358,7 @@ public class Analyze {
   private static void propagateComponents(ExpressionMap expressionMap,
       Collection<Component> components) throws AnalyzeException {
     for (Component comp : components) {
-      ExpressionComputer computer = (ExpressionComputer) comp
-          .getFeature(ExpressionComputer.class);
+      ExpressionComputer computer = (ExpressionComputer) comp.getFeature(ExpressionComputer.class);
       if (computer != null) {
         try {
           expressionMap.currentCause = comp;
@@ -373,8 +372,7 @@ public class Analyze {
       } else if (comp.getFactory() instanceof SplitterFactory) {
         ; // splitters are handled elsewhere
       } else {
-        throw new AnalyzeException.CannotHandle(comp.getFactory()
-            .getDisplayName());
+        throw new AnalyzeException.CannotHandle(comp.getFactory().getDisplayName());
       }
     }
   }

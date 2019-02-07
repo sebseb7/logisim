@@ -37,12 +37,19 @@ import java.io.File;
 
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
 import com.cburch.logisim.data.AttributeSet;
 
-public interface HDLGeneratorFactory {
+public abstract class HDLGeneratorFactory {
+
+  protected final String lang; // context
+  protected final FPGAReport err; // context
+
+  protected HDLGeneratorFactory(String lang, FPGAReport err) {
+    this.lang = lang;
+    this.err = err;
+  }
 
 	public static final int PallignmentSize = 26;
 	public static final int SallignmentSize = 35;
@@ -51,54 +58,48 @@ public interface HDLGeneratorFactory {
 	public static final String LocalInputBubbleBusname = "LOGISIM_INPUT_BUBBLES";
 	public static final String LocalOutputBubbleBusname = "LOGISIM_OUTPUT_BUBBLES";
 	public static final String LocalInOutBubbleBusname = "LOGISIM_INOUT_BUBBLES";
-	public final static String FPGAToplevelName = "LogisimToplevelShell";
-	public final static String InputBubblePortName = "LOGISIM_INPUT_BUBBLE_";
-	public final static String OutputBubblePortName = "LOGISIM_OUTPUT_BUBBLE_";
-	public final static String InOutBubblePortName = "LOGISIM_INOUTT_BUBBLE_";
-	public final static String BusToBitAddendum = "_bit_";
+	public static final String FPGAToplevelName = "LogisimToplevelShell";
+	public static final String InputBubblePortName = "LOGISIM_INPUT_BUBBLE_";
+	public static final String OutputBubblePortName = "LOGISIM_OUTPUT_BUBBLE_";
+	public static final String InOutBubblePortName = "LOGISIM_INOUTT_BUBBLE_";
+	public static final String BusToBitAddendum = "_bit_";
 	public static final String ClockTreeName = "LOGISIM_CLOCK_TREE_";
 	public static final String FPGAInputPinName = "FPGA_INPUT_PIN";
 	public static final String FPGAInOutPinName = "FPGA_INOUT_PIN";
 	public static final String FPGAOutputPinName = "FPGA_OUTPUT_PIN";
 
-	public boolean GenerateAllHDLDescriptions(Set<String> HandledComponents,
+	public abstract boolean GenerateAllHDLDescriptions(Set<String> HandledComponents,
 			String WorkingDir, ArrayList<String> Hierarchy,
 			FPGAReport Reporter, String HDLType);
 
-	public ArrayList<String> GetArchitecture(Netlist TheNetlist,
+	public abstract ArrayList<String> GetArchitecture(Netlist TheNetlist,
 			AttributeSet attrs, Map<String, File> MemInitFiles,
 			String ComponentName, FPGAReport Reporter,
 			String HDLType);
 
-	public ArrayList<String> GetComponentInstantiation(Netlist TheNetlist,
+	public abstract ArrayList<String> GetComponentInstantiation(Netlist TheNetlist,
 			AttributeSet attrs, String ComponentName, String HDLType);
 
-	public ArrayList<String> GetComponentMap(Netlist Nets, Long ComponentId,
+	public abstract ArrayList<String> GetComponentMap(Netlist Nets, Long ComponentId,
 			NetlistComponent ComponentInfo, FPGAReport Reporter,
 			String CircuitName, String HDLType);
 
-	public String getComponentStringIdentifier();
+	public abstract String getComponentStringIdentifier();
 	
-	public Map<String, ArrayList<String>> GetMemInitData(AttributeSet attrs);
+	public abstract Map<String, ArrayList<String>> GetMemInitData(AttributeSet attrs);
 
-	public ArrayList<String> GetEntity(Netlist TheNetlist, AttributeSet attrs,
+	public abstract ArrayList<String> GetEntity(Netlist TheNetlist, AttributeSet attrs,
 			String ComponentName, FPGAReport Reporter, String HDLType);
 
-	public ArrayList<String> GetInlinedCode(Netlist Nets, Long ComponentId,
+	public abstract ArrayList<String> GetInlinedCode(Netlist Nets, Long ComponentId,
 			NetlistComponent ComponentInfo, FPGAReport Reporter,
 			String CircuitName, String HDLType);
 
-	public ArrayList<String> GetInlinedCode(String HDLType,
+	public abstract ArrayList<String> GetInlinedCode(String HDLType,
 			ArrayList<String> ComponentIdentifier, FPGAReport Reporter,
 			MappableResourcesContainer MapInfo);
 
-	public String GetRelativeDirectory(String HDLType);
+	public abstract String GetRelativeDirectory(String HDLType);
 
-	public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-			char Vendor);
-
-	public boolean IsOnlyInlined(String HDLType);
-
-	public boolean IsOnlyInlined(String HDLType,
-			FPGAIOInformationContainer.IOComponentTypes map);
+	public abstract boolean IsOnlyInlined(String HDLType);
 }

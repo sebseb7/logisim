@@ -35,6 +35,7 @@ import java.awt.Graphics;
 
 import javax.swing.Icon;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
@@ -54,14 +55,10 @@ public abstract class AbstractComponentFactory implements ComponentFactory {
   private static final Icon toolIcon = Icons.getIcon("subcirc.gif");
 
   private AttributeSet defaultSet;
-  protected HDLGeneratorFactory MyHDLGenerator, MyVhdlGenerator, MyVerilogGenerator;
   protected IOComponentInformationContainer MyIOInformation;
 
   protected AbstractComponentFactory() {
-    defaultSet = null;
-    MyIOInformation = null;
-  }
-
+  } 
   public boolean ActiveOnHigh(AttributeSet attrs) {
     return true;
   }
@@ -106,20 +103,6 @@ public abstract class AbstractComponentFactory implements ComponentFactory {
     return null;
   }
 
-  public HDLGeneratorFactory getHDLGenerator(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (HDLSupportedComponent(HDLIdentifier, attrs, Vendor)) {
-      if (HDLIdentifier.equals("VHDL") && MyVhdlGenerator != null)
-        return MyVhdlGenerator;
-      else if (HDLIdentifier.equals("Verilog") && MyVerilogGenerator != null)
-        return MyVerilogGenerator;
-      else
-        return MyHDLGenerator;
-    } else {
-      return null;
-    }
-  }
-
   public String getHDLName(AttributeSet attrs) {
     return CorrectLabel.getCorrectLabel(this.getName());
   }
@@ -137,11 +120,6 @@ public abstract class AbstractComponentFactory implements ComponentFactory {
   public abstract Bounds getOffsetBounds(AttributeSet attrs);
 
   public boolean HasThreeStateDrivers(AttributeSet attrs) {
-    return false;
-  }
-
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
     return false;
   }
 

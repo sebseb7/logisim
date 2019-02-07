@@ -33,7 +33,9 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Graphics;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
+import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -48,7 +50,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 
-public class bin2bcd extends InstanceFactory{
+public class bin2bcd extends InstanceFactory {
 
 	static final int PER_DELAY = 1;
 	private static final int BINin = 0;
@@ -136,13 +138,13 @@ public class bin2bcd extends InstanceFactory{
 		CompleteName.append("_"+Integer.toString(NrOfPorts)+"_bcd_ports");
 		return CompleteName.toString();
 	}
-	
-	@Override
-	public boolean HDLSupportedComponent(String HDLIdentifier,
-			                             AttributeSet attrs,
-			                             char Vendor) {
-		if (MyHDLGenerator == null)
-			MyHDLGenerator = new bin2bcdHDLGeneratorFactory();
-		return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
-	}
+
+  @Override
+  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
+    if (lang.equals("VHDL"))
+      return new bin2bcdHDLGeneratorFactory(lang, err);
+    else
+      return null;
+  }
+
 }

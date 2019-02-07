@@ -37,6 +37,8 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Graphics2D;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -105,15 +107,12 @@ public class Ground extends InstanceFactory {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (MyHDLGenerator == null)
-      MyHDLGenerator = new AbstractConstantHDLGeneratorFactory() {
-        public int getConstant(AttributeSet attrs) {
-          return attrs.getValue(Constant.ATTR_VALUE);
-        }
-      };
-    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
+    return new AbstractConstantHDLGeneratorFactory(lang, err) {
+      public int getConstant(AttributeSet attrs) {
+        return attrs.getValue(Constant.ATTR_VALUE);
+      }
+    };
   }
 
   @Override

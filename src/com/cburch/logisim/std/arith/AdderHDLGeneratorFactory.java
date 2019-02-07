@@ -40,12 +40,13 @@ import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
 
 public class AdderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
+
+  public AdderHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
   
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_EXTENDEDBITS = -2;
-
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
 
   @Override
   public String getComponentStringIdentifier() { return "ADDER2C"; }

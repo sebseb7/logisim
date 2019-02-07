@@ -46,6 +46,10 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
+  public ShiftRegisterHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
+
   @Override
   public ArrayList<String> GetArchitecture(Netlist TheNetlist, AttributeSet attrs,
       Map<String, File> MemInitFiles, String ComponentName, FPGAReport err, String lang) {
@@ -171,9 +175,6 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
   protected final static int GENERIC_PARAM_BUSWIDTH = -2;
   protected final static int GENERIC_PARAM_STAGES = -3;
   protected final static int GENERIC_PARAM_BITS = -4;
-
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
 
   @Override
   public String getComponentStringIdentifier() { return "SHIFTER"; }

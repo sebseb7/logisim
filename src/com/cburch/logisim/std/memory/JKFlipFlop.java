@@ -31,6 +31,7 @@
 package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
 import com.cburch.logisim.data.Value;
 
 public class JKFlipFlop extends AbstractFlipFlop {
@@ -63,8 +64,8 @@ public class JKFlipFlop extends AbstractFlipFlop {
   }
 
   @Override
-  protected AbstractFlipFlopHDLGeneratorFactory getHdlGenerator() {
-    return new AbstractFlipFlopHDLGeneratorFactory(
+  protected AbstractFlipFlopHDLGeneratorFactory getHdlGenerator(String lang, FPGAReport err) {
+    return new AbstractFlipFlopHDLGeneratorFactory(lang, err,
         "JKFF", "J-K Flip-Flip",
         new String[]{ "J", "K" },
         "s_next_state <= (NOT(s_current_state_reg) AND J) OR (s_current_state_reg AND NOT(K));",

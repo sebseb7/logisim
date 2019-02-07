@@ -48,10 +48,13 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class RamHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
+  public RamHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
+
   private static final int TYPE_MEM_ARRAY = -1;
 
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) {
+  static boolean supports(String lang, AttributeSet attrs, char vendor) {
     Object dbus = attrs.getValue(RamAttributes.ATTR_DBUS);
     boolean separate = dbus == RamAttributes.BUS_SEP;
     Object trigger = attrs.getValue(StdAttr.TRIGGER);
@@ -236,7 +239,7 @@ public class RamHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   }
 
   @Override
-  public SortedSet<String> GetTypeDefinitions(Netlist TheNetlist, AttributeSet attrs, String lang) {
+  protected SortedSet<String> GetTypeDefinitions(Netlist TheNetlist, AttributeSet attrs, String lang) {
     SortedSet<String> list = new TreeSet<String>();
     int wd = dataWidth(attrs);
     int wa = addrWidth(attrs);

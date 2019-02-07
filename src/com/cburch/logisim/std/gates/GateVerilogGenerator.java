@@ -29,26 +29,27 @@
  */
 package com.cburch.logisim.std.gates;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
 import com.cburch.logisim.hdl.Hdl;
 
 public class GateVerilogGenerator extends GateVhdlGenerator {
 
-  protected GateVerilogGenerator(boolean invertOutput) { // unary ops
-    super(invertOutput);
+  protected GateVerilogGenerator(String lang, FPGAReport err, boolean invertOutput) { // unary ops
+    super(lang, err, invertOutput);
   }
 
-  protected GateVerilogGenerator(boolean identity, String op, boolean invertOutput) {
-    super(identity, op, invertOutput);
+  protected GateVerilogGenerator(String lang, FPGAReport err, boolean identity, String op, boolean invertOutput) {
+    super(lang, err, identity, op, invertOutput);
   }
 
-  static GateVerilogGenerator forBuffer() { return new GateVerilogGenerator(false); }
-  static GateVerilogGenerator forNot() { return new GateVerilogGenerator(true); }
-  static GateVerilogGenerator forAnd() { return new GateVerilogGenerator(true, "&", false); }
-  static GateVerilogGenerator forNand() { return new GateVerilogGenerator(true, "&", true); }
-  static GateVerilogGenerator forOr() { return new GateVerilogGenerator(false, "|", false); }
-  static GateVerilogGenerator forNor() { return new GateVerilogGenerator(false, "|", true); }
-  static GateVerilogGenerator forXor() { return new GateVerilogGenerator(false, "^", false); }
-  static GateVerilogGenerator forXnor() { return new GateVerilogGenerator(false, "^", true); }
+  static GateVerilogGenerator forBuffer(String lang, FPGAReport err) { return new GateVerilogGenerator(lang, err, false); }
+  static GateVerilogGenerator forNot(String lang, FPGAReport err) { return new GateVerilogGenerator(lang, err, true); }
+  static GateVerilogGenerator forAnd(String lang, FPGAReport err) { return new GateVerilogGenerator(lang, err, true, "&", false); }
+  static GateVerilogGenerator forNand(String lang, FPGAReport err) { return new GateVerilogGenerator(lang, err, true, "&", true); }
+  static GateVerilogGenerator forOr(String lang, FPGAReport err) { return new GateVerilogGenerator(lang, err, false, "|", false); }
+  static GateVerilogGenerator forNor(String lang, FPGAReport err) { return new GateVerilogGenerator(lang, err, false, "|", true); }
+  static GateVerilogGenerator forXor(String lang, FPGAReport err) { return new GateVerilogGenerator(lang, err, false, "^", false); }
+  static GateVerilogGenerator forXnor(String lang, FPGAReport err) { return new GateVerilogGenerator(lang, err, false, "^", true); }
 
   @Override
   protected void unaryOp(Hdl out) {

@@ -41,10 +41,11 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class ShifterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  protected final static int GENERIC_PARAM_MODE = -1;
+  public ShifterHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
 
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
+  protected final static int GENERIC_PARAM_MODE = -1;
 
   @Override
   public String getComponentStringIdentifier() { return "SHIFTER"; }

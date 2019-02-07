@@ -35,13 +35,13 @@ import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 
 public class ButtonHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
+  public ButtonHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
 
   @Override
   public boolean IsOnlyInlined(String lang) { return true; }

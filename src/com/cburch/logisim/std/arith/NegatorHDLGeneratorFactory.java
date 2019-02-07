@@ -41,10 +41,11 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class NegatorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
+  public NegatorHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
 
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
+  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
 
   @Override
   public String getComponentStringIdentifier() { return "NEGATOR2C"; }
@@ -77,7 +78,6 @@ public class NegatorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     int w = width(attrs);
     if (w > 1)
       list.put("BusWidth", w);
-    list.put("ExtendedBits", w + 1);
   }
 
   @Override
@@ -101,4 +101,6 @@ public class NegatorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   protected int width(AttributeSet attrs) {
     return attrs.getValue(StdAttr.WIDTH).getWidth();
   }
+
+  // todo: this should be inlined
 }

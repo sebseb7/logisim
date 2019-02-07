@@ -41,10 +41,11 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class DemultiplexerHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
+  public DemultiplexerHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
 
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
+  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
 
   @Override
   public String getComponentStringIdentifier() { return "DEMUX"; }
@@ -108,7 +109,7 @@ public class DemultiplexerHDLGeneratorFactory extends AbstractHDLGeneratorFactor
     int ws = selWidth(attrs);
     int n = (1 << ws);
     for (int i = 0; i < n; i++) {
-      String s = IntToBin(i, ws, out.isVhdl ? "VHDL" : "Verilog");
+      String s = out.literal(i, ws);
       if (out.isVhdl) {
         if (w == 1) {
           out.stmt("Out_%d <= DataIn WHEN Sel = %d AND Enable = '1' ELSE '0';", i, s);

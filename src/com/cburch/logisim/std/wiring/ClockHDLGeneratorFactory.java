@@ -41,6 +41,10 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class ClockHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
+  public ClockHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
+
   private static final int GENERIC_PARAM_HIGHTICKS = -1;
   private static final int GENERIC_PARAM_LOWTICKS = -2;
   private static final int GENERIC_PARAM_PHASE = -3;
@@ -53,9 +57,6 @@ public class ClockHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   public static final int GlobalClockIndex = 4;
 
   public static final int NrOfClockBits = 5;
-
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
 
   @Override
   public String getComponentStringIdentifier() { return "CLOCKGEN"; }

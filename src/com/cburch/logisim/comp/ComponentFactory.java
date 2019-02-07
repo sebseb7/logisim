@@ -32,6 +32,7 @@ package com.cburch.logisim.comp;
 
 import java.awt.Color;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 import com.cburch.logisim.LogisimVersion;
@@ -91,9 +92,12 @@ public interface ComponentFactory extends AttributeDefaultProvider {
    *         the feature.
    */
   public Object getFeature(Object key, AttributeSet attrs);
+  
+  public default boolean HDLSpecialHandling() { return false; }
 
-  public HDLGeneratorFactory getHDLGenerator(String HDLIdentifier,
-      AttributeSet attrs, char Vendor);
+  public default boolean HDLIgnore() { return false; }
+
+  public default HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) { return null; }
 
   public String getHDLName(AttributeSet attrs);
 
@@ -106,9 +110,6 @@ public interface ComponentFactory extends AttributeDefaultProvider {
   public Bounds getOffsetBounds(AttributeSet attrs);
 
   public boolean HasThreeStateDrivers(AttributeSet attrs);
-
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor);
 
   public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver);
 

@@ -34,6 +34,8 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.data.Attribute;
@@ -191,11 +193,11 @@ public class HexDigit extends InstanceFactory implements DynamicElementProvider 
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (MyHDLGenerator == null)
-      MyHDLGenerator = new HexDigitHDLGeneratorFactory();
-    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
+    if (lang.equals("VHDL"))
+      return new HexDigitHDLGeneratorFactory(lang, err);
+    else
+      return null;
   }
 
   @Override

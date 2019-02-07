@@ -48,26 +48,28 @@ public class GateVhdlGenerator extends AbstractHDLGeneratorFactory {
   protected final boolean identity;
   protected final boolean invertOutput;
 
-  protected GateVhdlGenerator(boolean invertOutput) { // unary ops
+  protected GateVhdlGenerator(String lang, FPGAReport err, boolean invertOutput) { // unary ops
+    super(lang, err);
     this.op = null;
     this.identity = false;
     this.invertOutput = invertOutput;
   }
 
-  protected GateVhdlGenerator(boolean identity, String op, boolean invertOutput) {
+  protected GateVhdlGenerator(String lang, FPGAReport err, boolean identity, String op, boolean invertOutput) {
+    super(lang, err);
     this.identity = identity;
     this.op = op;
     this.invertOutput = invertOutput;
   }
 
-  static GateVhdlGenerator forBuffer() { return new GateVhdlGenerator(false); }
-  static GateVhdlGenerator forNot() { return new GateVhdlGenerator(true); }
-  static GateVhdlGenerator forAnd() { return new GateVhdlGenerator(true, "AND", false); }
-  static GateVhdlGenerator forNand() { return new GateVhdlGenerator(true, "AND", true); }
-  static GateVhdlGenerator forOr() { return new GateVhdlGenerator(false, "OR", false); }
-  static GateVhdlGenerator forNor() { return new GateVhdlGenerator(false, "OR", true); }
-  static GateVhdlGenerator forXor() { return new GateVhdlGenerator(false, "XOR", false); }
-  static GateVhdlGenerator forXnor() { return new GateVhdlGenerator(false, "XOR", true); }
+  static GateVhdlGenerator forBuffer(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, false); }
+  static GateVhdlGenerator forNot(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, true); }
+  static GateVhdlGenerator forAnd(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, true, "AND", false); }
+  static GateVhdlGenerator forNand(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, true, "AND", true); }
+  static GateVhdlGenerator forOr(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, false, "OR", false); }
+  static GateVhdlGenerator forNor(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, false, "OR", true); }
+  static GateVhdlGenerator forXor(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, false, "XOR", false); }
+  static GateVhdlGenerator forXnor(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, false, "XOR", true); }
 
   protected void unaryOp(Hdl out) {
     if (!invertOutput)
@@ -158,10 +160,6 @@ public class GateVhdlGenerator extends AbstractHDLGeneratorFactory {
     else 
       naryOp(out, n);
   }
-
-  // Vestigial.
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char vendor) { return true; }
 
   // Used for naming files.
   @Override

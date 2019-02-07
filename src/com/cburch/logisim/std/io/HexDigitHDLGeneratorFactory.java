@@ -31,7 +31,6 @@ package com.cburch.logisim.std.io;
 
 import java.util.ArrayList;
 import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.Map;
 import java.io.File;
 
@@ -40,14 +39,12 @@ import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.data.AttributeSet;
 
 public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) {
-    return lang.equals("VHDL");
+  public HexDigitHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
   }
 
   @Override

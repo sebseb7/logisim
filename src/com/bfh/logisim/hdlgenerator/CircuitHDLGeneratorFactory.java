@@ -48,23 +48,25 @@ import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgaboardeditor.FPGAClass;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
-import com.bfh.logisim.settings.Settings;
 import com.bfh.logisim.library.DynamicClock;
+import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.std.io.Keyboard;
 import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.std.io.Tty;
-import com.cburch.logisim.std.io.Keyboard;
 import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
 	private Circuit MyCircuit;
 
-	public CircuitHDLGeneratorFactory(Circuit source) {
+	public CircuitHDLGeneratorFactory(String lang, FPGAReport err, Circuit source) {
+    super(lang, err);
 		MyCircuit = source;
 	}
 
@@ -95,7 +97,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				HDLGeneratorFactory Worker = ThisComponent
 						.GetComponent()
 						.getFactory()
-						.getHDLGenerator(HDLType,
+						.getHDLGenerator(HDLType, Reporter,
 								ThisComponent.GetComponent().getAttributeSet(),
 								FPGAClass.VendorUnknown);
 				if (Worker == null) {
@@ -146,7 +148,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			HDLGeneratorFactory Worker = ThisCircuit
 					.GetComponent()
 					.getFactory()
-					.getHDLGenerator(HDLType,
+					.getHDLGenerator(HDLType, Reporter,
 							ThisCircuit.GetComponent().getAttributeSet(),
 							FPGAClass.VendorUnknown);
 			if (Worker == null) {
@@ -233,7 +235,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				HDLGeneratorFactory Worker = Gate
 						.GetComponent()
 						.getFactory()
-						.getHDLGenerator(Settings.VHDL,
+						.getHDLGenerator(Settings.VHDL, null /* reporter */,
 								Gate.GetComponent().getAttributeSet(),
 								FPGAClass.VendorUnknown);
 				if (Worker != null) {
@@ -255,7 +257,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				HDLGeneratorFactory Worker = Gate
 						.GetComponent()
 						.getFactory()
-						.getHDLGenerator(Settings.VHDL,
+						.getHDLGenerator(Settings.VHDL, null /* reporter */,
 								Gate.GetComponent().getAttributeSet(),
 								FPGAClass.VendorUnknown);
 				SubcircuitFactory sub = (SubcircuitFactory) Gate.GetComponent()
@@ -455,9 +457,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		for (NetlistComponent ClockSource : TheNetlist.GetClockSources()) {
 			if (FirstLine) {
 				Contents.add("");
-				Contents.addAll(MakeRemarkBlock(
-						"Here all clock generator connections are defined", 3,
-						HDLType));
+        Hdl out = new Hdl(HDLType, Reporter);
+        out.comment("definitions for clock generator connections");
+				Contents.addAll(out);
 				FirstLine = false;
 			}
 			if (!ClockSource.EndIsConnected(0)) {
@@ -504,8 +506,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		ArrayList<String> Wiring = GetHDLWiring(HDLType, TheNetlist);
 		if (!Wiring.isEmpty()) {
 			Contents.add("");
-			Contents.addAll(MakeRemarkBlock("Here all wiring is defined", 3,
-					HDLType));
+      Hdl out = new Hdl(HDLType, Reporter);
+      out.comment("definitions for wiring");
+      Contents.addAll(out);
 			Contents.addAll(Wiring);
 		}
 		/* Now we define all input signals; hence Input port -> Internal Net */
@@ -513,8 +516,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		for (int i = 0; i < TheNetlist.NumberOfInputPorts(); i++) {
 			if (FirstLine) {
 				Contents.add("");
-				Contents.addAll(MakeRemarkBlock(
-						"Here all input connections are defined", 3, HDLType));
+        Hdl out = new Hdl(HDLType, Reporter);
+        out.comment("definitions for input connections");
+        Contents.addAll(out);
 				FirstLine = false;
 			}
 			NetlistComponent MyInput = TheNetlist.GetInputPin(i);
@@ -539,21 +543,23 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		// }
 		/* Now we define all output signals; hence Internal Net -> Input port */
 		FirstLine = true;
-                NetlistComponent dynClock = TheNetlist.GetDynamicClock();
-                if (dynClock != null) {
-                    Contents.add("");
-                    Contents.addAll(MakeRemarkBlock(
-                                    "Here all output connections are defined", 3, HDLType));
-                    FirstLine = false;
-                    Contents.add(GetSignalMap(
-                                    "LOGISIM_DYNAMIC_CLOCK_OUT",
-                                    dynClock, 0, 3, Reporter, HDLType, TheNetlist));
-                }
+    NetlistComponent dynClock = TheNetlist.GetDynamicClock();
+    if (dynClock != null) {
+      Contents.add("");
+      Hdl out = new Hdl(HDLType, Reporter);
+      out.comment("definitions for dynamic clock output connections");
+      Contents.addAll(out);
+      FirstLine = false;
+      Contents.add(GetSignalMap(
+            "LOGISIM_DYNAMIC_CLOCK_OUT",
+            dynClock, 0, 3, Reporter, HDLType, TheNetlist));
+    }
 		for (int i = 0; i < TheNetlist.NumberOfOutputPorts(); i++) {
 			if (FirstLine) {
 				Contents.add("");
-				Contents.addAll(MakeRemarkBlock(
-						"Here all output connections are defined", 3, HDLType));
+        Hdl out = new Hdl(HDLType, Reporter);
+        out.comment("definitions for output connections");
+        Contents.addAll(out);
 				FirstLine = false;
 			}
 			NetlistComponent MyOutput = TheNetlist.GetOutputPin(i);
@@ -568,7 +574,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			HDLGeneratorFactory Worker = comp
 					.GetComponent()
 					.getFactory()
-					.getHDLGenerator(HDLType,
+					.getHDLGenerator(HDLType, Reporter,
 							comp.GetComponent().getAttributeSet(),
 							FPGAClass.VendorUnknown);
 			if (Worker != null) {
@@ -584,9 +590,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					}
 					if (FirstLine) {
 						Contents.add("");
-						Contents.addAll(MakeRemarkBlock(
-								"Here all in-lined components are defined", 3,
-								HDLType));
+            Hdl out = new Hdl(HDLType, Reporter);
+            out.comment("definitions for in-lined components");
+            Contents.addAll(out);
 						FirstLine = false;
 					}
 					Contents.addAll(Worker.GetInlinedCode(TheNetlist, id++,
@@ -604,7 +610,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			HDLGeneratorFactory Worker = comp
 					.GetComponent()
 					.getFactory()
-					.getHDLGenerator(HDLType,
+					.getHDLGenerator(HDLType, Reporter,
 							comp.GetComponent().getAttributeSet(),
 							FPGAClass.VendorUnknown);
 			if (Worker != null) {
@@ -620,9 +626,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					}
 					if (FirstLine) {
 						Contents.add("");
-						Contents.addAll(MakeRemarkBlock(
-								"Here all normal components are defined", 3,
-								HDLType));
+            Hdl out = new Hdl(HDLType, Reporter);
+            out.comment("definitions for normal components");
+            Contents.addAll(out);
 						FirstLine = false;
 					}
 					Contents.addAll(Worker.GetComponentMap(TheNetlist, id++,
@@ -640,7 +646,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			HDLGeneratorFactory Worker = comp
 					.GetComponent()
 					.getFactory()
-					.getHDLGenerator(HDLType,
+					.getHDLGenerator(HDLType, Reporter,
 							comp.GetComponent().getAttributeSet(),
 							FPGAClass.VendorUnknown);
 			if (Worker != null) {
@@ -658,8 +664,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				if (!CompMap.isEmpty()) {
 					if (FirstLine) {
 						Contents.add("");
-						Contents.addAll(MakeRemarkBlock(
-								"Here all sub-circuits are defined", 3, HDLType));
+            Hdl out = new Hdl(HDLType, Reporter);
+            out.comment("definitions for all sub-circuits");
+            Contents.addAll(out);
 						FirstLine = false;
 					}
 					if (CompIds.containsKey(CompId)) {
@@ -1013,9 +1020,10 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				while (Destination.length() < SallignmentSize) {
 					Destination.append(" ");
 				}
+        Hdl out = new Hdl(lang, err);
 				Contents.append(Tab.toString() + AssignCommand
 						+ Destination.toString() + AssignOperator
-						+ GetZeroVector(NrOfBits, true, HDLType) + ";");
+						+ out.zeros(NrOfBits) + ";");
 			} else {
 				/*
 				 * There are connections, we detect if it is a continues bus
@@ -1058,11 +1066,12 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 							if (IsOutput) {
 								continue;
 							} else {
-                                                                Reporter.AddSevereWarning("In circuit " 
-                                                                        + "'" + MyCircuit.getName() + "', pin " + bit + " of output bus "
-                                                                        + "'" + PortName + "'"
-                                                                        + " is not connected. This bus pin will be tied to ground!");
-								Source.append(GetZeroVector(1, true, HDLType));
+                Hdl out = new Hdl(HDLType, Reporter);
+                Reporter.AddSevereWarning("In circuit " 
+                    + "'" + MyCircuit.getName() + "', pin " + bit + " of output bus "
+                    + "'" + PortName + "'"
+                    + " is not connected. This bus pin will be tied to ground!");
+								Source.append(out.zero);
 							}
 						} else {
 							/*
@@ -1149,9 +1158,4 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		return SignalMap;
 	}
 
-	@Override
-	public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-			char Vendor) {
-		return true;
-	}
 }

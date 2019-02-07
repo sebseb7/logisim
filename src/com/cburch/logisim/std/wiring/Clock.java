@@ -38,6 +38,8 @@ import java.awt.event.KeyEvent;
 
 import javax.swing.Icon;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.comp.Component;
@@ -208,12 +210,8 @@ public class Clock extends InstanceFactory {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (MyHDLGenerator == null) {
-      MyHDLGenerator = new ClockHDLGeneratorFactory();
-    }
-    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
+    return new ClockHDLGeneratorFactory(lang, err);
   }
 
   @Override

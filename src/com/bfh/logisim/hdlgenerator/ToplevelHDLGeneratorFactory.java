@@ -40,15 +40,16 @@ import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgaboardeditor.FPGAClass;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
-import com.bfh.logisim.settings.Settings;
 import com.bfh.logisim.library.DynamicClock;
+import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.std.io.Keyboard;
 import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.std.io.Tty;
-import com.cburch.logisim.std.io.Keyboard;
 import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 import com.cburch.logisim.std.wiring.Pin;
 
@@ -61,9 +62,12 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
 	// private boolean useFPGAClock;
 
-	public ToplevelHDLGeneratorFactory(long FPGAClock, int ClockTickPeriod,
+	public ToplevelHDLGeneratorFactory(
+      String lang, FPGAReport err,
+      long FPGAClock, int ClockTickPeriod,
 			Circuit TopLevel, MappableResourcesContainer IOComponents,
 			boolean useFPGAClock) {
+    super(lang, err);
 		FpgaClockFrequency = FPGAClock;
 		TickPeriod = ClockTickPeriod;
 		MyCircuit = TopLevel;
@@ -78,6 +82,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		int NrOfClockTrees = TheNetlist.NumberOfClockTrees();
 		if (NrOfClockTrees > 0) {
 			TickComponentHDLGeneratorFactory Ticker = new TickComponentHDLGeneratorFactory(
+          "VHDL", null /* reporter */,
 					FpgaClockFrequency, TickPeriod/* , useFPGAClock */);
 			Components
 					.addAll(Ticker.GetComponentInstantiation(TheNetlist, null,
@@ -93,7 +98,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					.get(0)
 					.getFactory()
 					.getHDLGenerator(
-							Settings.VHDL,
+							Settings.VHDL, null /* reporter */,
 							TheNetlist.GetAllClockSources().get(0)
 									.getAttributeSet(), FPGAClass.VendorUnknown);
 			Components.addAll(ClockWorker
@@ -111,6 +116,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 							Settings.VHDL/* , false */));
 		}
 		CircuitHDLGeneratorFactory Worker = new CircuitHDLGeneratorFactory(
+        "VHDL", null /* reporter */,
 				MyCircuit);
 		Components.addAll(Worker.GetComponentInstantiation(TheNetlist, null,
 				CorrectLabel.getCorrectLabel(MyCircuit.getName()),
@@ -167,8 +173,11 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		String NotOperator = (HDLType.equals(Settings.VHDL)) ? "NOT " : "~";
 		StringBuffer Temp = new StringBuffer();
 		/* First we process all pins */
-		Contents.addAll(MakeRemarkBlock(
-				"Here all signal adaptations are performed", 3, HDLType));
+    {
+    Hdl out = new Hdl(HDLType, Reporter);
+    out.comment("signal adaptions");
+    Contents.addAll(out);
+    }
 		for (ArrayList<String> CompId : MyIOComponents.GetComponents()) {
 			if (MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof Pin) {
 				Component ThisPin = MyIOComponents.GetComponent(CompId)
@@ -260,8 +269,11 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			}
 		}
 		/* Now we process the bubbles */
-		Contents.addAll(MakeRemarkBlock(
-				"Here all inlined adaptations are performed", 3, HDLType));
+    {
+    Hdl out = new Hdl(HDLType, Reporter);
+    out.comment("in-lined adaptions");
+    Contents.addAll(out);
+    }
 		for (ArrayList<String> CompId : MyIOComponents.GetComponents()) {
 			if (!(MyIOComponents.GetComponent(CompId).GetComponent()
 					.getFactory() instanceof Pin)
@@ -276,7 +288,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 						.GetComponent()
 						.getFactory()
 						.getHDLGenerator(
-								HDLType,
+								HDLType, Reporter,
 								MyIOComponents.GetComponent(CompId)
 										.GetComponent().getAttributeSet(),
 								FPGAClass.VendorUnknown);
@@ -302,9 +314,11 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			}
 		}
 		if (NrOfClockTrees > 0) {
-			Contents.addAll(MakeRemarkBlock(
-					"Here the clock tree components are defined", 3, HDLType));
+      Hdl out = new Hdl(HDLType, Reporter);
+      out.comment("definitions for clock signal distribution");
+      Contents.addAll(out);
 			TickComponentHDLGeneratorFactory Ticker = new TickComponentHDLGeneratorFactory(
+          HDLType, Reporter,
 					FpgaClockFrequency, TickPeriod/* , useFPGAClock */);
 			Contents.addAll(Ticker.GetComponentMap(TheNetlist, (long) 0, null,
 					Reporter, "", HDLType));
@@ -313,7 +327,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				NetlistComponent ThisClock = new NetlistComponent(Clockgen);
 				Contents.addAll(Clockgen
 						.getFactory()
-						.getHDLGenerator(HDLType,
+						.getHDLGenerator(HDLType, Reporter,
 								ThisClock.GetComponent().getAttributeSet(),
 								FPGAClass.VendorUnknown)
 						.GetComponentMap(TheNetlist, index++, ThisClock,
@@ -322,10 +336,13 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		}
 		Contents.add("");
 		/* Here the map is performed */
-		Contents.addAll(MakeRemarkBlock(
-				"Here the toplevel component is connected", 3, HDLType));
+    {
+    Hdl out = new Hdl(HDLType, Reporter);
+    out.comment("top-level component connections");
+    Contents.addAll(out);
+    }
 		CircuitHDLGeneratorFactory DUT = new CircuitHDLGeneratorFactory(
-				MyCircuit);
+        HDLType, Reporter, MyCircuit);
 		Contents.addAll(DUT.GetComponentMap(TheNetlist, (long) 0, null,
 				Reporter, CorrectLabel.getCorrectLabel(MyCircuit.getName()),
 				HDLType));
@@ -433,9 +450,4 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		return Wires;
 	}
 
-	@Override
-	public boolean HDLTargetSupported(String HDLType, AttributeSet attrs,
-			char Vendor) {
-		return true;
-	}
 }

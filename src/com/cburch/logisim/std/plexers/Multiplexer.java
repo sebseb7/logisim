@@ -34,6 +34,8 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Graphics;
 
+import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.data.Attribute;
@@ -162,11 +164,8 @@ public class Multiplexer extends InstanceFactory {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    if (MyHDLGenerator == null)
-      MyHDLGenerator = new MultiplexerHDLGeneratorFactory();
-    return MyHDLGenerator.HDLTargetSupported(HDLIdentifier, attrs, Vendor);
+  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
+    return new MultiplexerHDLGeneratorFactory(lang, err);
   }
 
   @Override

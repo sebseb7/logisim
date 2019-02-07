@@ -145,10 +145,7 @@ public class SplitterFactory extends AbstractComponentFactory {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier,
-      AttributeSet attrs, char Vendor) {
-    return true;
-  }
+  public boolean HDLSpecialHandling() { return true; }
 
   @Override
   public void paintIcon(ComponentDrawContext c, int x, int y,

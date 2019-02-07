@@ -175,9 +175,7 @@ public class Text extends InstanceFactory implements CustomHandles {
   }
 
   @Override
-  public boolean HDLSupportedComponent(String HDLIdentifier, AttributeSet attrs, char Vendor) {
-    return true;
-  }
+  public boolean HDLIgnore() { return true; }
 
   @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {

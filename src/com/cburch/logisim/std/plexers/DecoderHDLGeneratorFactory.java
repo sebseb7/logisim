@@ -40,11 +40,12 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class DecoderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
+  public DecoderHDLGeneratorFactory(String lang, FPGAReport err) {
+    super(lang, err);
+  }
+
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_EXTENDEDBITS = -2;
-
-  @Override
-  public boolean HDLTargetSupported(String lang, AttributeSet attrs, char Vendor) { return true; }
 
   @Override
   public String getComponentStringIdentifier() { return "BINDECODER"; }
@@ -89,7 +90,7 @@ public class DecoderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     int ws = selWidth(attrs);
     int n = (1 << ws);
     for (int i = 0; i < n; i++) {
-      String s = IntToBin(i, ws, out.isVhdl ? "VHDL" : "Verilog");
+      String s = out.literal(i, ws);
       if (out.isVhdl)
         out.stmt("Out_%d <= '1' WHEN Sel = %s AND Enable = '1' ELSE '0';", i, s);
       else
