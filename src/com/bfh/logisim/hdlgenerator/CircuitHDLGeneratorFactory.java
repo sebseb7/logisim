@@ -70,22 +70,20 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		MyCircuit = source;
 	}
 
-	@Override
-	public boolean GenerateAllHDLDescriptions(Set<String> HandledComponents,
-			String WorkingDir, ArrayList<String> Hierarchy /*, FPGAReport Reporter, String HDLType*/) {
+  public boolean GenerateAllHDLDescriptions(String WorkingDir) {
+		if (!WorkingDir.endsWith(File.separator))
+			WorkingDir += File.separator;
+    return GenerateAllHDLDescriptions(WorkingDir, new HashSet<String>(), new ArrayList<String>());
+  }
+
+	private boolean GenerateAllHDLDescriptions(String WorkingDir,
+      Set<String> HandledComponents, ArrayList<String> Hierarchy) {
 		if (MyCircuit == null) {
 			return false;
-		}
-		if (Hierarchy == null) {
-			Hierarchy = new ArrayList<String>();
 		}
 		Netlist MyNetList = MyCircuit.getNetList();
 		if (MyNetList == null) {
 			return false;
-		}
-		String WorkPath = WorkingDir;
-		if (!WorkPath.endsWith(File.separator)) {
-			WorkPath += File.separator;
 		}
 		MyNetList.SetCurrentHierarchyLevel(Hierarchy);
 		/* First we handle the normal components */
@@ -109,7 +107,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
         ((AbstractHDLGeneratorFactory)Worker).initHDLGen(MyNetList); /* stateful hdl gen */
 				if (!Worker.IsOnlyInlined(_lang)) {
 					if (!WriteEntity(
-							WorkPath + Worker.GetRelativeDirectory(_lang),
+							WorkingDir + Worker.GetRelativeDirectory(_lang),
 							Worker.GetEntity(MyNetList, ThisComponent
 									.GetComponent().getAttributeSet(),
 									ComponentName, _err, _lang),
@@ -124,7 +122,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 						for (String Mem : memInitData.keySet()) {
 							ArrayList<String> initData = memInitData.get(Mem);
 							File mif = WriteMemInitFile(
-									WorkPath + Worker.GetRelativeDirectory(_lang),
+									WorkingDir + Worker.GetRelativeDirectory(_lang),
 									initData,
 									ComponentName, Mem, _err, _lang);
 							if (mif == null)
@@ -133,7 +131,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 						}
 					}
 					if (!WriteArchitecture(
-							WorkPath + Worker.GetRelativeDirectory(_lang),
+							WorkingDir + Worker.GetRelativeDirectory(_lang),
 							Worker.GetArchitecture(/* MyNetList,*/
                 ThisComponent
 									.GetComponent().getAttributeSet(),
@@ -148,7 +146,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		}
 		/* Now we go down the hierarchy to get all other components */
 		for (NetlistComponent ThisCircuit : MyNetList.GetSubCircuits()) {
-			HDLGeneratorFactory Worker = ThisCircuit
+			CircuitHDLGeneratorFactory Worker = (CircuitHDLGeneratorFactory)ThisCircuit
 					.GetComponent()
 					.getFactory()
 					.getHDLGenerator(_lang, _err,
@@ -162,8 +160,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			}
 			Hierarchy.add(CorrectLabel.getCorrectLabel(ThisCircuit
 					.GetComponent().getAttributeSet().getValue(StdAttr.LABEL)));
-			if (!Worker.GenerateAllHDLDescriptions(HandledComponents,
-					WorkingDir, Hierarchy /*, Reporter, HDLType */)) {
+			if (!Worker.GenerateAllHDLDescriptions(WorkingDir, HandledComponents, Hierarchy)) {
 				return false;
 			}
 			Hierarchy.remove(Hierarchy.size() - 1);
@@ -173,7 +170,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				.getCorrectLabel(MyCircuit.getName());
 		if (!HandledComponents.contains(ComponentName)) {
 			if (!WriteEntity(
-					WorkPath + GetRelativeDirectory(_lang),
+					WorkingDir + GetRelativeDirectory(_lang),
 					GetEntity(MyNetList, null, ComponentName, _err, _lang),
 					ComponentName, _err, _lang)) {
 				return false;
@@ -184,20 +181,21 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					CircuitAttributes.CIRCUIT_IS_VHDL_BOX)) {
 				if (!FileWriter.CopyArchitecture(
 						MyCircuit.getStaticAttributes().getValue(
-								CircuitAttributes.CIRCUIT_VHDL_PATH), WorkPath
+								CircuitAttributes.CIRCUIT_VHDL_PATH), WorkingDir
 								+ GetRelativeDirectory(_lang), ComponentName,
 						_err, _lang)) {
 					return false;
 				}
 			} else {
 				if (!WriteArchitecture(
-						WorkPath + GetRelativeDirectory(_lang),
+						WorkingDir + GetRelativeDirectory(_lang),
 						this.GetArchitectureWithNetlist(MyNetList, /* stateful hdl gen */
                 /* We don't use _nets here, b/c that is the netlist for our
-                 * parent (or likely null, b/c it isn't configure yet), which
-                 * probably isn't what we want here... we want our own inner
-                 * circuit netlist instead. Or maybe it doesn't matter? What is
-                 * netlist used for here? Just the circuit name? */
+                 * parent (or null at the top level, b/c FPGACommanderGui
+                 * doesn't configure it), which probably isn't what we want
+                 * here... we want our own inner circuit netlist instead. Or
+                 * maybe it doesn't matter? What is netlist used for here? Just
+                 * the circuit name? */
               null, null, ComponentName /*, Reporter, HDLType*/), ComponentName, _err, _lang)) {
 					return false;
 				}

@@ -64,6 +64,7 @@ import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.TickComponentHDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.CircuitHDLGeneratorFactory;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.Simulator;
@@ -1288,24 +1289,22 @@ public class FPGACommanderGui implements ActionListener {
 				return false;
 			}
 		}
-		Set<String> GeneratedHDLComponents = new HashSet<String>();
-		HDLGeneratorFactory Worker = RootSheet.getSubcircuitFactory()
-				.getHDLGenerator(MySettings.GetHDLType(), MyReporter,
+		CircuitHDLGeneratorFactory cWorker = (CircuitHDLGeneratorFactory)
+        RootSheet.getSubcircuitFactory().getHDLGenerator(MySettings.GetHDLType(), MyReporter,
 						RootSheet.getStaticAttributes(),
 						MyBoardInformation.fpga.getVendor());
-    // if (!(Worker instanceof CircuitHDLGeneratorFactory))
+    // if (!(cWorker instanceof CircuitHDLGeneratorFactory))
     //   throw new IllegalStateException();
-    // ((CircuitHDLGeneratorFactory)Worker).initHDLGen(); /* stateful hdl gen */
+    // ((CircuitHDLGeneratorFactory)cWorker).initHDLGen(); /* stateful hdl gen */
     // this worker is not yet given a netlist, but we only use it for
     // GenerateAllHDLDescriptions(), which doesn't need one (it has an internal
     // one).
-		if (Worker == null) {
+		if (cWorker == null) {
 			MyReporter
 					.AddFatalError("Internal error on HDL generation, null pointer exception");
 			return false;
 		}
-		if (!Worker.GenerateAllHDLDescriptions(GeneratedHDLComponents,
-				ProjectDir, null /*, MyReporter, MySettings.GetHDLType()*/)) {
+		if (!cWorker.GenerateAllHDLDescriptions(ProjectDir)) {
 			return false;
 		}
 		/* Here we generate the top-level shell */
@@ -1376,7 +1375,7 @@ public class FPGACommanderGui implements ActionListener {
 				return false;
 			}
 		}
-		Worker = new ToplevelHDLGeneratorFactory(
+		ToplevelHDLGeneratorFactory Worker = new ToplevelHDLGeneratorFactory(
         MySettings.GetHDLType(), MyReporter,
 				MyBoardInformation.fpga.getClockFrequency(),
 						TickPeriod, RootSheet, MyMappableResources,

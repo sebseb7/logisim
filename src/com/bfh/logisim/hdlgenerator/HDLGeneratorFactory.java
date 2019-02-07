@@ -70,9 +70,6 @@ public abstract class HDLGeneratorFactory {
 	public static final String FPGAInOutPinName = "FPGA_INOUT_PIN";
 	public static final String FPGAOutputPinName = "FPGA_OUTPUT_PIN";
 
-	public boolean GenerateAllHDLDescriptions(Set<String> HandledComponents,
-			String WorkingDir, ArrayList<String> Hierarchy /*, FPGAReport Reporter, String HDLType*/) { return true; }
-
 	public abstract ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/
 			AttributeSet attrs, Map<String, File> MemInitFiles,
 			String ComponentName /*, FPGAReport Reporter, String HDLType */);
