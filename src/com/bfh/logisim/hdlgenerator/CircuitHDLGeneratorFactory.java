@@ -65,8 +65,8 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
 	private Circuit MyCircuit;
 
-	public CircuitHDLGeneratorFactory(String lang, FPGAReport err, Circuit source) {
-    super(lang, err);
+	public CircuitHDLGeneratorFactory(String lang, FPGAReport err, Circuit source, Netlist nets) {
+    super(lang, err, nets);
 		MyCircuit = source;
 	}
 
@@ -622,6 +622,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 							comp.GetComponent().getAttributeSet(),
 							FPGAClass.VendorUnknown);
 			if (Worker != null) {
+        if (!(Worker instanceof AbstractHDLGeneratorFactory))
+          throw new IllegalStateException();
+        ((AbstractHDLGeneratorFactory)Worker).initHDLGen(TheNetlist); /* stateful hdl gen */
 				if (!Worker.IsOnlyInlined(/*HDLType*/)) {
 					String CompName = comp.GetComponent().getFactory()
 							.getHDLName(comp.GetComponent().getAttributeSet());
@@ -639,8 +642,8 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
             Contents.addAll(out);
 						FirstLine = false;
 					}
-					Contents.addAll(Worker.GetComponentMap(TheNetlist, id++,
-							comp, Reporter, CompName, HDLType));
+					Contents.addAll(Worker.GetComponentMap(/*TheNetlist,*/ id++,
+							comp, /*Reporter,*/ CompName /*, HDLType*/));
 					if (CompIds.containsKey(CompId)) {
 						CompIds.remove(CompId);
 					}
@@ -658,6 +661,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 							comp.GetComponent().getAttributeSet(),
 							FPGAClass.VendorUnknown);
 			if (Worker != null) {
+        if (!(Worker instanceof AbstractHDLGeneratorFactory))
+          throw new IllegalStateException();
+        ((AbstractHDLGeneratorFactory)Worker).initHDLGen(TheNetlist); /* stateful hdl gen */
 				String CompName = comp.GetComponent().getFactory()
 						.getHDLName(comp.GetComponent().getAttributeSet());
 				String CompId = Worker.getComponentStringIdentifier();
@@ -667,8 +673,8 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				} else {
 					id = (long) 1;
 				}
-				ArrayList<String> CompMap = Worker.GetComponentMap(TheNetlist,
-						id++, comp, Reporter, CompName, HDLType);
+				ArrayList<String> CompMap = Worker.GetComponentMap(/*TheNetlist,*/
+						id++, comp, /*Reporter,*/ CompName /*, HDLType*/);
 				if (!CompMap.isEmpty()) {
 					if (FirstLine) {
 						Contents.add("");

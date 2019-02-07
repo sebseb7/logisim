@@ -334,7 +334,7 @@ public class SubcircuitFactory extends InstanceFactory {
 
   @Override
   public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    return new CircuitHDLGeneratorFactory(lang, err, this.source);
+    return new CircuitHDLGeneratorFactory(lang, err, this.source, null /* fixme: nets */);
   }
 
   @Override

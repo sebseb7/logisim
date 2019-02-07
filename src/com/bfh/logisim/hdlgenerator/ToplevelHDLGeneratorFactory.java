@@ -117,7 +117,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		}
 		CircuitHDLGeneratorFactory Worker = new CircuitHDLGeneratorFactory(
         "VHDL", null /* reporter */,
-				MyCircuit);
+				MyCircuit, TheNetlist);
 		Components.addAll(Worker.GetComponentInstantiation(TheNetlist, null,
 				CorrectLabel.getCorrectLabel(MyCircuit.getName()),
 				Settings.VHDL));
@@ -320,18 +320,20 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			TickComponentHDLGeneratorFactory Ticker = new TickComponentHDLGeneratorFactory(
           HDLType, Reporter,
 					FpgaClockFrequency, TickPeriod/* , useFPGAClock */, TheNetlist); /* stateful hdl gen */
-			Contents.addAll(Ticker.GetComponentMap(TheNetlist, (long) 0, null,
-					Reporter, "", HDLType));
+			Contents.addAll(Ticker.GetComponentMap(/*TheNetlist,*/ (long) 0, null,
+					/*Reporter,*/ "" /*, HDLType*/));
 			long index = 0;
 			for (Component Clockgen : TheNetlist.GetAllClockSources()) {
 				NetlistComponent ThisClock = new NetlistComponent(Clockgen);
-				Contents.addAll(Clockgen
-						.getFactory()
+        HDLGeneratorFactory _h = Clockgen.getFactory()
 						.getHDLGenerator(HDLType, Reporter,
 								ThisClock.GetComponent().getAttributeSet(),
-								FPGAClass.VendorUnknown)
-						.GetComponentMap(TheNetlist, index++, ThisClock,
-								Reporter, "Bla", HDLType));
+								FPGAClass.VendorUnknown);
+        if (!(_h instanceof AbstractHDLGeneratorFactory))
+          throw new IllegalStateException();
+        ((AbstractHDLGeneratorFactory)_h).initHDLGen(TheNetlist); /* stateful hdl gen */
+				Contents.addAll(_h.GetComponentMap(/*TheNetlist,*/ index++, ThisClock,
+								/*Reporter,*/ "Bla" /*, HDLType*/));
 			}
 		}
 		Contents.add("");
@@ -342,10 +344,10 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     Contents.addAll(out);
     }
 		CircuitHDLGeneratorFactory DUT = new CircuitHDLGeneratorFactory(
-        HDLType, Reporter, MyCircuit);
-		Contents.addAll(DUT.GetComponentMap(TheNetlist, (long) 0, null,
-				Reporter, CorrectLabel.getCorrectLabel(MyCircuit.getName()),
-				HDLType));
+        HDLType, Reporter, MyCircuit, TheNetlist);
+		Contents.addAll(DUT.GetComponentMap(/*TheNetlist,*/ (long) 0, null,
+				/*Reporter,*/ CorrectLabel.getCorrectLabel(MyCircuit.getName())/*,
+				HDLType*/));
 		return Contents;
 	}
 

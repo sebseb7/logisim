@@ -77,9 +77,9 @@ public abstract class HDLGeneratorFactory {
 	public abstract ArrayList<String> GetComponentInstantiation(Netlist TheNetlist,
 			AttributeSet attrs, String ComponentName, String HDLType);
 
-	public abstract ArrayList<String> GetComponentMap(Netlist Nets, Long ComponentId,
-			NetlistComponent ComponentInfo, FPGAReport Reporter,
-			String CircuitName, String HDLType);
+	public abstract ArrayList<String> GetComponentMap(/*Netlist Nets,*/ Long ComponentId,
+			NetlistComponent ComponentInfo, /*FPGAReport Reporter,*/
+			String CircuitName /*, String HDLType*/);
 
 	public abstract String getComponentStringIdentifier();
 	
