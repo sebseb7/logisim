@@ -567,11 +567,12 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 		return Components;
 	}
 
-	public ArrayList<String> GetComponentInstantiation(Netlist TheNetlist,
-			AttributeSet attrs, String ComponentName, String HDLType) {
+	public ArrayList<String> GetComponentInstantiation(/*Netlist TheNetlist,*/
+			AttributeSet attrs, String ComponentName/*, String HDLType*/) {
+    if (_nets == null) throw new IllegalStateException();
 		ArrayList<String> Contents = new ArrayList<String>();
-		if (HDLType.equals(Settings.VHDL)) {
-			Contents.addAll(GetVHDLBlackBox(TheNetlist, attrs, ComponentName, false));
+		if (_lang.equals(Settings.VHDL)) {
+			Contents.addAll(GetVHDLBlackBox(_nets, attrs, ComponentName, false));
 		}
 		return Contents;
 	}

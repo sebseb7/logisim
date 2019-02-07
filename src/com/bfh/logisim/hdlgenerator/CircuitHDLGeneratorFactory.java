@@ -244,11 +244,13 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 								Gate.GetComponent().getAttributeSet(),
 								FPGAClass.VendorUnknown);
 				if (Worker != null) {
+          if (!(Worker instanceof AbstractHDLGeneratorFactory))
+            throw new IllegalStateException();
+          ((AbstractHDLGeneratorFactory)Worker).initHDLGen(TheNetlist); /* stateful hdl gen */
 					if (!Worker.IsOnlyInlined(/*Settings.VHDL*/)) {
 						Components.addAll(Worker.GetComponentInstantiation(
-								TheNetlist, Gate.GetComponent()
-										.getAttributeSet(), CompName,
-								Settings.VHDL/* , false */));
+								/*TheNetlist,*/
+                  Gate.GetComponent().getAttributeSet(), CompName/*, Settings.VHDL*/ /* , false */));
 					}
 				}
 			}
@@ -268,12 +270,12 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				SubcircuitFactory sub = (SubcircuitFactory) Gate.GetComponent()
 						.getFactory();
 				if (Worker != null) {
-					Components.addAll(Worker.GetComponentInstantiation(sub
-							.getSubcircuit().getNetList(), Gate.GetComponent()
-							.getAttributeSet(), CompName, Settings.VHDL/*
-																		 * ,
-																		 * false
-																		 */));
+          if (!(Worker instanceof AbstractHDLGeneratorFactory))
+            throw new IllegalStateException();
+          ((AbstractHDLGeneratorFactory)Worker).initHDLGen(sub.getSubcircuit().getNetList()); /* stateful hdl gen */
+					Components.addAll(Worker.GetComponentInstantiation(/*sub
+							.getSubcircuit().getNetList(),*/
+                Gate.GetComponent().getAttributeSet(), CompName /*, Settings.VHDL*/ /*,  false */));
 				}
 			}
 		}

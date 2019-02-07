@@ -85,9 +85,9 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
           "VHDL", null /* reporter */,
 					FpgaClockFrequency, TickPeriod/* , useFPGAClock */, TheNetlist); /* stateful hdl gen */
 			Components
-					.addAll(Ticker.GetComponentInstantiation(TheNetlist, null,
-							Ticker.getComponentStringIdentifier(),
-							Settings.VHDL/* , false */));
+					.addAll(Ticker.GetComponentInstantiation(/*TheNetlist,*/ null,
+							Ticker.getComponentStringIdentifier() /*,
+							Settings.VHDL*/ /* , false */));
                         if (TickPeriod == 0) {
                             // raw fpga clock
                             TheNetlist.SetRawFPGAClock();
@@ -101,26 +101,23 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 							Settings.VHDL, null /* reporter */,
 							TheNetlist.GetAllClockSources().get(0)
 									.getAttributeSet(), FPGAClass.VendorUnknown);
+      if (!(ClockWorker instanceof AbstractHDLGeneratorFactory))
+        throw new IllegalStateException();
+      ((AbstractHDLGeneratorFactory)ClockWorker).initHDLGen(TheNetlist); /* stateful hdl gen */
 			Components.addAll(ClockWorker
 					.GetComponentInstantiation(
-							TheNetlist,
-							TheNetlist.GetAllClockSources().get(0)
-									.getAttributeSet(),
-							TheNetlist
-									.GetAllClockSources()
-									.get(0)
-									.getFactory()
-									.getHDLName(
-											TheNetlist.GetAllClockSources()
-													.get(0).getAttributeSet()),
-							Settings.VHDL/* , false */));
+							/*TheNetlist,*/
+							TheNetlist.GetAllClockSources().get(0).getAttributeSet(),
+							TheNetlist.GetAllClockSources().get(0).getFactory().getHDLName(
+											TheNetlist.GetAllClockSources().get(0).getAttributeSet())/*,
+							Settings.VHDL*/ /* , false */));
 		}
 		CircuitHDLGeneratorFactory Worker = new CircuitHDLGeneratorFactory(
         "VHDL", null /* reporter */,
 				MyCircuit, TheNetlist);
-		Components.addAll(Worker.GetComponentInstantiation(TheNetlist, null,
-				CorrectLabel.getCorrectLabel(MyCircuit.getName()),
-				Settings.VHDL));
+		Components.addAll(Worker.GetComponentInstantiation(/*TheNetlist,*/ null,
+				CorrectLabel.getCorrectLabel(MyCircuit.getName())/*,
+				Settings.VHDL*/));
 		return Components;
 	}
 
