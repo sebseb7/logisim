@@ -96,7 +96,7 @@ public abstract class HDLGeneratorFactory {
 			ArrayList<String> ComponentIdentifier, /*FPGAReport Reporter,*/
 			MappableResourcesContainer MapInfo);
 
-	public abstract String GetRelativeDirectory(String HDLType);
+	public abstract String GetRelativeDirectory(/*String HDLType*/);
 
 	public boolean IsOnlyInlined(/*String HDLType*/) { return false; }
 }

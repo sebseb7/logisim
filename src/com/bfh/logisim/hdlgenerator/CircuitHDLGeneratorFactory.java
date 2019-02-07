@@ -107,7 +107,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
         ((AbstractHDLGeneratorFactory)Worker).initHDLGen(MyNetList); /* stateful hdl gen */
 				if (!Worker.IsOnlyInlined(/*_lang*/)) {
 					if (!WriteEntity(
-							WorkingDir + Worker.GetRelativeDirectory(_lang),
+							WorkingDir + Worker.GetRelativeDirectory(/*_lang*/),
 							Worker.GetEntity(/*MyNetList,*/ ThisComponent
 									.GetComponent().getAttributeSet(),
 									ComponentName /*, _err, _lang*/),
@@ -122,7 +122,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 						for (String Mem : memInitData.keySet()) {
 							ArrayList<String> initData = memInitData.get(Mem);
 							File mif = WriteMemInitFile(
-									WorkingDir + Worker.GetRelativeDirectory(_lang),
+									WorkingDir + Worker.GetRelativeDirectory(/*_lang*/),
 									initData,
 									ComponentName, Mem, _err, _lang);
 							if (mif == null)
@@ -131,7 +131,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 						}
 					}
 					if (!WriteArchitecture(
-							WorkingDir + Worker.GetRelativeDirectory(_lang),
+							WorkingDir + Worker.GetRelativeDirectory(/*_lang*/),
 							Worker.GetArchitecture(/* MyNetList,*/
                 ThisComponent
 									.GetComponent().getAttributeSet(),
@@ -170,7 +170,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				.getCorrectLabel(MyCircuit.getName());
 		if (!HandledComponents.contains(ComponentName)) {
 			if (!WriteEntity(
-					WorkingDir + GetRelativeDirectory(_lang),
+					WorkingDir + GetRelativeDirectory(/*_lang*/),
 					GetEntityWithNetlist(MyNetList, null, ComponentName),
 					ComponentName, _err, _lang)) {
 				return false;
@@ -182,13 +182,13 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				if (!FileWriter.CopyArchitecture(
 						MyCircuit.getStaticAttributes().getValue(
 								CircuitAttributes.CIRCUIT_VHDL_PATH), WorkingDir
-								+ GetRelativeDirectory(_lang), ComponentName,
+								+ GetRelativeDirectory(/*_lang*/), ComponentName,
 						_err, _lang)) {
 					return false;
 				}
 			} else {
 				if (!WriteArchitecture(
-						WorkingDir + GetRelativeDirectory(_lang),
+						WorkingDir + GetRelativeDirectory(/*_lang*/),
 						this.GetArchitectureWithNetlist(MyNetList, /* stateful hdl gen */
                 /* We don't use _nets here, b/c that is the netlist for our
                  * parent (or null at the top level, b/c FPGACommanderGui

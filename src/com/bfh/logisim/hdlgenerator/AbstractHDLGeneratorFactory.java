@@ -1203,12 +1203,12 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 		return Regs;
 	}
 
-	public String GetRelativeDirectory(String HDLType) {
+	public String GetRelativeDirectory(/*String HDLType*/) {
 		String Subdir = GetSubDir();
 		if (!Subdir.endsWith(File.separator) & !Subdir.isEmpty()) {
 			Subdir += File.separatorChar;
 		}
-		return HDLType.toLowerCase() + File.separatorChar + Subdir;
+		return _lang.toLowerCase() + File.separatorChar + Subdir;
 	}
 
 	public String GetSubDir() {
