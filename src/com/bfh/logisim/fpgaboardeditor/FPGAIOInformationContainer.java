@@ -58,14 +58,13 @@ import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.std.io.DipSwitch;
 import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.std.io.RGBLed;
-import com.cburch.logisim.std.io.ReptarLocalBus;
 import com.cburch.logisim.std.io.SevenSegment;
 
 public class FPGAIOInformationContainer {
 
 	public static enum IOComponentTypes {
 
-		LED, Button, Pin, SevenSegment, DIPSwitch, RGBLED, PortIO, LocalBus, Bus, Unknown;
+		LED, Button, Pin, SevenSegment, DIPSwitch, RGBLED, PortIO, Bus, Unknown;
 		public static IOComponentTypes getEnumFromString(String str) {
 			for (IOComponentTypes elem : KnownComponentSet) {
 				if (elem.name().equalsIgnoreCase(str)) {
@@ -79,8 +78,6 @@ public class FPGAIOInformationContainer {
 			switch (comp) {
 			case PortIO:
 				return nbSwitch;
-			case LocalBus:
-				return 16;
 			default:
 				return 0;
 			}
@@ -92,8 +89,6 @@ public class FPGAIOInformationContainer {
 				return 1;
 			case DIPSwitch:
 				return nbSwitch;
-			case LocalBus:
-				return 12;
 			default:
 				return 0;
 			}
@@ -107,8 +102,6 @@ public class FPGAIOInformationContainer {
 				return 8;
 			case RGBLED:
 				return 3;
-			case LocalBus:
-				return 2;
 			default:
 				return 0;
 			}
@@ -127,18 +120,16 @@ public class FPGAIOInformationContainer {
 				return 8;
 			case RGBLED:
 				return 3;
-			case LocalBus:
-				return 30;
 			default:
 				return 0;
 			}
 		}
 
-		public static final EnumSet<IOComponentTypes> KnownComponentSet = EnumSet
-				.range(IOComponentTypes.LED, IOComponentTypes.LocalBus);
+		public static final EnumSet<IOComponentTypes> KnownComponentSet = EnumSet.range(
+        IOComponentTypes.LED, IOComponentTypes.PortIO);
 
-		public static final EnumSet<IOComponentTypes> SimpleInputSet = EnumSet
-				.range(IOComponentTypes.LED, IOComponentTypes.LocalBus);
+		public static final EnumSet<IOComponentTypes> SimpleInputSet = EnumSet.range(
+        IOComponentTypes.LED, IOComponentTypes.PortIO);
 
 		public static final EnumSet<IOComponentTypes> InputComponentSet = EnumSet
 				.of(IOComponentTypes.Button, IOComponentTypes.Pin,
@@ -520,9 +511,6 @@ public class FPGAIOInformationContainer {
 		case PortIO:
 			PinLabels = PortIO.GetLabels(NrOfDevicePins);
 			break;
-		case LocalBus:
-			PinLabels = ReptarLocalBus.GetLabels();
-			break;
 		default:
 			PinLabels = new ArrayList<String>();
 			if (NrOfDevicePins == 1) {
@@ -763,23 +751,6 @@ public class FPGAIOInformationContainer {
 		ArrayList<String> labels = null;
 		if (MyType.equals(IOComponentTypes.PortIO)) {
 			labels = PortIO.GetLabels(IOComponentTypes.GetNrOfFPGAPins(MyType));
-		} else if (MyType.equals(IOComponentTypes.LocalBus)) {
-			labels = ReptarLocalBus.GetLabels();
-			if (direction.equals("in")) {
-				end = IOComponentTypes.GetFPGAInputRequirement(MyType);
-			} else if (direction.equals("out")) {
-				// TODO: YSY
-				Contents.add("NET \"FPGA_LB_OUT_0\" LOC = \"R24\" | IOSTANDARD = LVCMOS18 ; # SP6_LB_WAIT3_o");
-				Contents.add("NET \"FPGA_LB_OUT_1\" LOC = \"AB30\" | IOSTANDARD = LVCMOS18 ; # IRQ_o");
-				return Contents;
-				// start = IOComponentTypes.GetFPGAInputRequirement(MyType);
-				// end = start +
-				// IOComponentTypes.GetFPGAOutputRequirement(MyType);
-			} else if (direction.equals("inout")) {
-				start = IOComponentTypes.GetFPGAInputRequirement(MyType)
-						+ IOComponentTypes.GetFPGAOutputRequirement(MyType);
-				end = start + IOComponentTypes.GetFPGAInOutRequirement(MyType);
-			}
 		} else if (MyType.equals(IOComponentTypes.DIPSwitch)) {
 			labels = DipSwitch.GetLabels(IOComponentTypes
 					.GetNrOfFPGAPins(MyType));

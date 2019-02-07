@@ -35,9 +35,7 @@ import java.awt.GridLayout;
 
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTextPane;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.Document;
 import javax.swing.text.DefaultCaret;
 import javax.swing.text.StyleContext;

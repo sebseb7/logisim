@@ -71,10 +71,7 @@ public interface HDLGeneratorFactory {
 			String HDLType);
 
 	public ArrayList<String> GetComponentInstantiation(Netlist TheNetlist,
-			AttributeSet attrs, String ComponentName, String HDLType/*
-																	 * , boolean
-																	 * hasLB
-																	 */);
+			AttributeSet attrs, String ComponentName, String HDLType);
 
 	public ArrayList<String> GetComponentMap(Netlist Nets, Long ComponentId,
 			NetlistComponent ComponentInfo, FPGAReport Reporter,

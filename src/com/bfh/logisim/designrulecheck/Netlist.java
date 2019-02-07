@@ -64,7 +64,6 @@ import com.cburch.logisim.std.io.DipSwitch;
 import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.std.io.Tty;
 import com.cburch.logisim.std.io.Keyboard;
-import com.cburch.logisim.std.io.ReptarLocalBus;
 import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.std.wiring.Tunnel;
@@ -627,8 +626,7 @@ public class Netlist {
 			 */
 			if (!(com.getFactory() instanceof SplitterFactory)
 					&& !(com.getFactory() instanceof Tunnel)
-					&& !(com.getFactory() instanceof PortIO)
-					&& !(com.getFactory() instanceof ReptarLocalBus)) {
+					&& !(com.getFactory() instanceof PortIO)) {
 				List<EndData> ends = com.getEnds();
 				for (EndData end : ends) {
 					if (end.isInput() && end.isOutput()) {
@@ -1733,8 +1731,7 @@ public class Netlist {
 		for (EndData ThisPin : comp.getEnds()) {
 			if (ThisPin.isInput()
 					&& ThisPin.isOutput()
-					&& !(comp.getFactory() instanceof PortIO || comp
-							.getFactory() instanceof ReptarLocalBus)) {
+					&& !(comp.getFactory() instanceof PortIO)) {
 				Reporter.AddFatalError("Found IO pin on component \""
 						+ comp.getFactory().getName() + "\" in circuit \""
 						+ MyCircuit.getName() + "\"!");
@@ -1785,11 +1782,6 @@ public class Netlist {
 			MyComponents.add(NormalComponent);
 		} else if (comp.getFactory() instanceof Keyboard) {
 			MyInOutPorts.add(NormalComponent);
-			MyComponents.add(NormalComponent);
-		} else if (comp.getFactory() instanceof ReptarLocalBus) {
-			MyInOutPorts.add(NormalComponent);
-			MyInputPorts.add(NormalComponent);
-			MyOutputPorts.add(NormalComponent);
 			MyComponents.add(NormalComponent);
 		} else {
 			MyComponents.add(NormalComponent);

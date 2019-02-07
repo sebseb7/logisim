@@ -567,14 +567,10 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 	}
 
 	public ArrayList<String> GetComponentInstantiation(Netlist TheNetlist,
-			AttributeSet attrs, String ComponentName, String HDLType/*
-																	 * , boolean
-																	 * hasLB
-																	 */) {
+			AttributeSet attrs, String ComponentName, String HDLType) {
 		ArrayList<String> Contents = new ArrayList<String>();
 		if (HDLType.equals(Settings.VHDL)) {
-			Contents.addAll(GetVHDLBlackBox(TheNetlist, attrs, ComponentName,
-					false/* , hasLB */));
+			Contents.addAll(GetVHDLBlackBox(TheNetlist, attrs, ComponentName, false));
 		}
 		return Contents;
 	}
@@ -740,8 +736,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 			Contents.addAll(FileWriter.getGenerateRemark(ComponentName,
 					Settings.VHDL, TheNetlist.projName()));
 			Contents.addAll(FileWriter.getExtendedLibrary());
-			Contents.addAll(GetVHDLBlackBox(TheNetlist, attrs, ComponentName,
-					true/* , false */));
+			Contents.addAll(GetVHDLBlackBox(TheNetlist, attrs, ComponentName, true));
 		}
 		return Contents;
 	}
@@ -1233,10 +1228,7 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 	}
 
 	private ArrayList<String> GetVHDLBlackBox(Netlist TheNetlist,
-			AttributeSet attrs, String ComponentName, Boolean IsEntity/*
-																	 * , boolean
-																	 * hasLB
-																	 */) {
+			AttributeSet attrs, String ComponentName, Boolean IsEntity) {
 		ArrayList<String> Contents = new ArrayList<String>();
 		Map<String, Integer> InputsList = GetInputList(TheNetlist, attrs);
 		Map<String, Integer> InOutsList = GetInOutList(TheNetlist, attrs);
@@ -1396,12 +1388,6 @@ public class AbstractHDLGeneratorFactory implements HDLGeneratorFactory {
 					}
 				}
 			}
-			// if(hasLB){
-			// OneLine.append(";");
-			// Contents.add(OneLine.toString());
-			// OneLine.setLength(0);
-			// OneLine.append("             LOGISIM_INOUT_BUBBLES     : INOUT  std_logic_vector( 15 DOWNTO 0 )");
-			// }
 			OneLine.append(");");
 			Contents.add(OneLine.toString());
 		}

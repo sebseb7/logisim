@@ -49,7 +49,6 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.std.io.Tty;
 import com.cburch.logisim.std.io.Keyboard;
-import com.cburch.logisim.std.io.ReptarLocalBus;
 import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 import com.cburch.logisim.std.wiring.Pin;
 
@@ -113,16 +112,9 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		}
 		CircuitHDLGeneratorFactory Worker = new CircuitHDLGeneratorFactory(
 				MyCircuit);
-		// boolean hasLB = false;
-		// for(NetlistComponent comp : TheNetlist.GetNormalComponents()){
-		// if(comp.GetComponent().getFactory() instanceof ReptarLocalBus){
-		// hasLB = true;
-		// break;
-		// }
-		// }
 		Components.addAll(Worker.GetComponentInstantiation(TheNetlist, null,
 				CorrectLabel.getCorrectLabel(MyCircuit.getName()),
-				Settings.VHDL/* , hasLB */));
+				Settings.VHDL));
 		return Components;
 	}
 
@@ -278,9 +270,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					&& !(MyIOComponents.GetComponent(CompId).GetComponent()
 							.getFactory() instanceof Tty)
 					&& !(MyIOComponents.GetComponent(CompId).GetComponent()
-							.getFactory() instanceof Keyboard)
-					&& !(MyIOComponents.GetComponent(CompId).GetComponent()
-							.getFactory() instanceof ReptarLocalBus)) {
+							.getFactory() instanceof Keyboard)) {
 				HDLGeneratorFactory Generator = MyIOComponents
 						.GetComponent(CompId)
 						.GetComponent()
@@ -297,11 +287,6 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					Contents.addAll(Generator.GetInlinedCode(HDLType, CompId,
 							Reporter, MyIOComponents));
 				}
-			} else if (MyIOComponents.GetComponent(CompId).GetComponent()
-					.getFactory() instanceof ReptarLocalBus) {
-				((ReptarLocalBus) MyIOComponents.GetComponent(CompId)
-						.GetComponent().getFactory())
-						.setMapInfo(MyIOComponents);
 			} else if (MyIOComponents.GetComponent(CompId).GetComponent()
 					.getFactory() instanceof PortIO) {
 				((PortIO) MyIOComponents.GetComponent(CompId).GetComponent()
@@ -351,23 +336,10 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
 			AttributeSet attrs) {
 		SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-		int k = 0;
 		for (int NrOfOutputs = 0; NrOfOutputs < MyIOComponents
 				.GetNrOfToplevelOutputPins(); NrOfOutputs++) {
-			if (MyIOComponents
-					.GetFPGAOutputPinId(MyIOComponents.currentBoardName
-							+ ":/LocalBus") > -1
-					&& (NrOfOutputs == MyIOComponents
-							.GetFPGAOutputPinId(MyIOComponents.currentBoardName
-									+ ":/LocalBus") || NrOfOutputs == MyIOComponents
-							.GetFPGAOutputPinId(MyIOComponents.currentBoardName
-									+ ":/LocalBus") + 1)) {
-				Outputs.put("FPGA_LB_OUT_" + Integer.toString(k), 1);
-				k++;
-			} else {
 				Outputs.put(HDLGeneratorFactory.FPGAOutputPinName + "_"
 						+ Integer.toString(NrOfOutputs), 1);
-			}
 		}
 		return Outputs;
 	}
