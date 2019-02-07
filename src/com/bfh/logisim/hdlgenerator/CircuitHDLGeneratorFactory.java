@@ -72,8 +72,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
 	@Override
 	public boolean GenerateAllHDLDescriptions(Set<String> HandledComponents,
-			String WorkingDir, ArrayList<String> Hierarchy,
-			FPGAReport Reporter, String HDLType) {
+			String WorkingDir, ArrayList<String> Hierarchy /*, FPGAReport Reporter, String HDLType*/) {
 		if (MyCircuit == null) {
 			return false;
 		}
@@ -97,21 +96,24 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				HDLGeneratorFactory Worker = ThisComponent
 						.GetComponent()
 						.getFactory()
-						.getHDLGenerator(HDLType, Reporter,
+						.getHDLGenerator(_lang, _err,
 								ThisComponent.GetComponent().getAttributeSet(),
 								FPGAClass.VendorUnknown);
 				if (Worker == null) {
-					Reporter.AddFatalError("INTERNAL ERROR: Cannot find the VHDL generator factory for component "
+					_err.AddFatalError("INTERNAL ERROR: Cannot find the VHDL generator factory for component "
 							+ ComponentName);
 					return false;
 				}
-				if (!Worker.IsOnlyInlined(HDLType)) {
+        if (!(Worker instanceof AbstractHDLGeneratorFactory))
+          throw new IllegalStateException();
+        ((AbstractHDLGeneratorFactory)Worker).initHDLGen(MyNetList); /* stateful hdl gen */
+				if (!Worker.IsOnlyInlined(_lang)) {
 					if (!WriteEntity(
-							WorkPath + Worker.GetRelativeDirectory(HDLType),
+							WorkPath + Worker.GetRelativeDirectory(_lang),
 							Worker.GetEntity(MyNetList, ThisComponent
 									.GetComponent().getAttributeSet(),
-									ComponentName, Reporter, HDLType),
-							ComponentName, Reporter, HDLType)) {
+									ComponentName, _err, _lang),
+							ComponentName, _err, _lang)) {
 						return false;
 					}
 					Map<String, ArrayList<String>> memInitData =
@@ -122,21 +124,22 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 						for (String Mem : memInitData.keySet()) {
 							ArrayList<String> initData = memInitData.get(Mem);
 							File mif = WriteMemInitFile(
-									WorkPath + Worker.GetRelativeDirectory(HDLType),
+									WorkPath + Worker.GetRelativeDirectory(_lang),
 									initData,
-									ComponentName, Mem, Reporter, HDLType);
+									ComponentName, Mem, _err, _lang);
 							if (mif == null)
 								return false;
 							memInitFiles.put(Mem, mif);
 						}
 					}
 					if (!WriteArchitecture(
-							WorkPath + Worker.GetRelativeDirectory(HDLType),
-							Worker.GetArchitecture(MyNetList, ThisComponent
+							WorkPath + Worker.GetRelativeDirectory(_lang),
+							Worker.GetArchitecture(/* MyNetList,*/
+                ThisComponent
 									.GetComponent().getAttributeSet(),
 									memInitFiles,
-									ComponentName, Reporter, HDLType),
-							ComponentName, Reporter, HDLType)) {
+									ComponentName /*, Reporter, HDLType*/),
+							ComponentName, _err, _lang)) {
 						return false;
 					}
 				}
@@ -148,11 +151,11 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			HDLGeneratorFactory Worker = ThisCircuit
 					.GetComponent()
 					.getFactory()
-					.getHDLGenerator(HDLType, Reporter,
+					.getHDLGenerator(_lang, _err,
 							ThisCircuit.GetComponent().getAttributeSet(),
 							FPGAClass.VendorUnknown);
 			if (Worker == null) {
-				Reporter.AddFatalError("INTERNAL ERROR: Unable to get a subcircuit VHDL generator for '"
+				_err.AddFatalError("INTERNAL ERROR: Unable to get a subcircuit VHDL generator for '"
 						+ ThisCircuit.GetComponent().getFactory().getName()
 						+ "'");
 				return false;
@@ -160,7 +163,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			Hierarchy.add(CorrectLabel.getCorrectLabel(ThisCircuit
 					.GetComponent().getAttributeSet().getValue(StdAttr.LABEL)));
 			if (!Worker.GenerateAllHDLDescriptions(HandledComponents,
-					WorkingDir, Hierarchy, Reporter, HDLType)) {
+					WorkingDir, Hierarchy /*, Reporter, HDLType */)) {
 				return false;
 			}
 			Hierarchy.remove(Hierarchy.size() - 1);
@@ -170,9 +173,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				.getCorrectLabel(MyCircuit.getName());
 		if (!HandledComponents.contains(ComponentName)) {
 			if (!WriteEntity(
-					WorkPath + GetRelativeDirectory(HDLType),
-					GetEntity(MyNetList, null, ComponentName, Reporter, HDLType),
-					ComponentName, Reporter, HDLType)) {
+					WorkPath + GetRelativeDirectory(_lang),
+					GetEntity(MyNetList, null, ComponentName, _err, _lang),
+					ComponentName, _err, _lang)) {
 				return false;
 			}
 
@@ -182,16 +185,20 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				if (!FileWriter.CopyArchitecture(
 						MyCircuit.getStaticAttributes().getValue(
 								CircuitAttributes.CIRCUIT_VHDL_PATH), WorkPath
-								+ GetRelativeDirectory(HDLType), ComponentName,
-						Reporter, HDLType)) {
+								+ GetRelativeDirectory(_lang), ComponentName,
+						_err, _lang)) {
 					return false;
 				}
 			} else {
 				if (!WriteArchitecture(
-						WorkPath + GetRelativeDirectory(HDLType),
-						GetArchitecture(MyNetList, null, null, ComponentName,
-								Reporter, HDLType), ComponentName, Reporter,
-						HDLType)) {
+						WorkPath + GetRelativeDirectory(_lang),
+						this.GetArchitectureWithNetlist(MyNetList, /* stateful hdl gen */
+                /* We don't use _nets here, b/c that is the netlist for our
+                 * parent (or likely null, b/c it isn't configure yet), which
+                 * probably isn't what we want here... we want our own inner
+                 * circuit netlist instead. Or maybe it doesn't matter? What is
+                 * netlist used for here? Just the circuit name? */
+              null, null, ComponentName /*, Reporter, HDLType*/), ComponentName, _err, _lang)) {
 					return false;
 				}
 			}
@@ -1020,7 +1027,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				while (Destination.length() < SallignmentSize) {
 					Destination.append(" ");
 				}
-        Hdl out = new Hdl(lang, err);
+        Hdl out = new Hdl(_lang, _err);
 				Contents.append(Tab.toString() + AssignCommand
 						+ Destination.toString() + AssignOperator
 						+ out.zeros(NrOfBits) + ";");

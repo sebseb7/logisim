@@ -177,15 +177,13 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   // #4
   @Override
-  public ArrayList<String> GetArchitecture(Netlist TheNetlist,
+  public ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/
       AttributeSet attrs, Map<String, File> MemInitFiles,
-      String ComponentName, FPGAReport Reporter,
-      String HDLType) {
-
+      String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
+    if (_nets == null) throw new IllegalStateException();
     ArrayList<String> Contents = new ArrayList<String>();
-    if (HDLType.equals(Settings.VHDL)) {
-      Contents.addAll(FileWriter.getGenerateRemark(ComponentName,
-            HDLType, TheNetlist.projName()));
+    if (_lang.equals(Settings.VHDL)) {
+      Contents.addAll(FileWriter.getGenerateRemark(ComponentName, _lang, _nets.projName()));
       Contents.add("");
       Contents.add("ARCHITECTURE PlatformIndependent OF "
           + ComponentName.toString() + " IS ");

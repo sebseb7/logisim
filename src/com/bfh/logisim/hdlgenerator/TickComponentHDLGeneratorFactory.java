@@ -58,8 +58,8 @@ public class TickComponentHDLGeneratorFactory extends
 
 	public TickComponentHDLGeneratorFactory(
       String lang, FPGAReport err,
-      long fpga_clock_frequency, int tick_period) {
-    super(lang, err);
+      long fpga_clock_frequency, int tick_period, Netlist nets) {
+    super(lang, err, nets);
 		FpgaClockFrequency = fpga_clock_frequency;
 		TickPeriod = tick_period;
 		// this.useFPGAClock = useFPGAClock;

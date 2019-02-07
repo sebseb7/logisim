@@ -66,8 +66,8 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       String lang, FPGAReport err,
       long FPGAClock, int ClockTickPeriod,
 			Circuit TopLevel, MappableResourcesContainer IOComponents,
-			boolean useFPGAClock) {
-    super(lang, err);
+			boolean useFPGAClock, Netlist nets) {
+    super(lang, err, nets);
 		FpgaClockFrequency = FPGAClock;
 		TickPeriod = ClockTickPeriod;
 		MyCircuit = TopLevel;
@@ -83,7 +83,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		if (NrOfClockTrees > 0) {
 			TickComponentHDLGeneratorFactory Ticker = new TickComponentHDLGeneratorFactory(
           "VHDL", null /* reporter */,
-					FpgaClockFrequency, TickPeriod/* , useFPGAClock */);
+					FpgaClockFrequency, TickPeriod/* , useFPGAClock */, TheNetlist); /* stateful hdl gen */
 			Components
 					.addAll(Ticker.GetComponentInstantiation(TheNetlist, null,
 							Ticker.getComponentStringIdentifier(),
@@ -319,7 +319,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       Contents.addAll(out);
 			TickComponentHDLGeneratorFactory Ticker = new TickComponentHDLGeneratorFactory(
           HDLType, Reporter,
-					FpgaClockFrequency, TickPeriod/* , useFPGAClock */);
+					FpgaClockFrequency, TickPeriod/* , useFPGAClock */, TheNetlist); /* stateful hdl gen */
 			Contents.addAll(Ticker.GetComponentMap(TheNetlist, (long) 0, null,
 					Reporter, "", HDLType));
 			long index = 0;

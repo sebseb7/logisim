@@ -113,13 +113,13 @@ public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   }
 
   @Override
-  public ArrayList<String> GetArchitecture(Netlist nets,
-      AttributeSet attrs, Map<String, File> MemInitFiles, String ComponentName,
-      FPGAReport err, String lang) {
-    // fixme: is this necessary? or maybe better?
+  public ArrayList<String> GetArchitecture(/*Netlist nets,*/
+      AttributeSet attrs, Map<String, File> MemInitFiles, String ComponentName /*, FPGAReport err, String lang*/) {
+    if (_nets == null) throw new IllegalStateException();
+    // fixme: is this custom arch necessary? or maybe better?
     ArrayList<String> Contents = new ArrayList<String>();
-    if (lang.equals("VHDL")) {
-      Contents.addAll(FileWriter.getGenerateRemark(ComponentName, lang, nets.projName()));
+    if (_lang.equals("VHDL")) {
+      Contents.addAll(FileWriter.getGenerateRemark(ComponentName, _lang, _nets.projName()));
       Contents.add("ARCHITECTURE PlatformIndependent OF " + ComponentName + " IS ");
       Contents.add("  signal s_output_value : std_logic_vector(6 downto 0);");
       Contents.add("begin");

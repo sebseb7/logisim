@@ -43,12 +43,14 @@ import com.cburch.logisim.data.AttributeSet;
 
 public abstract class HDLGeneratorFactory {
 
-  protected final String lang; // context
-  protected final FPGAReport err; // context
+  protected final String _lang; // context - fixme
+  protected final FPGAReport _err; // context - fixme
+  protected /* final */ Netlist _nets; // context - fixme
 
-  protected HDLGeneratorFactory(String lang, FPGAReport err) {
-    this.lang = lang;
-    this.err = err;
+  protected HDLGeneratorFactory(String lang, FPGAReport err, Netlist nets) {
+    this._lang = lang;
+    this._err = err;
+    this._nets = nets;
   }
 
 	public static final int PallignmentSize = 26;
@@ -68,14 +70,12 @@ public abstract class HDLGeneratorFactory {
 	public static final String FPGAInOutPinName = "FPGA_INOUT_PIN";
 	public static final String FPGAOutputPinName = "FPGA_OUTPUT_PIN";
 
-	public abstract boolean GenerateAllHDLDescriptions(Set<String> HandledComponents,
-			String WorkingDir, ArrayList<String> Hierarchy,
-			FPGAReport Reporter, String HDLType);
+	public boolean GenerateAllHDLDescriptions(Set<String> HandledComponents,
+			String WorkingDir, ArrayList<String> Hierarchy /*, FPGAReport Reporter, String HDLType*/) { return true; }
 
-	public abstract ArrayList<String> GetArchitecture(Netlist TheNetlist,
+	public abstract ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/
 			AttributeSet attrs, Map<String, File> MemInitFiles,
-			String ComponentName, FPGAReport Reporter,
-			String HDLType);
+			String ComponentName /*, FPGAReport Reporter, String HDLType */);
 
 	public abstract ArrayList<String> GetComponentInstantiation(Netlist TheNetlist,
 			AttributeSet attrs, String ComponentName, String HDLType);

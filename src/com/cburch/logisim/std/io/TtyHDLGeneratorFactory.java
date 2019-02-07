@@ -184,14 +184,13 @@ public class TtyHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   }
 
   @Override
-  public ArrayList<String> GetArchitecture(Netlist TheNetlist,
-      AttributeSet attrs, Map<String, File> MemInitFiles, String ComponentName,
-      FPGAReport Reporter, String HDLType) {
+  public ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/
+      AttributeSet attrs, Map<String, File> MemInitFiles, String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
+    if (_nets == null) throw new IllegalStateException();
 
     ArrayList<String> Contents = new ArrayList<String>();
-    if (HDLType.equals(Settings.VHDL)) {
-      Contents.addAll(FileWriter.getGenerateRemark(ComponentName,
-            HDLType, TheNetlist.projName()));
+    if (_lang.equals(Settings.VHDL)) {
+      Contents.addAll(FileWriter.getGenerateRemark(ComponentName, _lang, _nets.projName()));
       Contents.add("");
       Contents.add("-------------------------------------------------------------------------------");
       Contents.add("-- Title      : TTY-like emulator and 16x2 LCD controller");

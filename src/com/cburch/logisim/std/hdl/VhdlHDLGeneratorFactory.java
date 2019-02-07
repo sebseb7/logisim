@@ -98,11 +98,12 @@ public class VhdlHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   }
 
   @Override
-	public ArrayList<String> GetArchitecture(Netlist nets,
+	public ArrayList<String> GetArchitecture(/*Netlist nets,*/
 			AttributeSet attrs, Map<String, File> memInitFiles,
-			String name, FPGAReport err, String lang) {
+			String name /*, FPGAReport err, String lang*/) {
+    if (_nets == null) throw new IllegalStateException();
 		ArrayList<String> list = new ArrayList<>();
-    list.addAll(FileWriter.getGenerateRemark(name, lang, nets.projName()));
+    list.addAll(FileWriter.getGenerateRemark(name, _lang, _nets.projName()));
     VhdlContent content = content(attrs);
     list.add(content.getLibraries());
     list.add(content.getArchitecture());

@@ -51,11 +51,12 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
   }
 
   @Override
-  public ArrayList<String> GetArchitecture(Netlist TheNetlist, AttributeSet attrs,
-      Map<String, File> MemInitFiles, String ComponentName, FPGAReport err, String lang) {
+  public ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/ AttributeSet attrs,
+      Map<String, File> MemInitFiles, String ComponentName /*, FPGAReport err, String lang*/) {
+    if (_nets == null) throw new IllegalStateException();
     ArrayList<String> C = new ArrayList<String>();
-    C.addAll(FileWriter.getGenerateRemark(ComponentName, lang, TheNetlist.projName()));
-    if (lang.equals("VHDL")) {
+    C.addAll(FileWriter.getGenerateRemark(ComponentName, _lang, _nets.projName()));
+    if (_lang.equals("VHDL")) {
       C.add("ARCHITECTURE NoPlatformSpecific OF SingleBitShiftReg IS");
       C.add("   SIGNAL s_state_reg  : std_logic_vector(Stages-1 DOWNTO 0);");
       C.add("   SIGNAL s_state_next : std_logic_vector(Stages-1 DOWNTO 0);");
@@ -120,7 +121,7 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
     C.add("");
     C.add("");
     C.add("");
-    C.addAll(super.GetArchitecture(TheNetlist, attrs, null, ComponentName, err, lang));
+    C.addAll(super.GetArchitecture(/*TheNetlist,*/ attrs, null, ComponentName /*, err, lang */));
     return C;
   }
 

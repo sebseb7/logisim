@@ -1293,13 +1293,19 @@ public class FPGACommanderGui implements ActionListener {
 				.getHDLGenerator(MySettings.GetHDLType(), MyReporter,
 						RootSheet.getStaticAttributes(),
 						MyBoardInformation.fpga.getVendor());
+    // if (!(Worker instanceof CircuitHDLGeneratorFactory))
+    //   throw new IllegalStateException();
+    // ((CircuitHDLGeneratorFactory)Worker).initHDLGen(); /* stateful hdl gen */
+    // this worker is not yet given a netlist, but we only use it for
+    // GenerateAllHDLDescriptions(), which doesn't need one (it has an internal
+    // one).
 		if (Worker == null) {
 			MyReporter
 					.AddFatalError("Internal error on HDL generation, null pointer exception");
 			return false;
 		}
 		if (!Worker.GenerateAllHDLDescriptions(GeneratedHDLComponents,
-				ProjectDir, null, MyReporter, MySettings.GetHDLType())) {
+				ProjectDir, null /*, MyReporter, MySettings.GetHDLType()*/)) {
 			return false;
 		}
 		/* Here we generate the top-level shell */
@@ -1318,7 +1324,8 @@ public class FPGACommanderGui implements ActionListener {
 			TickComponentHDLGeneratorFactory Ticker = new TickComponentHDLGeneratorFactory(
           MySettings.GetHDLType(), MyReporter,
 					MyBoardInformation.fpga.getClockFrequency(),
-					TickPeriod);
+					TickPeriod,
+          RootSheet.getNetList()); /* stateful hdl gen */
 			if (!AbstractHDLGeneratorFactory.WriteEntity(
 					ProjectDir
 							+ Ticker.GetRelativeDirectory(MySettings
@@ -1332,11 +1339,9 @@ public class FPGACommanderGui implements ActionListener {
 			}
 			if (!AbstractHDLGeneratorFactory.WriteArchitecture(ProjectDir
 					+ Ticker.GetRelativeDirectory(MySettings.GetHDLType()),
-					Ticker.GetArchitecture(RootSheet.getNetList(), null, null,
-							Ticker.getComponentStringIdentifier(), MyReporter,
-							MySettings.GetHDLType()), Ticker
-							.getComponentStringIdentifier(), MyReporter,
-					MySettings.GetHDLType())) {
+					Ticker.GetArchitecture(/*RootSheet.getNetList(),*/ null, null,
+							Ticker.getComponentStringIdentifier() /*, MyReporter, MySettings.GetHDLType()*/),
+          Ticker.getComponentStringIdentifier(), MyReporter, MySettings.GetHDLType())) {
 				return false;
 			}
 			HDLGeneratorFactory ClockGen = RootSheet
@@ -1349,6 +1354,9 @@ public class FPGACommanderGui implements ActionListener {
 							RootSheet.getNetList().GetAllClockSources().get(0)
 									.getAttributeSet(),
 							MyBoardInformation.fpga.getVendor());
+      if (!(ClockGen instanceof AbstractHDLGeneratorFactory))
+        throw new IllegalStateException();
+      ((AbstractHDLGeneratorFactory)ClockGen).initHDLGen(RootSheet.getNetList()); /* stateful hdl gen */
 			String CompName = RootSheet.getNetList().GetAllClockSources()
 					.get(0).getFactory().getHDLName(null);
 			if (!AbstractHDLGeneratorFactory.WriteEntity(
@@ -1362,8 +1370,8 @@ public class FPGACommanderGui implements ActionListener {
 			}
 			if (!AbstractHDLGeneratorFactory.WriteArchitecture(ProjectDir
 					+ ClockGen.GetRelativeDirectory(MySettings.GetHDLType()),
-					ClockGen.GetArchitecture(RootSheet.getNetList(), null, null,
-							CompName, MyReporter, MySettings.GetHDLType()),
+					ClockGen.GetArchitecture(/*RootSheet.getNetList(),*/ null, null,
+							CompName /*, MyReporter, MySettings.GetHDLType()*/),
 					CompName, MyReporter, MySettings.GetHDLType())) {
 				return false;
 			}
@@ -1372,10 +1380,9 @@ public class FPGACommanderGui implements ActionListener {
         MySettings.GetHDLType(), MyReporter,
 				MyBoardInformation.fpga.getClockFrequency(),
 						TickPeriod, RootSheet, MyMappableResources,
-                                                skipHdl());
+                                                skipHdl(), RootSheet.getNetList()); /* stateful hdl gen */
 		if (!AbstractHDLGeneratorFactory.WriteEntity(
-				ProjectDir
-						+ Worker.GetRelativeDirectory(MySettings.GetHDLType()),
+				ProjectDir + Worker.GetRelativeDirectory(MySettings.GetHDLType()),
 				Worker.GetEntity(RootSheet.getNetList(), null,
 						ToplevelHDLGeneratorFactory.FPGAToplevelName,
 						MyReporter, MySettings.GetHDLType()), Worker
@@ -1386,11 +1393,9 @@ public class FPGACommanderGui implements ActionListener {
 		if (!AbstractHDLGeneratorFactory.WriteArchitecture(
 				ProjectDir
 						+ Worker.GetRelativeDirectory(MySettings.GetHDLType()),
-				Worker.GetArchitecture(RootSheet.getNetList(), null, null,
-						ToplevelHDLGeneratorFactory.FPGAToplevelName,
-						MyReporter, MySettings.GetHDLType()), Worker
-						.getComponentStringIdentifier(), MyReporter, MySettings
-						.GetHDLType())) {
+				Worker.GetArchitecture(/*RootSheet.getNetList(),*/ null, null,
+						ToplevelHDLGeneratorFactory.FPGAToplevelName/*, MyReporter, MySettings.GetHDLType()*/),
+        Worker.getComponentStringIdentifier(), MyReporter, MySettings.GetHDLType())) {
 			return false;
 		}
 

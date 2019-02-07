@@ -53,9 +53,18 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 
 public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
+  
+  protected AbstractHDLGeneratorFactory(String lang, FPGAReport err, Netlist nets) {
+    super(lang, err, nets);
+  }
 
   protected AbstractHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
+    super(lang, err, null /* nets, fixme */);
+  }
+  
+  public void initHDLGen(Netlist nets) { // fixme
+    if (_nets != null) throw new IllegalStateException();
+    _nets = nets;
   }
 	
 	public static File WriteMemInitFile(String TargetDirectory,
@@ -113,16 +122,17 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 	}
 
 	/* Here the common predefined methods are defined */
-	public boolean GenerateAllHDLDescriptions(Set<String> HandledComponents,
-			String WorkingDir, ArrayList<String> Hierarchy,
-			FPGAReport Reporter, String HDLType) {
-		return true;
-	}
 
-	public ArrayList<String> GetArchitecture(Netlist TheNetlist,
+	public ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/
 			AttributeSet attrs, Map<String, File> memInitFiles,
-			String ComponentName, FPGAReport Reporter,
-			String HDLType) {
+			String ComponentName /*, FPGAReport Reporter, String HDLType */) {
+    if (_nets == null) throw new IllegalStateException();
+    return GetArchitectureWithNetlist(_nets, attrs, memInitFiles, ComponentName /*, Reporter, HDLType*/);
+  }
+
+	protected ArrayList<String> GetArchitectureWithNetlist(Netlist TheNetlist,
+			AttributeSet attrs, Map<String, File> memInitFiles,
+			String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
 		ArrayList<String> Contents = new ArrayList<String>();
 		Map<String, Integer> InputsList = GetInputList(TheNetlist, attrs); // For
 																			// verilog
@@ -132,12 +142,12 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 																				// verilog
 		Map<Integer, String> ParameterList = GetParameterList(attrs);
 		Map<String, Integer> WireList = GetWireList(attrs, TheNetlist);
-		Map<String, Integer> RegList = GetRegList(attrs, HDLType);
-		Map<String, Integer> MemList = GetMemList(attrs, HDLType);
+		Map<String, Integer> RegList = GetRegList(attrs, _lang);
+		Map<String, Integer> MemList = GetMemList(attrs, _lang);
 		StringBuffer OneLine = new StringBuffer();
-		Contents.addAll(FileWriter.getGenerateRemark(ComponentName, HDLType,
+		Contents.addAll(FileWriter.getGenerateRemark(ComponentName, _lang,
 				TheNetlist.projName()));
-		if (HDLType.equals(Settings.VHDL)) {
+		if (_lang.equals(Settings.VHDL)) {
 			ArrayList<String> libs = GetExtraLibraries();
 			if (!libs.isEmpty()) {
 				Contents.addAll(libs);
@@ -145,25 +155,25 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 			}
 			Contents.add("ARCHITECTURE PlatformIndependent OF " + ComponentName + " IS ");
 			Contents.add("");
-			int NrOfTypes = GetNrOfTypes(TheNetlist, attrs, HDLType);
+			int NrOfTypes = GetNrOfTypes(TheNetlist, attrs, _lang);
 			if (NrOfTypes > 0) {
-        Hdl out = new Hdl(HDLType, Reporter);
+        Hdl out = new Hdl(_lang, _err);
         out.comment("definitions for private types");
 				Contents.addAll(out);
-				for (String ThisType : GetTypeDefinitions(TheNetlist, attrs, HDLType)) {
+				for (String ThisType : GetTypeDefinitions(TheNetlist, attrs, _lang)) {
 					Contents.add("   " + ThisType + ";");
 				}
 				Contents.add("");
 			}
 			ArrayList<String> Comps = GetComponentDeclarationSection( TheNetlist, attrs);
 			if (!Comps.isEmpty()) {
-        Hdl out = new Hdl(HDLType, Reporter);
+        Hdl out = new Hdl(_lang, _err);
         out.comment("definitions for components");
 				Contents.addAll(out);
 				Contents.addAll(Comps);
 				Contents.add("");
 			}
-      Hdl out = new Hdl(HDLType, Reporter);
+      Hdl out = new Hdl(_lang, _err);
       out.comment("definitions for signals");
 			Contents.addAll(out);
 			for (String Wire : WireList.keySet()) {
@@ -178,7 +188,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 					OneLine.append("_vector( ");
 					if (WireList.get(Wire) < 0) {
 						if (!ParameterList.containsKey(WireList.get(Wire))) {
-							Reporter.AddFatalError("Internal Error, Parameter not present in HDL generation, your HDL code will not work!");
+							_err.AddFatalError("Internal Error, Parameter not present in HDL generation, your HDL code will not work!");
 							Contents.clear();
 							return Contents;
 						}
@@ -208,7 +218,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 					OneLine.append("_vector( ");
 					if (RegList.get(Reg) < 0) {
 						if (!ParameterList.containsKey(RegList.get(Reg))) {
-							Reporter.AddFatalError("Internal Error, Parameter not present in HDL generation, your HDL code will not work!");
+							_err.AddFatalError("Internal Error, Parameter not present in HDL generation, your HDL code will not work!");
 							Contents.clear();
 							return Contents;
 						}
@@ -247,7 +257,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 			}
 			Contents.add("");
 			Contents.add("BEGIN");
-			Contents.addAll(GetModuleFunctionality(TheNetlist, attrs, Reporter, HDLType));
+			Contents.addAll(GetModuleFunctionality(TheNetlist, attrs, _err, _lang));
 			Contents.add("END PlatformIndependent;");
 		} else {
 			String Preamble = "module " + ComponentName + "( ";
@@ -280,12 +290,12 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 				if (ThisLine.length() != 0) {
 					Contents.add(ThisLine.toString() + ");");
 				} else {
-					Reporter.AddError("Internale Error in Verilog Architecture generation!");
+					_err.AddError("Internale Error in Verilog Architecture generation!");
 				}
 			}
 			if (!ParameterList.isEmpty()) {
 				Contents.add("");
-        Hdl out = new Hdl(HDLType, Reporter);
+        Hdl out = new Hdl(_lang, _err);
         out.comment("definitions for module parameters (with dummy values)");
 				Contents.addAll(out);
 				for (int param : ParameterList.keySet()) {
@@ -303,7 +313,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 				if (nr_of_bits < 0) {
 					/* we have a parameterized array */
 					if (!ParameterList.containsKey(nr_of_bits)) {
-						Reporter.AddFatalError("Internal Error, Parameter not present in HDL generation, your HDL code will not work!");
+						_err.AddFatalError("Internal Error, Parameter not present in HDL generation, your HDL code will not work!");
 						Contents.clear();
 						return Contents;
 					}
@@ -324,7 +334,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 				if (firstline) {
 					firstline = false;
 					Contents.add("");
-          Hdl out = new Hdl(HDLType, Reporter);
+          Hdl out = new Hdl(_lang, _err);
           out.comment("definitions for inputs");
 					Contents.addAll(out);
 				}
@@ -338,7 +348,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 				if (nr_of_bits < 0) {
 					/* we have a parameterized array */
 					if (!ParameterList.containsKey(nr_of_bits)) {
-						Reporter.AddFatalError("Internal Error, Parameter not present in HDL generation, your HDL code will not work!");
+						_err.AddFatalError("Internal Error, Parameter not present in HDL generation, your HDL code will not work!");
 						Contents.clear();
 						return Contents;
 					}
@@ -359,7 +369,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 				if (firstline) {
 					firstline = false;
 					Contents.add("");
-          Hdl out = new Hdl(HDLType, Reporter);
+          Hdl out = new Hdl(_lang, _err);
           out.comment("definitions for outputs");
 					Contents.addAll(out);
 				}
@@ -373,7 +383,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 				if (nr_of_bits < 0) {
 					/* we have a parameterized array */
 					if (!ParameterList.containsKey(nr_of_bits)) {
-						Reporter.AddFatalError("Internal Error, Parameter not present in HDL generation, your HDL code will not work!");
+						_err.AddFatalError("Internal Error, Parameter not present in HDL generation, your HDL code will not work!");
 						Contents.clear();
 						return Contents;
 					}
@@ -394,7 +404,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 				if (firstline) {
 					firstline = false;
 					Contents.add("");
-          Hdl out = new Hdl(HDLType, Reporter);
+          Hdl out = new Hdl(_lang, _err);
           out.comment("definitions for internal wires");
 					Contents.addAll(out);
 				}
@@ -407,7 +417,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 				if (nr_of_bits < 0) {
 					/* we have a parameterized array */
 					if (!ParameterList.containsKey(nr_of_bits)) {
-						Reporter.AddFatalError("Internal Error, Parameter not present in HDL generation, your HDL code will not work!");
+						_err.AddFatalError("Internal Error, Parameter not present in HDL generation, your HDL code will not work!");
 						Contents.clear();
 						return Contents;
 					}
@@ -428,7 +438,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 				if (firstline) {
 					firstline = false;
 					Contents.add("");
-          Hdl out = new Hdl(HDLType, Reporter);
+          Hdl out = new Hdl(_lang, _err);
           out.comment("definitions for internal registers");
 					Contents.addAll(out);
 				}
@@ -438,7 +448,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 			if (!firstline) {
 				Contents.add("");
 			}
-			Contents.addAll(GetModuleFunctionality(TheNetlist, attrs, Reporter, HDLType));
+			Contents.addAll(GetModuleFunctionality(TheNetlist, attrs, _err, _lang));
 			Contents.add("");
 			Contents.add("endmodule");
 		}
