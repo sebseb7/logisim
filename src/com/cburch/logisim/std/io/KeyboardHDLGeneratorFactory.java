@@ -165,12 +165,12 @@ public class KeyboardHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   // #2
   @Override
-  public ArrayList<String> GetEntity(Netlist TheNetlist, AttributeSet attrs,
-      String ComponentName, FPGAReport Reporter, String HDLType) {
+  public ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ AttributeSet attrs,
+      String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
     int asciiWidth = Keyboard.getWidth(attrs.getValue(Keyboard.ATTR_WIDTH));
     ArrayList<String> Contents = new ArrayList<String>();
     Contents.addAll(FileWriter.getGenerateRemark(ComponentName,
-          Settings.VHDL, TheNetlist.projName()));
+          Settings.VHDL, _nets.projName()));
     Contents.addAll(FileWriter.getExtendedLibrary2());
     Contents.add("ENTITY " + ComponentName + " IS");
     Contents.add("   PORT ( ");

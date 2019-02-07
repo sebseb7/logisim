@@ -88,11 +88,11 @@ public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   }
 
   @Override
-  public ArrayList<String> GetEntity(Netlist nets, AttributeSet attrs,
-      String ComponentName, FPGAReport err, String lang) {
+  public ArrayList<String> GetEntity(/*Netlist nets,*/ AttributeSet attrs,
+      String ComponentName /*, FPGAReport err, String lang*/) {
     // fixme: is this necessary? or maybe better?
     ArrayList<String> Contents = new ArrayList<String>();
-    Contents.addAll(FileWriter.getGenerateRemark(ComponentName, "VHDL", nets.projName()));
+    Contents.addAll(FileWriter.getGenerateRemark(ComponentName, "VHDL", _nets.projName()));
     Contents.addAll(FileWriter.getExtendedLibrary());
     Contents.add("ENTITY " + ComponentName + " IS");
     Contents.add("   PORT ( ");

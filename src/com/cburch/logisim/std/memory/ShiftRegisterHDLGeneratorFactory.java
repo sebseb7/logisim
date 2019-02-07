@@ -145,11 +145,11 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
   }
 
   @Override
-  public ArrayList<String> GetEntity(Netlist TheNetlist, AttributeSet attrs,
-      String ComponentName, FPGAReport err, String lang) {
+  public ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ AttributeSet attrs,
+      String ComponentName /*, FPGAReport err, String lang*/) {
     ArrayList<String> C = new ArrayList<String>();
-    if (lang.equals("VHDL")) {
-      C.addAll(FileWriter.getGenerateRemark(ComponentName, "VHDL", TheNetlist.projName()));
+    if (_lang.equals("VHDL")) {
+      C.addAll(FileWriter.getGenerateRemark(ComponentName, "VHDL", _nets.projName()));
       C.addAll(FileWriter.getExtendedLibrary());
       C.add("ENTITY SingleBitShiftReg IS");
       C.add("   GENERIC ( Trigger : INTEGER;");
@@ -168,7 +168,7 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
       C.add("");
       C.add("");
     }
-    C.addAll(super.GetEntity(TheNetlist, attrs, ComponentName, err, lang));
+    C.addAll(super.GetEntity(/*TheNetlist,*/ attrs, ComponentName /*, err, lang*/));
     return C;
   }
 

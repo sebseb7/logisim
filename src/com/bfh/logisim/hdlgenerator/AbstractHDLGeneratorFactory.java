@@ -730,14 +730,19 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 	}
 
 	@Override
-	public ArrayList<String> GetEntity(Netlist TheNetlist, AttributeSet attrs,
-			String ComponentName, FPGAReport Reporter, String HDLType) {
+	public ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ AttributeSet attrs,
+			String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
+    if (_nets == null) throw new IllegalStateException();
+    return GetEntityWithNetlist(_nets, attrs, ComponentName);
+  }
+
+	protected ArrayList<String> GetEntityWithNetlist(Netlist nets, AttributeSet attrs, String ComponentName) {
 		ArrayList<String> Contents = new ArrayList<String>();
-		if (HDLType.equals(Settings.VHDL)) {
+		if (_lang.equals(Settings.VHDL)) {
 			Contents.addAll(FileWriter.getGenerateRemark(ComponentName,
-					Settings.VHDL, TheNetlist.projName()));
+					Settings.VHDL, nets.projName()));
 			Contents.addAll(FileWriter.getExtendedLibrary());
-			Contents.addAll(GetVHDLBlackBox(TheNetlist, attrs, ComponentName, true));
+			Contents.addAll(GetVHDLBlackBox(nets, attrs, ComponentName, true));
 		}
 		return Contents;
 	}

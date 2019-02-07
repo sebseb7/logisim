@@ -162,12 +162,11 @@ public class TtyHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   // #2
   @Override
-  public ArrayList<String> GetEntity(Netlist TheNetlist, AttributeSet attrs,
-      String ComponentName, FPGAReport Reporter, String HDLType) {
+  public ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ AttributeSet attrs,
+      String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
     int asciiWidth = Tty.getWidth(attrs.getValue(Tty.ATTR_WIDTH));
     ArrayList<String> Contents = new ArrayList<String>();
-    Contents.addAll(FileWriter.getGenerateRemark(ComponentName,
-          Settings.VHDL, TheNetlist.projName()));
+    Contents.addAll(FileWriter.getGenerateRemark(ComponentName, _lang, _nets.projName()));
     Contents.addAll(FileWriter.getExtendedLibrary());
     Contents.add("ENTITY " + ComponentName + " IS");
     Contents.add("   PORT ( ");

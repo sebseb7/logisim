@@ -85,8 +85,8 @@ public abstract class HDLGeneratorFactory {
 	
 	public abstract Map<String, ArrayList<String>> GetMemInitData(AttributeSet attrs);
 
-	public abstract ArrayList<String> GetEntity(Netlist TheNetlist, AttributeSet attrs,
-			String ComponentName, FPGAReport Reporter, String HDLType);
+	public abstract ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ AttributeSet attrs,
+			String ComponentName /*, FPGAReport Reporter, String HDLType*/);
 
 	public abstract ArrayList<String> GetInlinedCode(Netlist Nets, Long ComponentId,
 			NetlistComponent ComponentInfo, FPGAReport Reporter,

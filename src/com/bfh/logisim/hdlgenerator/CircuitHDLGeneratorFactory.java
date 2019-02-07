@@ -108,9 +108,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				if (!Worker.IsOnlyInlined(_lang)) {
 					if (!WriteEntity(
 							WorkingDir + Worker.GetRelativeDirectory(_lang),
-							Worker.GetEntity(MyNetList, ThisComponent
+							Worker.GetEntity(/*MyNetList,*/ ThisComponent
 									.GetComponent().getAttributeSet(),
-									ComponentName, _err, _lang),
+									ComponentName /*, _err, _lang*/),
 							ComponentName, _err, _lang)) {
 						return false;
 					}
@@ -171,7 +171,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		if (!HandledComponents.contains(ComponentName)) {
 			if (!WriteEntity(
 					WorkingDir + GetRelativeDirectory(_lang),
-					GetEntity(MyNetList, null, ComponentName, _err, _lang),
+					GetEntityWithNetlist(MyNetList, null, ComponentName),
 					ComponentName, _err, _lang)) {
 				return false;
 			}
