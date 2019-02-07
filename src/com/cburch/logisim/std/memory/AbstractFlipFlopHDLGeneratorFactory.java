@@ -46,9 +46,9 @@ public class AbstractFlipFlopHDLGeneratorFactory extends AbstractHDLGeneratorFac
   private String[] inPorts;
   private String vhdlUpdate, verilogUpdate;
 
-  AbstractFlipFlopHDLGeneratorFactory(String lang, FPGAReport err, String name, String displayName,
+  AbstractFlipFlopHDLGeneratorFactory(HDLCTX ctx, String name, String displayName,
       String[] inPorts, String vhdlUpdate, String verilogUpdate) {
-    super(lang, err);
+    super(ctx);
     this.name = name;
     this.displayName = displayName;
     this.inPorts = inPorts;

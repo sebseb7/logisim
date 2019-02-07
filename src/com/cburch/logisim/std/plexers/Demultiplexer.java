@@ -35,7 +35,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.data.Attribute;
@@ -128,8 +128,8 @@ public class Demultiplexer extends InstanceFactory {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    return new DemultiplexerHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    return new DemultiplexerHDLGeneratorFactory(ctx);
   }
 
   @Override

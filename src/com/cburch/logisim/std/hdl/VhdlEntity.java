@@ -47,7 +47,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
 import com.cburch.logisim.circuit.Circuit;
@@ -168,9 +168,9 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    if (lang.equals("VHDL"))
-      return new VhdlHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    if (ctx.lang.equals("VHDL"))
+      return new VhdlHDLGeneratorFactory(ctx);
     else
       return null;
   }

@@ -32,8 +32,9 @@ package com.cburch.logisim.comp;
 
 import java.awt.Color;
 
+import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.data.Attribute;
@@ -97,7 +98,11 @@ public interface ComponentFactory extends AttributeDefaultProvider {
 
   public default boolean HDLIgnore() { return false; }
 
-  public default HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) { return null; }
+  public default AbstractHDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, Netlist nets, AttributeSet attrs, char vendor) {
+    return getHDLGenerator(new AbstractHDLGeneratorFactory.HDLCTX(lang, err, nets, attrs, vendor));
+  }
+
+  public default AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) { return null; }
 
   public String getHDLName(AttributeSet attrs);
 

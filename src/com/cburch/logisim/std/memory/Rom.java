@@ -44,7 +44,7 @@ import java.util.WeakHashMap;
 import javax.swing.JLabel;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.Attribute;
@@ -338,9 +338,9 @@ public class Rom extends Mem {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    if (RomHDLGeneratorFactory.supports(lang, attrs, vendor))
-      return new RomHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    if (RomHDLGeneratorFactory.supports(ctx.lang, ctx.attrs, ctx.vendor)) // fixme
+      return new RomHDLGeneratorFactory(ctx);
     else
       return null;
   }

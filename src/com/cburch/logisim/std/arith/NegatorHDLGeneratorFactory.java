@@ -41,9 +41,7 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class NegatorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public NegatorHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public NegatorHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
 

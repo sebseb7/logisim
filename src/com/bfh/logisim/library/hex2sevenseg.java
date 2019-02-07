@@ -34,7 +34,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -246,9 +246,9 @@ public class hex2sevenseg extends InstanceFactory {
 	}	
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    if (lang.equals("VHDL"))
-      return new hex2sevensegHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    if (ctx.lang.equals("VHDL"))
+      return new hex2sevensegHDLGeneratorFactory(ctx);
     else
       return null;
   }

@@ -77,8 +77,7 @@ public class MappableResourcesContainer {
 	 * 
 	 * The MappedList keeps track of the display names.
 	 */
-	public MappableResourcesContainer(BoardInformation CurrentBoard,
-			Netlist RootNetlist) {
+	public MappableResourcesContainer(BoardInformation CurrentBoard, Netlist RootNetlist) {
 		ArrayList<String> Toplevel = new ArrayList<String>();
 		Toplevel.add(CurrentBoard.getBoardName());
 		myMappableResources = RootNetlist.GetMappableResources(Toplevel, true);

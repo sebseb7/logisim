@@ -35,7 +35,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -110,8 +110,8 @@ public class BitExtender extends InstanceFactory {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    return new BitExtenderHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    return new BitExtenderHDLGeneratorFactory(ctx);
   }
 
   @Override

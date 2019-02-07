@@ -48,9 +48,7 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   // todo: verilog support
 
-  public PortHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public PortHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   private class InOutMap {
     private int end, start, size, busNr, endNr;
@@ -131,9 +129,8 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     return ports;
   }
 
-  // #2
   @Override
-  public ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ AttributeSet attrs,
+  public ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ /*AttributeSet attrs,*/
       String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
 
     ArrayList<String> Contents = new ArrayList<String>();
@@ -142,7 +139,7 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     Contents.add("ENTITY " + ComponentName + " IS");
     Contents.add("   PORT ( ");
 
-    ArrayList<InOutMap> ports = getPorts(attrs);
+    ArrayList<InOutMap> ports = getPorts(_attrs);
     InOutMap last = ports.get(ports.size() - 1);
     for (InOutMap io : ports) {
       String line = "          ";
@@ -174,10 +171,9 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     return Contents;
   }
 
-  // #4
   @Override
   public ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/
-      AttributeSet attrs, Map<String, File> MemInitFiles,
+      /*AttributeSet attrs,*/ Map<String, File> MemInitFiles,
       String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
     if (_nets == null) throw new IllegalStateException();
     ArrayList<String> Contents = new ArrayList<String>();
@@ -189,7 +185,7 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       Contents.add("");
       Contents.add("BEGIN");
       Contents.add("");
-      for (InOutMap io : getPorts(attrs)) {
+      for (InOutMap io : getPorts(_attrs)) {
         String ioBus = inOutBusName + io.busNr;
         String ioBusAll = ioBus;
         if (io.size == 1)

@@ -51,8 +51,9 @@ public class DFlipFlop extends AbstractFlipFlop {
   }
 
   @Override
-  protected AbstractFlipFlopHDLGeneratorFactory getHdlGenerator(String lang, FPGAReport err) {
-    return new AbstractFlipFlopHDLGeneratorFactory(lang, err,
+  protected AbstractFlipFlopHDLGeneratorFactory getHdlGenerator(
+      AbstractFlipFlopHDLGeneratorFactory.HDLCTX ctx) {
+    return new AbstractFlipFlopHDLGeneratorFactory(ctx,
           "DFF", "D Flip-Flip",
           new String[]{ "D" },
           "s_next_state <= D;",

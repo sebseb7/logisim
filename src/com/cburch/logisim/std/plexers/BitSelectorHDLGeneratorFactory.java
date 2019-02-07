@@ -40,9 +40,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class BitSelectorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public BitSelectorHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public BitSelectorHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   protected final static int GENERIC_PARAM_WIDTH_IN = -1;
   protected final static int GENERIC_PARAM_WIDTH_OUT = -2;

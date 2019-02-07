@@ -41,9 +41,7 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class DividerHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public DividerHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public DividerHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_EXTENDEDBITS = -2;

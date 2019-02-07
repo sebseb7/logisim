@@ -42,9 +42,7 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class RandomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public RandomHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public RandomHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_SEED = -2;

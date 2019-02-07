@@ -39,15 +39,13 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class ButtonHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public ButtonHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public ButtonHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   @Override
   public boolean IsOnlyInlined(/*String lang*/) { return true; }
 
   @Override
-  public ArrayList<String> GetInlinedCode(/*Netlist nets,*/ Long id,
+  public ArrayList<String> GetInlinedCode3(/*Netlist nets,*/ Long id,
       NetlistComponent info, /*FPGAReport err,*/ String circName /*, String lang*/) {
     if (_nets == null) throw new IllegalStateException();
     Hdl out = new Hdl(_lang, _err);

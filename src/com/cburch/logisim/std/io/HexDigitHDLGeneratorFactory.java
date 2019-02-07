@@ -43,9 +43,7 @@ import com.cburch.logisim.data.AttributeSet;
 
 public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public HexDigitHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public HexDigitHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   @Override
   public String getComponentStringIdentifier() { return "HEXDIGIT"; }
@@ -88,7 +86,7 @@ public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   }
 
   @Override
-  public ArrayList<String> GetEntity(/*Netlist nets,*/ AttributeSet attrs,
+  public ArrayList<String> GetEntity(/*Netlist nets,*/ /*AttributeSet attrs,*/
       String ComponentName /*, FPGAReport err, String lang*/) {
     // fixme: is this necessary? or maybe better?
     ArrayList<String> Contents = new ArrayList<String>();
@@ -114,7 +112,7 @@ public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   @Override
   public ArrayList<String> GetArchitecture(/*Netlist nets,*/
-      AttributeSet attrs, Map<String, File> MemInitFiles, String ComponentName /*, FPGAReport err, String lang*/) {
+      /*AttributeSet attrs,*/ Map<String, File> MemInitFiles, String ComponentName /*, FPGAReport err, String lang*/) {
     if (_nets == null) throw new IllegalStateException();
     // fixme: is this custom arch necessary? or maybe better?
     ArrayList<String> Contents = new ArrayList<String>();

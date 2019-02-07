@@ -53,19 +53,38 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 
 public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
+
+  public static class HDLCTX { // fixme - temporary hack
+    public final String lang;
+    public final FPGAReport err;
+    public final Netlist nets;
+    public final AttributeSet attrs;
+    public final char vendor;
+    public HDLCTX(String lang, FPGAReport err, Netlist nets, AttributeSet attrs, char vendor) {
+      this.lang = lang;;
+      this.err = err;;
+      this.nets = nets;;
+      this.attrs = attrs;;
+      this.vendor = vendor;;
+    }
+  }
   
-  protected AbstractHDLGeneratorFactory(String lang, FPGAReport err, Netlist nets) {
-    super(lang, err, nets);
+  protected AbstractHDLGeneratorFactory(String lang, FPGAReport err, Netlist nets, AttributeSet attrs, char vendor) {
+    super(lang, err, nets, attrs, vendor);
   }
 
-  protected AbstractHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err, null /* nets, fixme */);
+  protected AbstractHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx.lang, ctx.err, ctx.nets, ctx.attrs, ctx.vendor);
   }
-  
-  public void initHDLGen(Netlist nets) { // fixme
-    if (_nets != null) throw new IllegalStateException();
-    _nets = nets;
-  }
+
+  // protected AbstractHDLGeneratorFactory(String lang, FPGAReport err, AttributeSet attrs) {
+  //   super(lang, err, null /* nets, fixme */, attrs);
+  // }
+  // 
+  // public void initHDLGen(Netlist nets) { // fixme
+  //   if (_nets != null) throw new IllegalStateException();
+  //   _nets = nets;
+  // }
 	
 	public static File WriteMemInitFile(String TargetDirectory,
 			ArrayList<String> Contents, String ComponentName,
@@ -124,26 +143,26 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 	/* Here the common predefined methods are defined */
 
 	public ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/
-			AttributeSet attrs, Map<String, File> memInitFiles,
+			/*AttributeSet attrs,*/ Map<String, File> memInitFiles,
 			String ComponentName /*, FPGAReport Reporter, String HDLType */) {
     if (_nets == null) throw new IllegalStateException();
-    return GetArchitectureWithNetlist(_nets, attrs, memInitFiles, ComponentName /*, Reporter, HDLType*/);
+    return GetArchitectureWithNetlist(_nets, /*attrs,*/ memInitFiles, ComponentName /*, Reporter, HDLType*/);
   }
 
 	protected ArrayList<String> GetArchitectureWithNetlist(Netlist TheNetlist,
-			AttributeSet attrs, Map<String, File> memInitFiles,
+			/*AttributeSet attrs,*/ Map<String, File> memInitFiles,
 			String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
 		ArrayList<String> Contents = new ArrayList<String>();
-		Map<String, Integer> InputsList = GetInputList(TheNetlist, attrs); // For
+		Map<String, Integer> InputsList = GetInputList(TheNetlist, _attrs); // For
 																			// verilog
-		// Map<String, Integer> InOutsList = GetInOutList(TheNetlist, attrs);
+		// Map<String, Integer> InOutsList = GetInOutList(TheNetlist, _attrs);
 		// //For verilog
-		Map<String, Integer> OutputsList = GetOutputList(TheNetlist, attrs); // For
+		Map<String, Integer> OutputsList = GetOutputList(TheNetlist, _attrs); // For
 																				// verilog
-		Map<Integer, String> ParameterList = GetParameterList(attrs);
-		Map<String, Integer> WireList = GetWireList(attrs, TheNetlist);
-		Map<String, Integer> RegList = GetRegList(attrs, _lang);
-		Map<String, Integer> MemList = GetMemList(attrs, _lang);
+		Map<Integer, String> ParameterList = GetParameterList(_attrs);
+		Map<String, Integer> WireList = GetWireList(_attrs, TheNetlist);
+		Map<String, Integer> RegList = GetRegList(_attrs, _lang);
+		Map<String, Integer> MemList = GetMemList(_attrs, _lang);
 		StringBuffer OneLine = new StringBuffer();
 		Contents.addAll(FileWriter.getGenerateRemark(ComponentName, _lang,
 				TheNetlist.projName()));
@@ -155,17 +174,17 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 			}
 			Contents.add("ARCHITECTURE PlatformIndependent OF " + ComponentName + " IS ");
 			Contents.add("");
-			int NrOfTypes = GetNrOfTypes(TheNetlist, attrs, _lang);
+			int NrOfTypes = GetNrOfTypes(TheNetlist, _attrs, _lang);
 			if (NrOfTypes > 0) {
         Hdl out = new Hdl(_lang, _err);
         out.comment("definitions for private types");
 				Contents.addAll(out);
-				for (String ThisType : GetTypeDefinitions(TheNetlist, attrs, _lang)) {
+				for (String ThisType : GetTypeDefinitions(TheNetlist, _attrs, _lang)) {
 					Contents.add("   " + ThisType + ";");
 				}
 				Contents.add("");
 			}
-			ArrayList<String> Comps = GetComponentDeclarationSection( TheNetlist, attrs);
+			ArrayList<String> Comps = GetComponentDeclarationSection( TheNetlist, _attrs);
 			if (!Comps.isEmpty()) {
         Hdl out = new Hdl(_lang, _err);
         out.comment("definitions for components");
@@ -257,7 +276,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 			}
 			Contents.add("");
 			Contents.add("BEGIN");
-			Contents.addAll(GetModuleFunctionality(TheNetlist, attrs, _err, _lang));
+			Contents.addAll(GetModuleFunctionality(TheNetlist, _attrs, _err, _lang));
 			Contents.add("END PlatformIndependent;");
 		} else {
 			String Preamble = "module " + ComponentName + "( ";
@@ -448,7 +467,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 			if (!firstline) {
 				Contents.add("");
 			}
-			Contents.addAll(GetModuleFunctionality(TheNetlist, attrs, _err, _lang));
+			Contents.addAll(GetModuleFunctionality(TheNetlist, _attrs, _err, _lang));
 			Contents.add("");
 			Contents.add("endmodule");
 		}
@@ -568,11 +587,11 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 	}
 
 	public ArrayList<String> GetComponentInstantiation(/*Netlist TheNetlist,*/
-			AttributeSet attrs, String ComponentName/*, String HDLType*/) {
+			/*AttributeSet attrs,*/ String ComponentName/*, String HDLType*/) {
     if (_nets == null) throw new IllegalStateException();
 		ArrayList<String> Contents = new ArrayList<String>();
 		if (_lang.equals(Settings.VHDL)) {
-			Contents.addAll(GetVHDLBlackBox(_nets, attrs, ComponentName, false));
+			Contents.addAll(GetVHDLBlackBox(_nets, _attrs, ComponentName, false));
 		}
 		return Contents;
 	}
@@ -732,19 +751,19 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 	}
 
 	@Override
-	public ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ AttributeSet attrs,
+	public ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ /*AttributeSet attrs,*/
 			String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
     if (_nets == null) throw new IllegalStateException();
-    return GetEntityWithNetlist(_nets, attrs, ComponentName);
+    return GetEntityWithNetlist(_nets, /*attrs,*/ ComponentName);
   }
 
-	protected ArrayList<String> GetEntityWithNetlist(Netlist nets, AttributeSet attrs, String ComponentName) {
+	protected ArrayList<String> GetEntityWithNetlist(Netlist nets, /*AttributeSet attrs,*/ String ComponentName) {
 		ArrayList<String> Contents = new ArrayList<String>();
 		if (_lang.equals(Settings.VHDL)) {
 			Contents.addAll(FileWriter.getGenerateRemark(ComponentName,
 					Settings.VHDL, nets.projName()));
 			Contents.addAll(FileWriter.getExtendedLibrary());
-			Contents.addAll(GetVHDLBlackBox(nets, attrs, ComponentName, true));
+			Contents.addAll(GetVHDLBlackBox(nets, _attrs, ComponentName, true));
 		}
 		return Contents;
 	}
@@ -758,20 +777,23 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 		return new ArrayList<String>();
 	}
 
-	public ArrayList<String> GetInlinedCode(/*Netlist Nets,*/ Long ComponentId,
+  // CircuitHDLGeneratorFactory calls this for NormalComponents, when nets
+  // defined, if IsOnlyInlined returns true.
+	public ArrayList<String> GetInlinedCode3(/*Netlist Nets,*/ Long ComponentId,
 			NetlistComponent ComponentInfo, /*FPGAReport Reporter, */
 			String  CircuitName /*, String HDLType*/) {
 		ArrayList<String> Contents = new ArrayList<String>();
 		return Contents;
 	}
 
-	public ArrayList<String> GetInlinedCode(/*String HDLType,*/
+  // ToplevelHDLGeneratorFactory calls this for components that are not Pin,
+  // PortIO, Tty, or Keyboard.
+	public ArrayList<String> GetInlinedCode2(/*String HDLType,*/
 			ArrayList<String> ComponentIdentifier, /*FPGAReport Reporter,*/
 			MappableResourcesContainer MapInfo) {
 		ArrayList<String> Contents = new ArrayList<String>();
 		String Preamble = (_lang.equals(Settings.VHDL)) ? "" : "assign ";
-		String AssignOperator = (_lang.equals(Settings.VHDL)) ? " <= "
-				: " = ";
+		String AssignOperator = (_lang.equals(Settings.VHDL)) ? " <= " : " = ";
 		String OpenBracket = (_lang.equals(Settings.VHDL)) ? "(" : "[";
 		String CloseBracket = (_lang.equals(Settings.VHDL)) ? ")" : "]";
 		String Inversion = (_lang.equals(Settings.VHDL)) ? "NOT " : "~";
@@ -786,8 +808,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 		bla.remove(0);
 		BubbleInformationContainer BubbleInfo = comp.GetGlobalBubbleId(bla);
 		if (BubbleInfo == null) {
-			_err.AddFatalError("Component has no bubble information, bizar! "
-					+ bla.toString());
+			_err.AddFatalError("Component has no bubble information, bizar! " + bla.toString());
 			return Contents;
 		}
 		/* The button is simple as it has only 1 pin */
@@ -900,7 +921,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 		return Regs;
 	}
 
-	public Map<String, ArrayList<String>> GetMemInitData(AttributeSet attrs) {
+	public Map<String, ArrayList<String>> GetMemInitData(/*AttributeSet attrs*/) {
 		return null;
 	}
 

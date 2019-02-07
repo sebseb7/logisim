@@ -36,7 +36,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.data.AttributeSet;
@@ -76,11 +76,11 @@ class OddParityGate extends AbstractGate {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    if (lang.equals("VHDL"))
-      return GateVhdlGenerator.forXor(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    if (ctx.lang.equals("VHDL"))
+      return GateVhdlGenerator.forXor(ctx);
     else
-      return GateVerilogGenerator.forXor(lang, err);
+      return GateVerilogGenerator.forXor(ctx);
   }
 
   @Override

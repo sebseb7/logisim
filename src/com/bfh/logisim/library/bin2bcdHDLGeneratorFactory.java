@@ -42,13 +42,11 @@ import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 
-public class bin2bcdHDLGeneratorFactory  extends AbstractHDLGeneratorFactory{
+public class bin2bcdHDLGeneratorFactory extends AbstractHDLGeneratorFactory{
 
   // todo: verilog support
 
-  public bin2bcdHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public bin2bcdHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
 	final private static String NrOfBitsStr = "NrOfBits";
 	final private static int NrOfBitsId = -1;

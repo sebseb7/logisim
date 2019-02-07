@@ -41,9 +41,7 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class DemultiplexerHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public DemultiplexerHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public DemultiplexerHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
 

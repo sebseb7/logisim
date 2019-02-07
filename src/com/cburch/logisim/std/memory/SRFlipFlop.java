@@ -64,8 +64,9 @@ public class SRFlipFlop extends AbstractFlipFlop {
   }
 
   @Override
-  protected AbstractFlipFlopHDLGeneratorFactory getHdlGenerator(String lang, FPGAReport err) {
-    return new AbstractFlipFlopHDLGeneratorFactory(lang, err,
+  protected AbstractFlipFlopHDLGeneratorFactory getHdlGenerator(
+      AbstractFlipFlopHDLGeneratorFactory.HDLCTX ctx) {
+    return new AbstractFlipFlopHDLGeneratorFactory(ctx,
         "SRFF", "S-R Flip-Flip",
         new String[]{ "S", "R" },
         "s_next_state <= (s_current_state_reg OR S) AND NOT(R);",

@@ -38,7 +38,7 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
@@ -446,9 +446,9 @@ public class Keyboard extends InstanceFactory {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    if (lang.equals("VHDL"))
-      return new KeyboardHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    if (ctx.lang.equals("VHDL"))
+      return new KeyboardHDLGeneratorFactory(ctx);
     else
       return null;
   }

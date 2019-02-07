@@ -42,9 +42,7 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class CounterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public CounterHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public CounterHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_MAXVAL = -2;

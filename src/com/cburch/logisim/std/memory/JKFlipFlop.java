@@ -64,8 +64,9 @@ public class JKFlipFlop extends AbstractFlipFlop {
   }
 
   @Override
-  protected AbstractFlipFlopHDLGeneratorFactory getHdlGenerator(String lang, FPGAReport err) {
-    return new AbstractFlipFlopHDLGeneratorFactory(lang, err,
+  protected AbstractFlipFlopHDLGeneratorFactory getHdlGenerator(
+      AbstractFlipFlopHDLGeneratorFactory.HDLCTX ctx) {
+    return new AbstractFlipFlopHDLGeneratorFactory(ctx,
         "JKFF", "J-K Flip-Flip",
         new String[]{ "J", "K" },
         "s_next_state <= (NOT(s_current_state_reg) AND J) OR (s_current_state_reg AND NOT(K));",

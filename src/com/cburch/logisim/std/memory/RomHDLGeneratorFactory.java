@@ -40,9 +40,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class RomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public RomHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public RomHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   static boolean supports(String lang, AttributeSet attrs, char vendor) {
     return lang.equals("VHDL") || Mem.lineSize(attrs) == 1; // TODO: Verilog support

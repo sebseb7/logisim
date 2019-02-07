@@ -36,7 +36,7 @@ import java.awt.Graphics;
 import java.math.BigInteger;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeOption;
@@ -177,9 +177,9 @@ public class Multiplier extends InstanceFactory {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    if (lang.equals("VHDL"))
-      return new MultiplierHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    if (ctx.lang.equals("VHDL"))
+      return new MultiplierHDLGeneratorFactory(ctx);
     else
       return null;
   }

@@ -317,6 +317,7 @@ public class Netlist {
 			if (!comp.getFactory().HDLIgnore()
           && !comp.getFactory().HDLSpecialHandling()
           && comp.getFactory().getHDLGenerator(HDLIdentifier, Reporter,
+            null, /* fixme - no nets yet... */
 					comp.getAttributeSet(), Vendor) == null) {
 				Reporter.AddFatalError("Found unsupported component: \""
 						+ comp.getFactory().getName() + "\" for "
@@ -464,7 +465,7 @@ public class Netlist {
 		 */
 		Reporter.AddInfo("Building netlist for sheet \"" + MyCircuit.getName()
 				+ "\"");
-		if (!this.GenerateNetlist(Reporter, HDLIdentifier)) {
+		if (!this.GenerateNetlist(Reporter, HDLIdentifier, Vendor)) {
 			this.clear();
 			DRCStatus = DRC_ERROR;
 			return DRCStatus;
@@ -567,7 +568,7 @@ public class Netlist {
 		return null;
 	}
 
-	private boolean GenerateNetlist(FPGAReport Reporter, String HDLIdentifier) {
+	private boolean GenerateNetlist(FPGAReport Reporter, String HDLIdentifier, char vendor) {
 		GridBagConstraints gbc = new GridBagConstraints();
 		JFrame panel = new JFrame("Netlist: " + MyCircuit.getName());
 		panel.setResizable(false);
@@ -924,7 +925,8 @@ public class Netlist {
           || (comp.getFactory() instanceof DynamicClock)
 					|| (comp.getFactory().getIOInformation() != null)
 					|| (comp.getFactory().getHDLGenerator(HDLIdentifier, Reporter,
-							comp.getAttributeSet(), FPGAClass.VendorUnknown) != null)) {
+              null, /* no nets yet ... fixme ? maybe use "this"?*/
+							comp.getAttributeSet(), vendor) != null)) {
 				if (!ProcessNormalComponent(comp, Reporter)) {
 					this.clear();
 					panel.dispose();

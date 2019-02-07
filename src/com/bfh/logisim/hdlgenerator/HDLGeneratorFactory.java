@@ -45,12 +45,16 @@ public abstract class HDLGeneratorFactory {
 
   protected final String _lang; // context - fixme
   protected final FPGAReport _err; // context - fixme
-  protected /* final */ Netlist _nets; // context - fixme
+  protected final Netlist _nets; // context - fixme
+  protected final AttributeSet _attrs; // context - fixme
+  protected final char _vendor; // context - fixme
 
-  protected HDLGeneratorFactory(String lang, FPGAReport err, Netlist nets) {
+  protected HDLGeneratorFactory(String lang, FPGAReport err, Netlist nets, AttributeSet attrs, char vendor) {
     this._lang = lang;
     this._err = err;
-    this._nets = nets;
+    this._nets = nets; // fixme - sometimes null -- maybe null for top level? also for quick checks.
+    this._attrs = attrs; // empty for Circuit, Ticker, maybe others?
+    this._vendor = vendor;
   }
 
 	public static final int PallignmentSize = 26;
@@ -71,11 +75,11 @@ public abstract class HDLGeneratorFactory {
 	public static final String FPGAOutputPinName = "FPGA_OUTPUT_PIN";
 
 	public abstract ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/
-			AttributeSet attrs, Map<String, File> MemInitFiles,
+			/*AttributeSet attrs,*/ Map<String, File> MemInitFiles,
 			String ComponentName /*, FPGAReport Reporter, String HDLType */);
 
 	public abstract ArrayList<String> GetComponentInstantiation(/*Netlist TheNetlist,*/
-			AttributeSet attrs, String ComponentName /*, String HDLType*/);
+			/*AttributeSet attrs,*/ String ComponentName /*, String HDLType*/);
 
 	public abstract ArrayList<String> GetComponentMap(/*Netlist Nets,*/ Long ComponentId,
 			NetlistComponent ComponentInfo, /*FPGAReport Reporter,*/
@@ -83,16 +87,16 @@ public abstract class HDLGeneratorFactory {
 
 	public abstract String getComponentStringIdentifier();
 	
-	public abstract Map<String, ArrayList<String>> GetMemInitData(AttributeSet attrs);
+	public abstract Map<String, ArrayList<String>> GetMemInitData(/*AttributeSet attrs*/);
 
-	public abstract ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ AttributeSet attrs,
+	public abstract ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ /*AttributeSet attrs,*/
 			String ComponentName /*, FPGAReport Reporter, String HDLType*/);
 
-	public abstract ArrayList<String> GetInlinedCode(/*Netlist Nets,*/ Long ComponentId,
+	public abstract ArrayList<String> GetInlinedCode3(/*Netlist Nets,*/ Long ComponentId,
 			NetlistComponent ComponentInfo, /*FPGAReport Reporter,*/
 			String CircuitName /*, String HDLType*/);
 
-	public abstract ArrayList<String> GetInlinedCode(/*String HDLType,*/
+	public abstract ArrayList<String> GetInlinedCode2(/*String HDLType,*/
 			ArrayList<String> ComponentIdentifier, /*FPGAReport Reporter,*/
 			MappableResourcesContainer MapInfo);
 

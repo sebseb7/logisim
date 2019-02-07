@@ -42,7 +42,7 @@ import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -305,9 +305,9 @@ public class PortIO extends InstanceFactory {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    if (lang.equals("VHDL"))
-      return new PortHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    if (ctx.lang.equals("VHDL"))
+      return new PortHDLGeneratorFactory(ctx);
     else
       return null;
   }

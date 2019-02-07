@@ -40,9 +40,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class PLAVhdlGenerator extends AbstractHDLGeneratorFactory {
 
-  public PLAVhdlGenerator(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public PLAVhdlGenerator(HDLCTX ctx) { super(ctx); }
 
   private static String bits(char b[]) {
     String s = "";

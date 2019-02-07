@@ -41,9 +41,7 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class ComparatorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public ComparatorHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public ComparatorHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
   
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_TWOSCOMPLEMENT = -2;

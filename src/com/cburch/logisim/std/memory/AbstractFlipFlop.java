@@ -37,7 +37,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.AttributeOption;
@@ -275,13 +275,13 @@ abstract class AbstractFlipFlop extends InstanceFactory {
     return CompleteName.toString();
   }
 
-  protected abstract AbstractFlipFlopHDLGeneratorFactory getHdlGenerator(String lang, FPGAReport err);
+  protected abstract AbstractFlipFlopHDLGeneratorFactory getHdlGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx);
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    if (attrs.getValue(AbstractFlipFlop.ATTR_ENABLE))
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    if (ctx.attrs.getValue(AbstractFlipFlop.ATTR_ENABLE))
       return null; // flip-flops with enable pin not yet supported
-    return getHdlGenerator(lang, err);
+    return getHdlGenerator(ctx);
   }
 
   //

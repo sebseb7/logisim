@@ -54,6 +54,7 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.io.Keyboard;
@@ -65,8 +66,8 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
 	private Circuit MyCircuit;
 
-	public CircuitHDLGeneratorFactory(String lang, FPGAReport err, Circuit source, Netlist nets) {
-    super(lang, err, nets);
+	public CircuitHDLGeneratorFactory(String lang, FPGAReport err, Circuit source, Netlist nets, char vendor) {
+    super(lang, err, nets, AttributeSets.EMPTY, vendor); // this file doesn't use attrs
 		MyCircuit = source;
 	}
 
@@ -95,27 +96,24 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 						.GetComponent()
 						.getFactory()
 						.getHDLGenerator(_lang, _err,
+                MyNetList, /* stateful hdl gen */
 								ThisComponent.GetComponent().getAttributeSet(),
-								FPGAClass.VendorUnknown);
+								_vendor);
 				if (Worker == null) {
 					_err.AddFatalError("INTERNAL ERROR: Cannot find the VHDL generator factory for component "
 							+ ComponentName);
 					return false;
 				}
-        if (!(Worker instanceof AbstractHDLGeneratorFactory))
-          throw new IllegalStateException();
-        ((AbstractHDLGeneratorFactory)Worker).initHDLGen(MyNetList); /* stateful hdl gen */
 				if (!Worker.IsOnlyInlined(/*_lang*/)) {
 					if (!WriteEntity(
 							WorkingDir + Worker.GetRelativeDirectory(/*_lang*/),
-							Worker.GetEntity(/*MyNetList,*/ ThisComponent
-									.GetComponent().getAttributeSet(),
+							Worker.GetEntity(/*MyNetList,*/ /*ThisComponent.GetComponent().getAttributeSet(), */
 									ComponentName /*, _err, _lang*/),
 							ComponentName, _err, _lang)) {
 						return false;
 					}
 					Map<String, ArrayList<String>> memInitData =
-						Worker.GetMemInitData(ThisComponent.GetComponent().getAttributeSet());
+						Worker.GetMemInitData(/*ThisComponent.GetComponent().getAttributeSet()*/);
 					Map<String, File> memInitFiles = null;
 					if (memInitData != null) {
 						memInitFiles = new HashMap<String, File>();
@@ -133,8 +131,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					if (!WriteArchitecture(
 							WorkingDir + Worker.GetRelativeDirectory(/*_lang*/),
 							Worker.GetArchitecture(/* MyNetList,*/
-                ThisComponent
-									.GetComponent().getAttributeSet(),
+                /*ThisComponent.GetComponent().getAttributeSet(),*/
 									memInitFiles,
 									ComponentName /*, Reporter, HDLType*/),
 							ComponentName, _err, _lang)) {
@@ -150,8 +147,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					.GetComponent()
 					.getFactory()
 					.getHDLGenerator(_lang, _err,
+              MyNetList, /* stateful hdl gen */ // not used in GenerateAllHDLDescriptions anyway?
 							ThisCircuit.GetComponent().getAttributeSet(),
-							FPGAClass.VendorUnknown);
+							_vendor);
 			if (Worker == null) {
 				_err.AddFatalError("INTERNAL ERROR: Unable to get a subcircuit VHDL generator for '"
 						+ ThisCircuit.GetComponent().getFactory().getName()
@@ -171,7 +169,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		if (!HandledComponents.contains(ComponentName)) {
 			if (!WriteEntity(
 					WorkingDir + GetRelativeDirectory(/*_lang*/),
-					GetEntityWithNetlist(MyNetList, null, ComponentName),
+					GetEntityWithNetlist(MyNetList, /*null,*/ ComponentName),
 					ComponentName, _err, _lang)) {
 				return false;
 			}
@@ -196,7 +194,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
                  * here... we want our own inner circuit netlist instead. Or
                  * maybe it doesn't matter? What is netlist used for here? Just
                  * the circuit name? */
-              null, null, ComponentName /*, Reporter, HDLType*/), ComponentName, _err, _lang)) {
+              /*null,*/ null, ComponentName /*, Reporter, HDLType*/), ComponentName, _err, _lang)) {
 					return false;
 				}
 			}
@@ -240,17 +238,15 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				HDLGeneratorFactory Worker = Gate
 						.GetComponent()
 						.getFactory()
-						.getHDLGenerator(Settings.VHDL, null /* reporter */,
+						.getHDLGenerator(Settings.VHDL, _err,
+                TheNetlist, /* stateful hdl gen */
 								Gate.GetComponent().getAttributeSet(),
-								FPGAClass.VendorUnknown);
+								_vendor);
 				if (Worker != null) {
-          if (!(Worker instanceof AbstractHDLGeneratorFactory))
-            throw new IllegalStateException();
-          ((AbstractHDLGeneratorFactory)Worker).initHDLGen(TheNetlist); /* stateful hdl gen */
 					if (!Worker.IsOnlyInlined(/*Settings.VHDL*/)) {
 						Components.addAll(Worker.GetComponentInstantiation(
 								/*TheNetlist,*/
-                  Gate.GetComponent().getAttributeSet(), CompName/*, Settings.VHDL*/ /* , false */));
+                  /*Gate.GetComponent().getAttributeSet(),*/ CompName/*, Settings.VHDL*/ /* , false */));
 					}
 				}
 			}
@@ -261,21 +257,18 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					.getHDLName(Gate.GetComponent().getAttributeSet());
 			if (!InstantiatedComponents.contains(CompName)) {
 				InstantiatedComponents.add(CompName);
+				SubcircuitFactory sub = (SubcircuitFactory) Gate.GetComponent().getFactory();
 				HDLGeneratorFactory Worker = Gate
 						.GetComponent()
 						.getFactory()
-						.getHDLGenerator(Settings.VHDL, null /* reporter */,
+						.getHDLGenerator(Settings.VHDL, _err,
+                sub.getSubcircuit().getNetList(), /* stateful hdl gen */
 								Gate.GetComponent().getAttributeSet(),
-								FPGAClass.VendorUnknown);
-				SubcircuitFactory sub = (SubcircuitFactory) Gate.GetComponent()
-						.getFactory();
+								_vendor);
 				if (Worker != null) {
-          if (!(Worker instanceof AbstractHDLGeneratorFactory))
-            throw new IllegalStateException();
-          ((AbstractHDLGeneratorFactory)Worker).initHDLGen(sub.getSubcircuit().getNetList()); /* stateful hdl gen */
 					Components.addAll(Worker.GetComponentInstantiation(/*sub
 							.getSubcircuit().getNetList(),*/
-                Gate.GetComponent().getAttributeSet(), CompName /*, Settings.VHDL*/ /*,  false */));
+                /*Gate.GetComponent().getAttributeSet(),*/ CompName /*, Settings.VHDL*/ /*,  false */));
 				}
 			}
 		}
@@ -582,11 +575,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					.GetComponent()
 					.getFactory()
 					.getHDLGenerator(HDLType, Reporter,
+              TheNetlist, /* stateful hdl gen */
 							comp.GetComponent().getAttributeSet(),
-							FPGAClass.VendorUnknown);
-      if (!(Worker instanceof AbstractHDLGeneratorFactory))
-        throw new IllegalStateException();
-      ((AbstractHDLGeneratorFactory)Worker).initHDLGen(TheNetlist); /* stateful hdl gen */
+							_vendor);
 			if (Worker != null) {
 				if (Worker.IsOnlyInlined(/*HDLType*/)) {
 					String InlinedName = comp.GetComponent().getFactory()
@@ -605,7 +596,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
             Contents.addAll(out);
 						FirstLine = false;
 					}
-					Contents.addAll(Worker.GetInlinedCode(/*TheNetlist,*/ id++,
+					Contents.addAll(Worker.GetInlinedCode3(/*TheNetlist,*/ id++,
 							comp/*, Reporter*/, InlinedName/*, HDLType*/));
 					if (CompIds.containsKey(InlinedId)) {
 						CompIds.remove(InlinedId);
@@ -621,12 +612,10 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					.GetComponent()
 					.getFactory()
 					.getHDLGenerator(HDLType, Reporter,
+              TheNetlist, /* stateful hdl gen */
 							comp.GetComponent().getAttributeSet(),
-							FPGAClass.VendorUnknown);
+							_vendor);
 			if (Worker != null) {
-        if (!(Worker instanceof AbstractHDLGeneratorFactory))
-          throw new IllegalStateException();
-        ((AbstractHDLGeneratorFactory)Worker).initHDLGen(TheNetlist); /* stateful hdl gen */
 				if (!Worker.IsOnlyInlined(/*HDLType*/)) {
 					String CompName = comp.GetComponent().getFactory()
 							.getHDLName(comp.GetComponent().getAttributeSet());
@@ -660,12 +649,10 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					.GetComponent()
 					.getFactory()
 					.getHDLGenerator(HDLType, Reporter,
+              TheNetlist, /* stateful hdl gen */
 							comp.GetComponent().getAttributeSet(),
-							FPGAClass.VendorUnknown);
+							_vendor);
 			if (Worker != null) {
-        if (!(Worker instanceof AbstractHDLGeneratorFactory))
-          throw new IllegalStateException();
-        ((AbstractHDLGeneratorFactory)Worker).initHDLGen(TheNetlist); /* stateful hdl gen */
 				String CompName = comp.GetComponent().getFactory()
 						.getHDLName(comp.GetComponent().getAttributeSet());
 				String CompId = Worker.getComponentStringIdentifier();

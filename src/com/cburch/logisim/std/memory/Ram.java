@@ -35,7 +35,7 @@ import java.awt.Graphics;
 import java.util.WeakHashMap;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.Attribute;
@@ -619,9 +619,9 @@ public class Ram extends Mem {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    if (RamHDLGeneratorFactory.supports(lang, attrs, vendor))
-      return new RamHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    if (RamHDLGeneratorFactory.supports(ctx.lang, ctx.attrs, ctx.vendor)) // fixme
+      return new RamHDLGeneratorFactory(ctx);
     else
       return null;
   }

@@ -32,7 +32,7 @@ package com.cburch.logisim.std.gates;
 import static com.cburch.logisim.std.Strings.S;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.data.AttributeSet;
@@ -71,11 +71,11 @@ class EvenParityGate extends AbstractGate {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    if (lang.equals("VHDL"))
-      return GateVhdlGenerator.forXnor(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    if (ctx.lang.equals("VHDL"))
+      return GateVhdlGenerator.forXnor(ctx);
     else
-      return GateVerilogGenerator.forXnor(lang, err);
+      return GateVerilogGenerator.forXnor(ctx);
   }
 
   @Override

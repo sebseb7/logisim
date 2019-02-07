@@ -40,15 +40,13 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class BitExtenderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public BitExtenderHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public BitExtenderHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   @Override
   public boolean IsOnlyInlined(/*String lang*/) { return true; }
 
   @Override
-  public ArrayList<String> GetInlinedCode(/*Netlist nets,*/ Long id,
+  public ArrayList<String> GetInlinedCode3(/*Netlist nets,*/ Long id,
       NetlistComponent info, /*FPGAReport err,*/ String circName /*, String lang*/) {
     if (_nets == null) throw new IllegalStateException();
 

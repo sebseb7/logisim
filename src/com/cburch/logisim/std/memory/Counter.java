@@ -37,7 +37,7 @@ import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.data.Attribute;
@@ -365,8 +365,8 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    return new CounterHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    return new CounterHDLGeneratorFactory(ctx);
   }
 
   @Override

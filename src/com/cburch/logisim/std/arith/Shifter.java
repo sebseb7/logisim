@@ -36,7 +36,7 @@ import java.awt.Graphics;
 import java.util.Arrays;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -121,8 +121,8 @@ public class Shifter extends InstanceFactory {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    return new ShifterHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    return new ShifterHDLGeneratorFactory(ctx);
   }
 
   @Override

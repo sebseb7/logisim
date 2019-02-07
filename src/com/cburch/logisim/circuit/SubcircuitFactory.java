@@ -49,7 +49,7 @@ import javax.swing.JPopupMenu;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.CircuitHDLGeneratorFactory;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -333,8 +333,9 @@ public class SubcircuitFactory extends InstanceFactory {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    return new CircuitHDLGeneratorFactory(lang, err, this.source, null /* fixme: nets */);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    return new CircuitHDLGeneratorFactory(ctx.lang, ctx.err, this.source, ctx.nets, ctx.vendor);
+    // don't send attrs -- circuit doesn't use them anyway
   }
 
   @Override

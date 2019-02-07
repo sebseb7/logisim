@@ -45,6 +45,7 @@ import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.io.Keyboard;
@@ -66,8 +67,8 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       String lang, FPGAReport err,
       long FPGAClock, int ClockTickPeriod,
 			Circuit TopLevel, MappableResourcesContainer IOComponents,
-			boolean useFPGAClock, Netlist nets) {
-    super(lang, err, nets);
+			boolean useFPGAClock, Netlist nets, char vendor) {
+    super(lang, err, nets, AttributeSets.EMPTY, vendor); // this file doesn't use attrs
 		FpgaClockFrequency = FPGAClock;
 		TickPeriod = ClockTickPeriod;
 		MyCircuit = TopLevel;
@@ -83,9 +84,8 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		if (NrOfClockTrees > 0) {
 			TickComponentHDLGeneratorFactory Ticker = new TickComponentHDLGeneratorFactory(
           "VHDL", null /* reporter */,
-					FpgaClockFrequency, TickPeriod/* , useFPGAClock */, TheNetlist); /* stateful hdl gen */
-			Components
-					.addAll(Ticker.GetComponentInstantiation(/*TheNetlist,*/ null,
+					FpgaClockFrequency, TickPeriod/* , useFPGAClock */, TheNetlist, _vendor); /* stateful hdl gen */
+			Components.addAll(Ticker.GetComponentInstantiation(/*TheNetlist,*/ /*null,*/
 							Ticker.getComponentStringIdentifier() /*,
 							Settings.VHDL*/ /* , false */));
                         if (TickPeriod == 0) {
@@ -98,24 +98,21 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					.get(0)
 					.getFactory()
 					.getHDLGenerator(
-							Settings.VHDL, null /* reporter */,
-							TheNetlist.GetAllClockSources().get(0)
-									.getAttributeSet(), FPGAClass.VendorUnknown);
-      if (!(ClockWorker instanceof AbstractHDLGeneratorFactory))
-        throw new IllegalStateException();
-      ((AbstractHDLGeneratorFactory)ClockWorker).initHDLGen(TheNetlist); /* stateful hdl gen */
+							Settings.VHDL, _err,
+              TheNetlist, /* stateful hdl gen */
+							TheNetlist.GetAllClockSources().get(0).getAttributeSet(), _vendor);
 			Components.addAll(ClockWorker
 					.GetComponentInstantiation(
 							/*TheNetlist,*/
-							TheNetlist.GetAllClockSources().get(0).getAttributeSet(),
+							/*TheNetlist.GetAllClockSources().get(0).getAttributeSet(),*/
 							TheNetlist.GetAllClockSources().get(0).getFactory().getHDLName(
 											TheNetlist.GetAllClockSources().get(0).getAttributeSet())/*,
 							Settings.VHDL*/ /* , false */));
 		}
 		CircuitHDLGeneratorFactory Worker = new CircuitHDLGeneratorFactory(
-        "VHDL", null /* reporter */,
-				MyCircuit, TheNetlist);
-		Components.addAll(Worker.GetComponentInstantiation(/*TheNetlist,*/ null,
+        "VHDL", _err,
+				MyCircuit, TheNetlist, _vendor);
+		Components.addAll(Worker.GetComponentInstantiation(/*TheNetlist,*/ /*null,*/
 				CorrectLabel.getCorrectLabel(MyCircuit.getName())/*,
 				Settings.VHDL*/));
 		return Components;
@@ -130,11 +127,8 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	public SortedMap<String, Integer> GetInOutList(Netlist TheNetlist,
 			AttributeSet attrs) {
 		SortedMap<String, Integer> InOut = new TreeMap<String, Integer>();
-		for (int NrOfInOut = 0; NrOfInOut < MyIOComponents
-				.GetNrOfToplevelInOutPins(); NrOfInOut++) {
-			InOut.put(
-					HDLGeneratorFactory.FPGAInOutPinName + "_"
-							+ Integer.toString(NrOfInOut), 1);
+		for (int NrOfInOut = 0; NrOfInOut < MyIOComponents.GetNrOfToplevelInOutPins(); NrOfInOut++) {
+			InOut.put(HDLGeneratorFactory.FPGAInOutPinName + "_" + Integer.toString(NrOfInOut), 1);
 		}
 		return InOut;
 	}
@@ -148,11 +142,8 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		if (NrOfClockTrees > 0 || TheNetlist.RequiresGlobalClockConnection()) {
 			Inputs.put(TickComponentHDLGeneratorFactory.FPGAClock, 1);
 		}
-		for (int NrOfInputs = 0; NrOfInputs < MyIOComponents
-				.GetNrOfToplevelInputPins(); NrOfInputs++) {
-			Inputs.put(
-					HDLGeneratorFactory.FPGAInputPinName + "_"
-							+ Integer.toString(NrOfInputs), 1);
+		for (int NrOfInputs = 0; NrOfInputs < MyIOComponents.GetNrOfToplevelInputPins(); NrOfInputs++) {
+			Inputs.put(HDLGeneratorFactory.FPGAInputPinName + "_" + Integer.toString(NrOfInputs), 1);
 		}
 		return Inputs;
 	}
@@ -177,13 +168,10 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     }
 		for (ArrayList<String> CompId : MyIOComponents.GetComponents()) {
 			if (MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof Pin) {
-				Component ThisPin = MyIOComponents.GetComponent(CompId)
-						.GetComponent();
-				ArrayList<String> MyMaps = MyIOComponents
-						.GetMapNamesList(CompId);
+				Component ThisPin = MyIOComponents.GetComponent(CompId).GetComponent();
+				ArrayList<String> MyMaps = MyIOComponents.GetMapNamesList(CompId);
 				if (MyMaps == null) {
-					Reporter.AddFatalError("Component has no map information, bizar! "
-							+ CompId.toString());
+					Reporter.AddFatalError("Component has no map information, bizar! " + CompId.toString());
 					return Contents;
 				}
 				int PinPinId = 0;
@@ -272,42 +260,26 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     Contents.addAll(out);
     }
 		for (ArrayList<String> CompId : MyIOComponents.GetComponents()) {
-			if (!(MyIOComponents.GetComponent(CompId).GetComponent()
-					.getFactory() instanceof Pin)
-					&& !(MyIOComponents.GetComponent(CompId).GetComponent()
-							.getFactory() instanceof PortIO)
-					&& !(MyIOComponents.GetComponent(CompId).GetComponent()
-							.getFactory() instanceof Tty)
-					&& !(MyIOComponents.GetComponent(CompId).GetComponent()
-							.getFactory() instanceof Keyboard)) {
-				HDLGeneratorFactory Generator = MyIOComponents
-						.GetComponent(CompId)
-						.GetComponent()
-						.getFactory()
-						.getHDLGenerator(
+			if (!(MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof Pin)
+					&& !(MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof PortIO)
+					&& !(MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof Tty)
+					&& !(MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof Keyboard)) {
+				HDLGeneratorFactory Generator = MyIOComponents.GetComponent(CompId).GetComponent()
+						.getFactory().getHDLGenerator(
 								HDLType, Reporter,
-								MyIOComponents.GetComponent(CompId)
-										.GetComponent().getAttributeSet(),
-								FPGAClass.VendorUnknown);
+                _nets, /* fixme - we use the top-level nets here, though the GetInlinedCode2() below probably doesn't use it */
+								MyIOComponents.GetComponent(CompId).GetComponent().getAttributeSet(), _vendor);
 				if (Generator == null) {
-					Reporter.AddError("No generator for component "
-							+ CompId.toString());
+					Reporter.AddError("No generator for component " + CompId.toString());
 				} else {
-					Contents.addAll(Generator.GetInlinedCode(/*HDLType,*/ CompId,
-							/*Reporter,*/ MyIOComponents));
+					Contents.addAll(Generator.GetInlinedCode2(/*HDLType,*/ CompId, /*Reporter,*/ MyIOComponents));
 				}
-			} else if (MyIOComponents.GetComponent(CompId).GetComponent()
-					.getFactory() instanceof PortIO) {
-				((PortIO) MyIOComponents.GetComponent(CompId).GetComponent()
-						.getFactory()).setMapInfo(MyIOComponents);
-			} else if (MyIOComponents.GetComponent(CompId).GetComponent()
-					.getFactory() instanceof Tty) {
-				((Tty) MyIOComponents.GetComponent(CompId).GetComponent()
-						.getFactory()).setMapInfo(MyIOComponents);
-			} else if (MyIOComponents.GetComponent(CompId).GetComponent()
-					.getFactory() instanceof Keyboard) {
-				((Keyboard) MyIOComponents.GetComponent(CompId).GetComponent()
-						.getFactory()).setMapInfo(MyIOComponents);
+			} else if (MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof PortIO) {
+				((PortIO) MyIOComponents.GetComponent(CompId).GetComponent().getFactory()).setMapInfo(MyIOComponents);
+			} else if (MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof Tty) {
+				((Tty) MyIOComponents.GetComponent(CompId).GetComponent().getFactory()).setMapInfo(MyIOComponents);
+			} else if (MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof Keyboard) {
+				((Keyboard) MyIOComponents.GetComponent(CompId).GetComponent().getFactory()).setMapInfo(MyIOComponents);
 			}
 		}
 		if (NrOfClockTrees > 0) {
@@ -316,7 +288,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       Contents.addAll(out);
 			TickComponentHDLGeneratorFactory Ticker = new TickComponentHDLGeneratorFactory(
           HDLType, Reporter,
-					FpgaClockFrequency, TickPeriod/* , useFPGAClock */, TheNetlist); /* stateful hdl gen */
+					FpgaClockFrequency, TickPeriod/* , useFPGAClock */, TheNetlist, _vendor); /* stateful hdl gen */
 			Contents.addAll(Ticker.GetComponentMap(/*TheNetlist,*/ (long) 0, null,
 					/*Reporter,*/ "" /*, HDLType*/));
 			long index = 0;
@@ -324,11 +296,9 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				NetlistComponent ThisClock = new NetlistComponent(Clockgen);
         HDLGeneratorFactory _h = Clockgen.getFactory()
 						.getHDLGenerator(HDLType, Reporter,
+                TheNetlist, /* stateful hdl gen */
 								ThisClock.GetComponent().getAttributeSet(),
-								FPGAClass.VendorUnknown);
-        if (!(_h instanceof AbstractHDLGeneratorFactory))
-          throw new IllegalStateException();
-        ((AbstractHDLGeneratorFactory)_h).initHDLGen(TheNetlist); /* stateful hdl gen */
+								_vendor);
 				Contents.addAll(_h.GetComponentMap(/*TheNetlist,*/ index++, ThisClock,
 								/*Reporter,*/ "Bla" /*, HDLType*/));
 			}
@@ -341,7 +311,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     Contents.addAll(out);
     }
 		CircuitHDLGeneratorFactory DUT = new CircuitHDLGeneratorFactory(
-        HDLType, Reporter, MyCircuit, TheNetlist);
+        HDLType, Reporter, MyCircuit, TheNetlist, _vendor);
 		Contents.addAll(DUT.GetComponentMap(/*TheNetlist,*/ (long) 0, null,
 				/*Reporter,*/ CorrectLabel.getCorrectLabel(MyCircuit.getName())/*,
 				HDLType*/));
@@ -352,8 +322,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
 			AttributeSet attrs) {
 		SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
-		for (int NrOfOutputs = 0; NrOfOutputs < MyIOComponents
-				.GetNrOfToplevelOutputPins(); NrOfOutputs++) {
+		for (int NrOfOutputs = 0; NrOfOutputs < MyIOComponents.GetNrOfToplevelOutputPins(); NrOfOutputs++) {
 				Outputs.put(HDLGeneratorFactory.FPGAOutputPinName + "_"
 						+ Integer.toString(NrOfOutputs), 1);
 		}

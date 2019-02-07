@@ -47,9 +47,7 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class KeyboardHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public KeyboardHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public KeyboardHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   @Override
   public String getComponentStringIdentifier() {
@@ -163,11 +161,10 @@ public class KeyboardHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     return Wires;
   }
 
-  // #2
   @Override
-  public ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ AttributeSet attrs,
+  public ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ /*AttributeSet attrs,*/
       String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
-    int asciiWidth = Keyboard.getWidth(attrs.getValue(Keyboard.ATTR_WIDTH));
+    int asciiWidth = Keyboard.getWidth(_attrs.getValue(Keyboard.ATTR_WIDTH));
     ArrayList<String> Contents = new ArrayList<String>();
     Contents.addAll(FileWriter.getGenerateRemark(ComponentName,
           Settings.VHDL, _nets.projName()));
@@ -189,9 +186,10 @@ public class KeyboardHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   @Override
   public ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/
-      AttributeSet attrs, Map<String, File> MemInitFiles, String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
+      /*AttributeSet attrs,*/ Map<String, File> MemInitFiles, String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
     // if (_nets == null) throw new IllegalStateException();
 
+    System.out.println("BUG: depends on attr?");
     ArrayList<String> Contents = new ArrayList<String>();
     if (_lang.equals(Settings.VHDL)) {
       Contents.addAll(FileWriter.getGenerateRemark(ComponentName, _lang, _nets.projName()));
@@ -312,7 +310,7 @@ public class KeyboardHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       Contents.add("  -----------------------------------------------------------------------------");
       Contents.add("");
       Contents.add("  constant DATA_WIDTH : positive := 8;");
-      int fifoDepth = Keyboard.getBufferLength(attrs.getValue(Keyboard.ATTR_BUFFER));
+      int fifoDepth = Keyboard.getBufferLength(_attrs.getValue(Keyboard.ATTR_BUFFER));
       Contents.add("  constant FIFO_DEPTH  : positive := " + fifoDepth + ";");
       Contents.add("  signal fifo_pop : std_logic;");
       Contents.add("");
@@ -323,7 +321,7 @@ public class KeyboardHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       Contents.add("begin");
       Contents.add("");
       Contents.add("  clk50 <= GlobalClock;");
-      int asciiWidth = Keyboard.getWidth(attrs.getValue(Keyboard.ATTR_WIDTH));
+      int asciiWidth = Keyboard.getWidth(_attrs.getValue(Keyboard.ATTR_WIDTH));
       Contents.add("  Data <= ascii("+(asciiWidth-1)+" downto 0);");
       Contents.add("  Available <= ready;");
       Contents.add("");

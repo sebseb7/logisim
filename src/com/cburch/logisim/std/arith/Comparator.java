@@ -33,7 +33,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -107,8 +107,8 @@ public class Comparator extends InstanceFactory {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    return new ComparatorHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    return new ComparatorHDLGeneratorFactory(ctx);
   }
 
   @Override

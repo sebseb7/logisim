@@ -35,7 +35,7 @@ import java.awt.Graphics;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -140,9 +140,9 @@ public class bin2bcd extends InstanceFactory {
 	}
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    if (lang.equals("VHDL"))
-      return new bin2bcdHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    if (ctx.lang.equals("VHDL"))
+      return new bin2bcdHDLGeneratorFactory(ctx);
     else
       return null;
   }

@@ -38,7 +38,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.circuit.ExpressionComputer;
 import com.cburch.logisim.data.AbstractAttributeSet;
@@ -181,12 +181,8 @@ public class Constant extends InstanceFactory {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    return new AbstractConstantHDLGeneratorFactory(lang, err) {
-      public int getConstant(AttributeSet attrs) {
-        return attrs.getValue(Constant.ATTR_VALUE);
-      }
-    };
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    return new ConstantHDLGenerator(ctx, ctx.attrs.getValue(Constant.ATTR_VALUE));
   }
 
   @Override

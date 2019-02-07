@@ -47,9 +47,7 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class TtyHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public TtyHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public TtyHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   @Override
   public String getComponentStringIdentifier() {
@@ -160,11 +158,10 @@ public class TtyHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     return Wires;
   }
 
-  // #2
   @Override
-  public ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ AttributeSet attrs,
+  public ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ /* AttributeSet attrs,*/
       String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
-    int asciiWidth = Tty.getWidth(attrs.getValue(Tty.ATTR_WIDTH));
+    int asciiWidth = Tty.getWidth(_attrs.getValue(Tty.ATTR_WIDTH));
     ArrayList<String> Contents = new ArrayList<String>();
     Contents.addAll(FileWriter.getGenerateRemark(ComponentName, _lang, _nets.projName()));
     Contents.addAll(FileWriter.getExtendedLibrary());
@@ -184,8 +181,9 @@ public class TtyHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   @Override
   public ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/
-      AttributeSet attrs, Map<String, File> MemInitFiles, String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
+      /*AttributeSet attrs,*/ Map<String, File> MemInitFiles, String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
     if (_nets == null) throw new IllegalStateException();
+    System.out.println("BUG? depends on attrs");
 
     ArrayList<String> Contents = new ArrayList<String>();
     if (_lang.equals(Settings.VHDL)) {
@@ -306,7 +304,7 @@ public class TtyHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       Contents.add("  lcd_bl <= '1';");
       Contents.add("  lcd_rs_rw_en_db_bl <= lcd_rs & lcd_rw & lcd_en & lcd_db & lcd_bl;");
       Contents.add("  push <= ClockEnable and Enable;");
-      int asciiWidth = Tty.getWidth(attrs.getValue(Tty.ATTR_WIDTH));
+      int asciiWidth = Tty.getWidth(_attrs.getValue(Tty.ATTR_WIDTH));
       if (asciiWidth == 7)
         Contents.add("  ascii <= '0' & Data;"); // 7-bit ascii
       else

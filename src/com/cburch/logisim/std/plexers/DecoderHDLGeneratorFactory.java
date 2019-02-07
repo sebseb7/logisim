@@ -40,9 +40,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class DecoderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public DecoderHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public DecoderHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_EXTENDEDBITS = -2;

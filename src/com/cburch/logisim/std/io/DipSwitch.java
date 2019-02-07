@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 import com.cburch.logisim.data.Attribute;
@@ -201,8 +201,8 @@ public class DipSwitch extends InstanceFactory {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    return new ButtonHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    return new ButtonHDLGeneratorFactory(ctx);
   }
 
   @Override

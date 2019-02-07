@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 import com.cburch.logisim.circuit.appear.DynamicElement;
@@ -184,8 +184,8 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    return new AbstractLedHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    return new AbstractLedHDLGeneratorFactory(ctx);
   }
 
   @Override

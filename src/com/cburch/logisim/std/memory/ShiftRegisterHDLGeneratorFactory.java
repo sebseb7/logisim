@@ -46,12 +46,10 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public ShiftRegisterHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public ShiftRegisterHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   @Override
-  public ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/ AttributeSet attrs,
+  public ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/ /*AttributeSet attrs,*/
       Map<String, File> MemInitFiles, String ComponentName /*, FPGAReport err, String lang*/) {
     if (_nets == null) throw new IllegalStateException();
     ArrayList<String> C = new ArrayList<String>();
@@ -121,7 +119,7 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
     C.add("");
     C.add("");
     C.add("");
-    C.addAll(super.GetArchitecture(/*TheNetlist,*/ attrs, null, ComponentName /*, err, lang */));
+    C.addAll(super.GetArchitecture(/*TheNetlist,*/ /*attrs,*/ null, ComponentName /*, err, lang */));
     return C;
   }
 
@@ -145,7 +143,7 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
   }
 
   @Override
-  public ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ AttributeSet attrs,
+  public ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ /*AttributeSet attrs,*/
       String ComponentName /*, FPGAReport err, String lang*/) {
     ArrayList<String> C = new ArrayList<String>();
     if (_lang.equals("VHDL")) {
@@ -168,7 +166,7 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
       C.add("");
       C.add("");
     }
-    C.addAll(super.GetEntity(/*TheNetlist,*/ attrs, ComponentName /*, err, lang*/));
+    C.addAll(super.GetEntity(/*TheNetlist,*/ /*attrs,*/ ComponentName /*, err, lang*/));
     return C;
   }
 

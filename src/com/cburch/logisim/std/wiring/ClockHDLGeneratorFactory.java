@@ -41,9 +41,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class ClockHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public ClockHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public ClockHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   private static final int GENERIC_PARAM_HIGHTICKS = -1;
   private static final int GENERIC_PARAM_LOWTICKS = -2;

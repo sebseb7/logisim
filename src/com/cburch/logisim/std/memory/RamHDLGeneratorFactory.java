@@ -48,9 +48,7 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class RamHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public RamHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public RamHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   private static final int TYPE_MEM_ARRAY = -1;
 
@@ -148,23 +146,23 @@ public class RamHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   }
 
   @Override
-  public Map<String, ArrayList<String>> GetMemInitData(AttributeSet attrs) {
-    if (!attrs.getValue(RamAttributes.ATTR_TYPE).equals(RamAttributes.NONVOLATILE)) {
+  public Map<String, ArrayList<String>> GetMemInitData(/*AttributeSet attrs*/) {
+    if (!_attrs.getValue(RamAttributes.ATTR_TYPE).equals(RamAttributes.NONVOLATILE)) {
       return null;
     }
     Map<String, ArrayList<String>> m = new HashMap<String, ArrayList<String>>();
-    int n = Mem.lineSize(attrs);
+    int n = Mem.lineSize(_attrs);
     for (int i = 0; i < n; i++) {
-      ArrayList<String> contents = MemInitData(attrs, i);
+      ArrayList<String> contents = MemInitData(i);
       m.put("s_mem"+i+"_contents", contents);
     }
     return m;
   }
 
-  private ArrayList<String> MemInitData(AttributeSet attrs, int offset) {
-    int skip = Mem.lineSize(attrs);
-    int width = dataWidth(attrs);
-    MemContents c = null; // attrs.getValue(Ram.CONTENTS_ATTR); FIXME, if possible ?!?!
+  private ArrayList<String> MemInitData(int offset) {
+    int skip = Mem.lineSize(_attrs);
+    int width = dataWidth(_attrs);
+    MemContents c = null; // _attrs.getValue(Ram.CONTENTS_ATTR); FIXME, if possible ?!?!
     ArrayList<String> out = new ArrayList<String>();
     out.add("-- Memory initialization data line " + offset);
     int depth = (int)((c.getLastOffset() - c.getFirstOffset() + 1) / skip);

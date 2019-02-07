@@ -40,6 +40,7 @@ import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.library.DynamicClock;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.hdl.Hdl;
 
 public class TickComponentHDLGeneratorFactory extends
@@ -58,8 +59,8 @@ public class TickComponentHDLGeneratorFactory extends
 
 	public TickComponentHDLGeneratorFactory(
       String lang, FPGAReport err,
-      long fpga_clock_frequency, int tick_period, Netlist nets) {
-    super(lang, err, nets);
+      long fpga_clock_frequency, int tick_period, Netlist nets, char vendor) {
+    super(lang, err, nets, AttributeSets.EMPTY, vendor); // fixme - no attrs used in this file?
 		FpgaClockFrequency = fpga_clock_frequency;
 		TickPeriod = tick_period;
 		// this.useFPGAClock = useFPGAClock;

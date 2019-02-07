@@ -41,9 +41,7 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class ShifterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public ShifterHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public ShifterHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   protected final static int GENERIC_PARAM_MODE = -1;
 

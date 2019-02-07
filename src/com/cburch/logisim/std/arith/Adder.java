@@ -36,7 +36,7 @@ import java.awt.Graphics;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
@@ -142,8 +142,8 @@ public class Adder extends InstanceFactory {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    return new AdderHDLGeneratorFactory(lang, err);
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    return new AdderHDLGeneratorFactory(ctx);
   }
 
   @Override

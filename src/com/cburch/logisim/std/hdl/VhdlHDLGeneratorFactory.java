@@ -46,9 +46,7 @@ import com.cburch.logisim.instance.Port;
 
 public class VhdlHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public VhdlHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
-  }
+  public VhdlHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
 
   @Override
   public String getComponentStringIdentifier() { return "VHDL"; }
@@ -99,12 +97,12 @@ public class VhdlHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   @Override
 	public ArrayList<String> GetArchitecture(/*Netlist nets,*/
-			AttributeSet attrs, Map<String, File> memInitFiles,
+			/*AttributeSet attrs,*/ Map<String, File> memInitFiles,
 			String name /*, FPGAReport err, String lang*/) {
     if (_nets == null) throw new IllegalStateException();
 		ArrayList<String> list = new ArrayList<>();
     list.addAll(FileWriter.getGenerateRemark(name, _lang, _nets.projName()));
-    VhdlContent content = content(attrs);
+    VhdlContent content = content(_attrs);
     list.add(content.getLibraries());
     list.add(content.getArchitecture());
     return list;

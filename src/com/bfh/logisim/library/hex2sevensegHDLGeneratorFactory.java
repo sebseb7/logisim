@@ -43,8 +43,8 @@ public class hex2sevensegHDLGeneratorFactory extends AbstractHDLGeneratorFactory
 
   // todo: verilog support
 
-  public hex2sevensegHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
+  public hex2sevensegHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx);
   }
 
 	@Override

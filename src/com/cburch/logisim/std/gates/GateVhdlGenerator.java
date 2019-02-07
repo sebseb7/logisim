@@ -48,28 +48,28 @@ public class GateVhdlGenerator extends AbstractHDLGeneratorFactory {
   protected final boolean identity;
   protected final boolean invertOutput;
 
-  protected GateVhdlGenerator(String lang, FPGAReport err, boolean invertOutput) { // unary ops
-    super(lang, err);
+  protected GateVhdlGenerator(HDLCTX ctx, boolean invertOutput) { // unary ops
+    super(ctx);
     this.op = null;
     this.identity = false;
     this.invertOutput = invertOutput;
   }
 
-  protected GateVhdlGenerator(String lang, FPGAReport err, boolean identity, String op, boolean invertOutput) {
-    super(lang, err);
+  protected GateVhdlGenerator(HDLCTX ctx, boolean identity, String op, boolean invertOutput) {
+    super(ctx);
     this.identity = identity;
     this.op = op;
     this.invertOutput = invertOutput;
   }
 
-  static GateVhdlGenerator forBuffer(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, false); }
-  static GateVhdlGenerator forNot(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, true); }
-  static GateVhdlGenerator forAnd(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, true, "AND", false); }
-  static GateVhdlGenerator forNand(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, true, "AND", true); }
-  static GateVhdlGenerator forOr(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, false, "OR", false); }
-  static GateVhdlGenerator forNor(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, false, "OR", true); }
-  static GateVhdlGenerator forXor(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, false, "XOR", false); }
-  static GateVhdlGenerator forXnor(String lang, FPGAReport err) { return new GateVhdlGenerator(lang, err, false, "XOR", true); }
+  static GateVhdlGenerator forBuffer(HDLCTX ctx) { return new GateVhdlGenerator(ctx, false); }
+  static GateVhdlGenerator forNot(HDLCTX ctx) { return new GateVhdlGenerator(ctx, true); }
+  static GateVhdlGenerator forAnd(HDLCTX ctx) { return new GateVhdlGenerator(ctx, true, "AND", false); }
+  static GateVhdlGenerator forNand(HDLCTX ctx) { return new GateVhdlGenerator(ctx, true, "AND", true); }
+  static GateVhdlGenerator forOr(HDLCTX ctx) { return new GateVhdlGenerator(ctx, false, "OR", false); }
+  static GateVhdlGenerator forNor(HDLCTX ctx) { return new GateVhdlGenerator(ctx, false, "OR", true); }
+  static GateVhdlGenerator forXor(HDLCTX ctx) { return new GateVhdlGenerator(ctx, false, "XOR", false); }
+  static GateVhdlGenerator forXnor(HDLCTX ctx) { return new GateVhdlGenerator(ctx, false, "XOR", true); }
 
   protected void unaryOp(Hdl out) {
     if (!invertOutput)

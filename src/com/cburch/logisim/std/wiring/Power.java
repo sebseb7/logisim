@@ -38,7 +38,7 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Graphics2D;
 
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -106,13 +106,8 @@ public class Power extends InstanceFactory {
   }
 
   @Override
-  public HDLGeneratorFactory getHDLGenerator(String lang, FPGAReport err, AttributeSet attrs, char vendor) {
-    return new AbstractConstantHDLGeneratorFactory(lang, err) {
-      public int getConstant(AttributeSet attrs) {
-        int w = attrs.getValue(StdAttr.WIDTH).getWidth();
-        return (1 << w) - 1; // vector of ones
-      }
-    };
+  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+    return new ConstantHDLGenerator(ctx, -1); // vector of ones
   }
 
   @Override

@@ -43,8 +43,8 @@ public class bcd2sevensegHDLGeneratorFactory extends AbstractHDLGeneratorFactory
 
   // todo: verilog support
 
-  public bcd2sevensegHDLGeneratorFactory(String lang, FPGAReport err) {
-    super(lang, err);
+  public bcd2sevensegHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx);
   }
 
 	@Override
