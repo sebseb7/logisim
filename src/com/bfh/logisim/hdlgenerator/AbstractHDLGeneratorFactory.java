@@ -69,12 +69,12 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
     }
   }
   
-  protected AbstractHDLGeneratorFactory(String lang, FPGAReport err, Netlist nets, AttributeSet attrs, char vendor) {
-    super(lang, err, nets, attrs, vendor);
+  protected AbstractHDLGeneratorFactory(String lang, FPGAReport err, Netlist nets, AttributeSet attrs, char vendor, String hdlComponentName, String hdlInstanceNamePrefix) {
+    super(lang, err, nets, attrs, vendor, hdlComponentName, hdlInstanceNamePrefix);
   }
 
-  protected AbstractHDLGeneratorFactory(HDLCTX ctx) {
-    super(ctx.lang, ctx.err, ctx.nets, ctx.attrs, ctx.vendor);
+  protected AbstractHDLGeneratorFactory(HDLCTX ctx, String hdlComponentName, String hdlInstanceNamePrefix) {
+    super(ctx.lang, ctx.err, ctx.nets, ctx.attrs, ctx.vendor, hdlComponentName, hdlInstanceNamePrefix);
   }
 
   // protected AbstractHDLGeneratorFactory(String lang, FPGAReport err, AttributeSet attrs) {
@@ -598,16 +598,13 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 
 	public ArrayList<String> GetComponentMap(/*Netlist Nets,*/ Long ComponentId,
 			NetlistComponent ComponentInfo/* , FPGAReport Reporter,*/
-			/* String CircuitName */ /*, String HDLType*/) {
+			/* String CircuitName */ /*, String HDLType*/, String ContainingCircuitName) {
     if (_nets == null) throw new IllegalStateException();
 		ArrayList<String> Contents = new ArrayList<String>();
 		Map<String, Integer> ParameterMap = GetParameterMap(_nets, ComponentInfo, _err);
 		Map<String, String> PortMap = GetPortMap(_nets, ComponentInfo, _err, _lang);
-		String CompName = (ComponentInfo == null)
-        ? this.getComponentStringIdentifier()
-        : ComponentInfo.GetComponent().getFactory().getHDLName(ComponentInfo.GetComponent().getAttributeSet());
-		String ThisInstanceIdentifier = GetInstanceIdentifier(ComponentInfo,
-				ComponentId);
+		String CompName = getHDLNameWithinCircuit(ContainingCircuitName);
+		String ThisInstanceIdentifier = GetInstanceIdentifier(ComponentInfo, ComponentId);
 		StringBuffer OneLine = new StringBuffer();
 		int TabLength;
 		boolean first;
@@ -741,10 +738,6 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 			Contents.add("");
 		}
 		return Contents;
-	}
-
-	public String getComponentStringIdentifier() {
-		return "AComponent";
 	}
 
 	@Override

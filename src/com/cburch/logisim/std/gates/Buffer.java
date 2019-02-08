@@ -124,18 +124,6 @@ class Buffer extends InstanceFactory {
   }
 
   @Override
-  public String getHDLName(AttributeSet attrs) {
-    StringBuffer CompleteName = new StringBuffer();
-    CompleteName.append(CorrectLabel.getCorrectLabel(this.getName())
-        .toUpperCase());
-    CompleteName.append("_COMPONENT");
-    BitWidth width = attrs.getValue(StdAttr.WIDTH);
-    if (width.getWidth() > 1)
-      CompleteName.append("_BUS");
-    return CompleteName.toString();
-  }
-
-  @Override
   public Object getInstanceFeature(final Instance instance, Object key) {
     if (key == ExpressionComputer.class) {
       return new ExpressionComputer() {

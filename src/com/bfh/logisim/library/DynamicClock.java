@@ -79,30 +79,27 @@ public class DynamicClock extends InstanceFactory {
 		painter.drawPort(SPEED);
 	}
 
-        private static void drawTicks(Graphics g, int x, int y, int label, int w, int h, int n) {
-            GraphicsUtil.switchToWidth(g, 2);
-            g.setColor(h > 0 ? Value.TRUE_COLOR : Value.FALSE_COLOR);
-            g.drawLine(x, y, x, y-h);
-            for (int i = 0; i < n; i++) {
-                g.setColor(h > 0 ? Value.TRUE_COLOR : Value.FALSE_COLOR);
-                g.drawLine(x, y-h, x-w, y-h);
-                if (i != n-1)
-                    g.drawLine(x-w, y-h, x-w, y+h);
-                else 
-                    g.drawLine(x-w, y-h, x-w, y);
-                h *= -1;
-                x -= w;
-            }
-            g.setColor(Color.BLACK);
-            g.setFont(g.getFont().deriveFont(9.0f));
-            GraphicsUtil.drawCenteredText(g, "" + label , x-6, y);
-        }
-	
+  private static void drawTicks(Graphics g, int x, int y, int label, int w, int h, int n) {
+    GraphicsUtil.switchToWidth(g, 2);
+    g.setColor(h > 0 ? Value.TRUE_COLOR : Value.FALSE_COLOR);
+    g.drawLine(x, y, x, y-h);
+    for (int i = 0; i < n; i++) {
+      g.setColor(h > 0 ? Value.TRUE_COLOR : Value.FALSE_COLOR);
+      g.drawLine(x, y-h, x-w, y-h);
+      if (i != n-1)
+        g.drawLine(x-w, y-h, x-w, y+h);
+      else 
+        g.drawLine(x-w, y-h, x-w, y);
+      h *= -1;
+      x -= w;
+    }
+    g.setColor(Color.BLACK);
+    g.setFont(g.getFont().deriveFont(9.0f));
+    GraphicsUtil.drawCenteredText(g, "" + label , x-6, y);
+  }
+
 	@Override
 	public void propagate(InstanceState state) { }
-	
-	@Override
-	public String getHDLName(AttributeSet attrs) { return null; }
 	
   @Override
   public boolean HDLSpecialHandling() { return true; }

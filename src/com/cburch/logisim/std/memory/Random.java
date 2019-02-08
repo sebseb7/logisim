@@ -282,11 +282,6 @@ public class Random extends InstanceFactory {
   }
 
   @Override
-  public String getHDLName(AttributeSet attrs) {
-    return "LogisimRNG";
-  }
-
-  @Override
   public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
     return new RandomHDLGeneratorFactory(ctx);
   }

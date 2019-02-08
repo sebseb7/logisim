@@ -43,7 +43,7 @@ public class ConstantHDLGenerator extends AbstractHDLGeneratorFactory {
   long val;
 
   public ConstantHDLGenerator(HDLCTX ctx, long val) {
-    super(ctx);
+    super(ctx, "Constant"+val, "Const"); // names irrelevant, b/c always inlined ?
     this.val = val;
   }
 

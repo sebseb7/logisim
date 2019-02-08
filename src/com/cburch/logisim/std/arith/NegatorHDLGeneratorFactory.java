@@ -41,12 +41,11 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class NegatorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public NegatorHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public NegatorHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "${BUS}Negator", "NEGATOR2C");
+  }
 
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
-
-  @Override
-  public String getComponentStringIdentifier() { return "NEGATOR2C"; }
 
   @Override
   public String GetSubDir() { return "arithmetic"; }

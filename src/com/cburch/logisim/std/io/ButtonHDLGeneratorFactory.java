@@ -39,7 +39,9 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class ButtonHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public ButtonHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public ButtonHDLGeneratorFactory(HDLCTX ctx, String name) { 
+    super(ctx, name + "_${LABEL}", "BUTTON"); // names irrelevant, b/c always inlined ?
+  }
 
   @Override
   public boolean IsOnlyInlined(/*String lang*/) { return true; }

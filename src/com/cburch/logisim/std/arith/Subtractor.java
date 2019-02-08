@@ -82,16 +82,6 @@ public class Subtractor extends InstanceFactory {
   }
 
   @Override
-  public String getHDLName(AttributeSet attrs) {
-    StringBuffer CompleteName = new StringBuffer();
-    if (attrs.getValue(StdAttr.WIDTH).getWidth() == 1)
-      CompleteName.append("FullSubtractor");
-    else
-      CompleteName.append(CorrectLabel.getCorrectLabel(this.getName()));
-    return CompleteName.toString();
-  }
-
-  @Override
   public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
     return new SubtractorHDLGeneratorFactory(ctx);
   }

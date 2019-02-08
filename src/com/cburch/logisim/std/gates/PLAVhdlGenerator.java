@@ -40,8 +40,11 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class PLAVhdlGenerator extends AbstractHDLGeneratorFactory {
 
-  public PLAVhdlGenerator(HDLCTX ctx) { super(ctx); }
+  public PLAVhdlGenerator(HDLCTX ctx) {
+    super(ctx, "PLA_${CIRCUIT}_${LABEL}", "PLA");
+  }
 
+  // fixme: see hdl/Hdl.java helpers
   private static String bits(char b[]) {
     String s = "";
     for (char c : b)
@@ -73,9 +76,6 @@ public class PLAVhdlGenerator extends AbstractHDLGeneratorFactory {
       out.cont("\t%s;", zeros(w));
     }
   }
-
-  @Override
-  public String getComponentStringIdentifier() { return "PLA"; }
 
   @Override
   public String GetSubDir() { return "gates"; }

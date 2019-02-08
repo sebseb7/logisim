@@ -103,14 +103,6 @@ public abstract class AbstractComponentFactory implements ComponentFactory {
     return null;
   }
 
-  public String getHDLName(AttributeSet attrs) {
-    return CorrectLabel.getCorrectLabel(this.getName());
-  }
-
-  public String getHDLTopName(AttributeSet attrs) {
-    return getHDLName(attrs);
-  }
-
   public IOComponentInformationContainer getIOInformation() {
     return MyIOInformation;
   }
@@ -145,14 +137,8 @@ public abstract class AbstractComponentFactory implements ComponentFactory {
     }
   }
 
-  public boolean RequiresGlobalClock() {
-    return false;
-  }
-
-  /* HDL Methods */
-  public boolean RequiresNonZeroLabel() {
-    return false;
-  }
+  public boolean RequiresGlobalClock() { return false; }
+  public boolean RequiresNonZeroLabel() { return false; }
 
   @Override
   public String toString() {

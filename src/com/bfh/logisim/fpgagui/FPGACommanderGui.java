@@ -783,7 +783,8 @@ public class FPGACommanderGui implements ActionListener {
 			if (ClearExistingLabels) {
 				root.ClearAnnotationLevel();
 			}
-			root.Annotate(ClearExistingLabels, MyReporter);
+			root.Annotate(ClearExistingLabels, MyReporter,
+          MySettings.GetHDLType(), MyBoardInformation.fpga.getVendor());
 			MyReporter.AddInfo("Annotation done");
 			/* TODO: Dirty hack, see Circuit.java function Annotate for details */
 			MyProject.repaintCanvas();
@@ -1345,15 +1346,14 @@ public class FPGACommanderGui implements ActionListener {
 			}
 			HDLGeneratorFactory ClockGen = RootSheet
 					.getNetList()
-					.GetAllClockSources()
-					.get(0)
+					.GetAllClockSources().get(0)
 					.getFactory()
 					.getHDLGenerator( /* stateful hdl gen */
 							MySettings.GetHDLType(), MyReporter,
               RootSheet.getNetList(),
 							RootSheet.getNetList().GetAllClockSources().get(0).getAttributeSet(),
 							MyBoardInformation.fpga.getVendor());
-			String CompName = RootSheet.getNetList().GetAllClockSources().get(0).getFactory().getHDLName(null);
+			String CompName = ClockGen.getHDLNameWithinCircuit(""); // toplevel
 			if (!AbstractHDLGeneratorFactory.WriteEntity(
 					ProjectDir + ClockGen.GetRelativeDirectory(/*MySettings.GetHDLType()*/),
           ClockGen.GetEntity(

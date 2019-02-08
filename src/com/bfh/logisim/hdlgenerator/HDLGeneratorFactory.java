@@ -31,15 +31,17 @@
 package com.bfh.logisim.hdlgenerator;
 
 import java.util.ArrayList;
-import java.util.Set;
 import java.util.Map;
 import java.io.File;
 
+import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.BitWidth;
+import com.cburch.logisim.instance.StdAttr;
 
 public abstract class HDLGeneratorFactory {
 
@@ -49,12 +51,19 @@ public abstract class HDLGeneratorFactory {
   protected final AttributeSet _attrs; // context - fixme
   protected final char _vendor; // context - fixme
 
-  protected HDLGeneratorFactory(String lang, FPGAReport err, Netlist nets, AttributeSet attrs, char vendor) {
+  // these next two are not used for inline components
+  protected final String _hdlComponentName; // Must be unique, e.g. "ADDER2C", or "ONE_BIT_FULL_ADDER"
+  protected final String _hdlInstanceNamePrefix; // e.g. "Adder", which becomes "Adder_1", "Adder_2", etc.
+
+  protected HDLGeneratorFactory(String lang, FPGAReport err, Netlist nets, AttributeSet attrs, char vendor,
+      String hdlComponentName, String hdlInstanceNamePrefix) {
     this._lang = lang;
     this._err = err;
     this._nets = nets; // fixme - sometimes null -- maybe null for top level? also for quick checks.
     this._attrs = attrs; // empty for Circuit, Ticker, maybe others?
     this._vendor = vendor;
+    this._hdlComponentName = CorrectLabel.getCorrectLabel(hdlComponentName);
+    this._hdlInstanceNamePrefix = CorrectLabel.getCorrectLabel(hdlInstanceNamePrefix);
   }
 
 	public static final int PallignmentSize = 26;
@@ -83,9 +92,78 @@ public abstract class HDLGeneratorFactory {
 
 	public abstract ArrayList<String> GetComponentMap(/*Netlist Nets,*/ Long ComponentId,
 			NetlistComponent ComponentInfo/* , FPGAReport Reporter,*/
-			/* String CircuitName , String HDLType*/);
+			/* String CircuitName , String HDLType*/, String ContainingCircuitName);
 
-	public abstract String getComponentStringIdentifier();
+  // For some components, getHDLName() only works reliably if the component has
+  // a (preferable friendly) name that is unique within the circuit, because it
+  // shows up in the component-mapping GUI dialog where the user assigns FPGA
+  // resources. This is the case for Pin, PortIO, LED, BUtton, and similar
+  // components. These components should include "${LABEL}" in their name. ROM
+  // and volatile RAM components also do the same (see note below).
+  public final boolean RequiresNonZeroLabel() {
+    return _hdlComponentName.contains("${LABEL}");
+  }
+
+  // Return a suitable HDL name for this component, e.g. "ADDER2C" or
+  // "ADDER2C_BUS". This becomes the name of the vhdl/verilog file, and becomes
+  // the name of the vhdl/verilog entity for this component. The name must be
+  // unique for each different generated vhdl/verilog code. If any attributes
+  // are used to customize the generated vhdl/verilog code, that attribute must
+  // also be used as part of the HDL name. 
+  //
+  // As a convenience, some simple string replacements are made:
+  //   ${CIRCUIT} - replaced with name of circuit containing component
+  //   ${LABEL}   - replaced with StdAttr.LABEL
+  //   ${WIDTH}   - replaced with StdAttr.WIDTH
+  //   ${BUS}     - replaced with "Bit" (StdAttr.WIDTH == 1) or "Bus" (otherwise)
+  //   ${TRIGGER} - replaced with "LevelSensitive", "EdgeTriggered", or "Asynchronous"
+  //                depending on StdAttr.TRIGGER and/or StdAttr.EDGE_TRIGGER.
+  //
+  // Note: For ROM and non-volatile RAM components, the generated HDL code
+  // depends on the contents of the memory, which is too large of an attribute
+  // for getHDLName() to simply include in the name as is done for other
+  // attributes. Instead, we require each ROM and non-volatile RAM to have a
+  // non-zero label unique within the circuit, then we getHDLName() computes a
+  // name as a function of the circuit name (which is globally unique) and the
+  // label.
+  public final String getHDLNameWithinCircuit(String circuitName) { // was: getHDLName();
+    String s = _hdlComponentName;
+    int w = _attrs.getValueOrElse(StdAttr.WIDTH, BitWidth.ONE).getWidth();
+    if (s.contains("${CIRCUIT}"))
+        s = s.replace("${CIRCUIT}", circuitName);
+    if (s.contains("${WIDTH}"))
+        s = s.replace("${WIDTH}", ""+w);
+    if (s.contains("${BUS}"))
+        s = s.replace("${BUS}", w == 1 ? "Bit" : "Bus");
+    if (s.contains("${TRIGGER}")) {
+      if (_attrs.containsAttribute(StdAttr.EDGE_TRIGGER)
+          || _attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
+          || _attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_RISING)
+        s = s.replace("${TRIGGER}", "EdgeTriggered");
+      else if (_attrs.containsAttribute(StdAttr.TRIGGER))
+        s = s.replace("${TRIGGER}", "LevelSensitive");
+      else
+        s = s.replace("${TRIGGER}", "Asynchronous");
+    }
+    if (s.contains("${LABEL}")) {
+      String label = _attrs.getValueOrElse(StdAttr.LABEL, "");
+      if (label.isEmpty()) {
+        if (_err != null)
+          _err.AddSevereWarning("Missing label for %s within circuit \"%s\".",
+              _hdlComponentName, circuitName);
+        label = "ANONYMOUS";
+      }
+      s = s.replace("${LABEL}", label);
+    }
+    return CorrectLabel.getCorrectLabel(s);
+  }
+
+  // Return a suitable stem for naming instances of this component within a
+  // circuit, so we can form names like "ADDER_1", "ADDER_2", etc., for
+  // instances of ADDER2C. These need not be unique: the
+  // CircuitHDLGeneratorFactory will add suffixes to ensure all the instance
+  // names within a circuit are unique.
+	public final String getComponentStringIdentifier() { return _hdlInstanceNamePrefix; }
 	
 	public abstract Map<String, ArrayList<String>> GetMemInitData(/*AttributeSet attrs*/);
 

@@ -40,14 +40,13 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class RomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public RomHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
-
+  public RomHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "ROM_${CIRCUIT}_${LABEL}", "ROM");
+  }
+  
   static boolean supports(String lang, AttributeSet attrs, char vendor) {
     return lang.equals("VHDL") || Mem.lineSize(attrs) == 1; // TODO: Verilog support
   }
-
-  @Override
-  public String getComponentStringIdentifier() { return "ROM"; }
 
   @Override
   public String GetSubDir() { return "memory"; }

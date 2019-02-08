@@ -252,29 +252,6 @@ abstract class AbstractFlipFlop extends InstanceFactory {
         GraphicsUtil.V_BASELINE);
   }
 
-  @Override
-  public String getHDLName(AttributeSet attrs) {
-    StringBuffer CompleteName = new StringBuffer();
-    String[] Parts = this.getName().split(" ");
-    CompleteName.append(Parts[0].replace("-", "_").toUpperCase());
-    CompleteName.append("_");
-    if (attrs.containsAttribute(StdAttr.EDGE_TRIGGER)) {
-      CompleteName.append("FlipFlop".toUpperCase());
-    } else {
-      if (attrs.containsAttribute(StdAttr.TRIGGER)) {
-        if ((attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING)
-            || (attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_RISING)) {
-          CompleteName.append("FlipFlop".toUpperCase());
-        } else {
-          CompleteName.append("Latch".toUpperCase());
-        }
-      } else {
-        CompleteName.append("FlipFlop".toUpperCase());
-      }
-    }
-    return CompleteName.toString();
-  }
-
   protected abstract AbstractFlipFlopHDLGeneratorFactory getHdlGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx);
 
   @Override

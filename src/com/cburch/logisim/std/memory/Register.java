@@ -200,20 +200,6 @@ public class Register extends InstanceFactory implements DynamicElementProvider 
   }
 
   @Override
-  public String getHDLName(AttributeSet attrs) {
-    StringBuffer CompleteName = new StringBuffer();
-    CompleteName.append(CorrectLabel.getCorrectLabel(this.getName())
-        .toUpperCase());
-    if ((attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING)
-        || (attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_RISING)) {
-      CompleteName.append("_FLIP_FLOP");
-    } else {
-      CompleteName.append("_LATCH");
-    }
-    return CompleteName.toString();
-  }
-
-  @Override
   public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
     return new RegisterHDLGeneratorFactory(ctx);
   }

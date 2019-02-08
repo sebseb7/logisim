@@ -79,15 +79,6 @@ public class BitSelector extends InstanceFactory {
   }
 
   @Override
-  public String getHDLName(AttributeSet attrs) {
-    StringBuffer CompleteName = new StringBuffer();
-    CompleteName.append(CorrectLabel.getCorrectLabel(this.getName()));
-    if (attrs.getValue(GROUP_ATTR).getWidth() > 1)
-      CompleteName.append("_bus");
-    return CompleteName.toString();
-  }
-
-  @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {
     Direction facing = attrs.getValue(StdAttr.FACING);
     Bounds base = Bounds.create(-30, -15, 30, 30);

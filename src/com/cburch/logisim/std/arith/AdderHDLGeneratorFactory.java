@@ -41,13 +41,12 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class AdderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public AdderHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
-  
+  public AdderHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "${BUS}Adder", "ADDER2C");
+  }
+
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_EXTENDEDBITS = -2;
-
-  @Override
-  public String getComponentStringIdentifier() { return "ADDER2C"; }
 
   @Override
   public String GetSubDir() { return "arithmetic"; }

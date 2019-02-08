@@ -40,15 +40,22 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class BitSelectorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public BitSelectorHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public BitSelectorHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, deriveHDLName(ctx.attrs), "BITSELECTOR");
+  }
+
+  private static String deriveHDLName(AttributeSet attrs) {
+    int w = attrs.getValue(BitSelector.GROUP_ATTR).getWidth();
+    if (w == 1)
+      return "SingleBitSelector"; // 1-bit version
+    else
+      return "MultiBitSelector"; // generic n-bit version
+  }
 
   protected final static int GENERIC_PARAM_WIDTH_IN = -1;
   protected final static int GENERIC_PARAM_WIDTH_OUT = -2;
   protected final static int GENERIC_PARAM_WIDTH_SEL = -3;
   protected final static int GENERIC_PARAM_EXTENDEDBITS = -4;
-
-  @Override
-  public String getComponentStringIdentifier() { return "BITSELECTOR"; }
 
   @Override
   public String GetSubDir() { return "plexers"; }

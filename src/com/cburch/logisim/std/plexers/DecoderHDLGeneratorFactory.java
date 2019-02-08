@@ -40,13 +40,17 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class DecoderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public DecoderHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public DecoderHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, deriveHDLName(ctx.attrs), "BINDECODER");
+  }
+
+  private static String deriveHDLName(AttributeSet attrs) {
+    int w = 1 << attrs.getValue(Plexers.ATTR_SELECT).getWidth();
+    return "BinDecoder_" + w + "_Way";
+  }
 
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_EXTENDEDBITS = -2;
-
-  @Override
-  public String getComponentStringIdentifier() { return "BINDECODER"; }
 
   @Override
   public String GetSubDir() { return "plexers"; }

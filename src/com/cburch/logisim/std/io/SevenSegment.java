@@ -185,7 +185,7 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
 
   @Override
   public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    return new AbstractLedHDLGeneratorFactory(ctx);
+    return new AbstractLedHDLGeneratorFactory(ctx, "SEVENSEGMENT");
   }
 
   @Override

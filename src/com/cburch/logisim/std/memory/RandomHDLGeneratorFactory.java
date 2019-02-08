@@ -42,13 +42,12 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class RandomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public RandomHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public RandomHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "LogisimRNG", "RNG");
+  }
 
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_SEED = -2;
-
-  @Override
-  public String getComponentStringIdentifier() { return "RNG"; }
 
   @Override
   public String GetSubDir() { return "memory"; }

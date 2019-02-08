@@ -70,6 +70,7 @@ import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.StringUtil;
 
+import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.data.Location;
@@ -138,20 +139,11 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
     return new VhdlEntityAttributes(content);
   }
 
-  @Override
-  public String getHDLName(AttributeSet attrs) {
-    return content.getName().toLowerCase();
-  }
-
-  @Override
-  public String getHDLTopName(AttributeSet attrs) {
-
+  public String getHDLNameForInstanceSimulation(AttributeSet attrs) {
     String label = "";
-
     if (attrs.getValue(StdAttr.LABEL) != null && attrs.getValue(StdAttr.LABEL).length() != 0)
       label = "_" + attrs.getValue(StdAttr.LABEL).toLowerCase();
-
-    return getHDLName(attrs) + label;
+    return CorrectLabel.getCorrectLabel(VhdlHDLGeneratorFactory.deriveHDLName(attrs) + label);
   }
 
   @Override
@@ -268,7 +260,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
       for (int i = 0; i < n; i++) {
         Port p = ports.get(i);
         Value val = state.getPortValue(i);
-        String vhdlEntityName = getHDLTopName(state.getAttributeSet());
+        String vhdlEntityName = getHDLNameForInstanceSimulation(state.getAttributeSet());
         String message = p.getType() + ":" + vhdlEntityName + "_"
             + p.getToolTip() + ":" + val.toBinaryString() + ":" + i;
         vhdlSimulator.send(message);
@@ -338,13 +330,12 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
     PrintWriter writer;
     try {
-      writer = new PrintWriter(VhdlSimulator.SIM_SRC_PATH
-          + getHDLTopName(attrs) + ".vhdl", "UTF-8");
+      writer = new PrintWriter(VhdlSimulator.SIM_SRC_PATH + getHDLNameForInstanceSimulation(attrs) + ".vhdl", "UTF-8");
 
       String content = this.content.getContent();
 
-      content = content.replaceAll("(?i)" + getHDLName(attrs),
-          getHDLTopName(attrs));
+      content = content.replaceAll("(?i)" + VhdlHDLGeneratorFactory.deriveHDLName(attrs),
+          getHDLNameForInstanceSimulation(attrs));
 
       writer.print(content);
       writer.close();

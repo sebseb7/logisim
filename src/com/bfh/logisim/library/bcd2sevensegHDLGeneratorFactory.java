@@ -44,14 +44,9 @@ public class bcd2sevensegHDLGeneratorFactory extends AbstractHDLGeneratorFactory
   // todo: verilog support
 
   public bcd2sevensegHDLGeneratorFactory(HDLCTX ctx) {
-    super(ctx);
+    super(ctx, "BCD_to_7_Segment_decoder", "BCD2SEVENSEGMENT");
   }
 
-	@Override
-	public String getComponentStringIdentifier() {
-		return "BCD2SEVENSEGMENT";
-	}
-	
 	@Override
 	public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
 			                                       AttributeSet attrs) {

@@ -40,7 +40,9 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class BitExtenderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public BitExtenderHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public BitExtenderHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "Bit_Extender", "BITEXTEND"); // names irrelevant, b/c always inlined ?
+  }
 
   @Override
   public boolean IsOnlyInlined(/*String lang*/) { return true; }
@@ -61,7 +63,7 @@ public class BitExtenderHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
     // checks input and signinput too
     for (int i = 1; i < info.NrOfEnds(); i++) {
       if (!info.EndIsConnected(i)) {
-        String circName = info.GetComponent().getFactory().getHDLName(info.GetComponent().getAttributeSet());
+        String circName = info.GetComponent().getFactory().toString(); // ??
         _err.AddError("Bit Extender has floating input in circuit \"" + circName + "\"");
         return out;
       }

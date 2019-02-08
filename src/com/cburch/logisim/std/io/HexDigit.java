@@ -201,9 +201,7 @@ public class HexDigit extends InstanceFactory implements DynamicElementProvider 
   }
 
   @Override
-  public boolean RequiresNonZeroLabel() {
-    return true;
-  }
+  public boolean RequiresNonZeroLabel() { return true; }
 
   public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {
     return new HexDigitShape(x, y, path);

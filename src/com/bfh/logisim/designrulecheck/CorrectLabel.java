@@ -37,14 +37,24 @@ import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.settings.Settings;
 
 public class CorrectLabel {
+
+  // If label is null or empty, returns emptystring.
+  // Ensures label starts with an alpha not a digit.
+  // Replaces dashes with underscores.
+  // Q: why doesn't this safe-ify the names? Or at least check for illegal
+  // names?
 	public static String getCorrectLabel(String Label) {
-		if (Label.isEmpty())
-			return Label;
+		if (Label == null || Label.isEmpty())
+			return "";
 		StringBuffer result = new StringBuffer();
 		if (Numbers.contains(Label.substring(0, 1)))
 			result.append("L_");
 		result.append(Label.replace(" ", "_").replace("-", "_"));
 		return result.toString();
+	}
+
+	public static String getCorrectLabelWithVariables(String Label) {
+    return getCorrectLabel(Label);
 	}
 
 	public static String VhdlNameErrors(String Label) {

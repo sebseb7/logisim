@@ -39,7 +39,9 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class AbstractLedHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public AbstractLedHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public AbstractLedHDLGeneratorFactory(HDLCTX ctx, String name) {
+    super(ctx, name + "_${LABEL}", "SOME_LED"); // names irrelevant, b/c always inlined ?
+  }
 
   @Override
   public boolean IsOnlyInlined(/*String lang*/) { return true; }

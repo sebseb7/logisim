@@ -104,10 +104,6 @@ public interface ComponentFactory extends AttributeDefaultProvider {
 
   public default AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) { return null; }
 
-  public String getHDLName(AttributeSet attrs);
-
-  public String getHDLTopName(AttributeSet attrs);
-
   public IOComponentInformationContainer getIOInformation();
 
   public String getName();

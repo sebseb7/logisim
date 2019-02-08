@@ -48,7 +48,18 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class RamHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public RamHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public RamHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, deriveHDLName(ctx.attrs), "RAM");
+  }
+  
+  private static String deriveHDLName(AttributeSet attrs) {
+    if (attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.VOLATILE)
+      return "NVRAM_${CIRCUIT}_${LABEL}";
+    int wd = dataWidth(attrs);
+    int wa = addrWidth(attrs);
+    int n = Mem.lineSize(attrs);
+    return String.format("RAM_%dx%dx%d", wd, n, 1<<wa);
+  }
 
   private static final int TYPE_MEM_ARRAY = -1;
 
@@ -56,12 +67,9 @@ public class RamHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     Object dbus = attrs.getValue(RamAttributes.ATTR_DBUS);
     boolean separate = dbus == RamAttributes.BUS_SEP;
     Object trigger = attrs.getValue(StdAttr.TRIGGER);
-    boolean asynch = trigger == StdAttr.TRIG_HIGH || trigger == StdAttr.TRIG_LOW;
-    return lang.equals("VHDL") && separate && !asynch;
+    boolean synch = trigger == StdAttr.TRIG_RISING || trigger == StdAttr.TRIG_FALLING;
+    return lang.equals("VHDL") && separate && synch;
   }
-
-  @Override
-  public String getComponentStringIdentifier() { return "RAM"; }
 
   @Override
   public String GetSubDir() { return "memory"; }
@@ -248,13 +256,11 @@ public class RamHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     return list;
   }
 
-  protected int addrWidth(AttributeSet attrs) {
+  protected static int addrWidth(AttributeSet attrs) {
     return attrs.getValue(Mem.ADDR_ATTR).getWidth();
   }
 
-  protected int dataWidth(AttributeSet attrs) {
+  protected static int dataWidth(AttributeSet attrs) {
     return attrs.getValue(Mem.DATA_ATTR).getWidth();
   }
-
-
 }

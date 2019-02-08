@@ -46,10 +46,13 @@ import com.cburch.logisim.instance.Port;
 
 public class VhdlHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public VhdlHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public VhdlHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, deriveHDLName(ctx.attrs), "instance_of_vhdl");
+  }
 
-  @Override
-  public String getComponentStringIdentifier() { return "VHDL"; }
+  static String deriveHDLName(AttributeSet attrs) {
+    return ((VhdlEntityAttributes) attrs).getContent().getName(); // .toLowerCase();
+  }
 
   @Override
   public String GetSubDir() { return "circuit"; }

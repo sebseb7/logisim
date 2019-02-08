@@ -60,15 +60,12 @@ public class TickComponentHDLGeneratorFactory extends
 	public TickComponentHDLGeneratorFactory(
       String lang, FPGAReport err,
       long fpga_clock_frequency, int tick_period, Netlist nets, char vendor) {
-    super(lang, err, nets, AttributeSets.EMPTY, vendor); // fixme - no attrs used in this file?
+    super(lang, err, nets, AttributeSets.EMPTY, vendor,
+        "TICKER",
+        "TickGenerator"); // fixme - no attrs used in this file?
 		FpgaClockFrequency = fpga_clock_frequency;
 		TickPeriod = tick_period;
 		// this.useFPGAClock = useFPGAClock;
-	}
-
-	@Override
-	public String getComponentStringIdentifier() {
-		return "LogisimTickGenerator";
 	}
 
 	@Override

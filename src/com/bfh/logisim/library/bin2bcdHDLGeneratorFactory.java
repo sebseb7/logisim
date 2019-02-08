@@ -46,15 +46,18 @@ public class bin2bcdHDLGeneratorFactory extends AbstractHDLGeneratorFactory{
 
   // todo: verilog support
 
-  public bin2bcdHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public bin2bcdHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, deriveHDLName(ctx.attrs), "BIN2BCD");
+  }
+  
+  private static String deriveHDLName(AttributeSet attrs) {
+		int w = attrs.getValue(bin2bcd.ATTR_BinBits).getWidth();
+		int nports = (int)(Math.log10(1 << w) + 1.0);
+    return "Binairy_to_BCD_converter_" + nports + "_bcd_ports";
+	}
 
 	final private static String NrOfBitsStr = "NrOfBits";
 	final private static int NrOfBitsId = -1;
-	
-	@Override
-	public String getComponentStringIdentifier() {
-		return "BIN2BCD";
-	}
 	
 	@Override
 	public SortedMap<String, Integer> GetInputList( Netlist TheNetlist,

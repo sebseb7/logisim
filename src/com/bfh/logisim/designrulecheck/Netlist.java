@@ -48,6 +48,7 @@ import javax.swing.JProgressBar;
 import com.bfh.logisim.library.DynamicClock;
 import com.bfh.logisim.fpgaboardeditor.FPGAClass;
 import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.circuit.Splitter;
@@ -290,6 +291,7 @@ public class Netlist {
 		} else {
 			Sheetnames.add(MyCircuit.getName());
 		}
+    HashMap<Component, HDLGeneratorFactory> generators = new HashMap<>();
 		for (Component comp : MyCircuit.getNonWires()) {
       if (comp.getFactory() instanceof DynamicClock) {
         if (!IsTopLevel) {
@@ -313,11 +315,14 @@ public class Netlist {
 			 * Here we check if the components are supported for the HDL
 			 * generation
 			 */
-			if (!comp.getFactory().HDLIgnore()
-          && !comp.getFactory().HDLSpecialHandling()
-          && comp.getFactory().getHDLGenerator(HDLIdentifier, Reporter,
+      if (comp.getFactory().HDLIgnore())
+        continue;
+      // if (comp.getFactory().HDLSpecialHandling())
+      //  continue; // ? maybe ..?
+      HDLGeneratorFactory g = comp.getFactory().getHDLGenerator(HDLIdentifier, Reporter,
             null, /* fixme - no nets yet... */
-					comp.getAttributeSet(), Vendor) == null) {
+					comp.getAttributeSet(), Vendor);
+      if (g == null) {
 				Reporter.AddFatalError("Found unsupported component: \""
 						+ comp.getFactory().getName() + "\" for "
 						+ HDLIdentifier.toString()
@@ -338,20 +343,26 @@ public class Netlist {
 				}
 			}
 			/* Now we add the name to the set if it is not already in */
-      String ComponentName = comp.getFactory().getHDLName(comp.getAttributeSet());
+      String ComponentName = g.getHDLNameWithinCircuit(MyCircuit.getName());
 			if (!CompName.contains(ComponentName)) {
 				CompName.add(ComponentName);
 				AnnotationNames.add(new HashSet<String>());
+        generators.put(comp, g);
 			}
 		}
 		for (Component comp : MyCircuit.getNonWires()) {
 			/*
-			 * we check that all components that require a non zero label
-			 * (annotation) have a label set
+       * we check that all components that require a non zero label (annotation)
+       * have a label set. These are components like LED, Pin, DipSwitch, etc.,
+       * which maybe need the label b/c they might show up in the mapping gui
+       * and/or b/c the vhdl they generate is unique to each instance so we need
+       * a unique name for each.
+       * In any case, they should all have a generator, because none of them
+       * have HDLIgnore set (which would cause them to be skipped above).
 			 */
 			if (comp.getFactory().RequiresNonZeroLabel()) {
+        HDLGeneratorFactory g = generators.get(comp);
 				String Label = CorrectLabel.getCorrectLabel(comp.getAttributeSet().getValue(StdAttr.LABEL).toString()).toUpperCase();
-				String ComponentName = comp.getFactory().getHDLName(comp.getAttributeSet());
 				if (Label.isEmpty()) {
 					Reporter.AddError("Component \""
 							+ comp.getFactory().getName()
@@ -378,6 +389,7 @@ public class Netlist {
 					DRCStatus = DRC_ERROR;
 					return DRCStatus;
 				}
+				String ComponentName = g.getHDLNameWithinCircuit(MyCircuit.getName());
 				if (AnnotationNames.get(CompName.indexOf(ComponentName)).contains(Label)) {
 					Reporter.AddSevereError("Duplicated label \""
 							+ comp.getAttributeSet().getValue(StdAttr.LABEL)
@@ -387,8 +399,7 @@ public class Netlist {
 					DRCStatus = DRC_ERROR;
 					return DRCStatus;
 				} else {
-					AnnotationNames.get(CompName.indexOf(ComponentName)).add(
-							Label);
+					AnnotationNames.get(CompName.indexOf(ComponentName)).add(Label);
 				}
 				if (comp.getFactory() instanceof SubcircuitFactory) {
 					/* Special care has to be taken for sub-circuits */

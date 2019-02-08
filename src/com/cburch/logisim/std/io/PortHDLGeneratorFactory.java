@@ -48,7 +48,9 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   // todo: verilog support
 
-  public PortHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public PortHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "PORTIO_${LABEL}", "PORTIO");
+  }
 
   private class InOutMap {
     private int end, start, size, busNr, endNr;
@@ -224,7 +226,6 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     return Contents;
   }
 
-  // #5
   @Override
   public SortedMap<String, Integer> GetInputList(Netlist TheNetlist, AttributeSet attrs) {
     SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
@@ -236,7 +237,6 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   }
 
 
-  // #6
   @Override
   public SortedMap<String, Integer> GetInOutList(Netlist TheNetlist, AttributeSet attrs) {
     SortedMap<String, Integer> InOuts = new TreeMap<String, Integer>();
@@ -247,7 +247,6 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     return InOuts;
   }
 
-  // #7
   @Override
   public SortedMap<String, Integer> GetOutputList(Netlist TheNetlist,
       AttributeSet attrs) {
@@ -260,13 +259,6 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   }
 
 
-  // #8,10,11,13
-  @Override
-  public String getComponentStringIdentifier() {
-    return "PORTIO";
-  }
-
-  // #9,12
   @Override
   public SortedMap<String, String> GetPortMap(Netlist Nets,
       NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
@@ -303,7 +295,6 @@ public class PortHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     return PortMap;
   }
 
-  // #1,3
   @Override
   public String GetSubDir() {
     return "io";

@@ -41,12 +41,16 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class MultiplexerHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public MultiplexerHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public MultiplexerHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, deriveHDLName(ctx.attrs), "MUX");
+  }
+
+  private static String deriveHDLName(AttributeSet attrs) {
+    int a = 1 << attrs.getValue(Plexers.ATTR_SELECT).getWidth();
+    return "${BUS}Multiplexer_" + a + "_Way";
+  }
 
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
-
-  @Override
-  public String getComponentStringIdentifier() { return "MUX"; }
 
   @Override
   public String GetSubDir() { return "plexers"; }

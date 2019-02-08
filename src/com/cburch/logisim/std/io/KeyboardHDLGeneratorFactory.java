@@ -47,11 +47,8 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class KeyboardHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public KeyboardHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
-
-  @Override
-  public String getComponentStringIdentifier() {
-    return "KBD";
+  public KeyboardHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "KBD_${LABEL}", "KBD");
   }
 
   @Override

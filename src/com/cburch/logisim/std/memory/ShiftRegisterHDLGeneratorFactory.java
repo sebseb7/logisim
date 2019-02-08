@@ -46,7 +46,9 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public ShiftRegisterHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public ShiftRegisterHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "Shift_Register", "SHIFTER");
+  }
 
   @Override
   public ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/ /*AttributeSet attrs,*/
@@ -55,7 +57,7 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
     ArrayList<String> C = new ArrayList<String>();
     C.addAll(FileWriter.getGenerateRemark(ComponentName, _lang, _nets.projName()));
     if (_lang.equals("VHDL")) {
-      C.add("ARCHITECTURE NoPlatformSpecific OF SingleBitShiftReg IS");
+      C.add("ARCHITECTURE NoPlatformSpecific OF SingleBitShiftRegStage IS");
       C.add("   SIGNAL s_state_reg  : std_logic_vector(Stages-1 DOWNTO 0);");
       C.add("   SIGNAL s_state_next : std_logic_vector(Stages-1 DOWNTO 0);");
       C.add("BEGIN");
@@ -77,7 +79,7 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
       C.add("   END PROCESS make_state;");
       C.add("END NoPlatformSpecific;");
     } else {
-      C.add("module SingleBitShiftReg ( Reset, Tick, Clock, ShiftEnable, ParLoad, ");
+      C.add("module SingleBitShiftRegStage ( Reset, Tick, Clock, ShiftEnable, ParLoad, ");
       C.add("                           ShiftIn, D, ShiftOut, Q );");
       C.add("   parameter Stages = 1;");
       C.add("   parameter Trigger = 1;");
@@ -126,7 +128,7 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
   @Override
   public ArrayList<String> GetComponentDeclarationSection(Netlist TheNetlist, AttributeSet attrs) {
     ArrayList<String> C = new ArrayList<String>();
-    C.add("   COMPONENT SingleBitShiftReg");
+    C.add("   COMPONENT SingleBitShiftRegStage ");
     C.add("      GENERIC ( Trigger : INTEGER;");
     C.add("                Stages : INTEGER);");
     C.add("      PORT ( Reset       : IN  std_logic;");
@@ -149,7 +151,7 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
     if (_lang.equals("VHDL")) {
       C.addAll(FileWriter.getGenerateRemark(ComponentName, "VHDL", _nets.projName()));
       C.addAll(FileWriter.getExtendedLibrary());
-      C.add("ENTITY SingleBitShiftReg IS");
+      C.add("ENTITY SingleBitShiftRegStage  IS");
       C.add("   GENERIC ( Trigger : INTEGER;");
       C.add("             Stages : INTEGER);");
       C.add("   PORT ( Reset       : IN  std_logic;");
@@ -161,7 +163,7 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
       C.add("          D           : IN  std_logic_vector(Stages-1 DOWNTO 0);");
       C.add("          ShiftOut    : OUT std_logic;");
       C.add("          Q           : OUT std_logic_vector(Stages-1 DOWNTO 0));");
-      C.add("END SingleBitShiftReg;");
+      C.add("END SingleBitShiftRegStage;");
       C.add("");
       C.add("");
       C.add("");
@@ -174,9 +176,6 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
   protected final static int GENERIC_PARAM_BUSWIDTH = -2;
   protected final static int GENERIC_PARAM_STAGES = -3;
   protected final static int GENERIC_PARAM_BITS = -4;
-
-  @Override
-  public String getComponentStringIdentifier() { return "SHIFTER"; }
 
   @Override
   public String GetSubDir() { return "memory"; }
@@ -338,7 +337,7 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
   public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
     if (out.isVhdl) {
       out.stmt("   GenBits : FOR n IN (BusWidth-1) DOWNTO 0 GENERATE");
-      out.stmt("      OneBit : SingleBitShiftReg");
+      out.stmt("      OneBit : SingleBitShiftRegStage");
       out.stmt("      GENERIC MAP ( Trigger => Trigger,");
       out.stmt("                    Stages => Stages )");
       out.stmt("      PORT MAP ( Reset       => Reset,");
@@ -356,7 +355,7 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
       out.stmt("   generate");
       out.stmt("      for (n = 0 ; n < BusWidth-1 ; n =n+1)");
       out.stmt("      begin:Bit");
-      out.stmt("         SingleBitShiftReg #(.Trigger(Trigger),");
+      out.stmt("         SingleBitShiftRegStage #(.Trigger(Trigger),");
       out.stmt("                             .Stages(Stages))");
       out.stmt("            OneBit (.Reset(Reset),");
       out.stmt("                    .Tick(Tick),");

@@ -350,11 +350,6 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
   }
 
   @Override
-  public String getHDLName(AttributeSet attrs) {
-    return "LogisimCounter";
-  }
-
-  @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {
     BitWidth widthVal = attrs.getValue(StdAttr.WIDTH);
     int width = widthVal == null ? 8 : widthVal.getWidth();

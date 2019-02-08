@@ -205,17 +205,6 @@ public class PortIO extends InstanceFactory {
 
   }
 
-  @Override
-  public String getHDLName(AttributeSet attrs) {
-    String label = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
-    if (label == null || label.length() == 0) {
-      return "PORTIO";
-    }
-    StringBuffer CompleteName = new StringBuffer("PORTIO_");
-    CompleteName.append(label);
-    return CompleteName.toString();
-  }
-
   public MappableResourcesContainer getMapInfo() {
     return mapInfo;
   }

@@ -74,14 +74,12 @@ class VhdlSimulatorTclComp {
     for (Component comp : VhdlSimulator.getVhdlComponents(vhdlSimulator
           .getProject().getCircuitState())) {
       if (comp.getFactory().getClass().equals(VhdlEntity.class)) {
+        VhdlEntity vhdlEntity = (VhdlEntity)comp.getFactory();
 
-        InstanceState state = vhdlSimulator.getProject()
-            .getCircuitState().getInstanceState(comp);
-        String componentName = comp.getFactory().getHDLTopName(
-            state.getInstance().getAttributeSet());
+        InstanceState state = vhdlSimulator.getProject().getCircuitState().getInstanceState(comp);
+        String componentName = vhdlEntity.getHDLNameForInstanceSimulation(state.getInstance().getAttributeSet());
 
-        comp_files.append("vcom -reportprogress 300 -work work ../src/"
-            + componentName + ".vhdl");
+        comp_files.append("vcom -reportprogress 300 -work work ../src/" + componentName + ".vhdl");
         comp_files.append(System.getProperty("line.separator"));
       }
     }

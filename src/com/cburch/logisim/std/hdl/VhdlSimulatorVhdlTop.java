@@ -91,8 +91,8 @@ public class VhdlSimulatorVhdlTop {
 
         VhdlContent content = ((VhdlEntityAttributes)state.getAttributeSet()).getContent();
 
-        String vhdlEntityName = comp.getFactory().getHDLTopName(
-            state.getInstance().getAttributeSet());
+        VhdlEntity vhdlEntity = (VhdlEntity)comp.getFactory();
+        String vhdlEntityName = vhdlEntity.getHDLNameForInstanceSimulation(state.getInstance().getAttributeSet());
 
         /*
          * Create ports
@@ -156,8 +156,7 @@ public class VhdlSimulatorVhdlTop {
         /*
          * Create port map
          */
-        map.append("  " + vhdlEntityName + "_map : " + vhdlEntityName
-            + " port map (");
+        map.append("  " + vhdlEntityName + "_map : " + vhdlEntityName + " port map (");
         map.append(System.getProperty("line.separator"));
 
         firstMap = true;
@@ -169,8 +168,7 @@ public class VhdlSimulatorVhdlTop {
           } else
             firstMap = false;
 
-          map.append("    " + port.getName() + " => "
-              + vhdlEntityName + "_" + port.getName());
+          map.append("    " + port.getName() + " => " + vhdlEntityName + "_" + port.getName());
         }
         map.append(System.getProperty("line.separator"));
         map.append("  );");

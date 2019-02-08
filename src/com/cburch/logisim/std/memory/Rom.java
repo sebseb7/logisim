@@ -281,15 +281,6 @@ public class Rom extends Mem {
   }
 
   @Override
-  public String getHDLName(AttributeSet attrs) {
-    String Name = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
-    if (Name.length() == 0)
-      return "ROM";
-    else
-      return "ROMCONTENTS_" + Name;
-  }
-
-  @Override
   HexFrame getHexFrame(Project proj, Instance instance, CircuitState state) {
     return RomAttributes.getHexFrame(getMemContents(instance), proj, instance);
   }

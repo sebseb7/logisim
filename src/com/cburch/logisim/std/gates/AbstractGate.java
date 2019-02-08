@@ -220,28 +220,6 @@ abstract class AbstractGate extends InstanceFactory {
     }
   }
 
-  @Override
-  public String getHDLName(AttributeSet attrs) {
-    GateAttributes myattrs = (GateAttributes) attrs;
-    StringBuffer CompleteName = new StringBuffer();
-    CompleteName.append(CorrectLabel.getCorrectLabel(this.getName())
-        .toUpperCase());
-    BitWidth width = myattrs.getValue(StdAttr.WIDTH);
-    if (width.getWidth() > 1)
-      CompleteName.append("_BUS");
-    Integer inputCount = myattrs.getValue(GateAttributes.ATTR_INPUTS);
-    if (inputCount > 2) {
-      CompleteName.append("_" + inputCount.toString() + "_INPUTS");
-    }
-    if (myattrs.containsAttribute(GateAttributes.ATTR_XOR)) {
-      if (myattrs.getValue(GateAttributes.ATTR_XOR).equals(
-            GateAttributes.XOR_ONE)) {
-        CompleteName.append("_ONEHOT");
-      }
-    }
-    return CompleteName.toString();
-  }
-
   private Icon getIcon(int type) {
     Icon ret = icons[type];
     if (ret != null) {

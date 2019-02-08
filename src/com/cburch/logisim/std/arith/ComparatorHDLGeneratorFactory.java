@@ -41,13 +41,12 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class ComparatorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public ComparatorHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public ComparatorHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "${BUS}Comparator",  "COMPARATOR");
+  }
   
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_TWOSCOMPLEMENT = -2;
-
-  @Override
-  public String getComponentStringIdentifier() { return "COMPARATOR"; }
 
   @Override
   public String GetSubDir() { return "arithmetic"; }

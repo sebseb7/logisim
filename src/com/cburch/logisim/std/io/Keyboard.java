@@ -437,15 +437,6 @@ public class Keyboard extends InstanceFactory {
   }
 
   @Override
-  public String getHDLName(AttributeSet attrs) {
-    String Name = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
-    if (Name.length() == 0)
-      return "KBD";
-    else
-      return "KBD_" + Name;
-  }
-
-  @Override
   public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
     if (ctx.lang.equals("VHDL"))
       return new KeyboardHDLGeneratorFactory(ctx);
@@ -462,7 +453,5 @@ public class Keyboard extends InstanceFactory {
   }
 
   @Override
-  public boolean RequiresNonZeroLabel() {
-    return true;
-  }
+  public boolean RequiresNonZeroLabel() { return true; }
 }

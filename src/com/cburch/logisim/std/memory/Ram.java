@@ -522,15 +522,6 @@ public class Ram extends Mem {
       return 90 + enables * 10;
   }
 
-  @Override
-  public String getHDLName(AttributeSet attrs) {
-    String Name = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
-    if (Name.length() == 0)
-      return "RAM";
-    else
-      return "RAMCONTENTS_" + Name;
-  }
-
   private static WeakHashMap<MemContents, HexFrame> windowRegistry = new WeakHashMap<MemContents, HexFrame>();
   static HexFrame getHexFrame(MemContents value, Project proj, Instance instance) {
     synchronized (windowRegistry) {

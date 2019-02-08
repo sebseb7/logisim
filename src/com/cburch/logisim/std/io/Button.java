@@ -143,7 +143,7 @@ public class Button extends InstanceFactory {
 
   @Override
   public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    return new ButtonHDLGeneratorFactory(ctx);
+    return new ButtonHDLGeneratorFactory(ctx, "Button");
   }
 
   @Override
@@ -239,8 +239,6 @@ public class Button extends InstanceFactory {
   }
 
   @Override
-  public boolean RequiresNonZeroLabel() {
-    return true;
-  }
+  public boolean RequiresNonZeroLabel() { return true; }
 
 }

@@ -199,11 +199,6 @@ public class Clock extends InstanceFactory {
   }
 
   @Override
-  public String getHDLName(AttributeSet attrs) {
-    return "LogisimClockComponent";
-  }
-
-  @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {
     return Probe.getOffsetBounds(attrs.getValue(StdAttr.FACING),
         BitWidth.ONE, RadixOption.RADIX_2);

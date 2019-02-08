@@ -91,16 +91,6 @@ public class Decoder extends InstanceFactory {
   }
 
   @Override
-  public String getHDLName(AttributeSet attrs) {
-    StringBuffer CompleteName = new StringBuffer();
-    CompleteName.append(CorrectLabel.getCorrectLabel(this.getName()));
-    CompleteName.append("_"
-        + Integer.toString(1 << attrs.getValue(Plexers.ATTR_SELECT)
-          .getWidth()));
-    return CompleteName.toString();
-  }
-
-  @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {
     Direction facing = attrs.getValue(StdAttr.FACING);
     Object selectLoc = attrs.getValue(Plexers.ATTR_SELECT_LOC);

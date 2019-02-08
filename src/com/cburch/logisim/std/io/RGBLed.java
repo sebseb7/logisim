@@ -158,7 +158,7 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
 
   @Override
   public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    return new AbstractLedHDLGeneratorFactory(ctx);
+    return new AbstractLedHDLGeneratorFactory(ctx, "RGBLED");
   }
 
   @Override

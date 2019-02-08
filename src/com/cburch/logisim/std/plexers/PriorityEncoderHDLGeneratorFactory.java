@@ -40,13 +40,12 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class PriorityEncoderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public PriorityEncoderHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public PriorityEncoderHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "Priority_Encoder", "PRIENC");
+  }
 
   protected final static int GENERIC_PARAM_WIDTH_SEL = -1;
   protected final static int GENERIC_PARAM_WIDTH_IN = -2;
-
-  @Override
-  public String getComponentStringIdentifier() { return "PRIENC"; }
 
   @Override
   public String GetSubDir() { return "plexers"; }

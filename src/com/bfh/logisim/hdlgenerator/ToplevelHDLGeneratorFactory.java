@@ -68,7 +68,8 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       long FPGAClock, int ClockTickPeriod,
 			Circuit TopLevel, MappableResourcesContainer IOComponents,
 			boolean useFPGAClock, Netlist nets, char vendor) {
-    super(lang, err, nets, AttributeSets.EMPTY, vendor); // this file doesn't use attrs
+    super(lang, err, nets, AttributeSets.EMPTY, vendor,
+        "TOPLEVEL", FPGAToplevelName); // this file doesn't use attrs
 		FpgaClockFrequency = FPGAClock;
 		TickPeriod = ClockTickPeriod;
 		MyCircuit = TopLevel;
@@ -102,7 +103,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					.GetComponentInstantiation(
 							/*TheNetlist,*/
 							/*TheNetlist.GetAllClockSources().get(0).getAttributeSet(),*/
-							TheNetlist.GetAllClockSources().get(0).getFactory().getHDLName(TheNetlist.GetAllClockSources().get(0).getAttributeSet())/*,
+							ClockWorker.getHDLNameWithinCircuit("") /* top level circuit *//*,
 							Settings.VHDL*/ /* , false */));
 		}
 		CircuitHDLGeneratorFactory Worker = new CircuitHDLGeneratorFactory(
@@ -112,11 +113,6 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				CorrectLabel.getCorrectLabel(MyCircuit.getName())/*,
 				Settings.VHDL*/));
 		return Components;
-	}
-
-	@Override
-	public String getComponentStringIdentifier() {
-		return FPGAToplevelName;
 	}
 
 	@Override
@@ -286,7 +282,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
           HDLType, Reporter,
 					FpgaClockFrequency, TickPeriod/* , useFPGAClock */, TheNetlist, _vendor); /* stateful hdl gen */
 			Contents.addAll(Ticker.GetComponentMap(/*TheNetlist,*/ (long) 0, null /*,
-					Reporter, "" , HDLType*/));
+					Reporter, "" , HDLType*/, "" /* top level */));
 			long index = 0;
 			for (Component Clockgen : TheNetlist.GetAllClockSources()) {
 				NetlistComponent ThisClock = new NetlistComponent(Clockgen);
@@ -296,7 +292,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 								ThisClock.GetComponent().getAttributeSet(),
 								_vendor);
 				Contents.addAll(_h.GetComponentMap(/*TheNetlist,*/ index++, ThisClock /*,
-								Reporter, "Bla" , HDLType*/));
+								Reporter, "Bla" , HDLType*/, "" /* top level */));
 			}
 		}
 		Contents.add("");
@@ -310,7 +306,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
         HDLType, Reporter, MyCircuit, TheNetlist, _vendor);
 		Contents.addAll(DUT.GetComponentMap(/*TheNetlist,*/ (long) 0, null /*,
 				Reporter, CorrectLabel.getCorrectLabel(MyCircuit.getName()),
-				HDLType*/));
+				HDLType*/, "" /* top level */));
 		return Contents;
 	}
 

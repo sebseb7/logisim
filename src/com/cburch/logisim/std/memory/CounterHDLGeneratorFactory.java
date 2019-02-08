@@ -42,15 +42,14 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class CounterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public CounterHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public CounterHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "LogisimCounter", "COUNTER");
+  }
 
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_MAXVAL = -2;
   protected final static int GENERIC_PARAM_CLKEDGE = -3;
   protected final static int GENERIC_PARAM_MODE = -4;
-
-  @Override
-  public String getComponentStringIdentifier() { return "COUNTER"; }
 
   @Override
   public String GetSubDir() { return "memory"; }

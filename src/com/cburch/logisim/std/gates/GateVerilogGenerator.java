@@ -34,22 +34,22 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class GateVerilogGenerator extends GateVhdlGenerator {
 
-  protected GateVerilogGenerator(HDLCTX ctx, boolean invertOutput) { // unary ops
-    super(ctx, invertOutput);
+  protected GateVerilogGenerator(String name, HDLCTX ctx, boolean invertOutput) { // unary ops
+    super(name, ctx, invertOutput);
   }
 
-  protected GateVerilogGenerator(HDLCTX ctx, boolean identity, String op, boolean invertOutput) {
-    super(ctx, identity, op, invertOutput);
+  protected GateVerilogGenerator(String name, HDLCTX ctx, boolean identity, String op, boolean invertOutput) {
+    super(name, ctx, identity, op, invertOutput);
   }
 
-  static GateVerilogGenerator forBuffer(HDLCTX ctx) { return new GateVerilogGenerator(ctx, false); }
-  static GateVerilogGenerator forNot(HDLCTX ctx) { return new GateVerilogGenerator(ctx, true); }
-  static GateVerilogGenerator forAnd(HDLCTX ctx) { return new GateVerilogGenerator(ctx, true, "&", false); }
-  static GateVerilogGenerator forNand(HDLCTX ctx) { return new GateVerilogGenerator(ctx, true, "&", true); }
-  static GateVerilogGenerator forOr(HDLCTX ctx) { return new GateVerilogGenerator(ctx, false, "|", false); }
-  static GateVerilogGenerator forNor(HDLCTX ctx) { return new GateVerilogGenerator(ctx, false, "|", true); }
-  static GateVerilogGenerator forXor(HDLCTX ctx) { return new GateVerilogGenerator(ctx, false, "^", false); }
-  static GateVerilogGenerator forXnor(HDLCTX ctx) { return new GateVerilogGenerator(ctx, false, "^", true); }
+  static GateVerilogGenerator forBuffer(HDLCTX ctx) { return new GateVerilogGenerator("NOP_GATE", ctx, false); }
+  static GateVerilogGenerator forNot(HDLCTX ctx) { return new GateVerilogGenerator("NOT_GATE", ctx, true); }
+  static GateVerilogGenerator forAnd(HDLCTX ctx) { return new GateVerilogGenerator("AND_GATE", ctx, true, "&", false); }
+  static GateVerilogGenerator forNand(HDLCTX ctx) { return new GateVerilogGenerator("NAND_GATE", ctx, true, "&", true); }
+  static GateVerilogGenerator forOr(HDLCTX ctx) { return new GateVerilogGenerator("OR_GATE", ctx, false, "|", false); }
+  static GateVerilogGenerator forNor(HDLCTX ctx) { return new GateVerilogGenerator("NOR_GATE", ctx, false, "|", true); }
+  static GateVerilogGenerator forXor(HDLCTX ctx) { return new GateVerilogGenerator("XOR_GATE", ctx, false, "^", false); }
+  static GateVerilogGenerator forXnor(HDLCTX ctx) { return new GateVerilogGenerator("XNOR_GATE", ctx, false, "^", true); }
 
   @Override
   protected void unaryOp(Hdl out) {

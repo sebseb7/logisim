@@ -49,23 +49,23 @@ public class FPGAReport {
 		myCommander.AddInfo(Message);
 	}
 
-	public void AddSevereError(String Message) {
-		myCommander.AddErrors("**SEVERE** " + Message);
+	public void AddSevereError(String Message, Object ...args) {
+		myCommander.AddErrors("**SEVERE** " + String.format(Message, args));
 	}
 
-	public void AddSevereWarning(String Message) {
-		myCommander.AddWarning("**SEVERE** " + Message);
+	public void AddSevereWarning(String Message, Object ...args) {
+		myCommander.AddWarning("**SEVERE** " + String.format(Message, args));
 	}
 
-	public void AddWarning(String Message) {
-		myCommander.AddWarning(Message);
+	public void AddWarning(String Message, Object ...args) {
+		myCommander.AddWarning(String.format(Message, String.format(Message, args)));
 	}
 
 	public void NewConsole(String title) {
 		myCommander.NewConsole(title);
 	}
 
-	public void print(String Message) {
-		myCommander.AddConsole(Message);
+	public void print(String Message, Object ...args) {
+		myCommander.AddConsole(String.format(Message, args));
 	}
 }

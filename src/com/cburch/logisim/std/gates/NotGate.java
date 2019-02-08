@@ -144,17 +144,6 @@ class NotGate extends InstanceFactory {
   }
 
   @Override
-  public String getHDLName(AttributeSet attrs) {
-    StringBuffer CompleteName = new StringBuffer();
-    CompleteName.append(CorrectLabel.getCorrectLabel(this.getName())
-        .toUpperCase());
-    BitWidth width = attrs.getValue(StdAttr.WIDTH);
-    if (width.getWidth() > 1)
-      CompleteName.append("_BUS");
-    return CompleteName.toString();
-  }
-
-  @Override
   protected Object getInstanceFeature(final Instance instance, Object key) {
     if (key == ExpressionComputer.class) {
       return new ExpressionComputer() {

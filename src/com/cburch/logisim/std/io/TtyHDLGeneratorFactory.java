@@ -47,11 +47,8 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class TtyHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public TtyHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
-
-  @Override
-  public String getComponentStringIdentifier() {
-    return "TTY";
+  public TtyHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "TTY_${LABEL}", "TTY");
   }
 
   @Override

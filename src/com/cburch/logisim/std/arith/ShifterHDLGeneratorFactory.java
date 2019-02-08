@@ -41,12 +41,11 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class ShifterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public ShifterHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
-
+  public ShifterHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "Shifter_${WIDTH}_bit", "SHIFTER");
+  }
+  
   protected final static int GENERIC_PARAM_MODE = -1;
-
-  @Override
-  public String getComponentStringIdentifier() { return "SHIFTER"; }
 
   @Override
   public String GetSubDir() { return "arithmetic"; }

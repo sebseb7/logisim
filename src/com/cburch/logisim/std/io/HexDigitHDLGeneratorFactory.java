@@ -43,10 +43,9 @@ import com.cburch.logisim.data.AttributeSet;
 
 public class HexDigitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public HexDigitHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
-
-  @Override
-  public String getComponentStringIdentifier() { return "HEXDIGIT"; }
+  public HexDigitHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "Hex_Digit_Display", "HEXDIGIT");
+  }
 
   @Override
   public String GetSubDir() { return "io"; }

@@ -202,7 +202,7 @@ public class DipSwitch extends InstanceFactory {
 
   @Override
   public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    return new ButtonHDLGeneratorFactory(ctx);
+    return new ButtonHDLGeneratorFactory(ctx, "DipSwitch");
   }
 
   @Override
@@ -296,7 +296,5 @@ public class DipSwitch extends InstanceFactory {
   }
 
   @Override
-  public boolean RequiresNonZeroLabel() {
-    return true;
-  }
+  public boolean RequiresNonZeroLabel() { return true; }
 }

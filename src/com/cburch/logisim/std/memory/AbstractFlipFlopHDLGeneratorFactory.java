@@ -48,7 +48,7 @@ public class AbstractFlipFlopHDLGeneratorFactory extends AbstractHDLGeneratorFac
 
   AbstractFlipFlopHDLGeneratorFactory(HDLCTX ctx, String name, String displayName,
       String[] inPorts, String vhdlUpdate, String verilogUpdate) {
-    super(ctx);
+    super(ctx, "${TRIGGER}"+name, name);
     this.name = name;
     this.displayName = displayName;
     this.inPorts = inPorts;
@@ -57,9 +57,6 @@ public class AbstractFlipFlopHDLGeneratorFactory extends AbstractHDLGeneratorFac
   }
 
   protected final static int GENERIC_PARAM_ACTIVELEVEL = -1;
-  
-  @Override
-  public String getComponentStringIdentifier() { return name; }
 
   @Override
   public String GetSubDir() { return "memory"; }

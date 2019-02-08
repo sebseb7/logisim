@@ -42,13 +42,12 @@ import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class RegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public RegisterHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
-
+  public RegisterHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "${TRIGGER}Register", "REGISTER");
+  }
+  
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_ACTIVELEVEL = -2;
-
-  @Override
-  public String getComponentStringIdentifier() { return "REGISTER"; }
 
   @Override
   public String GetSubDir() { return "memory"; }

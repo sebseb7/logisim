@@ -285,15 +285,6 @@ public class Tty extends InstanceFactory {
   }
 
   @Override
-  public String getHDLName(AttributeSet attrs) {
-    String Name = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
-    if (Name.length() == 0)
-      return "TTY";
-    else
-      return "TTY_" + Name;
-  }
-
-  @Override
   public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
     if (ctx.lang.equals("VHDL"))
       return new TtyHDLGeneratorFactory(ctx);

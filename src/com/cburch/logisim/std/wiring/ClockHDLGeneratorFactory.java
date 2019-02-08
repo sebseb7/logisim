@@ -41,7 +41,9 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class ClockHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public ClockHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public ClockHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "LogisimClock", "CLOCKGEN");
+  }
 
   private static final int GENERIC_PARAM_HIGHTICKS = -1;
   private static final int GENERIC_PARAM_LOWTICKS = -2;
@@ -55,9 +57,6 @@ public class ClockHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   public static final int GlobalClockIndex = 4;
 
   public static final int NrOfClockBits = 5;
-
-  @Override
-  public String getComponentStringIdentifier() { return "CLOCKGEN"; }
 
   @Override
   public String GetSubDir() { return "base"; }

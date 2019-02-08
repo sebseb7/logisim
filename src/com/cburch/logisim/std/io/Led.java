@@ -119,7 +119,7 @@ public class Led extends InstanceFactory implements DynamicElementProvider {
 
   @Override
   public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    return new AbstractLedHDLGeneratorFactory(ctx);
+    return new AbstractLedHDLGeneratorFactory(ctx, "LED");
   }
 
   @Override
@@ -177,9 +177,7 @@ public class Led extends InstanceFactory implements DynamicElementProvider {
   }
 
   @Override
-  public boolean RequiresNonZeroLabel() {
-    return true;
-  }
+  public boolean RequiresNonZeroLabel() { return true; }
 
   public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {
     return new LedShape(x, y, path);

@@ -41,13 +41,12 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class MultiplierHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
-  public MultiplierHDLGeneratorFactory(HDLCTX ctx) { super(ctx); }
+  public MultiplierHDLGeneratorFactory(HDLCTX ctx) {
+    super(ctx, "Multiplier", "MULT");
+  }
 
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_EXTENDEDBITS = -2;
-
-  @Override
-  public String getComponentStringIdentifier() { return "MULT"; }
 
   @Override
   public String GetSubDir() { return "arithmetic"; }

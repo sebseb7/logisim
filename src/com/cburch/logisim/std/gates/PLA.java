@@ -294,16 +294,6 @@ class PLA extends InstanceFactory {
   }
 
   @Override
-  public String getHDLName(AttributeSet attrs) {
-    System.out.println("anonymous pla needs a name");
-    String Name = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
-    if (Name.length() == 0)
-      return "PLA"; // BUG?!
-    else
-      return "PLA_" + Name;
-  }
-
-  @Override
   public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
     if (ctx.lang.equals("VHDL"))
       return new PLAVhdlGenerator(ctx);
@@ -354,5 +344,8 @@ class PLA extends InstanceFactory {
     }
 
   }
+
+  @Override
+  public boolean RequiresNonZeroLabel() { return true; }
 
 }

@@ -45,6 +45,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.WeakHashMap;
 
+import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.fpgagui.FPGAReport;
@@ -197,129 +198,115 @@ public class Circuit implements AttributeDefaultProvider {
     }
   }
 
-  public void Annotate(boolean ClearExistingLabels, FPGAReport reporter) {
-    ArrayList<Integer> CompCount = new ArrayList<Integer>();
-    ArrayList<String> CompName = new ArrayList<String>();
-    ArrayList<Set<String>> AnnotationNames = new ArrayList<Set<String>>();
+  private static String labelSuggestionFor(Component comp,
+      HashMap<Component, AbstractHDLGeneratorFactory> generators, String circuitName) {
+    if (comp.getFactory() instanceof Pin) { /* Pins are treated specially */
+      int w = comp.getEnd(0).getWidth().getWidth();
+      if (comp.getEnd(0).isOutput())
+        return w > 1 ? "Input_bus" : "Input";
+      else
+        return w > 1 ? "Output_bus" : "Output";
+    } else {
+      return generators.get(comp).getHDLNameWithinCircuit(circuitName);
+    }
+  }
+
+  public void Annotate(boolean ClearExistingLabels, FPGAReport reporter, String lang, char vendor) {
     /* If I am already completely annotated, return */
     if (Annotated) {
       reporter.AddInfo("Nothing to do !");
       return;
     }
-    SortedSet<Component> comps = new TreeSet<Component>(Location.CompareVertical);
-    comps.addAll(this.getNonWires());
-    /* in case of label cleaning, we clear first all old labels */
+
+    /* find and sort all of of the components of interest */
+    HashMap<Component, AbstractHDLGeneratorFactory> generators = new HashMap<>();
+    TreeSet<Component> sortedComps = new TreeSet<>(Location.CompareVertical);
+    for (Component comp : this.getNonWires()) {
+      if (comp.getFactory().HDLIgnore())
+        continue;
+      if (comp.getFactory() instanceof Pin) {
+        // Pins are a special case: they are the only hdl-relevant component that
+        // will need a non-zero label, but has no HDL generator to go with it.
+        sortedComps.add(comp);
+      } else {
+        // All other components that need a non-zero label have a generator.
+        AbstractHDLGeneratorFactory g = comp.getFactory().getHDLGenerator(
+            lang, reporter, 
+            null, /* no nets net */
+            comp.getAttributeSet(), vendor);
+        if (g == null || !g.RequiresNonZeroLabel())
+          continue;
+        sortedComps.add(comp);
+        generators.put(comp, g);
+      }
+    }
+
+    /* clear old labels, if requested */
     if (ClearExistingLabels) {
-      for (Component comp : comps) {
-        if (!comp.getFactory().RequiresNonZeroLabel())
+      for (Component comp : sortedComps) {
+        String label = comp.getAttributeSet().getValueOrElse(StdAttr.LABEL, "");
+        if (!label.isEmpty())
           continue;
-        reporter.AddInfo("Cleared " + this.getName() + "/"
-            + comp.getAttributeSet().getValue(StdAttr.LABEL));
         comp.getAttributeSet().setAttr(StdAttr.LABEL, "");
+        reporter.AddInfo("Cleared " + this.getName() + "/" + label);
       }
     }
-    for (Component comp : comps) {
-      /* Ignore all components that do not require a label */
-      if (!comp.getFactory().RequiresNonZeroLabel())
-        continue;
-      /*
-       * Add the component to the set of components if it is not already
-       * added
-       */
-      String ComponentName;
-      /* Pins are treated specially */
-      if (comp.getFactory() instanceof Pin) {
-        if (comp.getEnd(0).isOutput()) {
-          if (comp.getEnd(0).getWidth().getWidth() > 1) {
-            ComponentName = "Input_bus";
-          } else {
-            ComponentName = "Input";
-          }
-        } else {
-          if (comp.getEnd(0).getWidth().getWidth() > 1) {
-            ComponentName = "Output_bus";
-          } else {
-            ComponentName = "Output";
-          }
-        }
-      } else {
-        ComponentName = comp.getFactory().getHDLName(comp.getAttributeSet());
+    
+    /* first pass: collect existing labels, grouped by suggestions */
+    ArrayList<Integer> counts = new ArrayList<Integer>();
+    ArrayList<String> suggestions = new ArrayList<String>();
+    ArrayList<Set<String>> usedLabels = new ArrayList<Set<String>>();
+    for (Component comp : sortedComps) {
+      String suggestion = labelSuggestionFor(comp, generators, getName());
+      if (!suggestions.contains(suggestion)) {
+        suggestions.add(suggestion);
+        counts.add(1);
+        usedLabels.add(new HashSet<String>());
       }
-      if (!CompName.contains(ComponentName)) {
-        CompCount.add(1);
-        CompName.add(ComponentName);
-        AnnotationNames.add(new HashSet<String>());
-      }
-      /* If the label is non-zero add them to the list of AnnotationNames */
-      String Label = CorrectLabel.getCorrectLabel(comp.getAttributeSet()
-          .getValue(StdAttr.LABEL).toString());
+      /* if the label is non-zero, add it to the list of used labels */
+      String Label = CorrectLabel.getCorrectLabel(comp.getAttributeSet().getValue(StdAttr.LABEL));
       if (!Label.isEmpty()) {
-        int compindex = CompName.indexOf(ComponentName);
-        AnnotationNames.get(compindex).add(Label);
-      }
-      /* if the current component is a sub-circuit, recurse into it */
-      if (comp.getFactory() instanceof SubcircuitFactory) {
-        SubcircuitFactory sub = (SubcircuitFactory) comp.getFactory();
-        sub.getSubcircuit().Annotate(ClearExistingLabels, reporter);
+        int idx = suggestions.indexOf(suggestion);
+        usedLabels.get(idx).add(Label);
       }
     }
-    /* Here the annotation process takes place */
-    for (Component comp : comps) {
-      /* Ignore all components that do not require a label */
-      if (!comp.getFactory().RequiresNonZeroLabel())
+
+    /* second pass: choose and add labels as needed */
+    for (Component comp : sortedComps) {
+      /* ignore components that have labels */
+      String label = CorrectLabel.getCorrectLabel(comp.getAttributeSet().getValue(StdAttr.LABEL));
+      if (!label.isEmpty())
         continue;
-      /* Ignore all components that already have a label */
-      String Label = CorrectLabel.getCorrectLabel(comp.getAttributeSet()
-          .getValue(StdAttr.LABEL).toString());
-      if (!Label.isEmpty())
-        continue;
-      String CorrectComponentName;
-      /* Pins are treated specially */
-      if (comp.getFactory() instanceof Pin) {
-        if (comp.getEnd(0).isOutput()) {
-          if (comp.getEnd(0).getWidth().getWidth() > 1) {
-            CorrectComponentName = "Input_bus";
-          } else {
-            CorrectComponentName = "Input";
-          }
-        } else {
-          if (comp.getEnd(0).getWidth().getWidth() > 1) {
-            CorrectComponentName = "Output_bus";
-          } else {
-            CorrectComponentName = "Output";
-          }
-        }
-        if (!CompName.contains(CorrectComponentName)) {
-          CompName.add(CorrectComponentName);
-          CompCount.add(1);
-          AnnotationNames.add(new HashSet<String>());
-        }
-      } else {
-        CorrectComponentName = comp.getFactory().getHDLName(comp.getAttributeSet());
-        if (!CompName.contains(CorrectComponentName)) {
-          /* This should never happen */
-          continue;
-        }
-      }
-      int index = CompName.indexOf(CorrectComponentName);
-      /* first we find a non-existing label */
-      Integer id = CompCount.get(index);
-      while (AnnotationNames.get(index).contains(
-            CorrectComponentName + "_" + id.toString())) {
+
+      String suggestion = labelSuggestionFor(comp, generators, getName());
+      int idx = suggestions.indexOf(suggestion);
+
+      /* find a suitable suffix to go on the suffix */
+      int id = counts.get(idx);
+      while (usedLabels.get(idx).contains(suggestion + "_" + id))
         id++;
-      }
-      CompCount.set(index, id + 1);
-      String NewLabel = CorrectComponentName + "_" + id.toString();
+      counts.set(idx, id + 1);
+
       /*
        * TODO: Dirty hack; I do not know how to change the label in such a
        * way that the whole project is correctly notified so I just change
        * the label here and do some dirty updates in
        * "FPGACommanderGUI.java"
        */
-      reporter.AddInfo("Labeled " + this.getName() + "/" + NewLabel);
-      comp.getAttributeSet().setAttr(StdAttr.LABEL, NewLabel);
-      AnnotationNames.get(index).add(NewLabel);
+      label = suggestion + "_" + id;
+      reporter.AddInfo("Labeled " + this.getName() + "/" + label);
+      comp.getAttributeSet().setAttr(StdAttr.LABEL, label);
+      usedLabels.get(idx).add(label);
     }
+
+    /* third pass: recurse into sub-circuits */
+    for (Component comp : sortedComps) {
+      if (comp.getFactory() instanceof SubcircuitFactory) {
+        SubcircuitFactory sub = (SubcircuitFactory) comp.getFactory();
+        sub.getSubcircuit().Annotate(ClearExistingLabels, reporter, lang, vendor);
+      }
+    }
+
     Annotated = true;
   }
 

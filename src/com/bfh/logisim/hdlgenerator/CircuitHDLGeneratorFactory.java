@@ -45,7 +45,6 @@ import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.designrulecheck.Net;
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgaboardeditor.FPGAClass;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
 import com.bfh.logisim.library.DynamicClock;
@@ -67,7 +66,8 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	private Circuit MyCircuit;
 
 	public CircuitHDLGeneratorFactory(String lang, FPGAReport err, Circuit source, Netlist nets, char vendor) {
-    super(lang, err, nets, AttributeSets.EMPTY, vendor); // this file doesn't use attrs
+    super(lang, err, nets, AttributeSets.EMPTY, vendor,
+       source.getName(), "subcirc_" + source.getName()); // this file doesn't use attrs
 		MyCircuit = source;
 	}
 
@@ -89,56 +89,58 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		MyNetList.SetCurrentHierarchyLevel(Hierarchy);
 		/* First we handle the normal components */
 		for (NetlistComponent ThisComponent : MyNetList.GetNormalComponents()) {
-			String ComponentName = ThisComponent.GetComponent().getFactory().getHDLName(ThisComponent.GetComponent().getAttributeSet());
-			if (!HandledComponents.contains(ComponentName)) {
-				HDLGeneratorFactory Worker = ThisComponent
-						.GetComponent()
-						.getFactory()
-						.getHDLGenerator(_lang, _err,
-                MyNetList, /* stateful hdl gen */
-								ThisComponent.GetComponent().getAttributeSet(),
-								_vendor);
-				if (Worker == null) {
-					_err.AddFatalError("INTERNAL ERROR: Cannot find the VHDL generator factory for component "
-							+ ComponentName);
-					return false;
-				}
-				if (!Worker.IsOnlyInlined(/*_lang*/)) {
-					if (!WriteEntity(
-							WorkingDir + Worker.GetRelativeDirectory(/*_lang*/),
-							Worker.GetEntity(/*MyNetList,*/ /*ThisComponent.GetComponent().getAttributeSet(), */
-									ComponentName /*, _err, _lang*/),
-							ComponentName, _err, _lang)) {
-						return false;
-					}
-					Map<String, ArrayList<String>> memInitData =
-						Worker.GetMemInitData(/*ThisComponent.GetComponent().getAttributeSet()*/);
-					Map<String, File> memInitFiles = null;
-					if (memInitData != null) {
-						memInitFiles = new HashMap<String, File>();
-						for (String Mem : memInitData.keySet()) {
-							ArrayList<String> initData = memInitData.get(Mem);
-							File mif = WriteMemInitFile(
-									WorkingDir + Worker.GetRelativeDirectory(/*_lang*/),
-									initData,
-									ComponentName, Mem, _err, _lang);
-							if (mif == null)
-								return false;
-							memInitFiles.put(Mem, mif);
-						}
-					}
-					if (!WriteArchitecture(
-							WorkingDir + Worker.GetRelativeDirectory(/*_lang*/),
-							Worker.GetArchitecture(/* MyNetList,*/
-                /*ThisComponent.GetComponent().getAttributeSet(),*/
-									memInitFiles,
-									ComponentName /*, Reporter, HDLType*/),
-							ComponentName, _err, _lang)) {
-						return false;
-					}
-				}
+      HDLGeneratorFactory Worker = ThisComponent
+          .GetComponent()
+          .getFactory()
+          .getHDLGenerator(_lang, _err,
+              MyNetList, /* stateful hdl gen */
+              ThisComponent.GetComponent().getAttributeSet(),
+              _vendor);
+      if (Worker == null) {
+        _err.AddFatalError("INTERNAL ERROR: Cannot find the VHDL generator factory for component of type " + 
+            ThisComponent.GetComponent().getFactory());
+        return false;
+      }
+			String ComponentName = Worker.getHDLNameWithinCircuit(MyCircuit.getName());
+			if (HandledComponents.contains(ComponentName))
+        continue;
+      if (Worker.IsOnlyInlined(/*_lang*/)) {
 				HandledComponents.add(ComponentName);
-			}
+        continue;
+      }
+      if (!WriteEntity(
+            WorkingDir + Worker.GetRelativeDirectory(/*_lang*/),
+            Worker.GetEntity(/*MyNetList,*/ /*ThisComponent.GetComponent().getAttributeSet(), */
+              ComponentName /*, _err, _lang*/),
+            ComponentName, _err, _lang)) {
+        return false;
+      }
+      Map<String, ArrayList<String>> memInitData =
+          Worker.GetMemInitData(/*ThisComponent.GetComponent().getAttributeSet()*/);
+      Map<String, File> memInitFiles = null;
+      if (memInitData != null) {
+        memInitFiles = new HashMap<String, File>();
+        for (String Mem : memInitData.keySet()) {
+          ArrayList<String> initData = memInitData.get(Mem);
+          File mif = WriteMemInitFile(
+              WorkingDir + Worker.GetRelativeDirectory(/*_lang*/),
+              initData,
+              ComponentName, Mem, _err, _lang);
+          if (mif == null)
+            return false;
+          memInitFiles.put(Mem, mif);
+        }
+      }
+      if (!WriteArchitecture(
+            WorkingDir + Worker.GetRelativeDirectory(/*_lang*/),
+            Worker.GetArchitecture(/* MyNetList,*/
+              /*ThisComponent.GetComponent().getAttributeSet(),*/
+              memInitFiles,
+              ComponentName /*, Reporter, HDLType*/),
+            ComponentName, _err, _lang)) {
+        return false;
+      }
+      HandledComponents.add(ComponentName);
 		}
 		/* Now we go down the hierarchy to get all other components */
 		for (NetlistComponent ThisCircuit : MyNetList.GetSubCircuits()) {
@@ -225,56 +227,50 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	}
 
 	@Override
-	public ArrayList<String> GetComponentDeclarationSection(Netlist TheNetlist,
+	public ArrayList<String> GetComponentDeclarationSection(Netlist TheNetlist,// verify - this is my netlist, not parent?
 			AttributeSet attrs) {
 		ArrayList<String> Components = new ArrayList<String>();
 		Set<String> InstantiatedComponents = new HashSet<String>();
 		for (NetlistComponent Gate : TheNetlist.GetNormalComponents()) {
-			String CompName = Gate.GetComponent().getFactory().getHDLName(Gate.GetComponent().getAttributeSet());
+      HDLGeneratorFactory Worker = Gate
+          .GetComponent()
+          .getFactory()
+          .getHDLGenerator(Settings.VHDL, _err,
+              TheNetlist, /* stateful hdl gen */
+              Gate.GetComponent().getAttributeSet(),
+              _vendor);
+      if (Worker == null)
+        continue; // huh?
+			String CompName = Worker.getHDLNameWithinCircuit(MyCircuit.getName());
 			if (!InstantiatedComponents.contains(CompName)) {
 				InstantiatedComponents.add(CompName);
-				HDLGeneratorFactory Worker = Gate
-						.GetComponent()
-						.getFactory()
-						.getHDLGenerator(Settings.VHDL, _err,
-                TheNetlist, /* stateful hdl gen */
-								Gate.GetComponent().getAttributeSet(),
-								_vendor);
-				if (Worker != null) {
-					if (!Worker.IsOnlyInlined(/*Settings.VHDL*/)) {
-						Components.addAll(Worker.GetComponentInstantiation(
-								/*TheNetlist,*/
-                  /*Gate.GetComponent().getAttributeSet(),*/ CompName/*, Settings.VHDL*/ /* , false */));
-					}
-				}
+        if (!Worker.IsOnlyInlined(/*Settings.VHDL*/)) {
+          Components.addAll(Worker.GetComponentInstantiation(
+                /*TheNetlist,*/
+                /*Gate.GetComponent().getAttributeSet(),*/ CompName/*, Settings.VHDL*/ /* , false */));
+        }
 			}
 		}
 		InstantiatedComponents.clear();
 		for (NetlistComponent Gate : TheNetlist.GetSubCircuits()) {
-			String CompName = Gate.GetComponent().getFactory().getHDLName(Gate.GetComponent().getAttributeSet());
+      SubcircuitFactory sub = (SubcircuitFactory) Gate.GetComponent().getFactory();
+      HDLGeneratorFactory Worker = Gate
+          .GetComponent()
+          .getFactory()
+          .getHDLGenerator(Settings.VHDL, _err,
+              sub.getSubcircuit().getNetList(), /* stateful hdl gen */
+              Gate.GetComponent().getAttributeSet(),
+              _vendor);
+      if (Worker == null)
+        continue; // huh?
+			String CompName = Worker.getHDLNameWithinCircuit(MyCircuit.getName());
 			if (!InstantiatedComponents.contains(CompName)) {
 				InstantiatedComponents.add(CompName);
-				SubcircuitFactory sub = (SubcircuitFactory) Gate.GetComponent().getFactory();
-				HDLGeneratorFactory Worker = Gate
-						.GetComponent()
-						.getFactory()
-						.getHDLGenerator(Settings.VHDL, _err,
-                sub.getSubcircuit().getNetList(), /* stateful hdl gen */
-								Gate.GetComponent().getAttributeSet(),
-								_vendor);
-				if (Worker != null) {
-					Components.addAll(Worker.GetComponentInstantiation(/*sub
-							.getSubcircuit().getNetList(),*/
-                /*Gate.GetComponent().getAttributeSet(),*/ CompName /*, Settings.VHDL*/ /*,  false */));
-				}
+        Components.addAll(Worker.GetComponentInstantiation(/*sub.getSubcircuit().getNetList(),*/
+              /*Gate.GetComponent().getAttributeSet(),*/ CompName /*, Settings.VHDL*/ /*,  false */));
 			}
 		}
 		return Components;
-	}
-
-	@Override
-	public String getComponentStringIdentifier() {
-		return CorrectLabel.getCorrectLabel(MyCircuit.getName());
 	}
 
 	public ArrayList<String> GetHDLWiring(String HDLType, Netlist TheNets) {
@@ -439,7 +435,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	}
 
 	@Override
-	public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist,
+	public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist, // verify -- this is my netlist, not parent
 			AttributeSet attrs, FPGAReport Reporter, String HDLType) {
 		ArrayList<String> Contents = new ArrayList<String>();
 		String Preamble = (HDLType.equals(Settings.VHDL)) ? "" : "assign ";
@@ -577,7 +573,6 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 							_vendor);
 			if (Worker != null) {
 				if (Worker.IsOnlyInlined(/*HDLType*/)) {
-					// String InlinedName = comp.GetComponent().getFactory().getHDLName(comp.GetComponent().getAttributeSet());
 					String InlinedId = Worker.getComponentStringIdentifier();
 					Long id;
 					if (CompIds.containsKey(InlinedId)) {
@@ -613,31 +608,31 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
               TheNetlist, /* stateful hdl gen */
 							comp.GetComponent().getAttributeSet(),
 							_vendor);
-			if (Worker != null) {
-				if (!Worker.IsOnlyInlined(/*HDLType*/)) {
-					String CompName = comp.GetComponent().getFactory().getHDLName(comp.GetComponent().getAttributeSet());
-					String CompId = Worker.getComponentStringIdentifier();
-					Long id;
-					if (CompIds.containsKey(CompId)) {
-						id = CompIds.get(CompId);
-					} else {
-						id = (long) 1;
-					}
-					if (FirstLine) {
-						Contents.add("");
-            Hdl out = new Hdl(HDLType, Reporter);
-            out.comment("definitions for normal components");
-            Contents.addAll(out);
-						FirstLine = false;
-					}
-					Contents.addAll(Worker.GetComponentMap(/*TheNetlist,*/ id++,
-							comp /*, Reporter, CompName , HDLType*/));
-					if (CompIds.containsKey(CompId)) {
-						CompIds.remove(CompId);
-					}
-					CompIds.put(CompId, id);
-				}
-			}
+			if (Worker == null)
+        continue; // huh?
+      if (Worker.IsOnlyInlined(/*HDLType*/))
+        continue;
+      String CompName = Worker.getHDLNameWithinCircuit(MyCircuit.getName());
+      String CompId = Worker.getComponentStringIdentifier();
+      Long id;
+      if (CompIds.containsKey(CompId)) {
+        id = CompIds.get(CompId);
+      } else {
+        id = (long) 1;
+      }
+      if (FirstLine) {
+        Contents.add("");
+        Hdl out = new Hdl(HDLType, Reporter);
+        out.comment("definitions for normal components");
+        Contents.addAll(out);
+        FirstLine = false;
+      }
+      Contents.addAll(Worker.GetComponentMap(/*TheNetlist,*/ id++,
+            comp /*, Reporter, CompName , HDLType*/, MyCircuit.getName()));
+      if (CompIds.containsKey(CompId)) {
+        CompIds.remove(CompId);
+      }
+      CompIds.put(CompId, id);
 		}
 		/* Finally we instantiate all sub-circuits */
 		FirstLine = true;
@@ -649,31 +644,31 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
               TheNetlist, /* stateful hdl gen */
 							comp.GetComponent().getAttributeSet(),
 							_vendor);
-			if (Worker != null) {
-				String CompName = comp.GetComponent().getFactory().getHDLName(comp.GetComponent().getAttributeSet());
-				String CompId = Worker.getComponentStringIdentifier();
-				Long id;
-				if (CompIds.containsKey(CompId)) {
-					id = CompIds.get(CompId);
-				} else {
-					id = (long) 1;
-				}
-				ArrayList<String> CompMap = Worker.GetComponentMap(/*TheNetlist,*/
-						id++, comp/*, Reporter, CompName , HDLType*/);
-				if (!CompMap.isEmpty()) {
-					if (FirstLine) {
-						Contents.add("");
-            Hdl out = new Hdl(HDLType, Reporter);
-            out.comment("definitions for all sub-circuits");
-            Contents.addAll(out);
-						FirstLine = false;
-					}
-					if (CompIds.containsKey(CompId)) {
-						CompIds.remove(CompId);
-					}
-					CompIds.put(CompId, id);
-					Contents.addAll(CompMap);
-				}
+			if (Worker == null)
+        continue; // huh?
+      String CompName = Worker.getHDLNameWithinCircuit(MyCircuit.getName());
+      String CompId = Worker.getComponentStringIdentifier();
+      Long id;
+      if (CompIds.containsKey(CompId)) {
+        id = CompIds.get(CompId);
+      } else {
+        id = (long) 1;
+      }
+      ArrayList<String> CompMap = Worker.GetComponentMap(/*TheNetlist,*/
+          id++, comp/*, Reporter, CompName , HDLType*/, MyCircuit.getName());
+      if (!CompMap.isEmpty()) {
+        if (FirstLine) {
+          Contents.add("");
+          Hdl out = new Hdl(HDLType, Reporter);
+          out.comment("definitions for all sub-circuits");
+          Contents.addAll(out);
+          FirstLine = false;
+        }
+        if (CompIds.containsKey(CompId)) {
+          CompIds.remove(CompId);
+        }
+        CompIds.put(CompId, id);
+        Contents.addAll(CompMap);
 			}
 		}
 		Contents.add("");

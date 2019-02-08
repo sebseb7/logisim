@@ -44,13 +44,8 @@ public class hex2sevensegHDLGeneratorFactory extends AbstractHDLGeneratorFactory
   // todo: verilog support
 
   public hex2sevensegHDLGeneratorFactory(HDLCTX ctx) {
-    super(ctx);
+    super(ctx,"Hex_to_7_Segment_decoder", "HEX2SEVENSEGMENT");
   }
-
-	@Override
-	public String getComponentStringIdentifier() {
-		return "HEX2SEVENSEGMENT";
-	}
 	
 	@Override
 	public SortedMap<String, Integer> GetInputList(Netlist TheNetlist,
