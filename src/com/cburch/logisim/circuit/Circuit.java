@@ -243,8 +243,7 @@ public class Circuit implements AttributeDefaultProvider {
           }
         }
       } else {
-        ComponentName = comp.getFactory().getHDLName(
-            comp.getAttributeSet());
+        ComponentName = comp.getFactory().getHDLName(comp.getAttributeSet());
       }
       if (!CompName.contains(ComponentName)) {
         CompCount.add(1);
@@ -296,8 +295,7 @@ public class Circuit implements AttributeDefaultProvider {
           AnnotationNames.add(new HashSet<String>());
         }
       } else {
-        CorrectComponentName = comp.getFactory().getHDLName(
-            comp.getAttributeSet());
+        CorrectComponentName = comp.getFactory().getHDLName(comp.getAttributeSet());
         if (!CompName.contains(CorrectComponentName)) {
           /* This should never happen */
           continue;

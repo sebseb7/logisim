@@ -295,9 +295,10 @@ class PLA extends InstanceFactory {
 
   @Override
   public String getHDLName(AttributeSet attrs) {
+    System.out.println("anonymous pla needs a name");
     String Name = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
     if (Name.length() == 0)
-      return "PLA";
+      return "PLA"; // BUG?!
     else
       return "PLA_" + Name;
   }

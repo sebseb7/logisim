@@ -1331,8 +1331,8 @@ public class FPGACommanderGui implements ActionListener {
               Ticker.GetEntity(
 							/* RootSheet.getNetList(),*/ /*null,*/
 							Ticker.getComponentStringIdentifier() /*, MyReporter,
-							MySettings.GetHDLType()*/), Ticker
-							.getComponentStringIdentifier(), MyReporter,
+							MySettings.GetHDLType()*/),
+              Ticker.getComponentStringIdentifier(), MyReporter,
 					MySettings.GetHDLType())) {
 				return false;
 			}

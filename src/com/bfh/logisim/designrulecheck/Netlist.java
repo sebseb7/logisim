@@ -309,7 +309,6 @@ public class Netlist {
         // DynClock = new NetlistComponent(comp);
         continue;
       }
-      String ComponentName = comp.getFactory().getHDLName(comp.getAttributeSet());
 			/*
 			 * Here we check if the components are supported for the HDL
 			 * generation
@@ -339,6 +338,7 @@ public class Netlist {
 				}
 			}
 			/* Now we add the name to the set if it is not already in */
+      String ComponentName = comp.getFactory().getHDLName(comp.getAttributeSet());
 			if (!CompName.contains(ComponentName)) {
 				CompName.add(ComponentName);
 				AnnotationNames.add(new HashSet<String>());
@@ -350,11 +350,8 @@ public class Netlist {
 			 * (annotation) have a label set
 			 */
 			if (comp.getFactory().RequiresNonZeroLabel()) {
-				String Label = CorrectLabel.getCorrectLabel(
-						comp.getAttributeSet().getValue(StdAttr.LABEL)
-								.toString()).toUpperCase();
-				String ComponentName = comp.getFactory().getHDLName(
-						comp.getAttributeSet());
+				String Label = CorrectLabel.getCorrectLabel(comp.getAttributeSet().getValue(StdAttr.LABEL).toString()).toUpperCase();
+				String ComponentName = comp.getFactory().getHDLName(comp.getAttributeSet());
 				if (Label.isEmpty()) {
 					Reporter.AddError("Component \""
 							+ comp.getFactory().getName()
@@ -381,8 +378,7 @@ public class Netlist {
 					DRCStatus = DRC_ERROR;
 					return DRCStatus;
 				}
-				if (AnnotationNames.get(CompName.indexOf(ComponentName))
-						.contains(Label)) {
+				if (AnnotationNames.get(CompName.indexOf(ComponentName)).contains(Label)) {
 					Reporter.AddSevereError("Duplicated label \""
 							+ comp.getAttributeSet().getValue(StdAttr.LABEL)
 									.toString() + "\" found for component "

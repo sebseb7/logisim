@@ -597,18 +597,15 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 	}
 
 	public ArrayList<String> GetComponentMap(/*Netlist Nets,*/ Long ComponentId,
-			NetlistComponent ComponentInfo, /*FPGAReport Reporter,*/
-			String CircuitName /*, String HDLType*/) {
+			NetlistComponent ComponentInfo/* , FPGAReport Reporter,*/
+			/* String CircuitName */ /*, String HDLType*/) {
     if (_nets == null) throw new IllegalStateException();
 		ArrayList<String> Contents = new ArrayList<String>();
-		Map<String, Integer> ParameterMap = GetParameterMap(_nets,
-				ComponentInfo, _err);
-		Map<String, String> PortMap = GetPortMap(_nets, ComponentInfo, _err,
-				_lang);
-		String CompName = (ComponentInfo == null) ? this
-				.getComponentStringIdentifier() : ComponentInfo.GetComponent()
-				.getFactory()
-				.getHDLName(ComponentInfo.GetComponent().getAttributeSet());
+		Map<String, Integer> ParameterMap = GetParameterMap(_nets, ComponentInfo, _err);
+		Map<String, String> PortMap = GetPortMap(_nets, ComponentInfo, _err, _lang);
+		String CompName = (ComponentInfo == null)
+        ? this.getComponentStringIdentifier()
+        : ComponentInfo.GetComponent().getFactory().getHDLName(ComponentInfo.GetComponent().getAttributeSet());
 		String ThisInstanceIdentifier = GetInstanceIdentifier(ComponentInfo,
 				ComponentId);
 		StringBuffer OneLine = new StringBuffer();

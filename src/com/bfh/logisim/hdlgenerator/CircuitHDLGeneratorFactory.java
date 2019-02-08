@@ -89,8 +89,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		MyNetList.SetCurrentHierarchyLevel(Hierarchy);
 		/* First we handle the normal components */
 		for (NetlistComponent ThisComponent : MyNetList.GetNormalComponents()) {
-			String ComponentName = ThisComponent.GetComponent().getFactory()
-					.getHDLName(ThisComponent.GetComponent().getAttributeSet());
+			String ComponentName = ThisComponent.GetComponent().getFactory().getHDLName(ThisComponent.GetComponent().getAttributeSet());
 			if (!HandledComponents.contains(ComponentName)) {
 				HDLGeneratorFactory Worker = ThisComponent
 						.GetComponent()
@@ -231,8 +230,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		ArrayList<String> Components = new ArrayList<String>();
 		Set<String> InstantiatedComponents = new HashSet<String>();
 		for (NetlistComponent Gate : TheNetlist.GetNormalComponents()) {
-			String CompName = Gate.GetComponent().getFactory()
-					.getHDLName(Gate.GetComponent().getAttributeSet());
+			String CompName = Gate.GetComponent().getFactory().getHDLName(Gate.GetComponent().getAttributeSet());
 			if (!InstantiatedComponents.contains(CompName)) {
 				InstantiatedComponents.add(CompName);
 				HDLGeneratorFactory Worker = Gate
@@ -253,8 +251,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		}
 		InstantiatedComponents.clear();
 		for (NetlistComponent Gate : TheNetlist.GetSubCircuits()) {
-			String CompName = Gate.GetComponent().getFactory()
-					.getHDLName(Gate.GetComponent().getAttributeSet());
+			String CompName = Gate.GetComponent().getFactory().getHDLName(Gate.GetComponent().getAttributeSet());
 			if (!InstantiatedComponents.contains(CompName)) {
 				InstantiatedComponents.add(CompName);
 				SubcircuitFactory sub = (SubcircuitFactory) Gate.GetComponent().getFactory();
@@ -580,8 +577,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 							_vendor);
 			if (Worker != null) {
 				if (Worker.IsOnlyInlined(/*HDLType*/)) {
-					String InlinedName = comp.GetComponent().getFactory()
-							.getHDLName(comp.GetComponent().getAttributeSet());
+					String InlinedName = comp.GetComponent().getFactory().getHDLName(comp.GetComponent().getAttributeSet());
 					String InlinedId = Worker.getComponentStringIdentifier();
 					Long id;
 					if (CompIds.containsKey(InlinedId)) {
@@ -617,8 +613,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 							_vendor);
 			if (Worker != null) {
 				if (!Worker.IsOnlyInlined(/*HDLType*/)) {
-					String CompName = comp.GetComponent().getFactory()
-							.getHDLName(comp.GetComponent().getAttributeSet());
+					String CompName = comp.GetComponent().getFactory().getHDLName(comp.GetComponent().getAttributeSet());
 					String CompId = Worker.getComponentStringIdentifier();
 					Long id;
 					if (CompIds.containsKey(CompId)) {
@@ -634,7 +629,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 						FirstLine = false;
 					}
 					Contents.addAll(Worker.GetComponentMap(/*TheNetlist,*/ id++,
-							comp, /*Reporter,*/ CompName /*, HDLType*/));
+							comp /*, Reporter, CompName , HDLType*/));
 					if (CompIds.containsKey(CompId)) {
 						CompIds.remove(CompId);
 					}
@@ -653,8 +648,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 							comp.GetComponent().getAttributeSet(),
 							_vendor);
 			if (Worker != null) {
-				String CompName = comp.GetComponent().getFactory()
-						.getHDLName(comp.GetComponent().getAttributeSet());
+				String CompName = comp.GetComponent().getFactory().getHDLName(comp.GetComponent().getAttributeSet());
 				String CompId = Worker.getComponentStringIdentifier();
 				Long id;
 				if (CompIds.containsKey(CompId)) {
@@ -663,7 +657,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 					id = (long) 1;
 				}
 				ArrayList<String> CompMap = Worker.GetComponentMap(/*TheNetlist,*/
-						id++, comp, /*Reporter,*/ CompName /*, HDLType*/);
+						id++, comp/*, Reporter, CompName , HDLType*/);
 				if (!CompMap.isEmpty()) {
 					if (FirstLine) {
 						Contents.add("");
