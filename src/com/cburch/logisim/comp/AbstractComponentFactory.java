@@ -134,8 +134,6 @@ public abstract class AbstractComponentFactory implements ComponentFactory {
     }
   }
 
-  public boolean RequiresGlobalClock() { return false; }
-
   @Override
   public String toString() {
     return getName();

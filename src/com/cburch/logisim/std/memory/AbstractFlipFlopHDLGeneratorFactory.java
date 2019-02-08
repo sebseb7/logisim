@@ -139,9 +139,7 @@ public class AbstractFlipFlopHDLGeneratorFactory extends AbstractHDLGeneratorFac
       list.put("Clock", zero);
     } else if (!gatedClk && edgeTriggered(attrs)) {
       list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
-      if (nets.RequiresGlobalClockConnection())
-        list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex)); // bug?
-      else if (activelo)
+      if (activelo)
         list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.NegativeEdgeTickIndex));
       else
         list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.PositiveEdgeTickIndex));

@@ -1591,9 +1591,6 @@ public class Netlist {
 			if (comp.getFactory() instanceof SplitterFactory) {
 				SplitterList.add(comp);
 			}
-			if (comp.getFactory().RequiresGlobalClock()) {
-				ClockSources.SetGloblaClockRequirement();
-			}
       // todo:
       //if (comp.getFactory() instanceof DynamicClockDivider) {
       //}
@@ -1867,10 +1864,6 @@ public class Netlist {
 
 	public String projName() {
 		return MyCircuit.getProjName();
-	}
-
-	public boolean RequiresGlobalClockConnection() {
-		return MyClockInformation.GetSourceContainer().RequiresFPGAGlobalClock();
 	}
 
 	public boolean RawFPGAClock() {

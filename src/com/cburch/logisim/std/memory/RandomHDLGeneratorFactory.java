@@ -113,9 +113,7 @@ public class RandomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       list.put("ClockEnable", zero);
     } else {
       list.put("GlobalClock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));;
-      if (nets.RequiresGlobalClockConnection())
-        list.put("ClockEnable", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
-      else if (activelo)
+      if (activelo)
         list.put("ClockEnable", String.format(clk+idx, ClockHDLGeneratorFactory.NegativeEdgeTickIndex));
       else
         list.put("ClockEnable", String.format(clk+idx, ClockHDLGeneratorFactory.PositiveEdgeTickIndex));

@@ -130,16 +130,12 @@ public class CounterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
         list.put("ClockEnable", one);
       } else {
         int ClockBusIndex = ClockHDLGeneratorFactory.DerivedClockIndex;
-        if (nets.RequiresGlobalClockConnection()) {
-          ClockBusIndex = ClockHDLGeneratorFactory.GlobalClockIndex;
-        } else {
-          if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_LOW)
-            ClockBusIndex = ClockHDLGeneratorFactory.InvertedDerivedClockIndex;
-          else if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_RISING)
-            ClockBusIndex = ClockHDLGeneratorFactory.PositiveEdgeTickIndex;
-          else if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING)
-            ClockBusIndex = ClockHDLGeneratorFactory.InvertedDerivedClockIndex;
-        }
+        if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_LOW)
+          ClockBusIndex = ClockHDLGeneratorFactory.InvertedDerivedClockIndex;
+        else if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_RISING)
+          ClockBusIndex = ClockHDLGeneratorFactory.PositiveEdgeTickIndex;
+        else if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING)
+          ClockBusIndex = ClockHDLGeneratorFactory.InvertedDerivedClockIndex;
         list.put("GlobalClock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
         list.put("ClockEnable", String.format(clk+idx, ClockBusIndex));
       }

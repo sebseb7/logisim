@@ -142,9 +142,7 @@ public class RamHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       list.put("Tick", one);
     } else {
       list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
-      if (nets.RequiresGlobalClockConnection())
-        list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
-      else if (attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_RISING)
+      if (attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_RISING)
         list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.PositiveEdgeTickIndex));
       else
         list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.NegativeEdgeTickIndex));

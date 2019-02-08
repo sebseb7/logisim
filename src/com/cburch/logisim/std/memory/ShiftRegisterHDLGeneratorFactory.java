@@ -249,9 +249,7 @@ public class ShiftRegisterHDLGeneratorFactory extends AbstractHDLGeneratorFactor
       list.put("Tick", zero);
     } else if (!gatedClk) {
       list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
-      if (nets.RequiresGlobalClockConnection())
-        list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
-      else if (activelo)
+      if (activelo)
         list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.NegativeEdgeTickIndex));
       else
         list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.PositiveEdgeTickIndex));

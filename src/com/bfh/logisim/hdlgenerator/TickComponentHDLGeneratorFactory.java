@@ -73,10 +73,10 @@ public class TickComponentHDLGeneratorFactory extends
 			AttributeSet attrs) {
 		SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
 		Inputs.put("FPGAClock", 1);
-                if (TickPeriod < 0) {
-                    // dynamic divided clock
-                    Inputs.put("ReloadValueLessOne", NrOfCounterBitsId);
-                }
+    if (TickPeriod < 0) {
+      // dynamic divided clock
+      Inputs.put("ReloadValueLessOne", NrOfCounterBitsId);
+    }
 		return Inputs;
 	}
 
@@ -92,23 +92,23 @@ public class TickComponentHDLGeneratorFactory extends
     out.comment("definitions for clock tick generator outputs");
     Contents.addAll(out);
     }
-		if (TheNetlist.RequiresGlobalClockConnection() || TickPeriod == 0) {
-			Contents.add("   " + Preamble + "FPGATick " + AssignOperator
-					+ " '1';");
-                        return Contents;
-		}
-                String ReloadValue;
-                if (TickPeriod < 0) {
-                    ReloadValue = "ReloadValueLessOne";
-                } else {
-                    if (HDLType.equals(Settings.VHDL)) {
-                        ReloadValue = "std_logic_vector(to_unsigned("
-                            +"("+ ReloadValueStr + "-1)," + NrOfCounterBitsStr + "))";
-                    } else {
-                        ReloadValue = ReloadValueStr + "-1";
-                    }
-                }
-                Contents.add("   " + Preamble + "FPGATick " + AssignOperator + " s_tick_reg;");
+    if (TickPeriod == 0) {
+      Contents.add("   " + Preamble + "FPGATick " + AssignOperator
+          + " '1';");
+      return Contents;
+    }
+    String ReloadValue;
+    if (TickPeriod < 0) {
+      ReloadValue = "ReloadValueLessOne";
+    } else {
+      if (HDLType.equals(Settings.VHDL)) {
+        ReloadValue = "std_logic_vector(to_unsigned("
+            +"("+ ReloadValueStr + "-1)," + NrOfCounterBitsStr + "))";
+      } else {
+        ReloadValue = ReloadValueStr + "-1";
+      }
+    }
+    Contents.add("   " + Preamble + "FPGATick " + AssignOperator + " s_tick_reg;");
 		Contents.add("");
     {
     Hdl out = new Hdl(HDLType, Reporter);

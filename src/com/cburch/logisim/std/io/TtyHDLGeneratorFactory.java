@@ -107,14 +107,10 @@ public class TtyHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
         PortMap.put("ClockEnable", SetBit);
       } else {
         int ClockBusIndex = ClockHDLGeneratorFactory.DerivedClockIndex;
-        if (Nets.RequiresGlobalClockConnection()) {
-          ClockBusIndex = ClockHDLGeneratorFactory.GlobalClockIndex;
-        } else {
-          if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_RISING)
-            ClockBusIndex = ClockHDLGeneratorFactory.PositiveEdgeTickIndex;
-          else if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING)
-            ClockBusIndex = ClockHDLGeneratorFactory.InvertedDerivedClockIndex;
-        }
+        if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_RISING)
+          ClockBusIndex = ClockHDLGeneratorFactory.PositiveEdgeTickIndex;
+        else if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING)
+          ClockBusIndex = ClockHDLGeneratorFactory.InvertedDerivedClockIndex;
         PortMap.put("GlobalClock",
             ClockNetName
             + BracketOpen

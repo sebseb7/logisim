@@ -131,9 +131,9 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
 		int NrOfClockTrees = TheNetlist.NumberOfClockTrees();
 		/* First we instantiate the Clock tree busses when present */
-		if (NrOfClockTrees > 0 || TheNetlist.RequiresGlobalClockConnection()) {
-			Inputs.put(TickComponentHDLGeneratorFactory.FPGAClock, 1);
-		}
+    if (NrOfClockTrees > 0) {
+      Inputs.put(TickComponentHDLGeneratorFactory.FPGAClock, 1);
+    }
 		for (int NrOfInputs = 0; NrOfInputs < MyIOComponents.GetNrOfToplevelInputPins(); NrOfInputs++) {
 			Inputs.put(HDLGeneratorFactory.FPGAInputPinName + "_" + Integer.toString(NrOfInputs), 1);
 		}

@@ -365,9 +365,6 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		// InOuts.put(ClockTreeName + Integer.toString(i),
 		// ClockHDLGeneratorFactory.NrOfClockBits);
 		// }
-		// if (MyNetList.RequiresGlobalClockConnection()) {
-		// InOuts.put(TickComponentHDLGeneratorFactory.FPGAClock, 1);
-		// }
 		int InOutBubbles = MyNetList.NumberOfInOutBubbles();
 		if (InOutBubbles > 0) {
 			if (InOutBubbles > 1) {
@@ -394,9 +391,6 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		for (int i = 0; i < MyNetList.NumberOfClockTrees(); i++) {
 			Inputs.put(ClockTreeName + Integer.toString(i),
 					ClockHDLGeneratorFactory.NrOfClockBits);
-		}
-		if (MyNetList.RequiresGlobalClockConnection()) {
-			Inputs.put(TickComponentHDLGeneratorFactory.FPGAClock, 1);
 		}
 		int InputBubbles = MyNetList.NumberOfInputBubbles();
 		if (InputBubbles > 0) {
@@ -479,21 +473,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			while (Temp.length() < SallignmentSize) {
 				Temp.append(" ");
 			}
-			if (!TheNetlist.RequiresGlobalClockConnection()) {
-				Contents.add("   "
-						+ Preamble
-						+ Temp.toString()
-						+ AssignmentOperator
-						+ ClockNet
-						+ OpenBracket
-						+ Integer
-								.toString(ClockHDLGeneratorFactory.DerivedClockIndex)
-						+ CloseBracket + ";");
-			} else {
 				Contents.add("   " + Preamble + Temp.toString()
 						+ AssignmentOperator
 						+ TickComponentHDLGeneratorFactory.FPGAClock + ";");
-			}
 		}
 		/* Here we define all wiring; hence all complex splitter connections */
 		ArrayList<String> Wiring = GetHDLWiring(HDLType, TheNetlist);
@@ -731,10 +713,6 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				PortMap.put(ClockTreeName + Integer.toString(i), ClockTreeName
 						+ Integer.toString(i));
 			}
-			if (MyNetList.RequiresGlobalClockConnection()) {
-				PortMap.put(TickComponentHDLGeneratorFactory.FPGAClock,
-						TickComponentHDLGeneratorFactory.FPGAClock);
-			}
 			if (NrOfInputBubbles > 0) {
 				PortMap.put(HDLGeneratorFactory.LocalInputBubbleBusname,
 						HDLGeneratorFactory.LocalInputBubbleBusname
@@ -816,14 +794,10 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				PortMap.put(ClockTreeName + Integer.toString(i), "s_"
 						+ ClockTreeName + Integer.toString(i));
 			}
-                        NetlistComponent dynClock = Nets.GetDynamicClock();
-			if (Nets.RequiresGlobalClockConnection()) {
-				PortMap.put(TickComponentHDLGeneratorFactory.FPGAClock,
-						TickComponentHDLGeneratorFactory.FPGAClock);
-			}
-                        if (dynClock != null) {
-                            PortMap.put("LOGISIM_DYNAMIC_CLOCK_OUT", "s_LOGISIM_DYNAMIC_CLOCK");
-                        }
+      NetlistComponent dynClock = Nets.GetDynamicClock();
+      if (dynClock != null) {
+        PortMap.put("LOGISIM_DYNAMIC_CLOCK_OUT", "s_LOGISIM_DYNAMIC_CLOCK");
+      }
 			if (NrOfInputBubbles > 0) {
 				PortMap.put(HDLGeneratorFactory.LocalInputBubbleBusname,
 						"s_LOGISIM_INPUT_BUBBLES");
