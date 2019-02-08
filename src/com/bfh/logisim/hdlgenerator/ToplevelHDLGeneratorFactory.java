@@ -37,7 +37,6 @@ import java.util.TreeMap;
 import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgaboardeditor.FPGAClass;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
 import com.bfh.logisim.library.DynamicClock;
@@ -259,12 +258,12 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				HDLGeneratorFactory Generator = MyIOComponents.GetComponent(CompId).GetComponent()
 						.getFactory().getHDLGenerator(
 								HDLType, Reporter,
-                _nets, /* fixme - we use the top-level nets here, though the GetInlinedCode2() below probably doesn't use it */
+                _nets, /* fixme - we use the top-level nets here, though the GetInlinedCodeForTopLevelIO() below probably doesn't use it */
 								MyIOComponents.GetComponent(CompId).GetComponent().getAttributeSet(), _vendor);
 				if (Generator == null) {
 					Reporter.AddError("No generator for component " + CompId.toString());
 				} else {
-					Contents.addAll(Generator.GetInlinedCode2(/*HDLType,*/ CompId, /*Reporter,*/ MyIOComponents));
+					Contents.addAll(Generator.GetInlinedCodeForTopLevelIO(CompId, MyIOComponents));
 				}
 			} else if (MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof PortIO) {
 				((PortIO) MyIOComponents.GetComponent(CompId).GetComponent().getFactory()).setMapInfo(MyIOComponents);

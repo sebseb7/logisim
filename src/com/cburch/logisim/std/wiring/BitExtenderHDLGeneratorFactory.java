@@ -31,11 +31,8 @@ package com.cburch.logisim.std.wiring;
 
 import java.util.ArrayList;
 
-import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 
 public class BitExtenderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
@@ -48,8 +45,7 @@ public class BitExtenderHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
   public boolean IsOnlyInlined(/*String lang*/) { return true; }
 
   @Override
-  public ArrayList<String> GetInlinedCode3(/*Netlist nets, Long id, */
-      NetlistComponent info /*, FPGAReport err, String circName, String lang*/) {
+  public ArrayList<String> GetInlinedCode(NetlistComponent info) {
     if (_nets == null) throw new IllegalStateException();
 
     Hdl out = new Hdl(_lang, _err);

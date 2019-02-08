@@ -83,16 +83,30 @@ public abstract class HDLGeneratorFactory {
 	public static final String FPGAInOutPinName = "FPGA_INOUT_PIN";
 	public static final String FPGAOutputPinName = "FPGA_OUTPUT_PIN";
 
-	public abstract ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/
-			/*AttributeSet attrs,*/ Map<String, File> MemInitFiles,
-			String ComponentName /*, FPGAReport Reporter, String HDLType */);
+	public abstract ArrayList<String> GetArchitecture(
+      Map<String, File> MemInitFiles, String ComponentName);
 
-	public abstract ArrayList<String> GetComponentInstantiation(/*Netlist TheNetlist,*/
-			/*AttributeSet attrs,*/ String ComponentName /*, String HDLType*/);
+	public abstract ArrayList<String> GetEntity(String ComponentName);
 
-	public abstract ArrayList<String> GetComponentMap(/*Netlist Nets,*/ Long ComponentId,
-			NetlistComponent ComponentInfo/* , FPGAReport Reporter,*/
-			/* String CircuitName , String HDLType*/, String ContainingCircuitName);
+	public abstract ArrayList<String> GetComponentInstantiation(String ComponentName);
+
+	public abstract ArrayList<String> GetComponentMap(Long ComponentId,
+			NetlistComponent ComponentInfo, String ContainingCircuitName);
+
+  // CircuitHDLGeneratorFactory calls this for NormalComponents, when nets
+  // defined, if IsOnlyInlined returns true.
+	public abstract ArrayList<String> GetInlinedCode(NetlistComponent ComponentInfo);
+	public boolean IsOnlyInlined() { return false; }
+
+  // ToplevelHDLGeneratorFactory calls this for IO-related components (like
+  // Button and LED?), though not for Pin, PortIO, Tty, or Keyboard, which are
+  // handled specially.
+	public abstract ArrayList<String> GetInlinedCodeForTopLevelIO(ArrayList<String> ComponentIdentifier, 
+			MappableResourcesContainer MapInfo);
+
+	public abstract Map<String, ArrayList<String>> GetMemInitData();
+
+	public abstract String GetRelativeDirectory();
 
   // For some components, getHDLName() only works reliably if the component has
   // a (preferable friendly) name that is unique within the circuit, because it
@@ -166,25 +180,5 @@ public abstract class HDLGeneratorFactory {
   // CircuitHDLGeneratorFactory will add suffixes to ensure all the instance
   // names within a circuit are unique.
 	public final String getComponentStringIdentifier() { return _hdlInstanceNamePrefix; }
-	
-	public abstract Map<String, ArrayList<String>> GetMemInitData(/*AttributeSet attrs*/);
 
-	public abstract ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ /*AttributeSet attrs,*/
-			String ComponentName /*, FPGAReport Reporter, String HDLType*/);
-
-  // CircuitHDLGeneratorFactory calls this for NormalComponents, when nets
-  // defined, if IsOnlyInlined returns true.
-	public abstract ArrayList<String> GetInlinedCode3(/*Netlist Nets, Long ComponentId,*/
-			NetlistComponent ComponentInfo/*, FPGAReport Reporter
-			String CircuitName, String HDLType*/);
-
-  // ToplevelHDLGeneratorFactory calls this for components that are not Pin,
-  // PortIO, Tty, or Keyboard.
-	public abstract ArrayList<String> GetInlinedCode2(/*String HDLType,*/
-			ArrayList<String> ComponentIdentifier, /*FPGAReport Reporter,*/
-			MappableResourcesContainer MapInfo);
-
-	public abstract String GetRelativeDirectory(/*String HDLType*/);
-
-	public boolean IsOnlyInlined(/*String HDLType*/) { return false; }
 }

@@ -767,20 +767,13 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 		return new ArrayList<String>();
 	}
 
-  // CircuitHDLGeneratorFactory calls this for NormalComponents, when nets
-  // defined, if IsOnlyInlined returns true.
-	public ArrayList<String> GetInlinedCode3(/*Netlist Nets, Long ComponentId, */
-			NetlistComponent ComponentInfo/*, FPGAReport Reporter,
-			String  CircuitName, String HDLType*/) {
+	public ArrayList<String> GetInlinedCode(NetlistComponent ComponentInfo) {
 		ArrayList<String> Contents = new ArrayList<String>();
 		return Contents;
 	}
 
-  // ToplevelHDLGeneratorFactory calls this for components that are not Pin,
-  // PortIO, Tty, or Keyboard.
-	public ArrayList<String> GetInlinedCode2(/*String HDLType,*/
-			ArrayList<String> ComponentIdentifier, /*FPGAReport Reporter,*/
-			MappableResourcesContainer MapInfo) {
+	public ArrayList<String> GetInlinedCodeForTopLevelIO(
+      ArrayList<String> ComponentIdentifier, MappableResourcesContainer MapInfo) {
 		ArrayList<String> Contents = new ArrayList<String>();
 		String Preamble = (_lang.equals(Settings.VHDL)) ? "" : "assign ";
 		String AssignOperator = (_lang.equals(Settings.VHDL)) ? " <= " : " = ";

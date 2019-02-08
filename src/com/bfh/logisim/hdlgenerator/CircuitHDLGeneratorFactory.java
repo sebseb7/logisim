@@ -570,8 +570,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 						FirstLine = false;
 					}
           id++; // BUG?
-					Contents.addAll(Worker.GetInlinedCode3(/*TheNetlist, id++,*/
-							comp/*, Reporter, InlinedName, HDLType*/));
+					Contents.addAll(Worker.GetInlinedCode(comp));
 					if (CompIds.containsKey(InlinedId)) {
 						CompIds.remove(InlinedId);
 					}
