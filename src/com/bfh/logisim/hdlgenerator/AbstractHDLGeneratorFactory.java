@@ -34,7 +34,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
@@ -77,15 +76,6 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
     super(ctx.lang, ctx.err, ctx.nets, ctx.attrs, ctx.vendor, hdlComponentName, hdlInstanceNamePrefix);
   }
 
-  // protected AbstractHDLGeneratorFactory(String lang, FPGAReport err, AttributeSet attrs) {
-  //   super(lang, err, null /* nets, fixme */, attrs);
-  // }
-  // 
-  // public void initHDLGen(Netlist nets) { // fixme
-  //   if (_nets != null) throw new IllegalStateException();
-  //   _nets = nets;
-  // }
-	
 	public static File WriteMemInitFile(String TargetDirectory,
 			ArrayList<String> Contents, String ComponentName,
 			String MemName,
@@ -145,27 +135,18 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 	public ArrayList<String> GetArchitecture(/*Netlist TheNetlist,*/
 			/*AttributeSet attrs,*/ Map<String, File> memInitFiles,
 			String ComponentName /*, FPGAReport Reporter, String HDLType */) {
-    if (_nets == null) throw new IllegalStateException();
-    return GetArchitectureWithNetlist(_nets, /*attrs,*/ memInitFiles, ComponentName /*, Reporter, HDLType*/);
-  }
+    // if (_nets == null) throw new IllegalStateException();
+    Netlist TheNetlist = _nets;
 
-	protected ArrayList<String> GetArchitectureWithNetlist(Netlist TheNetlist,
-			/*AttributeSet attrs,*/ Map<String, File> memInitFiles,
-			String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
 		ArrayList<String> Contents = new ArrayList<String>();
-		Map<String, Integer> InputsList = GetInputList(TheNetlist, _attrs); // For
-																			// verilog
-		// Map<String, Integer> InOutsList = GetInOutList(TheNetlist, _attrs);
-		// //For verilog
-		Map<String, Integer> OutputsList = GetOutputList(TheNetlist, _attrs); // For
-																				// verilog
+		Map<String, Integer> InputsList = GetInputList(TheNetlist, _attrs);
+		Map<String, Integer> OutputsList = GetOutputList(TheNetlist, _attrs);
 		Map<Integer, String> ParameterList = GetParameterList(_attrs);
 		Map<String, Integer> WireList = GetWireList(_attrs, TheNetlist);
 		Map<String, Integer> RegList = GetRegList(_attrs, _lang);
 		Map<String, Integer> MemList = GetMemList(_attrs, _lang);
 		StringBuffer OneLine = new StringBuffer();
-		Contents.addAll(FileWriter.getGenerateRemark(ComponentName, _lang,
-				TheNetlist.projName()));
+		Contents.addAll(FileWriter.getGenerateRemark(ComponentName, _lang, "project" /* TheNetlist.projName()*/));
 		if (_lang.equals(Settings.VHDL)) {
 			ArrayList<String> libs = GetExtraLibraries();
 			if (!libs.isEmpty()) {
@@ -184,7 +165,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 				}
 				Contents.add("");
 			}
-			ArrayList<String> Comps = GetComponentDeclarationSection( TheNetlist, _attrs);
+			ArrayList<String> Comps = GetComponentDeclarationSection(TheNetlist, _attrs);
 			if (!Comps.isEmpty()) {
         Hdl out = new Hdl(_lang, _err);
         out.comment("definitions for components");
@@ -743,15 +724,12 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 	@Override
 	public ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ /*AttributeSet attrs,*/
 			String ComponentName /*, FPGAReport Reporter, String HDLType*/) {
-    if (_nets == null) throw new IllegalStateException();
-    return GetEntityWithNetlist(_nets, /*attrs,*/ ComponentName);
-  }
-
-	protected ArrayList<String> GetEntityWithNetlist(Netlist nets, /*AttributeSet attrs,*/ String ComponentName) {
+    // if (_nets == null) throw new IllegalStateException();
+    Netlist nets = _nets;
 		ArrayList<String> Contents = new ArrayList<String>();
 		if (_lang.equals(Settings.VHDL)) {
 			Contents.addAll(FileWriter.getGenerateRemark(ComponentName,
-					Settings.VHDL, nets.projName()));
+					Settings.VHDL, "project" /* nets.projName() */));
 			Contents.addAll(FileWriter.getExtendedLibrary());
 			Contents.addAll(GetVHDLBlackBox(nets, _attrs, ComponentName, true));
 		}

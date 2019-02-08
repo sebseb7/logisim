@@ -170,7 +170,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		if (!HandledComponents.contains(ComponentName)) {
 			if (!WriteEntity(
 					WorkingDir + GetRelativeDirectory(/*_lang*/),
-					GetEntityWithNetlist(MyNetList, /*null,*/ ComponentName),
+					GetEntity(ComponentName),
 					ComponentName, _err, _lang)) {
 				return false;
 			}
@@ -188,13 +188,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			} else {
 				if (!WriteArchitecture(
 						WorkingDir + GetRelativeDirectory(/*_lang*/),
-						this.GetArchitectureWithNetlist(MyNetList, /* stateful hdl gen */
-                /* We don't use _nets here, b/c that is the netlist for our
-                 * parent (or null at the top level, b/c FPGACommanderGui
-                 * doesn't configure it), which probably isn't what we want
-                 * here... we want our own inner circuit netlist instead. Or
-                 * maybe it doesn't matter? What is netlist used for here? Just
-                 * the circuit name? */
+						this.GetArchitecture( /* stateful hdl gen */
               /*null,*/ null, ComponentName /*, Reporter, HDLType*/), ComponentName, _err, _lang)) {
 					return false;
 				}
@@ -227,8 +221,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	}
 
 	@Override
-	public ArrayList<String> GetComponentDeclarationSection(Netlist TheNetlist,// verify - this is my netlist, not parent?
+	public ArrayList<String> GetComponentDeclarationSection(Netlist ParentCircuitNetlist,
 			AttributeSet attrs) {
+    Netlist TheNetlist = MyCircuit.getNetList();
 		ArrayList<String> Components = new ArrayList<String>();
 		Set<String> InstantiatedComponents = new HashSet<String>();
 		for (NetlistComponent Gate : TheNetlist.GetNormalComponents()) {
@@ -358,8 +353,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	}
 
 	@Override
-	public SortedMap<String, Integer> GetInOutList(Netlist MyNetList,
+	public SortedMap<String, Integer> GetInOutList(Netlist ParentCircuitNetList,
 			AttributeSet attrs) {
+		Netlist MyNetList = MyCircuit.getNetList();
 		SortedMap<String, Integer> InOuts = new TreeMap<String, Integer>();
 		// for (int i = 0; i < MyNetList.NumberOfClockTrees(); i++) {
 		// InOuts.put(ClockTreeName + Integer.toString(i),
@@ -385,8 +381,8 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	}
 
 	@Override
-	public SortedMap<String, Integer> GetInputList(Netlist MyNetList,
-			AttributeSet attrs) {
+	public SortedMap<String, Integer> GetInputList(Netlist ParentCircuitNetList, AttributeSet attrs) {
+		Netlist MyNetList = MyCircuit.getNetList();
 		SortedMap<String, Integer> Inputs = new TreeMap<String, Integer>();
 		for (int i = 0; i < MyNetList.NumberOfClockTrees(); i++) {
 			Inputs.put(ClockTreeName + Integer.toString(i),
@@ -429,8 +425,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	}
 
 	@Override
-	public ArrayList<String> GetModuleFunctionality(Netlist TheNetlist, // verify -- this is my netlist, not parent
+	public ArrayList<String> GetModuleFunctionality(Netlist ParentCircuitNetlist,
 			AttributeSet attrs, FPGAReport Reporter, String HDLType) {
+    Netlist TheNetlist = MyCircuit.getNetList();
 		ArrayList<String> Contents = new ArrayList<String>();
 		String Preamble = (HDLType.equals(Settings.VHDL)) ? "" : "assign ";
 		String AssignmentOperator = (HDLType.equals(Settings.VHDL)) ? "<= "
@@ -657,8 +654,9 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 	}
 
 	@Override
-	public SortedMap<String, Integer> GetOutputList(Netlist MyNetList,
+	public SortedMap<String, Integer> GetOutputList(Netlist ParentCircuitNetList,
 			AttributeSet attrs) {
+		Netlist MyNetList = MyCircuit.getNetList();
 		SortedMap<String, Integer> Outputs = new TreeMap<String, Integer>();
                 NetlistComponent dynClock = MyNetList.GetDynamicClock();
                 if (dynClock != null) {
@@ -1103,22 +1101,23 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
 	@Override
 	public SortedMap<String, Integer> GetWireList(AttributeSet attrs,
-			Netlist Nets) {
+			Netlist ParentCircuitNets) {
+		Netlist MyNetList = MyCircuit.getNetList();
 		SortedMap<String, Integer> SignalMap = new TreeMap<String, Integer>();
 
 		/* First we define the nets */
-		for (Net ThisNet : Nets.GetAllNets()) {
+		for (Net ThisNet : MyNetList.GetAllNets()) {
 			if (!ThisNet.isBus()) {
 				SignalMap.put(
-						NetName + Integer.toString(Nets.GetNetId(ThisNet)), 1);
+						NetName + Integer.toString(MyNetList.GetNetId(ThisNet)), 1);
 			}
 		}
 		/* now we define the busses */
-		for (Net ThisNet : Nets.GetAllNets()) {
+		for (Net ThisNet : MyNetList.GetAllNets()) {
 			if (ThisNet.isBus()) {
 				int NrOfBits = ThisNet.BitWidth();
 				SignalMap.put(
-						BusName + Integer.toString(Nets.GetNetId(ThisNet)),
+						BusName + Integer.toString(MyNetList.GetNetId(ThisNet)),
 						NrOfBits);
 			}
 		}

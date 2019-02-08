@@ -47,7 +47,10 @@ public abstract class HDLGeneratorFactory {
 
   protected final String _lang; // context - fixme
   protected final FPGAReport _err; // context - fixme
-  protected final Netlist _nets; // context - fixme
+  protected final Netlist _nets; // context - fixme // signals of the circuit in
+  // which this component is embeded. For CircuitHDLGeneratorComponent, this is
+  // the signals for the *parent* circuit (or null, if it is the top-level
+  // circuit), not the signals within this subcircuit.
   protected final AttributeSet _attrs; // context - fixme
   protected final char _vendor; // context - fixme
 
