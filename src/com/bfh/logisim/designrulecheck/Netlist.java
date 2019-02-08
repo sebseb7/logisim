@@ -1870,8 +1870,7 @@ public class Netlist {
 	}
 
 	public boolean RequiresGlobalClockConnection() {
-		return MyClockInformation.GetSourceContainer()
-				.RequiresFPGAGlobalClock();
+		return MyClockInformation.GetSourceContainer().RequiresFPGAGlobalClock();
 	}
 
 	public boolean RawFPGAClock() {

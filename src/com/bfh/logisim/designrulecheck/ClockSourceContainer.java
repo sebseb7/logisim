@@ -37,14 +37,11 @@ import com.cburch.logisim.std.wiring.Clock;
 
 public class ClockSourceContainer {
 
-	ArrayList<Component> sources;
-	boolean RequiresFPGAGlobalClock;
-	boolean RawFPGAClock;
+	ArrayList<Component> sources = new ArrayList<>();
+	boolean RequiresFPGAGlobalClock = false;
+	boolean RawFPGAClock = false;
 
 	public ClockSourceContainer() {
-		sources = new ArrayList<Component>();
-		RequiresFPGAGlobalClock = false;
-		RawFPGAClock = false;
 	}
 
 	public void clear() {
@@ -98,7 +95,7 @@ public class ClockSourceContainer {
 		return RawFPGAClock;
 	}
 
-        public void SetRawFPGAClock() {
-                RawFPGAClock = true;
-        }
+  public void SetRawFPGAClock() {
+    RawFPGAClock = true;
+  }
 }
