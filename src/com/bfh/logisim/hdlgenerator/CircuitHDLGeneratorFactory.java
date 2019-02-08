@@ -1152,4 +1152,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 		return SignalMap;
 	}
 
+  @Override
+  public boolean RequiresNonZeroLabel() { return true; }
+
 }

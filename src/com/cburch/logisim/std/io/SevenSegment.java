@@ -36,7 +36,6 @@ import java.awt.Graphics;
 import java.util.ArrayList;
 import java.awt.event.KeyEvent;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
@@ -215,11 +214,6 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
     } else {
       data.setValue(value);
     }
-  }
-
-  @Override
-  public boolean RequiresNonZeroLabel() {
-    return true;
   }
 
   public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {

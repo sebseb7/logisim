@@ -34,9 +34,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.util.WeakHashMap;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
@@ -748,8 +746,4 @@ public class Ram extends Mem {
     return bus == null || bus.equals(RamAttributes.BUS_SEP);
   }
 
-  @Override
-  public boolean RequiresNonZeroLabel() {
-    return true;
-  }
 }

@@ -47,7 +47,6 @@ import java.util.Map;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.CircuitHDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.comp.Component;
@@ -425,11 +424,6 @@ public class SubcircuitFactory extends InstanceFactory {
         superState.setPort(i, val, 1);
       }
     }
-  }
-
-  @Override
-  public boolean RequiresNonZeroLabel() {
-    return true;
   }
 
   /*

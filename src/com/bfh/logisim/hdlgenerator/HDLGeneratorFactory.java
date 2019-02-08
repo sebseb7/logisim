@@ -99,8 +99,10 @@ public abstract class HDLGeneratorFactory {
   // shows up in the component-mapping GUI dialog where the user assigns FPGA
   // resources. This is the case for Pin, PortIO, LED, BUtton, and similar
   // components. These components should include "${LABEL}" in their name. ROM
-  // and volatile RAM components also do the same (see note below).
-  public final boolean RequiresNonZeroLabel() {
+  // and volatile RAM components also do the same (see note below). Also,
+  // Subcircuit and VhdlEntity need labels for the same reason, and override
+  // this method to return true.
+  public boolean RequiresNonZeroLabel() {
     return _hdlComponentName.contains("${LABEL}");
   }
 

@@ -46,7 +46,6 @@ import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 
 import com.bfh.logisim.library.DynamicClock;
-import com.bfh.logisim.fpgaboardeditor.FPGAClass;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.cburch.logisim.circuit.Circuit;
@@ -54,6 +53,7 @@ import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.circuit.Splitter;
 import com.cburch.logisim.circuit.SplitterFactory;
 import com.cburch.logisim.circuit.SubcircuitFactory;
+import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.EndData;
@@ -291,6 +291,7 @@ public class Netlist {
 		} else {
 			Sheetnames.add(MyCircuit.getName());
 		}
+
     HashMap<Component, HDLGeneratorFactory> generators = new HashMap<>();
 		for (Component comp : MyCircuit.getNonWires()) {
       if (comp.getFactory() instanceof DynamicClock) {
@@ -317,6 +318,18 @@ public class Netlist {
 			 */
       if (comp.getFactory().HDLIgnore())
         continue;
+      if (comp.getFactory() instanceof Pin)
+        continue;
+			if (comp.getFactory() instanceof SubcircuitFactory
+          || comp.getFactory() instanceof VhdlEntity) {
+				/* Special care has to be taken for sub-circuits and vhdl entities*/
+				if (!CorrectLabel.IsCorrectLabel(comp.getFactory().getName(),
+						HDLIdentifier, "Bad name for component \""
+								+ comp.getFactory().getName() + "\" in circuit \"" + MyCircuit.getName(), Reporter)) {
+					DRCStatus = DRC_ERROR;
+					return DRCStatus;
+				}
+			}
       // if (comp.getFactory().HDLSpecialHandling())
       //  continue; // ? maybe ..?
       HDLGeneratorFactory g = comp.getFactory().getHDLGenerator(HDLIdentifier, Reporter,
@@ -331,17 +344,6 @@ public class Netlist {
 				DRCStatus = DRC_ERROR;
 				return DRCStatus;
 			}
-			if (comp.getFactory() instanceof SubcircuitFactory) {
-				/* Special care has to be taken for sub-circuits */
-				if (!CorrectLabel.IsCorrectLabel(comp.getFactory().getName(),
-						HDLIdentifier, "Found that the component \""
-								+ comp.getFactory().getName()
-								+ "\" in circuit \"" + MyCircuit.getName(),
-						Reporter)) {
-					DRCStatus = DRC_ERROR;
-					return DRCStatus;
-				}
-			}
 			/* Now we add the name to the set if it is not already in */
       String ComponentName = g.getHDLNameWithinCircuit(MyCircuit.getName());
 			if (!CompName.contains(ComponentName)) {
@@ -350,6 +352,7 @@ public class Netlist {
         generators.put(comp, g);
 			}
 		}
+
 		for (Component comp : MyCircuit.getNonWires()) {
 			/*
        * we check that all components that require a non zero label (annotation)
@@ -360,15 +363,15 @@ public class Netlist {
        * In any case, they should all have a generator, because none of them
        * have HDLIgnore set (which would cause them to be skipped above).
 			 */
-			if (comp.getFactory().RequiresNonZeroLabel()) {
-        HDLGeneratorFactory g = generators.get(comp);
+      HDLGeneratorFactory g = generators.get(comp);
+			if (g.RequiresNonZeroLabel()) {
 				String Label = CorrectLabel.getCorrectLabel(comp.getAttributeSet().getValue(StdAttr.LABEL).toString()).toUpperCase();
 				if (Label.isEmpty()) {
 					Reporter.AddError("Component \""
 							+ comp.getFactory().getName()
 							+ "\" in sheet "
 							+ MyCircuit.getName()
-							+ " does not have a label! Run annotate or add labels");
+							+ " does not have a label! Run annotate, or manually add labels.");
 					DRCStatus = ANNOTATE_REQUIRED;
 					return DRCStatus;
 				}

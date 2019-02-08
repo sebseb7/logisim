@@ -34,12 +34,10 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
@@ -199,9 +197,6 @@ public class HexDigit extends InstanceFactory implements DynamicElementProvider 
     else
       return null;
   }
-
-  @Override
-  public boolean RequiresNonZeroLabel() { return true; }
 
   public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {
     return new HexDigitShape(x, y, path);

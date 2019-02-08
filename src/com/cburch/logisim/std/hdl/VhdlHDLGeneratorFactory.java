@@ -114,4 +114,7 @@ public class VhdlHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   private VhdlContent content(AttributeSet attrs) {
     return ((VhdlEntityAttributes) attrs).getContent();
   }
+
+  @Override
+  public boolean RequiresNonZeroLabel() { return true; }
 }

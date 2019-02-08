@@ -345,7 +345,4 @@ class PLA extends InstanceFactory {
 
   }
 
-  @Override
-  public boolean RequiresNonZeroLabel() { return true; }
-
 }

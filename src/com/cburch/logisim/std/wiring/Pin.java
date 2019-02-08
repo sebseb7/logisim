@@ -812,11 +812,6 @@ public class Pin extends InstanceFactory {
     }
   }
 
-  @Override
-  public boolean RequiresNonZeroLabel() {
-    return true;
-  }
-
   public void setValue(InstanceState state, Value value) {
     PinAttributes attrs = (PinAttributes) state.getAttributeSet();
     Object pull = attrs.pull;

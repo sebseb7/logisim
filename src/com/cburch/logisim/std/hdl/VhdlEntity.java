@@ -317,11 +317,6 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
     }
   }
 
-  @Override
-  public boolean RequiresNonZeroLabel() {
-    return true;
-  }
-
   /**
    * Save the VHDL entity in a file. The file is used for VHDL components
    * simulation by QUestasim/Modelsim

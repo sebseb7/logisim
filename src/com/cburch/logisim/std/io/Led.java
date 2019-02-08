@@ -35,7 +35,6 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
@@ -175,9 +174,6 @@ public class Led extends InstanceFactory implements DynamicElementProvider {
       data.setValue(val);
     }
   }
-
-  @Override
-  public boolean RequiresNonZeroLabel() { return true; }
 
   public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {
     return new LedShape(x, y, path);

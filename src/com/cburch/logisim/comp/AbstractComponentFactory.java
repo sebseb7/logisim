@@ -35,9 +35,6 @@ import java.awt.Graphics;
 
 import javax.swing.Icon;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.designrulecheck.CorrectLabel;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.data.Attribute;
@@ -138,7 +135,6 @@ public abstract class AbstractComponentFactory implements ComponentFactory {
   }
 
   public boolean RequiresGlobalClock() { return false; }
-  public boolean RequiresNonZeroLabel() { return false; }
 
   @Override
   public String toString() {

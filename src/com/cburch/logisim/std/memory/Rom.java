@@ -43,9 +43,7 @@ import java.util.WeakHashMap;
 
 import javax.swing.JLabel;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -436,8 +434,4 @@ public class Rom extends Mem {
     }
   }
 
-  @Override
-  public boolean RequiresNonZeroLabel() {
-    return true;
-  }
 }

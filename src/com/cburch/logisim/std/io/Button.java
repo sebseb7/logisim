@@ -36,7 +36,6 @@ import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.event.KeyEvent;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
@@ -237,8 +236,5 @@ public class Button extends InstanceFactory {
     Value val = data == null ? Value.FALSE : (Value) data.getValue();
     state.setPort(0, val, 1);
   }
-
-  @Override
-  public boolean RequiresNonZeroLabel() { return true; }
 
 }

@@ -117,8 +117,6 @@ public interface ComponentFactory extends AttributeDefaultProvider {
   public void paintIcon(ComponentDrawContext context, int x, int y,
       AttributeSet attrs);
 
-  public boolean RequiresGlobalClock();
-
   /* Added for HDL generation */
-  public boolean RequiresNonZeroLabel();
+  public boolean RequiresGlobalClock();
 }

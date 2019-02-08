@@ -38,9 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.awt.event.KeyEvent;
 
-import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
@@ -482,11 +480,6 @@ public class PortIO extends InstanceFactory {
       data.toggle(n);
       state.getInstance().fireInvalidated();
     }
-  }
-
-  @Override
-  public boolean RequiresNonZeroLabel() {
-    return true;
   }
 
   public void setMapInfo(MappableResourcesContainer mapInfo) {

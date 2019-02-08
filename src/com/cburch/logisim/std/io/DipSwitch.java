@@ -37,7 +37,6 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.awt.event.KeyEvent;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
@@ -294,7 +293,4 @@ public class DipSwitch extends InstanceFactory {
       state.setPort(i, pinstate, 1);
     }
   }
-
-  @Override
-  public boolean RequiresNonZeroLabel() { return true; }
 }
