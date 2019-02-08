@@ -92,10 +92,14 @@ public abstract class HDLGeneratorFactory {
 	public abstract ArrayList<String> GetEntity(/*Netlist TheNetlist,*/ /*AttributeSet attrs,*/
 			String ComponentName /*, FPGAReport Reporter, String HDLType*/);
 
-	public abstract ArrayList<String> GetInlinedCode3(/*Netlist Nets,*/ Long ComponentId,
-			NetlistComponent ComponentInfo, /*FPGAReport Reporter,*/
-			String CircuitName /*, String HDLType*/);
+  // CircuitHDLGeneratorFactory calls this for NormalComponents, when nets
+  // defined, if IsOnlyInlined returns true.
+	public abstract ArrayList<String> GetInlinedCode3(/*Netlist Nets, Long ComponentId,*/
+			NetlistComponent ComponentInfo/*, FPGAReport Reporter
+			String CircuitName, String HDLType*/);
 
+  // ToplevelHDLGeneratorFactory calls this for components that are not Pin,
+  // PortIO, Tty, or Keyboard.
 	public abstract ArrayList<String> GetInlinedCode2(/*String HDLType,*/
 			ArrayList<String> ComponentIdentifier, /*FPGAReport Reporter,*/
 			MappableResourcesContainer MapInfo);

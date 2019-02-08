@@ -46,8 +46,8 @@ public class BitExtenderHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
   public boolean IsOnlyInlined(/*String lang*/) { return true; }
 
   @Override
-  public ArrayList<String> GetInlinedCode3(/*Netlist nets,*/ Long id,
-      NetlistComponent info, /*FPGAReport err,*/ String circName /*, String lang*/) {
+  public ArrayList<String> GetInlinedCode3(/*Netlist nets, Long id, */
+      NetlistComponent info /*, FPGAReport err, String circName, String lang*/) {
     if (_nets == null) throw new IllegalStateException();
 
     Hdl out = new Hdl(_lang, _err);
@@ -61,6 +61,7 @@ public class BitExtenderHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
     // checks input and signinput too
     for (int i = 1; i < info.NrOfEnds(); i++) {
       if (!info.EndIsConnected(i)) {
+        String circName = info.GetComponent().getFactory().getHDLName(info.GetComponent().getAttributeSet());
         _err.AddError("Bit Extender has floating input in circuit \"" + circName + "\"");
         return out;
       }

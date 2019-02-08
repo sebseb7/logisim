@@ -577,7 +577,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 							_vendor);
 			if (Worker != null) {
 				if (Worker.IsOnlyInlined(/*HDLType*/)) {
-					String InlinedName = comp.GetComponent().getFactory().getHDLName(comp.GetComponent().getAttributeSet());
+					// String InlinedName = comp.GetComponent().getFactory().getHDLName(comp.GetComponent().getAttributeSet());
 					String InlinedId = Worker.getComponentStringIdentifier();
 					Long id;
 					if (CompIds.containsKey(InlinedId)) {
@@ -592,12 +592,14 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
             Contents.addAll(out);
 						FirstLine = false;
 					}
-					Contents.addAll(Worker.GetInlinedCode3(/*TheNetlist,*/ id++,
-							comp/*, Reporter*/, InlinedName/*, HDLType*/));
+          id++; // BUG?
+					Contents.addAll(Worker.GetInlinedCode3(/*TheNetlist, id++,*/
+							comp/*, Reporter, InlinedName, HDLType*/));
 					if (CompIds.containsKey(InlinedId)) {
 						CompIds.remove(InlinedId);
 					}
 					CompIds.put(InlinedId, id);
+          System.out.println("wrong id for this?! incremented too soon!");
 				}
 			}
 		}

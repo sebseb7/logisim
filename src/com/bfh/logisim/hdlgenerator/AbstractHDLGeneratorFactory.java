@@ -776,9 +776,9 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 
   // CircuitHDLGeneratorFactory calls this for NormalComponents, when nets
   // defined, if IsOnlyInlined returns true.
-	public ArrayList<String> GetInlinedCode3(/*Netlist Nets,*/ Long ComponentId,
-			NetlistComponent ComponentInfo, /*FPGAReport Reporter, */
-			String  CircuitName /*, String HDLType*/) {
+	public ArrayList<String> GetInlinedCode3(/*Netlist Nets, Long ComponentId, */
+			NetlistComponent ComponentInfo/*, FPGAReport Reporter,
+			String  CircuitName, String HDLType*/) {
 		ArrayList<String> Contents = new ArrayList<String>();
 		return Contents;
 	}
