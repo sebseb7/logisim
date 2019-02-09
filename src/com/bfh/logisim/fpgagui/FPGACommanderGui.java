@@ -140,6 +140,7 @@ public class FPGACommanderGui implements ActionListener {
 	private static final String OnlyDownloadMessage = "Download only";
 	private JTabbedPane tabbedPane = new JTabbedPane();
 	private Project MyProject;
+  public String getProjectName() { return MyProject.getLogisimFile().getName(); }
 	private Settings MySettings = new Settings();
 	private BoardInformation MyBoardInformation = null;
 	private MyProjListener myprojList = new MyProjListener();

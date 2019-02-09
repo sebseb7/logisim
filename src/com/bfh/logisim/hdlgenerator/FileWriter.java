@@ -76,28 +76,6 @@ public class FileWriter {
 			return false;
 		}
 	}
-
-	public static ArrayList<String> getExtendedLibrary() {
-		ArrayList<String> Lines = new ArrayList<String>();
-		Lines.add("");
-		Lines.add("LIBRARY ieee;");
-		Lines.add("USE ieee.std_logic_1164.all;");
-		Lines.add("USE ieee.numeric_std.all;");
-		Lines.add("");
-		return Lines;
-	}
-
-	public static ArrayList<String> getExtendedLibrary2() {
-		ArrayList<String> Lines = new ArrayList<String>();
-		Lines.add("");
-		Lines.add("LIBRARY ieee;");
-		Lines.add("USE ieee.std_logic_1164.all;");
-		Lines.add("USE ieee.std_logic_unsigned.all;");
-		Lines.add("USE ieee.numeric_std.all;");
-		Lines.add("");
-		return Lines;
-	}
-
 	public static File GetFilePointer(String TargetDirectory,
 			String ComponentName, boolean IsMif, boolean IsEntity, FPGAReport MyReporter,
 			String HDLType) {
@@ -169,64 +147,6 @@ public class FileWriter {
 			MyReporter.AddFatalError("Unable to create file!");
 			return null;
 		}
-	}
-
-	public static ArrayList<String> getGenerateRemark(String compName,
-			String HDLIdentifier, String projName) {
-		ArrayList<String> Lines = new ArrayList<String>();
-		if (HDLIdentifier.equals(Settings.VHDL)) {
-			Lines.add("--==============================================================================");
-			Lines.add("--== Logisim goes FPGA automatic generated VHDL code                          ==");
-			Lines.add("--==                                                                          ==");
-			Lines.add("--==                                                                          ==");
-			String ThisLine = "--== Project   : ";
-			int nr_of_spaces = (80 - 2 - ThisLine.length() - projName.length());
-			ThisLine += projName;
-			for (int i = 0; i < nr_of_spaces; i++) {
-				ThisLine += " ";
-			}
-			ThisLine += "==";
-			Lines.add(ThisLine);
-			ThisLine = "--== Component : ";
-			nr_of_spaces = (80 - 2 - ThisLine.length() - compName.length());
-			ThisLine += compName;
-			for (int i = 0; i < nr_of_spaces; i++) {
-				ThisLine += " ";
-			}
-			ThisLine += "==";
-			Lines.add(ThisLine);
-			Lines.add("--==                                                                          ==");
-			Lines.add("--==============================================================================");
-			Lines.add("");
-		} else {
-			if (HDLIdentifier.equals(Settings.VERILOG)) {
-				Lines.add("/******************************************************************************");
-				Lines.add(" ** Logisim goes FPGA automatic generated Verilog code                       **");
-				Lines.add(" **                                                                          **");
-				String ThisLine = " ** Component : ";
-				int nr_of_spaces = (79 - 2 - ThisLine.length() - compName
-						.length());
-				ThisLine += compName;
-				for (int i = 0; i < nr_of_spaces; i++) {
-					ThisLine += " ";
-				}
-				ThisLine += "**";
-				Lines.add(ThisLine);
-				Lines.add(" **                                                                          **");
-				Lines.add(" ******************************************************************************/");
-				Lines.add("");
-			}
-		}
-		return Lines;
-	}
-
-	public static ArrayList<String> getStandardLibrary() {
-		ArrayList<String> Lines = new ArrayList<String>();
-		Lines.add("");
-		Lines.add("LIBRARY ieee;");
-		Lines.add("USE ieee.std_logic_1164.all;");
-		Lines.add("");
-		return Lines;
 	}
 
 	public static boolean WriteContents(File outfile,

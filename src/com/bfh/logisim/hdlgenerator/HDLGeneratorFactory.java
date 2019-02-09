@@ -45,6 +45,7 @@ import com.cburch.logisim.instance.StdAttr;
 
 public abstract class HDLGeneratorFactory {
 
+  protected final String _projectName; // context - fixme
   protected final String _lang; // context - fixme
   protected final FPGAReport _err; // context - fixme
   protected final Netlist _nets; // context - fixme // signals of the circuit in
@@ -60,6 +61,7 @@ public abstract class HDLGeneratorFactory {
 
   protected HDLGeneratorFactory(String lang, FPGAReport err, Netlist nets, AttributeSet attrs, char vendor,
       String hdlComponentName, String hdlInstanceNamePrefix) {
+    this._projectName = err.getProjectName();
     this._lang = lang;
     this._err = err;
     this._nets = nets; // fixme - sometimes null -- maybe null for top level? also for quick checks.
@@ -182,6 +184,9 @@ public abstract class HDLGeneratorFactory {
   // instances of ADDER2C. These need not be unique: the
   // CircuitHDLGeneratorFactory will add suffixes to ensure all the instance
   // names within a circuit are unique.
-	public final String getComponentStringIdentifier() { return _hdlInstanceNamePrefix; }
+	public final String getInstanceNamePrefix() { return _hdlInstanceNamePrefix; }
+
+  // Return an instance name by combining the prefix with a unique ID.
+	public final String getInstanceName(long id) { return _hdlInstanceNamePrefix + "_" + id; }
 
 }

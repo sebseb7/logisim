@@ -68,7 +68,7 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			Circuit TopLevel, MappableResourcesContainer IOComponents,
 			boolean useFPGAClock, Netlist nets, char vendor) {
     super(lang, err, nets, AttributeSets.EMPTY, vendor,
-        "TOPLEVEL", FPGAToplevelName); // this file doesn't use attrs
+        FPGAToplevelName, "TOPLEVEL"); // this file doesn't use attrs
 		FpgaClockFrequency = FPGAClock;
 		TickPeriod = ClockTickPeriod;
 		MyCircuit = TopLevel;

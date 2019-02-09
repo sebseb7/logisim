@@ -258,4 +258,47 @@ public class Hdl extends ArrayList<String> {
       return "\"" + (value?"1":"0").repeat(width) + "\"";
   }
 
+  private static String sz(Generics params, int id) {
+    if (params == null || !params.containsKey(id)) {
+      err.AddFatalError("Internal error: Signal reference to non-existant generic parameter ID=%d.", w);
+      return "???";
+    }
+    String g = params.get(w);
+    if (g == null || g.isEmpty() || g.equals("=")) {
+      err.AddFatalError("Internal error: Invalid generic parameter ID=%d '%s'.\n", w, g);
+      return "???";
+    }
+    return g.charAt(0) == '=' ? g.substring(1) : g;
+  }
+
+  // Returns an appropriate type definition for a signal of fixed width (when
+  // w>=0) or width defined by a generic parameter (when w<0). Examples:
+  //   w = 1    VHDL: "std_logic"                         Verilog: ""
+  //   w = 8    VHDL: "std_logic_vector(7 downto 0)"      Verilog: "[7:0] "
+  //   w = -1   VHDL: "std_logic_vector(N-1 downto 0)"    Verilog: "[N-1:0] "
+  //               (assuming params.get(w) = "N")
+  //   w = -2   VHDL: "std_logic_vector(2*K-1 downto 0)"  Verilog: "[2*N-1:0] "
+  //               (assuming params.get(w) = "=2*K"
+  public String typeForWidth(int w, Generics params) {
+    if (isVhdl) {
+      if (w == 1)
+        return "std_logic";
+      else if (w == 0)
+        return "std_logic_vector(0 downto 0)";
+      else if (w > 1)
+        return "std_logic_vector("+(w-1)+" downto 0)";
+      else
+        return "std_logic_vector("+sz(params, w)+"-1 downto 0)";
+    } else {
+      if (w == 1)
+        return "";
+      else if (w == 0)
+        return "[0:0] ";
+      else if (w > 1)
+        return "["+(w-1)+":0] ";
+      else
+        return "["+sz(params, w)+"-1:0] ";
+    }
+  }
+
 }

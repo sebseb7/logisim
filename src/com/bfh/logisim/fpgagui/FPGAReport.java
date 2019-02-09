@@ -33,8 +33,12 @@ package com.bfh.logisim.fpgagui;
 public class FPGAReport {
 	private FPGACommanderGui myCommander;
 
-	public FPGAReport(FPGACommanderGui parrent) {
-		myCommander = parrent;
+  public String getProjectName() {
+    return myCommander.getProjectName();
+  }
+
+	public FPGAReport(FPGACommanderGui parent) {
+		myCommander = parent;
 	}
 
 	public void AddError(String Message) {
