@@ -35,10 +35,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.math.BigInteger;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -96,11 +94,10 @@ public class Divider extends InstanceFactory {
   }
 
   static final int PER_DELAY = 1;
-  public static final int IN0 = 0;
-  public static final int IN1 = 1;
-  public static final int OUT = 2;
-  public static final int UPPER = 3;
-
+  static final int IN0 = 0;
+  static final int IN1 = 1;
+  static final int OUT = 2;
+  static final int UPPER = 3;
   public static final int REM = 4;
 
   public Divider() {

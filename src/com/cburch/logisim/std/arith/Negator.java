@@ -31,11 +31,8 @@
 package com.cburch.logisim.std.arith;
 import static com.cburch.logisim.std.Strings.S;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
@@ -48,8 +45,8 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 
 public class Negator extends InstanceFactory {
-  private static final int IN = 0;
-  private static final int OUT = 1;
+  static final int IN = 0;
+  static final int OUT = 1;
 
   public Negator() {
     super("Negator", S.getter("negatorComponent"));

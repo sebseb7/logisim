@@ -34,11 +34,8 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Graphics;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
@@ -102,12 +99,11 @@ public class Adder extends InstanceFactory {
   }
 
   static final int PER_DELAY = 1;
-  private static final int IN0 = 0;
-  private static final int IN1 = 1;
-  private static final int OUT = 2;
-  private static final int C_IN = 3;
-
-  private static final int C_OUT = 4;
+  static final int IN0 = 0;
+  static final int IN1 = 1;
+  static final int OUT = 2;
+  static final int C_IN = 3;
+  static final int C_OUT = 4;
 
   public Adder() {
     super("Adder", S.getter("adderComponent"));

@@ -29,84 +29,43 @@
  */
 package com.cburch.logisim.std.arith;
 
-import java.util.SortedMap;
-
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.cburch.logisim.data.AttributeSet;
+import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.hdl.Hdl;
-import com.cburch.logisim.instance.StdAttr;
 
-public class ComparatorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
+public class ComparatorHDLGenerator extends HDLGenerator {
 
-  public ComparatorHDLGeneratorFactory(HDLCTX ctx) {
-    super(ctx, "${BUS}Comparator",  "COMPARATOR");
-  }
-  
-  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
-  protected final static int GENERIC_PARAM_TWOSCOMPLEMENT = -2;
-
-  @Override
-  public String GetSubDir() { return "arithmetic"; }
-
-  @Override
-  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
-    list.put("DataA", w);
-    list.put("DataB", w);
-  }
-
-  @Override
-  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    list.put("A_GT_B", 1);
-    list.put("A_EQ_B", 1);
-    list.put("A_LT_B", 1);
-  }
-
-  @Override
-	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
-    int w = width(attrs);
-    if (w > 1)
-      list.put(GENERIC_PARAM_BUSWIDTH, "BusWidth");
-    list.put(GENERIC_PARAM_TWOSCOMPLEMENT, "TwosComplement");
-  }
-
-  @Override
-  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
-    AttributeSet attrs = info.GetComponent().getAttributeSet();
-    int w = width(attrs);
-    if (w > 1)
-      list.put("BusWidth", w);
-    boolean is_signed = attrs.getValue(Comparator.MODE_ATTRIBUTE) == Comparator.SIGNED_OPTION;
-    list.put("TwosComplement", is_signed ? 1 : 0);
-  }
-
-  @Override
-  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
-    list.putAll(GetNetMap("DataA", true, info, 0, err, lang, nets));
-    list.putAll(GetNetMap("DataB", true, info, 1, err, lang, nets));
-    list.putAll(GetNetMap("A_GT_B", true, info, 2, err, lang, nets));
-    list.putAll(GetNetMap("A_EQ_B", true, info, 3, err, lang, nets));
-    list.putAll(GetNetMap("A_LT_B", true, info, 4, err, lang, nets));
-  }
-
-  @Override
-  public void wires(SortedMap<String, Integer> list, AttributeSet attrs, Netlist nets) {
-    if (width(attrs) > 1) {
-      list.put("s_slt", 1);
-      list.put("s_ult", 1);
-      list.put("s_sgt", 1);
-      list.put("s_ugt", 1);
+  public ComparatorHDLGenerator(HDLCTX ctx) {
+    super(ctx, "arithmetic", "${BUS}Comparator", "i_Cmp");
+    int w = stdWidth();
+    if (w > 1) {
+      // Generic n-bit version
+      parameters.add(new ParameterInfo("TwosComplement", uMode() ? 0 : 1));
+      parameters.add(new ParameterInfo("BitWidth", w));
+      inPorts.add(new PortInfo("DataA", "BitWidth", Comparator.IN0, false));
+      inPorts.add(new PortInfo("DataB", "BitWidth", Comparator.IN1, false));
+      outPorts.add(new PortInfo("A_GT_B", 1, Comparator.GT, null));
+      outPorts.add(new PortInfo("A_EQ_B", 1, Comparator.EQ, null));
+      outPorts.add(new PortInfo("A_LT_B", 1, Comparator.LT, null));
+    } else {
+      // 1-bit version
+      parameters.add(new ParameterInfo("TwosComplement", uMode() ? 0 : 1));
+      inPorts.add(new PortInfo("DataA", 1, Comparator.IN0, false));
+      inPorts.add(new PortInfo("DataB", 1, Comparator.IN1, false));
+      outPorts.add(new PortInfo("Result", 1, Comparator.OUT, null));
+      inPorts.add(new PortInfo("CarryIn", 1, Comparator.C_OUT, false));
+      outPorts.add(new PortInfo("CarryOut", 1, Comparator.C_OUT, null));
+    }
+    if (ctx.isVhdl) {
+      wires.add(new WireInfo("s_slt", 1));
+      wires.add(new WireInfo("s_ult", 1));
+      wires.add(new WireInfo("s_sgt", 1));
+      wires.add(new WireInfo("s_ugt", 1));
     }
   }
 
   @Override
-  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
-    out.indent();
-    int w = width(attrs);
-    if (out.isVhdl && w == 1) {
+  public void generateBehavior(Hdl out) {
+    if (out.isVhdl && !isBus()) {
       out.stmt("A_EQ_B <= DataA XNOR DataB;");
       out.stmt("A_LT_B <= DataA AND NOT(DataB) WHEN TwosComplement = 1 ELSE");
       out.stmt("          NOT(DataA) AND DataB;");
@@ -121,7 +80,7 @@ public class ComparatorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       out.stmt("A_EQ_B <= '1' WHEN DataA = DataB ELSE '0';");
       out.stmt("A_GT_B <= s_sgt WHEN TwosComplement = 1 ELSE s_ugt;");
       out.stmt("A_LT_B <= s_slt WHEN TwosComplement = 1 ELSE s_ult;");
-    } else if (out.isVerilog && w == 1) {
+    } else if (out.isVerilog && !isBus()) {
       out.stmt("assign A_EQ_B = (DataA == DataB);");
       out.stmt("assign A_LT_B = (DataA < DataB);");
       out.stmt("assign A_GT_B = (DataA > DataB);");
@@ -137,7 +96,8 @@ public class ComparatorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     }
   }
 
-  protected int width(AttributeSet attrs) {
-    return attrs.getValue(StdAttr.WIDTH).getWidth();
+  protected boolean uMode() {
+    return attrs.getValue(Comparator.MODE_ATTRIBUTE) == Comparator.UNSIGNED_OPTION;
   }
+
 }

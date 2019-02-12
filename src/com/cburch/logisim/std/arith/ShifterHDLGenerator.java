@@ -42,67 +42,23 @@ import com.cburch.logisim.instance.StdAttr;
 public class ShifterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   public ShifterHDLGeneratorFactory(HDLCTX ctx) {
-    super(ctx, "Shifter_${WIDTH}_bit", "SHIFTER");
-  }
-  
-  protected final static int GENERIC_PARAM_MODE = -1;
-
-  @Override
-  public String GetSubDir() { return "arithmetic"; }
-
-  @Override
-  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    list.put("DataA", width(attrs));
-    list.put("Shift", stages(attrs));
-  }
-
-  @Override
-  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    list.put("Result", width(attrs));
-  }
-
-  @Override
-	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
-    list.put(GENERIC_PARAM_MODE, "Mode");
-  }
-
-  @Override
-  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
-    AttributeSet attrs = info.GetComponent().getAttributeSet();
-    Object mode = attrs.getValue(Shifter.ATTR_SHIFT);
-    if (mode == Shifter.SHIFT_LOGICAL_LEFT)
-      list.put("Mode", 0);
-    else if (mode == Shifter.SHIFT_ROLL_LEFT)
-      list.put("Mode", 1);
-    else if (mode == Shifter.SHIFT_LOGICAL_RIGHT)
-      list.put("Mode", 2);
-    else if (mode == Shifter.SHIFT_ARITHMETIC_RIGHT)
-      list.put("Mode", 3);
-    else if (mode == Shifter.SHIFT_ROLL_RIGHT)
-      list.put("Mode", 4);
-  }
-
-  @Override
-  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
-    list.putAll(GetNetMap("DataA", true, info, Shifter.IN0, err, lang, nets));
-    list.putAll(GetNetMap("Shift", true, info, Shifter.IN1, err, lang, nets));
-    list.putAll(GetNetMap("Result", true, info, Shifter.OUT, err, lang, nets));
-  }
-
-  @Override
-  public void wires(SortedMap<String, Integer> list, AttributeSet attrs, Netlist nets) {
-    System.out.println("BUG?! width and num stages must be a param?!");
-    int w = width(attrs);
+    super(ctx, "arithmetic", "Shifter_${WIDTH}_bit", "i_Shift");
+    int w = stdWidth();
+    int n = stages();
+    int m = mode();
+    parameters.add(new ParameterInfo("Mode", m));
+    inPorts.add(new PortInfo("DataA", w, Shifter.IN0, false));
+    inPorts.add(new PortInfo("Shift", n, Shifter.IN1, false));
+    outPorts.add(new PortInfo("Result", w, Shifter.OUT, null));
     if (w > 1) {
-      int n = stages(attrs);
       for (int i = 0; i < n; i++) {
-        list.put(String.format("s_%d_out", i), w);
-        list.put(String.format("s_%d_in", i), 1<<i);
+        wires.add(new WireInfo(String.format("s_%d_out", i), w));
+        wires.add(new WireInfo(String.format("s_%d_in", i), 1<<i));
       }
     }
   }
-
-  public void vhdlStageBehavior(Hdl out, int stage, int w) {
+  
+  private void vhdlStageBehavior(Hdl out, int stage, int w) {
     int amt = (1 << stage);
     if (stage == 0) {
       out.stmt("s_0_in <= DataA(%d) WHEN Mode = 1 OR Mode = 3 ELSE", w-1);
@@ -122,7 +78,7 @@ public class ShifterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     }
   }
 
-  public void verilogStageBehavior(Hdl out, int stage, int w) {
+  private void verilogStageBehavior(Hdl out, int stage, int w) {
     int amt = (1 << stage);
     if (stage == 0) {
       out.stmt("assign s_0_in = ((Mode == 1) || (Mode == 3)) ? DataA[%d] :", w-1);
@@ -143,57 +99,53 @@ public class ShifterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   }
   
   @Override
-  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
-    System.out.println("BUG? need bus width param?");
-    out.indent();
-    int w = width(attrs);
-    int n = stages(attrs);
-    if (out.isVhdl) {
-      out.stmt("--- Accepted Mode Values:");
-      out.stmt("--- 0 : Logical Shift Left");
-      out.stmt("--- 1 : Rotate Left");
-      out.stmt("--- 2 : Logical Shift Right");
-      out.stmt("--- 3 : Arithmetic Shift Right");
-      out.stmt("--- 4 : Rotate Right");
-      out.stmt("");
-      if (n == 1) {
+  public void generateBehavior(Hdl out) {
+    int w = stdWidth();
+    int n = stages();
+    out.comment("-- Accepted Mode Values:");
+    out.comment("-- 0 : Logical Shift Left");
+    out.comment("-- 1 : Rotate Left");
+    out.comment("-- 2 : Logical Shift Right");
+    out.comment("-- 3 : Arithmetic Shift Right");
+    out.comment("-- 4 : Rotate Right");
+    out.stmt();
+    if (out.isVhdl && n == 1) {
         out.stmt("Result <= DataA WHEN Mode = 1 OR Mode = 3 OR Mode = 4 ELSE");
         out.stmt("          DataA AND NOT(Shift);");
-      } else {
-        for (int i = 0; i < n; i++)
-          vhdlStageBehavior(out, i, w);
-        out.stmt("");
-        out.stmt("Result <= s_%d_out;", n-1);
-      }
+    } else if (out.isVhdl) {
+      for (int i = 0; i < n; i++)
+        vhdlStageBehavior(out, i, w);
+      out.stmt();
+      out.stmt("Result <= s_%d_out;", n-1);
+    } else if (n == 1) {
+      out.stmt("assign Result = ((Mode == 1) || (Mode == 3) || (Mode == 4)");
+      out.stmt("                ? DataA");
+      out.stmt("                : DataA & ~Shift;");
     } else {
-      out.stmt("/* Accepted Mode Values");
-      out.stmt(" * 0 : Logical Shift Left");
-      out.stmt(" * 1 : Rotate Left");
-      out.stmt(" * 2 : Logical Shift Right");
-      out.stmt(" * 3 : Arithmetic Shift Right");
-      out.stmt(" * 4 : Rotate Right");
-      out.stmt(" */");
-      out.stmt("");
-      if (n == 1) {
-        out.stmt("assign Result = ((Mode == 1) || (Mode == 3) || (Mode == 4)");
-        out.stmt("                ? DataA");
-        out.stmt("                : DataA & ~Shift;");
-      } else {
-        int stage;
-        for (int i = 0; i < n; i++)
-          verilogStageBehavior(out, i, w);
-        out.stmt("");
-        out.stmt("assign Result = s_%d_out;", n-1);
-      }
+      int stage;
+      for (int i = 0; i < n; i++)
+        verilogStageBehavior(out, i, w);
+      out.stmt();
+      out.stmt("assign Result = s_%d_out;", n-1);
     }
   }
 
-  protected int width(AttributeSet attrs) {
-    return attrs.getValue(StdAttr.WIDTH).getWidth();
+  private int mode() {
+    Object mode = attrs.getValue(Shifter.ATTR_SHIFT);
+    if (mode == Shifter.SHIFT_LOGICAL_LEFT)
+      list.put("Mode", 0);
+    else if (mode == Shifter.SHIFT_ROLL_LEFT)
+      list.put("Mode", 1);
+    else if (mode == Shifter.SHIFT_LOGICAL_RIGHT)
+      list.put("Mode", 2);
+    else if (mode == Shifter.SHIFT_ARITHMETIC_RIGHT)
+      list.put("Mode", 3);
+    else if (mode == Shifter.SHIFT_ROLL_RIGHT)
+      list.put("Mode", 4);
   }
 
-  private int stages(AttributeSet attrs) {
-    int w = width(attrs);
+  private int stages() {
+    int w = stdWidth();
     int stages = 1;
     while ((1 << stages) < w)
       stages++;

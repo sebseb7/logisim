@@ -31,12 +31,9 @@
 package com.cburch.logisim.std.arith;
 import static com.cburch.logisim.std.Strings.S;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -60,11 +57,11 @@ public class Comparator extends InstanceFactory {
       .forOption("mode", S.getter("comparatorType"),
           new AttributeOption[] { SIGNED_OPTION, UNSIGNED_OPTION });
 
-  private static final int IN0 = 0;
-  private static final int IN1 = 1;
-  private static final int GT = 2;
-  private static final int EQ = 3;
-  private static final int LT = 4;
+  static final int IN0 = 0;
+  static final int IN1 = 1;
+  static final int GT = 2;
+  static final int EQ = 3;
+  static final int LT = 4;
 
   public Comparator() {
     super("Comparator", S.getter("comparatorComponent"));

@@ -29,61 +29,61 @@
  */
 package com.cburch.logisim.std.arith;
 
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.hdl.Hdl;
 
-public class AdderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
+public class SubtractorHDLGenerator extends HDLGenerator {
 
-  public AdderHDLGeneratorFactory(HDLCTX ctx) {
-    super(ctx, "${BUS}Adder", "ADDER2C");
+  public SubtractorHDLGenerator(HDLCTX ctx) {
+    super(ctx, "arithmetic", "${BUS}Subtractor", "i_Sub");
     int w = stdWidth();
     if (w > 1) {
       // Generic n-bit version
-      parameters.add(new ParameterInfo(ws, w));
-      inPorts.add(new PortInfo("DataA", "BitWidth", 0, false));
-      inPorts.add(new PortInfo("DataB", "BitWidth", 1, false));
-      outPorts.add(new PortInfo("Result", "BitWidth", 2, null));
-      inPorts.add(new PortInfo("CarryIn", 1, 3, false));
-      outPorts.add(new PortInfo("CarryOut", 1, 4, null));
+      parameters.add(new ParameterInfo("BitWidth", w));
+      inPorts.add(new PortInfo("DataA", "BitWidth", Subtractor.IN0, false));
+      inPorts.add(new PortInfo("DataB", "BitWidth", Subtractor.IN1, false));
+      outPorts.add(new PortInfo("Result", "BitWidth", Subtractor.OUT, null));
+      inPorts.add(new PortInfo("BorrowIn", 1, Subtractor.B_IN, false));
+      outPorts.add(new PortInfo("BorrowOut", 1, Subtractor.B_OUT, null));
       if (ctx.isVhdl) {
         wires.add(new WireInfo("s_A", "BitWidth+1"));
         wires.add(new WireInfo("s_B", "BitWidth+1"));
+        wires.add(new WireInfo("s_C", 1));
         wires.add(new WireInfo("s_R", "BitWidth+1"));
       }
     } else {
       // 1-bit version
-      inPorts.add(new PortInfo("DataA", 1, 0, false));
-      inPorts.add(new PortInfo("DataB", 1, 1, false));
-      outPorts.add(new PortInfo("Result", 1, 2, null));
-      inPorts.add(new PortInfo("CarryIn", 1, 3, false));
-      outPorts.add(new PortInfo("CarryOut", 1, 4, null));
+      inPorts.add(new PortInfo("DataA", 1, Subtractor.IN0, false));
+      inPorts.add(new PortInfo("DataB", 1, Subtractor.IN1, false));
+      outPorts.add(new PortInfo("Result", 1, Subtractor.OUT, null));
+      inPorts.add(new PortInfo("BorrowIn", 1, Subtractor.B_IN, false));
+      outPorts.add(new PortInfo("BorrowOut", 1, Subtractor.B_OUT, null));
       if (ctx.isVhdl) {
         wires.add(new WireInfo("s_A", 2));
         wires.add(new WireInfo("s_B", 2));
+        wires.add(new WireInfo("s_C", 1));
         wires.add(new WireInfo("s_R", 2));
       }
     }
   }
 
   @Override
-  protected String subdir() { return "arithmetic"; }
-
-  @Override
   public void generateBehavior(Hdl out) {
-    out.indent();
     if (out.isVhdl) {
       out.stmt("s_A <= \"0\" & DataA;");
-      out.stmt("s_B <= \"0\" & DataB;");
-      out.stmt("s_R <= std_logic_vector(unsigned(s_A) + unsigned(s_B) + (\"\" & CarryIn));");
+      out.stmt("s_B <= \"0\" & not(DataB);");
+      out.stmt("s_C <= not(BorrowIn);");
+      out.stmt("s_R <= std_logic_vector(unsigned(s_A) + unsigned(s_B)+ (\"\" & s_C));");
       if (isBus()) {
-        out.stmt("Result <= s_R((BusWidth-1) DOWNTO 0);");
-        out.stmt("CarryOut <= s_R(BusWidth);");
+        out.stmt("Result <= s_R(BitWidth-1 downto 0);");
+        out.stmt("BorrowOut <= not(s_R(BitWidth));");
       } else {
         out.stmt("Result <= s_R(0);");
-        out.stmt("CarryOut <= s_R(1);");
+        out.stmt("BorrowOut <= not(s_R(1));");
       }
     } else {
-      out.stmt("assign {CarryOut, Result} = DataA + DataB + CarryIn;");
+      out.stmt("assign {s_C, Result} = DataA + ~(DataB) + ~(BorrowIn);");
+      out.stmt("assign BorrowOut = ~s_C;");
     }
   }
 
