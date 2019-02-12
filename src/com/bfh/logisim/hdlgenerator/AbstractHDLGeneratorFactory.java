@@ -599,7 +599,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 	protected File openFile(String rootDir, String hdlName, boolean isMif, boolean isEntity) {
     if (!rootDir.endsWith(File.separator))
       rootDir += File.separatorChar;
-    String subdir = getSubDir();
+    String subdir = subdir();
     if (!subdir.endsWith(File.separator) && !subdir.isEmpty())
       subdir += File.separatorChar;
     String path = rootDir + _lang.toLowerCase() + File.separatorChar + subdir;
@@ -608,6 +608,43 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 
   /////////// DONE
   // Returns a suitable subdirectory for storing HDL files.
-	protected abstract String getSubDir();
+	protected abstract String subdir();
+
+  protected static class PortInfo {
+    final String name;
+    final String width; // generic param (but not an expression) or constant integer
+    final int index;
+    Boolean defaultValue; // only for inputs, null means port is required
+    PortInfo(String n, String w, int i, Boolean v) {
+      name = n;
+      width = w;
+      index = i;
+      defaultValue = v;
+    }
+  }
+
+  protected static class WireInfo {
+    final String name;
+    final String width; // generic param or expression or constant integer
+    WireInfo(String n, String w) {
+      name = n;
+      width = w;
+    }
+  }
+
+  protected static class ParameterInfo {
+    final String name;
+    final int width; // constant integer
+    WireInfo(String n, int w) {
+      name = n;
+      width = w;
+    }
+  }
+
+  protected final ArrayList<PortInfo> inPorts = new ArrayList<>();
+  // protected final ArrayList<PortInfo> inOutPorts = new ArrayList<>();
+  protected final ArrayList<PortInfo> outPorts = new ArrayList<>();
+  protected final ArrayList<WireInfo> wires = new ArrayList<>();
+  protected final ArrayList<String> parameters = new ArrayList<>();
 
 }

@@ -29,97 +29,62 @@
  */
 package com.cburch.logisim.std.arith;
 
-import java.util.SortedMap;
-
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
-import com.cburch.logisim.instance.StdAttr;
 
 public class AdderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 
   public AdderHDLGeneratorFactory(HDLCTX ctx) {
     super(ctx, "${BUS}Adder", "ADDER2C");
-  }
-
-  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
-  protected final static int GENERIC_PARAM_EXTENDEDBITS = -2;
-
-  @Override
-  public String GetSubDir() { return "arithmetic"; }
-
-  @Override
-  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
-    list.put("DataA", w);
-    list.put("DataB", w);
-    list.put("CarryIn", 1);
-  }
-
-  @Override
-  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
-    list.put("Result", w);
-    list.put("CarryOut", 1);
-  }
-
-  @Override
-	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
-    int w = width(attrs);
-    if (w > 1)
-      list.put(GENERIC_PARAM_BUSWIDTH, "BusWidth");
-    list.put(GENERIC_PARAM_EXTENDEDBITS, "ExtendedBits");
-  }
-
-  @Override
-  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
-    AttributeSet attrs = info.GetComponent().getAttributeSet();
-    int w = width(attrs);
-    if (w > 1)
-      list.put("BusWidth", w);
-    list.put("ExtendedBits", w + 1);
+    int w = stdWidth();
+    if (w > 1) {
+      // Generic n-bit version
+      parameters.add(new ParameterInfo(ws, w));
+      inPorts.add(new PortInfo("DataA", "BitWidth", 0, false));
+      inPorts.add(new PortInfo("DataB", "BitWidth", 1, false));
+      outPorts.add(new PortInfo("Result", "BitWidth", 2, null));
+      inPorts.add(new PortInfo("CarryIn", 1, 3, false));
+      outPorts.add(new PortInfo("CarryOut", 1, 4, null));
+      if (ctx.isVhdl) {
+        wires.add(new WireInfo("s_A", "BitWidth+1"));
+        wires.add(new WireInfo("s_B", "BitWidth+1"));
+        wires.add(new WireInfo("s_R", "BitWidth+1"));
+      }
+    } else {
+      // 1-bit version
+      inPorts.add(new PortInfo("DataA", 1, 0, false));
+      inPorts.add(new PortInfo("DataB", 1, 1, false));
+      outPorts.add(new PortInfo("Result", 1, 2, null));
+      inPorts.add(new PortInfo("CarryIn", 1, 3, false));
+      outPorts.add(new PortInfo("CarryOut", 1, 4, null));
+      if (ctx.isVhdl) {
+        wires.add(new WireInfo("s_A", 2));
+        wires.add(new WireInfo("s_B", 2));
+        wires.add(new WireInfo("s_R", 2));
+      }
+    }
   }
 
   @Override
-  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
-    list.putAll(GetNetMap("DataA", true, info, 0, err, lang, nets));
-    list.putAll(GetNetMap("DataB", true, info, 1, err, lang, nets));
-    list.putAll(GetNetMap("Result", true, info, 2, err, lang, nets));
-    list.putAll(GetNetMap("CarryIn", true, info, 3, err, lang, nets));
-    list.putAll(GetNetMap("CarryOut", true, info, 4, err, lang, nets));
-  }
+  protected String subdir() { return "arithmetic"; }
 
   @Override
-  public void wires(SortedMap<String, Integer> list, AttributeSet attrs, Netlist nets) {
-    list.put("s_A", GENERIC_PARAM_EXTENDEDBITS);
-    list.put("s_B", GENERIC_PARAM_EXTENDEDBITS);
-    list.put("s_R", GENERIC_PARAM_EXTENDEDBITS);
-  }
-  // fixme: EXTENDEDBITS is only needed b/c we have no way of saying "BusWidth+1 if BusWidth is defined otherwise 2"
-  
-  @Override
-  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
+  public void generateBehavior(Hdl out) {
     out.indent();
-    int w = width(attrs);
     if (out.isVhdl) {
       out.stmt("s_A <= \"0\" & DataA;");
       out.stmt("s_B <= \"0\" & DataB;");
-      out.stmt("s_R <= std_logic_vector(unsigned(s_A) + unsigned(s_B)+ (\"\" & CarryIn));");
-      out.stmt("");
-      if (w == 1)
-        out.stmt("Result <= s_R(0);");
-      else
+      out.stmt("s_R <= std_logic_vector(unsigned(s_A) + unsigned(s_B) + (\"\" & CarryIn));");
+      if (isBus()) {
         out.stmt("Result <= s_R((BusWidth-1) DOWNTO 0);");
-      out.stmt("CarryOut <= s_R(BusWidth);");
+        out.stmt("CarryOut <= s_R(BusWidth);");
+      } else {
+        out.stmt("Result <= s_R(0);");
+        out.stmt("CarryOut <= s_R(1);");
+      }
     } else {
       out.stmt("assign {CarryOut, Result} = DataA + DataB + CarryIn;");
     }
   }
 
-  protected int width(AttributeSet attrs) {
-    return attrs.getValue(StdAttr.WIDTH).getWidth();
-  }
 }

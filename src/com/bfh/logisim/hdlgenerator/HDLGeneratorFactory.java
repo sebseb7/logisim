@@ -145,7 +145,7 @@ public abstract class HDLGeneratorFactory {
   // label.
   public final String getHDLNameWithinCircuit(String circuitName) { // was: getHDLName();
     String s = _hdlComponentName;
-    int w = _attrs.getValueOrElse(StdAttr.WIDTH, BitWidth.ONE).getWidth();
+    int w = stdWidth();
     if (s.contains("${CIRCUIT}"))
         s = s.replace("${CIRCUIT}", circuitName);
     if (s.contains("${WIDTH}"))
@@ -185,4 +185,11 @@ public abstract class HDLGeneratorFactory {
   // Return an instance name by combining the prefix with a unique ID.
 	public final String getInstanceName(long id) { return _hdlInstanceNamePrefix + "_" + id; }
 
+  protected int stdWidth() {
+    return _attrs.getValueOrElse(StdAttr.WIDTH, BitWidth.ONE).getWidth();
+  }
+
+  protected boolean isBus() {
+    return stdWidth() > 1;
+  }
 }
