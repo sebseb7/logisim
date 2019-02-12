@@ -35,163 +35,60 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeMap;
 
-import com.bfh.logisim.designrulecheck.BubbleInformationContainer;
-import com.bfh.logisim.designrulecheck.ConnectionEnd;
-import com.bfh.logisim.designrulecheck.ConnectionPoint;
-import com.bfh.logisim.designrulecheck.Net;
-import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.fpgagui.MappableResourcesContainer;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 
-public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
+public class HDLGenerator extends HDLSupport {
 
-  public static class HDLCTX { // fixme - temporary hack
-    public final String lang;
-    public final FPGAReport err;
-    public final Netlist nets;
-    public final AttributeSet attrs;
-    public final char vendor;
-    public HDLCTX(String lang, FPGAReport err, Netlist nets, AttributeSet attrs, char vendor) {
-      this.lang = lang;;
-      this.err = err;;
-      this.nets = nets;;
-      this.attrs = attrs;;
-      this.vendor = vendor;;
-    }
-  }
+  // A suitable subdirectory for storing HDL files.
+  protected final String subdir;
   
-  protected AbstractHDLGeneratorFactory(String lang, FPGAReport err, Netlist nets, AttributeSet attrs, char vendor, String hdlComponentName, String hdlInstanceNamePrefix) {
-    super(lang, err, nets, attrs, vendor, hdlComponentName, hdlInstanceNamePrefix);
+  // Name for HDL module (i.e. base name of HDL file).
+  // Must be unique and distinct for each variation of generated HDL,
+  // e.g. "BitAdder" (for a 1-bit HDL version using std_logic) versus
+  // "BusAdder" (for a parameterized N-bit version using std_logic_vector). In
+  // some cases, this is even globally unique (distinct per-circuit and
+  // per-instance), when the VHDL essentially can't be shared between instances
+  // like for PLA, Rom, and Non-Volatile Ram components.
+  protected final String hdlComponentName;
+ 
+  // Prefix for generating pretty instance names. No need to be unique, as it
+  // will get a unique ID suffix: "i_Add" will become "i_Add_1", "i_Add_2", etc.
+  protected final String hdlInstanceNamePrefix;
+  
+  protected HDLGenerator(HDLCTX ctx, String subdir,
+      String hdlComponentNameTemplate, String hdlInstanceNamePrefix) {
+    super(ctx, false);
+    this.subdir = subdir;
+    this.hdlComponentName = deriveHDLNameWithinCircuit(hdlComponentNameTemplate,
+        _attrs, _nets == null ? null : _nets.getCircuitName());
+    this.hdlInstanceNamePrefix = CorrectLabel.getCorrectLabel(hdlInstanceNamePrefix);
   }
 
-  protected AbstractHDLGeneratorFactory(HDLCTX ctx, String hdlComponentName, String hdlInstanceNamePrefix) {
-    super(ctx.lang, ctx.err, ctx.nets, ctx.attrs, ctx.vendor, hdlComponentName, hdlInstanceNamePrefix);
-  }
-
-  /*
-	public String GetBusNameContinues(NetlistComponent comp, int EndIndex,
-			String HDLType, Netlist TheNets) {
-		String Result;
-		String BracketOpen = (HDLType.equals("VHDL")) ? "(" : "[";
-		String BracketClose = (HDLType.equals("VHDL")) ? ")" : "]";
-		String VectorLoopId = (HDLType.equals("VHDL")) ? " DOWNTO "
-				: ":";
-		if ((EndIndex < 0) || (EndIndex >= comp.NrOfEnds())) {
-			return "";
-		}
-		ConnectionEnd ConnectionInformation = comp.getEnd(EndIndex);
-		int NrOfBits = ConnectionInformation.NrOfBits();
-		if (NrOfBits == 1) {
-			return "";
-		}
-		if (!TheNets.IsContinuesBus(comp, EndIndex)) {
-			return "";
-		}
-		Net ConnectedNet = ConnectionInformation.GetConnection((byte) 0)
-				.GetParrentNet();
-		Result = BusName
-				+ Integer.toString(TheNets.GetNetId(ConnectedNet))
-				+ BracketOpen
-				+ Integer.toString(ConnectionInformation.GetConnection(
-						(byte) (ConnectionInformation.NrOfBits() - 1))
-						.GetParrentNetBitIndex())
-				+ VectorLoopId
-				+ Integer.toString(ConnectionInformation.GetConnection(
-						(byte) (0)).GetParrentNetBitIndex()) + BracketClose;
-		return Result;
-	}
-  */
-
-  //    s/GetNetName(...)/nets.signalForEnd1(...)/
-  //    s/GetNetMap(...)/nets.signalForEnd(...)/
-  //    s/GetBusEntryName(...)/nets.signalForEndBit(...)/
-  //    s/GetClockNetName/nets.clockForEnd(...)/
-
-  // XXX - here - move this to netlist, or netlistcomponent?
-  // Determine the HDL name corresponding to whichever Logisim wire is connected
-  // to the given "end" (i.e. port) of this instance. If the end is not
-  // connected to a wire, a fatal error is reported.
-  // protected String getNetName(NetlistComponent comp, int endIdx) {
-  //   return getNetNameOrElse(comp, endIdx, null /* no default */, _nets);
-  // }
-
-  // XXX - here - move this to netlist, or netlistcomponent?
-  // Determine the HDL name corresponding to whichever Logisim wire is connected
-  // to the given "end" (i.e. port) of this instance. If the end is not
-  // connected to a wire, the given default value is returned instead, sized to
-  // the appropriate width.
-  // protected String getNetNameOrElse(NetlistComponent comp, int endIdx, boolean defaultValue) {
-  //   return getNetNameOrElse(comp, endIdx, defaultValue, _nets);
-  // }
-
-  // XXX - here - move this to netlist, or netlistcomponent? Same as above, but
-  // using the given Netlist instead of the usual Netlist (which is the one for
-  // the circuit in which this component is embedded).
-
-  // Determine the HDL name corresponding to whichever Logisim wire is connected
-  // to the given "end" (i.e. port) of this component.
-	// public String getNetName(NetlistComponent comp, int endIdx, Boolean defaultValue, Netlist nets) {
-	// 	
-  //   if (endIdx < 0 || endIdx >= comp.NrOfEnds()) {
-  //     _err.AddFatalError("INTERNAL ERROR: Invalid end/port '%d' for component '%s'", endIdx, this);
-  //     return "???";
-  //   }
-
-  //   ConnectionEnd end = comp.getEnd(endIdx);
-  //   int n = end.NrOfBits();
-  //   if (n != 1) {
-  //     _err.AddFatalError("INTERNAL ERROR: Unexpected %d-bit end/port '%d' for component '%s'", n, endIdx, this);
-  //     return "???";
-  //   }
-
-  //   Hdl hdl = new Hdl(_lang, _err);
-
-  //   ConnectionPoint solderPoint = end.GetConnection((byte)0);
-  //   Net net = solderPoint.GetParrentNet();
-  //   if (net == null) { // unconnected net
-  //     if (defaultValue == null) {
-  //       _err.AddFatalError("INTERNAL ERROR: Unexpected unconnected net to end/port '%d' for component '%s'", endIdx, this);
-  //       return "???";
-  //     }
-  //     return end.IsOutputEnd() ? hdl.unconnected : hdl.bit(defaultValue);
-  //   } else if (net.BitWidth() == 1) { // connected to a single-bit net
-  //     return "s_LOGISIM_NET_" + nets.GetNetId(net);
-  //   } else { // connected to one bit of a multi-bit bus
-  //     return String.format("S_LOGISIM_NET_%d"+hdl.idx,
-  //         nets.GetNetId(net),
-  //         solderPoint.GetParrentNetBitIndex());
-  //   }
-	// }
-
-  // DONE
   // Generate and write all necessary HDL files for this component, using the
-  // given root directory and hdlName. Depeding on the specific subclass
-  // involved, this may include entity, architecture, and several memory init
-  // files.
-  public boolean writeHDLFiles(String rootDir, String hdlName) {
-    HashMap<String, File> memInitFiles = writeMemInitFiles(rootDir, hdlName);
-    return writeEntity(rootDir, hdlName)
-        && writeArchitecture(rootDir, hdlName, memInitFiles);
+  // given root directory. Depeding on the specific subclass involved, this may
+  // include entity, architecture, and several memory init files.
+  public boolean writeHDLFiles(String rootDir) {
+    HashMap<String, File> memInitFiles = writeMemInitFiles(rootDir);
+    return writeEntity(rootDir)
+        && writeArchitecture(rootDir, memInitFiles);
   }
 
   // DONE
   // Generate and write all "memory init" files for this component, using the
-  // given root directory and hdlName, returning the list of memory names and
-  // corresponding memory init files.
-  protected HashMap<String, File> writeMemInitFiles(String rootDir, String hdlName) {
+  // given root directory, returning the list of memory names and corresponding
+  // memory init files.
+  protected HashMap<String, File> writeMemInitFiles(String rootDir) {
     MemInitData memInits = getMemInitData();
     HashMap<String, File> files = new HashMap<>();
     for (String m : memInits.keySet()) {
       Hdl data = memInits.get(m);
       if (data.isEmpty()) {
         _err.AddFatalError("INTERNAL ERROR: Empty memory initialization file for memory '%s:%s'.",
-            hdlName, memName);
+            hdlComponentName, memName);
         continue;
       }
-      File f = openFile(rootDir, hdlName + "_" + memName, true, false);
+      File f = openFile(rootDir, hdlComponentName + "_" + memName, true, false);
       if (f == null)
         continue;
       if (!FileWriter.WriteContents(f, data, _err))
@@ -203,16 +100,14 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 
   /////////// DONE
   // Generate and write an "architecture" file for this component, using the
-  // given root directory, hdlName, and NVRAM initialization files, where:
-  //   hdlName = getHDLNameWithinCircuit(containingCircuitName);
-  protected boolean writeArchitecture(String rootDir,
-			String hdlName, HashMap<String, File> memInitFiles) { // fixme: meminitfiles from where?
-    Hdl hdl = getArchitecture(hdlName, memInitFiles);
+  // given root directory and NVRAM initialization files.
+  protected boolean writeArchitecture(String rootDir, HashMap<String, File> memInitFiles) {
+    Hdl hdl = getArchitecture(memInitFiles);
 		if (hdl == null || hdl.isEmpty()) {
-			_err.AddFatalError("INTERNAL ERROR: Generated empty architecture for HDL `%s'.", hdlName);
+			_err.AddFatalError("INTERNAL ERROR: Generated empty architecture for HDL `%s'.", hdlComponentName);
 			return false;
 		}
-		File f = openFile(rootDir, hdlName, false, false);
+		File f = openFile(rootDir, false, false);
 		if (f == null)
 			return false;
 		return FileWriter.WriteContents(f, hdl, _err);
@@ -220,9 +115,9 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 
   /////////// DONE
   // Generate the full HDL code for the "architecture" file.
-	protected Hdl getArchitecture(String hdlName, HashMap<String, File> memInitFiles) {
+	protected Hdl getArchitecture(HashMap<String, File> memInitFiles) {
     Hdl out = new Hdl(_lang, _err);
-    generateFileHeader(out, hdlName);
+    generateFileHeader(out);
 
     SignalList inPorts = getInPorts();
     // fixme: if logisim circuits can do bidirectional ports, add support for in/out ports here
@@ -235,7 +130,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 
 		if (out.isVhdl) {
 
-			out.stmt("architecture logisim_generated of " + hdlName + " is ");
+			out.stmt("architecture logisim_generated of " + hdlComponentName + " is ");
       out.indent();
 
 			if (!types.isEmpty()) {
@@ -287,7 +182,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
       ArrayList<String> ports = new ArrayList<>();
       ports.addall(inPorts.keySet());
       ports.addall(outPorts.keySet());
-      out.stmt("module %s(\t %s );", hdlName, String.join(",\n\t ", ports));
+      out.stmt("module %s(\t %s );", hdlComponentName, String.join(",\n\t ", ports));
 
       out.indent();
       for (int p : params.keySet())
@@ -329,48 +224,47 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 
   /////////// DONE
   // Generate and write an "entity" file (for VHDL) for this component, using
-  // the given root directory and hdlName, where:
-  //   hdlName = getHDLNameWithinCircuit(containingCircuitName);
-  protected boolean writeEntity(String rootDir, String hdlName) {
+  // the given root directory.
+  protected boolean writeEntity(String rootDir) {
     if (!_lang.equals("VHDL"))
       return true;
-    Hdl hdl = getVhdlEntity(hdlName);
+    Hdl hdl = getVhdlEntity();
 		if (hdl == null || hdl.isEmpty()) {
-			_err.AddFatalError("INTERNAL ERROR: Generated empty entity for VHDL `%s'.", hdlName);
+			_err.AddFatalError("INTERNAL ERROR: Generated empty entity for VHDL `%s'.", hdlComponentName);
 			return false;
 		}
-		File f = openFile(rootDir, hdlName, false, true);
+		File f = openFile(rootDir, false, true);
 		if (f == null)
 			return false;
 		return FileWriter.WriteContents(f, hdl, _err);
 	}
 
   /////////// DONE
-	protected Hdl getVhdlEntity(String hdlName) {
+	protected Hdl getVhdlEntity() {
     Hdl out = new Hdl(_lang, _err);
-    generateFileHeader(out, hdlName);
+    generateFileHeader(out);
     generateVhdlLibraries(out, IEEE_LOGIC, IEEE_NUMERIC);
-    generateVhdlBlackBox(out, hdlName, true);
+    generateVhdlBlackBox(out, true);
     return out;
 	}
 
   /////////// DONE
-	protected void generateComponentInstantiation(Hdl out, String hdlName) {
+	protected void generateComponentDeclaration(Hdl out) {
 		if (_lang.equals("VHDL"))
-      generateVhdlBlackBox(out, hdlName, false);
+      generateVhdlBlackBox(out, false);
 	}
 
   /////////// DONE
-	private void generateVhdlBlackBox(Hdl out, String hdlName, boolean isEntity) {
+	private void generateVhdlBlackBox(Hdl out, boolean isEntity) {
     SignalList inPorts = getInPorts();
     SignalList inOutPorts = getInOutPorts();
     SignalList outPorts = getOutPorts();
     Generics params = getGenericParameters();
 
     if (isEntity)
-      out.stmt("entity %s is", hdlName);
+      out.stmt("entity %s is", hdlComponentName);
     else
-      out.stmt("component %s", hdlName);
+      out.stmt("component %s", hdlComponentName);
 
 		if (!params.isEmpty()) {
       ArrayList<String> generics = new ArrayList<>();
@@ -395,7 +289,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 		}
     
     if (isEntity)
-      out.stmt("end %s;", hdlName);
+      out.stmt("end %s;", hdlComponentName);
     else
       out.stmt("end component;");
 		out.stmt();
@@ -418,10 +312,8 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
   //             .B(bar),
   //             .C(baz) );
   //
-	protected void generateComponentMap(Hdl out, long id,
-      NetlistComponent comp, String containingCircuitName) {
+	protected void generateComponentInstance(Hdl out, long id, NetlistComponent comp) {
 
-		String hdlName = getHDLNameWithinCircuit(containingCircuitName);
 		String instName = getInstanceName(id);
 
     ParameterAssignments paramVals = getParameterAssignments(comp);
@@ -432,7 +324,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 
 		if (out.isVhdl) {
 
-      out.stmt("%s : %s", instName, hdlName);
+      out.stmt("%s : %s", instName, hdlComponentName);
 			if (!paramVals.isEmpty()) {
         for (String s : paramVals.keySet())
           generics.add(s + " => " +  paramVals.get(s));
@@ -455,13 +347,13 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
       String v = String.join(",\n\t ", values);
 
 			if (generics.isEmpty() && values.isEmpty())
-        out.stmt("%s %s;", hdlName, instName);
+        out.stmt("%s %s;", hdlComponentName, instName);
       else if (generics.isEmpty())
-        out.stmt("%s %s (\t %s );", hdlName, instName, v);
+        out.stmt("%s %s (\t %s );", hdlComponentName, instName, v);
       else if (values.isEmpty())
-        out.stmt("%s #(\t %s ) %s;", hdlName, g, instName);
+        out.stmt("%s #(\t %s ) %s;", hdlComponentName, g, instName);
       else
-        out.stmt("%s #(\t %s ) %s ( %s );", hdlName, g, instName, v);
+        out.stmt("%s #(\t %s ) %s ( %s );", hdlComponentName, g, instName, v);
 		}
 
     out.stmt();
@@ -470,10 +362,10 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 
 
   /////////// DONE
-	protected void generateFileHeader(Hdl out, String hdlName) {
+	protected void generateFileHeader(Hdl out) {
     out.comment(" === Logisim-Evolution Holy Cross Edition auto-generated %s code", _lang);
     out.comment(" === Project: %s", _projectName);
-    out.comment(" === Component: %s", hdlName);
+    out.comment(" === Component: %s", hdlComponentName);
     out.stmt();
 	}
 
@@ -596,19 +488,14 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 
   /////////// DONE
   // Returns a file opened for writing.
-	protected File openFile(String rootDir, String hdlName, boolean isMif, boolean isEntity) {
+	protected File openFile(String rootDir, boolean isMif, boolean isEntity) {
     if (!rootDir.endsWith(File.separator))
       rootDir += File.separatorChar;
-    String subdir = subdir();
     if (!subdir.endsWith(File.separator) && !subdir.isEmpty())
       subdir += File.separatorChar;
     String path = rootDir + _lang.toLowerCase() + File.separatorChar + subdir;
-    return FileWriter.GetFilePointer(path, hdlName, isMif, isEntity, _err, _lang);
+    return FileWriter.GetFilePointer(path, hdlComponentName, isMif, isEntity, _err, _lang);
 	}
-
-  /////////// DONE
-  // Returns a suitable subdirectory for storing HDL files.
-	protected abstract String subdir();
 
   protected static class PortInfo {
     final String name;
@@ -634,10 +521,14 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 
   protected static class ParameterInfo {
     final String name;
+    final String type; // integer, natural, or positive
     final int width; // constant integer
-    WireInfo(String n, int w) {
+    final int defaultValue;
+    WireInfo(String n, String t, int w, int v) {
       name = n;
+      type = t;
       width = w;
+      defaultValue = v;
     }
   }
 
@@ -645,6 +536,87 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
   // protected final ArrayList<PortInfo> inOutPorts = new ArrayList<>();
   protected final ArrayList<PortInfo> outPorts = new ArrayList<>();
   protected final ArrayList<WireInfo> wires = new ArrayList<>();
-  protected final ArrayList<String> parameters = new ArrayList<>();
+  protected final ArrayList<ParameterInfo> parameters = new ArrayList<>();
+
+
+  // For some components, getHDLName() only works reliably if the component has
+  // a (preferable friendly) name that is unique within the circuit, because it
+  // shows up in the component-mapping GUI dialog where the user assigns FPGA
+  // resources. This is the case for Pin, PortIO, LED, BUtton, and similar
+  // components. These components should include "${LABEL}" in their name. ROM
+  // and volatile RAM components also do the same (see note below). Also,
+  // Subcircuit and VhdlEntity need labels for the same reason, and override
+  // this method to return true.
+  public boolean RequiresNonZeroLabel() {
+    return hdlComponentName.contains("${LABEL}");
+  }
+
+  // Return a suitable HDL name for this component, e.g. "BitAdder" or
+  // "BusAdder". This becomes the name of the vhdl/verilog file, and becomes
+  // the name of the vhdl/verilog entity for this component. The name must be
+  // unique for each different generated vhdl/verilog code. If any attributes
+  // are used to customize the generated vhdl/verilog code, that attribute must
+  // also be used as part of the HDL name. 
+  //
+  // As a convenience, some simple string replacements are made:
+  //   ${CIRCUIT} - replaced with name of circuit containing component
+  //   ${LABEL}   - replaced with StdAttr.LABEL
+  //   ${WIDTH}   - replaced with StdAttr.WIDTH
+  //   ${BUS}     - replaced with "Bit" (StdAttr.WIDTH == 1) or "Bus" (otherwise)
+  //   ${TRIGGER} - replaced with "LevelSensitive", "EdgeTriggered", or "Asynchronous"
+  //                depending on StdAttr.TRIGGER and/or StdAttr.EDGE_TRIGGER.
+  //
+  // Note: For ROM and non-volatile RAM components, the generated HDL code
+  // depends on the contents of the memory, which is too large of an attribute
+  // for getHDLName() to simply include in the name as is done for other
+  // attributes. Instead, we require each ROM and non-volatile RAM to have a
+  // non-zero label unique within the circuit, then we getHDLName() computes a
+  // name as a function of the circuit name (which is globally unique) and the
+  // label.
+  private static String deriveHDLNameWithinCircuit(String nameTemplate,
+      AttributeSet attrs, String circuitName) {
+    String s = hdlComponentName;
+    int w = stdWidth();
+    // fixme: this will happen for temp-instances with no netlist
+    if (s.contains("${CIRCUIT}") && circuitName == null)
+      throw new IllegalArgumentException("%s can't appear in top-level circuit");
+    if (s.contains("${CIRCUIT}"))
+        s = s.replace("${CIRCUIT}", circuitName);
+    if (s.contains("${WIDTH}"))
+        s = s.replace("${WIDTH}", ""+w);
+    if (s.contains("${BUS}"))
+        s = s.replace("${BUS}", w == 1 ? "Bit" : "Bus");
+    if (s.contains("${TRIGGER}")) {
+      if (attrs.containsAttribute(StdAttr.EDGE_TRIGGER)
+          || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
+          || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_RISING)
+        s = s.replace("${TRIGGER}", "EdgeTriggered");
+      else if (attrs.containsAttribute(StdAttr.TRIGGER))
+        s = s.replace("${TRIGGER}", "LevelSensitive");
+      else
+        s = s.replace("${TRIGGER}", "Asynchronous");
+    }
+    if (s.contains("${LABEL}")) {
+      String label = attrs.getValueOrElse(StdAttr.LABEL, "");
+      if (label.isEmpty()) {
+        if (_err != null)
+          _err.AddSevereWarning("Missing label for %s within circuit \"%s\".",
+              hdlComponentName, circuitName);
+        label = "ANONYMOUS";
+      }
+      s = s.replace("${LABEL}", label);
+    }
+    return CorrectLabel.getCorrectLabel(s);
+  }
+
+  // Return a suitable stem for naming instances of this component within a
+  // circuit, so we can form names like "i_Add_1", "i_Add_2", etc., for
+  // instances of BusAdder and BitAdder. These need not be unique: the
+  // CircuitHDLGeneratorFactory will add suffixes to ensure all the instance
+  // names within a circuit are unique.
+	public final String getInstanceNamePrefix() { return hdlInstanceNamePrefix; }
+
+  // Return an instance name by combining the prefix with a unique ID.
+	public final String getInstanceName(long id) { return hdlInstanceNamePrefix + "_" + id; }
 
 }

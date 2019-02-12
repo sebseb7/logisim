@@ -1,38 +1,32 @@
---------------------------------------------------------------------------------
--- HEIG-VD, institute REDS, 1400 Yverdon-les-Bains
--- Project :
--- File    :
--- Autor   :
--- Date    :
+-- Project: %project%
+-- File: %file%
+-- Author:
+-- Date:
 --
---------------------------------------------------------------------------------
--- Description :
---
---------------------------------------------------------------------------------
+-- Description:
 
 library ieee;
   use ieee.std_logic_1164.all;
   --use ieee.numeric_std.all;
 
 entity %entityname% is
+  generic(
+    EXAMPLE_PARAM : integer := 42;
+    ANOTHER_PARAM : integer := 226;
+  );
   port(
-  ------------------------------------------------------------------------------
-  --Insert input ports below
-    horloge_i  : in  std_logic;                    -- input bit example
-    val_i      : in  std_logic_vector(3 downto 0); -- input vector example
-  ------------------------------------------------------------------------------
-  --Insert output ports below
-    max_o      : out std_logic;                    -- output bit example
-    cpt_o      : out std_logic_Vector(3 downto 0)  -- output vector example
-    );
+    -- Note: Logisim does not yet support Using generic parameters for port sizes.
+    example_input : in std_logic;
+    example_other : in std_logic_vector(3 downto 0); 
+    example_output : out std_logic_vector(7 downto 0);
+  )
 end %entityname%;
 
---------------------------------------------------------------------------------
---Complete your VHDL description below
-architecture type_architecture of %entityname% is
+architecture SomeArchitecture of %entityname% is
 
+  -- add VHDL code here
 
 begin
 
 
-end type_architecture;
+end SomeArchitecture;

@@ -76,7 +76,11 @@ public class VhdlContent extends HdlContent {
 
   public static VhdlContent create(String name, LogisimFile file) {
     VhdlContent content = new VhdlContent(name, file);
-    if (!content.setContent(TEMPLATE.replaceAll("%entityname%", name)))
+    String s = TEMPLATE;
+    s = s.replaceAll("%project%", file.getName());
+    s = s.replaceAll("%file%", name + ".vhdl");
+    s = s.replaceAll("%entityname%", name);
+    if (!content.setContent(s))
       content.showErrors();
     return content;
   }
