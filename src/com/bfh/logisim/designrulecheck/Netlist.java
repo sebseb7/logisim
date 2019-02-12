@@ -105,8 +105,8 @@ public class Netlist {
 	private Circuit MyCircuit;
 	private int DRCStatus;
 	private Set<Wire> wires = new HashSet<Wire>();
-	private ArrayList<String> CurrentHierarchyLevel;
-        private NetlistComponent DynClock;
+	private ArrayList<String> CurrentHierarchyLevel = new ArrayList<>();
+  private NetlistComponent DynClock;
 	public static final int DRC_REQUIRED = -1;
 	public static final int DRC_PASSED = 0;
 	public static final int ANNOTATE_REQUIRED = 1;
@@ -142,12 +142,7 @@ public class Netlist {
 		LocalNrOfInportBubles = 0;
 		LocalNrOfOutportBubles = 0;
 		LocalNrOfInOutBubles = 0;
-                DynClock = null;
-		if (CurrentHierarchyLevel == null) {
-			CurrentHierarchyLevel = new ArrayList<String>();
-		} else {
-			CurrentHierarchyLevel.clear();
-		}
+    CurrentHierarchyLevel.clear();
 	}
 
 	public void ConstructHierarchyTree(Set<String> ProcessedCircuits,
@@ -1062,10 +1057,8 @@ public class Netlist {
 		return CircuitName;
 	}
 
-	public int GetClockSourceId(ArrayList<String> HierarchyLevel, Net WhichNet,
-			Byte Bitid) {
-		return MyClockInformation.GetClockSourceId(HierarchyLevel, WhichNet,
-				Bitid);
+	public int GetClockSourceId(ArrayList<String> HierarchyLevel, Net WhichNet, Byte Bitid) {
+		return MyClockInformation.GetClockSourceId(HierarchyLevel, WhichNet, Bitid);
 	}
 
 	public int GetClockSourceId(Component comp) {
@@ -1518,35 +1511,30 @@ public class Netlist {
 		return false;
 	}
 
-	public boolean IsContinuesBus(NetlistComponent comp, int EndIndex) {
-		boolean ContinuesBus = true;
-		if ((EndIndex < 0) || (EndIndex >= comp.NrOfEnds())) {
+  public boolean isConnectedToSingleNamedBus(NetlistComponent comp, int endIdx) {
+    return IsContinuesBus(comp, endIdx);
+  }
+
+  // aka isConnectedToSingleNamedBus...
+	private boolean IsContinuesBus(NetlistComponent comp, int endIdx) {
+		if (endIdx < 0 || endIdx >= comp.NrOfEnds())
 			return true;
-		}
-		ConnectionEnd ConnectionInformation = comp.getEnd(EndIndex);
-		int NrOfBits = ConnectionInformation.NrOfBits();
-		if (NrOfBits == 1) {
+
+		ConnectionEnd end = comp.getEnd(endIdx);
+		int n = end.NrOfBits();
+		if (n == 1)
 			return true;
+
+		Net net = end.GetConnection((byte) 0).GetParrentNet();
+		byte idx = end.GetConnection((byte) 0).GetParrentNetBitIndex();
+
+		for (int i = 1; i < n; i++) {
+			if (net != end.GetConnection((byte) i).GetParrentNet())
+				return false; // This bit is connected to different bus
+			if (net != null && (idx + i) != end.GetConnection((byte)i).GetParrentNetBitIndex())
+        return false; // This bit is connected to same bus, but indexes are not sequential
 		}
-		Net ConnectedNet = ConnectionInformation.GetConnection((byte) 0)
-				.GetParrentNet();
-		byte ConnectedNetIndex = ConnectionInformation.GetConnection((byte) 0)
-				.GetParrentNetBitIndex();
-		for (int i = 1; (i < NrOfBits) && ContinuesBus; i++) {
-			if (ConnectedNet != ConnectionInformation.GetConnection((byte) i)
-					.GetParrentNet()) {
-				/* This bit is connected to another bus */
-				ContinuesBus = false;
-			}
-			if ((ConnectedNetIndex + 1) != ConnectionInformation.GetConnection(
-					(byte) i).GetParrentNetBitIndex()) {
-				/* Connected to a none incremental position of the bus */
-				ContinuesBus = false;
-			} else {
-				ConnectedNetIndex++;
-			}
-		}
-		return ContinuesBus;
+		return true;
 	}
 
 	public boolean IsValid() {
@@ -1979,4 +1967,215 @@ public class Netlist {
 		}
 		return true;
 	}
+
+  // TODO here
+  // Determine the single-bit HDL signal name that is connected to the given
+  // "end" (aka component port). If the end is not connected to a signal, then
+  // null is returned.
+  // xxx either and hdl "open" is returned (for outputs) or the given default value
+  // xxx is returned instead (for inputs). But, if the default is null and the end
+  // xxx is an input, null is returned instead.
+  private String signalForEndBit(ConnectionEnd end, int bit, /*Boolean defaultValue,*/ Hdl hdl) {
+    ConnectionPoint solderPoint = end.GetConnection((byte) bit);
+    Net net = solderPoint.GetParrentNet();
+    if (net == null) { // unconnected net
+      // if (end.IsOutputEnd()) {
+      //   return hdl.unconnected;
+      // } else if (defaultValue == null) {
+      //   hdl.err.AddFatalError("INTERNAL ERROR: Invalid component end/port.");
+      //   return "???";
+      // } else {
+      //   return hdl.bit(defaultValue);
+      // }
+      return null;
+    } else if (net.BitWidth() == 1) { // connected to a single-bit net
+      return "s_LOGISIM_NET_" + this.GetNetId(net);
+    } else { // connected to one bit of a multi-bit bus
+      return String.format("S_LOGISIM_NET_%d"+hdl.idx,
+          this.GetNetId(net),
+          solderPoint.GetParrentNetBitIndex());
+    }
+  }
+
+  // TODO here
+  // Determine the single-bit HDL signal name that is connected to one of the
+  // given component's ports (aka "ends"). If the end is not connected to a
+  // signal, then either an HDL "open" is returned (for outputs) or the given
+  // default value is returned instead (for inputs). But, if the default is null
+  // and the end is an input, a fatal error is posted.
+	public String signalForEnd1(NetlistComponent comp, int endIdx, Boolean defaultValue, Hdl hdl) {
+		
+    if (endIdx < 0 || endIdx >= comp.NrOfEnds()) {
+      hdl.err.AddFatalError("INTERNAL ERROR: Invalid end/port '%d' for component '%s'", endIdx, comp);
+      return "???";
+    }
+
+    ConnectionEnd end = comp.getEnd(endIdx);
+    int n = end.NrOfBits();
+    if (n != 1) {
+      hdl.err.AddFatalError("INTERNAL ERROR: Unexpected %d-bit end/port '%d' for component '%s'", n, endIdx, comp);
+      return "???";
+    }
+
+    String s = signalForEndBit(end, 0, hdl);
+    if (s != null) {
+      return s;
+    } else if (end.IsOutputEnd()) {
+      return hdl.unconnected;
+    } else if (defaultValue == null) {
+      hdl.err.AddFatalError("INTERNAL ERROR: Unexpected unconnected end/port '%d' for component '%s'", endIdx, comp);
+      return "???";
+    } else {
+      return hdl.bit(defaultValue);
+    }
+
+	}
+
+  // TODO here - i don't like this interface...
+  // Determine the HDL signal names (or name) that are connected to one of the
+  // given component's ports (aka "ends"). If the end is not connected to a
+  // signal, then given default value is returned instead. Or, if the default is
+  // null, a fatal error is posted instead. For a 1-bit signal, a single mapping
+  // from name to signal is returned. For a multi-bit signal, one or more
+  // mappings are returned, as need.
+	public Map<String, String> signalForEnd(String portName,
+      NetlistComponent comp, int endIdx, Boolean defaultValue, Hdl hdl) {
+
+		Map<String, String> result = new HashMap<String, String>();
+    if (endIdx < 0 || endIdx >= comp.NrOfEnds()) {
+      hdl.err.AddFatalError("INTERNAL ERROR: Invalid end/port '%d' for component '%s'", endIdx, comp);
+      return result;
+    }
+
+    ConnectionEnd end = comp.getEnd(endIdx);
+    int n = end.NrOfBits();
+
+    if (n == 1) {
+      // example: somePort => s_LOGISIM_NET_5;
+      result.put(portName, signalForEnd1(comp, endIdx, defaultValue, hdl));
+      return result;
+    }
+
+		boolean isOutput = end.IsOutputEnd();
+
+    // boolean foundConnection = false;
+    // for (int i = 0; i < n && !foundConnection; i++)
+    //   foundConnection |= end.GetConnection((byte) i).GetParrentNet() != null;
+
+    // if (!foundConnection) {
+    //   if (isOutput) {
+    //     return hdl.unconnected;
+    //   } else if (defaultValue == null) {
+    //     hdl.err.AddFatalError("INTERNAL ERROR: Unexpected unconnected net to end/port '%d' for component '%s'", endIdx, comp);
+    //     return "???";
+    //   } else {
+    //     return defaultValue ? hdl.ones(n) : hdl.zeros(n);
+    //   }
+    // }
+
+    if (isConnectedToSingleNamedBus(comp, endIdx)) {
+      // example: somePort => s_LOGISIM_BUS_27(4 downto 0)
+      Net net = end.getConnection((byte) 0).GetParrentNet();
+      if (net == null) {
+        if (isOutput) {
+          return hdl.unconnected;
+        } else if (defaultValue == null) {
+          hdl.err.AddFatalError("INTERNAL ERROR: Unexpected unconnected net to end/port '%d' for component '%s'", endIdx, comp);
+          return "???";
+        } else {
+          return defaultValue ? hdl.ones(n) : hdl.zeros(n);
+        }
+      }
+      byte hi = end.GetConnection((byte)(n-1)).GetParrentNetBitIndex();
+      byte lo = end.GetConnection((byte)0).GetParrentNetBitIndex();
+      results.put(portName,
+          String.format("s_LOGISIM_BUS_%d"+hdl.range, this.GetNetId(net), hi, lo));
+      return results;
+    } 
+
+    if (isOutput)
+      defaultValue = null; // neither VHDL nor Verilog allow only-partially-unconnected outputs
+      
+    ArrayList<String> signals = new ArrayList<>();
+    for (int i = 0; i < n; i++) {
+      String s = signalForEndBit(end, i, hdl);
+      if (s != null) {
+        signals.add(s);
+      } else if (isOutput) {
+        hdl.err.AddFatalError("INTERNAL ERROR: Unexpected unconnected bit %d of %d in end/port '%d' for component '%s'", i, n, endIdx, comp);
+        signals.add(hdl.isVhdl ? "open" : "1'bz"); // not actually legal in VHDL/Verilog
+      } else if (defaultValue == null) {
+        hdl.err.AddFatalError("INTERNAL ERROR: Unexpected unconnected bit %d of %d in end/port '%d' for component '%s'", i, n, endIdx, comp);
+        signals.add("???");
+      } else {
+        return signals.add(hdl.bit(defaultValue));
+      }
+    }
+
+    if (hdl.isVhdl) {
+      // VHDL example:
+      //    somePort(2) => s_LOGISIM_BUS_27(3)
+      //    somePort(1) => s_LOGISIM_BUS_27(2)
+      //    somePort(0) => s_LOGISIM_BUS_45(8)
+      // todo: contiguous ranges can be encoded more compactly as slices
+      for (int i = 0; i < n; i++)
+        results.put(String.format(portName+hdl.idx, i), signals.get(i));
+    } else {
+      // Verilog example:
+      //   .somePort({s_LOGISIM_BUS_27(3),s_LOGISIM_BUS_27(2),s_LOGISIM_BUS_45(8)})
+      results.put(portName, "{"+String.join(",", signals)+"}");
+    }
+    return results;
+  }
+
+  // TODO here - i don't like this interface...
+  // Determine the single-bit HDL signal name that is connected to a given bit
+  // of the given component's ports (aka "ends"). If the end is not connected to
+  // a signal, then either an HDL "open" is returned (for outputs) or the given
+  // default value is returned instead (for inputs). But, if the default is null
+  // and the end is an input, a fatal error is posted.
+  public String signalForEndBit(ConnectionEnd end, int bit, Boolean defaultValue, Hdl hdl) {
+    String s = signalForEndBit(end, bit, hdl);
+    if (s != null) {
+      return s;
+    } else if (isOutput) {
+      return hdl.unconnected;
+    } else if (defaultValue == null) {
+      hdl.err.AddFatalError("INTERNAL ERROR: Unexpected unconnected bit %d of %d in end/port '%d' for component '%s'", i, n, endIdx, comp);
+      return "???";
+    } else {
+      return hdl.bit(defaultValue);
+    }
+  }
+
+  // TODO here - rethink this interface ...
+  // fixme: handle rising/falling/level sensitive here, and non-clock signal cases too
+	public String clockForEnd(NetlistComponent comp, int endIdx, Hdl hdl) {
+    if (endIdx < 0 || endIdx >= comp.NrOfEnds()) {
+      hdl.err.AddFatalError("INTERNAL ERROR: Invalid end/port '%d' for component '%s'", endIdx, comp);
+      return "???";
+    }
+
+    ConnectionEnd end = comp.getEnd(endIdx);
+    if (end.NrOfBits() != 1) {
+      hdl.err.AddFatalError("INTERNAL ERROR: Bus clock end/port '%d' for component '%s'", endIdx, comp);
+      return "???";
+    }
+
+    Net net = end.GetConnection((byte) 0).GetParrentNet();
+    if (net == null) {
+      hdl.err.AddFatalError("INTERNAL ERROR: Unexpected unconnected clock for end/port '%d' for component '%s'", endIdx, comp);
+      return "???";
+    }
+
+    byte idx = end.GetConnection((byte) 0).GetParrentNetBitIndex();
+    int clkId = MyClockInformation.GetClockSourceId(CurrentHierarchyLevel, net, idx);
+    if (clkId < 0) {
+      hdl.err.AddSevereWarning("WARNING: Non-clock signal connected to clock for end/port '%d' for component '%s'", endIdx, comp);
+      return "???"; // fixme: return alternate here?
+    }
+
+    return "LOGISIM_CLOCK_TREE_" + clkId;
+	}
+
 }

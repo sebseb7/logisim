@@ -115,8 +115,7 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
             ComponentName, _err, _lang)) {
         return false;
       }
-      Map<String, ArrayList<String>> memInitData =
-          Worker.GetMemInitData(/*ThisComponent.GetComponent().getAttributeSet()*/);
+      Map<String, ArrayList<String>> memInitData = Worker.GetMemInitData();
       Map<String, File> memInitFiles = null;
       if (memInitData != null) {
         memInitFiles = new HashMap<String, File>();
@@ -447,24 +446,16 @@ public class CircuitHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 				FirstLine = false;
 			}
 			if (!ClockSource.EndIsConnected(0)) {
-				if (ClockSource.GetComponent().getAttributeSet()
-						.getValue(StdAttr.LABEL).equals("sysclk")) {
-					Reporter.AddInfo("Clock component found with no connection, skipping: '"
-							+ ClockSource.GetComponent().getAttributeSet()
-									.getValue(StdAttr.LABEL) + "'");
-				} else {
-					Reporter.AddWarning("Clock component found with no connection, skipping: '"
-							+ ClockSource.GetComponent().getAttributeSet()
-									.getValue(StdAttr.LABEL) + "'");
-				}
+        Reporter.AddWarning("Clock component found with no connection, skipping: '"
+            + ClockSource.GetComponent().getAttributeSet()
+            .getValue(StdAttr.LABEL) + "'");
 				continue;
 			}
 			String ClockNet = GetClockNetName(ClockSource, 0, TheNetlist);
 			if (ClockNet.isEmpty()) {
 				Reporter.AddFatalError("INTERNAL ERROR: Cannot find clocknet!");
 			}
-			String ConnectedNet = GetNetName(ClockSource, 0, true, HDLType,
-					TheNetlist);
+			String ConnectedNet = GetNetName(ClockSource, 0, true, HDLType, TheNetlist);
 			Temp.setLength(0);
 			Temp.append(ConnectedNet);
 			while (Temp.length() < SallignmentSize) {

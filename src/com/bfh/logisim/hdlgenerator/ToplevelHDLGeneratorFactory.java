@@ -251,27 +251,35 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     Contents.addAll(out);
     }
 		for (ArrayList<String> CompId : MyIOComponents.GetComponents()) {
-			if (!(MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof Pin)
-					&& !(MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof PortIO)
-					&& !(MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof Tty)
-					&& !(MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof Keyboard)) {
-				HDLGeneratorFactory Generator = MyIOComponents.GetComponent(CompId).GetComponent()
-						.getFactory().getHDLGenerator(
-								HDLType, Reporter,
-                _nets, /* fixme - we use the top-level nets here, though the GetInlinedCodeForTopLevelIO() below probably doesn't use it */
-								MyIOComponents.GetComponent(CompId).GetComponent().getAttributeSet(), _vendor);
-				if (Generator == null) {
-					Reporter.AddError("No generator for component " + CompId.toString());
-				} else {
-					Contents.addAll(Generator.GetInlinedCodeForTopLevelIO(CompId, MyIOComponents));
-				}
-			} else if (MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof PortIO) {
-				((PortIO) MyIOComponents.GetComponent(CompId).GetComponent().getFactory()).setMapInfo(MyIOComponents);
-			} else if (MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof Tty) {
-				((Tty) MyIOComponents.GetComponent(CompId).GetComponent().getFactory()).setMapInfo(MyIOComponents);
-			} else if (MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof Keyboard) {
-				((Keyboard) MyIOComponents.GetComponent(CompId).GetComponent().getFactory()).setMapInfo(MyIOComponents);
-			}
+			// if (!(MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof Pin)
+			// 		&& !(MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof PortIO)
+			// 		&& !(MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof Tty)
+			// 		&& !(MyIOComponents.GetComponent(CompId).GetComponent().getFactory() instanceof Keyboard)) {
+				// HDLGeneratorFactory Generator = MyIOComponents.GetComponent(CompId).GetComponent()
+				// 		.getFactory().getHDLGenerator(
+				// 				HDLType, Reporter,
+        //         _nets, /* fixme - we use the top-level nets here, though the GetInlinedCodeForTopLevelIO() below probably doesn't use it */
+				// 				MyIOComponents.GetComponent(CompId).GetComponent().getAttributeSet(), _vendor);
+				// if (Generator == null) {
+				// 	Reporter.AddError("No generator for component " + CompId.toString());
+				// } else {
+        //  Hdl out = new Hdl(HDLType, Reporter);
+        //  generateInlinedCodeForTopLevelIO(out, CompId);
+        //  Contents.addAll(out);
+				// }
+			// } else
+      InstanceFactory factory = MyIOComponents.GetComponent(CompId).GetComponent().getFactory();
+      if (factory instanceof PortIO) {
+				((PortIO)factory).setMapInfo(MyIOComponents);
+			} else if (factory instanceof Tty) {
+				((Tty)factory).setMapInfo(MyIOComponents);
+			} else if (factory instanceof Keyboard) {
+				((Keyboard)factory).setMapInfo(MyIOComponents);
+			} else {
+        Hdl out = new Hdl(HDLType, Reporter);
+        generateInlinedCodeForTopLevelIO(out, CompId);
+        Contents.addAll(out);
+      }
 		}
 		if (NrOfClockTrees > 0) {
       Hdl out = new Hdl(HDLType, Reporter);
@@ -407,6 +415,60 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       Wires.put("s_LOGISIM_DYNAMIC_CLOCK", w);
     }
 		return Wires;
+	}
+
+  // TODO - Q: is this only for Button? or also other things like LED?
+	private static void generateInlinedCodeForTopLevelIO(Hdl out, ArrayList<String> compId) {
+    MappableResourcesContainer rsrcs = MyIOComponents;
+
+		ArrayList<String> path = new ArrayList<>();
+		path.addAll(compId);
+		path.remove(0); // ?? removes TopLevel from path?
+    String pathstr = String.join("/", path);
+
+		NetlistComponent comp = rsrcs.GetComponent(compId);
+		if (comp == null) {
+			out.err.AddFatalError("INTERNAL ERROR: Shadow I/O component missing for %s", pathstr);
+			return;
+		}
+
+		BubbleInformationContainer bubbles = comp.GetGlobalBubbleId(path);
+		if (bubbles == null) {
+			out.err.AddFatalError("INTERNAL ERROR: Missing bubble data for I/O component %s", pathstr);
+			return;
+		}
+    int inputIdx = bubbles.GetInputStartIndex();
+    int inputIdxEnd = bubbles.GetInputEndIndex();
+    int outputIdx = bubbles.GetOutputStartIndex();
+    int outputIdxEnd = bubbles.GetOutputEndIndex();
+
+		ArrayList<String> maps = rsrcs.GetMapNamesList(compId);
+		if (maps == null) {
+			out.err.AddFatalError("INTERNAL ERROR: Missing map data for I/O component %s", pathstr);
+			return;
+		}
+
+		for (String map : maps) {
+			boolean invert = rsrcs.RequiresToplevelInversion(compId, map);
+      String maybeInvert = (invert ? hdl.not + " " : "");
+			int inputId = rsrcs.GetFPGAInputPinId(map);
+			int outputId = rsrcs.GetFPGAOutputPinId(map);
+			int n = rsrcs.GetNrOfPins(map);
+			for (int pin = 0; pin < n; pin++) {
+        // Example Vhdl:
+        //   s_LOGISIM_INPUT_BUBBLES(3) <= FPGA_INPUT_PIN_28;
+				if (inputId >= 0 && inputIdx <= inputIdxEnd)
+					out.assign("s_LOGISIM_INPUT_BUBBLES", inputIdx++,
+              maybeInvert + "FPGA_INPUT_PIN_"+ (inputId + pin));
+        // Example Vhdl:
+        //   FPGA_OUTPUT_PIN_35 <= s_LOGISIM_OUTPUT_BUBBLES(4);
+				if (outputId >= 0 && outputIdx <= outputIdxEnd)
+          out.assign("FPGA_OUTPUT_PIN_" + (outputId + pin),
+              maybeInvert + "s_LOGISIM_OUTPUT_BUBBLES", outputIdx++);
+			}
+		}
+    if (!maps.isEmpty())
+      out.stmt();
 	}
 
 }

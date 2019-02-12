@@ -88,19 +88,17 @@ public abstract class HDLGeneratorFactory {
 	public static final String FPGAInOutPinName = "FPGA_INOUT_PIN";
 	public static final String FPGAOutputPinName = "FPGA_OUTPUT_PIN";
 
-	public abstract ArrayList<String> GetArchitecture(
-      Map<String, File> MemInitFiles, String ComponentName);
+  // DONE
+  public boolean writeHDLFiles(String rootDir, String hdlName);
 
-	public abstract ArrayList<String> GetEntity(String ComponentName);
 
 	public abstract ArrayList<String> GetComponentInstantiation(String ComponentName);
 
 	public abstract ArrayList<String> GetComponentMap(Long ComponentId,
 			NetlistComponent ComponentInfo, String ContainingCircuitName);
 
-  // CircuitHDLGeneratorFactory calls this for NormalComponents, when nets
-  // defined, if IsOnlyInlined returns true.
-	public abstract ArrayList<String> GetInlinedCode(NetlistComponent ComponentInfo);
+  // CircuitHDLGeneratorFactory calls this for NormalComponents if IsOnlyInlined returns true.
+	protected abstract void generateInlinedCode(Hdl out, NetlistComponent comp);
 	public boolean IsOnlyInlined() { return false; }
 
   // ToplevelHDLGeneratorFactory calls this for IO-related components (like
@@ -108,8 +106,6 @@ public abstract class HDLGeneratorFactory {
   // handled specially.
 	public abstract ArrayList<String> GetInlinedCodeForTopLevelIO(ArrayList<String> ComponentIdentifier, 
 			MappableResourcesContainer MapInfo);
-
-	public abstract Map<String, ArrayList<String>> GetMemInitData();
 
 	public abstract String GetRelativeDirectory();
 

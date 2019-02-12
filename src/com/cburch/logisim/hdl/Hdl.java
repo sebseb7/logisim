@@ -44,13 +44,17 @@ public class Hdl extends ArrayList<String> {
   public final boolean isVhdl, isVerilog;
   public final FPGAReport err;
 
-  public final String assn;
-  public final String bitAssn;
-  public final String assnBit;
-  public final String bitAssnBit;
-  public final String idx;
-  public final String zero;
-  public final String one;
+  // HDL-specific formats              VHDL              Verilog
+  public final String assn;         // %s <= %s;         assign %s = %s;
+  public final String bitAssn;      // %s(%d) <= %s;     assign %s[%d] = %s;
+  public final String assnBit;      // %s <= %s(%d);     assign %s = %s[%d];
+  public final String bitAssnBit;   // %s(%d) <= %s(%d); assign %s[%d] = %s[%d];
+  public final String idx;          // (%d)              [%d]
+  public final String range;        // (%d downto %d)    [%d:%d]
+  public final String zero;         // '0'               1b'0
+  public final String one;          // '1'               1b'1
+  public final String unconnected;  // open              (emptystring)
+  public final String not;          // not               ~
 
   private int indent = 0;
   private String tab = "";
@@ -73,16 +77,22 @@ public class Hdl extends ArrayList<String> {
       assnBit = "%s \t<= %s(%d);";
       bitAssnBit = "%s(%d) \t<= %s(%d);";
       idx = "(%d)";
+      range = "(%d downto %d)"
       zero = "'0'";
       one = "'1'";
+      unconnected = "open";
+      not = "not";
     } else {
       assn = "assign %s \t= %s;";
       bitAssn = "assign %s[%d] \t= %s;";
       assnBit = "assign %s \t= %s[%d];";
       bitAssnBit = "assign %s[%d] \t= %s[%d];";
       idx = "[%d]";
+      range = "[%d:%d]";
       zero = "1b'0";
       one = "1b'1";
+      unconnected = "";
+      not = "~";
     }
   }
 

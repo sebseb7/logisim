@@ -33,7 +33,6 @@ package com.bfh.logisim.hdlgenerator;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.TreeMap;
 
 import com.bfh.logisim.designrulecheck.BubbleInformationContainer;
@@ -72,54 +71,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
     super(ctx.lang, ctx.err, ctx.nets, ctx.attrs, ctx.vendor, hdlComponentName, hdlInstanceNamePrefix);
   }
 
-
-  // TODO
-	public String GetBusEntryName(NetlistComponent comp, int EndIndex,
-			boolean FloatingNetTiedToGround, int bitindex, String HDLType,
-			Netlist TheNets) {
-    Hdl out = new Hdl(HDLType, null);
-		StringBuffer Contents = new StringBuffer();
-		String BracketOpen = (HDLType.equals("VHDL")) ? "(" : "[";
-		String BracketClose = (HDLType.equals("VHDL")) ? ")" : "]";
-		if ((EndIndex >= 0) && (EndIndex < comp.NrOfEnds())) {
-			ConnectionEnd ThisEnd = comp.getEnd(EndIndex);
-			boolean IsOutput = ThisEnd.IsOutputEnd();
-			int NrOfBits = ThisEnd.NrOfBits();
-			if ((NrOfBits > 1) && (bitindex >= 0) && (bitindex < NrOfBits)) {
-				if (ThisEnd.GetConnection((byte) bitindex).GetParrentNet() == null) {
-					/* The net is not connected */
-					if (IsOutput) {
-						if (HDLType.equals("VHDL")) {
-							Contents.append("OPEN");
-						} else {
-							Contents.append("'bz");
-						}
-					} else {
-						Contents.append(out.bit(!FloatingNetTiedToGround));
-					}
-				} else {
-					Net ConnectedNet = ThisEnd.GetConnection((byte) bitindex)
-							.GetParrentNet();
-					int ConnectedNetBitIndex = ThisEnd.GetConnection(
-							(byte) bitindex).GetParrentNetBitIndex();
-					if (!ConnectedNet.isBus()) {
-						Contents.append(NetName
-								+ Integer.toString(TheNets
-										.GetNetId(ConnectedNet)));
-					} else {
-						Contents.append(BusName
-								+ Integer.toString(TheNets
-										.GetNetId(ConnectedNet)) + BracketOpen
-								+ Integer.toString(ConnectedNetBitIndex)
-								+ BracketClose);
-					}
-				}
-			}
-		}
-		return Contents.toString();
-	}
-
-  // TODO
+  /*
 	public String GetBusNameContinues(NetlistComponent comp, int EndIndex,
 			String HDLType, Netlist TheNets) {
 		String Result;
@@ -151,363 +103,110 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 						(byte) (0)).GetParrentNetBitIndex()) + BracketClose;
 		return Result;
 	}
+  */
 
-  // TODO
-	public String GetClockNetName(NetlistComponent comp, int EndIndex, Netlist TheNets) {
-		StringBuffer Contents = new StringBuffer();
-		if ((TheNets.GetCurrentHierarchyLevel() != null) && (EndIndex >= 0)
-				&& (EndIndex < comp.NrOfEnds())) {
-			ConnectionEnd EndData = comp.getEnd(EndIndex);
-			if (EndData.NrOfBits() == 1) {
-				Net ConnectedNet = EndData.GetConnection((byte) 0)
-						.GetParrentNet();
-				byte ConnectedNetBitIndex = EndData.GetConnection((byte) 0)
-						.GetParrentNetBitIndex();
-				/* Here we search for a clock net Match */
-				int clocksourceid = TheNets.GetClockSourceId(
-						TheNets.GetCurrentHierarchyLevel(), ConnectedNet,
-						ConnectedNetBitIndex);
-				if (clocksourceid >= 0) {
-					Contents.append(ClockTreeName
-							+ Integer.toString(clocksourceid));
-				}
-			}
-		}
-		return Contents.toString();
-	}
+  //    s/GetNetName(...)/nets.signalForEnd1(...)/
+  //    s/GetNetMap(...)/nets.signalForEnd(...)/
+  //    s/GetBusEntryName(...)/nets.signalForEndBit(...)/
+  //    s/GetClockNetName/nets.clockForEnd(...)/
 
-  // TODO
-	public Map<String, String> GetNetMap(String SourceName,
-			boolean FloatingPinTiedToGround, NetlistComponent comp,
-			int EndIndex, FPGAReport Reporter, String HDLType, Netlist TheNets) {
-    Hdl out = new Hdl(HDLType, null);
-		Map<String, String> NetMap = new HashMap<String, String>();
-		if ((EndIndex < 0) || (EndIndex >= comp.NrOfEnds())) {
-			Reporter.AddFatalError("INTERNAL ERROR: Component tried to index non-existing SolderPoint");
-			return NetMap;
-		}
-		ConnectionEnd ConnectionInformation = comp.getEnd(EndIndex);
-		boolean IsOutput = ConnectionInformation.IsOutputEnd();
-		int NrOfBits = ConnectionInformation.NrOfBits();
-		if (NrOfBits == 1) {
-			/* Here we have the easy case, just a single bit net */
-			NetMap.put(
-					SourceName,
-					GetNetName(comp, EndIndex, FloatingPinTiedToGround,
-							HDLType, TheNets));
-		} else {
-			/*
-			 * Here we have the more difficult case, it is a bus that needs to
-			 * be mapped
-			 */
-			/* First we check if the bus has a connection */
-			boolean Connected = false;
-			for (int i = 0; i < NrOfBits; i++) {
-				if (ConnectionInformation.GetConnection((byte) i)
-						.GetParrentNet() != null) {
-					Connected = true;
-				}
-			}
-			if (!Connected) {
-				/* Here is the easy case, the bus is unconnected */
-				if (IsOutput) {
-					if (HDLType.equals("VHDL")) {
-						NetMap.put(SourceName, "OPEN");
-					} else {
-						NetMap.put(SourceName, "");
-					}
-				} else {
-					NetMap.put(
-							SourceName,
-							out.fill(!FloatingPinTiedToGround, NrOfBits));
-				}
-			} else {
-				/*
-				 * There are connections, we detect if it is a continues bus
-				 * connection
-				 */
-				if (TheNets.IsContinuesBus(comp, EndIndex)) {
-					/* Another easy case, the continues bus connection */
-					NetMap.put(
-							SourceName,
-							GetBusNameContinues(comp, EndIndex, HDLType,
-									TheNets));
-				} else {
-					/* The last case, we have to enumerate through each bit */
-					if (HDLType.equals("VHDL")) {
-						StringBuffer SourceNetName = new StringBuffer();
-						for (int i = 0; i < NrOfBits; i++) {
-							/* First we build the Line information */
-							SourceNetName.setLength(0);
-							SourceNetName.append(SourceName + "("
-									+ Integer.toString(i) + ") ");
-							ConnectionPoint SolderPoint = ConnectionInformation
-									.GetConnection((byte) i);
-							if (SolderPoint.GetParrentNet() == null) {
-								/* The net is not connected */
-								if (IsOutput) {
-									NetMap.put(SourceNetName.toString(), "OPEN");
-								} else {
-									NetMap.put(
-											SourceNetName.toString(),
-                      out.bit(!FloatingPinTiedToGround));
-								}
-							} else {
-								/*
-								 * The net is connected, we have to find out if
-								 * the connection is to a bus or to a normal net
-								 */
-								if (SolderPoint.GetParrentNet().BitWidth() == 1) {
-									/* The connection is to a Net */
-									NetMap.put(
-											SourceNetName.toString(),
-											NetName
-													+ Integer.toString(TheNets
-															.GetNetId(SolderPoint
-																	.GetParrentNet())));
-								} else {
-									/* The connection is to an entry of a bus */
-									NetMap.put(
-											SourceNetName.toString(),
-											BusName
-													+ Integer.toString(TheNets
-															.GetNetId(SolderPoint
-																	.GetParrentNet()))
-													+ "("
-													+ Integer
-															.toString(SolderPoint
-																	.GetParrentNetBitIndex())
-													+ ")");
-								}
-							}
-						}
-					} else {
-						ArrayList<String> SeperateSignals = new ArrayList<String>();
-						/*
-						 * First we build an array with all the signals that
-						 * need to be concatenated
-						 */
-						for (int i = 0; i < NrOfBits; i++) {
-							ConnectionPoint SolderPoint = ConnectionInformation
-									.GetConnection((byte) i);
-							if (SolderPoint.GetParrentNet() == null) {
-								/* this entry is not connected */
-								if (IsOutput) {
-									SeperateSignals.add("1'bz");
-								} else {
-									SeperateSignals.add(out.bit(!FloatingPinTiedToGround));
-								}
-							} else {
-								/*
-								 * The net is connected, we have to find out if
-								 * the connection is to a bus or to a normal net
-								 */
-								if (SolderPoint.GetParrentNet().BitWidth() == 1) {
-									/* The connection is to a Net */
-									SeperateSignals.add(NetName
-											+ Integer.toString(TheNets
-													.GetNetId(SolderPoint
-															.GetParrentNet())));
-								} else {
-									/* The connection is to an entry of a bus */
-									SeperateSignals.add(BusName
-											+ Integer.toString(TheNets
-													.GetNetId(SolderPoint
-															.GetParrentNet()))
-											+ "["
-											+ Integer.toString(SolderPoint
-													.GetParrentNetBitIndex())
-											+ "]");
-								}
-							}
-						}
-						/* Finally we can put all together */
-						StringBuffer Vector = new StringBuffer();
-						Vector.append("{");
-						for (int i = NrOfBits; i > 0; i++) {
-							Vector.append(SeperateSignals.get(i - 1));
-							if (i != 1) {
-								Vector.append(",");
-							}
-						}
-						Vector.append("}");
-						NetMap.put(SourceName, Vector.toString());
-					}
-				}
-			}
-		}
-		return NetMap;
-	}
+  // XXX - here - move this to netlist, or netlistcomponent?
+  // Determine the HDL name corresponding to whichever Logisim wire is connected
+  // to the given "end" (i.e. port) of this instance. If the end is not
+  // connected to a wire, a fatal error is reported.
+  // protected String getNetName(NetlistComponent comp, int endIdx) {
+  //   return getNetNameOrElse(comp, endIdx, null /* no default */, _nets);
+  // }
 
+  // XXX - here - move this to netlist, or netlistcomponent?
+  // Determine the HDL name corresponding to whichever Logisim wire is connected
+  // to the given "end" (i.e. port) of this instance. If the end is not
+  // connected to a wire, the given default value is returned instead, sized to
+  // the appropriate width.
+  // protected String getNetNameOrElse(NetlistComponent comp, int endIdx, boolean defaultValue) {
+  //   return getNetNameOrElse(comp, endIdx, defaultValue, _nets);
+  // }
 
-  // TODO
-	public String GetNetName(NetlistComponent comp, int EndIndex,
-			boolean FloatingNetTiedToGround, String HDLType, Netlist MyNetlist) {
-    Hdl out = new Hdl(HDLType, null);
-		StringBuffer Contents = new StringBuffer();
-		String BracketOpen = (HDLType.equals("VHDL")) ? "(" : "[";
-		String BracketClose = (HDLType.equals("VHDL")) ? ")" : "]";
-		String Unconnected = (HDLType.equals("VHDL")) ? "OPEN" : "";
-		String FloatingValue = out.bit(!FloatingNetTiedToGround);
-		if ((EndIndex >= 0) && (EndIndex < comp.NrOfEnds())) {
-			ConnectionEnd ThisEnd = comp.getEnd(EndIndex);
-			boolean IsOutput = ThisEnd.IsOutputEnd();
-			if (ThisEnd.NrOfBits() == 1) {
-				ConnectionPoint SolderPoint = ThisEnd.GetConnection((byte) 0);
-				if (SolderPoint.GetParrentNet() == null) {
-					/* The net is not connected */
-					if (IsOutput) {
-						Contents.append(Unconnected);
-					} else {
-						Contents.append(FloatingValue);
-					}
-				} else {
-					/*
-					 * The net is connected, we have to find out if the
-					 * connection is to a bus or to a normal net
-					 */
-					if (SolderPoint.GetParrentNet().BitWidth() == 1) {
-						/* The connection is to a Net */
-						Contents.append(NetName
-								+ Integer.toString(MyNetlist
-										.GetNetId(SolderPoint.GetParrentNet())));
-					} else {
-						/* The connection is to an entry of a bus */
-						Contents.append(BusName
-								+ Integer.toString(MyNetlist
-										.GetNetId(SolderPoint.GetParrentNet()))
-								+ BracketOpen
-								+ Integer.toString(SolderPoint
-										.GetParrentNetBitIndex())
-								+ BracketClose);
-					}
-				}
-			}
-		}
-		return Contents.toString();
-	}
+  // XXX - here - move this to netlist, or netlistcomponent? Same as above, but
+  // using the given Netlist instead of the usual Netlist (which is the one for
+  // the circuit in which this component is embedded).
 
+  // Determine the HDL name corresponding to whichever Logisim wire is connected
+  // to the given "end" (i.e. port) of this component.
+	// public String getNetName(NetlistComponent comp, int endIdx, Boolean defaultValue, Netlist nets) {
+	// 	
+  //   if (endIdx < 0 || endIdx >= comp.NrOfEnds()) {
+  //     _err.AddFatalError("INTERNAL ERROR: Invalid end/port '%d' for component '%s'", endIdx, this);
+  //     return "???";
+  //   }
 
-  // TODO
-  protected void generateInlinedCode(Hdl out, NetlistComponent comp) { }
+  //   ConnectionEnd end = comp.getEnd(endIdx);
+  //   int n = end.NrOfBits();
+  //   if (n != 1) {
+  //     _err.AddFatalError("INTERNAL ERROR: Unexpected %d-bit end/port '%d' for component '%s'", n, endIdx, this);
+  //     return "???";
+  //   }
 
-  // TODO
-	public void generateInlinedCodeForTopLevelIO(Hdl out,
-      ArrayList<String> ComponentIdentifier, MappableResourcesContainer MapInfo) {
+  //   Hdl hdl = new Hdl(_lang, _err);
 
-		ArrayList<String> Contents = new ArrayList<String>();
-		String Preamble = (_lang.equals("VHDL")) ? "" : "assign ";
-		String AssignOperator = (_lang.equals("VHDL")) ? " <= " : " = ";
-		String OpenBracket = (_lang.equals("VHDL")) ? "(" : "[";
-		String CloseBracket = (_lang.equals("VHDL")) ? ")" : "]";
-		String Inversion = (_lang.equals("VHDL")) ? "NOT " : "~";
-		StringBuffer Temp = new StringBuffer();
-		NetlistComponent comp = MapInfo.GetComponent(ComponentIdentifier);
-		if (comp == null) {
-			_err.AddFatalError("Component not found, bizar");
-			return Contents;
-		}
-		ArrayList<String> bla = new ArrayList<String>();
-		bla.addAll(ComponentIdentifier);
-		bla.remove(0);
-		BubbleInformationContainer BubbleInfo = comp.GetGlobalBubbleId(bla);
-		if (BubbleInfo == null) {
-			_err.AddFatalError("Component has no bubble information, bizar! " + bla.toString());
-			return Contents;
-		}
-		/* The button is simple as it has only 1 pin */
-		/*
-		 * The bubble information presents the internal pin location, we now
-		 * need to know the input pin index
-		 */
-		ArrayList<String> MyMaps = MapInfo.GetMapNamesList(ComponentIdentifier);
-		if (MyMaps == null) {
-			_err.AddFatalError("Component has no map information, bizar! "
-					+ ComponentIdentifier.toString());
-			return Contents;
-		}
-		int BubbleOffset = 0;
-		for (int MapOffset = 0; MapOffset < MyMaps.size(); MapOffset++) {
-			String map = MyMaps.get(MapOffset);
-			int InputId = MapInfo.GetFPGAInputPinId(map);
-			int OutputId = MapInfo.GetFPGAOutputPinId(map);
-			int NrOfPins = MapInfo.GetNrOfPins(map);
-			boolean Invert = MapInfo.RequiresToplevelInversion(
-					ComponentIdentifier, map);
-			for (int PinId = 0; PinId < NrOfPins; PinId++) {
-				Temp.setLength(0);
-				Temp.append("   " + Preamble);
-				if (InputId >= 0
-						&& ((BubbleInfo.GetInputStartIndex() + BubbleOffset) <= BubbleInfo
-								.GetInputEndIndex())) {
-					Temp.append("s_"
-							+ HDLGeneratorFactory.LocalInputBubbleBusname
-							+ OpenBracket);
-					Temp.append(BubbleInfo.GetInputStartIndex() + BubbleOffset);
-					BubbleOffset++;
-					Temp.append(CloseBracket + AssignOperator);
-					if (Invert) {
-						Temp.append(Inversion);
-					}
-					Temp.append(HDLGeneratorFactory.FPGAInputPinName);
-					Temp.append("_" + Integer.toString(InputId + PinId) + ";");
-					Contents.add(Temp.toString());
-				}
-				Temp.setLength(0);
-				Temp.append("   " + Preamble);
-				if (OutputId >= 0
-						&& ((BubbleInfo.GetOutputStartIndex() + BubbleOffset) <= BubbleInfo
-								.GetOutputEndIndex())) {
-					Temp.append(HDLGeneratorFactory.FPGAOutputPinName);
-					Temp.append("_" + Integer.toString(OutputId + PinId)
-							+ AssignOperator);
-					if (Invert) {
-						Temp.append(Inversion);
-					}
-					Temp.append("s_"
-							+ HDLGeneratorFactory.LocalOutputBubbleBusname
-							+ OpenBracket);
-					Temp.append(BubbleInfo.GetOutputStartIndex() + BubbleOffset);
-					BubbleOffset++;
-					Temp.append(CloseBracket + ";");
-					Contents.add(Temp.toString());
-				}
-			}
-		}
-		return Contents;
-	}
+  //   ConnectionPoint solderPoint = end.GetConnection((byte)0);
+  //   Net net = solderPoint.GetParrentNet();
+  //   if (net == null) { // unconnected net
+  //     if (defaultValue == null) {
+  //       _err.AddFatalError("INTERNAL ERROR: Unexpected unconnected net to end/port '%d' for component '%s'", endIdx, this);
+  //       return "???";
+  //     }
+  //     return end.IsOutputEnd() ? hdl.unconnected : hdl.bit(defaultValue);
+  //   } else if (net.BitWidth() == 1) { // connected to a single-bit net
+  //     return "s_LOGISIM_NET_" + nets.GetNetId(net);
+  //   } else { // connected to one bit of a multi-bit bus
+  //     return String.format("S_LOGISIM_NET_%d"+hdl.idx,
+  //         nets.GetNetId(net),
+  //         solderPoint.GetParrentNetBitIndex());
+  //   }
+	// }
 
-  // TODO:
-	public static File WriteMemInitFile(String TargetDirectory,
-			ArrayList<String> Contents, String ComponentName,
-			String MemName,
-			FPGAReport Reporter, String HDLType) {
-		if (Contents.isEmpty()) {
-			Reporter.AddFatalError("INTERNAL ERROR: Empty memory initialization file for memory '"
-					+ ComponentName + ":"+MemName+"' received!");
-			return null;
-		}
-		File OutFile = FileWriter.GetFilePointer(TargetDirectory,
-				ComponentName+"_"+MemName, true, false, Reporter, HDLType);
-		if (OutFile == null) {
-			return null;
-		}
-		if (!FileWriter.WriteContents(OutFile, Contents, Reporter)) {
-			return null;
-		}
-		return OutFile;
-	}
+  // DONE
+  // Generate and write all necessary HDL files for this component, using the
+  // given root directory and hdlName. Depeding on the specific subclass
+  // involved, this may include entity, architecture, and several memory init
+  // files.
+  public boolean writeHDLFiles(String rootDir, String hdlName) {
+    HashMap<String, File> memInitFiles = writeMemInitFiles(rootDir, hdlName);
+    return writeEntity(rootDir, hdlName)
+        && writeArchitecture(rootDir, hdlName, memInitFiles);
+  }
 
-  // TODO
-	public Map<String, ArrayList<String>> GetMemInitData() { return null; }
-
+  // DONE
+  // Generate and write all "memory init" files for this component, using the
+  // given root directory and hdlName, returning the list of memory names and
+  // corresponding memory init files.
+  protected HashMap<String, File> writeMemInitFiles(String rootDir, String hdlName) {
+    MemInitData memInits = getMemInitData();
+    HashMap<String, File> files = new HashMap<>();
+    for (String m : memInits.keySet()) {
+      Hdl data = memInits.get(m);
+      if (data.isEmpty()) {
+        _err.AddFatalError("INTERNAL ERROR: Empty memory initialization file for memory '%s:%s'.",
+            hdlName, memName);
+        continue;
+      }
+      File f = openFile(rootDir, hdlName + "_" + memName, true, false);
+      if (f == null)
+        continue;
+      if (!FileWriter.WriteContents(f, data, _err))
+        continue;
+      files.put(m, f);
+    }
+    return files;
+  }
 
   /////////// DONE
   // Generate and write an "architecture" file for this component, using the
   // given root directory, hdlName, and NVRAM initialization files, where:
   //   hdlName = getHDLNameWithinCircuit(containingCircuitName);
-  public boolean writeArchitecture(String rootDir,
-			String hdlName, Map<String, File> memInitFiles) { // fixme: meminitfiles from where?
+  protected boolean writeArchitecture(String rootDir,
+			String hdlName, HashMap<String, File> memInitFiles) { // fixme: meminitfiles from where?
     Hdl hdl = getArchitecture(hdlName, memInitFiles);
 		if (hdl == null || hdl.isEmpty()) {
 			_err.AddFatalError("INTERNAL ERROR: Generated empty architecture for HDL `%s'.", hdlName);
@@ -521,12 +220,12 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 
   /////////// DONE
   // Generate the full HDL code for the "architecture" file.
-	protected Hdl getArchitecture(String hdlName, Map<String, File> memInitFiles) {
+	protected Hdl getArchitecture(String hdlName, HashMap<String, File> memInitFiles) {
     Hdl out = new Hdl(_lang, _err);
     generateFileHeader(out, hdlName);
 
     SignalList inPorts = getInPorts();
-    // fixme: support in/out ports here?
+    // fixme: if logisim circuits can do bidirectional ports, add support for in/out ports here
     SignalList outPorts = getOutPorts();
     Generics params = getGenericParameters();
 		SignalList wires = getWires();
@@ -565,7 +264,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
           out.stmt("signal %s : %s;", m, mems.get(m));
           // fixme: memInitFiles comes from where? name probably won't match!
           if (memInitFiles != null && memInitFiles.get(m) != null) {
-            String filepath = memInitFiles.get(Mem).getPath();
+            String filepath = memInitFiles.get(m).getPath();
             Contents.add("attribute nvram_init_file of %s : signal is \"%s\";", m, filepath);
           }
 				}
@@ -612,7 +311,7 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
         out.stmt();
       }
 
-      // fixme: add support for memories here and in Ram/Rom HDL generators.
+      // fixme: verilog support for memories here and in Ram/Rom HDL generators.
 
 			out.stmt();
       generateBehavior(out);
@@ -625,11 +324,14 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
 		return out;
 	}
 
+
+
+
   /////////// DONE
   // Generate and write an "entity" file (for VHDL) for this component, using
   // the given root directory and hdlName, where:
   //   hdlName = getHDLNameWithinCircuit(containingCircuitName);
-  public boolean writeEntity(String directory, String hdlName) {
+  protected boolean writeEntity(String rootDir, String hdlName) {
     if (!_lang.equals("VHDL"))
       return true;
     Hdl hdl = getVhdlEntity(hdlName);
@@ -832,9 +534,16 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
   protected static class MemoryList extends TreeMap<String, String> { }
 
   /////////// DONE
-  // A list of memory blocks used internally within this component.
+  // Return a list of memory blocks used internally within this component.
 	protected MemoryList getMemories() { return new MemoryList(); }
 
+  /////////// DONE
+  // A list of memory names and their corresponding initialization data file
+  // contents (e.g. for RAM components marked as "non-volatile").
+  protected static class MemInitData extends TreeMap<String, Hdl> { }
+
+  // Return a list of memory init data used internally within this component.
+	protected MemInitData getMemInitData() { return new MemInitData(); }
 
   /////////// DONE
   // A list of type names and corresponding definitions, e.g. to use for
@@ -844,7 +553,6 @@ public class AbstractHDLGeneratorFactory extends HDLGeneratorFactory {
   /////////// DONE
   // Returns a list of types defined and used internally within this component.
 	protected TypeList getTypes() { return new TypeList(); }
-
 
   /////////// DONE
   // An assignment, from each real generic parameter name, to a constant value.
