@@ -928,4 +928,149 @@ public class HDLGenerator extends HDLSupport {
   //     list.putAll(GetNetMap("DataOut"+i, true, info, DATAOUT[i], err, lang, nets));
   // }
 
+  // ShiftRegister
+  // public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
+  //   AttributeSet attrs = info.GetComponent().getAttributeSet();
+  //   int w = stdWidth();
+  //   int n = stages();
+
+  //   boolean gatedClk = GetClockNetName(info, ShiftRegister.CK, nets).equals("");
+  //   if (gatedClk)
+  //     err.AddWarning("Found a gated clock for component \"Shift Register\" in circuit \"" + nets.getCircuitName() + "\"");
+  //   boolean activelo = attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING;
+
+  //   list.put("Trigger", activelo && gatedClk ? 0 : 1);
+  //   list.put("BitWidth", w);
+  //   list.put("Stages", n);
+  //   list.put("Bits", w * n);
+  // }
+  // @Override
+  // public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+  //   AttributeSet attrs = info.GetComponent().getAttributeSet();
+  //   int w = stdWidth();
+  //   int n = stages();
+  //   boolean hasClk = info.EndIsConnected(ShiftRegister.CK);
+  //   if (!hasClk)
+  //     err.AddSevereWarning("Component \"Shift Register\" in circuit \""
+  //         + nets.getCircuitName() + "\" has no clock connection");
+
+  //   String clk = GetClockNetName(info, ShiftRegister.CK, nets);
+  //   boolean gatedClk = clk.equals("");
+  //   boolean activelo = attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING;
+  //   boolean parallel = attrs.getValue(ShiftRegister.ATTR_LOAD);
+
+  //   boolean vhdl = lang.equals("VHDL");
+  //   String zero = vhdl ? "'0'" : "1'b0";
+  //   String one = vhdl ? "'1'" : "1'b1";
+  //   String idx = vhdl ? "(%d)" : "[%]"; // fixme: these should be in base class at minimum!
+
+  //   list.putAll(GetNetMap("Reset", true, info, ShiftRegister.CLR, err, lang, nets));
+
+  //   if (!hasClk) {
+  //     list.put("Clock", zero);
+  //     list.put("Tick", zero);
+  //   } else if (!gatedClk) {
+  //     list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
+  //     if (activelo)
+  //       list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.NegativeEdgeTickIndex));
+  //     else
+  //       list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.PositiveEdgeTickIndex));
+  //   } else {
+  //     list.put("Tick", one);
+  //     if (gatedClk)
+  //       list.put("Clock", GetNetName(info, ShiftRegister.CK, true, lang, nets));
+  //     else if (activelo)
+  //       list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.InvertedDerivedClockIndex));
+  //     else
+  //       list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.DerivedClockIndex));
+  //   }
+
+  //   list.putAll(GetNetMap("ShiftEnable", false, info, ShiftRegister.SH, err, lang, nets));
+
+  //   if (parallel)
+  //     list.putAll(GetNetMap("ParLoad", true, info, ShiftRegister.LD, err, lang, nets));
+  //   else
+  //     list.put("ParLoad", zero);
+
+  //   String si = "ShiftIn" + (vhdl & (w == 1) ? "(0)" : "");
+  //   list.putAll(GetNetMap(si, true, info, ShiftRegister.IN, err, lang, nets));
+  //   String so = "ShiftOut" + (vhdl & (w == 1) ? "(0)" : "");
+  //   list.putAll(GetNetMap(so, true, info, ShiftRegister.OUT, err, lang, nets));
+
+  //   System.out.println("todo: confirm open for last port, esp for verilog");
+  //   if (parallel && w == 1) {
+  //     if (vhdl) {
+  //       for (int i = 0; i < n; i++) {
+  //         list.putAll(GetNetMap(String.format("D"+idx, i), true, info, 6 + 2 * i, err, lang, nets));
+  //         if (i == n-1 && attrs.getValue(StdAttr.APPEARANCE) != StdAttr.APPEAR_CLASSIC)
+  //           list.put(String.format("Q"+idx, i), "OPEN");
+  //         else
+  //           list.putAll(GetNetMap(String.format("Q"+idx, i), true, info, 7 + 2 * i, err, lang, nets));
+  //       }
+  //     } else {
+  //       // fixme: helper/utility for this
+  //       String[] p = new String[n];
+  //       for (int i = 0; i < n; i++)
+  //         p[i] = GetNetName(info, 6 + 2 * i, true, lang, nets);
+  //       list.put("D", String.join(", ", p));
+  //       for (int i = 0; i < n - 1; i++)
+  //         p[i] = GetNetName(info, 7 + 2 * i, true, lang, nets);
+  //       list.put("Q", String.join(", ", p));
+  //     }
+  //   } else if (parallel) {
+  //     boolean lastBitMissing = attrs.getValue(StdAttr.APPEARANCE) != StdAttr.APPEAR_CLASSIC;
+  //     if (vhdl) {
+  //       for (int bit = 0; bit < w; bit++) {
+  //         for (int i = 0; i < n; i++)
+  //           list.put(String.format("D"+idx, bit * n + i), GetBusEntryName(info, 6 + 2 * i, true, bit, lang, nets));
+  //         for (int i = 0; i < n; i++) {
+  //           if (i == n-1 && lastBitMissing)
+  //             list.put(String.format("Q"+idx, bit * n + i), "OPEN");
+  //           else
+  //             list.put(String.format("Q"+idx, bit * n + i), GetBusEntryName(info, 7 + 2 * i, true, bit, lang, nets));
+  //         }
+  //       }
+  //     } else {
+  //       String[] p = new String[n*w];
+  //       for (int bit = 0; bit < w; bit++)
+  //         for (int i = 0; i < n; i++)
+  //           p[bit * n + i] = GetBusEntryName(info, 6 + 2 * i, true, bit, lang, nets);
+  //       list.put("D", String.join(", ", p));
+  //       for (int bit = 0; bit < w; bit++) {
+  //         for (int i = 0; i < n; i++) {
+  //           if (i == n-1 && lastBitMissing)
+  //             p[bit * n + i] = "";
+  //           else
+  //             p[bit * n + i] = GetBusEntryName(info, 7 + 2 * i, true, bit, lang, nets);
+  //         }
+  //       }
+  //       list.put("Q", String.join(", ", p));
+  //     }
+  //   } else {
+  //     list.put("Q", vhdl ? "OPEN" : "");
+  //     String zeros = vhdl ? "\"" + ("0".repeat(w*n)) + "\"" : "0";
+  //     list.put("D", zeros);
+  //   }
+  // }
+
+  // ShiftRegister
+  //  if (!hasClk) {
+  //    list.put("GlobalClock", zero);
+  //    list.put("ClockEnable", zero);
+  //  } else if (!gatedClk) {
+  //    list.put("GlobalClock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
+  //    if (activelo)
+  //      list.put("ClockEnable", String.format(clk+idx, ClockHDLGeneratorFactory.NegativeEdgeTickIndex));
+  //    else
+  //      list.put("ClockEnable", String.format(clk+idx, ClockHDLGeneratorFactory.PositiveEdgeTickIndex));
+  //  } else {
+  //    list.put("ClockEnable", one);
+  //    if (gatedClk)
+  //      list.put("GlobalClock", GetNetName(info, ShiftRegister.CK, true, lang, nets));
+  //    else if (activelo)
+  //      list.put("GlobalClock", String.format(clk+idx, ClockHDLGeneratorFactory.InvertedDerivedClockIndex));
+  //    else
+  //      list.put("GlobalClock", String.format(clk+idx, ClockHDLGeneratorFactory.DerivedClockIndex));
+  //  }
+
 }

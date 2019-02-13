@@ -34,8 +34,7 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Graphics;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -349,7 +348,7 @@ public class ShiftRegister extends InstanceFactory {
 
   @Override
   public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
-    return new ShiftRegisterHDLGeneratorFactory(ctx);
+    return new ShiftRegisterHDLGenerator(ctx);
   }
 
   @Override
