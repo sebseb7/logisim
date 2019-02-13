@@ -44,6 +44,8 @@ public class TtyHDLGenerator extends HDLGenerator {
 
     // todo: support CLR
     _err.AddWarning("Clear signal is likely broken for TTY component in HDL");
+    if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING)
+      _err.AddSevereWarning("With full-speed clock, falling clock edge not yet supported for TTY component in HDL");
 
     clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", Tty.CK);
     inPorts.add(new PortInfo("Enable", 1, Tty.WE, false));

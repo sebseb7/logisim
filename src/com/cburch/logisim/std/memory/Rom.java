@@ -43,7 +43,7 @@ import java.util.WeakHashMap;
 
 import javax.swing.JLabel;
 
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -327,9 +327,9 @@ public class Rom extends Mem {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    if (RomHDLGeneratorFactory.supports(ctx.lang, ctx.attrs, ctx.vendor)) // fixme
-      return new RomHDLGeneratorFactory(ctx);
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+    if (RomHDLGenerator.supports(ctx.lang, ctx.attrs, ctx.vendor)) // fixme
+      return new RomHDLGenerator(ctx);
     else
       return null;
   }

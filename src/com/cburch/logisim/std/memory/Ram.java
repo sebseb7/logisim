@@ -34,7 +34,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.util.WeakHashMap;
 
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
@@ -608,9 +608,9 @@ public class Ram extends Mem {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    if (RamHDLGeneratorFactory.supports(ctx.lang, ctx.attrs, ctx.vendor)) // fixme
-      return new RamHDLGeneratorFactory(ctx);
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+    if (RamHDLGenerator.supports(ctx.lang, ctx.attrs, ctx.vendor)) // fixme
+      return new RamHDLGenerator(ctx);
     else
       return null;
   }

@@ -117,21 +117,14 @@ public class HDLGenerator extends HDLSupport {
 		SignalList wires = getWires();
 		SignalList registers = getRegisters();
 		MemoryList mems = getMemories();
-    TypeList types = getTypes();
 
 		if (out.isVhdl) {
 
 			out.stmt("architecture logisim_generated of " + hdlComponentName + " is ");
       out.indent();
 
-			if (!types.isEmpty()) {
-        out.comment("type definitions");
-				for (String t : types.keySet())
-					out.stmt("type %s is %s;", t, types.get(t);
-				out.stmt();
-			}
-
-      generateVhlComponentDeclarations(out);
+      generateVhdlTypes(out);
+      generateVhdlComponentDeclarations(out);
 
       if (!wires.isEmpty() || !registers.isEmpty()) {
         out.comment("signal definitions");
@@ -364,6 +357,11 @@ public class HDLGenerator extends HDLSupport {
 	protected void generateVhdlComponentDeclarations(Hdl out) { }
 
   /////////// DONE
+  // Generate any custom type declarations that should appear within the VHDL
+  // declarations.
+	protected void generateVhdlTypes(Hdl out) { }
+
+  /////////// DONE
   // A list of signal or port names and corresponding widths/IDs. If width=n>0,
   // the signal has a fixed size of n bits. If width=ID<0, then the width is
   // taken from the generic parameter value map corresponding to that ID. In
@@ -427,15 +425,6 @@ public class HDLGenerator extends HDLSupport {
 
   // Return a list of memory init data used internally within this component.
 	protected MemInitData getMemInitData() { return new MemInitData(); }
-
-  /////////// DONE
-  // A list of type names and corresponding definitions, e.g. to use for
-  // getMemories().
-  protected static class TypeList extends TreeMap<String, String> { }
-
-  /////////// DONE
-  // Returns a list of types defined and used internally within this component.
-	protected TypeList getTypes() { return new TypeList(); }
 
   /////////// DONE
   // An assignment, from each real generic parameter name, to a constant value.
@@ -528,8 +517,8 @@ public class HDLGenerator extends HDLSupport {
   protected final ArrayList<PortInfo> inOutPorts = new ArrayList<>();
   protected final ArrayList<PortInfo> outPorts = new ArrayList<>();
   protected final ArrayList<WireInfo> wires = new ArrayList<>();
+  protected final ArrayList<WireInfo> registers = new ArrayList<>();
   protected final ArrayList<ParameterInfo> parameters = new ArrayList<>();
-
 
   // Return a suitable stem for naming instances of this component within a
   // circuit, so we can form names like "i_Add_1", "i_Add_2", etc., for
@@ -716,5 +705,288 @@ public class HDLGenerator extends HDLSupport {
 //     list.put("Segment_G", pin + "(" + (b+6) + ")");
 //     list.put("Segment_DP", pin + "(" + (b+7) + ")");
 //   }
+
+  // Counter
+  //  If using a non-clock net (so we don't have GlobalClock+ClockEnable),
+  //  Counter has some special hdl to handle negative edges. We should
+  //  automatically 
+  //  parameters.add(new ParameterInfo("ClkEdge", edge)); // 0 for TRIG_FALLING, 1 for TRIG_RISING
+    // When we have a fake clock signal, pos edge happens by default, but
+    // negative edge is handled specially.
+    // boolean fakeClockFallingEdge = GetClockNetName(info, Counter.CK, nets).isEmpty()
+    //     && attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING;
+    // // parameters.add(new ParameterInfo("ClkEdge", fakeClockFallingEdge ? 1 : 0));
+//     if (!info.EndIsConnected(Counter.CK)) {
+//       err.AddSevereWarning("Component \"Counter\" in circuit \""
+//           + nets.getCircuitName() + "\" has no clock connection");
+//       list.put("GlobalClock", zero);
+//       list.put("ClockEnable", zero);
+//     } else {
+//       String clk = GetClockNetName(info, Counter.CK, nets);
+//       if (clk.isEmpty()) {
+//         err.AddSevereWarning("Component \"Counter\" in circuit \""
+//             + nets.getCircuitName()
+//             + "\" has a none-clock-component forced clock!\n"
+//             + "        Functional differences between Logisim simulation and hardware can be expected!");
+//         list.putAll(GetNetMap("GlobalClock", true, info, Counter.CK, err, lang, nets));
+//         list.put("ClockEnable", one);
+//       } else {
+//         int ClockBusIndex = ClockHDLGeneratorFactory.DerivedClockIndex;
+//         if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_LOW)
+//           ClockBusIndex = ClockHDLGeneratorFactory.InvertedDerivedClockIndex;
+//         else if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_RISING)
+//           ClockBusIndex = ClockHDLGeneratorFactory.PositiveEdgeTickIndex;
+//         else if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING)
+//           ClockBusIndex = ClockHDLGeneratorFactory.InvertedDerivedClockIndex;
+//         list.put("GlobalClock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
+//         list.put("ClockEnable", String.format(clk+idx, ClockBusIndex));
+//       }
+//     }
+//     String ld = "LoadData" + (vhdl & (w == 1) ? "(0)" : "");
+//     list.putAll(GetNetMap(ld, true, info, Counter.IN, err, lang, nets));
+//     list.putAll(GetNetMap("clear", true, info, Counter.CLR, err, lang, nets));
+//     list.putAll(GetNetMap("load", true, info, Counter.LD, err, lang, nets));
+//     list.putAll(GetNetMap("Enable", false, info, Counter.EN, err, lang, nets));
+//     list.putAll(GetNetMap("Up_n_Down", false, info, Counter.UD, err, lang, nets));
+// 
+//     String cv = "CountValue" + (vhdl & (w == 1) ? "(0)" : "");
+//     list.putAll(GetNetMap(cv, true, info, Counter.OUT, err, lang, nets));
+//     list.putAll(GetNetMap("CompareOut", true, info, Counter.CARRY, err, lang, nets));
+//   }
+
+  // Counter mapping trick: if port was generic, but has size 1, be sure to do
+  //    portname(0) => whatever
+  // instead of
+  //    portname => whatever
+  // since the latter will only work when size>1. That would eliminate most of
+  // the need to have Bit/Bus versions of other components.
+  
+  // Random
+  // @Override
+  // public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+  //   AttributeSet attrs = info.GetComponent().getAttributeSet();
+  //   int w = width(attrs);
+  //   boolean hasClk = info.EndIsConnected(Random.CK);
+  //   if (!hasClk)
+  //     err.AddSevereWarning("Component \"Random\" in circuit \""
+  //         + nets.getCircuitName() + "\" has no clock connection");
+
+  //   String clk = GetClockNetName(info, Random.CK, nets);
+  //   boolean gatedClk = clk.equals("");
+  //   boolean activelo = attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING;
+
+  //   boolean vhdl = lang.equals("VHDL");
+  //   String zero = vhdl ? "'0'" : "1'b0";
+  //   String one = vhdl ? "'1'" : "1'b1";
+  //   String idx = vhdl ? "(%d)" : "[%]"; // fixme: these should be in base class at minimum!
+
+  //   if (!hasClk) {
+  //     err.AddError("Found a gated clock for component \"Random\" in circuit \""
+  //         + nets.getCircuitName() + "\"");
+  //     err.AddError("This RNG will not work!");
+  //   }
+
+  //   // fixme: same as several others?
+  //   if (!hasClk || gatedClk) {
+  //     list.put("GlobalClock", zero);
+  //     list.put("ClockEnable", zero);
+  //   } else {
+  //     list.put("GlobalClock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));;
+  //     if (activelo)
+  //       list.put("ClockEnable", String.format(clk+idx, ClockHDLGeneratorFactory.NegativeEdgeTickIndex));
+  //     else
+  //       list.put("ClockEnable", String.format(clk+idx, ClockHDLGeneratorFactory.PositiveEdgeTickIndex));
+  //   }
+  //   list.putAll(GetNetMap("Clear", true, info, Random.RST, err, lang, nets));
+  //   list.putAll(GetNetMap("Enable", false, info, Random.NXT, err, lang, nets));
+  //   String q = "Q" + (vhdl && w == 1 ? "(0)" : "");
+  //   list.putAll(GetNetMap(q, true, info, Random.OUT, err, lang, nets));
+  // }
+   
+  // Various...
+  // if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING)
+  //   and params.not contains "ClkEdge")
+  //   and fake clock input, then... warn about not handling fake edge
+  // similarly, if full speed and using falling trigger, many don't support
+  // this. Or do we have an inverted globalclock?
+  //    _err.AddSevereWarning("With full-speed clock, falling clock edge not yet supported for Keyboard component in HDL");
+  //
+  //    if clockPort contains third param "ClkEdge" then add it to params list,
+  //    and set it appropriately, 0 for falling, 1 for rising ?
+
+  // Register
+  //   boolean gatedClk = GetClockNetName(info, Register.CK, nets).equals("");
+  //   // fixme: differs from ShiftRegister and others
+  //   if (gatedClk && edgeTriggered(attrs))
+  //     err.AddWarning("Found a gated clock for component \"Register\" in circuit \""
+  //         + nets.getCircuitName() + "\"");
+//     boolean activelo = gatedClk &&
+//         (attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
+//          || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW);
+// 
+//     list.put("ActiveLevel", activelo ? 0 : 1);
+// 
+  //   boolean activelo = gatedClk &&
+  //       (attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
+  //        || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW);
+  // @Override
+  // public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+  //   AttributeSet attrs = info.GetComponent().getAttributeSet();
+  //   int w = width(attrs);
+  //   boolean hasClk = info.EndIsConnected(Register.CK);
+  //   if (!hasClk)
+  //     err.AddSevereWarning("Component \"Register\" in circuit \""
+  //         + nets.getCircuitName() + "\" has no clock connection");
+
+  //   String clk = GetClockNetName(info, Register.CK, nets);
+  //   boolean gatedClk = clk.equals("");
+  //   boolean activelo = attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING
+  //       || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW;
+
+  //   boolean vhdl = lang.equals("VHDL");
+  //   String zero = vhdl ? "'0'" : "1'b0";
+  //   String one = vhdl ? "'1'" : "1'b1";
+  //   String idx = vhdl ? "(%d)" : "[%]"; // fixme: these should be in base class at minimum!
+
+  //   if (!hasClk) {
+  //     list.put("ClockEnable", zero);
+  //     list.put("GlobalClock", zero);
+  //   } else if (!gatedClk && edgeTriggered(attrs)) {
+  //     list.put("GlobalClock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
+  //     if (activelo)
+  //       list.put("ClockEnable", String.format(clk+idx, ClockHDLGeneratorFactory.NegativeEdgeTickIndex));
+  //     else
+  //       list.put("ClockEnable", String.format(clk+idx, ClockHDLGeneratorFactory.PositiveEdgeTickIndex));
+  //   } else {
+  //     list.put("ClockEnable", one);
+  //     if (!gatedClk && activelo)
+  //       list.put("GlobalClock", String.format(clk+idx, ClockHDLGeneratorFactory.InvertedDerivedClockIndex));
+  //     else if (!gatedClk)
+  //       list.put("GlobalClock", String.format(clk+idx, ClockHDLGeneratorFactory.DerivedClockIndex));
+  //     else
+  //       list.put("GlobalClock", GetNetName(info, Register.CK, true, lang, nets));
+  //   }
+  //   String d = "D" + (vhdl && w == 1 ? "(0)" : "");
+  //   String q = "Q" + (vhdl && w == 1 ? "(0)" : "");
+  //   list.putAll(GetNetMap(d, true, info, Register.IN, err, lang, nets));
+  //   list.putAll(GetNetMap(q, true, info, Register.OUT, err, lang, nets));
+  // }
+
+  // FlipFlip
+  // public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
+  //   AttributeSet attrs = info.GetComponent().getAttributeSet();
+  //   int w = width(attrs);
+
+  //   int CLK = info.NrOfEnds()-5;
+  //   boolean gatedClk = GetClockNetName(info, CLK, nets).equals("");
+  //   // fixme: differs from ShiftRegister and others, but only slightly
+  //   if (gatedClk && edgeTriggered(attrs))
+  //       err.AddWarning("Found a gated clock for component \""
+  //           + displayName + "\" in circuit \""
+  //           + nets.getCircuitName() + "\"");
+
+  //   boolean activelo = gatedClk &&
+  //       (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING
+  //       || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
+  //       || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW);
+
+  //   list.put("ActiveLevel", activelo ? 0 : 1);
+  // }
+// 
+//     String clk = GetClockNetName(info, CLK, nets);
+//     boolean gatedClk = clk.equals("");
+//     boolean activelo = (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING
+//         || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
+//         || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW);
+// 
+//     boolean vhdl = lang.equals("VHDL");
+//     String zero = vhdl ? "'0'" : "1'b0";
+//     String one = vhdl ? "'1'" : "1'b1";
+//     String idx = vhdl ? "(%d)" : "[%]"; // fixme: these should be in base class at minimum!
+// 
+//     list.putAll(GetNetMap("Reset", true, info, RST, err, lang, nets));
+//     list.putAll(GetNetMap("Preset", true, info, PRE, err, lang, nets));
+// 
+//     if (!hasClk) {
+//       list.put("Tick", zero);
+//       list.put("Clock", zero);
+//     } else if (!gatedClk && edgeTriggered(attrs)) {
+//       list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
+//       if (activelo)
+//         list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.NegativeEdgeTickIndex));
+//       else
+//         list.put("Tick", String.format(clk+idx, ClockHDLGeneratorFactory.PositiveEdgeTickIndex));
+//     } else {
+//       list.put("Tick", one);
+//       if (!gatedClk && activelo)
+//         list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.InvertedDerivedClockIndex));
+//       else if (!gatedClk)
+//         list.put("Clock", String.format(clk+idx, ClockHDLGeneratorFactory.DerivedClockIndex));
+//       else
+//         list.put("Clock", GetNetName(info, CLK, true, lang, nets));
+//     }
+//     list.putAll(GetNetMap("Q", true, info, OUT, err, lang, nets));
+//     list.putAll(GetNetMap("Q_bar", true, info, INV, err, lang, nets));
+//     for (int i = 0; i < inPorts.length; i++)
+//       list.putAll(GetNetMap(inPorts[i], true, info, i, err, lang, nets));
+//   }
+  
+  // Ram
+  // @Override
+  // public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+  //   AttributeSet attrs = info.GetComponent().getAttributeSet();
+
+  //   int n = Mem.lineSize(attrs);
+  //   int DATA1 = Mem.MEM_INPUTS; // (n-1) of them
+  //   int DATAOUT[] = { Mem.DATA, DATA1, DATA1+1, DATA1+2 };
+  //   int DIN0 = DATA1+(n-1); // (n) of them
+  //   int DATAIN[] = { DIN0, DIN0+1, DIN0+2, DIN0+3 };
+  //   int CLK = (DIN0 + n); // 1, always
+  //   int WE = CLK+1; // 1, always
+  //   int LE = WE+1; // (datalines) of them, only if multiple data lines
+
+  //   list.putAll(GetNetMap("Address", true, info, Mem.ADDR, err, lang, nets));
+  //   for (int i = 0; i < n; i++)
+  //     list.putAll(GetNetMap("DataIn"+i, true, info, DATAIN[i], err, lang, nets));
+  //   list.putAll(GetNetMap("WE", true, info, WE, err, lang, nets));
+  //   for (int i = 0; i < n && n > 1; i++)
+  //     list.putAll(GetNetMap("LE"+i, false, info, LE+i, err, lang, nets));
+
+  //   String BracketOpen = (lang.equals("VHDL")) ? "(" : "[";
+  //   String BracketClose = (lang.equals("VHDL")) ? ")" : "]";
+
+  //   boolean vhdl = lang.equals("VHDL");
+  //   String zero = vhdl ? "'0'" : "1'b0";
+  //   String one = vhdl ? "'1'" : "1'b1";
+  //   String idx = vhdl ? "(%d)" : "[%]"; // fixme: these should be in base class at minimum!
+
+  //   boolean hasClk = info.EndIsConnected(CLK);
+  //   if (!hasClk)
+  //     err.AddSevereWarning("Component \"RAM\" in circuit \""
+  //         + nets.getCircuitName() + "\" has no clock connection");
+  //   
+  //   String clk = GetClockNetName(info, CLK, nets);
+  //   boolean gatedClk = clk.equals("");
+  //   if (gatedClk)
+  //     err.AddSevereWarning("Component \"RAM\" in circuit \""
+  //         + nets.getCircuitName() + "\" has a none-clock-component forced clock!\n"
+  //         + "   Functional differences between Logisim simulation and hardware can be expected!");
+
+  //   if (!hasClk) {
+  //     list.put("GlobalClock", zero);
+  //     list.put("ClockEnable", zero);
+  //   } else if (gatedClk) {
+  //     list.putAll(GetNetMap("GlobalClock", true, info, CLK, err, lang, nets));
+  //     list.put("ClockEnable", one);
+  //   } else {
+  //     list.put("GlobalClock", String.format(clk+idx, ClockHDLGeneratorFactory.GlobalClockIndex));
+  //     if (attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_RISING)
+  //       list.put("ClockEnable", String.format(clk+idx, ClockHDLGeneratorFactory.PositiveEdgeTickIndex));
+  //     else
+  //       list.put("ClockEnable", String.format(clk+idx, ClockHDLGeneratorFactory.NegativeEdgeTickIndex));
+  //   }
+  //   for (int i = 0; i < n; i++)
+  //     list.putAll(GetNetMap("DataOut"+i, true, info, DATAOUT[i], err, lang, nets));
+  // }
 
 }

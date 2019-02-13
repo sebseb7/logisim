@@ -124,6 +124,12 @@ public abstract class HDLSupport {
     return stdWidth() > 1;
   }
 
+  protected boolean edgeTriggered() {
+    return _attrs.containsAttribute(StdAttr.EDGE_TRIGGER)
+        || (_attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING)
+        || (_attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_RISING);
+  }
+
   // Return a suitable HDL name for this component, e.g. "BitAdder" or
   // "BusAdder". This becomes the name of the vhdl/verilog file, and becomes
   // the name of the vhdl/verilog entity for this component. The name must be
@@ -160,9 +166,7 @@ public abstract class HDLSupport {
     if (s.contains("${BUS}"))
         s = s.replace("${BUS}", w == 1 ? "Bit" : "Bus");
     if (s.contains("${TRIGGER}")) {
-      if (attrs.containsAttribute(StdAttr.EDGE_TRIGGER)
-          || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
-          || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_RISING)
+      if (edgeTriggered())
         s = s.replace("${TRIGGER}", "EdgeTriggered");
       else if (attrs.containsAttribute(StdAttr.TRIGGER))
         s = s.replace("${TRIGGER}", "LevelSensitive");

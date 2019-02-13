@@ -35,9 +35,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.designrulecheck.CorrectLabel;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.data.Attribute;
@@ -200,8 +198,8 @@ public class Register extends InstanceFactory implements DynamicElementProvider 
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    return new RegisterHDLGeneratorFactory(ctx);
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+    return new RegisterHDLGenerator(ctx);
   }
 
   public void DrawRegisterClassic(InstancePainter painter) {

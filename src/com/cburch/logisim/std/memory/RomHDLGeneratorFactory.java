@@ -29,105 +29,79 @@
  */
 package com.cburch.logisim.std.memory;
 
-import java.util.SortedMap;
-
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 
-public class RomHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
-
-  public RomHDLGeneratorFactory(HDLCTX ctx) {
-    super(ctx, "ROM_${CIRCUIT}_${LABEL}", "ROM");
-  }
+public class RomHDLGenerator extends HDLGenerator {
   
   static boolean supports(String lang, AttributeSet attrs, char vendor) {
     return lang.equals("VHDL") || Mem.lineSize(attrs) == 1; // TODO: Verilog support
   }
 
-  @Override
-  public String GetSubDir() { return "memory"; }
-
-  @Override
-  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    list.put("Address", addrWidth(attrs));
-  }
-
-  @Override
-  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    int w = dataWidth(attrs);
-    list.put("Data", w);
+  public RomHDLGenerator(HDLCTX ctx) {
+    super(ctx, "memory", "ROM_${CIRCUIT}_${LABEL}", "i_ROM");
+    inPorts.add(new PortInfo("Address", addrWidth(), Mem.ADDR, false));
+    outPorts.add(new PortInfo("Data", dataWidth(), Mem.DATA, null));
     int n = Mem.lineSize(attrs);
     for (int i = 1; i < n; i++)
-      list.put("Data"+i, w);
+      outPorts.add(new PortInfo("Data"+i, dataWidth(), Mem.MEM_INPUTS+i-1, null));
   }
 
   @Override
-  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
-    list.putAll(GetNetMap("Address", true, info, Mem.ADDR, err, lang, nets));
-    list.putAll(GetNetMap("Data", true, info, Mem.DATA, err, lang, nets));
-    int n = Mem.lineSize(info.GetComponent().getAttributeSet());
-    for (int i = 1; i < n; i++)
-      list.putAll(GetNetMap("Data"+i, true, info, Mem.MEM_INPUTS+i-1, err, lang, nets));
-  }
-
-  @Override
-  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
+  protected void generateBehavior(Hdl out) {
     MemContents rom = attrs.getValue(Rom.CONTENTS_ATTR);
     int n = Mem.lineSize(attrs);
     int wd = dataWidth(attrs);
     int wa = addrWidth(attrs);
     // int shift = (n == 4 ? 2 : n == 2 ? 1 : 0);
     if (out.isVhdl) {
-      out.stmt("   MakeRom : PROCESS( Address )");
-      out.stmt("      BEGIN");
-      out.stmt("         CASE (Address) IS");
+      out.stmt("MakeRom : PROCESS( Address )");
+      out.stmt("   BEGIN");
+      out.stmt("      CASE (Address) IS");
       for (long addr = 0; addr < (1 << wa); addr += n) {
         if (filled(rom, addr, n)) {
-          out.stmt("            WHEN %s =>\t Data <= %s;",
+          out.stmt("         WHEN %s =>\t Data <= %s;",
               out.literal(addr, wa), out.literal(rom.get(addr), wd));
           for (int i = 1; i < n; i++)
             out.cont(" \t Data%d <= %s;", i, out.literal(rom.get(addr+i), wd));
         }
       }
       if (wd == 1) {
-        out.stmt("            WHEN others =>\t Data <= '0';");
+        out.stmt("         WHEN others =>\t Data <= '0';");
         for (int i = 1; i < n; i++)
           out.cont(" \t Data%d <= '0';", i);
       } else {
-        out.stmt("            WHEN others =>\t Data <= (others => '0');");
+        out.stmt("         WHEN others =>\t Data <= (others => '0');");
         for (int i = 1; i < n; i++)
           out.cont(" \t Data%d <= (others => '0');", i);
       }
-      out.stmt("         END CASE;");
-      out.stmt("      END PROCESS MakeRom;");
+      out.stmt("      END CASE;");
+      out.stmt("   END PROCESS MakeRom;");
     } else {
       // todo: support verilog with lineSize > 1
-      out.stmt("   reg[%d:0] Data;", wd - 1);
+      out.stmt("reg[%d:0] Data;", wd - 1);
       out.stmt("");
-      out.stmt("   always @ (Address)");
-      out.stmt("   begin");
-      out.stmt("      case(Address)");
+      out.stmt("always @ (Address)");
+      out.stmt("begin");
+      out.stmt("   case(Address)");
       for (long addr = 0; addr < (1 << wa); addr++) {
         int data = rom.get(addr);
         if (data != 0)
-          out.stmt("         %d : Data = %d;", addr, data);
+          out.stmt("      %d : Data = %d;", addr, data);
       }
-      out.stmt("         default : Data = 0;");
-      out.stmt("      endcase");
-      out.stmt("   end");
+      out.stmt("      default : Data = 0;");
+      out.stmt("   endcase");
+      out.stmt("end");
     }
   }
 
-  protected int addrWidth(AttributeSet attrs) {
-    return attrs.getValue(Mem.ADDR_ATTR).getWidth();
+  protected int addrWidth() {
+    return _attrs.getValue(Mem.ADDR_ATTR).getWidth();
   }
 
-  protected int dataWidth(AttributeSet attrs) {
-    return attrs.getValue(Mem.DATA_ATTR).getWidth();
+  protected int dataWidth() {
+    return _attrs.getValue(Mem.DATA_ATTR).getWidth();
   }
 
   static boolean filled(MemContents rom, long addr, int n) {

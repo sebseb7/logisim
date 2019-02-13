@@ -46,6 +46,8 @@ public class KeyboardHDLGenerator extends HDLGenerator {
 
     // todo: support CLR
     _err.AddWarning("Clear signal is not yet supported for Keyboard component in HDL");
+    if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING)
+      _err.AddSevereWarning("With full-speed clock, falling clock edge not yet supported for Keyboard component in HDL");
 
     clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", Keyboard.CK);
     inPorts.add(new PortInfo("ReadEnable", 1, Keyboard.RE, false));
