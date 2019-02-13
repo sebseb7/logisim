@@ -58,42 +58,16 @@ public class HDLGenerator extends HDLSupport {
 
   // Generate and write all necessary HDL files for this component, using the
   // given root directory. Depeding on the specific subclass involved, this may
-  // include entity, architecture, and several memory init files.
+  // include entity, architecture, and several memory init files (for NV Ram).
   public boolean writeHDLFiles(String rootDir) {
-    HashMap<String, File> memInitFiles = writeMemInitFiles(rootDir);
-    return writeEntity(rootDir)
-        && writeArchitecture(rootDir, memInitFiles);
-  }
-
-  // DONE
-  // Generate and write all "memory init" files for this component, using the
-  // given root directory, returning the list of memory names and corresponding
-  // memory init files.
-  protected HashMap<String, File> writeMemInitFiles(String rootDir) {
-    MemInitData memInits = getMemInitData();
-    HashMap<String, File> files = new HashMap<>();
-    for (String m : memInits.keySet()) {
-      Hdl data = memInits.get(m);
-      if (data.isEmpty()) {
-        _err.AddFatalError("INTERNAL ERROR: Empty memory initialization file for memory '%s:%s'.",
-            hdlComponentName, memName);
-        continue;
-      }
-      File f = openFile(rootDir, hdlComponentName + "_" + memName, true, false);
-      if (f == null)
-        continue;
-      if (!FileWriter.WriteContents(f, data, _err))
-        continue;
-      files.put(m, f);
-    }
-    return files;
+    return writeEntity(rootDir) && writeArchitecture(rootDir);
   }
 
   /////////// DONE
   // Generate and write an "architecture" file for this component, using the
-  // given root directory and NVRAM initialization files.
-  protected boolean writeArchitecture(String rootDir, HashMap<String, File> memInitFiles) {
-    Hdl hdl = getArchitecture(memInitFiles);
+  // given root directory.
+  protected boolean writeArchitecture(String rootDir) {
+    Hdl hdl = getArchitecture();
 		if (hdl == null || hdl.isEmpty()) {
 			_err.AddFatalError("INTERNAL ERROR: Generated empty architecture for HDL `%s'.", hdlComponentName);
 			return false;
@@ -106,7 +80,7 @@ public class HDLGenerator extends HDLSupport {
 
   /////////// DONE
   // Generate the full HDL code for the "architecture" file.
-	protected Hdl getArchitecture(HashMap<String, File> memInitFiles) {
+	protected Hdl getArchitecture() {
     Hdl out = new Hdl(_lang, _err);
     generateFileHeader(out);
 
@@ -116,7 +90,6 @@ public class HDLGenerator extends HDLSupport {
     Generics params = getGenericParameters();
 		SignalList wires = getWires();
 		SignalList registers = getRegisters();
-		MemoryList mems = getMemories();
 
 		if (out.isVhdl) {
 
@@ -132,21 +105,6 @@ public class HDLGenerator extends HDLSupport {
           out.stmt("signal %s : %s;", s, out.typeForWidth(wires.get(s), params));
         for (String s : registers.keySet())
           out.stmt("signal %s : %s;", s, out.typeForWidth(registers.get(s), params));
-        out.stmt();
-			}
-
-      if (!mems.isEmpty()) {
-        out.comment("memory definitions");
-        if (memInitFiles != null && !memInitFiles.isEmpty())
-          out.stmt("attribute nvram_init_file : string;");
-        for (String m : mems.keySet()) {
-          out.stmt("signal %s : %s;", m, mems.get(m));
-          // fixme: memInitFiles comes from where? name probably won't match!
-          if (memInitFiles != null && memInitFiles.get(m) != null) {
-            String filepath = memInitFiles.get(m).getPath();
-            Contents.add("attribute nvram_init_file of %s : signal is \"%s\";", m, filepath);
-          }
-				}
         out.stmt();
 			}
       out.dedent();
@@ -189,8 +147,6 @@ public class HDLGenerator extends HDLSupport {
           out.stmt("reg %s%s;", out.typeForWidth(registers.get(s), params), s);
         out.stmt();
       }
-
-      // fixme: verilog support for memories here and in Ram/Rom HDL generators.
 
 			out.stmt();
       generateBehavior(out);
@@ -408,23 +364,6 @@ public class HDLGenerator extends HDLSupport {
   // Return a list of registers used internally within this component. In
   // Verilog, wires and registers are different. In VHDL they are the same.
 	protected SignalList getRegisters() { return new SignalList(); }
-
-
-  /////////// DONE
-  // A list of memory names and corresponding type names.
-  protected static class MemoryList extends TreeMap<String, String> { }
-
-  /////////// DONE
-  // Return a list of memory blocks used internally within this component.
-	protected MemoryList getMemories() { return new MemoryList(); }
-
-  /////////// DONE
-  // A list of memory names and their corresponding initialization data file
-  // contents (e.g. for RAM components marked as "non-volatile").
-  protected static class MemInitData extends TreeMap<String, Hdl> { }
-
-  // Return a list of memory init data used internally within this component.
-	protected MemInitData getMemInitData() { return new MemInitData(); }
 
   /////////// DONE
   // An assignment, from each real generic parameter name, to a constant value.

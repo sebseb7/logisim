@@ -66,7 +66,7 @@ public class RamHDLGenerator extends HDLGenerator {
     for (int i = 0; i < n && n > 1; i++)
       inPorts.add(new PortInfo("LE"+i, 1, portnr++, true));
   }
-  
+
   private static String deriveHDLName(AttributeSet attrs) {
     if (attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.VOLATILE)
       return "NVRAM_${CIRCUIT}_${LABEL}";
@@ -76,16 +76,20 @@ public class RamHDLGenerator extends HDLGenerator {
     return String.format("RAM_%dx%dx%d", wd, n, 1<<wa); // could probably be generic
   }
 
-  @Override
-  public MemInitData getMemInitData() {
-    MemInitData m = new MemInitData();
-    if (!_attrs.getValue(RamAttributes.ATTR_TYPE).equals(RamAttributes.NONVOLATILE)) {
-      return m;
-    }
+  // Generate and write all "memory init" files for this non-volatile Ram component.
+  protected File[] writeMemInitFiles(String rootDir) {
     int n = Mem.lineSize(_attrs);
-    for (int i = 0; i < n; i++)
-      m.put("s_mem"+i+"_contents", getMemInitData(i); 
-    return m;
+    File[] files = new File[n];
+    for (int i = 0; i < n; i++) {
+      Hdl data = getMemInitData(i);
+      File f = openFile(rootDir, hdlComponentName+"_"+i+"_contents", true, false);
+      if (f == null)
+        continue;
+      if (!FileWriter.WriteContents(f, data, _err))
+        continue;
+      files[i] = f;
+    }
+    return files;
   }
 
   private Hdl getMemInitData(int offset) {
@@ -111,54 +115,83 @@ public class RamHDLGenerator extends HDLGenerator {
     return out;
   }
 
-  @Override
-  public SortedMap<String, Integer> GetMemList(AttributeSet attrs, String lang) {
-    SortedMap<String, Integer> list = new TreeMap<String, Integer>();
-    int n = Mem.lineSize(attrs);
-    for (int i = 0; i < n; i++)
-      list.put("s_mem"+i+"_contents", TYPE_MEM_ARRAY);
-    return list;
+  File[] nvFiles = null;
+  protected boolean writeArchitecture(String rootDir) {
+    nvFiles = null;
+    if (_attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE)
+      nvFiles = writeMemInitFiles(rootDir);
+    super.writeArchitecture(rootDir);
   }
 
   @Override
-  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
-    out.indent();
-    int n = Mem.lineSize(attrs);
-    if (n == 1) {
-      out.stmt("Mem0 : PROCESS( GlobalClock, DataIn0, Address, WE, ClockEnable )");
-      out.stmt("BEGIN");
-      out.stmt("   IF (GlobalClock'event AND (GlobalClock = '1')) THEN");
-      out.stmt("      IF (WE = '1' and ClockEnable = '1') THEN");
-      out.stmt("         s_mem0_contents(to_integer(unsigned(Address))) <= DataIn0;");
-      out.stmt("      ELSE");
-      out.stmt("          DataOut0 <= s_mem0_contents(to_integer(unsigned(Address)));");
-      out.stmt("      END IF;");
-      out.stmt("   END IF;");
-      out.stmt("END PROCESS Mem0;");
-    } else {
-      int sa = (n == 4 ? 2 : n == 2 ? 1 : 0);
-      for (int i = 0; i < n; i++) {
-        out.stmt("Mem%d : PROCESS( GlobalClock, DataIn%d, Address, WE, LE%d, ClockEnable )", i, i, i);
-        out.stmt("BEGIN");
-        out.stmt("   IF (GlobalClock'event AND (GlobalClock = '1')) THEN");
-        out.stmt("      IF (WE = '1' and LE%d = '1' and ClockEnable = '1') THEN", i);
-        out.stmt("         s_mem%d_contents(to_integer(shift_right(unsigned(Address),%d))) <= DataIn%d;", i, sa, i);
-        out.stmt("      ELSE");
-        out.stmt("          DataOut%d <= s_mem%d_contents(to_integer(shift_right(unsigned(Address),%d)));", i, i, sa);
-        out.stmt("      END IF;");
-        out.stmt("   END IF;");
-        out.stmt("END PROCESS Mem%d;", i);
-      }
-    }
-  }
+	protected Hdl getArchitecture(HashMap<String) {
+    Hdl out = new Hdl(_lang, _err);
+    generateFileHeader(out);
 
-  @Override
-	protected void generateVhdlTypes(Hdl out) {
+    SignalList inPorts = getInPorts();
+    SignalList outPorts = getOutPorts();
+
     int wd = dataWidth();
     int rows = (1 << addrWidth());
-    out.stmt("type MEMORY_ARRAY is array (%d downto 0) of std_logic_vector(%d downto 0);",
-        rows-1, wd-1);
-  }
+    int n = Mem.lineSize(attrs);
+
+		if (out.isVhdl) {
+
+			out.stmt("architecture logisim_generated of " + hdlComponentName + " is ");
+      out.indent();
+      out.stmt("type MEMORY_ARRAY is array (%d downto 0) of std_logic_vector(%d downto 0);", rows-1, wd-1);
+
+      out.comment("memory definitions");
+      for (int i = 0; i < n; i++)
+        out.stmt("signal s_mem_%d__contents : MEMORY_ARRAY;", i);
+      out.stmt();
+
+      if (nvFiles != null) {
+        out.stmt("attribute nvram_init_file : string;");
+        for (int i = 0; i < n; i++)
+          out.stmt("attribute nvram_init_file of s_mem_%d_contents : signal is \"%s\";",
+              i, nvFiles[i].getPath());
+			}
+      out.stmt();
+      out.dedent();
+
+			out.stmt("begin");
+      out.indent();
+			out.stmt();
+      if (n == 1) {
+        out.stmt("Mem0 : PROCESS( GlobalClock, DataIn0, Address, WE, ClockEnable )");
+        out.stmt("BEGIN");
+        out.stmt("   IF (GlobalClock'event AND (GlobalClock = '1')) THEN");
+        out.stmt("      IF (WE = '1' and ClockEnable = '1') THEN");
+        out.stmt("         s_mem0_contents(to_integer(unsigned(Address))) <= DataIn0;");
+        out.stmt("      ELSE");
+        out.stmt("          DataOut0 <= s_mem0_contents(to_integer(unsigned(Address)));");
+        out.stmt("      END IF;");
+        out.stmt("   END IF;");
+        out.stmt("END PROCESS Mem0;");
+      } else {
+        int sa = (n == 4 ? 2 : n == 2 ? 1 : 0);
+        for (int i = 0; i < n; i++) {
+          out.stmt("Mem%d : PROCESS( GlobalClock, DataIn%d, Address, WE, LE%d, ClockEnable )", i, i, i);
+          out.stmt("BEGIN");
+          out.stmt("   IF (GlobalClock'event AND (GlobalClock = '1')) THEN");
+          out.stmt("      IF (WE = '1' and LE%d = '1' and ClockEnable = '1') THEN", i);
+          out.stmt("         s_mem%d_contents(to_integer(shift_right(unsigned(Address),%d))) <= DataIn%d;", i, sa, i);
+          out.stmt("      ELSE");
+          out.stmt("          DataOut%d <= s_mem%d_contents(to_integer(shift_right(unsigned(Address),%d)));", i, i, sa);
+          out.stmt("      END IF;");
+          out.stmt("   END IF;");
+          out.stmt("END PROCESS Mem%d;", i);
+        }
+      }
+			out.stmt();
+      out.dedent();
+			out.stmt("end logisim_generated;");
+    } else {
+      // todo: Verilog support
+    }
+		return out;
+	}
 
   protected static int addrWidth() {
     return attrs.getValue(Mem.ADDR_ATTR).getWidth();
