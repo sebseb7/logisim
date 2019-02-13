@@ -35,9 +35,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
-import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.data.Attribute;
@@ -93,10 +91,6 @@ public class Led extends InstanceFactory implements DynamicElementProvider {
     setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK));
     setPorts(new Port[] { new Port(0, 0, Port.INPUT, 1) });
     setInstanceLogger(Logger.class);
-    MyIOInformation = new IOComponentInformationContainer(0, 1, 0,
-        FPGAIOInformationContainer.IOComponentTypes.LED);
-    MyIOInformation
-        .AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
   }
 
   @Override
@@ -117,8 +111,8 @@ public class Led extends InstanceFactory implements DynamicElementProvider {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    return new AbstractLedHDLGeneratorFactory(ctx, "LED");
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+    return LightsHDLGenerator.forLed(ctx);
   }
 
   @Override

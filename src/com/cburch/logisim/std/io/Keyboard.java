@@ -37,10 +37,7 @@ import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
-import com.bfh.logisim.fpgagui.MappableResourcesContainer;
-import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
@@ -178,19 +175,16 @@ public class Keyboard extends InstanceFactory {
     return ret;
   }
 
-  protected static final int CLR = 0;
-
-  protected static final int CK = 1;
-  protected static final int RE = 2;
-
-  protected static final int AVL = 3;
-  protected static final int OUT = 4;
+  static final int CLR = 0;
+  static final int CK = 1;
+  static final int RE = 2;
+  static final int AVL = 3;
+  static final int OUT = 4;
 
   private static final int DELAY0 = 9; // 1; 1;
   private static final int DELAY1 = 11; // 2; 1;
 
   static final int WIDTH = 145;
-
   static final int HEIGHT = 25;
 
   private static final Font DEFAULT_FONT = new Font("monospaced", Font.PLAIN,
@@ -214,10 +208,6 @@ public class Keyboard extends InstanceFactory {
     setIconName("keyboard.gif");
     setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK));
     setInstancePoker(Poker.class);
-
-    MyIOInformation = new IOComponentInformationContainer(0, 0, 4,
-        null, null, null, FPGAIOInformationContainer.IOComponentTypes.PortIO);
-    MyIOInformation.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
   }
 
   @Override
@@ -434,19 +424,11 @@ public class Keyboard extends InstanceFactory {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
     if (ctx.lang.equals("VHDL"))
-      return new KeyboardHDLGeneratorFactory(ctx);
+      return new KeyboardHDLGenerator(ctx);
     else
       return null;
-  }
-
-  private MappableResourcesContainer mapInfo;
-  public MappableResourcesContainer getMapInfo() {
-    return mapInfo;
-  }
-  public void setMapInfo(MappableResourcesContainer mapInfo) {
-    this.mapInfo = mapInfo;
   }
 
 }

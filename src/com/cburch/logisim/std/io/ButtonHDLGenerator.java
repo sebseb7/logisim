@@ -29,32 +29,46 @@
  */
 package com.cburch.logisim.std.io;
 
-import java.util.ArrayList;
-
 import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
+import com.bfh.logisim.hdlgenerator.HDLInliner;
 import com.cburch.logisim.hdl.Hdl;
 
-public class ButtonHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
+public class ButtonHDLGenerator extends HDLInliner {
 
-  public ButtonHDLGeneratorFactory(HDLCTX ctx, String name) { 
-    super(ctx, name + "_${LABEL}", "BUTTON"); // names irrelevant, b/c always inlined ?
+  private ButtonHDLGenerator(HDLCTX ctx, String name) {
+    super(ctx, name);
+  }
+  
+  public static ButtonHDLGenerator forButton(HDLCTX ctx) {
+    this(ctx, "Button_${LABEL}");
+    hiddenPort = new IOComponentInformationContainer(
+        1/*in*/, 0/*out*/, 0/*inout*/, IOComponentInformationContainer.Button);
+    hiddenPort.AddAlternateMapType(IOComponentInformationContainer.Pin);
+  }
+
+  public static ButtonHDLGenerator forDipSwitch(HDLCTX ctx) {
+    this(ctx, "DIPSwitch_${LABEL}");
+    int n = attrs.getValue(ATTR_SIZE).getWidth();
+    ArrayList<String> labels = new ArrayList<>();
+    for (int i = 1; i <= n; i++)
+      LabelNames.add("sw_" + i);
+    hiddenPort = new IOComponentInformationContainer(
+        n/*in*/, 0/*out*/, 0/*inout*/,
+        labels, null, null, IOComponentInformationContainer.DIPSwitch);
+    hiddenPort.AddAlternateMapType(IOComponentInformationContainer.Button);
+    hiddenPort.AddAlternateMapType(IOComponentInformationContainer.Pin);
   }
 
   @Override
-  public boolean IsOnlyInlined(/*String lang*/) { return true; }
-
-  @Override
-  public ArrayList<String> GetInlinedCode(NetlistComponent info) {
-    if (_nets == null) throw new IllegalStateException();
-    Hdl out = new Hdl(_lang, _err);
-    int b = info.GetLocalBubbleInputStartId();
-    for (int i = 0; i < info.NrOfEnds(); i++) {
-      if (info.EndIsConnected(i)) {
-        String name = GetNetName(info, i, true, _lang, _nets);
-        out.assign(name, LocalInputBubbleBusname, b + i);
+	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
+    int b = comp.GetLocalBubbleInputStartId();
+    for (int i = 0; i < comp.NrOfEnds(); i++) {
+      if (comp.EndIsConnected(i)) {
+        String name = _nets.signalEndForEnd1(comp, i, null, out);
+        out.assign(name, "LOGISIM_HIDDEN_FPGA_INPUT", b + i);
       }
     }
-    return out;
   }
+
 }

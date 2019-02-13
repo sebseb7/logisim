@@ -36,9 +36,6 @@ import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.event.KeyEvent;
 
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
-import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -121,10 +118,6 @@ public class Button extends InstanceFactory {
     setPorts(new Port[] { new Port(0, 0, Port.OUTPUT, 1) });
     setInstancePoker(Poker.class);
     setInstanceLogger(Logger.class);
-    MyIOInformation = new IOComponentInformationContainer(1, 0, 0,
-        FPGAIOInformationContainer.IOComponentTypes.Button);
-    MyIOInformation
-        .AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
   }
 
   @Override
@@ -141,8 +134,8 @@ public class Button extends InstanceFactory {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    return new ButtonHDLGeneratorFactory(ctx, "Button");
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+    return ButtonHDLGenerator.forButton(ctx);
   }
 
   @Override

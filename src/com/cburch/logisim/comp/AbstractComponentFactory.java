@@ -35,7 +35,7 @@ import java.awt.Graphics;
 
 import javax.swing.Icon;
 
-import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
+// import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -52,7 +52,7 @@ public abstract class AbstractComponentFactory implements ComponentFactory {
   private static final Icon toolIcon = Icons.getIcon("subcirc.gif");
 
   private AttributeSet defaultSet;
-  protected IOComponentInformationContainer MyIOInformation;
+  // protected IOComponentInformationContainer MyIOInformation;
 
   protected AbstractComponentFactory() {
   } 
@@ -100,9 +100,9 @@ public abstract class AbstractComponentFactory implements ComponentFactory {
     return null;
   }
 
-  public IOComponentInformationContainer getIOInformation() {
-    return MyIOInformation;
-  }
+  // public IOComponentInformationContainer getIOInformation() {
+  //   return MyIOInformation;
+  // }
 
   public abstract String getName();
 

@@ -37,10 +37,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
-import com.bfh.logisim.fpgagui.MappableResourcesContainer;
-import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -71,11 +68,11 @@ public class Tty extends InstanceFactory {
       return 4;
   }
 
-  protected static final int CLR = 0;
-  protected static final int CK = 1;
+  static final int CLR = 0;
+  static final int CK = 1;
+  static final int WE = 2;
+  static final int IN = 3;
 
-  protected static final int WE = 2;
-  protected static final int IN = 3;
   private static final int BORDER = 5;
   private static final int ROW_HEIGHT = 15;
 
@@ -106,10 +103,6 @@ public class Tty extends InstanceFactory {
             "", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT});
     setIconName("tty.gif");
     setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK));
-
-    MyIOInformation = new IOComponentInformationContainer(0, 0, 12,
-        null, null, null, FPGAIOInformationContainer.IOComponentTypes.PortIO);
-    MyIOInformation.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
   }
 
   public static int getWidth(Object widthAttr) {
@@ -283,19 +276,11 @@ public class Tty extends InstanceFactory {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
     if (ctx.lang.equals("VHDL"))
-      return new TtyHDLGeneratorFactory(ctx);
+      return new TtyHDLGenerator(ctx);
     else
       return null;
-  }
-
-  private MappableResourcesContainer mapInfo;
-  public MappableResourcesContainer getMapInfo() {
-    return mapInfo;
-  }
-  public void setMapInfo(MappableResourcesContainer mapInfo) {
-    this.mapInfo = mapInfo;
   }
 
 }

@@ -33,12 +33,9 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import java.util.ArrayList;
 import java.awt.event.KeyEvent;
 
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
-import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.data.Attribute;
@@ -105,21 +102,6 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
     }
   }
 
-  public static final ArrayList<String> GetLabels() {
-    ArrayList<String> LabelNames = new ArrayList<String>();
-    for (int i = 0; i < 8; i++)
-      LabelNames.add("");
-    LabelNames.set(Segment_A, "Segment_A");
-    LabelNames.set(Segment_B, "Segment_B");
-    LabelNames.set(Segment_C, "Segment_C");
-    LabelNames.set(Segment_D, "Segment_D");
-    LabelNames.set(Segment_E, "Segment_E");
-    LabelNames.set(Segment_F, "Segment_F");
-    LabelNames.set(Segment_G, "Segment_G");
-    LabelNames.set(DP, "Segment_DP");
-    return LabelNames;
-  }
-
   public static final int Segment_A = 0;
   public static final int Segment_B = 1;
   public static final int Segment_C = 2;
@@ -161,13 +143,6 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
     ps[Segment_F].setToolTip(S.getter("Segment_F"));
     ps[Segment_G].setToolTip(S.getter("Segment_G"));
     ps[DP].setToolTip(S.getter("DecimalPoint"));
-    MyIOInformation = new IOComponentInformationContainer(0, 8, 0, null,
-        GetLabels(), null,
-        FPGAIOInformationContainer.IOComponentTypes.SevenSegment);
-    MyIOInformation
-        .AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.LED);
-    MyIOInformation
-        .AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
     setPorts(ps);
   }
 
@@ -183,8 +158,8 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    return new AbstractLedHDLGeneratorFactory(ctx, "SEVENSEGMENT");
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+    return LightsHDLGenerator.forSevenSegment(ctx);
   }
 
   @Override

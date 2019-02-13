@@ -32,9 +32,21 @@ package com.bfh.logisim.hdlgenerator;
 
 import java.util.ArrayList;
 
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
+import static com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer.IOComponentTypes;
+
 
 public class IOComponentInformationContainer {
+	
+  // These are here just for convenience in generator classes.
+  public static final IOComponentTypes LED = IOComponentTypes.LED;
+  public static final IOComponentTypes Button = IOComponentTypes.Button;
+  public static final IOComponentTypes Pin = IOComponentTypes.Pin;
+  public static final IOComponentTypes SevenSegment = IOComponentTypes.SevenSegment;
+  public static final IOComponentTypes DIPSwitch = IOComponentTypes.DIPSwitch;
+  public static final IOComponentTypes RGBLED = IOComponentTypes.RGBLED;
+  public static final IOComponentTypes PortIO = IOComponentTypes.PortIO;
+  public static final IOComponentTypes Bus = IOComponentTypes.Bus;
+  public static final IOComponentTypes Unknown = IOComponentTypes.Unknown;
 
 	private int NrOfInputBubbles;
 	private int NrOfInOutBubbles;
@@ -42,13 +54,13 @@ public class IOComponentInformationContainer {
 	private ArrayList<String> InputBubbleLabels;
 	private ArrayList<String> InOutBubbleLabels;
 	private ArrayList<String> OutputBubbleLabels;
-	private FPGAIOInformationContainer.IOComponentTypes MainMapType;
-	private ArrayList<FPGAIOInformationContainer.IOComponentTypes> AlternateMapTypes;
+	private IOComponentTypes MainMapType;
+	private ArrayList<IOComponentTypes> AlternateMapTypes;
 
 	public IOComponentInformationContainer(int inports, int outports,
 			int inoutports, ArrayList<String> inportLabels,
 			ArrayList<String> outportLabels, ArrayList<String> inoutportLabels,
-			FPGAIOInformationContainer.IOComponentTypes MapType) {
+			IOComponentTypes MapType) {
 		NrOfInputBubbles = inports;
 		NrOfOutputBubbles = outports;
 		NrOfInOutBubbles = inoutports;
@@ -56,11 +68,11 @@ public class IOComponentInformationContainer {
 		OutputBubbleLabels = outportLabels;
 		InOutBubbleLabels = inoutportLabels;
 		MainMapType = MapType;
-		AlternateMapTypes = new ArrayList<FPGAIOInformationContainer.IOComponentTypes>();
+		AlternateMapTypes = new ArrayList<IOComponentTypes>();
 	}
 
 	public IOComponentInformationContainer(int inports, int outports,
-			int inoutport, FPGAIOInformationContainer.IOComponentTypes MapType) {
+			int inoutport, IOComponentTypes MapType) {
 		NrOfInputBubbles = inports;
 		NrOfOutputBubbles = outports;
 		NrOfInOutBubbles = inoutport;
@@ -68,11 +80,10 @@ public class IOComponentInformationContainer {
 		OutputBubbleLabels = null;
 		InOutBubbleLabels = null;
 		MainMapType = MapType;
-		AlternateMapTypes = new ArrayList<FPGAIOInformationContainer.IOComponentTypes>();
+		AlternateMapTypes = new ArrayList<IOComponentTypes>();
 	}
 
-	public void AddAlternateMapType(
-			FPGAIOInformationContainer.IOComponentTypes map) {
+	public void AddAlternateMapType(IOComponentTypes map) {
 		AlternateMapTypes.add(map);
 	}
 
@@ -81,16 +92,16 @@ public class IOComponentInformationContainer {
 				NrOfInputBubbles, NrOfOutputBubbles, NrOfInOutBubbles,
 				InputBubbleLabels, OutputBubbleLabels, InOutBubbleLabels,
 				MainMapType);
-		for (FPGAIOInformationContainer.IOComponentTypes Alt : AlternateMapTypes) {
+		for (IOComponentTypes Alt : AlternateMapTypes) {
 			Myclone.AddAlternateMapType(Alt);
 		}
 		return Myclone;
 	}
 
-	public FPGAIOInformationContainer.IOComponentTypes GetAlternateMapType(
+	public IOComponentTypes GetAlternateMapType(
 			int id) {
 		if (id >= AlternateMapTypes.size()) {
-			return FPGAIOInformationContainer.IOComponentTypes.Unknown;
+			return Unknown;
 		} else {
 			return AlternateMapTypes.get(id);
 		}
@@ -116,7 +127,7 @@ public class IOComponentInformationContainer {
 		return InputBubbleLabels.get(inputNr);
 	}
 
-	public FPGAIOInformationContainer.IOComponentTypes GetMainMapType() {
+	public IOComponentTypes GetMainMapType() {
 		return MainMapType;
 	}
 
@@ -156,14 +167,14 @@ public class IOComponentInformationContainer {
 		InputBubbleLabels = labels;
 	}
 
-//   private ArrayList<FPGAIOInformationContainer.IOComponentTypes> allMapTypes() {
-//     ArrayList<FPGAIOInformationContainer.IOComponentTypes> all = new ArrayList<>();
+//   private ArrayList<IOComponentTypes> allMapTypes() {
+//     ArrayList<IOComponentTypes> all = new ArrayList<>();
 //     all.add(MainMapType);
 //     all.addAll(AlternateMapTypes);
 //     return all;
 //   }
 
-//     for (FPGAIOInformationContainer.IOComponentTypes t : allMapTypes())
+//     for (IOComponentTypes t : allMapTypes())
 //       switch(t) {
 //       case Pin:
 //       case Bus:

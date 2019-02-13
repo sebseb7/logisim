@@ -34,7 +34,7 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.data.Attribute;
@@ -50,8 +50,6 @@ import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.tools.key.DirectionConfigurator;
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
-import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 
 public class HexDigit extends InstanceFactory implements DynamicElementProvider {
 
@@ -75,13 +73,6 @@ public class HexDigit extends InstanceFactory implements DynamicElementProvider 
     setOffsetBounds(Bounds.create(-15, -60, 40, 60));
     setIconName("hexdig.gif");
     setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK));
-    MyIOInformation = new IOComponentInformationContainer(0, 8, 0, null,
-        SevenSegment.GetLabels(), null,
-        FPGAIOInformationContainer.IOComponentTypes.SevenSegment);
-    MyIOInformation
-        .AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.LED);
-    MyIOInformation
-        .AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
   }
 
   @Override
@@ -191,9 +182,9 @@ public class HexDigit extends InstanceFactory implements DynamicElementProvider 
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
     if (ctx.lang.equals("VHDL"))
-      return new HexDigitHDLGeneratorFactory(ctx);
+      return new HexDigitHDLGenerator(ctx);
     else
       return null;
   }

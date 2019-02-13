@@ -34,12 +34,9 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.awt.event.KeyEvent;
 
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
-import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -122,14 +119,6 @@ public class DipSwitch extends InstanceFactory {
     }
   }
 
-  public static final ArrayList<String> GetLabels(int size) {
-    ArrayList<String> LabelNames = new ArrayList<String>();
-    for (int i = 0; i < size; i++) {
-      LabelNames.add("sw_" + Integer.toString(i + 1));
-    }
-    return LabelNames;
-  }
-
   public static final int MAX_SWITCH = 32;
 
   public static final int MIN_SWITCH = 2;
@@ -151,13 +140,6 @@ public class DipSwitch extends InstanceFactory {
           new BitWidthConfigurator(ATTR_SIZE),
           new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK)));
     setInstancePoker(Poker.class);
-    MyIOInformation = new IOComponentInformationContainer(dipSize, 0, 0,
-        GetLabels(dipSize), null, null,
-        FPGAIOInformationContainer.IOComponentTypes.DIPSwitch);
-    MyIOInformation
-        .AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Button);
-    MyIOInformation
-        .AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
   }
 
   @Override
@@ -165,8 +147,6 @@ public class DipSwitch extends InstanceFactory {
     instance.addAttributeListener();
     updatePorts(instance);
     instance.computeLabelTextField(Instance.AVOID_LEFT);
-    MyIOInformation.setNrOfInports(instance.getAttributeValue(ATTR_SIZE).getWidth(),
-        GetLabels(instance.getAttributeValue(ATTR_SIZE).getWidth()));
   }
 
   private void updatePorts(Instance instance) {
@@ -200,8 +180,8 @@ public class DipSwitch extends InstanceFactory {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    return new ButtonHDLGeneratorFactory(ctx, "DipSwitch");
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+    return ButtonHDLGenerator.forDipSwitch(ctx);
   }
 
   @Override
@@ -212,9 +192,6 @@ public class DipSwitch extends InstanceFactory {
       instance.recomputeBounds();
       updatePorts(instance);
       instance.computeLabelTextField(Instance.AVOID_LEFT);
-      MyIOInformation.setNrOfInports(
-          instance.getAttributeValue(ATTR_SIZE).getWidth(),
-          GetLabels(instance.getAttributeValue(ATTR_SIZE).getWidth()));
     } else if (attr == StdAttr.FACING) {
       instance.recomputeBounds();
       updatePorts(instance);

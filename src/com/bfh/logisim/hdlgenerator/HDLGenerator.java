@@ -42,27 +42,18 @@ public class HDLGenerator extends HDLSupport {
 
   // A suitable subdirectory for storing HDL files.
   protected final String subdir;
-  
-  // Name for HDL module (i.e. base name of HDL file).
-  // Must be unique and distinct for each variation of generated HDL,
-  // e.g. "BitAdder" (for a 1-bit HDL version using std_logic) versus
-  // "BusAdder" (for a parameterized N-bit version using std_logic_vector). In
-  // some cases, this is even globally unique (distinct per-circuit and
-  // per-instance), when the VHDL essentially can't be shared between instances
-  // like for PLA, Rom, and Non-Volatile Ram components.
-  protected final String hdlComponentName;
- 
+
   // Prefix for generating pretty instance names. No need to be unique, as it
   // will get a unique ID suffix: "i_Add" will become "i_Add_1", "i_Add_2", etc.
   protected final String hdlInstanceNamePrefix;
-  
+
   protected HDLGenerator(HDLCTX ctx, String subdir,
       String hdlComponentNameTemplate, String hdlInstanceNamePrefix) {
-    super(ctx, false);
+    super(ctx, hdlComponentNameTemplate, false);
     this.subdir = subdir;
-    this.hdlComponentName = deriveHDLNameWithinCircuit(hdlComponentNameTemplate,
-        _attrs, _nets == null ? null : _nets.getCircuitName());
     this.hdlInstanceNamePrefix = CorrectLabel.getCorrectLabel(hdlInstanceNamePrefix);
+    this.vhdlLibraries.add(IEEE_LOGIC);
+    this.vhdlLibraries.add(IEEE_NUMERIC);
   }
 
   // Generate and write all necessary HDL files for this component, using the
@@ -120,7 +111,7 @@ public class HDLGenerator extends HDLSupport {
     generateFileHeader(out);
 
     SignalList inPorts = getInPorts();
-    // fixme: if logisim circuits can do bidirectional ports, add support for in/out ports here
+    SignalList inOutPorts = getInPorts(); ... // fixme: PortIO can do bidirectional ports, so add support for in/out ports here
     SignalList outPorts = getOutPorts();
     Generics params = getGenericParameters();
 		SignalList wires = getWires();
@@ -176,7 +167,7 @@ public class HDLGenerator extends HDLSupport {
       out.dedent();
 
 			out.stmt("end logisim_generated;");
-    
+
     } else {
 
       ArrayList<String> ports = new ArrayList<>();
@@ -243,7 +234,7 @@ public class HDLGenerator extends HDLSupport {
 	protected Hdl getVhdlEntity() {
     Hdl out = new Hdl(_lang, _err);
     generateFileHeader(out);
-    generateVhdlLibraries(out, IEEE_LOGIC, IEEE_NUMERIC);
+    generateVhdlLibraries(out);
     generateVhdlBlackBox(out, true);
     return out;
 	}
@@ -287,7 +278,7 @@ public class HDLGenerator extends HDLSupport {
         ports.add(s + " : out " + out.typeForWidth(outPorts.get(s), params));
       out.stmt("port(\t %s );", String.join(";\n\t ", generics));
 		}
-    
+
     if (isEntity)
       out.stmt("end %s;", hdlComponentName);
     else
@@ -477,11 +468,12 @@ public class HDLGenerator extends HDLSupport {
   static final String IEEE_LOGIC = "std_logic_1164"; // standard + extended + extended2
   static final String IEEE_UNSIGNED = "std_logic_unsigned"; //                extended2
   static final String IEEE_NUMERIC = "numeric_std"; //             extended + extended2
-	protected static void generateVhdlLibraries(Hdl out, String ...libs) {
-    if (libs.length == 0)
+  protected ArrayList<String> vhdlLibraries = new ArrayList<>();
+	protected static void generateVhdlLibraries(Hdl out) {
+    if (vhdlLibraries.length == 0)
       return;
     out.stmt("library ieee;");
-    for (String lib : libs)
+    for (String lib : vhdlLibraries)
       out.stmt("use ieee.%s.all;", lib);
     out.stmt();
   }
@@ -524,7 +516,7 @@ public class HDLGenerator extends HDLSupport {
     final String type; // integer, natural, or positive
     final int width; // constant integer
     final int defaultValue;
-    WireInfo(String n, String t, int w, int v) {
+    ParameterInfo(String n, String t, int w, int v) {
       name = n;
       type = t;
       width = w;
@@ -533,81 +525,11 @@ public class HDLGenerator extends HDLSupport {
   }
 
   protected final ArrayList<PortInfo> inPorts = new ArrayList<>();
-  // protected final ArrayList<PortInfo> inOutPorts = new ArrayList<>();
+  protected final ArrayList<PortInfo> inOutPorts = new ArrayList<>();
   protected final ArrayList<PortInfo> outPorts = new ArrayList<>();
   protected final ArrayList<WireInfo> wires = new ArrayList<>();
   protected final ArrayList<ParameterInfo> parameters = new ArrayList<>();
 
-
-  // For some components, getHDLName() only works reliably if the component has
-  // a (preferable friendly) name that is unique within the circuit, because it
-  // shows up in the component-mapping GUI dialog where the user assigns FPGA
-  // resources. This is the case for Pin, PortIO, LED, BUtton, and similar
-  // components. These components should include "${LABEL}" in their name. ROM
-  // and volatile RAM components also do the same (see note below). Also,
-  // Subcircuit and VhdlEntity need labels for the same reason, and override
-  // this method to return true.
-  public boolean RequiresNonZeroLabel() {
-    return hdlComponentName.contains("${LABEL}");
-  }
-
-  // Return a suitable HDL name for this component, e.g. "BitAdder" or
-  // "BusAdder". This becomes the name of the vhdl/verilog file, and becomes
-  // the name of the vhdl/verilog entity for this component. The name must be
-  // unique for each different generated vhdl/verilog code. If any attributes
-  // are used to customize the generated vhdl/verilog code, that attribute must
-  // also be used as part of the HDL name. 
-  //
-  // As a convenience, some simple string replacements are made:
-  //   ${CIRCUIT} - replaced with name of circuit containing component
-  //   ${LABEL}   - replaced with StdAttr.LABEL
-  //   ${WIDTH}   - replaced with StdAttr.WIDTH
-  //   ${BUS}     - replaced with "Bit" (StdAttr.WIDTH == 1) or "Bus" (otherwise)
-  //   ${TRIGGER} - replaced with "LevelSensitive", "EdgeTriggered", or "Asynchronous"
-  //                depending on StdAttr.TRIGGER and/or StdAttr.EDGE_TRIGGER.
-  //
-  // Note: For ROM and non-volatile RAM components, the generated HDL code
-  // depends on the contents of the memory, which is too large of an attribute
-  // for getHDLName() to simply include in the name as is done for other
-  // attributes. Instead, we require each ROM and non-volatile RAM to have a
-  // non-zero label unique within the circuit, then we getHDLName() computes a
-  // name as a function of the circuit name (which is globally unique) and the
-  // label.
-  private static String deriveHDLNameWithinCircuit(String nameTemplate,
-      AttributeSet attrs, String circuitName) {
-    String s = hdlComponentName;
-    int w = stdWidth();
-    // fixme: this will happen for temp-instances with no netlist
-    if (s.contains("${CIRCUIT}") && circuitName == null)
-      throw new IllegalArgumentException("%s can't appear in top-level circuit");
-    if (s.contains("${CIRCUIT}"))
-        s = s.replace("${CIRCUIT}", circuitName);
-    if (s.contains("${WIDTH}"))
-        s = s.replace("${WIDTH}", ""+w);
-    if (s.contains("${BUS}"))
-        s = s.replace("${BUS}", w == 1 ? "Bit" : "Bus");
-    if (s.contains("${TRIGGER}")) {
-      if (attrs.containsAttribute(StdAttr.EDGE_TRIGGER)
-          || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
-          || attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_RISING)
-        s = s.replace("${TRIGGER}", "EdgeTriggered");
-      else if (attrs.containsAttribute(StdAttr.TRIGGER))
-        s = s.replace("${TRIGGER}", "LevelSensitive");
-      else
-        s = s.replace("${TRIGGER}", "Asynchronous");
-    }
-    if (s.contains("${LABEL}")) {
-      String label = attrs.getValueOrElse(StdAttr.LABEL, "");
-      if (label.isEmpty()) {
-        if (_err != null)
-          _err.AddSevereWarning("Missing label for %s within circuit \"%s\".",
-              hdlComponentName, circuitName);
-        label = "ANONYMOUS";
-      }
-      s = s.replace("${LABEL}", label);
-    }
-    return CorrectLabel.getCorrectLabel(s);
-  }
 
   // Return a suitable stem for naming instances of this component within a
   // circuit, so we can form names like "i_Add_1", "i_Add_2", etc., for
@@ -618,5 +540,181 @@ public class HDLGenerator extends HDLSupport {
 
   // Return an instance name by combining the prefix with a unique ID.
 	public final String getInstanceName(long id) { return hdlInstanceNamePrefix + "_" + id; }
+
+  // Some components can have hidden connections to FPGA board resource, e.g. an
+  // LED component has a regular logisim input, but it also has a hidden FPGA
+  // output that needs to "bubble up" to the top-level HDL circuit and
+  // eventually be connected to an FPGA "LED" or "Pin" resource. Similarly, a
+  // Button component has a regular logisim output and a hidden FPGA input that
+  // "bubbles up" to the top level and can be connected to an FPGA "Button",
+  // "DipSwitch", "Pin", or other compatable FPGA resource. The hiddenPorts
+  // object, if not null, holds info about what type of FPGA resource is most
+  // suitable, alternate resource types, how many in/out/inout pins are
+  // involved, names for the signals, etc.
+  protected IOComponentInformationContainer hiddenPort = null;
+  public final IOComponentInformationContainer getHiddenPort() { return hiddenPort; }
+  
+  // From Keyboard
+  // public SortedMap<String, String> GetPortMap(Netlist Nets,
+  //     NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
+  //   SortedMap<String, String> PortMap = new TreeMap<String, String>();
+  //   String ZeroBit = (HDLType.equals(Settings.VHDL)) ? "'0'" : "1'b0";
+  //   String SetBit = (HDLType.equals(Settings.VHDL)) ? "'1'" : "1'b1";
+  //   String BracketOpen = (HDLType.equals(Settings.VHDL)) ? "(" : "[";
+  //   String BracketClose = (HDLType.equals(Settings.VHDL)) ? ")" : "]";
+  //   AttributeSet attrs = ComponentInfo.GetComponent().getAttributeSet();
+  //   if (!ComponentInfo.EndIsConnected(Keyboard.CK)) {
+  //     Reporter.AddSevereWarning("Component \"KBD\" in circuit \""
+  //         + Nets.getCircuitName() + "\" has no clock connection");
+  //     PortMap.put("GlobalClock", ZeroBit);
+  //     PortMap.put("ClockEnable", ZeroBit);
+  //   } else {
+  //     String ClockNetName = GetClockNetName(ComponentInfo, Keyboard.CK, Nets);
+  //     if (ClockNetName.isEmpty()) {
+  //       Reporter.AddSevereWarning("Component \"KBD\" in circuit \""
+  //           + Nets.getCircuitName()
+  //           + "\" has a none-clock-component forced clock!\n"
+  //           + "        Functional differences between Logisim simulation and hardware can be expected!");
+  //       PortMap.putAll(GetNetMap("GlobalClock", true, ComponentInfo,
+  //             Tty.CK, Reporter, HDLType, Nets));
+  //       PortMap.put("ClockEnable", SetBit);
+  //     } else {
+  //       int ClockBusIndex = ClockHDLGeneratorFactory.DerivedClockIndex;
+  //       if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_RISING)
+  //         ClockBusIndex = ClockHDLGeneratorFactory.PositiveEdgeTickIndex;
+  //       else if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING)
+  //         ClockBusIndex = ClockHDLGeneratorFactory.InvertedDerivedClockIndex;
+  //       PortMap.put("GlobalClock",
+  //           ClockNetName
+  //           + BracketOpen
+  //           + Integer
+  //           .toString(ClockHDLGeneratorFactory.GlobalClockIndex)
+  //           + BracketClose);
+  //       PortMap.put("ClockEnable",
+  //           ClockNetName + BracketOpen
+  //           + Integer.toString(ClockBusIndex)
+  //           + BracketClose);
+  //     }
+  //   }
+  //   String pin = LocalInOutBubbleBusname;
+  //   int offset = ComponentInfo.GetLocalBubbleInOutStartId();
+  //   int start = offset;
+  //   int end = offset + 4 - 1;
+  //   PortMap.put("ps2kbd", pin + "(" + end + " DOWNTO " + start + ")");
+  //   return PortMap;
+  // }
+  
+  // From Tty
+  // @Override
+  // public SortedMap<String, String> GetPortMap(Netlist Nets,
+  //     NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
+  //   SortedMap<String, String> PortMap = new TreeMap<String, String>();
+  //   String ZeroBit = (HDLType.equals(Settings.VHDL)) ? "'0'" : "1'b0";
+  //   String SetBit = (HDLType.equals(Settings.VHDL)) ? "'1'" : "1'b1";
+  //   String BracketOpen = (HDLType.equals(Settings.VHDL)) ? "(" : "[";
+  //   String BracketClose = (HDLType.equals(Settings.VHDL)) ? ")" : "]";
+  //   AttributeSet attrs = ComponentInfo.GetComponent().getAttributeSet();
+  //   if (!ComponentInfo.EndIsConnected(Tty.CK)) {
+  //     Reporter.AddSevereWarning("Component \"TTY\" in circuit \""
+  //         + Nets.getCircuitName() + "\" has no clock connection");
+  //     PortMap.put("GlobalClock", ZeroBit);
+  //     PortMap.put("ClockEnable", ZeroBit);
+  //   } else {
+  //     String ClockNetName = GetClockNetName(ComponentInfo, Tty.CK, Nets);
+  //     if (ClockNetName.isEmpty()) {
+  //       Reporter.AddSevereWarning("Component \"TTY\" in circuit \""
+  //           + Nets.getCircuitName()
+  //           + "\" has a none-clock-component forced clock!\n"
+  //           + "        Functional differences between Logisim simulation and hardware can be expected!");
+  //       PortMap.putAll(GetNetMap("GlobalClock", true, ComponentInfo,
+  //             Tty.CK, Reporter, HDLType, Nets));
+  //       PortMap.put("ClockEnable", SetBit);
+  //     } else {
+  //       int ClockBusIndex = ClockHDLGeneratorFactory.DerivedClockIndex;
+  //       if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_RISING)
+  //         ClockBusIndex = ClockHDLGeneratorFactory.PositiveEdgeTickIndex;
+  //       else if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING)
+  //         ClockBusIndex = ClockHDLGeneratorFactory.InvertedDerivedClockIndex;
+  //       PortMap.put("GlobalClock",
+  //           ClockNetName
+  //           + BracketOpen
+  //           + Integer
+  //           .toString(ClockHDLGeneratorFactory.GlobalClockIndex)
+  //           + BracketClose);
+  //       PortMap.put("ClockEnable",
+  //           ClockNetName + BracketOpen
+  //           + Integer.toString(ClockBusIndex)
+  //           + BracketClose);
+  //     }
+  //   }
+  //   PortMap.putAll(GetNetMap("Data", true, ComponentInfo, Tty.IN,
+  //         Reporter, HDLType, Nets));
+  //   PortMap.putAll(GetNetMap("Clear", true, ComponentInfo, Tty.CLR,
+  //         Reporter, HDLType, Nets));
+  //   PortMap.putAll(GetNetMap("Enable", true, ComponentInfo, Tty.WE,
+  //         Reporter, HDLType, Nets));
+  //   String pin = LocalInOutBubbleBusname;
+  //   int offset = ComponentInfo.GetLocalBubbleInOutStartId();
+  //   int start = offset;
+  //   int end = offset + 12 - 1;
+  //   PortMap.put("lcd_rs_rw_en_db_bl", pin + "(" + end + " DOWNTO " + start + ")");
+  //   return PortMap;
+  // }
+
+
+
+  // From PortIO
+//   @Override
+//   public SortedMap<String, String> GetPortMap(Netlist Nets,
+//       NetlistComponent ComponentInfo, FPGAReport Reporter, String HDLType) {
+//     String ComponentName = "PORTIO_" + ComponentInfo.GetComponent().getAttributeSet().getValue(StdAttr.LABEL);
+// 
+//     SortedMap<String, String> PortMap = new TreeMap<String, String>();
+//     for (InOutMap io : getPorts(ComponentInfo.GetComponent().getAttributeSet())) {
+//       switch (io.type) {
+//       case ALWAYSINPUT:
+//         PortMap.putAll(GetNetMap(io.name, false, ComponentInfo, io.endNr, Reporter, HDLType, Nets));
+//         break;
+//       case TRISTATEINPUT_1:
+//       case TRISTATEINPUT_N:
+//         PortMap.putAll(GetNetMap(io.name, true, ComponentInfo, io.endNr, Reporter, HDLType, Nets));
+//         break;
+//       case ENABLE:
+//         PortMap.putAll(GetNetMap(io.name, true, ComponentInfo, io.endNr, Reporter, HDLType, Nets));
+//         break;
+//       case OUTPUT:
+//         PortMap.putAll(GetNetMap(io.name, false, ComponentInfo, io.endNr, Reporter, HDLType, Nets));
+//         break;
+//       case BUS:
+//         String pin = LocalInOutBubbleBusname;
+//         int offset = ComponentInfo.GetLocalBubbleInOutStartId();
+//         int start = offset + io.start + io.busNr * 32;
+//         int end = offset + io.end + io.busNr * 32;
+//         if (io.size == 1)
+//           PortMap.put(io.name, pin + "(" + end + ")");
+//         else
+//           PortMap.put(io.name, pin + "(" + end + " DOWNTO " + start + ")");
+//         break;
+//       }
+//     }
+//     return PortMap;
+//   }
+
+// HexDigit
+//   @Override
+//   public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+//     list.putAll(GetNetMap("Hex", true, info, HexDigit.HEX, err, lang, nets));
+//     list.putAll(GetNetMap("DecimalPoint", true, info, HexDigit.DP, err, lang, nets));
+//     String pin = LocalOutputBubbleBusname;
+//     int b = info.GetLocalBubbleOutputStartId();
+//     list.put("Segment_A", pin + "(" + (b+0) + ")");
+//     list.put("Segment_B", pin + "(" + (b+1) + ")");
+//     list.put("Segment_C", pin + "(" + (b+2) + ")");
+//     list.put("Segment_D", pin + "(" + (b+3) + ")");
+//     list.put("Segment_E", pin + "(" + (b+4) + ")");
+//     list.put("Segment_F", pin + "(" + (b+5) + ")");
+//     list.put("Segment_G", pin + "(" + (b+6) + ")");
+//     list.put("Segment_DP", pin + "(" + (b+7) + ")");
+//   }
 
 }

@@ -32,12 +32,9 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import java.util.ArrayList;
 import java.awt.event.KeyEvent;
 
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
-import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.data.Attribute;
@@ -82,16 +79,6 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
     }
   }
 
-  public static final ArrayList<String> GetLabels() {
-    ArrayList<String> LabelNames = new ArrayList<String>();
-    for (int i = 0; i < 3; i++)
-      LabelNames.add("");
-    LabelNames.set(RED, "RED");
-    LabelNames.set(GREEN, "GREEN");
-    LabelNames.set(BLUE, "BLUE");
-    return LabelNames;
-  }
-
   public static final int RED = 0;
   public static final int GREEN = 1;
   public static final int BLUE = 2;
@@ -106,13 +93,6 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
     setIconName("rgbled.gif");
     setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK));
     setInstanceLogger(Logger.class);
-    MyIOInformation = new IOComponentInformationContainer(0, 3, 0, null,
-        GetLabels(), null,
-        FPGAIOInformationContainer.IOComponentTypes.RGBLED);
-    MyIOInformation
-        .AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
-    MyIOInformation
-        .AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.LED);
   }
 
   private void updatePorts(Instance instance) {
@@ -156,8 +136,8 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    return new AbstractLedHDLGeneratorFactory(ctx, "RGBLED");
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+    return LightsHDLGenerator.forRGBLed(ctx);
   }
 
   @Override

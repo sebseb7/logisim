@@ -34,14 +34,10 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.awt.event.KeyEvent;
 
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
-import com.bfh.logisim.fpgagui.MappableResourcesContainer;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -65,14 +61,6 @@ import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringUtil;
 
 public class PortIO extends InstanceFactory {
-
-  public static final ArrayList<String> GetLabels(int size) {
-    ArrayList<String> LabelNames = new ArrayList<String>();
-    for (int i = 0; i < size; i++) {
-      LabelNames.add("pin_" + Integer.toString(i + 1));
-    }
-    return LabelNames;
-  }
 
   public static final int MAX_IO = 128;
   public static final int MIN_IO = 2;
@@ -98,8 +86,6 @@ public class PortIO extends InstanceFactory {
   public static final Attribute<String> ATTR_DIR = Attributes.forOption(
       "direction", S.getter("pioDirection"), DIRECTIONS);
 
-  private MappableResourcesContainer mapInfo;
-
   public PortIO() {
     super("PortIO", S.getter("pioComponent"));
     int portSize = 8;
@@ -113,12 +99,6 @@ public class PortIO extends InstanceFactory {
           new IntegerConfigurator(ATTR_SIZE, MIN_IO, MAX_IO, KeyEvent.ALT_DOWN_MASK),
           new DirectionConfigurator(StdAttr.LABEL_LOC, KeyEvent.ALT_DOWN_MASK)));
     setInstancePoker(PortPoker.class);
-    MyIOInformation = new IOComponentInformationContainer(0, 0, portSize,
-        null, null, GetLabels(portSize),
-        FPGAIOInformationContainer.IOComponentTypes.PortIO);
-    // MyIOInformation.AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Button);
-    MyIOInformation
-        .AddAlternateMapType(FPGAIOInformationContainer.IOComponentTypes.Pin);
   }
 
   @Override
@@ -126,9 +106,6 @@ public class PortIO extends InstanceFactory {
     instance.addAttributeListener();
     updatePorts(instance);
     instance.computeLabelTextField(Instance.AVOID_BOTTOM);
-    MyIOInformation.setNrOfInOutports(
-        instance.getAttributeValue(ATTR_SIZE),
-        GetLabels(instance.getAttributeValue(ATTR_SIZE)));
   }
 
   private void updatePorts(Instance instance) {
@@ -201,10 +178,6 @@ public class PortIO extends InstanceFactory {
     }
     instance.setPorts(ps);
 
-  }
-
-  public MappableResourcesContainer getMapInfo() {
-    return mapInfo;
   }
 
   @Override
@@ -292,9 +265,9 @@ public class PortIO extends InstanceFactory {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
     if (ctx.lang.equals("VHDL"))
-      return new PortHDLGeneratorFactory(ctx);
+      return new PortIOHDLGenerator(ctx);
     else
       return null;
   }
@@ -307,9 +280,6 @@ public class PortIO extends InstanceFactory {
       instance.recomputeBounds();
       updatePorts(instance);
       instance.computeLabelTextField(Instance.AVOID_BOTTOM);
-      MyIOInformation.setNrOfInOutports(
-          instance.getAttributeValue(ATTR_SIZE),
-          GetLabels(instance.getAttributeValue(ATTR_SIZE)));
     }
   }
 
@@ -482,7 +452,4 @@ public class PortIO extends InstanceFactory {
     }
   }
 
-  public void setMapInfo(MappableResourcesContainer mapInfo) {
-    this.mapInfo = mapInfo;
-  }
 }
