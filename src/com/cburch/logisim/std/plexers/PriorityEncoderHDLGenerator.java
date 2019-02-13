@@ -29,92 +29,46 @@
  */
 package com.cburch.logisim.std.plexers;
 
-import java.util.SortedMap;
-
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 
-public class PriorityEncoderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
+public class PriorityEncoderHDLGenerator extends HDLGenerator {
 
-  public PriorityEncoderHDLGeneratorFactory(HDLCTX ctx) {
-    super(ctx, "Priority_Encoder", "PRIENC");
-  }
-
-  protected final static int GENERIC_PARAM_WIDTH_SEL = -1;
-  protected final static int GENERIC_PARAM_WIDTH_IN = -2;
-
-  @Override
-  public String GetSubDir() { return "plexers"; }
-
-  @Override
-  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    list.put("Enable", 1);
-    list.put("In", GENERIC_PARAM_WIDTH_IN);
-  }
-
-  @Override
-  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    list.put("Sel", 1);
-    list.put("EnableOut", 1);
-    list.put("Address", GENERIC_PARAM_WIDTH_SEL);
-  }
-
-  @Override
-	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
-    list.put(GENERIC_PARAM_WIDTH_IN, "SelWidth");
-    list.put(GENERIC_PARAM_WIDTH_SEL, "InWidth");
-  }
-
-  @Override
-  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
-    AttributeSet attrs = info.GetComponent().getAttributeSet();
-    int ws = selWidth(attrs);
-    list.put("SelWidth", ws);
-    list.put("InWidth", 1 << ws);
-  }
-
-  @Override
-  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
-    AttributeSet attrs = info.GetComponent().getAttributeSet();
-    int ws = selWidth(attrs);
+  public PriorityEncoderHDLGenerator(HDLCTX ctx) {
+    super(ctx, "plexers", deriveHDLName(ctx.attrs), "i_PriEnc");
+    int ws = selWidth();
     int n = (1 << ws);
-    if (lang.equals("VHDL")) {
-      for (int i = n - 1; i >= 0; i--)
-        list.putAll(GetNetMap("In("+i+")", true, info, i, err, lang, nets));
-    } else {
-      String[] p = new String[n];
-      for (int i = n - 1; i >= 0; i--)
-        p[n-i-1] = GetNetName(info, i, true, lang, nets);
-      list.put("In", String.join(", ", p));
-    }
-    list.putAll(GetNetMap("Enable", false, info, n + PriorityEncoder.EN_IN, err, lang, nets));
-    list.putAll(GetNetMap("Sel", true, info, n + PriorityEncoder.GS, err, lang, nets));
-    list.putAll(GetNetMap("EnableOut", true, info, n + PriorityEncoder.EN_OUT, err, lang, nets));
-    list.putAll(GetNetMap("Address", true, info, n + PriorityEncoder.OUT, err, lang, nets));
+    for (int i = n - 1; i >= 0; i--)
+      inPorts.add(new PortInfo("In"+i, 1, i, false));
+    inPorts.add(new PortInfo("Enable", 1, n + PriorityEncoder.EN_IN, true));
+    outPorts.add(new PortInfo("Sel", 1, n + PriorityEncoder.GS, null));
+    outPorts.add(new PortInfo("EnableOut", 1, n + PriorityEncoder.EN_OUT, null));
+    outPorts.add(new PortInfo("Address", ws, n + PriorityEncoder.OUT, null));
+    wires.add(new WireInfo("s_in_is_zero", 1));
+    wires.add(new WireInfo("s_addr", 5));
+    wires.add(new WireInfo("v_sel_1", 33));
+    wires.add(new WireInfo("v_sel_2", 16));
+    wires.add(new WireInfo("v_sel_3", 8));
+    wires.add(new WireInfo("v_sel_4", 4));
+  }
+
+  private static String deriveHDLName(AttributeSet attrs) {
+    int w = 1 << attrs.getValue(Plexers.ATTR_SELECT).getWidth();
+    return "PriorityEncoder_" + w + "_Way";
   }
 
   @Override
-  public void wires(SortedMap<String, Integer> list, AttributeSet attrs, Netlist nets) {
-    list.put("s_in_is_zero", 1);
-    list.put("s_addr", 5);
-    list.put("v_sel_1", 33);
-    list.put("v_sel_2", 16);
-    list.put("v_sel_3", 8);
-    list.put("v_sel_4", 4);
-  }
-
-  @Override
-  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
-    out.indent();
+  public void generateBehavior(Hdl out) {
+    int ws = selWidth();
+    int n = (1 << ws);
     if (out.isVhdl) {
+      for (int i = n-1; i >= 0; i--)
+        out.stmt("In(%d) <= In%d;", i, i);
       out.stmt("Sel       <= Enable AND NOT(s_in_is_zero);");
       out.stmt("EnableOut <= Enable AND s_in_is_zero;");
       out.stmt("Address   <= (others => '0') WHEN Enable = '0' ELSE");
-      out.stmt("             s_addr(SelWidth-1 DOWNTO 0);");
+      out.stmt("             s_addr(%d DOWNTO 0);", ws-1);
       out.stmt("");
       out.stmt("s_in_is_zero <= '1' WHEN In = std_logic(to_unsigned(0, InWidth)) ELSE '0';");
       out.stmt("");
@@ -152,9 +106,13 @@ public class PriorityEncoderHDLGeneratorFactory extends AbstractHDLGeneratorFact
       out.stmt("  END IF;");
       out.stmt("END PROCESS make_addr;");
     } else {
+      ArrayList<String> inputs = new ArrayList<>();
+      for (int i = n-1; i >= 0; i--)
+        inputs.add("In"+i);
+      out.stmt("assign In        = {%s};", String.join(", ", inputs));
       out.stmt("assign Sel       = Enable & ~s_in_is_zero;");
       out.stmt("assign EnableOut = Enable & s_in_is_zero;");
-      out.stmt("assign Address   = (~Enable) ? 0 : s_addr[SelWidth-1:0];");
+      out.stmt("assign Address   = (~Enable) ? 0 : s_addr[%d:0];", ws-1);
       out.stmt("assign s_in_is_zero = (In == 0) ? 1'b1 : 1'b0;");
       out.stmt("");
       out.stmt("assign v_sel_1[32:InWidth] = 0;");

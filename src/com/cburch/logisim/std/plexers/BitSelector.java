@@ -34,9 +34,7 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Graphics;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.designrulecheck.CorrectLabel;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -86,8 +84,8 @@ public class BitSelector extends InstanceFactory {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    return new BitSelectorHDLGeneratorFactory(ctx);
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+    return new BitSelectorHDLGenerator(ctx);
   }
 
   @Override
@@ -181,13 +179,17 @@ public class BitSelector extends InstanceFactory {
     }
 
     Port[] ps = new Port[3];
-    ps[0] = new Port(0, 0, Port.OUTPUT, group.getWidth());
-    ps[1] = new Port(inPt.getX(), inPt.getY(), Port.INPUT, data.getWidth());
-    ps[2] = new Port(selPt.getX(), selPt.getY(), Port.INPUT,
+    ps[OUT] = new Port(0, 0, Port.OUTPUT, group.getWidth());
+    ps[IN] = new Port(inPt.getX(), inPt.getY(), Port.INPUT, data.getWidth());
+    ps[SEL] = new Port(selPt.getX(), selPt.getY(), Port.INPUT,
         select.getWidth());
-    ps[0].setToolTip(S.getter("bitSelectorOutputTip"));
-    ps[1].setToolTip(S.getter("bitSelectorDataTip"));
-    ps[2].setToolTip(S.getter("bitSelectorSelectTip"));
+    ps[OUT].setToolTip(S.getter("bitSelectorOutputTip"));
+    ps[IN].setToolTip(S.getter("bitSelectorDataTip"));
+    ps[SEL].setToolTip(S.getter("bitSelectorSelectTip"));
     instance.setPorts(ps);
   }
+
+  static final int OUT = 0;
+  static final int IN = 1;
+  static final int SEL = 2;
 }

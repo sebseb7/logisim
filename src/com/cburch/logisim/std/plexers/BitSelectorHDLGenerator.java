@@ -29,19 +29,26 @@
  */
 package com.cburch.logisim.std.plexers;
 
-import java.util.SortedMap;
-
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 
-public class BitSelectorHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
+public class BitSelectorHDLGenerator extends HDLGenerator {
 
-  public BitSelectorHDLGeneratorFactory(HDLCTX ctx) {
-    super(ctx, deriveHDLName(ctx.attrs), "BITSELECTOR");
+  public BitSelectorHDLGenerator(HDLCTX ctx) {
+    super(ctx, "plexers", deriveHDLName(ctx.attrs), "i_BitSel");
+    parameters.add(new ParameterInfo("WidthSel", selWidth()));
+    parameters.add(new ParameterInfo("WidthIn", stdWidth()));
+    if (outWidth() > 1) {
+      parameters.add(new ParameterInfo("WidthOut", outWidth()));
+      outPorts.add(new PortInfo("Result", "WidthOut", BitSelector.OUT, null));
+    } else {
+      outPorts.add(new PortInfo("Result", 1, BitSelector.OUT, null));
+    }
+    // list.put("ExtendedBits", wo * (1 << ws) + 1);
+    inPorts.add(new PortInfo("DataIn", "WidthIn", BitSelector.IN, false));
+    inPorts.add(new PortInfo("Sel", "WidthSel", BitSelector.IN, false));
+    wires.add(new WireInfo("s_vec", "(2**WidthSel)+1"));
   }
 
   private static String deriveHDLName(AttributeSet attrs) {
@@ -52,62 +59,8 @@ public class BitSelectorHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
       return "MultiBitSelector"; // generic n-bit version
   }
 
-  protected final static int GENERIC_PARAM_WIDTH_IN = -1;
-  protected final static int GENERIC_PARAM_WIDTH_OUT = -2;
-  protected final static int GENERIC_PARAM_WIDTH_SEL = -3;
-  protected final static int GENERIC_PARAM_EXTENDEDBITS = -4;
-
   @Override
-  public String GetSubDir() { return "plexers"; }
-
-  @Override
-  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    list.put("DataIn", GENERIC_PARAM_WIDTH_IN);
-    list.put("Sel", GENERIC_PARAM_WIDTH_SEL);
-  }
-
-  @Override
-  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    int wo = outWidth(attrs) > 1 ? GENERIC_PARAM_WIDTH_OUT : 1;
-    list.put("Result", wo);
-  }
-
-  @Override
-	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
-    list.put(GENERIC_PARAM_WIDTH_IN, "WidthIn");
-    if (outWidth(attrs) > 1)
-      list.put(GENERIC_PARAM_WIDTH_OUT, "WidthOut");
-    list.put(GENERIC_PARAM_WIDTH_SEL, "WidthSel");
-    list.put(GENERIC_PARAM_EXTENDEDBITS, "ExtendedBits");
-  }
-
-  @Override
-  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
-    int wo = info.GetComponent().getEnd(0).getWidth().getWidth();
-    int ws = info.GetComponent().getEnd(2).getWidth().getWidth();
-    int wi = info.GetComponent().getEnd(1).getWidth().getWidth();
-    list.put("WidthIn", wi);
-    if (wo > 1)
-      list.put("WidthOut", wo);
-    list.put("WidthSel", ws);
-    list.put("ExtendedBits", wo * (1 << ws) + 1);
-  }
-
-  @Override
-  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
-    list.putAll(GetNetMap("DataIn", true, info, 1, err, lang, nets));
-    list.putAll(GetNetMap("Sel", true, info, 2, err, lang, nets));
-    list.putAll(GetNetMap("Result", true, info, 0, err, lang, nets));
-  }
-
-  @Override
-  public void wires(SortedMap<String, Integer> list, AttributeSet attrs, Netlist nets) {
-    list.put("s_vec", GENERIC_PARAM_EXTENDEDBITS);
-  }
-  
-  @Override
-  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
-    System.out.println("BUG? use param for output width == 1?");
+  public void generateBehavior(Hdl out) {
     out.indent();
     int wo = outWidth(attrs);
     if (out.isVhdl) {
@@ -131,11 +84,11 @@ public class BitSelectorHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
         out.stmt("");
         out.stmt("always @(*)");
         out.stmt("begin");
-        out.stmt("case (Sel)");
+        out.stmt("  case (Sel)");
         for (int i = 15; i > 0; i--)
-          out.stmt("%d : s_selected_slice <= s_select_vector[(%d*WidthOut)-1 : %d*WidthOut];", i, i+1, i);
-        out.stmt("default : s_selected_slice <= s_select_vector[WidthOut-1:0];");
-        out.stmt("endcase");
+          out.stmt("  %d : s_selected_slice <= s_select_vector[(%d*WidthOut)-1 : %d*WidthOut];", i, i+1, i);
+        out.stmt("  default : s_selected_slice <= s_select_vector[WidthOut-1:0];");
+        out.stmt("  endcase");
         out.stmt("end");
       } else {
         out.stmt("assign Result = s_vec[Sel];");
@@ -143,7 +96,22 @@ public class BitSelectorHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
     }
   }
 
-  protected int outWidth(AttributeSet attrs) {
+  protected int outWidth() {
     return attrs.getValue(BitSelector.GROUP_ATTR).getWidth();
   }
+
+  protected int selWidth() {
+    int wd = stdWidth();
+    int wo = outWidth();
+    int groups = (wd + wg - 1) / wo - 1;
+    int ws = 1;
+    if (groups > 0) {
+      while (groups != 1) {
+        groups >>= 1;
+        ws++;
+      }
+    }
+    return ws;
+  }
+
 }

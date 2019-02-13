@@ -34,15 +34,34 @@ import java.util.SortedMap;
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
-import com.cburch.logisim.instance.StdAttr;
 
-public class MultiplexerHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
+public class MultiplexerHDLGenerator extends HDLGenerator {
 
-  public MultiplexerHDLGeneratorFactory(HDLCTX ctx) {
-    super(ctx, deriveHDLName(ctx.attrs), "MUX");
+  public MultiplexerHDLGenerator(HDLCTX ctx) {
+    super(ctx, "plexers", deriveHDLName(ctx.attrs), "i_Mux");
+    int w = stdWidth();
+    int ws = selWidth();
+    int n = (1 << ws);
+    String bitWidth = (w > 1 ? "BitWidth" : "1");
+    if (w > 1) {
+      parameters.add(new ParameterInfo("BitWidth", w));
+    for (int i = 0; i < n; i++)
+      outPorts.add(new PortInfo("In_"+i, bitWidth, i, false));
+    inPorts.add(new PortInfo("Sel", ws, n, true));
+    if (attrs.getValue(Plexers.ATTR_ENABLE)) {
+      inPorts.add(new PortInfo("Enable", 1, n+1, true)); // may not be present
+      inPorts.add(new PortInfo("Out", bitWidth, n+2, null));
+    } else {
+      inPorts.add(new PortInfo("Enable", 1, -1, true)); // no port, use default instead
+      inPorts.add(new PortInfo("Out", bitWidth, n+1, null));
+    }
+
+    if (_lang.equals("Verilog")) {
+      registers.add(new WireInfo("s_vec", bitWidth));
+    }
   }
 
   private static String deriveHDLName(AttributeSet attrs) {
@@ -50,76 +69,12 @@ public class MultiplexerHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
     return "${BUS}Multiplexer_" + a + "_Way";
   }
 
-  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
-
   @Override
-  public String GetSubDir() { return "plexers"; }
-
-  @Override
-  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
-    int ws = selWidth(attrs);
-    for (int i = 0; i < (1 << ws); i++)
-      list.put("In_"+i, w);
-    list.put("Enable", 1);
-    list.put("Sel", ws);
-  }
-
-  @Override
-  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
-    list.put("Out", w);
-  }
-
-  @Override
-	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
-    int w = width(attrs);
-    if (w > 1)
-      list.put(GENERIC_PARAM_BUSWIDTH, "BusWidth");
-  }
-
-  @Override
-  public void registers(SortedMap<String, Integer> list, AttributeSet attrs, String lang) {
-    if (lang.equals("Verilog")) {
-      int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
-      list.put("s_vec", w);
-    }
-  }
-
-  @Override
-  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
-    AttributeSet attrs = info.GetComponent().getAttributeSet();
-    int w = width(attrs);
-    if (w > 1)
-      list.put("BusWidth", w);
-  }
-
-  @Override
-  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
-    AttributeSet attrs = info.GetComponent().getAttributeSet();
-    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
-    int ws = selWidth(attrs);
-    int n = (1 << ws);
-    for (int i = 0; i < n; i++)
-      list.putAll(GetNetMap("In_"+i, true, info, i, err, lang, nets));
-    list.putAll(GetNetMap("Sel", true, info, n, err, lang, nets));
-    if (attrs.getValue(Plexers.ATTR_ENABLE)) {
-      list.putAll(GetNetMap("Enable", false, info, n + 1, err, lang, nets));
-    } else {
-      list.put("Enable", lang.equals("VHDL") ? "'1'" : "1'b1");
-      n--;
-    }
-    list.putAll(GetNetMap("Out", true, info, n+2, err, lang, nets));
-  }
-
-  @Override
-  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
-    out.indent();
+  public void generateBehavior(Hdl out) {
     int w = width(attrs);
     int ws = selWidth(attrs);
     int n = (1 << ws);
     if (out.isVhdl) {
-      String lang = "VHDL";
       out.stmt("make_mux : PROCESS(\tEnable,");
       for (int i = 0; i < n; i++)
         out.cont("     \tIn_%d, ", i);
@@ -140,7 +95,6 @@ public class MultiplexerHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
       out.dedent();
       out.stmt("END PROCESS make_mux;");
     } else {
-      String lang = "Verilog";
       out.stmt("assign Out = s_vec;");
       out.stmt("");
       out.stmt("always @(*)");
@@ -154,11 +108,7 @@ public class MultiplexerHDLGeneratorFactory extends AbstractHDLGeneratorFactory 
     }
   }
 
-  protected int selWidth(AttributeSet attrs) {
+  protected int selWidth() {
     return attrs.getValue(Plexers.ATTR_SELECT).getWidth();
-  }
-
-  protected int width(AttributeSet attrs) {
-    return attrs.getValue(StdAttr.WIDTH).getWidth();
   }
 }

@@ -34,9 +34,7 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Graphics;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.designrulecheck.CorrectLabel;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -119,8 +117,8 @@ public class Decoder extends InstanceFactory {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    return new DecoderHDLGeneratorFactory(ctx);
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+    return new DecoderHDLGenerator(ctx);
   }
 
   @Override
@@ -304,8 +302,7 @@ public class Decoder extends InstanceFactory {
     Direction facing = instance.getAttributeValue(StdAttr.FACING);
     Object selectLoc = instance.getAttributeValue(Plexers.ATTR_SELECT_LOC);
     BitWidth select = instance.getAttributeValue(Plexers.ATTR_SELECT);
-    boolean enable = instance.getAttributeValue(Plexers.ATTR_ENABLE)
-        .booleanValue();
+    boolean enable = instance.getAttributeValue(Plexers.ATTR_ENABLE);
     int outputs = 1 << select.getWidth();
     Port[] ps = new Port[outputs + (enable ? 2 : 1)];
     if (outputs == 2) {

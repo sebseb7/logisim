@@ -29,19 +29,20 @@
  */
 package com.cburch.logisim.std.plexers;
 
-import java.util.SortedMap;
-
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 
-public class DecoderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
+public class DecoderHDLGenerator extends HDLGenerator {
 
-  public DecoderHDLGeneratorFactory(HDLCTX ctx) {
-    super(ctx, deriveHDLName(ctx.attrs), "BINDECODER");
+  public DecoderHDLGenerator(HDLCTX ctx) {
+    super(ctx, "plexers", deriveHDLName(ctx.attrs), "i_Decoder");
+    int ws = selWidth();
+    int n = (1 << ws);
+    for (int i = 0; i < n; i++)
+      outPorts.add(new PortInfo("Out_"+i, 1, i, null));
+    inPorts.add(new PortInfo("Sel", ws, n, false));
+    inPorts.add(new PortInfo("Enable", 1, n+1, true)); // may not be present, but will get default
   }
 
   private static String deriveHDLName(AttributeSet attrs) {
@@ -49,46 +50,8 @@ public class DecoderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     return "BinDecoder_" + w + "_Way";
   }
 
-  protected final static int GENERIC_PARAM_BUSWIDTH = -1;
-  protected final static int GENERIC_PARAM_EXTENDEDBITS = -2;
-
   @Override
-  public String GetSubDir() { return "plexers"; }
-
-  @Override
-  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    int ws = selWidth(attrs);
-    list.put("Enable", 1);
-    list.put("Sel", ws);
-  }
-
-  @Override
-  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    int ws = selWidth(attrs);
-    for (int i = 0; i < (1 << ws); i++)
-      list.put("Out_"+i, 1);
-  }
-
-  @Override
-  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
-    AttributeSet attrs = info.GetComponent().getAttributeSet();
-    int ws = selWidth(attrs);
-    int n = (1 << ws);
-
-    for (int i = 0; i < n; i++)
-      list.putAll(GetNetMap("Out_" + i, true, info, i, err, lang, nets));
-
-    list.putAll(GetNetMap("Sel", true, info, n, err, lang, nets));
-
-    if (attrs.getValue(Plexers.ATTR_ENABLE))
-      list.putAll(GetNetMap("Enable", false, info, n + 1, err, lang, nets));
-    else
-      list.put("Enable", lang.equals("VHDL") ? "'1'" : "1'b1");
-  }
-
-  @Override
-  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
-    out.indent();
+  public void generateBehavior(Hdl out) {
     int ws = selWidth(attrs);
     int n = (1 << ws);
     for (int i = 0; i < n; i++) {
@@ -100,7 +63,7 @@ public class DecoderHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     }
   }
 
-  protected int selWidth(AttributeSet attrs) {
+  protected int selWidth() {
     return attrs.getValue(Plexers.ATTR_SELECT).getWidth();
   }
 }
