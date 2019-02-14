@@ -29,123 +29,68 @@
  */
 package com.cburch.logisim.std.wiring;
 
-import java.util.SortedMap;
-
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.hdlgenerator.TickComponentHDLGeneratorFactory;
-import com.cburch.logisim.data.AttributeSet;
+import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.hdl.Hdl;
 
-public class ClockHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
+public class ClockHDLGenerator extends HDLGenerator {
 
-  public ClockHDLGeneratorFactory(HDLCTX ctx) {
-    super(ctx, "LogisimClock", "CLOCKGEN");
-  }
-
-  private static final int GENERIC_PARAM_HIGHTICKS = -1;
-  private static final int GENERIC_PARAM_LOWTICKS = -2;
-  private static final int GENERIC_PARAM_PHASE = -3;
-  private static final int GENERIC_PARAM_CTRWIDTH = -4;
-
-  public static final int DerivedClockIndex = 0;
-  public static final int InvertedDerivedClockIndex = 1;
-  public static final int PositiveEdgeTickIndex = 2;
+  public static final int DerivedClockIndex = 0;         // Oscillates at requested rate
+  public static final int InvertedDerivedClockIndex = 1; // Inverse of DerivedClock
+  public static final int PositiveEdgeTickIndex = 2;     //
   public static final int NegativeEdgeTickIndex = 3;
-  public static final int GlobalClockIndex = 4;
-
+  public static final int GlobalClockIndex = 4;          // The underlying raw FPGA clock..
   public static final int NrOfClockBits = 5;
 
-  @Override
-  public String GetSubDir() { return "base"; }
-
-  @Override
-  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    list.put("GlobalClock", 1);
-    list.put("ClockTick", 1);
-  }
-
-  @Override
-  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    list.put("ClockBus", NrOfClockBits);
-  }
-
-  @Override
-	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
-    list.put(GENERIC_PARAM_HIGHTICKS, "HighTicks");
-    list.put(GENERIC_PARAM_LOWTICKS, "LowTicks");
-    list.put(GENERIC_PARAM_PHASE, "Phase");
-    list.put(GENERIC_PARAM_CTRWIDTH, "CtrWidth");
-  }
-
-  @Override
-  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
-    AttributeSet attrs = info.GetComponent().getAttributeSet();
+  public ClockHDLGenerator(HDLCTX ctx) {
+    super(ctx, "base", "LogisimClock", "i_ClockGen");
     int hi = attrs.getValue(Clock.ATTR_HIGH);
     int lo = attrs.getValue(Clock.ATTR_LOW);
+    int raw = nets.RawFPGAClock() ? 1 : 0;
+    if (raw && hi != lo)
+      _err.AddFatalError("Clock component detected with " +hi+":"+lo+ " hi:lo duty cycle,"
+          + " but maximum clock speed was selected. Only 1:1 duty cycle is supported with "
+          + " maximum clock speed.");
     int ph = attrs.getValue(Clock.ATTR_PHASE);
     ph = ph % (hi + lo);
+    if (ph != 0) // todo: support phase offset
+      _err.AddFatalError("Clock component detected with "+ph+" tick phase offset,"
+          + " but currently only 0 tick phase offset is supported for FPGA synthesis.");
     int max = (hi > lo) ? hi : lo;
     int w = 0;
     while (max != 0) {
       w++;
       max /= 2;
     }
-    list.put("HighTicks", hi);
-    list.put("LowTicks", lo);
-    list.put("Phase", ph);
-    list.put("CtrWidth", w);
+    parameters.add(new ParameterInfo("HighTicks", hi));
+    parameters.add(new ParameterInfo("LowTicks", lo));
+    parameters.add(new ParameterInfo("Phase", ph));
+    parameters.add(new ParameterInfo("CtrWidth", w));
+    parameters.add(new ParameterInfo("Raw", raw));
+    outPorts.add(new PortInfo("ClockBus", 5, PortInfo.CLOCKBUS, null));
+    ArrayList<String> labels = new ArrayList<>();
+    labels.add("GlobalClock");
+    labels.add("ClockTick");
+    // fpgaClockTickerPort = labels;
+    hiddenPort = new IOComponentInformationContainer(
+        2/*in*/, 0/*out*/, 0/*inout*/,
+        labels, null, null, 
+        IOComponentInformationContainer.TickGenerator);
+
+    registers.add(new WireInfo("s_output_regs", 4));
+    registers.add(new WireInfo("s_counter_reg", "CtrWidth"));
+    registers.add(new WireInfo("s_derived_clock_reg", 1));
+    wires.add(new WireInfo("s_counter_next", "CtrWidth"));
+    wires.add(new WireInfo("s_counter_is_zero", 1));
   }
 
   @Override
-  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
-    int id = nets.GetClockSourceId(info.GetComponent());
-    list.put("GlobalClock", TickComponentHDLGeneratorFactory.FPGAClock);
-    list.put("ClockTick", TickComponentHDLGeneratorFactory.FPGATick);
-    list.put("ClockBus", id >= 0 ? "s_" + ClockTreeName + id : "s_missing_clock_id"); // fixme: ??
-  }
+  public void generateBehavior(Hdl out) {
 
-  @Override
-  public void registers(SortedMap<String, Integer> list, AttributeSet attrs, String lang) {
-    list.put("s_output_regs", NrOfClockBits - 1);
-    list.put("s_counter_reg", GENERIC_PARAM_CTRWIDTH);
-    list.put("s_derived_clock_reg", 1);
-  }
-
-  @Override
-  public void wires(SortedMap<String, Integer> list, AttributeSet attrs, Netlist nets) {
-    list.put("s_counter_next", GENERIC_PARAM_CTRWIDTH);
-    list.put("s_counter_is_zero", 1);
-  }
-
-  @Override
-  public void behavior(Hdl out, Netlist nets, AttributeSet attrs) {
-    out.indent();
-
-    int hi = attrs.getValue(Clock.ATTR_HIGH);
-    int lo = attrs.getValue(Clock.ATTR_LOW);
-    int ph = attrs.getValue(Clock.ATTR_PHASE);
-    if (ph != 0) // todo: support phase offset
-      out.err.AddFatalError("Clock component detected with "+ph+" tick phase offset,"
-          + " but currently only 0 tick phase offset is supported for FPGA synthesis.");
-
-    if (nets.RawFPGAClock()) {
-      // raw clock b/c use selected maximum clock speed
-      if (hi != lo)
-        out.err.AddFatalError("Clock component detected with " +hi+":"+lo+ " hi:lo duty cycle,"
-            + " but maximum clock speed was selected. Only 1:1 duty cycle is supported with "
-            + " maximum clock speed.");
-      if (out.isVhdl)
-        out.stmt("ClockBus <= GlobalClock & '1' & '1' & NOT(GlobalClock) & GlobalClock;");
-      else
-        out.stmt("assign ClockBus = {GlobalClock, 1'b1, 1'b1, ~GlobalClock, GlobalClock};");
-      return;
-    }
 
     if (out.isVhdl) {
-      out.stmt("ClockBus <= GlobalClock&s_output_regs;");
+      out.stmt("ClockBus <= IF (Raw = '1') THEN");
+      out.stmt("            GlobalClock & '1' & '1' & NOT(GlobalClock) & GlobalClock;");
+      out.stmt("            ELSE GlobalClock&s_output_regs;");
       out.stmt("makeOutputs : PROCESS( GlobalClock )");
       out.stmt("BEGIN");
       out.stmt("   IF (GlobalClock'event AND (GlobalClock = '1')) THEN");
@@ -191,7 +136,9 @@ public class ClockHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
       out.stmt("   END IF;");
       out.stmt("END PROCESS makeCounter;");
     } else {
-      out.stmt("assign ClockBus = {GlobalClock,s_output_regs};");
+      out.stmt("assign ClockBus = (Raw == 1)");
+      out.stmt("                  ? {GlobalClock, 1'b1, 1'b1, ~GlobalClock, GlobalClock};");
+      out.stmt("                  : {GlobalClock,s_output_regs};");
       out.stmt("always @(posedge GlobalClock)");
       out.stmt("begin");
       out.stmt("   s_output_regs[0] <= s_derived_clock_reg;");

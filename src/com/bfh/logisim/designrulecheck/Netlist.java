@@ -2004,10 +2004,13 @@ public class Netlist {
   // default value is returned instead (for inputs). But, if the default is null
   // and the end is an input, a fatal error is posted.
 	public String signalForEnd1(NetlistComponent comp, int endIdx, Boolean defaultValue, Hdl hdl) {
-		
+    return signalForEndBit(comp, endIdx, 0, defaultValue, hdl);
+  }
+
+	public String signalForEndBit(NetlistComponent comp, int endIdx, int bitIdx, Boolean defaultValue, Hdl hdl) {
     if (endIdx < 0 || endIdx >= comp.NrOfEnds()) {
       hdl.err.AddFatalError("INTERNAL ERROR: Invalid end/port '%d' for component '%s'", endIdx, comp);
-      return "???";
+      return "???"; // fixme: return default here instead, used for missing enable in a few places
     }
 
     ConnectionEnd end = comp.getEnd(endIdx);
@@ -2017,7 +2020,7 @@ public class Netlist {
       return "???";
     }
 
-    String s = signalForEndBit(end, 0, hdl);
+    String s = signalForEndBit(end, bitIdx, hdl);
     if (s != null) {
       return s;
     } else if (end.IsOutputEnd()) {

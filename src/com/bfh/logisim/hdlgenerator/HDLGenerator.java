@@ -421,6 +421,8 @@ public class HDLGenerator extends HDLSupport {
     final String name;
     final String width; // generic param (but not an expression) or constant integer
     final int index;
+    final static int UNCONNECTED = -1; // When this is index, use just default value.
+    final static int CLOCKBUS = -2; // When this is index, connect to nets.GetClockSourceID(info.getComponent())
     Boolean defaultValue; // only for inputs, null means port is required
     PortInfo(String n, String w, int i, Boolean v) {
       name = n;
@@ -1073,4 +1075,10 @@ public class HDLGenerator extends HDLSupport {
   //      list.put("GlobalClock", String.format(clk+idx, ClockHDLGeneratorFactory.DerivedClockIndex));
   //  }
 
+  // Clock
+  // public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
+  //   int id = nets.GetClockSourceId(info.GetComponent());
+  //   list.put("GlobalClock", TickComponentHDLGeneratorFactory.FPGAClock);
+  //   list.put("ClockTick", TickComponentHDLGeneratorFactory.FPGATick);
+  //   list.put("ClockBus", id >= 0 ? "s_" + ClockTreeName + id : "s_missing_clock_id"); // fixme: ??
 }
