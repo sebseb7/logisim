@@ -33,9 +33,7 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Graphics;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.designrulecheck.CorrectLabel;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -130,7 +128,7 @@ public class bin2bcd extends InstanceFactory {
 	}
 	
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
     if (ctx.lang.equals("VHDL"))
       return new bin2bcdHDLGeneratorFactory(ctx);
     else
