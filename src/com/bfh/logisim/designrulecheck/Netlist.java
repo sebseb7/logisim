@@ -514,8 +514,7 @@ public class Netlist {
 		 * First pass, we remove all information of previously detected
 		 * clock-trees
 		 */
-		ClockSourceContainer ClockSources = MyClockInformation
-				.GetSourceContainer();
+		ClockSourceContainer ClockSources = MyClockInformation.GetSourceContainer();
 		cleanClockTree(ClockSources);
 		/* Second pass, we build the clock tree */
 		ArrayList<Netlist> HierarchyNetlists = new ArrayList<Netlist>();
@@ -1566,8 +1565,7 @@ public class Netlist {
 
 	public void MarkClockNet(ArrayList<String> HierarchyNames,
 			int clocksourceid, ConnectionPoint connection) {
-		MyClockInformation.AddClockNet(HierarchyNames, clocksourceid,
-				connection);
+		MyClockInformation.AddClockNet(HierarchyNames, clocksourceid, connection);
 	}
 
 	public boolean MarkClockSourceComponents(ArrayList<String> HierarchyNames,
@@ -1881,8 +1879,12 @@ public class Netlist {
 		return MyClockInformation.GetSourceContainer().RawFPGAClock();
 	}
 
-	public void SetRawFPGAClock() {
-		MyClockInformation.GetSourceContainer().SetRawFPGAClock();
+	public void SetRawFPGAClock(boolean en) {
+		MyClockInformation.GetSourceContainer().SetRawFPGAClock(en);
+	}
+
+	public void SetRawFPGAClockFreq(long f) {
+		MyClockInformation.GetSourceContainer().SetRawFPGAClockFreq(f);
 	}
 
   public NetlistComponent GetDynamicClock() {

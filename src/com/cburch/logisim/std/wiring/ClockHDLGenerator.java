@@ -31,6 +31,7 @@ package com.cburch.logisim.std.wiring;
 
 import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
+import com.bfh.logisim.hdlgenerator.TickHDLGenerator;
 import com.cburch.logisim.hdl.Hdl;
 
 public class ClockHDLGenerator extends HDLGenerator {
@@ -47,27 +48,27 @@ public class ClockHDLGenerator extends HDLGenerator {
     String clkNet = "LOGISIM_LOCK_TREE_"+ clkId + downstream._hdl.idx;
     String one = downstream._hdl.one;
     if (downstream.nets.RawFPGAClock()) {
-      // Raw mode: use ck=GlobalClock en=1, or ck=~GlobalClock en=1
+      // Raw mode: use ck=CLK_RAW en=1 or ck=~CLK_RAW en=1
       if (downstream.attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING 
           || downstream.attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
           || downstream.attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW)
         return new String[] { String.format(clkNet, CLK_RAW), one };
       else
-        return new String[] { String.format(clkNet, CLK_INV),  one }; // == ~GlobalClock
+        return new String[] { String.format(clkNet, CLK_INV), one }; // == ~CLK_RAW
     } else if (downstream.attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING 
         || downstream.attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING) {
-      // Slow mode falling: use ck=GlobalClock en=NegativeEdgeTick
+      // Slow mode falling: use ck=CLK_RAW en=NEG_EDGE
       return new String[] {
         String.format(clkNet, CLK_RAW),
         String.format(clkNet, NEG_EDGE) };
     } else if (downstream.attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_HIGH) {
-      // Slow mode active high: use ck=DerivedCLock en=1
+      // Slow mode active high: use ck=CL_SLOW en=1
       return new String[] { String.format(clkNet, CLK_SLOW), one };
     } else if (downstream.attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW) {
-      // Slow mode active high: use ck=~DerivedCLock en=1
-      return new String[] { String.format(clkNet, CLK_INV), one };
+      // Slow mode active high: use ck=~CLK_SLOW en=1
+      return new String[] { String.format(clkNet, CLK_INV), one }; // == ~CLK_SLOW
     } else { // default: TRIG_RISING
-      // Slow mode rising: use ck=GlobalClock en=PositiveEdgeTick
+      // Slow mode rising: use ck=CLK_RAW en=POS_EDGE
       return new String[] {
         String.format(clkNet, CLK_RAW),
         String.format(clkNet, POS_EDGE) };
@@ -99,15 +100,9 @@ public class ClockHDLGenerator extends HDLGenerator {
     parameters.add(new ParameterInfo("Phase", ph));
     parameters.add(new ParameterInfo("CtrWidth", w));
     parameters.add(new ParameterInfo("Raw", raw));
+    inPorts.add(new PortInfo("FPGAClock", 1, -1, null)); // see getPortMappings below
+    inPorts.add(new PortInfo("FPGATick", 1, -1, null)); // see getPortMappings below
     outPorts.add(new PortInfo("ClockBus", 5, -1, null)); // see getPortMappings below
-    ArrayList<String> labels = new ArrayList<>();
-    labels.add("GlobalClock");
-    labels.add("ClockTick");
-    // fpgaClockTickerPort = labels;
-    hiddenPort = new IOComponentInformationContainer(
-        2/*in*/, 0/*out*/, 0/*inout*/,
-        labels, null, null, 
-        IOComponentInformationContainer.TickGenerator);
 
     registers.add(new WireInfo("s_output_regs", 4));
     registers.add(new WireInfo("s_counter_reg", "CtrWidth"));
@@ -120,18 +115,18 @@ public class ClockHDLGenerator extends HDLGenerator {
   public void generateBehavior(Hdl out) {
     if (out.isVhdl) {
       out.stmt("ClockBus <= IF (Raw = '1') THEN");
-      out.stmt("            GlobalClock & '1' & '1' & NOT(GlobalClock) & GlobalClock;");
-      out.stmt("            ELSE GlobalClock&s_output_regs;");
-      out.stmt("makeOutputs : PROCESS( GlobalClock )");
+      out.stmt("            FPGACLock & '1' & '1' & NOT(FPGACLock) & FPGACLock;");
+      out.stmt("            ELSE FPGACLock&s_output_regs;");
+      out.stmt("makeOutputs : PROCESS( FPGACLock )");
       out.stmt("BEGIN");
-      out.stmt("   IF (GlobalClock'event AND (GlobalClock = '1')) THEN");
+      out.stmt("   IF (FPGACLock'event AND (FPGACLock = '1')) THEN");
       out.stmt("      s_output_regs(0)  <= s_derived_clock_reg;");
       out.stmt("      s_output_regs(1)  <= NOT(s_derived_clock_reg);");
       out.stmt("      s_output_regs(2)  <= NOT(s_derived_clock_reg) AND --rising edge tick");
-      out.stmt("                           ClockTick AND");
+      out.stmt("                           FPGATick AND");
       out.stmt("                           s_counter_is_zero;");
       out.stmt("      s_output_regs(3)  <= s_derived_clock_reg AND --falling edge tick");
-      out.stmt("                           ClockTick AND");
+      out.stmt("                           FPGATick AND");
       out.stmt("                           s_counter_is_zero;");
       out.stmt("   END IF;");
       out.stmt("END PROCESS makeOutputs;");
@@ -143,39 +138,39 @@ public class ClockHDLGenerator extends HDLGenerator {
       out.stmt("                        WHEN s_derived_clock_reg = '1' ELSE");
       out.stmt("                     std_logic_vector(to_unsigned((HighTicks-1),CtrWidth));");
       out.stmt("");
-      out.stmt("makeDerivedClock : PROCESS( GlobalClock , ClockTick , s_counter_is_zero ,");
+      out.stmt("makeDerivedClock : PROCESS( FPGACLock , FPGATick , s_counter_is_zero ,");
       out.stmt("                            s_derived_clock_reg)");
       out.stmt("BEGIN");
-      out.stmt("   IF (GlobalClock'event AND (GlobalClock = '1')) THEN");
+      out.stmt("   IF (FPGACLock'event AND (FPGACLock = '1')) THEN");
       out.stmt("      IF (s_derived_clock_reg /= '0' AND s_derived_clock_reg /= '1') THEN --For simulation only");
       out.stmt("         s_derived_clock_reg <= '0';");
-      out.stmt("      ELSIF (s_counter_is_zero = '1' AND ClockTick = '1') THEN");
+      out.stmt("      ELSIF (s_counter_is_zero = '1' AND FPGATick = '1') THEN");
       out.stmt("         s_derived_clock_reg <= NOT(s_derived_clock_reg);");
       out.stmt("      END IF;");
       out.stmt("   END IF;");
       out.stmt("END PROCESS makeDerivedClock;");
       out.stmt("");
-      out.stmt("makeCounter : PROCESS( GlobalClock , ClockTick , s_counter_next ,");
+      out.stmt("makeCounter : PROCESS( FPGACLock , FPGATick , s_counter_next ,");
       out.stmt("                       s_derived_clock_reg )");
       out.stmt("BEGIN");
-      out.stmt("   IF (GlobalClock'event AND (GlobalClock = '1')) THEN");
+      out.stmt("   IF (FPGACLock'event AND (FPGACLock = '1')) THEN");
       out.stmt("      IF (s_derived_clock_reg /= '0' AND s_derived_clock_reg /= '1') THEN --For simulation only");
       out.stmt("         s_counter_reg <= (OTHERS => '0');");
-      out.stmt("      ELSIF (ClockTick = '1') THEN");
+      out.stmt("      ELSIF (FPGATick = '1') THEN");
       out.stmt("         s_counter_reg <= s_counter_next;");
       out.stmt("      END IF;");
       out.stmt("   END IF;");
       out.stmt("END PROCESS makeCounter;");
     } else {
       out.stmt("assign ClockBus = (Raw == 1)");
-      out.stmt("                  ? {GlobalClock, 1'b1, 1'b1, ~GlobalClock, GlobalClock};");
-      out.stmt("                  : {GlobalClock,s_output_regs};");
-      out.stmt("always @(posedge GlobalClock)");
+      out.stmt("                  ? {FPGACLock, 1'b1, 1'b1, ~FPGACLock, FPGACLock};");
+      out.stmt("                  : {FPGACLock,s_output_regs};");
+      out.stmt("always @(posedge FPGACLock)");
       out.stmt("begin");
       out.stmt("   s_output_regs[0] <= s_derived_clock_reg;");
       out.stmt("   s_output_regs[1] <= ~s_derived_clock_reg;");
-      out.stmt("   s_output_regs[2] <= ~s_derived_clock_reg & ClockTick & s_counter_is_zero;");
-      out.stmt("   s_output_regs[3] <= s_derived_clock_reg & ClockTick & s_counter_is_zero;");
+      out.stmt("   s_output_regs[2] <= ~s_derived_clock_reg & FPGATick & s_counter_is_zero;");
+      out.stmt("   s_output_regs[3] <= s_derived_clock_reg & FPGATick & s_counter_is_zero;");
       out.stmt("end");
       out.stmt("");
       out.stmt("assign s_counter_is_zero = (s_counter_reg == 0) ? 1'b1 : 1'b0;");
@@ -190,17 +185,17 @@ public class ClockHDLGenerator extends HDLGenerator {
       out.stmt("   s_counter_reg = 0;");
       out.stmt("end");
       out.stmt("");
-      out.stmt("always @(posedge GlobalClock)");
+      out.stmt("always @(posedge FPGACLock)");
       out.stmt("begin");
-      out.stmt("   if (s_counter_is_zero & ClockTick)");
+      out.stmt("   if (s_counter_is_zero & FPGATick)");
       out.stmt("   begin");
       out.stmt("      s_derived_clock_reg <= ~s_derived_clock_reg;");
       out.stmt("   end");
       out.stmt("end");
       out.stmt("");
-      out.stmt("always @(posedge GlobalClock)");
+      out.stmt("always @(posedge FPGACLock)");
       out.stmt("begin");
-      out.stmt("   if (ClockTick)");
+      out.stmt("   if (FPGATick)");
       out.stmt("   begin");
       out.stmt("      s_counter_reg <= s_counter_next;");
       out.stmt("   end");
@@ -210,11 +205,17 @@ public class ClockHDLGenerator extends HDLGenerator {
 
   @Override
   protected void getPortMappings(ArrayList<String> assn, NetlistComponent comp, PortInfo p) {
-    int id = _nets.GetClockSourceId(comp.GetComponent());
-    if (id < 0)
-      err.AddFatalError("INTERNAL ERROR: missing clock net for pin '%s' of '%s' in circuit '%s'.",
-          p.name, hdlComponentName, _nets.getCircuitName());
-    assn.add(String.format(_hdl.map, p.name, "LOGISIM_CLOCK_TREE_" + id));
+    if (p.name.equals("FPGAClock")) {
+      assn.add(_hdl.map, p.name, TickHDLGenerator.FPGA_CLK_NET);
+    } else if (p.name.equals("FPGATick")) {
+      assn.add(_hdl.map, p.name, TickHDLGenerator.FPGA_CLK_ENABLE_NET);
+    } else if (p.name.equals("ClockBus")) {
+      int id = _nets.GetClockSourceId(comp.GetComponent());
+      if (id < 0)
+        err.AddFatalError("INTERNAL ERROR: missing clock net for pin '%s' of '%s' in circuit '%s'.",
+            p.name, hdlComponentName, _nets.getCircuitName());
+      assn.add(String.format(_hdl.map, p.name, "LOGISIM_CLOCK_TREE_" + id));
+    }
   }
 
 }

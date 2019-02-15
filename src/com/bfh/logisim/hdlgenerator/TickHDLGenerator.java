@@ -153,7 +153,7 @@ public class TickHDLGenerator extends HDLGenerator {
   // TRIG_RISING events     |     |     |     |     |     |     |     |     |
   // TRIG_FALLING events       |     |     |     |     |     |     |     |     |
 
-  private long freq;
+  private long freq; // not currently used
   private int period;
 
   public TickHDLGenerator(HDLCTX ctx, long clock_frequency, int tick_period) {
@@ -161,7 +161,7 @@ public class TickHDLGenerator extends HDLGenerator {
     freq = clock_frequency;
     period = tick_period; // negative means dynamically adjustable period
 
-    inPorts.add(new PortInfo("FPGARawClock", 1, -1, null)); // see getPortMappings below
+    inPorts.add(new PortInfo("FPGAClock", 1, -1, null)); // see getPortMappings below
 
     if (period == 0) {
       // full speed, no params
@@ -236,16 +236,16 @@ public class TickHDLGenerator extends HDLGenerator {
       out.stmt("                 ReloadValueLessOne WHEN s_tick_next = '1' ELSE");
       out.stmt("                 std_logic_vector(unsigned(s_count_reg)-1);");
       out.stmt();
-      out.stmt("make_tick : PROCESS( FPGARawClock , s_tick_next )");
+      out.stmt("make_tick : PROCESS( FPGAClock , s_tick_next )");
       out.stmt("BEGIN");
-      out.stmt("   IF (FPGARawClock'event AND (FPGARawClock = '1')) THEN");
+      out.stmt("   IF (FPGAClock'event AND (FPGAClock = '1')) THEN");
       out.stmt("      s_tick_reg <= s_tick_next;");
       out.stmt("   END IF;");
       out.stmt("END PROCESS make_tick;");
       out.stmt();
-      out.stmt("make_counter : PROCESS( FPGARawClock , s_count_next )");
+      out.stmt("make_counter : PROCESS( FPGAClock , s_count_next )");
       out.stmt("BEGIN");
-      out.stmt("   IF (FPGARawClock'event AND (FPGARawClock = '1')) THEN");
+      out.stmt("   IF (FPGAClock'event AND (FPGAClock = '1')) THEN");
       out.stmt("      s_count_reg <= s_count_next;");
       out.stmt("   END IF;");
       out.stmt("END PROCESS make_counter;");
@@ -259,7 +259,7 @@ public class TickHDLGenerator extends HDLGenerator {
       out.stmt("   s_tick_reg  = 1'b0; -- for hdl simulation only");
       out.stmt("end");
       out.stmt();
-      out.stmt("always @(posedge FPGARawClock)");
+      out.stmt("always @(posedge FPGAClock)");
       out.stmt("begin");
       out.stmt("    s_count_reg <= s_count_next;");
       out.stmt("    s_tick_reg  <= s_tick_next;");
@@ -269,12 +269,12 @@ public class TickHDLGenerator extends HDLGenerator {
 
   @Override
   protected void getPortMappings(ArrayList<String> assn, NetlistComponent compUnused, PortInfo p) {
-    if (p.name.equals("FPGARawClock")) {
-      assn.add(_hdl.map, "FPGARawClock", FPGA_CLK_NET);
+    if (p.name.equals("FPGAClock")) {
+      assn.add(_hdl.map, p.name, FPGA_CLK_NET);
     } else if (p.name.equals("ReloadValueLessOne")) {
-      assn.add(_hdl.map, "ReloadValueLessOne", FPGA_DYNCLK_PERIOD_NET);
+      assn.add(_hdl.map, p.name, FPGA_DYNCLK_PERIOD_NET);
     } else if (p.name.equals("FPGATick")) {
-      assn.add(_hdl.map, "FPGATick", FPGA_CLK_ENABLE_NET);
+      assn.add(_hdl.map, p.name, FPGA_CLK_ENABLE_NET);
     }
   }
 

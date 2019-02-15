@@ -39,12 +39,6 @@ public class CounterHDLGeneratorextends HDLGenerator {
     parameters.add(new ParameterInfo("BitWidth", stdWidth()));
     parameters.add(new ParameterInfo("MaxVal", attrs.getValue(Counter.ATTR_MAX)));
     parameters.add(new ParameterInfo("Mode", mode()));
-    // When we have a fake clock signal, pos edge happens by default, but
-    // negative edge is handled specially.
-    // boolean fakeClockFallingEdge = GetClockNetName(info, Counter.CK, nets).isEmpty()
-    //     && attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING;
-    // // parameters.add(new ParameterInfo("ClkEdge", fakeClockFallingEdge ? 1 : 0));
-    clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", "ClkEdge", Counter.CK);
 
     inPorts.add(new PortInfo("LoadData", "BitWidth", Counter.IN, false));
     inPorts.add(new PortInfo("Clear", 1, Counter.CLR, false));
@@ -58,8 +52,6 @@ public class CounterHDLGeneratorextends HDLGenerator {
     registers.add(new WireInfo("s_counter_value", "BitWidth"));
     registers.add(new WireInfo("s_next_counter_value", "BitWidth"));
     registers.add(new WireInfo("s_carry", 1));
-    if (_lang.equals("VHDL"))
-      registers.add(new WireInfo("s_counter_value_neg_edge", "BitWidth"));
   }
 
   @Override
@@ -141,11 +133,9 @@ public class CounterHDLGeneratorextends HDLGenerator {
       out.stmt("END PROCESS make_next_value;");
       out.stmt();
       out.stmt("make_flops : PROCESS( GlobalClock , s_real_enable , Clear , s_next_counter_value )");
-      out.stmt("   VARIABLE temp : std_logic_vector(0 DOWNTO 0);");
       out.stmt("BEGIN");
-      out.stmt("   temp := std_logic_vector(to_unsigned(ClkEdge,1));");
       out.stmt("   IF (Clear = '1') THEN s_counter_value <= (OTHERS => '0');");
-      out.stmt("   ELSIF (GlobalClock'event AND (GlobalClock = temp(0))) THEN");
+      out.stmt("   ELSIF (GlobalClock'event AND (GlobalClock = '1')) THEN");
       out.stmt("      IF (s_real_enable = '1') THEN s_counter_value <= s_next_counter_value;");
       out.stmt("      END IF;");
       out.stmt("   END IF;");
@@ -153,24 +143,14 @@ public class CounterHDLGeneratorextends HDLGenerator {
     } else {
       out.stmt();
       out.stmt("assign CompareOut = s_carry;");
-      out.stmt("assign CountValue = (ClkEdge) ? s_counter_value : s_counter_value_neg_edge;");
+      out.stmt("assign CountValue = s_counter_value;");
       out.stmt();
       out.stmt("always@(*)");
       out.stmt("begin");
       out.stmt("   if (Direction)");
-      out.stmt("      begin");
-      out.stmt("         if (ClkEdge)");
-      out.stmt("            s_carry = (s_counter_value == max_val) ? 1'b1 : 1'b0;");
-      out.stmt("         else");
-      out.stmt("            s_carry = (s_counter_value_neg_edge == max_val) ? 1'b1 : 1'b0;");
-      out.stmt("      end");
+      out.stmt("         s_carry = (s_counter_value == max_val) ? 1'b1 : 1'b0;");
       out.stmt("   else");
-      out.stmt("      begin");
-      out.stmt("         if (ClkEdge)");
-      out.stmt("            s_carry = (s_counter_value == 0) ? 1'b1 : 1'b0;");
-      out.stmt("         else");
-      out.stmt("            s_carry = (s_counter_value_neg_edge == 0) ? 1'b1 : 1'b0;");
-      out.stmt("      end");
+      out.stmt("         s_carry = (s_counter_value == 0) ? 1'b1 : 1'b0;");
       out.stmt("end");
       out.stmt();
       out.stmt("assign s_real_enable = ((~(Load)&~(Enable))|");
@@ -185,31 +165,15 @@ public class CounterHDLGeneratorextends HDLGenerator {
       out.stmt("   else if ((Mode==0)&s_carry)");
       out.stmt("      s_next_counter_value = max_val;");
       out.stmt("   else if (Direction)");
-      out.stmt("      begin");
-      out.stmt("         if (ClkEdge)");
-      out.stmt("            s_next_counter_value = s_counter_value + 1;");
-      out.stmt("         else");
-      out.stmt("            s_next_counter_value = s_counter_value_neg_edge + 1;");
-      out.stmt("      end");
+      out.stmt("      s_next_counter_value = s_counter_value + 1;");
       out.stmt("   else");
-      out.stmt("      begin");
-      out.stmt("         if (ClkEdge)");
-      out.stmt("            s_next_counter_value = s_counter_value - 1;");
-      out.stmt("         else");
-      out.stmt("            s_next_counter_value = s_counter_value_neg_edge - 1;");
-      out.stmt("      end");
+      out.stmt("      s_next_counter_value = s_counter_value - 1;");
       out.stmt("end");
       out.stmt();
       out.stmt("always @(posedge GlobalClock or posedge Clear)");
       out.stmt("begin");
       out.stmt("    if (Clear) s_counter_value <= 0;");
       out.stmt("    else if (s_real_enable) s_counter_value <= s_next_counter_value;");
-      out.stmt("end");
-      out.stmt();
-      out.stmt("always @(negedge GlobalClock or posedge Clear)");
-      out.stmt("begin");
-      out.stmt("    if (Clear) s_counter_value_neg_edge <= 0;");
-      out.stmt("    else if (s_real_enable) s_counter_value_neg_edge <= s_next_counter_value;");
       out.stmt("end");
       out.stmt();
     }

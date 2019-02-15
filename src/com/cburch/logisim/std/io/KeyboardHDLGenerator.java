@@ -42,14 +42,22 @@ public class KeyboardHDLGenerator extends HDLGenerator {
     int d = attrs.getValue(Keyboard.ATTR_BUFFER);
     parameters.add(new ParameterInfo("AsciiWidth", w));
     parameters.add(new ParameterInfo("FIFO_DEPTH", d));
+    // See HDL code below for explanation of these parameters.
+    long freq = _nets.RawFPGAClockFreq();
+    int counter_size = (int)Math.ceil(Math.log(5.0*freq/1e6) / Math.log(2));
+    parameters.add(new ParameterInfo("clk_freq", (int)freq));
+    parameters.add(new ParameterInfo("counter_size", counter_size);
     // vhdlLibraries.add(IEEE_UNSIGNED);
 
-    // todo: support CLR
-    _err.AddWarning("Clear signal is not yet supported for Keyboard component in HDL");
-    if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING)
-      _err.AddSevereWarning("With full-speed clock, falling clock edge not yet supported for Keyboard component in HDL");
+    // Note: We expect the slow clock to actually be FPGAClock (or its inverse),
+    // which it will be whenever the clock input is connected to a proper clock
+    // bus. In cases where this is not the case, e.g. when using a gated clock,
+    // are not supported: proper HDL would be tricky, since we need data to
+    // cross between the raw clock domain and slow clock domain. There is a
+    // warning in HDLGenerator about this.
 
-    clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", Keyboard.CK);
+    clockPort = new ClockPortInfo("FPGAClock", "SlowClockEnable", Keyboard.CK);
+    // inPorts.add(new PortInfo("FPGAClock", 1, -1, null)); // see getPortMappings, below
     inPorts.add(new PortInfo("ReadEnable", 1, Keyboard.RE, false));
     // inPorts.add(new PortInfo("Clear", 1, Keyboard.CLR, false)); // todo
     outPorts.add(new PortInfo("Data", "AsciiWidth", Keyboard.OUT, null));
@@ -133,8 +141,15 @@ public class KeyboardHDLGenerator extends HDLGenerator {
       out.add("  -- ps2_keyboard scancode protocol");
       out.add("  -----------------------------------------------------------------------------");
       out.add("");
-      out.add("  constant clk50_freq   : integer := 50_000_000;         -- Frequency of clk50 (50 MHz)"); // fixme: TERASIC_DE0 is 50MHz, but not others
-      out.add("  constant counter_size : integer := 8;                  -- Width (minus 1) for ps2 debounce counters");
+      out.add("  -- The ps2 clock is 10 - 16.7 kHz, or 60-100us per cycle (30-50us per half cycle),");
+      out.add("  -- so if the ps clock has remained high for approx 55us, then it has gone idle.");
+      out.add("  -- We also debounce signals for about 5us.");
+      out.add("  -- Note: The code below uses an idle counter limit of 50mHz/18000Hz = 2750, which");
+      out.add("  -- works out to 2750/50mHz = 50mHz/18000Hz/50mHz = 1/18000Hz = 55us.
+      out.add("");
+      out.add("  -- constant clk_freq     : integer := 50_000_000;        -- frequency of clk (e.g. 50 MHz)"); // TERASIC_DE0 is 50MHz, but not others
+      out.add("  -- constant counter_size : integer := 8;                 -- width (minus 1) for ps2 debounce counters, sized so 2**size/freq = 5us");
+      out.add("  constant idle_max     : integer := clk_freq/18_000;   -- max value for idle counter, sized so max/freq >= 55us
       out.add("");
       out.add("  signal ps2bus         : std_logic_vector(3 downto 0);  -- all four ps2 connector signals
       out.add("  signal sync_ffs       : std_logic_vector(3 downto 0);  -- synchronizer flip-flops for PS/2 signals");
@@ -154,7 +169,7 @@ public class KeyboardHDLGenerator extends HDLGenerator {
       out.add("");
       out.add("  signal ps2_word       : std_logic_vector(10 downto 0); -- stores the ps2 data word");
       out.add("  signal ps2_error      : std_logic;                     -- validate parity, start, and stop bits");
-      out.add("  signal count_idle     : integer range 0 to clk50_freq/18_000;  -- counter to determine whether PS/2 is idle");
+      out.add("  signal count_idle     : integer range 0 to idle_max;   -- counter to determine whether PS/2 is idle");
       out.add("");
       out.add("  signal ps2_recv       : std_logic;                     -- flag that new scancode is available in ps2_code");
       out.add("  signal ps2_code       : std_logic_vector(7 downto 0);  -- scancode received from PS/2");
@@ -192,13 +207,13 @@ public class KeyboardHDLGenerator extends HDLGenerator {
       out.add("  constant DATA_WIDTH : positive := 8;");
       out.add("  signal fifo_pop : std_logic;");
       out.add("");
-      out.add("  signal clk50 : std_logic;");
+      out.add("  signal clk : std_logic;");
       out.add("  signal ready : std_logic;");
       out.add("  signal ascii : std_logic_vector(7 downto 0);");
       out.add("");
       out.add("begin");
       out.add("");
-      out.add("  clk50 <= GlobalClock;");
+      out.add("  clk <= FPGAClock;");
       out.add("  Data <= ascii(AsciiWidth-1 downto 0);");
       out.add("  Available <= ready;");
       out.add("");
@@ -207,9 +222,9 @@ public class KeyboardHDLGenerator extends HDLGenerator {
       out.add("  -----------------------------------------------------------------------------");
       out.add("");
       out.add("  -- synchronize ps2 inputs");
-      out.add("  process (clk50)");
+      out.add("  process (clk)");
       out.add("  begin");
-      out.add("    if (rising_edge(clk50)) then  -- sample PS/2 bus signals");
+      out.add("    if (rising_edge(clk)) then  -- sample PS/2 bus signals");
       out.add("      sync_ffs(0) <= ps2kb_clk;");
       out.add("      sync_ffs(1) <= ps2kb_dat;");
       out.add("      sync_ffs(2) <= ps2ms_clk;");
@@ -219,9 +234,9 @@ public class KeyboardHDLGenerator extends HDLGenerator {
       out.add("");
       out.add("  -- debounce ps2clk signal");
       out.add("  d_ps2clk_set <= d_ps2clk_ffs(0) xor d_ps2clk_ffs(1);  -- determine when to start/reset counter");
-      out.add("  process (clk50)");
+      out.add("  process (clk)");
       out.add("  begin");
-      out.add("    if (rising_edge(clk50)) then");
+      out.add("    if (rising_edge(clk)) then");
       out.add("      d_ps2clk_ffs(0) <= sync_ffs(0);");
       out.add("      d_ps2clk_ffs(1) <= d_ps2clk_ffs(0);");
       out.add("      if (d_ps2clk_set = '1') then  -- reset counter because input is changing");
@@ -236,9 +251,9 @@ public class KeyboardHDLGenerator extends HDLGenerator {
       out.add("");
       out.add("  -- debounce ps2data signal");
       out.add("  d_ps2data_set <= d_ps2data_ffs(0) xor d_ps2data_ffs(1);  -- determine when to start/reset counter");
-      out.add("  process (clk50)");
+      out.add("  process (clk)");
       out.add("  begin");
-      out.add("    if (rising_edge(clk50)) then");
+      out.add("    if (rising_edge(clk)) then");
       out.add("      d_ps2data_ffs(0) <= sync_ffs(1);");
       out.add("      d_ps2data_ffs(1) <= d_ps2data_ffs(0);");
       out.add("      if (d_ps2data_set = '1') then  -- reset counter because input is changing");
@@ -265,21 +280,21 @@ public class KeyboardHDLGenerator extends HDLGenerator {
       out.add("        ps2_word(2) xor ps2_word(1)));  ");
       out.add("");
       out.add("  -- determine if PS2 port is idle (i.e. last transaction is finished) and output result");
-      out.add("  process (clk50)");
+      out.add("  process (clk)");
       out.add("  begin");
-      out.add("    if (rising_edge(clk50)) then");
-      out.add("      if (ps2clk = '0') then                        -- low PS2 clock, PS/2 is active");
-      out.add("        count_idle <= 0;                            -- reset idle counter");
-      out.add("      elsif (count_idle /= clk50_freq/18_000) then  -- PS2 clock has been high less than a half clock period (<55us)");
-      out.add("          count_idle <= count_idle + 1;             -- continue counting");
+      out.add("    if (rising_edge(clk)) then");
+      out.add("      if (ps2clk = '0') then                  -- low PS2 clock, PS/2 is active");
+      out.add("        count_idle <= 0;                      -- reset idle counter");
+      out.add("      elsif (count_idle /= idle_max) then     -- PS2 clock has been high less than a half clock period (<55us)");
+      out.add("          count_idle <= count_idle + 1;       -- continue counting");
       out.add("      end if;");
       out.add("      ");
       out.add("      ps2_prev_new <= ps2_curr_new;");
-      out.add("      if (count_idle = clk50_freq/18_000 and ps2_error = '0') then  -- idle threshold reached and no errors detected");
-      out.add("        ps2_curr_new <= '1';                                        -- set flag that new PS/2 code is available");
-      out.add("        ps2_code <= ps2_word(8 downto 1);                           -- output new PS/2 code");
-      out.add("      else                                                          -- PS/2 port active or error detected");
-      out.add("        ps2_curr_new <= '0';                                        -- set flag that PS/2 transaction is in progress");
+      out.add("      if (count_idle = idle_max and ps2_error = '0') then     -- idle threshold reached and no errors detected");
+      out.add("        ps2_curr_new <= '1';                                  -- set flag that new PS/2 code is available");
+      out.add("        ps2_code <= ps2_word(8 downto 1);                     -- output new PS/2 code");
+      out.add("      else                                                    -- PS/2 port active or error detected");
+      out.add("        ps2_curr_new <= '0';                                  -- set flag that PS/2 transaction is in progress");
       out.add("      end if;");
       out.add("      ps2_recv <= (not ps2_prev_new) and ps2_curr_new;");
       out.add("    end if;");
@@ -289,9 +304,9 @@ public class KeyboardHDLGenerator extends HDLGenerator {
       out.add("  -- ps2_ascii scancode to ascii conversion");
       out.add("  -----------------------------------------------------------------------------");
       out.add("");
-      out.add("  process (clk50) is");
+      out.add("  process (clk) is");
       out.add("  begin");
-      out.add("    if rising_edge(clk50) then");
+      out.add("    if rising_edge(clk) then");
       out.add("      char_ascii <= ascii_w;");
       out.add("      char_ready <= ready_w;");
       out.add("      caps <= caps_w;");
@@ -573,17 +588,17 @@ public class KeyboardHDLGenerator extends HDLGenerator {
       out.add("  -- ps2_keyboard scancode protocol");
       out.add("  -----------------------------------------------------------------------------");
       out.add("");
-      out.add("  fifo_pop <= ClockEnable AND Read;");
+      out.add("  fifo_pop <= SlowClockEnable AND Read;");
       out.add("");
       out.add("  -- fifo process");
-      out.add("  process (clk50)");
+      out.add("  process (clk)");
       out.add("    type FIFO_Memory is array (0 to FIFO_DEPTH - 1) of std_logic_vector (DATA_WIDTH - 1 downto 0);");
       out.add("    variable Memory : FIFO_Memory;");
       out.add("    variable Head : natural range 0 to FIFO_DEPTH - 1;");
       out.add("    variable Tail : natural range 0 to FIFO_DEPTH - 1;");
       out.add("    variable Wrapped : boolean;");
       out.add("  begin");
-      out.add("    if (rising_edge(clk50)) then");
+      out.add("    if (rising_edge(clk)) then");
       out.add("      -- Pop old data");
       out.add("      if (fifo_pop = '1') then");
       out.add("        if ((Wrapped = true) or (Head /= Tail)) then");
@@ -640,5 +655,21 @@ public class KeyboardHDLGenerator extends HDLGenerator {
       out.add("");
     }
     return out;
+  }
+
+  // @Override
+  // protected void getPortMappings(ArrayList<String> assn, NetlistComponent comp, PortInfo p) {
+  //   if (p.name.equals("FPGAClock"))
+  //     assn.add(_hdl.map, p.name, TickHDLGenerator.FPGA_CLK_NET);
+  //   else
+  //     super.getPortMappings(assn, comp, p);
+  // }
+
+  @Override
+  protected ArrayList<String> getPortMappings(NetlistComponent comp) {
+    // todo: support CLR
+    if (comp.EndIsConnected(Keyboard.CLR))
+      _err.AddWarning("Clear signal is not yet supported for Keyboard component in HDL");
+    return super.getPortMappings(comp);
   }
 }

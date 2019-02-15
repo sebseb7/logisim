@@ -39,13 +39,14 @@ public class ClockSourceContainer {
 
 	ArrayList<Component> sources = new ArrayList<>();
 	boolean RawFPGAClock = false;
+  long RawFPGAClockFreq = 0;
 
-	public ClockSourceContainer() {
-	}
+	public ClockSourceContainer() { }
 
 	public void clear() {
 		sources.clear();
 		RawFPGAClock = false;
+    RawFPGAClockFreq = 0;
 	}
 
 	private boolean equals(Component comp1, Component comp2) {
@@ -85,7 +86,15 @@ public class ClockSourceContainer {
 		return RawFPGAClock;
 	}
 
-  public void SetRawFPGAClock() {
-    RawFPGAClock = true;
+  public long RawFPGAClockFreq() {
+    return RawFPGAClockFreq;
+  }
+
+  public void SetRawFPGAClock(boolean en) {
+    RawFPGAClock = en;
+  }
+
+  public void SetRawFPGAClockFreq(long f) {
+    RawFPGAClockFreq = f;
   }
 }

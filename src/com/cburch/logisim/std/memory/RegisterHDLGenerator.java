@@ -41,13 +41,9 @@ public class RegisterHDLGenerator extends HDLGenerator {
     inPorts.add(new PortInfo("Reset", 1, Register.CLR, false));
     inPorts.add(new PortInfo("Load", 1, Register.EN, true));
     outPorts.add(new PortInfo("Q", "BitWidth", Register.OUT, false));
-    clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", null, "ActiveLevel", Register.CK);
-    // todo: simplify below, ActiveLevel doesn't need to be a param, it is just
-    // constant... But check functionality first
+    clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", Register.CK);
 
     registers.add(new WireInfo("s_state_reg", "BitWidth"));
-    if (_lang.equals("Verilog") && edgeTriggered())
-      registers.add(new WireInfo("s_state_reg_neg_edge", "BitWidth"));
   }
 
   @Override
@@ -59,39 +55,18 @@ public class RegisterHDLGenerator extends HDLGenerator {
       out.stmt("   BEGIN");
       out.stmt("      IF (Reset = '1') THEN s_state_reg <= (OTHERS => '0');");
       if (edgeTriggered()) {
-        out.stmt("      ELSIF (ActiveLevel = 1) THEN");
-        out.stmt("         IF (GlobalClock'event AND (GlobalClock = '1')) THEN");
-        out.stmt("            IF (Load = '1' AND ClockEnable = '1') THEN");
-        out.stmt("               s_state_reg <= D;");
-        out.stmt("            END IF;");
-        out.stmt("         END IF;");
-        out.stmt("      ELSIF (ActiveLevel = 0) THEN");
-        out.stmt("         IF (GlobalClock'event AND (GlobalClock = '0')) THEN");
+        out.stmt("      IF (GlobalClock'event AND (GlobalClock = '1')) THEN");
         out.stmt("         IF (Load = '1' AND ClockEnable = '1') THEN");
-        out.stmt("               s_state_reg <= D;");
-        out.stmt("            END IF;");
+        out.stmt("            s_state_reg <= D;");
         out.stmt("         END IF;");
-        //out.stmt("      ELSIF (GlobalClock'event AND (GlobalClock = std_logic_vector(to_unsigned("
-        //    + "ActiveLevel,1)) )) THEN");
+        out.stmt("      END IF;");
       } else {
-        out.stmt("      ELSIF (ActiveLevel = 1) THEN");
-        out.stmt("         IF (GlobalClock = '1') THEN");
-        out.stmt("            IF (Load = '1' AND ClockEnable = '1') THEN");
-        out.stmt("               s_state_reg <= D;");
-        out.stmt("            END IF;");
+        out.stmt("      IF (GlobalClock = '1') THEN");
+        out.stmt("         IF (Load = '1' AND ClockEnable = '1') THEN");
+        out.stmt("            s_state_reg <= D;");
         out.stmt("         END IF;");
-        out.stmt("      ELSIF (ActiveLevel = 0) THEN");
-        out.stmt("         IF (GlobalClock = '0') THEN");
-        out.stmt("            IF (Load = '1' AND ClockEnable = '1') THEN");
-        out.stmt("               s_state_reg <= D;");
-        out.stmt("            END IF;");
-        out.stmt("         END IF;");
-        //out.stmt("      ELSIF (GlobalClock = std_logic_vector(to_unsigned("
-        //    + "ActiveLevel,1)) ) THEN");
+        out.stmt("      END IF;");
       }
-      //out.stmt("         IF (Load = '1' AND ClockEnable = '1') THEN");
-      //out.stmt("            s_state_reg <= D;");
-      //out.stmt("         END IF;");
       out.stmt("      END IF;");
       out.stmt("   END PROCESS make_memory;");
     } else {
@@ -101,21 +76,15 @@ public class RegisterHDLGenerator extends HDLGenerator {
         out.stmt("   always @(*)");
         out.stmt("   begin");
         out.stmt("      if (Reset) s_state_reg <= 0;");
-        out.stmt("      else if ((GlobalClock==ActiveLevel)&Load&ClockEnable) s_state_reg <= D;");
+        out.stmt("      else if ((GlobalClock==1)&Load&ClockEnable) s_state_reg <= D;");
         out.stmt("   end");
       } else {
-        out.stmt("   assign Q = (ActiveLevel) ? s_state_reg : s_state_reg_neg_edge;");
+        out.stmt("   assign Q = s_state_reg;");
         out.stmt("");
         out.stmt("   always @(posedge GlobalClock or posedge Reset)");
         out.stmt("   begin");
         out.stmt("      if (Reset) s_state_reg <= 0;");
         out.stmt("      else if (Load&ClockEnable) s_state_reg <= D;");
-        out.stmt("   end");
-        out.stmt("");
-        out.stmt("   always @(negedge GlobalClock or posedge Reset)");
-        out.stmt("   begin");
-        out.stmt("      if (Reset) s_state_reg_neg_edge <= 0;");
-        out.stmt("      else if (Load&ClockEnable) s_state_reg_neg_edge <= D;");
         out.stmt("   end");
       }
     }

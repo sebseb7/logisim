@@ -87,11 +87,9 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
       out.stmt("   s_state_next <= D WHEN ParLoad = '1' ELSE s_state_reg((Stages-2) DOWNTO 0)&ShiftIn;");
       out.stmt();
       out.stmt("   make_state : PROCESS(GlobalClock, ShiftEnable, ClockEnable, Reset, s_state_next, ParLoad)");
-      out.stmt("      VARIABLE temp : std_logic_vector( 0 DOWNTO 0 );");
       out.stmt("   BEGIN");
-      out.stmt("      temp := std_logic_vector(to_unsigned("+"Trigger"+ ",1));");
       out.stmt("      IF (Reset = '1') THEN s_state_reg <= (OTHERS => '0');");
-      out.stmt("      ELSIF (GlobalClock'event AND (GlobalClock = temp(0) )) THEN");
+      out.stmt("      ELSIF (GlobalClock'event AND (GlobalClock = '1')) THEN");
       out.stmt("         IF (((ShiftEnable = '1') OR (ParLoad = '1')) AND (ClockEnable = '1')) THEN");
       out.stmt("            s_state_reg <= s_state_next;");
       out.stmt("         END IF;");
@@ -102,7 +100,6 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
       out.stmt("module SingleBitShiftRegStage ( Reset, ClockEnable, GlobalClock, ShiftEnable, ParLoad, ");
       out.stmt("                           ShiftIn, D, ShiftOut, Q );");
       out.stmt("   parameter Stages = 1;");
-      out.stmt("   parameter Trigger = 1;");
       out.stmt();
       out.stmt("   input Reset;");
       out.stmt("   input ClockEnable;");
@@ -116,24 +113,15 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
       out.stmt();
       out.stmt("   wire[Stages:0] s_state_next;");
       out.stmt("   reg[Stages:0] s_state_reg;");
-      out.stmt("   reg[Stages:0] s_state_reg_neg_edge;");
       out.stmt();
-      out.stmt("   assign Q            = (Trigger) ? s_state_reg : s_state_reg_neg_edge;");
-      out.stmt("   assign ShiftOut     = (Trigger) ? s_state_reg[Stages-1] : s_state_reg_neg_edge[Stages-1];");
-      out.stmt("   assign s_state_next = (ParLoad) ? D :");
-      out.stmt("                         (Trigger) ? {s_state_reg[Stages-2:1],ShiftIn} :");
-      out.stmt("                                     {s_state_reg_neg_edge[Stages-2:1],ShiftIn};");
+      out.stmt("   assign Q            = s_state_reg;");
+      out.stmt("   assign ShiftOut     = s_state_reg[Stages-1];");
+      out.stmt("   assign s_state_next = (ParLoad) ? D : {s_state_reg[Stages-2:1],ShiftIn};");
       out.stmt();
       out.stmt("   always @(posedge GlobalClock or posedge Reset)");
       out.stmt("   begin");
       out.stmt("      if (Reset) s_state_reg <= 0;");
       out.stmt("      else if ((ShiftEnable|ParLoad)&ClockEnable) s_state_reg <= s_state_next;");
-      out.stmt("   end");
-      out.stmt();
-      out.stmt("   always @(negedge GlobalClock or posedge Reset)");
-      out.stmt("   begin");
-      out.stmt("      if (Reset) s_state_reg_neg_edge <= 0;");
-      out.stmt("      else if ((ShiftEnable|ParLoad)&ClockEnable) s_state_reg_neg_edge <= s_state_next;");
       out.stmt("   end");
       out.stmt();
       out.stmt("endmodule");
@@ -153,8 +141,7 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
     if (out.isVhdl) {
       generateVhdlLibraries(out);
       out.stmt("ENTITY SingleBitShiftRegStage IS");
-      out.stmt("   GENERIC ( Trigger : INTEGER;");
-      out.stmt("             Stages : INTEGER);");
+      out.stmt("   GENERIC ( Stages : INTEGER );");
       out.stmt("   PORT ( Reset       : IN  std_logic;");
       out.stmt("          ClockEnable : IN  std_logic;");
       out.stmt("          GlobalClock : IN  std_logic;");
@@ -183,8 +170,7 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
   @Override
 	protected void generateComponentDeclaration(Hdl out) {
     out.stmt("   COMPONENT SingleBitShiftRegStage ");
-    out.stmt("      GENERIC ( Trigger : INTEGER;");
-    out.stmt("                Stages : INTEGER);");
+    out.stmt("      GENERIC ( Stages : INTEGER );");
     out.stmt("      PORT ( Reset       : IN  std_logic;");
     out.stmt("             ClockEnable : IN  std_logic;");
     out.stmt("             GlobalClock : IN  std_logic;");
@@ -203,8 +189,7 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
     if (out.isVhdl) {
       out.stmt("GenBits : FOR n IN (BitWidth-1) DOWNTO 0 GENERATE");
       out.stmt("   OneBit : SingleBitShiftRegStage");
-      out.stmt("   GENERIC MAP ( Trigger => Trigger,");
-      out.stmt("                 Stages => Stages )");
+      out.stmt("   GENERIC MAP ( Stages => Stages )");
       out.stmt("   PORT MAP ( Reset       => Reset,");
       out.stmt("              ClockEnable => ClockEnable,");
       out.stmt("              GlobalClock => GlobalClock,");
@@ -229,8 +214,7 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
       out.stmt("generate");
       out.stmt("   for (n = 0 ; n < BitWidth-1 ; n =n+1)");
       out.stmt("   begin:Bit");
-      out.stmt("      SingleBitShiftRegStage #(.Trigger(Trigger),");
-      out.stmt("                          .Stages(Stages))");
+      out.stmt("      SingleBitShiftRegStage #(.Stages(Stages))");
       out.stmt("         OneBit (.Reset(Reset),");
       out.stmt("                 .ClockEnable(ClockEnable),");
       out.stmt("                 .GlobalClock(GlobalClock),");

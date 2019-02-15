@@ -41,13 +41,21 @@ public class TtyHDLGenerator extends HDLGenerator {
     super(ctx, "io", "Tty_${LABEL}", "i_Tty");
     int w = Tty.getWidth(attrs.getValue(Tty.ATTR_WIDTH));
     parameters.add(new ParameterInfo("AsciiWidth", w));
+    long freq = _nets.RawFPGAClockFreq();
+    long period_ns = 1000000000 / freq;
+    parameters.add(new ParameterInfo("CLK_PERIOD_NS", (int)period_ns));
 
     // todo: support CLR
     _err.AddWarning("Clear signal is likely broken for TTY component in HDL");
-    if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING)
-      _err.AddSevereWarning("With full-speed clock, falling clock edge not yet supported for TTY component in HDL");
 
-    clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", Tty.CK);
+    // Note: We expect the slow clock to actually be FPGAClock (or its inverse),
+    // which it will be whenever the clock input is connected to a proper clock
+    // bus. In cases where this is not the case, e.g. when using a gated clock,
+    // are not supported: proper HDL would be tricky, since we need data to
+    // cross between the raw clock domain and slow clock domain. There is a
+    // warning in HDLGenerator about this.
+
+    clockPort = new ClockPortInfo("FPGAClock", "SlowClockEnable", Tty.CK);
     inPorts.add(new PortInfo("Enable", 1, Tty.WE, false));
     inPorts.add(new PortInfo("Clear", 1, Tty.CLR, false));
     inPorts.add(new PortInfo("Data", "AsciiWidth", Tty.IN, false));
@@ -96,7 +104,7 @@ public class TtyHDLGenerator extends HDLGenerator {
       out.add("");
       out.add("architecture RTL of " + ComponentName.toString() + " is ");
       out.add("");
-      out.add("  constant CLK_PERIOD_NS : positive := 20; -- 50MHz"); // fixme: TERASIC_DE0 is 50MHz, but not others
+      out.add("  -- constant CLK_PERIOD_NS : positive := 20; -- 50MHz"); // TERASIC_DE0 is 50MHz, but not others
       out.add("  constant DELAY_15_MS   : positive := 15 * 10**6 / CLK_PERIOD_NS + 1;");
       out.add("  constant DELAY_1640_US : positive := 1640 * 10**3 / CLK_PERIOD_NS + 1;");
       out.add("  constant DELAY_4100_US : positive := 4100 * 10**3 / CLK_PERIOD_NS + 1;");
@@ -173,7 +181,7 @@ public class TtyHDLGenerator extends HDLGenerator {
       out.add("  signal line1, line2 : ROW;");
       out.add("  signal wptr : natural range 0 to 16;");
       out.add("");
-      out.add("  signal clk50 : std_logic;");
+      out.add("  signal clk : std_logic;");
       out.add("  signal rst : std_logic;");
       // out.add("  signal lcd_rs : std_logic;");
       // out.add("  signal lcd_rw : std_logic;");
@@ -183,7 +191,7 @@ public class TtyHDLGenerator extends HDLGenerator {
       out.add("");
       out.add("begin");
       out.add("");
-      out.add("  clk50 <= GlobalClock;");
+      out.add("  clk <= FPGAClock;");
       out.add("  rst <= Clear;");
       out.add("  lcd_bl <= '1';");
       // out.add("  lcd_rs_rw_en_db_bl <= lcd_rs & lcd_rw & lcd_en & lcd_db & lcd_bl;");
@@ -195,13 +203,13 @@ public class TtyHDLGenerator extends HDLGenerator {
       out.add("  lcd_db5 <= lcd_db(5);");
       out.add("  lcd_db6 <= lcd_db(6);");
       out.add("  lcd_db7 <= lcd_db(7);");
-      out.add("  push <= ClockEnable and Enable;");
+      out.add("  push <= SlowClockEnable and Enable;");
       out.add("  ascii <= std_logic_vector(resize(unsigned(Data), 8));");
       out.add("");
       out.add("  -- tty emulation");
-      out.add("  process (clk50) is");
+      out.add("  process (clk) is");
       out.add("  begin");
-      out.add("  if rising_edge(clk50) then");
+      out.add("  if rising_edge(clk) then");
       out.add("    if rst = '1' then");
       out.add("      init <= '0';");
       out.add("    else");
@@ -343,9 +351,9 @@ public class TtyHDLGenerator extends HDLGenerator {
       out.add("    end case;");
       out.add("  end process proc_state;");
       out.add("");
-      out.add("  reg_state : process(clk50)");
+      out.add("  reg_state : process(clk)");
       out.add("  begin");
-      out.add("    if rising_edge(clk50) then");
+      out.add("    if rising_edge(clk) then");
       out.add("      if rst = '1' then");
       out.add("        state <= RESET;");
       out.add("        ptr   <= 0;");
@@ -475,9 +483,9 @@ public class TtyHDLGenerator extends HDLGenerator {
       out.add("    end case;");
       out.add("  end process proc_op_state;");
       out.add("");
-      out.add("  reg_op_state : process (clk50) is");
+      out.add("  reg_op_state : process (clk) is");
       out.add("  begin");
-      out.add("    if rising_edge(clk50) then");
+      out.add("    if rising_edge(clk) then");
       out.add("      if state = RESET then");
       out.add("        op_state <= IDLE;");
       out.add("      else");

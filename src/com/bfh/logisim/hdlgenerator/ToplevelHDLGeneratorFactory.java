@@ -88,11 +88,8 @@ public class ToplevelHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
 			Components.addAll(Ticker.GetComponentInstantiation(/*TheNetlist,*/ /*null,*/
 							Ticker.getComponentStringIdentifier() /*,
 							Settings.VHDL*/ /* , false */));
-                        if (TickPeriod == 0) {
-                            // raw fpga clock
-                            TheNetlist.SetRawFPGAClock();
-                        } else if (TickPeriod < 0) {
-                        }
+      TheNetlist.SetRawFPGAClock(TickPeriod == 0);
+      TheNetlist.SetRawFPGAClockFreq(FpgaClockFrequency);
 			HDLGeneratorFactory ClockWorker =
           TheNetlist.GetAllClockSources().get(0).getFactory().getHDLGenerator(
 							Settings.VHDL, _err,

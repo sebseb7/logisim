@@ -45,8 +45,8 @@ public class PortIOHDLGenerator extends HDLGenerator {
         inPorts.add(new PortInfo(io.name, io.size, io.endNr, null));
       else if (io.type == OUTPUT)
         outPorts.add(new PortInfo(io.name, io.size, io.endNr, null));
-      else if (io.type == BUS)
-        inOutPorts.add(new PortInfo(io.name, io.size, io.endNr, null));
+      //else if (io.type == BUS)
+      //  inOutPorts.add(new PortInfo(io.name, io.size, io.endNr, null));
     }
 
     int n = attrs.getValue(PortIO.ATTR_SIZE);
@@ -85,9 +85,9 @@ public class PortIOHDLGenerator extends HDLGenerator {
       case OUTPUT:
         name = outBusName + busNr;
         break;
-      case BUS:
-        name = inOutBusName + busNr;
-        break;
+      // case BUS:
+      //   name = inOutBusName + busNr;
+      //   break;
       }
     }
   }
@@ -97,7 +97,7 @@ public class PortIOHDLGenerator extends HDLGenerator {
   private static final int TRISTATEINPUT_N = 2;
   private static final int ALWAYSINPUT = 3;
   private static final int OUTPUT = 4;
-  private static final int BUS = 5;
+  // private static final int BUS = 5;
 
   private static final String inBusName = "PIO_IN_BUS_";
   private static final String enBusName = "PIO_EN_BUS_";
@@ -118,7 +118,7 @@ public class PortIOHDLGenerator extends HDLGenerator {
     int n = size;
     for (int busNr = 0; busNr < (size - 1)/32 + 1; busNr++) {
       int e = (n > 32 ? 32 : n);
-      ports.add(new InOutMap(BUS, e - 1, 0, busNr, -1));
+      // ports.add(new InOutMap(BUS, e - 1, 0, busNr, -1));
       if (dir == PortIO.INOUT_N) {
         ports.add(new InOutMap(ENABLE, e - 1, 0, busNr, endNr++));
         ports.add(new InOutMap(TRISTATEINPUT_N, e - 1, 0, busNr, endNr++));
@@ -173,7 +173,7 @@ public class PortIOHDLGenerator extends HDLGenerator {
             out.stmt("%s <= %s when %s = '1' else 'Z';", bus, input, enable);
           }
           break;
-        case BUS:
+        // case BUS:
         case ENABLE:
           // nothing
           break;
