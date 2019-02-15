@@ -39,7 +39,8 @@ import com.cburch.logisim.instance.StdAttr;
 
 public abstract class HDLSupport {
 
-  public static class HDLCTX { // fixme - temporary hack?
+  // Helper used in constructors to facilitate adding/removing params.
+  public static class HDLCTX {
     public final String lang;
     public final FPGAReport err;
     public final Netlist nets;
@@ -73,6 +74,7 @@ public abstract class HDLSupport {
   protected final AttributeSet _attrs; // context - fixme
   protected final char _vendor; // context - fixme
   public final boolean inlined;
+  protected final Hdl _hdl;
 
   protected HDLSupport(HDLCTX ctx, String hdlComponentNameTemplate, boolean inlined) {
     this._projectName = ctx.err.getProjectName();
@@ -84,6 +86,7 @@ public abstract class HDLSupport {
     this.inlined = inlined;
     this.hdlComponentName = deriveHDLNameWithinCircuit(hdlComponentNameTemplate,
         _attrs, _nets == null ? null : _nets.getCircuitName());
+    this._hdl = new Hdl(_lang, _err);
   }
 
   // TODO - fixme these only serve to make code more impenetrable

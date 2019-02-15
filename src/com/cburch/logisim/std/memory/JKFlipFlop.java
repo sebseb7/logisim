@@ -31,7 +31,6 @@
 package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.cburch.logisim.data.Value;
 
 public class JKFlipFlop extends AbstractFlipFlop {

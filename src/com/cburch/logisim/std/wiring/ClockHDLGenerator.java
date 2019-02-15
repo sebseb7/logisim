@@ -29,17 +29,50 @@
  */
 package com.cburch.logisim.std.wiring;
 
+import com.bfh.logisim.designrulecheck.NetlistComponent;
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.hdl.Hdl;
 
 public class ClockHDLGenerator extends HDLGenerator {
 
-  public static final int DerivedClockIndex = 0;         // Oscillates at requested rate
-  public static final int InvertedDerivedClockIndex = 1; // Inverse of DerivedClock
-  public static final int PositiveEdgeTickIndex = 2;     //
-  public static final int NegativeEdgeTickIndex = 3;
-  public static final int GlobalClockIndex = 4;          // The underlying raw FPGA clock..
-  public static final int NrOfClockBits = 5;
+  public static final int CLK_SLOW = 0; // Oscillates at user-chosen rate and shape
+  public static final int CLK_INV = 1;  // Inverse of CLK_SLOW
+  public static final int POS_EDGE = 2; // High pulse when CLK_SLOW rises
+  public static final int NEG_EDGE = 3; // High pulse when CLK_SLOW falls
+  public static final int CLK_RAW = 4;  // The underlying raw FPGA clock
+  // public static final int NrOfClockBits = 5;
+
+  // See TickHDLGenerator for details on the rationale for these.
+  public static String[] clkSignalFor(HDLGenerator downstream, int clkId) {
+    String clkNet = "LOGISIM_LOCK_TREE_"+ clkId + downstream._hdl.idx;
+    String one = downstream._hdl.one;
+    if (downstream.nets.RawFPGAClock()) {
+      // Raw mode: use ck=GlobalClock en=1, or ck=~GlobalClock en=1
+      if (downstream.attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING 
+          || downstream.attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
+          || downstream.attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW)
+        return new String[] { String.format(clkNet, CLK_RAW), one };
+      else
+        return new String[] { String.format(clkNet, CLK_INV),  one }; // == ~GlobalClock
+    } else if (downstream.attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING 
+        || downstream.attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING) {
+      // Slow mode falling: use ck=GlobalClock en=NegativeEdgeTick
+      return new String[] {
+        String.format(clkNet, CLK_RAW),
+        String.format(clkNet, NEG_EDGE) };
+    } else if (downstream.attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_HIGH) {
+      // Slow mode active high: use ck=DerivedCLock en=1
+      return new String[] { String.format(clkNet, CLK_SLOW), one };
+    } else if (downstream.attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW) {
+      // Slow mode active high: use ck=~DerivedCLock en=1
+      return new String[] { String.format(clkNet, CLK_INV), one };
+    } else { // default: TRIG_RISING
+      // Slow mode rising: use ck=GlobalClock en=PositiveEdgeTick
+      return new String[] {
+        String.format(clkNet, CLK_RAW),
+        String.format(clkNet, POS_EDGE) };
+    }
+  }
 
   public ClockHDLGenerator(HDLCTX ctx) {
     super(ctx, "base", "LogisimClock", "i_ClockGen");
@@ -66,7 +99,7 @@ public class ClockHDLGenerator extends HDLGenerator {
     parameters.add(new ParameterInfo("Phase", ph));
     parameters.add(new ParameterInfo("CtrWidth", w));
     parameters.add(new ParameterInfo("Raw", raw));
-    outPorts.add(new PortInfo("ClockBus", 5, PortInfo.CLOCKBUS, null));
+    outPorts.add(new PortInfo("ClockBus", 5, -1, null)); // see getPortMappings below
     ArrayList<String> labels = new ArrayList<>();
     labels.add("GlobalClock");
     labels.add("ClockTick");
@@ -85,8 +118,6 @@ public class ClockHDLGenerator extends HDLGenerator {
 
   @Override
   public void generateBehavior(Hdl out) {
-
-
     if (out.isVhdl) {
       out.stmt("ClockBus <= IF (Raw = '1') THEN");
       out.stmt("            GlobalClock & '1' & '1' & NOT(GlobalClock) & GlobalClock;");
@@ -175,6 +206,15 @@ public class ClockHDLGenerator extends HDLGenerator {
       out.stmt("   end");
       out.stmt("end");
     }
+  }
+
+  @Override
+  protected void getPortMappings(ArrayList<String> assn, NetlistComponent comp, PortInfo p) {
+    int id = _nets.GetClockSourceId(comp.GetComponent());
+    if (id < 0)
+      err.AddFatalError("INTERNAL ERROR: missing clock net for pin '%s' of '%s' in circuit '%s'.",
+          p.name, hdlComponentName, _nets.getCircuitName());
+    assn.add(String.format(_hdl.map, p.name, "LOGISIM_CLOCK_TREE_" + id));
   }
 
 }

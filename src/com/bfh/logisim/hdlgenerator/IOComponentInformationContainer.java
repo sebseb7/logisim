@@ -47,6 +47,7 @@ public class IOComponentInformationContainer {
   public static final IOComponentTypes PortIO = IOComponentTypes.PortIO;
   public static final IOComponentTypes Bus = IOComponentTypes.Bus;
   public static final IOComponentTypes Unknown = IOComponentTypes.Unknown;
+  public static final IOComponentTypes TickGenerator = IOComponentTypes.TickGenerator;
 
 	private int NrOfInputBubbles;
 	private int NrOfInOutBubbles;
@@ -112,7 +113,7 @@ public class IOComponentInformationContainer {
 			return Integer.toString(inoutNr);
 		}
 		if (InOutBubbleLabels.size() <= inoutNr) {
-			return Integer.toString(inoutNr);
+			return "badinout_"+Integer.toString(inoutNr); // ??
 		}
 		return InOutBubbleLabels.get(inoutNr);
 	}
@@ -122,14 +123,46 @@ public class IOComponentInformationContainer {
 			return AlternateMapTypes.get(0).name() + Integer.toString(inputNr);
 		}
 		if (InputBubbleLabels.size() <= inputNr) {
-			return Integer.toString(inputNr);
+			return "badin_"+Integer.toString(inputNr); // ??!?! should never happen ?
 		}
 		return InputBubbleLabels.get(inputNr);
 	}
 
+  public ArrayList<String> GetInportLabels() {
+    if (InputBubbleLabels != null)
+      return InputBubbleLabels;
+    else
+      return makeLabels(AlternateMapTypes.get(0).name(), NrOfInputBubbles);
+  }
+
+  public ArrayList<String> GetInOutLabels() {
+    if (InOutBubbleLabels != null)
+      return InOutBubbleLabels;
+    else
+      return makeLabels(AlternateMapTypes.get(0).name(), NrOfInOutBubbles);
+  }
+
+  public ArrayList<String> GetOutportLabels() {
+    if (OutputBubbleLabels != null)
+      return OutputBubbleLabels;
+    else
+      return makeLabels(AlternateMapTypes.get(0).name(), NrOfOutputBubbles);
+  }
+
+  private static ArrayList<String> makeLabels(String prefix, n) {
+    ArrayList<String> labels = new ArrayList<>();
+    for (int i = 0; i < n; i++)
+      labels.add(prefix + i);
+    return labels;
+  }
+
 	public IOComponentTypes GetMainMapType() {
 		return MainMapType;
 	}
+
+	public int GetNrOfPorts() {
+    return NrOfInputBubbles + NrOfInOutBubbles + NrOfOutputBubbles;
+  }
 
 	public int GetNrOfInOutports() {
 		return NrOfInOutBubbles;
@@ -148,7 +181,7 @@ public class IOComponentInformationContainer {
 			return AlternateMapTypes.get(0).name() + Integer.toString(outputNr);
 		}
 		if (OutputBubbleLabels.size() <= outputNr) {
-			return Integer.toString(outputNr);
+			return "badout_" + Integer.toString(outputNr); // ??
 		}
 		return OutputBubbleLabels.get(outputNr);
 	}

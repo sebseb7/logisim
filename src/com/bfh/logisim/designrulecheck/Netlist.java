@@ -1061,6 +1061,11 @@ public class Netlist {
 		return MyClockInformation.GetClockSourceId(HierarchyLevel, WhichNet, Bitid);
 	}
 
+	public int GetClockSourceId(Net WhichNet, Byte Bitid) {
+		return MyClockInformation.GetClockSourceId(CurrentHierarchyLevel, WhichNet, Bitid);
+	}
+
+
 	public int GetClockSourceId(Component comp) {
 		return MyClockInformation.GetClockSourceId(comp);
 	}
@@ -1511,31 +1516,49 @@ public class Netlist {
 		return false;
 	}
 
-  public boolean isConnectedToSingleNamedBus(NetlistComponent comp, int endIdx) {
-    return IsContinuesBus(comp, endIdx);
-  }
-
-  // aka isConnectedToSingleNamedBus...
-	private boolean IsContinuesBus(NetlistComponent comp, int endIdx) {
-		if (endIdx < 0 || endIdx >= comp.NrOfEnds())
-			return true;
-
-		ConnectionEnd end = comp.getEnd(endIdx);
+  static final int BUS_UNCONNECTED = 0;     // all bits unconnected
+  static final int BUS_SIMPLYCONNECTED = 1; // connected to contiguous slice of a single named bus
+  static final int BUS_MULTICONNECTED = 2;  // all bits connected, but non-contiguous or multi-bus
+  static final int BUS_MIXCONNECTED = -1;   // mix of connected and unconnected bits
+  public int busConnectionStatus(ConnectionEnd end) {
 		int n = end.NrOfBits();
-		if (n == 1)
-			return true;
-
-		Net net = end.GetConnection((byte) 0).GetParrentNet();
-		byte idx = end.GetConnection((byte) 0).GetParrentNetBitIndex();
-
+		Net net0 = end.GetConnection((byte) 0).GetParrentNet();
+		byte idx = net0 == null ? -1 : end.GetConnection((byte) 0).GetParrentNetBitIndex();
 		for (int i = 1; i < n; i++) {
-			if (net != end.GetConnection((byte) i).GetParrentNet())
-				return false; // This bit is connected to different bus
-			if (net != null && (idx + i) != end.GetConnection((byte)i).GetParrentNetBitIndex())
-        return false; // This bit is connected to same bus, but indexes are not sequential
+      Net neti = end.GetConnection((byte) i).GetParrentNet();
+      if ((net0 == null) != (neti == null))
+        return BUS_MIXCONNECTED: // This bit is connected when other wasn't, or vice versa
+			if (net0 != neti)
+				return BUS_MULTICONNECTED; // This bit is connected to different bus
+			if (net0 != null && (idx + i) != end.GetConnection((byte)i).GetParrentNetBitIndex())
+        return BUS_MULTICONNECTED; // This bit is connected to same bus, but indexes are not sequential
 		}
-		return true;
+    return net0 == null ? BUS_UNCONNECTED : BUS_SIMPLYCONNECTED;
 	}
+  
+  // aka IsContinuesBus...
+  // public boolean isConnectedToSingleNamedBus(NetlistComponent comp, int endIdx) {
+	// 	if (endIdx < 0 || endIdx >= comp.NrOfEnds())
+	// 		return true;
+  //   return busConnectionStatus(comp.getEnd(endIdx)) == BUS_SIMPLYCONNECTED;
+  // }
+
+  // public boolean isConnectedToSingleNamedBus(ConnectionEnd end) {
+	// 	int n = end.NrOfBits();
+	// 	if (n == 1)
+	// 		return true;
+
+	// 	Net net = end.GetConnection((byte) 0).GetParrentNet();
+	// 	byte idx = end.GetConnection((byte) 0).GetParrentNetBitIndex();
+
+	// 	for (int i = 1; i < n; i++) {
+	// 		if (net != end.GetConnection((byte) i).GetParrentNet())
+	// 			return false; // This bit is connected to different bus
+	// 		if (net != null && (idx + i) != end.GetConnection((byte)i).GetParrentNetBitIndex())
+  //       return false; // This bit is connected to same bus, but indexes are not sequential
+	// 	}
+	// 	return true;
+	// }
 
 	public boolean IsValid() {
 		return DRCStatus == DRC_PASSED;
@@ -1991,7 +2014,7 @@ public class Netlist {
     } else if (net.BitWidth() == 1) { // connected to a single-bit net
       return "s_LOGISIM_NET_" + this.GetNetId(net);
     } else { // connected to one bit of a multi-bit bus
-      return String.format("S_LOGISIM_NET_%d"+hdl.idx,
+      return String.format("S_LOGISIM_BUS_%d"+hdl.idx,
           this.GetNetId(net),
           solderPoint.GetParrentNetBitIndex());
     }
@@ -2009,8 +2032,14 @@ public class Netlist {
 
 	public String signalForEndBit(NetlistComponent comp, int endIdx, int bitIdx, Boolean defaultValue, Hdl hdl) {
     if (endIdx < 0 || endIdx >= comp.NrOfEnds()) {
-      hdl.err.AddFatalError("INTERNAL ERROR: Invalid end/port '%d' for component '%s'", endIdx, comp);
-      return "???"; // fixme: return default here instead, used for missing enable in a few places
+      if (defaultValue == null) {
+        hdl.err.AddFatalError("INTERNAL ERROR: Invalid end/port '%d' for component '%s'", endIdx, comp);
+        return "???";
+      }
+      // In some HDLGenerator subclasses, missing pins are sometimes expected
+      // (e.g. an enable pin that is configured to be invisible). Returning the
+      // default here allows those cases to work.
+      return hdl.bit(defaultValue);
     }
 
     ConnectionEnd end = comp.getEnd(endIdx);
@@ -2033,6 +2062,28 @@ public class Netlist {
     }
 
 	}
+
+  // Assuming isConnectedToSingleNamedBus(end)), returns the name (or slice) of
+  // the bus signal this end is connected to, for example:
+  //    VHDL:    s_LOGISIM_BUS_27(31 downto 0)
+  //    Verilog: s_LOGISIM_BUS_27[31:0]
+  public String signalForEndBus(ConnectionEnd end, int bitHi, int bitLo, Hdl hdl) {
+    Net net = end.getConnection((byte) bitLo).GetParrentNet();
+    // if (net == null) {
+    //   if (isOutput) {
+    //     return hdl.unconnected;
+    //   } else if (defaultValue == null) {
+    //     hdl.err.AddFatalError("INTERNAL ERROR: Unexpected unconnected net to end/port '%d' for component '%s'", endIdx, comp);
+    //     return "???";
+    //   } else {
+    //     int n = bitHi - bitLo + 1;
+    //     return defaultValue ? hdl.ones(n) : hdl.zeros(n);
+    //   }
+    // }
+    byte hi = end.GetConnection((byte)bitHi).GetParrentNetBitIndex();
+    byte lo = end.GetConnection((byte)bitLo).GetParrentNetBitIndex();
+    return String.format("s_LOGISIM_BUS_%d"+hdl.range, this.GetNetId(net), hi, lo);
+  } 
 
   // TODO here - i don't like this interface...
   // Determine the HDL signal names (or name) that are connected to one of the
@@ -2076,7 +2127,7 @@ public class Netlist {
     //   }
     // }
 
-    if (isConnectedToSingleNamedBus(comp, endIdx)) {
+    if (isConnectedToSingleNamedBus(end)) {
       // example: somePort => s_LOGISIM_BUS_27(4 downto 0)
       Net net = end.getConnection((byte) 0).GetParrentNet();
       if (net == null) {

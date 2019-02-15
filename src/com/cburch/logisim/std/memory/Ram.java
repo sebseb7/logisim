@@ -69,7 +69,7 @@ public class Ram extends Mem {
   // would change to be the latched value, then stay that way. This is,
   // needless to say, unusual.
   //
-  // FPGA synthesis behaved differently. The address, data in, and both
+  // Old FPGA synthesis behaved differently. The address, data in, and both
   // enables are latched on rising clock edges. Writes happen soon after that:
   // when running in fast "raw" clock mode, writes happen at the next rising
   // clock edge; in slow "fake" clock mode, writes happen at the next rising

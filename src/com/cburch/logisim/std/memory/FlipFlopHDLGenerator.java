@@ -29,16 +29,8 @@
  */
 package com.cburch.logisim.std.memory;
 
-import java.util.SortedMap;
-
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
-import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.std.wiring.ClockHDLGeneratorFactory;
 
 public class FlipFlopHDLGenerator extends HDLGenerator {
 

@@ -44,17 +44,21 @@ public class Hdl extends ArrayList<String> {
   public final boolean isVhdl, isVerilog;
   public final FPGAReport err;
 
-  // HDL-specific formats              VHDL              Verilog
-  public final String assn;         // %s <= %s;         assign %s = %s;
-  public final String bitAssn;      // %s(%d) <= %s;     assign %s[%d] = %s;
-  public final String assnBit;      // %s <= %s(%d);     assign %s = %s[%d];
-  public final String bitAssnBit;   // %s(%d) <= %s(%d); assign %s[%d] = %s[%d];
-  public final String idx;          // (%d)              [%d]
-  public final String range;        // (%d downto %d)    [%d:%d]
-  public final String zero;         // '0'               1b'0
-  public final String one;          // '1'               1b'1
-  public final String unconnected;  // open              (emptystring)
-  public final String not;          // not               ~
+  // HDL-specific formats              VHDL                      Verilog
+  public final String map;          // %s => %s                  .%s(%s)
+  public final String map0;         // %s(0) => %s               .%s(%s)
+  public final String map1;         // %s(%d) => %s              (null)
+  public final String mapN;         // %s(%d downto %d) => %s    (null)
+  public final String assn;         // %s <= %s;                 assign %s = %s;
+  public final String bitAssn;      // %s(%d) <= %s;             assign %s[%d] = %s;
+  public final String assnBit;      // %s <= %s(%d);             assign %s = %s[%d];
+  public final String bitAssnBit;   // %s(%d) <= %s(%d);         assign %s[%d] = %s[%d];
+  public final String idx;          // (%d)                      [%d]
+  public final String range;        // (%d downto %d)            [%d:%d]
+  public final String zero;         // '0'                       1b'0
+  public final String one;          // '1'                       1b'1
+  public final String unconnected;  // open                      (emptystring)
+  public final String not;          // not                       ~
 
   private int indent = 0;
   private String tab = "";
@@ -72,6 +76,10 @@ public class Hdl extends ArrayList<String> {
     this.isVerilog = this.lang == Lang.Verilog;
     this.err = err;
     if (isVhdl) {
+      map = "%s => %s";
+      map0 = "%s(0) => %s";
+      map1 = "%s(%d) => %s";
+      mapN = "%s(%d downto %d) => %s";
       assn = "%s \t<= %s;";
       bitAssn = "%s(%d) \t<= %s;";
       assnBit = "%s \t<= %s(%d);";
@@ -83,6 +91,10 @@ public class Hdl extends ArrayList<String> {
       unconnected = "open";
       not = "not";
     } else {
+      map = ".%s(%s)";
+      map0 = ".%s(%s)";
+      map1 = null;
+      mapN = null;
       assn = "assign %s \t= %s;";
       bitAssn = "assign %s[%d] \t= %s;";
       assnBit = "assign %s \t= %s[%d];";
@@ -256,10 +268,12 @@ public class Hdl extends ArrayList<String> {
   public String fill(boolean value, int width) {
     if (width == 0)
       throw new IllegalArgumentException("Can't create HDL literal with zero width");
-    else if (width == 1)
-      return value ? one : zero;
+    // else if (width == 1)
+    //   return value ? one : zero;
+    else if (isVerilog && value)
+      return width + "'d-1";
     else if (isVerilog)
-      return value ? width+"'d-1" : zero;
+      return width + "'d0";
     else if (width % 4 == 0)
       return "X\"" + (value?"F":"0").repeat(width/4);
     else if (width > 12)
@@ -268,46 +282,32 @@ public class Hdl extends ArrayList<String> {
       return "\"" + (value?"1":"0").repeat(width) + "\"";
   }
 
-  private static String sz(Generics params, int id) {
-    if (params == null || !params.containsKey(id)) {
-      err.AddFatalError("Internal error: Signal reference to non-existant generic parameter ID=%d.", w);
-      return "???";
-    }
-    String g = params.get(w);
-    if (g == null || g.isEmpty() || g.equals("=")) {
-      err.AddFatalError("Internal error: Invalid generic parameter ID=%d '%s'.\n", w, g);
-      return "???";
-    }
-    return g.charAt(0) == '=' ? g.substring(1) : g;
-  }
+  // private static String sz(HDLGenerator.Generics params, String name) {
+  //   Integer val = params == null ? null : params.getValue(name);
+  //   if (val == null) {
+  //     err.AddFatalError("Internal error: Signal reference to non-existant generic parameter ID=%d.", w);
+  //     return "???";
+  //   }
+  //   return val.intValue();
+  // }
 
   // Returns an appropriate type definition for a signal of fixed width (when
-  // w>=0) or width defined by a generic parameter (when w<0). Examples:
-  //   w = 1    VHDL: "std_logic"                         Verilog: ""
-  //   w = 8    VHDL: "std_logic_vector(7 downto 0)"      Verilog: "[7:0] "
-  //   w = -1   VHDL: "std_logic_vector(N-1 downto 0)"    Verilog: "[N-1:0] "
-  //               (assuming params.get(w) = "N")
-  //   w = -2   VHDL: "std_logic_vector(2*K-1 downto 0)"  Verilog: "[2*N-1:0] "
-  //               (assuming params.get(w) = "=2*K"
-  public String typeForWidth(int w, Generics params) {
-    if (isVhdl) {
-      if (w == 1)
-        return "std_logic";
-      else if (w == 0)
-        return "std_logic_vector(0 downto 0)";
-      else if (w > 1)
-        return "std_logic_vector("+(w-1)+" downto 0)";
+  // widthStr is an integer) or width defined by a generic parameter
+  // (otherwise). All generics are assumed to be buses. Examples:
+  //   w = "1"    VHDL: "std_logic"                         Verilog: ""
+  //   w = "8"    VHDL: "std_logic_vector(7 downto 0)"      Verilog: "[7:0] "
+  //   w = "N"    VHDL: "std_logic_vector(N-1 downto 0)"    Verilog: "[N-1:0] "
+  public String typeForWidth(String w, HDLGenerator.Generics params) {
+    try {
+      int n = Integer.parseInt(w);
+      if (n == 1)
+        return isVhdl ? "std_logic" : "";
+      // else if (w == 0) // Q: can this happen?
+      //   return isVhdl ? "std_logic_vector(0 downto 0)" : "[0:0]";
       else
-        return "std_logic_vector("+sz(params, w)+"-1 downto 0)";
-    } else {
-      if (w == 1)
-        return "";
-      else if (w == 0)
-        return "[0:0] ";
-      else if (w > 1)
-        return "["+(w-1)+":0] ";
-      else
-        return "["+sz(params, w)+"-1:0] ";
+        return isVhdl ? "std_logic_vector("+(n-1)+" downto 0)" : "["+(n-1)+":0] ";
+    } catch (NumberFormatException ex) {
+      return isVhdl ? "std_logic_vector("+w+"-1 downto 0)" : "["+w+"-1:0] ";
     }
   }
 

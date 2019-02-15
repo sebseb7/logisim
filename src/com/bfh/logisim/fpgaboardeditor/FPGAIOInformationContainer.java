@@ -64,7 +64,11 @@ public class FPGAIOInformationContainer {
 
 	public static enum IOComponentTypes {
 
-		LED, Button, Pin, SevenSegment, DIPSwitch, RGBLED, PortIO, Bus, Unknown;
+		LED, Button, Pin, SevenSegment, DIPSwitch, RGBLED, PortIO, Bus, Unknown, TickGenerator;
+
+    // Note: Bus is just a placeholder for a multi-bit pin. It should not be
+    // used for mappable components. (fixme: huh?)
+
 		public static IOComponentTypes getEnumFromString(String str) {
 			for (IOComponentTypes elem : KnownComponentSet) {
 				if (elem.name().equalsIgnoreCase(str)) {
@@ -115,7 +119,7 @@ public class FPGAIOInformationContainer {
 				return 1;
 			case DIPSwitch:
 			case PortIO:
-				return nbSwitch;
+				return nbSwitch; // fixme: ?!
 			case SevenSegment:
 				return 8;
 			case RGBLED:
@@ -145,14 +149,9 @@ public class FPGAIOInformationContainer {
 		private static int nbSwitch = 8;
 
 		private void setNbSwitch(int nb) {
-			nbSwitch = nb;
+			nbSwitch = nb; // fixme: hack
 		}
 	}
-
-	/*
-	 * Bus is just a placeholder for a multi-bit pin. It should not be used for
-	 * mappable components
-	 */
 
 	public static LinkedList<String> GetComponentTypes() {
 		LinkedList<String> result = new LinkedList<String>();

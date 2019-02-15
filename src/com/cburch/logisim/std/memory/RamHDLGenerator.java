@@ -29,12 +29,6 @@
  */
 package com.cburch.logisim.std.memory;
 
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-
-import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
