@@ -37,9 +37,7 @@ import java.awt.Graphics2D;
 
 import javax.swing.Icon;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.designrulecheck.CorrectLabel;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.circuit.ExpressionComputer;
@@ -197,7 +195,7 @@ class NotGate extends InstanceFactory {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
     if (ctx.lang.equals("VHDL"))
       return GateVhdlGenerator.forNot(ctx);
     else

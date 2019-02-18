@@ -40,13 +40,13 @@ public class PortIOHDLGenerator extends HDLGenerator {
     
     for (InOutMap io : getPorts(_attrs)) {
       if (io.type == ALWAYSINPUT || io.type == ENABLE)
-        inPorts.add(new PortInfo(io.name, io.size, io.endNr, false));
+        inPorts.add(io.name, io.size, io.endNr, false);
       else if (io.type == TRISTATEINPUT_1 || io.type == TRISTATEINPUT_N)
-        inPorts.add(new PortInfo(io.name, io.size, io.endNr, null));
+        inPorts.add(io.name, io.size, io.endNr, null);
       else if (io.type == OUTPUT)
-        outPorts.add(new PortInfo(io.name, io.size, io.endNr, null));
+        outPorts.add(io.name, io.size, io.endNr, null);
       //else if (io.type == BUS)
-      //  inOutPorts.add(new PortInfo(io.name, io.size, io.endNr, null));
+      //  inOutPorts.add(io.name, io.size, io.endNr, null);
     }
 
     int n = attrs.getValue(PortIO.ATTR_SIZE);

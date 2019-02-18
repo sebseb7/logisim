@@ -29,22 +29,18 @@
  */
 package com.cburch.logisim.std.gates;
 
-import java.util.SortedMap;
-
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.cburch.logisim.data.AttributeSet;
+import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.hdl.Hdl;
 
-public class PLAVhdlGenerator extends AbstractHDLGeneratorFactory {
+public class PLAVhdlGenerator extends HDLGenerator {
 
   public PLAVhdlGenerator(HDLCTX ctx) {
-    super(ctx, "PLA_${CIRCUIT}_${LABEL}", "PLA");
+    super(ctx, "gates", "PLA_${CIRCUIT}_${LABEL}", "i_PLA");
+
+    inPorts.add("Index", attrs.getValue(PLA.ATTR_IN_WIDTH).getWidth(), PLA.IN_PORT, false);
+    outPorts.add("Result", attrs.getValue(PLA.ATTR_OUT_WIDTH).getWidth(), PLA.OUT_PORT, null);
   }
 
-  // fixme: see hdl/Hdl.java helpers
   private static String bits(char b[]) {
     String s = "";
     for (char c : b)
@@ -55,45 +51,18 @@ public class PLAVhdlGenerator extends AbstractHDLGeneratorFactory {
       return "\"" + s + "\"";
   }
 
-  private static String zeros(int sz) {
-    if (sz == 1)
-      return "'0'";
-    else
-      return "\"" + ("0".repeat(sz)) + "\"";
-  }
-
   @Override
-  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
-    out.indent();
+  public void generateBehavior(Hdl out) {
     PLATable tt = attrs.getValue(PLA.ATTR_TABLE);
     int w = attrs.getValue(PLA.ATTR_OUT_WIDTH).getWidth();
     if (tt.rows().isEmpty()) {
-      out.stmt("Result <= %s;", zeros(w));
+      out.stmt("Result <= %s;", out.zeros(w));
     } else {
       out.stmt("Result <= \t");
       for (PLATable.Row r : tt.rows())
         out.cont("\t%s WHEN std_match(Index, %s) ELSE", bits(r.outBits), bits(r.inBits));
-      out.cont("\t%s;", zeros(w));
+      out.cont("\t%s;", out.zeros(w));
     }
-  }
-
-  @Override
-  public String GetSubDir() { return "gates"; }
-
-  @Override
-  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    list.put("Index", attrs.getValue(PLA.ATTR_IN_WIDTH).getWidth());
-  }
-
-  @Override
-  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    list.put("Result", attrs.getValue(PLA.ATTR_OUT_WIDTH).getWidth());
-  }
-
-  @Override
-  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
-    list.putAll(GetNetMap("Index", true, info, PLA.IN_PORT, err, lang, nets));
-    list.putAll(GetNetMap("Result", true, info, PLA.OUT_PORT, err, lang, nets));
   }
 
 }

@@ -41,24 +41,24 @@ public class DemultiplexerHDLGenerator extends HDLGenerator {
     int ws = selWidth();
     int n = (1 << ws);
     if (w > 1) {
-      parameters.add(new ParameterInfo("BitWidth", w));
+      parameters.add("BitWidth", w);
       for (int i = 0; i < n; i++)
-        outPorts.add(new PortInfo("Out_"+i, "BitWidth", i, null));
+        outPorts.add("Out_"+i, "BitWidth", i, null);
     } else {
       for (int i = 0; i < n; i++)
-        outPorts.add(new PortInfo("Out_"+i, 1, i, null));
+        outPorts.add("Out_"+i, 1, i, null);
     }
-    inPorts.add(new PortInfo("Sel", ws, n, true));
+    inPorts.add("Sel", ws, n, true);
     if (attrs.getValue(Plexers.ATTR_ENABLE)) {
-      inPorts.add(new PortInfo("Enable", 1, n+1, true)); // may not be present
+      inPorts.add("Enable", 1, n+1, true); // may not be present
     } else {
-      inPorts.add(new PortInfo("Enable", 1, -1, true)); // no port, use default instead
+      inPorts.add("Enable", 1, -1, true); // no port, use default instead
       n--;
     }
     if (w > 1)
-      inPorts.add(new PortInfo("DataIn", "BitWidth", n+2, false));
+      inPorts.add("DataIn", "BitWidth", n+2, false);
     else
-      inPorts.add(new PortInfo("DataIn", 1, n+2, false));
+      inPorts.add("DataIn", 1, n+2, false);
   }
 
   private static String deriveHDLName(AttributeSet attrs) {

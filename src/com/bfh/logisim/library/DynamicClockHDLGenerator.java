@@ -27,43 +27,29 @@
  * This version of the project is currently maintained by:
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
-package com.cburch.logisim.std.plexers;
 
-import com.bfh.logisim.hdlgenerator.HDLGenerator;
-import com.cburch.logisim.data.AttributeSet;
-import com.cburch.logisim.hdl.Hdl;
+package com.bfh.logisim.library;
 
-public class DecoderHDLGenerator extends HDLGenerator {
+import com.bfh.logisim.hdlgenerator.HDLInliner;
 
-  public DecoderHDLGenerator(HDLCTX ctx) {
-    super(ctx, "plexers", deriveHDLName(ctx.attrs), "i_Decoder");
-    int ws = selWidth();
-    int n = (1 << ws);
-    for (int i = 0; i < n; i++)
-      outPorts.add("Out_"+i, 1, i, null);
-    inPorts.add("Sel", ws, n, false);
-    inPorts.add("Enable", 1, n+1, true); // may not be present, but will get default
-  }
+public class DynamicClockHDLGenerator extends HDLInliner {
 
-  private static String deriveHDLName(AttributeSet attrs) {
-    int w = 1 << attrs.getValue(Plexers.ATTR_SELECT).getWidth();
-    return "BinDecoder_" + w + "_Way";
+  public DynamicClockHDLGenerator(HDLCTX ctx) {
+    super(ctx, "DynamicClock");
   }
 
   @Override
-  public void generateBehavior(Hdl out) {
-    int ws = selWidth(attrs);
-    int n = (1 << ws);
-    for (int i = 0; i < n; i++) {
-      String s = out.literal(i, ws);
-      if (out.isVhdl)
-        out.stmt("Out_%d <= '1' WHEN Sel = %s AND Enable = '1' ELSE '0';", i, s);
-      else
-        out.stmt("assign Out_%d = (Enable & (Sel == s)) ? 1'b1 : 1'b0;", i, s);
+	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
+		int w = _attrs.getValue(DynamicClock.WIDTH_ATTR).getWidth();
+    if (!comp.EndIsConnected(0)) {
+      out.err.AddWarning("Dynamic Clock Control component input is not connected.");
+      out.err.AddWarning("Clock speed will be set to the maximum possible.");
+      out.assign("LOGISIM_DYNAMIC_CLOCK_OUT", out.ones(w));
+    } else {
+        // fixme: does not handle mixed or partial connections
+      String signal = _nets.signalForEndBus(comp, 0, w-1, 0, out);
+      out.assign("LOGISIM_DYNAMIC_CLOCK_OUT", signal);
     }
   }
 
-  protected int selWidth() {
-    return attrs.getValue(Plexers.ATTR_SELECT).getWidth();
-  }
 }

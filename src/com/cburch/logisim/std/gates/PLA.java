@@ -51,9 +51,7 @@ import javax.swing.JPopupMenu;
 import java.util.Arrays;
 import java.util.List;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.bfh.logisim.designrulecheck.CorrectLabel;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -294,7 +292,7 @@ class PLA extends InstanceFactory {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
     if (ctx.lang.equals("VHDL"))
       return new PLAVhdlGenerator(ctx);
     else

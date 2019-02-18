@@ -47,15 +47,15 @@ public class FlipFlopHDLGenerator extends HDLGenerator {
 
     int portnum = 0;
     for (String name : inPorts)
-      inPorts.add(new PortInfo(name, 1, portnum++, false));
+      inPorts.add(name, 1, portnum++, false);
 
     clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", portnum++);
-    outPorts.add(new PortInfo("Q", 1, portnum++, null));
-    outPorts.add(new PortInfo("Q_bar", 1, portnum++, null));
-    inPorts.add(new PortInfo("Reset", 1, portnum++, false));
-    inPorts.add(new PortInfo("Preset", 1, portnum++, false));
+    outPorts.add("Q", 1, portnum++, null);
+    outPorts.add("Q_bar", 1, portnum++, null);
+    inPorts.add("Reset", 1, portnum++, false);
+    inPorts.add("Preset", 1, portnum++, false);
 
-    wires.add(new WireInfo("s_next_state", 1));
+    wires.add("s_next_state", 1);
     registers.add(new WireInfo("s_current_state_reg", 1));
   }
 

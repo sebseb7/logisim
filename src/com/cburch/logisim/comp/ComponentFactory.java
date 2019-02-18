@@ -35,7 +35,6 @@ import java.awt.Color;
 import com.bfh.logisim.designrulecheck.Netlist;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
-// import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeDefaultProvider;
@@ -103,8 +102,6 @@ public interface ComponentFactory extends AttributeDefaultProvider {
   }
 
   public default HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) { return null; }
-
-  // public IOComponentInformationContainer getIOInformation();
 
   public String getName();
 

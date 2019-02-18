@@ -29,11 +29,6 @@
  */
 package com.cburch.logisim.std.plexers;
 
-import java.util.SortedMap;
-
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
@@ -47,16 +42,16 @@ public class MultiplexerHDLGenerator extends HDLGenerator {
     int n = (1 << ws);
     String bitWidth = (w > 1 ? "BitWidth" : "1");
     if (w > 1) {
-      parameters.add(new ParameterInfo("BitWidth", w));
+      parameters.add("BitWidth", w);
     for (int i = 0; i < n; i++)
-      outPorts.add(new PortInfo("In_"+i, bitWidth, i, false));
-    inPorts.add(new PortInfo("Sel", ws, n, true));
+      outPorts.add("In_"+i, bitWidth, i, false);
+    inPorts.add("Sel", ws, n, true);
     if (attrs.getValue(Plexers.ATTR_ENABLE)) {
-      inPorts.add(new PortInfo("Enable", 1, n+1, true)); // may not be present
-      inPorts.add(new PortInfo("Out", bitWidth, n+2, null));
+      inPorts.add("Enable", 1, n+1, true); // may not be present
+      inPorts.add("Out", bitWidth, n+2, null);
     } else {
-      inPorts.add(new PortInfo("Enable", 1, -1, true)); // no port, use default instead
-      inPorts.add(new PortInfo("Out", bitWidth, n+1, null));
+      inPorts.add("Enable", 1, -1, true); // no port, use default instead
+      inPorts.add("Out", bitWidth, n+1, null);
     }
 
     if (_lang.equals("Verilog")) {

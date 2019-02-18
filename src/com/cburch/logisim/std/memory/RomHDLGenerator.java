@@ -41,11 +41,11 @@ public class RomHDLGenerator extends HDLGenerator {
 
   public RomHDLGenerator(HDLCTX ctx) {
     super(ctx, "memory", "ROM_${CIRCUIT}_${LABEL}", "i_ROM");
-    inPorts.add(new PortInfo("Address", addrWidth(), Mem.ADDR, false));
-    outPorts.add(new PortInfo("Data", dataWidth(), Mem.DATA, null));
+    inPorts.add("Address", addrWidth(), Mem.ADDR, false);
+    outPorts.add("Data", dataWidth(), Mem.DATA, null);
     int n = Mem.lineSize(attrs);
     for (int i = 1; i < n; i++)
-      outPorts.add(new PortInfo("Data"+i, dataWidth(), Mem.MEM_INPUTS+i-1, null));
+      outPorts.add("Data"+i, dataWidth(), Mem.MEM_INPUTS+i-1, null);
   }
 
   @Override

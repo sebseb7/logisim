@@ -41,22 +41,22 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
     int n = stages(attrs);
     boolean parallel = attrs.getValue(ShiftRegister.ATTR_LOAD);
 
-    parameters.add(new ParameterInfo("BitWidth", w));
+    parameters.add("BitWidth", w);
     if (!parallel)
       parameters.add(new ParameterInfo("Stages", n);
 
     clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", ShiftRegister.CK);
 
-    inPorts.add(new PortInfo("Reset", 1, ShiftRegister.CLR, false));
-    inPorts.add(new PortInfo("ShiftEnable", 1, ShiftRegister.SH, false));
-    inPorts.add(new PortInfo("ShiftIn", "BitWidth", ShiftRegister.IN, false));
-    outPorts.add(new PortInfo("ShiftOut", "BitWidth", ShiftRegister.OUT, null));
+    inPorts.add("Reset", 1, ShiftRegister.CLR, false);
+    inPorts.add("ShiftEnable", 1, ShiftRegister.SH, false);
+    inPorts.add("ShiftIn", "BitWidth", ShiftRegister.IN, false);
+    outPorts.add("ShiftOut", "BitWidth", ShiftRegister.OUT, null);
     if (parallel) {
       int portnr = ShiftRegister.LD;
-      inPorts.add(new PortInfo("ParLoad", 1, portnr++, false));
+      inPorts.add("ParLoad", 1, portnr++, false);
       for (int i = 0; i < n; i++) {
-        inPorts.add(new PortInfo("D"+i, "BitWidth", portnr++ false));
-        outPorts.add(new PortInfo("Q"+i, "BitWidth", portnr++ null));
+        inPorts.add("D"+i, "BitWidth", portnr++ false);
+        outPorts.add("Q"+i, "BitWidth", portnr++ null);
       }
     }
   }

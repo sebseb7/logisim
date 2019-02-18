@@ -36,7 +36,6 @@ import java.awt.Graphics2D;
 
 import javax.swing.Icon;
 
-import com.bfh.logisim.designrulecheck.CorrectLabel;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
@@ -44,7 +43,6 @@ import com.cburch.logisim.circuit.ExpressionComputer;
 import com.cburch.logisim.comp.TextField;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
-import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;

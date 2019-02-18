@@ -29,7 +29,6 @@
  */
 package com.cburch.logisim.std.gates;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.cburch.logisim.hdl.Hdl;
 
 public class GateVerilogGenerator extends GateVhdlGenerator {
@@ -121,7 +120,7 @@ public class GateVerilogGenerator extends GateVhdlGenerator {
   }
 
   @Override
-  protected void doInputInversions(Hdl out, int n) {
+  protected void generateInputInversions(Hdl out, int n) {
     out.stmt("assign s_mask = InputNegations;", n);
     for (int i = 1; i <= n; i++)
       out.stmt("assign s_in_%d = s_mask[%d] ? ~Input_%d : Input_%d;", i, i, i, i);

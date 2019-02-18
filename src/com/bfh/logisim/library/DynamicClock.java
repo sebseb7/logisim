@@ -34,7 +34,6 @@ import java.awt.Color;
 import java.awt.Graphics;
 
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -100,7 +99,12 @@ public class DynamicClock extends InstanceFactory {
 
 	@Override
 	public void propagate(InstanceState state) { }
-	
+
   @Override
-  public boolean HDLSpecialHandling() { return true; }
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+    return new DynamicClockHDLGenerator(ctx);
+  }
+	
+//   @Override
+//   public boolean HDLSpecialHandling() { return true; }
 }

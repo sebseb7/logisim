@@ -65,7 +65,8 @@ public class ButtonHDLGenerator extends HDLInliner {
     int b = comp.GetLocalBubbleInputStartId();
     for (int i = 0; i < comp.NrOfEnds(); i++) {
       if (comp.EndIsConnected(i)) {
-        String name = _nets.signalEndForEnd1(comp, i, null, out);
+        // fixme: does not handle mixed or partial connections
+        String name = _nets.signalForEnd1(comp, i, null, out);
         out.assign(name, "LOGISIM_HIDDEN_FPGA_INPUT", b + i);
       }
     }

@@ -43,14 +43,14 @@ public class VhdlHDLGenerator extends HDLGenerator {
     VhdlContent content = content();
     for (VhdlContent.Generic g : content.getGenerics()) {
       int v = attrs.getValue(VhdlEntityAttributes.forGeneric(g));
-      parameters.add(new ParameterInfo(g.getName(), g.getType(), v, g.getDefaultValue()));
+      parameters.add(g.getName(), g.getType(), v, g.getDefaultValue());
     }
     int i = 0;
     for (VhdlParser.PortDescription p : content.getPorts()) {
       if (p.getType() == Port.INPUT)
-        inPorts.add(new PortInfo(p.getName(), p.getWidth().getWidth(), i++, false));
+        inPorts.add(p.getName(), p.getWidth().getWidth(), i++, false);
       else
-        outPorts.add(new PortInfo(p.getName(), p.getWidth().getWidth(), i++, false));
+        outPorts.add(p.getName(), p.getWidth().getWidth(), i++, false);
     }
   }
 

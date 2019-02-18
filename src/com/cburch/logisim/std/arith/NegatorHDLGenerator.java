@@ -39,13 +39,13 @@ public class NegatorHDLGenerator extends HDLGenerator {
     int w = stdWidth();
     if (w > 1) {
       // Generic n-bit version
-      parameters.add(new ParameterInfo("BitWidth", w));
-      inPorts.add(new PortInfo("DataX", "BitWidth", Negator.IN, false));
-      outPorts.add(new PortInfo("Result", "BitWidth", Negator.OUT, null));
+      parameters.add("BitWidth", w);
+      inPorts.add("DataX", "BitWidth", Negator.IN, false);
+      outPorts.add("Result", "BitWidth", Negator.OUT, null);
     } else {
       // 1-bit version
-      inPorts.add(new PortInfo("DataX", 1, Negator.IN false));
-      outPorts.add(new PortInfo("Result", 1, Negator.OUT, null));
+      inPorts.add("DataX", 1, Negator.IN false);
+      outPorts.add("Result", 1, Negator.OUT, null);
     }
   }
 

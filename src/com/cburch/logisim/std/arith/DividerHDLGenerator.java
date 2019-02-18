@@ -39,16 +39,16 @@ public class DividerHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
     // todo: 1-bit version?
     // todo: Verilog version
     int w = stdWidth();
-    parameters.add(new ParameterInfo("BitWidth", w));
-    inPorts.add(new PortInfo("DataA", "BitWidth", Divider.IN0, false));
-    inPorts.add(new PortInfo("DataB", "BitWidth", Divider.IN1, false));
-    inPorts.add(new PortInfo("Upper", "BitWidth", Divider.UPPER, false));
-    outPorts.add(new PortInfo("Quotient", "BitWidth", Divider.OUT, null));
-    outPorts.add(new PortInfo("Remainder", "BitWidth", Divider.REM, null));
+    parameters.add("BitWidth", w);
+    inPorts.add("DataA", "BitWidth", Divider.IN0, false);
+    inPorts.add("DataB", "BitWidth", Divider.IN1, false);
+    inPorts.add("Upper", "BitWidth", Divider.UPPER, false);
+    outPorts.add("Quotient", "BitWidth", Divider.OUT, null);
+    outPorts.add("Remainder", "BitWidth", Divider.REM, null);
     if (ctx.isVhdl) {
-      wires.add(new WireInfo("s_div", "2*BitWidth"));
-      wires.add(new WireInfo("s_mod", "BitWidth"));
-      wires.add(new WireInfo("s_num", "2*BitWidth"));
+      wires.add("s_div", "2*BitWidth");
+      wires.add("s_mod", "BitWidth");
+      wires.add("s_num", "2*BitWidth");
     } else {
       throw new IllegalArgumentException("Verilog divider not yet implemented");
     }

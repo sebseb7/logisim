@@ -39,30 +39,30 @@ public class SubtractorHDLGenerator extends HDLGenerator {
     int w = stdWidth();
     if (w > 1) {
       // Generic n-bit version
-      parameters.add(new ParameterInfo("BitWidth", w));
-      inPorts.add(new PortInfo("DataA", "BitWidth", Subtractor.IN0, false));
-      inPorts.add(new PortInfo("DataB", "BitWidth", Subtractor.IN1, false));
-      outPorts.add(new PortInfo("Result", "BitWidth", Subtractor.OUT, null));
-      inPorts.add(new PortInfo("BorrowIn", 1, Subtractor.B_IN, false));
-      outPorts.add(new PortInfo("BorrowOut", 1, Subtractor.B_OUT, null));
+      parameters.add("BitWidth", w);
+      inPorts.add("DataA", "BitWidth", Subtractor.IN0, false);
+      inPorts.add("DataB", "BitWidth", Subtractor.IN1, false);
+      outPorts.add("Result", "BitWidth", Subtractor.OUT, null);
+      inPorts.add("BorrowIn", 1, Subtractor.B_IN, false);
+      outPorts.add("BorrowOut", 1, Subtractor.B_OUT, null);
       if (ctx.isVhdl) {
-        wires.add(new WireInfo("s_A", "BitWidth+1"));
-        wires.add(new WireInfo("s_B", "BitWidth+1"));
-        wires.add(new WireInfo("s_C", 1));
-        wires.add(new WireInfo("s_R", "BitWidth+1"));
+        wires.add("s_A", "BitWidth+1");
+        wires.add("s_B", "BitWidth+1");
+        wires.add("s_C", 1);
+        wires.add("s_R", "BitWidth+1");
       }
     } else {
       // 1-bit version
-      inPorts.add(new PortInfo("DataA", 1, Subtractor.IN0, false));
-      inPorts.add(new PortInfo("DataB", 1, Subtractor.IN1, false));
-      outPorts.add(new PortInfo("Result", 1, Subtractor.OUT, null));
-      inPorts.add(new PortInfo("BorrowIn", 1, Subtractor.B_IN, false));
-      outPorts.add(new PortInfo("BorrowOut", 1, Subtractor.B_OUT, null));
+      inPorts.add("DataA", 1, Subtractor.IN0, false);
+      inPorts.add("DataB", 1, Subtractor.IN1, false);
+      outPorts.add("Result", 1, Subtractor.OUT, null);
+      inPorts.add("BorrowIn", 1, Subtractor.B_IN, false);
+      outPorts.add("BorrowOut", 1, Subtractor.B_OUT, null);
       if (ctx.isVhdl) {
-        wires.add(new WireInfo("s_A", 2));
-        wires.add(new WireInfo("s_B", 2));
-        wires.add(new WireInfo("s_C", 1));
-        wires.add(new WireInfo("s_R", 2));
+        wires.add("s_A", 2);
+        wires.add("s_B", 2);
+        wires.add("s_C", 1);
+        wires.add("s_R", 2);
       }
     }
   }

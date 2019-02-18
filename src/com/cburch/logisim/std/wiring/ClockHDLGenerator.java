@@ -36,12 +36,15 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class ClockHDLGenerator extends HDLGenerator {
 
+  // Name used by circuit and top-level netslists for clock-related shadow buses.
+  public static String CLK_TREE_NET = "s_LOGISIM_CLOCK_TREE_"; // %d
+  public static int CLK_TREE_WIDTH = 5; // bus contains the five signals below
+
   public static final int CLK_SLOW = 0; // Oscillates at user-chosen rate and shape
   public static final int CLK_INV = 1;  // Inverse of CLK_SLOW
   public static final int POS_EDGE = 2; // High pulse when CLK_SLOW rises
   public static final int NEG_EDGE = 3; // High pulse when CLK_SLOW falls
   public static final int CLK_RAW = 4;  // The underlying raw FPGA clock
-  // public static final int NrOfClockBits = 5;
 
   // See TickHDLGenerator for details on the rationale for these.
   public static String[] clkSignalFor(HDLGenerator downstream, int clkId) {
@@ -76,15 +79,19 @@ public class ClockHDLGenerator extends HDLGenerator {
   }
 
   public ClockHDLGenerator(HDLCTX ctx) {
+    // Note: all Clock components are lifted up to the top level. Only one
+    // declaration is made, so can only have a single HDL implementation version
+    // here. If we wanted multiple versions here, ToplevelHDLGenerator would
+    // maybe need multiple declarations too.
     super(ctx, "base", "LogisimClock", "i_ClockGen");
-    int hi = attrs.getValue(Clock.ATTR_HIGH);
-    int lo = attrs.getValue(Clock.ATTR_LOW);
+    int hi = attrs.getValueOrElse(Clock.ATTR_HIGH, 1);
+    int lo = attrs.getValueOrElse(Clock.ATTR_LOW, 1);
     int raw = nets.RawFPGAClock() ? 1 : 0;
     if (raw && hi != lo)
       _err.AddFatalError("Clock component detected with " +hi+":"+lo+ " hi:lo duty cycle,"
           + " but maximum clock speed was selected. Only 1:1 duty cycle is supported with "
           + " maximum clock speed.");
-    int ph = attrs.getValue(Clock.ATTR_PHASE);
+    int ph = attrs.getValueOrElse(Clock.ATTR_PHASE, 0);
     ph = ph % (hi + lo);
     if (ph != 0) // todo: support phase offset
       _err.AddFatalError("Clock component detected with "+ph+" tick phase offset,"
@@ -95,20 +102,20 @@ public class ClockHDLGenerator extends HDLGenerator {
       w++;
       max /= 2;
     }
-    parameters.add(new ParameterInfo("HighTicks", hi));
-    parameters.add(new ParameterInfo("LowTicks", lo));
-    parameters.add(new ParameterInfo("Phase", ph));
-    parameters.add(new ParameterInfo("CtrWidth", w));
-    parameters.add(new ParameterInfo("Raw", raw));
-    inPorts.add(new PortInfo("FPGAClock", 1, -1, null)); // see getPortMappings below
-    inPorts.add(new PortInfo("FPGATick", 1, -1, null)); // see getPortMappings below
-    outPorts.add(new PortInfo("ClockBus", 5, -1, null)); // see getPortMappings below
+    parameters.add("HighTicks", hi);
+    parameters.add("LowTicks", lo);
+    parameters.add("Phase", ph);
+    parameters.add("CtrWidth", w);
+    parameters.add("Raw", raw);
+    inPorts.add("FPGAClock", 1, -1, null); // see getPortMappings below
+    inPorts.add("FPGATick", 1, -1, null); // see getPortMappings below
+    outPorts.add("ClockBus", 5, -1, null); // see getPortMappings below
 
     registers.add(new WireInfo("s_output_regs", 4));
     registers.add(new WireInfo("s_counter_reg", "CtrWidth"));
     registers.add(new WireInfo("s_derived_clock_reg", 1));
-    wires.add(new WireInfo("s_counter_next", "CtrWidth"));
-    wires.add(new WireInfo("s_counter_is_zero", 1));
+    wires.add("s_counter_next", "CtrWidth");
+    wires.add("s_counter_is_zero", 1);
   }
 
   @Override
@@ -204,17 +211,17 @@ public class ClockHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  protected void getPortMappings(ArrayList<String> assn, NetlistComponent comp, PortInfo p) {
+  protected void getPortMappings(Hdl.Map map, NetlistComponent comp, PortInfo p) {
     if (p.name.equals("FPGAClock")) {
-      assn.add(_hdl.map, p.name, TickHDLGenerator.FPGA_CLK_NET);
+      map.add(p.name, TickHDLGenerator.FPGA_CLK_NET);
     } else if (p.name.equals("FPGATick")) {
-      assn.add(_hdl.map, p.name, TickHDLGenerator.FPGA_CLK_ENABLE_NET);
+      map.add(p.name, TickHDLGenerator.FPGA_TICK_NET);
     } else if (p.name.equals("ClockBus")) {
       int id = _nets.GetClockSourceId(comp.GetComponent());
       if (id < 0)
         err.AddFatalError("INTERNAL ERROR: missing clock net for pin '%s' of '%s' in circuit '%s'.",
             p.name, hdlComponentName, _nets.getCircuitName());
-      assn.add(String.format(_hdl.map, p.name, "LOGISIM_CLOCK_TREE_" + id));
+      map.add(p.name, CLK_TREE_NET + id);
     }
   }
 

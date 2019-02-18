@@ -47,18 +47,18 @@ public class RamHDLGenerator extends HDLGenerator {
   public RamHDLGenerator(HDLCTX ctx) {
     super(ctx, "memory", deriveHDLName(ctx.attrs), "i_RAM");
     // Address, DataOut0, then... DataOutX, DataInX, CLK, WE, LEX
-    inPorts.add(new PortInfo("Address", addrWidth(), Mem.ADDR, false));
-    outPorts.add(new PortInfo("DataOut0", dataWidth(), Mem.DATA, null));
+    inPorts.add("Address", addrWidth(), Mem.ADDR, false);
+    outPorts.add("DataOut0", dataWidth(), Mem.DATA, null);
     int n = Mem.lineSize(attrs);
     int portnr = Mem.MEM_INPUTS;
     for (int i = 1; i < n; i++)
-      outPorts.add(new PortInfo("DataOut"+i, dataWidth(), portnr++ null));
+      outPorts.add("DataOut"+i, dataWidth(), portnr++ null);
     for (int i = 0; i < n; i++)
-      inPorts.add(new PortInfo("DataIn"+i, dataWidth(), portnr++, false));
+      inPorts.add("DataIn"+i, dataWidth(), portnr++, false);
     clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", portnr++);
-    inPorts.add(new PortInfo("WE", 1, portnr++, false));
+    inPorts.add("WE", 1, portnr++, false);
     for (int i = 0; i < n && n > 1; i++)
-      inPorts.add(new PortInfo("LE"+i, 1, portnr++, true));
+      inPorts.add("LE"+i, 1, portnr++, true);
   }
 
   private static String deriveHDLName(AttributeSet attrs) {

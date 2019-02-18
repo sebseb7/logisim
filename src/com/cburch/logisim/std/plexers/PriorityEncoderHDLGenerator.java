@@ -40,17 +40,17 @@ public class PriorityEncoderHDLGenerator extends HDLGenerator {
     int ws = selWidth();
     int n = (1 << ws);
     for (int i = n - 1; i >= 0; i--)
-      inPorts.add(new PortInfo("In"+i, 1, i, false));
-    inPorts.add(new PortInfo("Enable", 1, n + PriorityEncoder.EN_IN, true));
-    outPorts.add(new PortInfo("Sel", 1, n + PriorityEncoder.GS, null));
-    outPorts.add(new PortInfo("EnableOut", 1, n + PriorityEncoder.EN_OUT, null));
-    outPorts.add(new PortInfo("Address", ws, n + PriorityEncoder.OUT, null));
-    wires.add(new WireInfo("s_in_is_zero", 1));
-    wires.add(new WireInfo("s_addr", 5));
-    wires.add(new WireInfo("v_sel_1", 33));
-    wires.add(new WireInfo("v_sel_2", 16));
-    wires.add(new WireInfo("v_sel_3", 8));
-    wires.add(new WireInfo("v_sel_4", 4));
+      inPorts.add("In"+i, 1, i, false);
+    inPorts.add("Enable", 1, n + PriorityEncoder.EN_IN, true);
+    outPorts.add("Sel", 1, n + PriorityEncoder.GS, null);
+    outPorts.add("EnableOut", 1, n + PriorityEncoder.EN_OUT, null);
+    outPorts.add("Address", ws, n + PriorityEncoder.OUT, null);
+    wires.add("s_in_is_zero", 1);
+    wires.add("s_addr", 5);
+    wires.add("v_sel_1", 33);
+    wires.add("v_sel_2", 16);
+    wires.add("v_sel_3", 8);
+    wires.add("v_sel_4", 4);
   }
 
   private static String deriveHDLName(AttributeSet attrs) {

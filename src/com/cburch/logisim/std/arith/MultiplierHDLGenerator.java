@@ -39,16 +39,16 @@ public class MultiplierHDLGenerator extends HDLGenerator {
     // todo: 1-bit version?
     // todo: Verilog version
     int w = stdWidth();
-    parameters.add(new ParameterInfo("BitWidth", w));
-    inPorts.add(new PortInfo("DataA", "BitWidth", Multiplier.IN0, false));
-    inPorts.add(new PortInfo("DataB", "BitWidth", Multiplier.IN1, false));
-    inPorts.add(new PortInfo("CarryIn", "BitWidth", Multiplier.C_IN, false));
-    outPorts.add(new PortInfo("ProductLo", "BitWidth", Multiplier.OUT, null));
-    outPorts.add(new PortInfo("ProductHi", "BitWidth", Multiplier.C_OUT, null));
+    parameters.add("BitWidth", w);
+    inPorts.add("DataA", "BitWidth", Multiplier.IN0, false);
+    inPorts.add("DataB", "BitWidth", Multiplier.IN1, false);
+    inPorts.add("CarryIn", "BitWidth", Multiplier.C_IN, false);
+    outPorts.add("ProductLo", "BitWidth", Multiplier.OUT, null);
+    outPorts.add("ProductHi", "BitWidth", Multiplier.C_OUT, null);
     if (ctx.isVhdl) {
-      wires.add(new WireInfo("s_mul", "2*BitWidth"));
-      wires.add(new WireInfo("s_cin", "2*BitWidth"));
-      wires.add(new WireInfo("s_res", "2*BitWidth"));
+      wires.add("s_mul", "2*BitWidth");
+      wires.add("s_cin", "2*BitWidth");
+      wires.add("s_res", "2*BitWidth");
     } else {
       throw new IllegalArgumentException("Verilog multiplier not yet implemented");
     }

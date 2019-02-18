@@ -40,10 +40,10 @@ public class TtyHDLGenerator extends HDLGenerator {
   public TtyHDLGenerator(HDLCTX ctx) {
     super(ctx, "io", "Tty_${LABEL}", "i_Tty");
     int w = Tty.getWidth(attrs.getValue(Tty.ATTR_WIDTH));
-    parameters.add(new ParameterInfo("AsciiWidth", w));
+    parameters.add("AsciiWidth", w);
     long freq = _nets.RawFPGAClockFreq();
     long period_ns = 1000000000 / freq;
-    parameters.add(new ParameterInfo("CLK_PERIOD_NS", (int)period_ns));
+    parameters.add("CLK_PERIOD_NS", (int)period_ns);
 
     // todo: support CLR
     _err.AddWarning("Clear signal is likely broken for TTY component in HDL");
@@ -56,9 +56,9 @@ public class TtyHDLGenerator extends HDLGenerator {
     // warning in HDLGenerator about this.
 
     clockPort = new ClockPortInfo("FPGAClock", "SlowClockEnable", Tty.CK);
-    inPorts.add(new PortInfo("Enable", 1, Tty.WE, false));
-    inPorts.add(new PortInfo("Clear", 1, Tty.CLR, false));
-    inPorts.add(new PortInfo("Data", "AsciiWidth", Tty.IN, false));
+    inPorts.add("Enable", 1, Tty.WE, false);
+    inPorts.add("Clear", 1, Tty.CLR, false);
+    inPorts.add("Data", "AsciiWidth", Tty.IN, false);
 
     ArrayList<String> labels = new ArrayList<>();
     labels.add("lcd_bl");

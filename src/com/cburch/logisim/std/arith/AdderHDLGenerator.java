@@ -39,28 +39,28 @@ public class AdderHDLGenerator extends HDLGenerator {
     int w = stdWidth();
     if (w > 1) {
       // Generic n-bit version
-      parameters.add(new ParameterInfo("BitWidth", w));
-      inPorts.add(new PortInfo("DataA", "BitWidth", Adder.IN0, false));
-      inPorts.add(new PortInfo("DataB", "BitWidth", Adder.IN1, false));
-      outPorts.add(new PortInfo("Result", "BitWidth", Adder.OUT, null));
-      inPorts.add(new PortInfo("CarryIn", 1, Adder.C_IN, false));
-      outPorts.add(new PortInfo("CarryOut", 1, Adder.C_OUT, null));
+      parameters.add("BitWidth", w);
+      inPorts.add("DataA", "BitWidth", Adder.IN0, false);
+      inPorts.add("DataB", "BitWidth", Adder.IN1, false);
+      outPorts.add("Result", "BitWidth", Adder.OUT, null);
+      inPorts.add("CarryIn", 1, Adder.C_IN, false);
+      outPorts.add("CarryOut", 1, Adder.C_OUT, null);
       if (ctx.isVhdl) {
-        wires.add(new WireInfo("s_A", "BitWidth+1"));
-        wires.add(new WireInfo("s_B", "BitWidth+1"));
-        wires.add(new WireInfo("s_R", "BitWidth+1"));
+        wires.add("s_A", "BitWidth+1");
+        wires.add("s_B", "BitWidth+1");
+        wires.add("s_R", "BitWidth+1");
       }
     } else {
       // 1-bit version
-      inPorts.add(new PortInfo("DataA", 1, Adder.IN0, false));
-      inPorts.add(new PortInfo("DataB", 1, Adder.IN1, false));
-      outPorts.add(new PortInfo("Result", 1, Adder.OUT, null));
-      inPorts.add(new PortInfo("CarryIn", 1, Adder.C_OUT, false));
-      outPorts.add(new PortInfo("CarryOut", 1, Adder.C_OUT, null));
+      inPorts.add("DataA", 1, Adder.IN0, false);
+      inPorts.add("DataB", 1, Adder.IN1, false);
+      outPorts.add("Result", 1, Adder.OUT, null);
+      inPorts.add("CarryIn", 1, Adder.C_OUT, false);
+      outPorts.add("CarryOut", 1, Adder.C_OUT, null);
       if (ctx.isVhdl) {
-        wires.add(new WireInfo("s_A", 2));
-        wires.add(new WireInfo("s_B", 2));
-        wires.add(new WireInfo("s_R", 2));
+        wires.add("s_A", 2);
+        wires.add("s_B", 2);
+        wires.add("s_R", 2);
       }
     }
   }

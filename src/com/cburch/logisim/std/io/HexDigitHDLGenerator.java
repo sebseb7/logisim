@@ -30,16 +30,9 @@
 package com.cburch.logisim.std.io;
 
 import java.util.ArrayList;
-import java.util.SortedMap;
-import java.util.Map;
-import java.io.File;
 
-import com.bfh.logisim.hdlgenerator.FileWriter;
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
-import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 
 public class HexDigitHDLGenerator extends HDLGenerator {
 
@@ -64,9 +57,9 @@ public class HexDigitHDLGenerator extends HDLGenerator {
   public HexDigitHDLGenerator(HDLCTX ctx) {
     super(ctx, "io", "HexDigit_${LABEL}", "i_Hex");
 
-    inPorts.add(new PortInfo("Hex", 4, HexDigit.HEX, false));
-    inPorts.add(new PortInfo("DecimalPoint", 1, HexDigit.DP, false));
-    wires.add(new WireInfo("s_pattern", 7));
+    inPorts.add("Hex", 4, HexDigit.HEX, false);
+    inPorts.add("DecimalPoint", 1, HexDigit.DP, false);
+    wires.add("s_pattern", 7);
 
     hiddenPort = new IOComponentInformationContainer(
         0/*in*/, 8/*out*/, 0/*inout*/,

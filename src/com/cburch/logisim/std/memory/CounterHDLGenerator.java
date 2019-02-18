@@ -36,19 +36,19 @@ public class CounterHDLGeneratorextends HDLGenerator {
 
   public CounterHDLGenerator(HDLCTX ctx) {
     super(ctx, "memory", "Counter", "i_Ctr");
-    parameters.add(new ParameterInfo("BitWidth", stdWidth()));
-    parameters.add(new ParameterInfo("MaxVal", attrs.getValue(Counter.ATTR_MAX)));
-    parameters.add(new ParameterInfo("Mode", mode()));
+    parameters.add("BitWidth", stdWidth());
+    parameters.add("MaxVal", attrs.getValue(Counter.ATTR_MAX));
+    parameters.add("Mode", mode());
 
-    inPorts.add(new PortInfo("LoadData", "BitWidth", Counter.IN, false));
-    inPorts.add(new PortInfo("Clear", 1, Counter.CLR, false));
-    inPorts.add(new PortInfo("Load", 1, Counter.LD, false));
-    inPorts.add(new PortInfo("Enable", 1, Counter.EN, true));
-    inPorts.add(new PortInfo("Direction", 1, Counter.UD, true));
-    outPorts.add(new PortInfo("CountValue", "BitWidth", Counter.OUT, null));
-    outPorts.add(new PortInfo("CompareOut", 1, Counter.CARRY, null));
+    inPorts.add("LoadData", "BitWidth", Counter.IN, false);
+    inPorts.add("Clear", 1, Counter.CLR, false);
+    inPorts.add("Load", 1, Counter.LD, false);
+    inPorts.add("Enable", 1, Counter.EN, true);
+    inPorts.add("Direction", 1, Counter.UD, true);
+    outPorts.add("CountValue", "BitWidth", Counter.OUT, null);
+    outPorts.add("CompareOut", 1, Counter.CARRY, null);
 
-    wires.add(new WireInfo("s_real_enable", 1));
+    wires.add("s_real_enable", 1);
     registers.add(new WireInfo("s_counter_value", "BitWidth"));
     registers.add(new WireInfo("s_next_counter_value", "BitWidth"));
     registers.add(new WireInfo("s_carry", 1));

@@ -50,7 +50,7 @@ public abstract class HDLSupport {
       this.lang = lang;
       this.err = err;
       this.nets = nets;
-      this.attrs = attrs;
+      this.attrs = attrs != null ? attrs : AttriibuteSets.EMPTY;
       this.vendor = vendor;
     }
   }
@@ -89,21 +89,20 @@ public abstract class HDLSupport {
     this._hdl = new Hdl(_lang, _err);
   }
 
+// 	public static final String FPGAToplevelName = "LogisimToplevelShell"; -- TopLevelHDLGenerator.HDL_NAME
+
   // TODO - fixme these only serve to make code more impenetrable
-	// public static final String NetName = "s_LOGISIM_NET_";
+	
+  // public static final String NetName = "s_LOGISIM_NET_";
 	// public static final String BusName = "s_LOGISIM_BUS_";
 	// public static final String LocalInputBubbleBusname = "LOGISIM_INPUT_BUBBLES"; LOGISIM_HIDDEN_FPGA_INPUT
-	// public static final String LocalOutputBubbleBusname = "LOGISIM_OUTPUT_BUBBLES";
-	// public static final String LocalInOutBubbleBusname = "LOGISIM_INOUT_BUBBLES";
-	// public static final String FPGAToplevelName = "LogisimToplevelShell";
+	// public static final String LocalOutputBubbleBusname = "LOGISIM_OUTPUT_BUBBLES"; LOGISIM_HIDDEN_FPGA_INOUT
+	// public static final String LocalInOutBubbleBusname = "LOGISIM_INOUT_BUBBLES"; LOGISIM_HIDDEN_FPGA_OUTPUT
 	// public static final String InputBubblePortName = "LOGISIM_INPUT_BUBBLE_";
 	// public static final String OutputBubblePortName = "LOGISIM_OUTPUT_BUBBLE_";
 	// public static final String InOutBubblePortName = "LOGISIM_INOUTT_BUBBLE_";
 	// public static final String BusToBitAddendum = "_bit_";
 	// public static final String ClockTreeName = "LOGISIM_CLOCK_TREE_";
-	// public static final String FPGAInputPinName = "FPGA_INPUT_PIN";
-	// public static final String FPGAInOutPinName = "FPGA_INOUT_PIN";
-	// public static final String FPGAOutputPinName = "FPGA_OUTPUT_PIN";
 
   // Return the component name.
   public final String getComponentName() { return hdlComponentName; }
@@ -112,6 +111,7 @@ public abstract class HDLSupport {
   public boolean writeHDLFiles(String rootDir) { }
 	protected void generateComponentDeclaration(Hdl out) { }
 	protected void generateComponentInstance(Hdl out, long id, NetlistComponent comp) { }
+	protected String getInstanceNamePrefix() { }
 
   // For HDLInliner classes.
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) { }

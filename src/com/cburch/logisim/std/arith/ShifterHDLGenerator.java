@@ -29,31 +29,24 @@
  */
 package com.cburch.logisim.std.arith;
 
-import java.util.SortedMap;
-
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
-import com.cburch.logisim.data.AttributeSet;
+import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.hdl.Hdl;
-import com.cburch.logisim.instance.StdAttr;
 
-public class ShifterHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
+public class ShifterHDLGenerator extends HDLGenerator {
 
-  public ShifterHDLGeneratorFactory(HDLCTX ctx) {
+  public ShifterHDLGenerator(HDLCTX ctx) {
     super(ctx, "arithmetic", "Shifter_${WIDTH}_bit", "i_Shift");
     int w = stdWidth();
     int n = stages();
     int m = mode();
-    parameters.add(new ParameterInfo("Mode", m));
-    inPorts.add(new PortInfo("DataA", w, Shifter.IN0, false));
-    inPorts.add(new PortInfo("Shift", n, Shifter.IN1, false));
-    outPorts.add(new PortInfo("Result", w, Shifter.OUT, null));
+    parameters.add("Mode", m);
+    inPorts.add("DataA", w, Shifter.IN0, false);
+    inPorts.add("Shift", n, Shifter.IN1, false);
+    outPorts.add("Result", w, Shifter.OUT, null);
     if (w > 1) {
       for (int i = 0; i < n; i++) {
-        wires.add(new WireInfo(String.format("s_%d_out", i), w));
-        wires.add(new WireInfo(String.format("s_%d_in", i), 1<<i));
+        wires.add(String.format("s_%d_out", i), w);
+        wires.add(String.format("s_%d_in", i), 1<<i);
       }
     }
   }

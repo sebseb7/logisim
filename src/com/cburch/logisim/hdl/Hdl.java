@@ -44,21 +44,19 @@ public class Hdl extends ArrayList<String> {
   public final boolean isVhdl, isVerilog;
   public final FPGAReport err;
 
-  // HDL-specific formats              VHDL                      Verilog
-  public final String map;          // %s => %s                  .%s(%s)
-  public final String map0;         // %s(0) => %s               .%s(%s)
-  public final String map1;         // %s(%d) => %s              (null)
-  public final String mapN;         // %s(%d downto %d) => %s    (null)
-  public final String assn;         // %s <= %s;                 assign %s = %s;
-  public final String bitAssn;      // %s(%d) <= %s;             assign %s[%d] = %s;
-  public final String assnBit;      // %s <= %s(%d);             assign %s = %s[%d];
-  public final String bitAssnBit;   // %s(%d) <= %s(%d);         assign %s[%d] = %s[%d];
-  public final String idx;          // (%d)                      [%d]
-  public final String range;        // (%d downto %d)            [%d:%d]
-  public final String zero;         // '0'                       1b'0
-  public final String one;          // '1'                       1b'1
-  public final String unconnected;  // open                      (emptystring)
-  public final String not;          // not                       ~
+  // HDL-specific formats                VHDL                      Verilog
+  public final String assn;           // %s <= %s;                 assign %s = %s;
+  public final String bitAssn;        // %s(%d) <= %s;             assign %s[%d] = %s;
+  public final String rangeAssn;      // %s(%d downto %d) <= %s;   assign %s[%d:%d] = %s;
+  public final String assnBit;        // %s <= %s(%d);             assign %s = %s[%d];
+  public final String assnRange;      // %s <= %s(%d downto %d);   assign %s = %s[%d:%d];
+  public final String bitAssnBit;     // %s(%d) <= %s(%d);         assign %s[%d] = %s[%d];
+  public final String idx;            // (%d)                      [%d]
+  public final String range;          // (%d downto %d)            [%d:%d]
+  public final String zero;           // '0'                       1b'0
+  public final String one;            // '1'                       1b'1
+  public final String unconnected;    // open                      (emptystring)
+  public final String not;            // not                       ~
 
   private int indent = 0;
   private String tab = "";
@@ -76,13 +74,11 @@ public class Hdl extends ArrayList<String> {
     this.isVerilog = this.lang == Lang.Verilog;
     this.err = err;
     if (isVhdl) {
-      map = "%s => %s";
-      map0 = "%s(0) => %s";
-      map1 = "%s(%d) => %s";
-      mapN = "%s(%d downto %d) => %s";
       assn = "%s \t<= %s;";
       bitAssn = "%s(%d) \t<= %s;";
+      rangeAssn = "%s(%d downto %d) \t<= %s;";
       assnBit = "%s \t<= %s(%d);";
+      assnRange = "%s \t<= %s(%d downto %d);";
       bitAssnBit = "%s(%d) \t<= %s(%d);";
       idx = "(%d)";
       range = "(%d downto %d)"
@@ -91,13 +87,11 @@ public class Hdl extends ArrayList<String> {
       unconnected = "open";
       not = "not";
     } else {
-      map = ".%s(%s)";
-      map0 = ".%s(%s)";
-      map1 = null;
-      mapN = null;
       assn = "assign %s \t= %s;";
       bitAssn = "assign %s[%d] \t= %s;";
+      rangeAssn = "assign %s[%d:%d] \t= %s;";
       assnBit = "assign %s \t= %s[%d];";
+      assnRange = "assign %s \t= %s[%d:%d];";
       bitAssnBit = "assign %s[%d] \t= %s[%d];";
       idx = "[%d]";
       range = "[%d:%d]";
@@ -202,8 +196,22 @@ public class Hdl extends ArrayList<String> {
     stmt(bitAssn, name, nameIdx, val);
   }
 
+  public void assign(String name, int nameIdxHi, int nameIdxLo, String val) {
+    if (nameIdxHi == nameIdxLo)
+      stmt(bitAssn, name, nameIdxLo, val);
+    else
+      stmt(rangeAssn, name, nameIdxHi, nameIdxLo, val);
+  }
+
   public void assign(String name, String val, int valIdx) {
     stmt(assnBit, name, val, valIdx);
+  }
+
+  public void assign(String name, String val, int valIdxHi, int valIdxLo) {
+    if (valIdxHi == valIdxLo)
+      stmt(assnBit, name, val, valIdxLo);
+    else
+      stmt(assnRange, name, val, valIdxHi, valIdxLo);
   }
 
   public void assign(String name, int nameIdx, String val, int valIdx) {
@@ -245,6 +253,16 @@ public class Hdl extends ArrayList<String> {
     }
     return out.toString();
 	}
+
+  // Returns "(others => '1')", "(others => '0'), "~0", or "0".
+  public String all(boolean value) {
+    if (isVhdl)
+      return String.format("(others => %s)", bit(value));
+    else if (value)
+      return "~0";
+    else
+      return "0";
+  }
  
   // Same as literal(0, 1) or literal(1, 1).
   public String bit(boolean value) {
@@ -298,6 +316,8 @@ public class Hdl extends ArrayList<String> {
   //   w = "8"    VHDL: "std_logic_vector(7 downto 0)"      Verilog: "[7:0] "
   //   w = "N"    VHDL: "std_logic_vector(N-1 downto 0)"    Verilog: "[N-1:0] "
   public String typeForWidth(String w, HDLGenerator.Generics params) {
+    // Special case: when w has parens, like "(1)", we deliberately treat it as
+    // a vector. See ToplevelHDLGenerator.addWireVector().
     try {
       int n = Integer.parseInt(w);
       if (n == 1)
@@ -308,6 +328,93 @@ public class Hdl extends ArrayList<String> {
         return isVhdl ? "std_logic_vector("+(n-1)+" downto 0)" : "["+(n-1)+":0] ";
     } catch (NumberFormatException ex) {
       return isVhdl ? "std_logic_vector("+w+"-1 downto 0)" : "["+w+"-1:0] ";
+    }
+  }
+
+  // Map is used for port mappings and generic parameter mapping.
+  public static class Map extends Hdl {
+    // HDL-specific formats              VHDL                        Verilog
+    public final String map;          // %s => %s                    .%s(%s)
+    public final String map0;         // %s(0) => %s                 .%s(%s)
+    public final String map1;         // %s(%d) => %s                (null)
+    public final String mapN;         // %s(%d downto %d) => %s      (null)
+    public final String mapBit;       // %s => %s(%d)                .%s(%s(%d))
+    public final String map0Bit;      // %s(0) => %s(%d)             .%s(%s(%d))
+    public final String map1Bit;      // %s(%d) => %s(%d)            (null)
+    public final String mapNBus;      // %s(%d downto %d) => %s(%d)  (null)
+
+    public Map(String lang, FPGAReport err) {
+      super(lang, err);
+      if (isVhdl) {
+        map = "%s => %s";
+        map0 = "%s(0) => %s";
+        map1 = "%s(%d) => %s";
+        mapN = "%s(%d downto %d) => %s";
+        mapBit = "%s => %s(%d)";
+        map0Bit = "%s(0) => %s(%d)";
+        map1Bit = "%s(%d) => %s(%d)";
+        mapNBit = "%s(%d downto %d) => %s(%d)";
+      } else {
+        map = ".%s(%s)";
+        map0 = ".%s(%s)";
+        map1 = null;
+        mapN = null;
+        mapBit = ".%s(%s(%d))";
+        map0Bit = ".%s(%s(%d))";
+        map1Bit = null;
+        mapNBit = null;
+      }
+    }
+
+    public void assign(String name, String val) { throw new IllegalArgumentException(); }
+    public void assign(String name, int nameIdx, String val) { throw new IllegalArgumentException(); }
+    public void assign(String name, String val, int valIdx) { throw new IllegalArgumentException(); }
+    public void assign(String name, int nameIdx, String val, int valIdx) { throw new IllegalArgumentException(); }
+
+    public void add(String name, String val) {
+      stmt(map, name, val);
+    }
+
+    public void add0(String name, String val) {
+      stmt(map0, name, val);
+    }
+
+    public void vhdlAdd(String name, int nameIdx, String val) {
+      if (isVerilog)
+        throw new IllegalArgumentException();
+      stmt(map1, name, nameIdx, val);
+    }
+
+    public void vhdlAdd(String name, int nameIdxHi, int nameIdxLo, String val) {
+      if (isVerilog)
+        throw new IllegalArgumentException();
+      if (nameIdxHi == nameIdxLo)
+        stmt(map1, name, nameIdxLo, val);
+      else
+        stmt(mapN, name, nameIdxHi, nameIdxLo, val);
+    }
+
+    public void add(String name, String val, int valIdx) {
+      stmt(mapBit, name, val, valIdx);
+    }
+
+    public void add0(String name, String val, int valIdx) {
+      stmt(map0Bit, name, val, valIdx);
+    }
+
+    public void vhdlAdd(String name, int nameIdx, String val, int valIdx) {
+      if (isVerilog)
+        throw new IllegalArgumentException();
+      stmt(map1Bit, name, nameIdx, val, valIdx);
+    }
+
+    public void vhdlAdd(String name, int nameIdxHi, int nameIdxLo, String val, int valIdx) {
+      if (isVerilog)
+        throw new IllegalArgumentException();
+      if (nameIdxHi == nameIdxLo)
+        stmt(map1Bit, name, nameIdxLo, val, valIdx);
+      else
+        stmt(mapNBit, name, nameIdxHi, nameIdxLo, val, valIdx);
     }
   }
 

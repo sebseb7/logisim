@@ -39,27 +39,27 @@ public class ComparatorHDLGenerator extends HDLGenerator {
     int w = stdWidth();
     if (w > 1) {
       // Generic n-bit version
-      parameters.add(new ParameterInfo("TwosComplement", uMode() ? 0 : 1));
-      parameters.add(new ParameterInfo("BitWidth", w));
-      inPorts.add(new PortInfo("DataA", "BitWidth", Comparator.IN0, false));
-      inPorts.add(new PortInfo("DataB", "BitWidth", Comparator.IN1, false));
-      outPorts.add(new PortInfo("A_GT_B", 1, Comparator.GT, null));
-      outPorts.add(new PortInfo("A_EQ_B", 1, Comparator.EQ, null));
-      outPorts.add(new PortInfo("A_LT_B", 1, Comparator.LT, null));
+      parameters.add("TwosComplement", uMode() ? 0 : 1);
+      parameters.add("BitWidth", w);
+      inPorts.add("DataA", "BitWidth", Comparator.IN0, false);
+      inPorts.add("DataB", "BitWidth", Comparator.IN1, false);
+      outPorts.add("A_GT_B", 1, Comparator.GT, null);
+      outPorts.add("A_EQ_B", 1, Comparator.EQ, null);
+      outPorts.add("A_LT_B", 1, Comparator.LT, null);
     } else {
       // 1-bit version
-      parameters.add(new ParameterInfo("TwosComplement", uMode() ? 0 : 1));
-      inPorts.add(new PortInfo("DataA", 1, Comparator.IN0, false));
-      inPorts.add(new PortInfo("DataB", 1, Comparator.IN1, false));
-      outPorts.add(new PortInfo("Result", 1, Comparator.OUT, null));
-      inPorts.add(new PortInfo("CarryIn", 1, Comparator.C_OUT, false));
-      outPorts.add(new PortInfo("CarryOut", 1, Comparator.C_OUT, null));
+      parameters.add("TwosComplement", uMode() ? 0 : 1);
+      inPorts.add("DataA", 1, Comparator.IN0, false);
+      inPorts.add("DataB", 1, Comparator.IN1, false);
+      outPorts.add("Result", 1, Comparator.OUT, null);
+      inPorts.add("CarryIn", 1, Comparator.C_OUT, false);
+      outPorts.add("CarryOut", 1, Comparator.C_OUT, null);
     }
     if (ctx.isVhdl) {
-      wires.add(new WireInfo("s_slt", 1));
-      wires.add(new WireInfo("s_ult", 1));
-      wires.add(new WireInfo("s_sgt", 1));
-      wires.add(new WireInfo("s_ugt", 1));
+      wires.add("s_slt", 1);
+      wires.add("s_ult", 1);
+      wires.add("s_sgt", 1);
+      wires.add("s_ugt", 1);
     }
   }
 

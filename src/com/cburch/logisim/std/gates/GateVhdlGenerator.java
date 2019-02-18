@@ -29,17 +29,11 @@
  */
 package com.cburch.logisim.std.gates;
 
-import java.util.SortedMap;
-
-import com.bfh.logisim.designrulecheck.Netlist;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
-import com.cburch.logisim.instance.StdAttr;
 
-public class GateVhdlGenerator extends AbstractHDLGeneratorFactory {
+public class GateVhdlGenerator extends HDLGenerator {
 
   protected final static int GENERIC_PARAM_BUSWIDTH = -1;
   protected final static int GENERIC_PARAM_INPUTNEGATIONS = -2;
@@ -49,17 +43,47 @@ public class GateVhdlGenerator extends AbstractHDLGeneratorFactory {
   protected final boolean invertOutput;
 
   protected GateVhdlGenerator(String name, HDLCTX ctx, boolean invertOutput) { // unary ops
-    super(ctx, deriveHDLName(name, ctx.attrs), "GATE");
+    super(ctx, "gates", deriveHDLName(name, ctx.attrs), "i_Gate");
     this.op = null;
     this.identity = false;
     this.invertOutput = invertOutput;
+    setup(true);
   }
 
   protected GateVhdlGenerator(String name, HDLCTX ctx, boolean identity, String op, boolean invertOutput) {
-    super(ctx, deriveHDLName(name, ctx.attrs), "GATE");
+    super(ctx, "gates", deriveHDLName(name, ctx.attrs), "i_Gate");
     this.identity = identity;
     this.op = op;
     this.invertOutput = invertOutput;
+    setup(false);
+  }
+
+  protected void setup(boolean unary) {
+    int w = stdWidth();
+    int n = numInputs();
+    if (w > 1) {
+      // Generic n-bit version
+      parameters.add("BitWidth", w);
+      outPorts.add("Result", "BitWidth", 0, null);
+      for (int i = 1; i <= n; i++)
+        inPorts.add("Input_"+i, "BitWidth", i, invertedInput(i) ^ identity;
+    } else {
+      // 1-bit version
+      outPorts.add("Result", 1, 0, null);
+      for (int i = 1; i <= n; i++)
+        inPorts.add("Input_"+i, 1, i, invertedInput(i) ^ identity);
+    }
+    if (!unary) {
+      int mask = 0;
+      for (int i = 1; i <= n; i++)
+        if (invertedInput(i))
+          mask |= 1 << (i-1);
+      parameters.add("InputNegations", mask);
+      wires.add("s_mask", n);
+      for (int i = 1; i <= n; i++)
+        wires.add("s_in_"+i, (w > 1) ? "BitWidth" : "1");
+    }
+
   }
 
   private static String deriveHDLName(String name, AttributeSet attrs) {
@@ -146,21 +170,17 @@ public class GateVhdlGenerator extends AbstractHDLGeneratorFactory {
     }
   }
 
-  protected void doInputInversions(Hdl out, int n) {
+  protected void generateInputInversions(Hdl out, int n) {
     out.stmt("s_mask <= std_logic_vector(to_unsigned(InputNegations, %d));", n);
     for (int i = 1; i <= n; i++)
       out.stmt("s_in_%d <= NOT(Input_%d) WHEN s_mask(%d) = '1' ELSE Input_%d;", i, i, i, i);
   }
 
   @Override
-  public void behavior(Hdl out, Netlist TheNetlist, AttributeSet attrs) {
-    out.indent();
-
+  protected void generateBehavior(Hdl out) {
     int n = attrs.getValueOrElse(GateAttributes.ATTR_INPUTS, 1);
-
     if (n > 1)
-      doInputInversions(out, n);
-
+      generateInputInversions(out, n);
     if (n == 1)
       unaryOp(out);
     else if (n == 2)
@@ -171,88 +191,11 @@ public class GateVhdlGenerator extends AbstractHDLGeneratorFactory {
       naryOp(out, n);
   }
 
-  // Subdirectory where files will be saved.
-  @Override
-  public String GetSubDir() { return "gates"; }
-
-  // {SignalName, SignalWidth} for each input port, where negative SignalWidth
-  // means use width is defined by corresponding generic parameter.
-  @Override
-  public void inputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
-    int n = attrs.getValueOrElse(GateAttributes.ATTR_INPUTS, 1);
-    for (int i = 1; i <= n; i++)
-      list.put("Input_"+i, w);
+  protected boolean invertedInput(int i) {
+    return _attrs.getValueOrElse(new NegateAttribute(i-1, null), false);
   }
 
-  // {SignalName, SignalWidth} for each output port, where negative SignalWidth
-  // means use width is defined by corresponding generic parameter.
-  @Override
-  public void outputs(SortedMap<String, Integer> list, Netlist nets, AttributeSet attrs) {
-    int w = width(attrs) > 1 ? GENERIC_PARAM_BUSWIDTH : 1;
-    list.put("Result", w);
-  }
-
-  // {ID, ParameterName} for each generic parameter, where ID is negative.
-  @Override
-	public void params(SortedMap<Integer, String> list, AttributeSet attrs) {
-    int n = attrs.getValueOrElse(GateAttributes.ATTR_INPUTS, 1);
-    if (width(attrs) > 1)
-      list.put(GENERIC_PARAM_BUSWIDTH, "BusWidth");
-    if (n > 1)
-      list.put(GENERIC_PARAM_INPUTNEGATIONS, "InputNegations");
-  }
-
-  // {ParameterName, ParameterValue} for each generic parameter, where
-  // ParameterValue is a constant.
-  @Override
-  public void paramValues(SortedMap<String, Integer> list, Netlist nets, NetlistComponent info, FPGAReport err) {
-    AttributeSet attrs = info.GetComponent().getAttributeSet();
-
-    if (width(attrs) > 1)
-      list.put("BusWidth", width(attrs));
-
-    int n = attrs.getValueOrElse(GateAttributes.ATTR_INPUTS, 1);
-    if (n > 1) {
-      int mask = 0;
-      for (int i = 1; i <= n; i++)
-        if (invertedInput(attrs, i))
-          mask |= 1 << (i-1);
-      list.put("InputNegations", mask);
-    }
-  }
-
-  // {PortName, PortValue} for each input/output port, where PortValue can be a
-  // net name, "OPEN", zeros, concatenated signals to form a bus, etc.
-  @Override
-  public void portValues(SortedMap<String, String> list, Netlist nets, NetlistComponent info, FPGAReport err, String lang) {
-    AttributeSet attrs = info.GetComponent().getAttributeSet();
-    int n = attrs.getValueOrElse(GateAttributes.ATTR_INPUTS, 1);
-    for (int i = 1; i <= n; i++) {
-      boolean inputWhenFloating = invertedInput(attrs, i) ^ identity;
-      list.putAll(GetNetMap("Input_"+i, inputWhenFloating, info, i, err, lang, nets));
-    }
-    list.putAll(GetNetMap("Result", true, info, 0, err, lang, nets));
-  }
-
-  // {SignalName, SignalWidth} for signals internally by this entity, where
-  // negative SignalWidth means use width is defined by corresponding generic parameter.
-  @Override
-  public void wires(SortedMap<String, Integer> list, AttributeSet attrs, Netlist nets) {
-    int n = attrs.getValueOrElse(GateAttributes.ATTR_INPUTS, 1);
-    if (n > 1) {
-      boolean is_bus = width(attrs) > 1;
-      for (int i = 1; i <= n; i++)
-        list.put("s_in_"+i, is_bus ? GENERIC_PARAM_BUSWIDTH : 1);
-      list.put("s_mask", n);
-    }
-  }
-
-  protected int width(AttributeSet attrs) {
-    return attrs.getValue(StdAttr.WIDTH).getWidth();
-  }
-
-  protected boolean invertedInput(AttributeSet attrs, int i) {
-    return attrs.getValueOrElse(new NegateAttribute(i-1, null), false);
+  protected int numInputs() {
+    return attrs.getValueOrElse(GateAttributes.ATTR_INPUTS, 1);
   }
 }

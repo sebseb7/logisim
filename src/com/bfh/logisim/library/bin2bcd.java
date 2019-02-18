@@ -130,7 +130,7 @@ public class bin2bcd extends InstanceFactory {
   @Override
   public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
     if (ctx.lang.equals("VHDL"))
-      return new bin2bcdHDLGeneratorFactory(ctx);
+      return new bin2bcdHDLGenerator(ctx);
     else
       return null;
   }

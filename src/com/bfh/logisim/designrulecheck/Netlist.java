@@ -95,7 +95,7 @@ public class Netlist {
 	private ArrayList<NetlistComponent> MySubCircuits = new ArrayList<NetlistComponent>();
 	private ArrayList<NetlistComponent> MyComponents = new ArrayList<NetlistComponent>();
 	private ArrayList<NetlistComponent> MyClockGenerators = new ArrayList<NetlistComponent>();
-	private ArrayList<NetlistComponent> MyInOutPorts = new ArrayList<NetlistComponent>();
+	// private ArrayList<NetlistComponent> MyInOutPorts = new ArrayList<NetlistComponent>();
 	private ArrayList<NetlistComponent> MyInputPorts = new ArrayList<NetlistComponent>();
 	private ArrayList<NetlistComponent> MyOutputPorts = new ArrayList<NetlistComponent>();
 	private Integer LocalNrOfInportBubles;
@@ -1077,23 +1077,6 @@ public class Netlist {
 		return CurrentHierarchyLevel;
 	}
 
-	public int GetEndIndex(NetlistComponent comp, String PinLabel,
-			boolean IsOutputPort) {
-		String label = CorrectLabel.getCorrectLabel(PinLabel);
-		SubcircuitFactory sub = (SubcircuitFactory) comp.GetComponent()
-				.getFactory();
-		for (int end = 0; end < comp.NrOfEnds(); end++) {
-			if (comp.getEnd(end).IsOutputEnd() == IsOutputPort) {
-				if (comp.getEnd(end).GetConnection((byte) 0)
-						.getChildsPortIndex() == sub.getSubcircuit()
-						.getNetList().GetPortInfo(label)) {
-					return end;
-				}
-			}
-		}
-		return -1;
-	}
-
 	private ArrayList<ConnectionPoint> GetHiddenSinks(Net thisNet,
 			Byte bitIndex, Set<Component> SplitterList,
 			Component ActiveSplitter, Set<String> HandledNets,
@@ -1194,14 +1177,15 @@ public class Netlist {
 		}
 		return result;
 	}
-
-	public NetlistComponent GetInOutPin(int index) {
-		if ((index < 0) || (index >= MyInOutPorts.size())) {
+	
+  public NetlistComponent GetOutputPin(int index) {
+		if ((index < 0) || (index >= MyOutputPorts.size())) {
 			return null;
 		}
-		return MyInOutPorts.get(index);
+		return MyOutputPorts.get(index);
 	}
 
+	// public NetlistComponent GetInOutPin(int index)...
 	public NetlistComponent GetInOutPort(int Index) {
 		if ((Index < 0) || (Index >= MyInOutPorts.size())) {
 			return null;
@@ -1209,19 +1193,17 @@ public class Netlist {
 		return MyInOutPorts.get(Index);
 	}
 
-	public NetlistComponent GetInputPin(int index) {
-		if ((index < 0) || (index >= MyInputPorts.size())) {
-			return null;
-		}
-		return MyInputPorts.get(index);
-	}
-
+// 	public NetlistComponent GetInputPin(int index)...
 	public NetlistComponent GetInputPort(int Index) {
 		if ((Index < 0) || (Index >= MyInputPorts.size())) {
 			return null;
 		}
 		return MyInputPorts.get(Index);
 	}
+
+	public ArrayList<NetlistComponent> GetInputPorts() { return MyInputPorts; }
+	public ArrayList<NetlistComponent> GetInOutPorts() { return MyInOutPorts; }
+	public ArrayList<NetlistComponent> GetOutputPorts() { return MyOutputPorts; }
 
 	public Map<ArrayList<String>, NetlistComponent> GetMappableResources(
 			ArrayList<String> Hierarchy, boolean toplevel) {
@@ -1329,13 +1311,6 @@ public class Netlist {
 
 	public ArrayList<NetlistComponent> GetNormalComponents() {
 		return MyComponents;
-	}
-
-	public NetlistComponent GetOutputPin(int index) {
-		if ((index < 0) || (index >= MyOutputPorts.size())) {
-			return null;
-		}
-		return MyOutputPorts.get(index);
 	}
 
 	public int GetPortInfo(String Label) {
@@ -1699,9 +1674,9 @@ public class Netlist {
 		return count;
 	}
 
-	public int NumberOfInOutPorts() {
-		return MyInOutPorts.size();
-	}
+	// public int NumberOfInOutPorts() {
+	// 	return MyInOutPorts.size();
+	// }
 
 	public int NumberOfInputBubbles() {
 		return LocalNrOfInportBubles;
@@ -1793,20 +1768,21 @@ public class Netlist {
 			}
     } else if (comp.getFactory() instanceof DynamicClock) {
       DynClock = NormalComponent;
-		} else if (comp.getFactory() instanceof PortIO) {
-			MyInOutPorts.add(NormalComponent);
-			MyComponents.add(NormalComponent);
-		} else if (comp.getFactory() instanceof Tty) {
-			MyInOutPorts.add(NormalComponent);
-			MyComponents.add(NormalComponent);
-		} else if (comp.getFactory() instanceof Keyboard) {
-			MyInOutPorts.add(NormalComponent);
-			MyComponents.add(NormalComponent);
+		// } else if (comp.getFactory() instanceof PortIO) {
+		// 	MyInOutPorts.add(NormalComponent);
+		// 	MyComponents.add(NormalComponent);
+		// } else if (comp.getFactory() instanceof Tty) {
+		// 	MyInOutPorts.add(NormalComponent);
+		// 	MyComponents.add(NormalComponent);
+		// } else if (comp.getFactory() instanceof Keyboard) {
+		// 	MyInOutPorts.add(NormalComponent);
+		// 	MyComponents.add(NormalComponent);
 		} else {
 			MyComponents.add(NormalComponent);
 		}
 		return true;
 	}
+fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
 
 	private boolean ProcessSubcircuit(Component comp, FPGAReport Reporter) {
 		NetlistComponent Subcircuit = new NetlistComponent(comp);
@@ -1910,7 +1886,7 @@ public class Netlist {
 					return false;
 				}
 				NetlistComponent InputPort = sub.getSubcircuit().getNetList()
-						.GetInputPin(SolderPoint.getChildsPortIndex());
+						.GetInputPort(SolderPoint.getChildsPortIndex());
 				if (InputPort == null) {
 					Reporter.AddFatalError("INTERNAL ERROR: Unable to find Subcircuit input port!");
 					return false;

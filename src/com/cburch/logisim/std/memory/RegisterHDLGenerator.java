@@ -36,11 +36,11 @@ public class RegisterHDLGenerator extends HDLGenerator {
 
   public RegisterHDLGenerator(HDLCTX ctx) {
     super(ctx, "memory", "${TRIGGER}Register", "REGISTER");
-    parameters.add(new ParameterInfo("BitWidth", stdWidth()));
-    inPorts.add(new PortInfo("D", "BitWidth", Register.IN, false));
-    inPorts.add(new PortInfo("Reset", 1, Register.CLR, false));
-    inPorts.add(new PortInfo("Load", 1, Register.EN, true));
-    outPorts.add(new PortInfo("Q", "BitWidth", Register.OUT, false));
+    parameters.add("BitWidth", stdWidth());
+    inPorts.add("D", "BitWidth", Register.IN, false);
+    inPorts.add("Reset", 1, Register.CLR, false);
+    inPorts.add("Load", 1, Register.EN, true);
+    outPorts.add("Q", "BitWidth", Register.OUT, false);
     clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", Register.CK);
 
     registers.add(new WireInfo("s_state_reg", "BitWidth"));

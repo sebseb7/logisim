@@ -37,18 +37,18 @@ public class BitSelectorHDLGenerator extends HDLGenerator {
 
   public BitSelectorHDLGenerator(HDLCTX ctx) {
     super(ctx, "plexers", deriveHDLName(ctx.attrs), "i_BitSel");
-    parameters.add(new ParameterInfo("WidthSel", selWidth()));
-    parameters.add(new ParameterInfo("WidthIn", stdWidth()));
+    parameters.add("WidthSel", selWidth());
+    parameters.add("WidthIn", stdWidth());
     if (outWidth() > 1) {
-      parameters.add(new ParameterInfo("WidthOut", outWidth()));
-      outPorts.add(new PortInfo("Result", "WidthOut", BitSelector.OUT, null));
+      parameters.add("WidthOut", outWidth());
+      outPorts.add("Result", "WidthOut", BitSelector.OUT, null);
     } else {
-      outPorts.add(new PortInfo("Result", 1, BitSelector.OUT, null));
+      outPorts.add("Result", 1, BitSelector.OUT, null);
     }
     // list.put("ExtendedBits", wo * (1 << ws) + 1);
-    inPorts.add(new PortInfo("DataIn", "WidthIn", BitSelector.IN, false));
-    inPorts.add(new PortInfo("Sel", "WidthSel", BitSelector.IN, false));
-    wires.add(new WireInfo("s_vec", "(2**WidthSel)+1"));
+    inPorts.add("DataIn", "WidthIn", BitSelector.IN, false);
+    inPorts.add("Sel", "WidthSel", BitSelector.IN, false);
+    wires.add("s_vec", "(2**WidthSel)+1");
   }
 
   private static String deriveHDLName(AttributeSet attrs) {

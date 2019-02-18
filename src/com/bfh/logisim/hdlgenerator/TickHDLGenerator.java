@@ -37,7 +37,7 @@ import com.cburch.logisim.hdl.Hdl;
 public class TickHDLGenerator extends HDLGenerator {
 
   public static final String FPGA_CLK_NET = "FPGA_GlobalClock";
-  public static final String FPGA_CLK_ENABLE_NET = "FPGA_Tick";
+  public static final String FPGA_TICK_NET = "FPGA_Tick";
   public static final String FPGA_DYNCLK_PERIOD_NET = "s_LOGISIM_DYNAMIC_CLOCK";
 
   // Note: The discussion below should be checkec against recommended best
@@ -274,7 +274,7 @@ public class TickHDLGenerator extends HDLGenerator {
     } else if (p.name.equals("ReloadValueLessOne")) {
       assn.add(_hdl.map, p.name, FPGA_DYNCLK_PERIOD_NET);
     } else if (p.name.equals("FPGATick")) {
-      assn.add(_hdl.map, p.name, FPGA_CLK_ENABLE_NET);
+      assn.add(_hdl.map, p.name, FPGA_TICK_NET);
     }
   }
 

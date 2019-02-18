@@ -46,11 +46,15 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.designrulecheck.CorrectLabel;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.cburch.draw.model.CanvasObject;
 import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.appear.CircuitAppearance;
+import com.cburch.logisim.circuit.appear.DefaultClassicAppearance;
+import com.cburch.logisim.circuit.appear.DefaultEvolutionAppearance;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.Attribute;
@@ -59,26 +63,20 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.data.Direction;
+import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.StringUtil;
-
-import com.bfh.logisim.designrulecheck.CorrectLabel;
-import com.cburch.logisim.std.wiring.Pin;
-import com.cburch.logisim.instance.InstanceComponent;
-import com.cburch.logisim.data.Location;
-import com.cburch.logisim.circuit.appear.DefaultEvolutionAppearance;
-import com.cburch.logisim.circuit.appear.DefaultClassicAppearance;
-import com.cburch.logisim.circuit.appear.CircuitAppearance;
-import com.cburch.logisim.data.Direction;
-import com.cburch.draw.model.CanvasObject;
 
 public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
@@ -160,7 +158,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
     if (ctx.lang.equals("VHDL"))
       return new VhdlHDLGeneratorFactory(ctx);
     else

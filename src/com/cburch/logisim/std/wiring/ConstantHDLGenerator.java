@@ -32,43 +32,50 @@ package com.cburch.logisim.std.wiring;
 import java.util.ArrayList;
 
 import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLInliner;
 import com.cburch.logisim.hdl.Hdl;
 
-public class ConstantHDLGenerator extends AbstractHDLGeneratorFactory {
+public class ConstantHDLGenerator extends HDLInliner {
 
-  long val;
+  private long val;
 
   public ConstantHDLGenerator(HDLCTX ctx, long val) {
-    super(ctx, "Constant"+val, "Const"); // names irrelevant, b/c always inlined ?
+    super(ctx, "Constant_"+val);
     this.val = val;
   }
 
   @Override
-  public boolean IsOnlyInlined(/*String lang*/) { return true; }
-
-  @Override
-  public ArrayList<String> GetInlinedCode(NetlistComponent info) {
-    if (_nets == null) throw new IllegalStateException();
-
-    Hdl out = new Hdl(_lang, _err);
-    out.indent();
-
-    if (!info.EndIsConnected(0))
-      return out;
+	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
+    if (!comp.EndIsConnected(0))
+      return;
     
-    int w = info.GetComponent().getEnd(0).getWidth().getWidth();
+    ConnectionEnd end = comp.getEnd(0);
+    int w = end.NrOfBits();
 
     if (w == 1) { // easy case: single bit
-      String name = GetNetName(info, 0, true, _lang, _nets);
-      out.assign(name, out.literal(val, w));
-    } else if (_nets.IsContinuesBus(info, 0)) { // another easy case
-      String name = GetBusNameContinues(info, 0, _lang, _nets);
-      out.assign(name, out.literal(val, w));
+      String signal = _nets.signalForEndBit(end, 0, out);
+      out.assign(signal, out.literal(val, w));
+      return;
+    }
+
+    int status = _nets.busConnectionStatus(end);
+    if (status == Netlist.BUS_UNCONNECTED) {
+      return; // should not happen?
+    } else if (status == Netlist.BUS_SIMPLYCONNECTED) {
+    } else if (status == Netlist.BUS_MULTICONNECTED) {
+    } else { // status == BUS_MIXCONNECTED
+
+    }
+
+    // here
+
+    } else if (_nets.IsContinuesBus(comp, 0)) { // another easy case
+      String signal = GetBusNameContinues(comp, 0, _lang, _nets);
+      out.assign(signal, out.literal(val, w));
     } else { // worst case: we have to enumerate all bits
       for (byte bit = 0; bit < w; bit++) {
-        String name = GetBusEntryName(info, 0, true, bit, _lang, _nets);
-        out.assign(name, out.literal((val>>>bit)&1, 1));
+        String signal = GetBusEntryName(comp, 0, true, bit, _lang, _nets);
+        out.assign(signal, out.literal((val>>>bit)&1, 1));
       }
     }
     

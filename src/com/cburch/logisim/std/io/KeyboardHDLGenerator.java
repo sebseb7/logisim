@@ -40,12 +40,12 @@ public class KeyboardHDLGenerator extends HDLGenerator {
     super(ctx, "io", "Keyboard_${CIRCUIT}_${LABEL}", "i_Kbd");
     int w = attrs.getValue(Keyboard.ATTR_WIDTH);
     int d = attrs.getValue(Keyboard.ATTR_BUFFER);
-    parameters.add(new ParameterInfo("AsciiWidth", w));
-    parameters.add(new ParameterInfo("FIFO_DEPTH", d));
+    parameters.add("AsciiWidth", w);
+    parameters.add("FIFO_DEPTH", d);
     // See HDL code below for explanation of these parameters.
     long freq = _nets.RawFPGAClockFreq();
     int counter_size = (int)Math.ceil(Math.log(5.0*freq/1e6) / Math.log(2));
-    parameters.add(new ParameterInfo("clk_freq", (int)freq));
+    parameters.add("clk_freq", (int)freq);
     parameters.add(new ParameterInfo("counter_size", counter_size);
     // vhdlLibraries.add(IEEE_UNSIGNED);
 
@@ -57,11 +57,11 @@ public class KeyboardHDLGenerator extends HDLGenerator {
     // warning in HDLGenerator about this.
 
     clockPort = new ClockPortInfo("FPGAClock", "SlowClockEnable", Keyboard.CK);
-    // inPorts.add(new PortInfo("FPGAClock", 1, -1, null)); // see getPortMappings, below
-    inPorts.add(new PortInfo("ReadEnable", 1, Keyboard.RE, false));
-    // inPorts.add(new PortInfo("Clear", 1, Keyboard.CLR, false)); // todo
-    outPorts.add(new PortInfo("Data", "AsciiWidth", Keyboard.OUT, null));
-    outPorts.add(new PortInfo("Available", 1, Keyboard.AVL, null));
+    // inPorts.add("FPGAClock", 1, -1, null); // see getPortMappings, below
+    inPorts.add("ReadEnable", 1, Keyboard.RE, false);
+    // inPorts.add("Clear", 1, Keyboard.CLR, false); // todo
+    outPorts.add("Data", "AsciiWidth", Keyboard.OUT, null);
+    outPorts.add("Available", 1, Keyboard.AVL, null);
  
     ArrayList<String> labels = new ArrayList<>();
     labels.add("ps2kb_clk");
@@ -658,15 +658,15 @@ public class KeyboardHDLGenerator extends HDLGenerator {
   }
 
   // @Override
-  // protected void getPortMappings(ArrayList<String> assn, NetlistComponent comp, PortInfo p) {
+  // protected void getPortMappings(Hdl.Map map, NetlistComponent comp, PortInfo p) {
   //   if (p.name.equals("FPGAClock"))
-  //     assn.add(_hdl.map, p.name, TickHDLGenerator.FPGA_CLK_NET);
+  //     map.add(p.name, TickHDLGenerator.FPGA_CLK_NET);
   //   else
-  //     super.getPortMappings(assn, comp, p);
+  //     super.getPortMappings(map, comp, p);
   // }
 
   @Override
-  protected ArrayList<String> getPortMappings(NetlistComponent comp) {
+  protected Hdl.Map getPortMappings(NetlistComponent comp) {
     // todo: support CLR
     if (comp.EndIsConnected(Keyboard.CLR))
       _err.AddWarning("Clear signal is not yet supported for Keyboard component in HDL");

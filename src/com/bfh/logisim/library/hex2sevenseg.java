@@ -246,7 +246,7 @@ public class hex2sevenseg extends InstanceFactory {
   @Override
   public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
     if (ctx.lang.equals("VHDL"))
-      return new hex2sevensegHDLGeneratorFactory(ctx);
+      return new hex2sevensegHDLGenerator(ctx);
     else
       return null;
   }

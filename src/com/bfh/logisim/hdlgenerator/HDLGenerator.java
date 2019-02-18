@@ -53,6 +53,18 @@ public class HDLGenerator extends HDLSupport {
     }
   }
 
+  public static class PortList extends ArrayList<PortInfo> {
+    public void add(String name, String width, int index, Boolean defaultValue) {
+      add(new PortInfo(name, width, index, defaultValue));
+    }
+    public void addVector(String name, int width, int index, Boolean defaultValue) {
+      // Note: the parens around "(1)" here are a hack to force vector creation.
+      // See: Hdl.typeForWidth() and its use below.
+      if (width > 0)
+        add(new PortInfo(name, "("+width+")", index, defaultValue));
+    }
+  }
+
   // Details of signals for wire and registers.
   protected static class WireInfo {
     final String name; // signal name
@@ -60,6 +72,18 @@ public class HDLGenerator extends HDLSupport {
     WireInfo(String n, String w) {
       name = n;
       width = w;
+    }
+  }
+
+  public static class WireList extends ArrayList<WireInfo> {
+    public void add(String name, String width) {
+      add(new WireInfo(name, width));
+    }
+    public void addVector(String name, int width) {
+      // Note: the parens around "(1)" here are a hack to force vector creation.
+      // See: Hdl.typeForWidth() and its use below.
+      if (width > 0)
+        add(new WireInfo(name, "("+width+")");
     }
   }
 
@@ -106,13 +130,13 @@ public class HDLGenerator extends HDLSupport {
 
   // Generic parameters and ports.
   protected final Generics parameters = new Generics();
-  protected final ArrayList<PortInfo> inPorts = new ArrayList<>();
-  protected final ArrayList<PortInfo> inOutPorts = new ArrayList<>();
-  protected final ArrayList<PortInfo> outPorts = new ArrayList<>();
+  protected final PortList inPorts = new PortList();
+  protected final PortList inOutPorts = new PortList();
+  protected final PortList outPorts = new PortList();
 
   // Wires and registers, which appear before the "begin" statement in VHDL.
-  protected final ArrayList<WireInfo> wires = new ArrayList<>();
-  protected final ArrayList<WireInfo> registers = new ArrayList<>();
+  protected final WireList wires = new WireList();
+  protected final WireList registers = new WireList();
 
   // Components that have a clock input (like Keyboard, Tty, Register, etc.)
   // don't put the clock input into inPorts because the clock needs special
@@ -382,11 +406,8 @@ public class HDLGenerator extends HDLSupport {
 	protected void generateComponentInstance(Hdl out, long id, NetlistComponent comp) {
 
 		String instName = getInstanceName(id);
-
-    ArrayList<String> portVals = getPortMappings(comp);
-
+    Hdl.Map values = getPortMappings(comp);
     ArrayList<String> generics = new ArrayList<>();
-    ArrayList<String> values = new ArrayList<>();
 
 		if (out.isVhdl) {
 
@@ -397,19 +418,14 @@ public class HDLGenerator extends HDLSupport {
         out.stmt("generic map(\t %s )", String.join(",\n\t ", generics));
 			}
 
-			if (!portVals.isEmpty()) {
-        for (String s : portVals.keySet())
-          values.add(s + " => " +  portVals.get(s));
+			if (!values.isEmpty())
         out.stmt("port map(\t %s )", String.join(",\n\t ", values));
-      }
 
 		} else {
 
       for (ParameterInfo s : parameters)
         generics.add(".%s(%d)", s.name, s.value);
       String g = String.join(",\n\t ", generics);
-      for (String s : portVals.keySet())
-        values.add(".%s(%d)", s, portVals.get(s));
       String v = String.join(",\n\t ", values);
 
 			if (generics.isEmpty() && values.isEmpty())
@@ -471,7 +487,8 @@ public class HDLGenerator extends HDLSupport {
   // instances of BusAdder and BitAdder. These need not be unique: the
   // CircuitHDLGeneratorFactory will add suffixes to ensure all the instance
   // names within a circuit are unique.
-	public final String getInstanceNamePrefix() { return hdlInstanceNamePrefix; }
+  @Override
+	protected final String getInstanceNamePrefix() { return hdlInstanceNamePrefix; }
 
   // Return an instance name by combining the prefix with a unique ID.
 	public final String getInstanceName(long id) { return hdlInstanceNamePrefix + "_" + id; }
@@ -479,53 +496,53 @@ public class HDLGenerator extends HDLSupport {
 
   // Returns mappings of all input, inout, and output ports to signal names
   // or expressions for the "port map" of the given component instantiation.
-  protected ArrayList<String> getPortMappings(NetlistComponent comp) {
-    ArrayList<String> assn = new ArrayList<>();
+  protected Hdl.Map getPortMappings(NetlistComponent comp) {
+    Hdl.Map map = new Hdl.Map(_lang, _err);
     for (PortInfo port : inPorts)
-      getPortMappings(assn, comp, port);
+      getPortMappings(map, comp, port);
     for (PortInfo port : inOutPorts)
-      getPortMappings(assn, comp, port);
+      getPortMappings(map, comp, port);
     for (PortInfo port : outPorts)
-      getPortMappings(assn, comp, port);
+      getPortMappings(map, comp, port);
     if (clockPort != null)
-      getClockPortMappings(assn, comp);
+      getClockPortMappings(map, comp);
     if (hiddenPort != null)
-      getHiddenPortMappings(assn, comp);
-    return assn;
+      getHiddenPortMappings(map, comp);
+    return map;
   }
 
 todo: add clock info to ports and params
 
-  protected void getClockPortMappings(ArrayList<String> assn, NetlistComponent comp) {
+  protected void getClockPortMappings(Hdl.Map map, NetlistComponent comp) {
     if (clockPort.index < 0 || clockPort.index >= comp.NrOfEnds()) {
       _err.AddFatalError("INTERNAL ERROR: Clock port %d of '%s' is missing.",
           clockPort.index, hdlComponentName);
-      assn.add(String.format(_hdl.map, clockPort.ckPortName, _hdl.zero));
-      assn.add(String.format(_hdl.map, clockPort.enPortName, _hdl.zero));
+      map.add(clockPort.ckPortName, _hdl.zero);
+      map.add(clockPort.enPortName, _hdl.zero);
       return;
     }
     if (!comp.EndIsConnected(clockPort.index)) {
       _err.AddSevereWarning("ERROR: Clock port of '%s' in circuit '%s' is not connected."
           hdlComponentName, _nets.getCircuitName()
       _err.AddSevereWarning("  The component will likely malfunction without a clock.");
-      assn.add(String.format(_hdl.map, clockPort.ckPortName, _hdl.zero));
-      assn.add(String.format(_hdl.map, clockPort.enPortName, _hdl.zero));
+      map.add(clockPort.ckPortName, _hdl.zero);
+      map.add(clockPort.enPortName, _hdl.zero);
       return;
     }
     ConnectionEnd end = comp.getEnd(clockPort.index);
     if (end.NrOfBits() != 1) {
       _err.AddFatalError("ERROR: Clock port of '%s' in '%s' is connected to a bus.",
           hdlComponentName, _nets.getCircuitName());
-      assn.add(String.format(_hdl.map, clockPort.ckPortName, _hdl.zero));
-      assn.add(String.format(_hdl.map, clockPort.enPortName, _hdl.zero));
+      map.add(clockPort.ckPortName, _hdl.zero);
+      map.add(clockPort.enPortName, _hdl.zero);
       return;
     }
     Net net = end.GetConnection((byte) 0).GetParrentNet();
     if (net == null) {
       _err.AddFatalError("INTERNAL ERROR: Unexpected unconnected clock port of '%s' in circuit '%s'.",
           hdlComponentName, _nets.getCircuitName());
-      assn.add(String.format(_hdl.map, clockPort.ckPortName, _hdl.zero));
-      assn.add(String.format(_hdl.map, clockPort.enPortName, _hdl.zero));
+      map.add(clockPort.ckPortName, _hdl.zero);
+      map.add(clockPort.enPortName, _hdl.zero);
       return;
     }
 
@@ -555,65 +572,55 @@ todo: add clock info to ports and params
           || _attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW) {
         clkSignal = _hdl.not + " " + clkSignal;
       }
-      assn.add(String.format(_hdl.map, clockPort.ckPortName, clkSignal));
-      assn.add(String.format(_hdl.map, clockPort.enPortName, _hdl.one));
+      map.add(clockPort.ckPortName, clkSignal);
+      map.add(clockPort.enPortName, _hdl.one);
     } else {
       // Here we have a proper connection to one of the clock buses that come
       // from a Clock component. We just need to select the right bits from it.
       String[] clkSignals = ClockHDLGenerator.clkSignalFor(this, clkId);
-      assn.add(String.format(_hdl.map, clockPort.ckPortName, clkSignals[0]));
-      assn.add(String.format(_hdl.map, clockPort.enPortName, clkSignals[1]));
+      map.add(clockPort.ckPortName, clkSignals[0]);
+      map.add(clockPort.enPortName, clkSignals[1]);
     }
   }
 
-  protected void getHiddenPortMappings(ArrayList<String> assn, NetlistComponent comp) {
+  protected void getHiddenPortMappings(Hdl.Map map, NetlistComponent comp) {
     int i, b;
-    if (hiddenPort.GetMainMapType() == IOComponentInformationContainer.TickGenerator) {
-      // Special case: tick generator isn't actually a hidden input, it is just a
-      // reference to the primary ticker clock net.
-      assn.add(String.format(_hdl.map, comp.GetInportLabel(0), TickComponentHDLGeneratorFactory.FPGAClock));
-      assn.add(String.format(_hdl.map, comp.GetInportLabel(1), TickComponentHDLGeneratorFactory.FPGATick));
-      return;
-    }
+    // This is handled in ClockHDLGenerator now.
+    // if (hiddenPort.GetMainMapType() == IOComponentInformationContainer.TickGenerator) {
+    //   // Special case: tick generator isn't actually a hidden input, it is just a
+    //   // reference to the primary ticker clock net.
+    //   map.add(comp.GetInportLabel(0), TickHDLGenerator.FPGA_CLK_NET);
+    //   map.add(comp.GetInportLabel(1), TickHDLGenerator.FPGA_TICK_NET);
+    //   return;
+    // }
     i = 0;
     b = comp.GetLocalBubbleInputStartId();
     for (String name : hiddenPort.GetInportLabels())
-      assn.add(String.format(_hdl.map, name, "LOGISIM_HIDDEN_FPGA_INPUT" + (i++)));
+      map.add(name, "LOGISIM_HIDDEN_FPGA_INPUT" + (i++);
     i = 0;
     b = comp.GetLocalBubbleInOutStartId();
     for (String name : hiddenPort.GetInOutLabels())
-      assn.add(String.format(_hdl.map, name, "LOGISIM_HIDDEN_FPGA_INOUT" + (i++)));
+      map.add(name, "LOGISIM_HIDDEN_FPGA_INOUT" + (i++);
     i = 0;
     b = comp.GetLocalBubbleOutputStartId();
     for (String name : hiddenPort.GetOutputLabels())
-      assn.add(String.format(_hdl.map, name, "LOGISIM_HIDDEN_FPGA_OUTPUT" + (i++)));
+      map.add(name, "LOGISIM_HIDDEN_FPGA_OUTPUT" + (i++);
   }
 
-  protected void getUnconnectedPortMappings(ArrayList<String> assn, PortInfo p) {
-    if (_hdl.isVhdl) {
-      if (p.defaultValue == null)
-        assn.add(String.format("%s => open", p.name));
-      else if (p.width.equals("1"))
-        assn.add(String.format("%s => %s", p.name, _hdl.bit(p.defaultValue)));
-      else
-        assn.add(String.format("%s => (others => %s)", p.name, _hdl.bit(p.defaultValue)));
-    } else {
-      if (p.defaultValue == null)
-        assn.add(String.format(".%s()", p.name));
-      else if (p.width.equals("1"))
-        assn.add(String.format(".%s(%s)", p.name, _hdl.bit(p.defaultValue)));
-      else if (p.defaultValue)
-        assn.add(String.format(".%s(~0)", p.name));
-      else
-        assn.add(String.format(".%s(0)", p.name));
-    }
+  protected void getUnconnectedPortMappings(Hdl.Map map, PortInfo p) {
+    if (p.defaultValue == null)
+      map.add(p.name, map.unconnected); // "name => open" or ".name()"
+    else if (p.width.equals("1"))
+      map.add(p.name, map.bit(p.defaultValue)); // "name => '1'" or ".name(1'b1)"
+    else 
+      map.add(p.name, map.all(p.defaultValue)); // "name => (others => '1')" or ".name(~0)"
   }
 
-  protected void getPortMappings(ArrayList<String> assn, NetlistComponent comp, PortInfo p) {
+  protected void getPortMappings(Hdl.Map map, NetlistComponent comp, PortInfo p) {
     if (p.index == UNCONNECTED || p.index < 0 || p.index >= comp.NrOfEnds()) {
       // For output and inout ports, default value *should* be null, making
       // those ones be open. Sadly, we can't do a sanity check for those here.
-      getUnconnectedPortMappings(assn, p);
+      getUnconnectedPortMappings(map, p);
     } else {
       ConnectionEnd end = comp.getEnd(endIdx);
       // Sanity check to ensure default value for output ports is null.
@@ -630,9 +637,9 @@ todo: add clock info to ports and params
         // being assigned is of type std_logic. These can't be directly assigned
         // using "portname => signal" because of the mismatched types. We need
         // to do "portname(0) => signal" instead.
-        assn.add(String.format(_hdl.map0, p.name, _nets.signalForEndBit(end, 0, _hdl)));
+        map.add0(p.name, _nets.signalForEndBit(end, 0, _hdl));
       } else if (w == 1) {
-        assn.add(String.format(_hdl.map, p.name, _nets.signalForEndBit(end, 0, _hdl)));
+        map.add(p.name, _nets.signalForEndBit(end, 0, _hdl));
       } else {
         int status = _nets.busConnectionStatus(end);
         if (status == Netlist.BUS_MIXCONNECTED) {
@@ -647,12 +654,12 @@ todo: add clock info to ports and params
           _err.AddSevereWarning("BUS WIDTH MISMATCH: Some bits of pin '%s' of '%s' in circuit '%s' are connected, but others are not.",
               p.name, hdlComponentName, _nets.getCircuitName());
           _err.AddSevereWarning("                    All bits will be treated as disconnected.");
-          getUnconnectedPortMappings(assn, p);
+          getUnconnectedPortMappings(map, p);
         } else if (status == Netlist.BUS_UNCONNECTED) {
-          getUnconnectedPortMappings(assn, p);
+          getUnconnectedPortMappings(map, p);
         } else if (status == Netlist.BUS_SIMPLYCONNECTED ) {
-          assn.add(String.format(_hdl.map, p.name, _nets.signalForEndBus(end, 0, _hdl)));
-        } else {
+          map.add(p.name, _nets.signalForEndBus(end, w-1, 0, _hdl));
+        } else { // Netlist.BUS_MULTICONNECTED
           // Port has a bus connection to multiple separate signals. For VHDL,
           // we need something like:
           //    portName(7 downto 4) => foo(6 downto 2)
@@ -674,20 +681,18 @@ todo: add clock info to ports and params
             // emit the n-bit slice, or accumulate it
             String signal;
             if (n == 1 && prevnet.BitWidth() == 1)
-              signal = String.format("S_LOGISIM_NET_%d", _nets.GetNetId(prevnet));
+              signal = String.format("s_LOGISIM_NET_%d", _nets.GetNetId(prevnet));
             else if (n == 1)
-              signal = String.format("S_LOGISIM_BUS_%d"+_hdl.idx, _nets.GetNetId(prevnet), prevbit);
+              signal = String.format("s_LOGISIM_BUS_%d"+_hdl.idx, _nets.GetNetId(prevnet), prevbit);
             else
-              signal = String.format("S_LOGISIM_BUS_%d"+_hdl.range, _nets.GetNetId(prevnet), prevbit, prevbit-n+1);
+              signal = String.format("s_LOGISIM_BUS_%d"+_hdl.range, _nets.GetNetId(prevnet), prevbit, prevbit-n+1);
             if (_hdl.isVerilog)
               signals.add(signal);
-            else if (n == 1)
-              assn.add(String.format(_hdl.map1, p.name, i+1, signal));
             else
-              assn.add(String.format(_hdl.mapN, p.name, i+n, i+1, signal));
+              map.vhdlAdd(p.name, i+n, i+1, signal);
           }
           if (_hdl.isVerilog)
-            assn.add(String.format(_hdl.map, p.name, "{" + String.join(", ", signals + "}"));
+            map.add(p.name, "{" + String.join(", ", signals + "}");
         }
       }
     }
