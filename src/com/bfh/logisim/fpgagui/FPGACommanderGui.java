@@ -52,8 +52,8 @@ import javax.swing.JLabel;
 import javax.swing.JTabbedPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import com.bfh.logisim.designrulecheck.CorrectLabel;
-import com.bfh.logisim.designrulecheck.Netlist;
+import com.bfh.logisim.netlist.CorrectLabel;
+import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.download.AlteraDownload;
 import com.bfh.logisim.download.XilinxDownload;
 import com.bfh.logisim.fpgaboardeditor.BoardInformation;

@@ -46,7 +46,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
-import com.bfh.logisim.designrulecheck.CorrectLabel;
+import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.draw.model.CanvasObject;
 import com.cburch.hdl.HdlModel;

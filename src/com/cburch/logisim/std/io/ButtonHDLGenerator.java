@@ -29,9 +29,9 @@
  */
 package com.cburch.logisim.std.io;
 
-import com.bfh.logisim.designrulecheck.NetlistComponent;
-import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
+import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.hdlgenerator.HDLInliner;
+import com.bfh.logisim.hdlgenerator.HiddenPort;
 import com.cburch.logisim.hdl.Hdl;
 
 public class ButtonHDLGenerator extends HDLInliner {
@@ -42,9 +42,7 @@ public class ButtonHDLGenerator extends HDLInliner {
   
   public static ButtonHDLGenerator forButton(HDLCTX ctx) {
     this(ctx, "Button_${LABEL}");
-    hiddenPort = new IOComponentInformationContainer(
-        1/*in*/, 0/*out*/, 0/*inout*/, IOComponentInformationContainer.Button);
-    hiddenPort.AddAlternateMapType(IOComponentInformationContainer.Pin);
+    hiddenPort = HiddenPort.makeInport(1, HiddenPort.Button, HiddenPort.Pin);
   }
 
   public static ButtonHDLGenerator forDipSwitch(HDLCTX ctx) {
@@ -53,18 +51,14 @@ public class ButtonHDLGenerator extends HDLInliner {
     ArrayList<String> labels = new ArrayList<>();
     for (int i = 1; i <= n; i++)
       LabelNames.add("sw_" + i);
-    hiddenPort = new IOComponentInformationContainer(
-        n/*in*/, 0/*out*/, 0/*inout*/,
-        labels, null, null, IOComponentInformationContainer.DIPSwitch);
-    hiddenPort.AddAlternateMapType(IOComponentInformationContainer.Button);
-    hiddenPort.AddAlternateMapType(IOComponentInformationContainer.Pin);
+    hiddenPort = HiddenPort.makeInport(n, HiddenPort.DIPSwitch, HiddenPort.Button, HiddenPort.Pin);
   }
 
   @Override
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
     int b = comp.GetLocalBubbleInputStartId();
-    for (int i = 0; i < comp.NrOfEnds(); i++) {
-      if (comp.EndIsConnected(i)) {
+    for (int i = 0; i < comp.ports.size(); i++) {
+      if (comp.ports.get(i).isConnected()) {
         // fixme: does not handle mixed or partial connections
         String name = _nets.signalForEnd1(comp, i, null, out);
         out.assign(name, "LOGISIM_HIDDEN_FPGA_INPUT", b + i);

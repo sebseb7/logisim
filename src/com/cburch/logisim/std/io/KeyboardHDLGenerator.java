@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.io.File;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
+import com.bfh.logisim.hdlgenerator.HiddenPort;
 
 public class KeyboardHDLGenerator extends HDLGenerator {
 
@@ -68,10 +69,7 @@ public class KeyboardHDLGenerator extends HDLGenerator {
     labels.add("ps2kb_dat");
     labels.add("ps2ms_clk");
     labels.add("ps2ms_dat");
-    hiddenPort = new IOComponentInformationContainer(
-        0/*in*/, 0/*out*/, 4/*inout*/,
-        null, null, labels, IOComponentInformationContainer.PortIO);
-    hiddenPort.AddAlternateMapType(IOComponentInformationContainer.Pin);
+    hiddenPort = HiddenPort.makeInOutport(labels, HiddenPort.PortIO /*, HiddenPort.Pin*/);
   }
 
   @Override
@@ -668,7 +666,7 @@ public class KeyboardHDLGenerator extends HDLGenerator {
   @Override
   protected Hdl.Map getPortMappings(NetlistComponent comp) {
     // todo: support CLR
-    if (comp.EndIsConnected(Keyboard.CLR))
+    if (comp.endIsConnected(Keyboard.CLR))
       _err.AddWarning("Clear signal is not yet supported for Keyboard component in HDL");
     return super.getPortMappings(comp);
   }

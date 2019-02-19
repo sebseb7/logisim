@@ -31,8 +31,9 @@ package com.cburch.logisim.std.io;
 
 import java.util.ArrayList;
 
-import com.bfh.logisim.designrulecheck.NetlistComponent;
+import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.hdlgenerator.HDLInliner;
+import com.bfh.logisim.hdlgenerator.HiddenPort;
 import com.cburch.logisim.hdl.Hdl;
 
 public class LightsHDLGenerator extends HDLInliner {
@@ -43,9 +44,7 @@ public class LightsHDLGenerator extends HDLInliner {
 
   public static LightsHDLGenerator forLed(HDLCTX ctx) {
     this(ctx, "LED_${LABEL}");
-    hiddenPort = new IOComponentInformationContainer(
-        0/*in*/, 1/*out*/, 0/*inout*/, IOComponentInformationContainer.LED);
-    hiddenPort.AddAlternateMapType(IOComponentInformationContainer.Pin);
+    hiddenPort = HiddenPort.makeOutport(1, HiddenPort.LED, HiddenPort.Pin);
   }
 
   public static LightsHDLGenerator forRGBLed(HDLCTX ctx) {
@@ -56,28 +55,24 @@ public class LightsHDLGenerator extends HDLInliner {
     labels.set(RGBLed.RED, "RED");
     labels.set(RGBLed.GREEN, "GREEN");
     labels.set(RGBLed.BLUE, "BLUE");
-    hiddenPort = new IOComponentInformationContainer(
-        0/*in*/, 3/*out*/, 0/*inout*/,
-        null, labels, null, IOComponentInformationContainer.RGBLED);
-    hiddenPort.AddAlternateMapType(IOComponentInformationContainer.LED);
-    hiddenPort.AddAlternateMapType(IOComponentInformationContainer.Pin);
+    hiddenPort = HiddenPort.makeOutport(labels, HiddenPort.RGBLED, HiddenPort.LED, HiddenPort.Pin);
   }
 
   public static LightsHDLGenerator forSevenSegment(HDLCTX ctx) {
     this(ctx, "SevenSegment_${LABEL}");
-    hiddenPort = new IOComponentInformationContainer(
-        0/*in*/, 8/*out*/, 0/*inout*/,
-        null, HexDigitHDLGenerator.labels(), null, IOComponentInformationContainer.SevenSegment);
-    hiddenPort.AddAlternateMapType(IOComponentInformationContainer.LED);
-    hiddenPort.AddAlternateMapType(IOComponentInformationContainer.Pin);
+    hiddenPort = HiddenPort.makeOutport(HexDigitHDLGenerator.labels(),
+        HiddenPort.SevenSegment, HiddenPort.LED, HiddenPort.Pin);
   }
 
   @Override
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
-    int b = info.GetLocalBubbleOutputStartId();
-    for (int i = 0; i < info.NrOfEnds(); i++) {
-      String name = _nets.signalEndForEnd1(comp, i, false, out);
-      out.assign("LOGISIM_HIDDEN_FPGA_OUTPUT", b + i, name);
+    int b = comp.GetLocalBubbleOutputStartId();
+    for (int i = 0; i < comp.ports.size(); i++) {
+      if (comp.ports.get(i).isConnected()) {
+        // fixme: does not handle mixed or partial connections
+        String name = _nets.signalEndForEnd1(comp, i, false, out);
+        out.assign("LOGISIM_HIDDEN_FPGA_OUTPUT", b + i, name);
+      }
     }
   }
 

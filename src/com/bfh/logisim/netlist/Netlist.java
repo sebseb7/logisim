@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.designrulecheck;
+package com.bfh.logisim.netlist;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -177,21 +177,20 @@ public class Netlist {
 								MyHierarchyName, GlobalInputID, GlobalOutputID,
 								GlobalInOutID);
 			}
-			int subInputBubbles = sub.getSubcircuit().getNetList()
-					.NumberOfInputBubbles();
-			int subInOutBubbles = sub.getSubcircuit().getNetList()
-					.NumberOfInOutBubbles();
-			int subOutputBubbles = sub.getSubcircuit().getNetList()
-					.NumberOfOutputBubbles();
-			comp.SetLocalBubbleID(LocalNrOfInportBubles, subInputBubbles,
-					LocalNrOfOutportBubles, subOutputBubbles,
-					LocalNrOfInOutBubles, subInOutBubbles);
+			int subInputBubbles = sub.getSubcircuit().getNetList().NumberOfInputBubbles();
+			int subInOutBubbles = sub.getSubcircuit().getNetList().NumberOfInOutBubbles();
+			int subOutputBubbles = sub.getSubcircuit().getNetList().NumberOfOutputBubbles();
+			comp.setLocalHiddenPortIndices(
+          LocalNrOfInportBubles, subInputBubbles,
+					LocalNrOfInOutBubles, subInOutBubbles,
+					LocalNrOfOutportBubles, subOutputBubbles);
 			LocalNrOfInportBubles += subInputBubbles;
 			LocalNrOfInOutBubles += subInOutBubbles;
 			LocalNrOfOutportBubles += subOutputBubbles;
-			comp.AddGlobalBubbleID(MyHierarchyName, GlobalInputID,
-					subInputBubbles, GlobalOutputID, subOutputBubbles,
-					GlobalInOutID, subInOutBubbles);
+			comp.setGlobalHiddenPortIndices(MyHierarchyName,
+          GlobalInputID, subInputBubbles,
+					GlobalInOutID, subInOutBubbles
+          GlobalOutputID, subOutputBubbles);
 			if (!FirstTime) {
 				sub.getSubcircuit()
 						.getNetList()
@@ -207,31 +206,26 @@ public class Netlist {
 		 * we have to process the IO components
 		 */
 		for (NetlistComponent comp : MyComponents) {
-			if (comp.GetIOInformationContainer() != null) {
+			if (comp.hiddenPort != null) {
 				ArrayList<String> MyHierarchyName = new ArrayList<String>();
 				MyHierarchyName.addAll(HierarchyName);
 				MyHierarchyName.add(CorrectLabel.getCorrectLabel(comp
 						.GetComponent().getAttributeSet()
 						.getValue(StdAttr.LABEL).toString()));
-				int subInputBubbles = comp.GetIOInformationContainer()
-						.GetNrOfInports();
-				if (comp.GetComponent().getFactory() instanceof DipSwitch) {
-					subInputBubbles = comp.GetComponent().getAttributeSet()
-							.getValue(DipSwitch.ATTR_SIZE).getWidth();
-				}
-				int subInOutBubbles = comp.GetIOInformationContainer()
-						.GetNrOfInOutports();
-				int subOutputBubbles = comp.GetIOInformationContainer()
-						.GetNrOfOutports();
-				comp.SetLocalBubbleID(LocalNrOfInportBubles, subInputBubbles,
-						LocalNrOfOutportBubles, subOutputBubbles,
-						LocalNrOfInOutBubles, subInOutBubbles);
+				int subInputBubbles = comp.hiddenPort.inports.size();
+				int subInOutBubbles = comp.hiddenPort.inoutports.size();
+				int subOutputBubbles = comp.hiddenPort.outports.size();
+				comp.setLocalHiddenPortIndices(
+            LocalNrOfInportBubles, subInputBubbles,
+						LocalNrOfInOutBubles, subInOutBubbles,
+						LocalNrOfOutportBubles, subOutputBubbles);
 				LocalNrOfInportBubles += subInputBubbles;
 				LocalNrOfInOutBubles += subInOutBubbles;
 				LocalNrOfOutportBubles += subOutputBubbles;
-				comp.AddGlobalBubbleID(MyHierarchyName, GlobalInputID,
-						subInputBubbles, GlobalOutputID, subOutputBubbles,
-						GlobalInOutID, subInOutBubbles);
+				comp.setGlobalHiddenPortIndices(MyHierarchyName,
+            GlobalInputID, subInputBubbles,
+						GlobalInOutID, subInOutBubbles,
+            GlobalOutputID, subOutputBubbles);
 				GlobalInputID += subInputBubbles;
 				GlobalInOutID += subInOutBubbles;
 				GlobalOutputID += subOutputBubbles;
@@ -523,7 +517,6 @@ public class Netlist {
 				HierarchyNetlists, ClockSources, Reporter);
 	}
 
-	/* Here all private handles are defined */
 	private void EnumerateGlobalBubbleTree(ArrayList<String> HierarchyName,
 			int StartInputID, int StartOutputID, int StartInOutID) {
 		for (NetlistComponent comp : MySubCircuits) {
@@ -542,23 +535,19 @@ public class Netlist {
 							StartInOutID + comp.GetLocalBubbleInOutStartId());
 		}
 		for (NetlistComponent comp : MyComponents) {
-			if (comp.GetIOInformationContainer() != null) {
+			if (comp.hiddenPort != null) {
 				ArrayList<String> MyHierarchyName = new ArrayList<String>();
 				MyHierarchyName.addAll(HierarchyName);
 				MyHierarchyName.add(CorrectLabel.getCorrectLabel(comp
 						.GetComponent().getAttributeSet()
 						.getValue(StdAttr.LABEL).toString()));
-				int subInputBubbles = comp.GetIOInformationContainer()
-						.GetNrOfInports();
-				int subInOutBubbles = comp.GetIOInformationContainer()
-						.GetNrOfInOutports();
-				int subOutputBubbles = comp.GetIOInformationContainer()
-						.GetNrOfOutports();
-				comp.AddGlobalBubbleID(MyHierarchyName,
-						StartInputID + comp.GetLocalBubbleInputStartId(),
-						subInputBubbles,
-						StartOutputID + comp.GetLocalBubbleOutputStartId(),
-						subOutputBubbles, StartInOutID, subInOutBubbles);
+				int subInputBubbles = comp.hiddenPort.inports.size();
+				int subInOutBubbles = comp.hiddenPort.inoutports.size();
+				int subOutputBubbles = comp.hiddenPort.outports.size();
+				comp.setGlobalHiddenPortIndices(MyHierarchyName,
+						StartInputID + comp.GetLocalBubbleInputStartId(), subInputBubbles,
+            StartInOutID, subInOutBubbles,
+						StartOutputID + comp.GetLocalBubbleOutputStartId(), subOutputBubbles);
 			}
 		}
 	}
@@ -992,8 +981,7 @@ public class Netlist {
 								 * Here we have to process the inherited bits of
 								 * the parent
 								 */
-								byte[] BusBitConnection = ((Splitter) comp)
-										.GetEndpoints();
+								byte[] BusBitConnection = ((Splitter) comp).GetEndpoints();
 								ArrayList<Byte> IndexBits = new ArrayList<Byte>();
 								for (byte b = 0; b < BusBitConnection.length; b++) {
 									if (BusBitConnection[b] == endid) {
@@ -1109,8 +1097,7 @@ public class Netlist {
 			for (byte end = 0; end < ends.size(); end++) {
 				if (thisNet.contains(ends.get(end).getLocation())) {
 					/* Here we have to process the inherited bits of the parent */
-					byte[] BusBitConnection = ((Splitter) currentSplitter)
-							.GetEndpoints();
+					byte[] BusBitConnection = ((Splitter) currentSplitter).GetEndpoints();
 					if (end == 0) {
 						/* this is a main net, find the connected end */
 						Byte SplitterEnd = BusBitConnection[bitIndex];
@@ -1152,8 +1139,7 @@ public class Netlist {
 						}
 						Net RootNet = null;
 						for (Net thisnet : MyNets) {
-							if (thisnet.contains(currentSplitter.getEnd(0)
-									.getLocation())) {
+							if (thisnet.contains(currentSplitter.getEnd(0).getLocation())) {
 								RootNet = thisnet;
 							}
 						}
@@ -1222,7 +1208,7 @@ public class Netlist {
 		}
 		/* Now we search for all local IO components */
 		for (NetlistComponent comp : MyComponents) {
-			if (comp.GetIOInformationContainer() != null) {
+			if (comp.hiddenPort != null) {
 				ArrayList<String> MyHierarchyName = new ArrayList<String>();
 				MyHierarchyName.addAll(Hierarchy);
 				MyHierarchyName.add(CorrectLabel.getCorrectLabel(comp
@@ -1287,25 +1273,21 @@ public class Netlist {
 		return MyNets.indexOf(selectedNet);
 	}
 
-	public ConnectionPoint GetNetlistConnectionForSubCircuit(String Label,
-			int PortIndex, byte bitindex) {
-		for (NetlistComponent search : MySubCircuits) {
-			String CircuitLabel = CorrectLabel.getCorrectLabel(search
-					.GetComponent().getAttributeSet().getValue(StdAttr.LABEL));
-			if (CircuitLabel.equals(Label)) {
-				/* Found the component, let's search the ends */
-				for (int i = 0; i < search.NrOfEnds(); i++) {
-					ConnectionEnd ThisEnd = search.getEnd(i);
-					if (ThisEnd.IsOutputEnd()
-							&& (bitindex < ThisEnd.NrOfBits())) {
-						if (ThisEnd.GetConnection(bitindex)
-								.getChildsPortIndex() == PortIndex) {
-							return ThisEnd.GetConnection(bitindex);
-						}
-					}
-				}
-			}
-		}
+	public ConnectionPoint GetNetlistConnectionForSubCircuit(String label,
+			int portIndex, byte bitindex) {
+    for (NetlistComponent comp : MySubCircuits) {
+      // Check the label
+      String s = comp.GetComponent().getAttributeSet().getValue(StdAttr.LABEL);
+      s = CorrectLabel.getCorrectLabel(s);
+      if (!s.equals(label))
+        continue;
+      // Found the component, now search the ports
+      for (ConnectionEnd end: comp.ports) {
+        if (end.IsOutputEnd() && bitindex < ThisEnd.NrOfBits()
+            && end.GetConnection(bitindex).getChildsPortIndex() == portIndex)
+          return end.GetConnection(bitindex);
+      }
+    }
 		return null;
 	}
 
@@ -1415,8 +1397,7 @@ public class Netlist {
 			for (byte end = 0; end < ends.size(); end++) {
 				if (thisNet.contains(ends.get(end).getLocation())) {
 					/* Here we have to process the inherited bits of the parent */
-					byte[] BusBitConnection = ((Splitter) currentSplitter)
-							.GetEndpoints();
+					byte[] BusBitConnection = ((Splitter) currentSplitter).GetEndpoints();
 					if (end == 0) {
 						/* this is a main net, find the connected end */
 						Byte SplitterEnd = BusBitConnection[bitIndex];
@@ -1461,8 +1442,7 @@ public class Netlist {
 						}
 						Net RootNet = null;
 						for (Net thisnet : MyNets) {
-							if (thisnet.contains(currentSplitter.getEnd(0)
-									.getLocation())) {
+							if (thisnet.contains(currentSplitter.getEnd(0).getLocation())) {
 								RootNet = thisnet;
 							}
 						}
@@ -1510,30 +1490,6 @@ public class Netlist {
     return net0 == null ? BUS_UNCONNECTED : BUS_SIMPLYCONNECTED;
 	}
   
-  // aka IsContinuesBus...
-  // public boolean isConnectedToSingleNamedBus(NetlistComponent comp, int endIdx) {
-	// 	if (endIdx < 0 || endIdx >= comp.NrOfEnds())
-	// 		return true;
-  //   return busConnectionStatus(comp.getEnd(endIdx)) == BUS_SIMPLYCONNECTED;
-  // }
-
-  // public boolean isConnectedToSingleNamedBus(ConnectionEnd end) {
-	// 	int n = end.NrOfBits();
-	// 	if (n == 1)
-	// 		return true;
-
-	// 	Net net = end.GetConnection((byte) 0).GetParrentNet();
-	// 	byte idx = end.GetConnection((byte) 0).GetParrentNetBitIndex();
-
-	// 	for (int i = 1; i < n; i++) {
-	// 		if (net != end.GetConnection((byte) i).GetParrentNet())
-	// 			return false; // This bit is connected to different bus
-	// 		if (net != null && (idx + i) != end.GetConnection((byte)i).GetParrentNetBitIndex())
-  //       return false; // This bit is connected to same bus, but indexes are not sequential
-	// 	}
-	// 	return true;
-	// }
-
 	public boolean IsValid() {
 		return DRCStatus == DRC_PASSED;
 	}
@@ -1581,11 +1537,7 @@ public class Netlist {
 		}
 		/* Second pass: We mark all clock sources */
 		for (NetlistComponent source : MyClockGenerators) {
-			if (source.NrOfEnds() != 1) {
-				Reporter.AddFatalError("INTERNAL ERROR: Found a clock source with more than 1 connection");
-				return false;
-			}
-			ConnectionEnd ClockConnection = source.getEnd(0);
+			ConnectionEnd ClockConnection = source.ports.get(0);
 			if (ClockConnection.NrOfBits() != 1) {
 				Reporter.AddFatalError("INTERNAL ERROR: Found a clock source with a bus as output");
 				return false;
@@ -1669,7 +1621,7 @@ public class Netlist {
 	public int NumberOfInOutPortBits() {
 		int count = 0;
 		for (NetlistComponent inp : MyInOutPorts) {
-			count += inp.getEnd(0).NrOfBits();
+			count += inp.ports.get(0).NrOfBits();
 		}
 		return count;
 	}
@@ -1685,7 +1637,7 @@ public class Netlist {
 	public int NumberOfInputPortBits() {
 		int count = 0;
 		for (NetlistComponent inp : MyInputPorts) {
-			count += inp.getEnd(0).NrOfBits();
+			count += inp.ports.get(0).NrOfBits();
 		}
 		return count;
 	}
@@ -1711,7 +1663,7 @@ public class Netlist {
 	public int NumberOfOutputPortBits() {
 		int count = 0;
 		for (NetlistComponent outp : MyOutputPorts) {
-			count += outp.getEnd(0).NrOfBits();
+			count += outp.ports.get(0).NrOfBits();
 		}
 		return count;
 	}
@@ -1735,7 +1687,7 @@ public class Netlist {
 			if (Connection != null) {
 				int PinId = comp.getEnds().indexOf(ThisPin);
 				boolean PinIsSink = ThisPin.isInput();
-				ConnectionEnd ThisEnd = NormalComponent.getEnd(PinId);
+				ConnectionEnd ThisEnd = NormalComponent.ports.get(PinId);
 				Net RootNet = GetRootNet(Connection);
 				if (RootNet == null) {
 					Reporter.AddFatalError("INTERNAL ERROR: Unable to find a root net!");
@@ -1818,14 +1770,14 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
 						Reporter.AddFatalError("INTERNAL ERROR: Unable to find a root-net bit-index!");
 						return false;
 					}
-					Subcircuit.getEnd(PinId).GetConnection(bitid)
+					Subcircuit.ports.get(PinId).GetConnection(bitid)
 							.SetParrentNet(RootNet, RootNetBitIndex);
 					if (PinIsSink) {
 						RootNet.addSink(RootNetBitIndex,
-								Subcircuit.getEnd(PinId).GetConnection(bitid));
+								Subcircuit.ports.get(PinId).GetConnection(bitid));
 					} else {
 						RootNet.addSource(RootNetBitIndex,
-								Subcircuit.getEnd(PinId).GetConnection(bitid));
+								Subcircuit.ports.get(PinId).GetConnection(bitid));
 					}
 					/*
 					 * Special handling for sub-circuits; we have to find out
@@ -1833,12 +1785,12 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
 					 * net-list; At this point the underlying net-lists have
 					 * already been generated.
 					 */
-					Subcircuit.getEnd(PinId).GetConnection(bitid)
+					Subcircuit.ports.get(PinId).GetConnection(bitid)
 							.setChildsPortIndex(SubPortIndex);
 				}
 			} else {
 				for (byte bitid = 0; bitid < ThisPin.getWidth().getWidth(); bitid++) {
-					Subcircuit.getEnd(PinId).GetConnection(bitid)
+					Subcircuit.ports.get(PinId).GetConnection(bitid)
 							.setChildsPortIndex(SubPortIndex);
 				}
 			}
@@ -1877,10 +1829,8 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
 			ArrayList<Netlist> HierarchyNetlists, FPGAReport Reporter) {
 		/* first pass, we check if the clock net goes down the hierarchy */
 		for (NetlistComponent search : MySubCircuits) {
-			SubcircuitFactory sub = (SubcircuitFactory) search.GetComponent()
-					.getFactory();
-			for (ConnectionPoint SolderPoint : search.GetConnections(ClockNet,
-					ClockNetBitIndex, false)) {
+			SubcircuitFactory sub = (SubcircuitFactory) search.GetComponent().getFactory();
+			for (ConnectionPoint SolderPoint : search.GetConnections(ClockNet, ClockNetBitIndex, false)) {
 				if (SolderPoint.getChildsPortIndex() < 0) {
 					Reporter.AddFatalError("INTERNAL ERROR: Subcircuit port is not annotated!");
 					return false;
@@ -1897,7 +1847,7 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
 					Reporter.AddFatalError("INTERNAL ERROR: Unable to find the bit index of a Subcircuit input port!");
 					return false;
 				}
-				ConnectionPoint SubClockNet = InputPort.getEnd(0)
+				ConnectionPoint SubClockNet = InputPort.ports.get(0)
 						.GetConnection(BitIndex);
 				if (SubClockNet.GetParrentNet() == null) {
 					/* we do not have a connected pin */
@@ -2009,7 +1959,7 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
   }
 
 	public String signalForEndBit(NetlistComponent comp, int endIdx, int bitIdx, Boolean defaultValue, Hdl hdl) {
-    if (endIdx < 0 || endIdx >= comp.NrOfEnds()) {
+    if (endIdx < 0 || endIdx >= comp.ports.size()) {
       if (defaultValue == null) {
         hdl.err.AddFatalError("INTERNAL ERROR: Invalid end/port '%d' for component '%s'", endIdx, comp);
         return "???";
@@ -2020,7 +1970,7 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
       return hdl.bit(defaultValue);
     }
 
-    ConnectionEnd end = comp.getEnd(endIdx);
+    ConnectionEnd end = comp.ports.get(endIdx);
     int n = end.NrOfBits();
     if (n != 1) {
       hdl.err.AddFatalError("INTERNAL ERROR: Unexpected %d-bit end/port '%d' for component '%s'", n, endIdx, comp);
@@ -2074,12 +2024,12 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
       NetlistComponent comp, int endIdx, Boolean defaultValue, Hdl hdl) {
 
 		Map<String, String> result = new HashMap<String, String>();
-    if (endIdx < 0 || endIdx >= comp.NrOfEnds()) {
+    if (endIdx < 0 || endIdx >= comp.ports.size()) {
       hdl.err.AddFatalError("INTERNAL ERROR: Invalid end/port '%d' for component '%s'", endIdx, comp);
       return result;
     }
 
-    ConnectionEnd end = comp.getEnd(endIdx);
+    ConnectionEnd end = comp.ports.get(endIdx);
     int n = end.NrOfBits();
 
     if (n == 1) {
@@ -2183,12 +2133,12 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
   // TODO here - rethink this interface ...
   // fixme: handle rising/falling/level sensitive here, and non-clock signal cases too
 	public String clockForEnd(NetlistComponent comp, int endIdx, Hdl hdl) {
-    if (endIdx < 0 || endIdx >= comp.NrOfEnds()) {
+    if (endIdx < 0 || endIdx >= comp.ports.size()) {
       hdl.err.AddFatalError("INTERNAL ERROR: Invalid end/port '%d' for component '%s'", endIdx, comp);
       return "???";
     }
 
-    ConnectionEnd end = comp.getEnd(endIdx);
+    ConnectionEnd end = comp.ports.get(endIdx);
     if (end.NrOfBits() != 1) {
       hdl.err.AddFatalError("INTERNAL ERROR: Bus clock end/port '%d' for component '%s'", endIdx, comp);
       return "???";

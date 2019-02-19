@@ -30,6 +30,7 @@
 package com.cburch.logisim.std.io;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
+import com.bfh.logisim.hdlgenerator.HiddenPort;
 
 public class PortIOHDLGenerator extends HDLGenerator {
 
@@ -51,14 +52,8 @@ public class PortIOHDLGenerator extends HDLGenerator {
 
     int n = attrs.getValue(PortIO.ATTR_SIZE);
 
-    ArrayList<String> labels = new ArrayList<>();
-    for (int i = 1; i <= n; i++)
-      labels.add("pin_"+i);
-    hiddenPort = new IOComponentInformationContainer(
-        0/*in*/, 0/*out*/, n/*inout*/,
-        null, null, labels, IOComponentInformationContainer.PortIO);
-    // hiddenPort.AddAlternateMapType(IOComponentInformationContainer.Button);
-    // hiddenPort.AddAlternateMapType(IOComponentInformationContainer.Pin);
+    hiddenPort = HiddenPort.makeInOutport(n, 
+        HiddenPort.PortIO /*, HiddenPort.Button, HiddenPort.Pin*/);
   }
 
   private class InOutMap {

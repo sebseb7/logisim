@@ -28,39 +28,31 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.designrulecheck;
+package com.bfh.logisim.netlist;
 
-public class ConnectionPoint {
+import java.util.ArrayList;
 
-	private Net MyOwnNet;
-	private Byte MyOwnNetBitIndex;
-	private int MyChildsPortIndex;
+class ConnectionPointArray {
 
-	public ConnectionPoint() {
-		MyOwnNet = null;
-		MyOwnNetBitIndex = -1;
-		MyChildsPortIndex = -1;
+	private ArrayList<ConnectionPoint> MyConnections;
+
+	public ConnectionPointArray() {
+		MyConnections = new ArrayList<ConnectionPoint>();
 	}
 
-	public int getChildsPortIndex() {
-		return MyChildsPortIndex;
+	public void AddConnection(ConnectionPoint Connection) {
+		MyConnections.add(Connection);
 	}
 
-	public Net GetParrentNet() {
-		return MyOwnNet;
+	public void ClearConnections() {
+		MyConnections.clear();
 	}
 
-	public Byte GetParrentNetBitIndex() {
-		return MyOwnNetBitIndex;
+	public ArrayList<ConnectionPoint> GetConnections() {
+		return MyConnections;
 	}
 
-	public void setChildsPortIndex(int Index) {
-		MyChildsPortIndex = Index;
+	public int NrOfConnections() {
+		return MyConnections.size();
 	}
-
-	public void SetParrentNet(Net ConnectedNet, Byte BitIndex) {
-		MyOwnNet = ConnectedNet;
-		MyOwnNetBitIndex = BitIndex;
-	}
-
 }

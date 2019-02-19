@@ -28,53 +28,39 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.designrulecheck;
+package com.bfh.logisim.netlist;
 
-import java.util.ArrayList;
+public class ConnectionPoint {
 
-public class ConnectionEnd {
+	private Net MyOwnNet;
+	private Byte MyOwnNetBitIndex;
+	private int MyChildsPortIndex;
 
-	private boolean IsOutput;
-	private Byte nr_of_bits;
-	private ArrayList<ConnectionPoint> MyConnections;
-
-	public ConnectionEnd(boolean OutputEnd, Byte nr_of_bits) {
-		IsOutput = OutputEnd;
-		this.nr_of_bits = nr_of_bits;
-		MyConnections = new ArrayList<ConnectionPoint>();
-		for (byte i = 0; i < nr_of_bits; i++)
-			MyConnections.add(new ConnectionPoint());
+	public ConnectionPoint() {
+		MyOwnNet = null;
+		MyOwnNetBitIndex = -1;
+		MyChildsPortIndex = -1;
 	}
 
-	public ConnectionPoint GetConnection(Byte BitIndex) {
-		if ((BitIndex < 0) || (BitIndex >= nr_of_bits))
-			return null;
-		return MyConnections.get(BitIndex);
+	public int getChildsPortIndex() {
+		return MyChildsPortIndex;
 	}
 
-	public boolean IsOutputEnd() {
-		return IsOutput;
+	public Net GetParrentNet() {
+		return MyOwnNet;
 	}
 
-	public int NrOfBits() {
-		return nr_of_bits;
+	public Byte GetParrentNetBitIndex() {
+		return MyOwnNetBitIndex;
 	}
 
-	public boolean SetChildPortIndex(Net ConnectedNet, Byte BitIndex,
-			int PortIndex) {
-		if ((BitIndex < 0) || (BitIndex >= nr_of_bits))
-			return false;
-		ConnectionPoint Connection = MyConnections.get(BitIndex);
-		if (Connection == null)
-			return false;
-		Connection.setChildsPortIndex(PortIndex);
-		return true;
+	public void setChildsPortIndex(int Index) {
+		MyChildsPortIndex = Index;
 	}
 
-	public boolean SetConnection(ConnectionPoint Connection, Byte BitIndex) {
-		if ((BitIndex < 0) || (BitIndex >= nr_of_bits))
-			return false;
-		MyConnections.set(BitIndex, Connection);
-		return true;
+	public void SetParrentNet(Net ConnectedNet, Byte BitIndex) {
+		MyOwnNet = ConnectedNet;
+		MyOwnNetBitIndex = BitIndex;
 	}
+
 }

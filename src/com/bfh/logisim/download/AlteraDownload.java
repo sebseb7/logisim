@@ -47,7 +47,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 
-import com.bfh.logisim.designrulecheck.Netlist;
+import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.fpgaboardeditor.BoardInformation;
 import com.bfh.logisim.fpgaboardeditor.FPGAClass;
 import com.bfh.logisim.fpgaboardeditor.PullBehaviors;

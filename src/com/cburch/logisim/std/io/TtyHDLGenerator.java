@@ -34,6 +34,7 @@ import java.io.File;
 
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
+import com.bfh.logisim.hdlgenerator.HiddenPort;
 
 public class TtyHDLGenerator extends HDLGenerator {
 
@@ -67,10 +68,7 @@ public class TtyHDLGenerator extends HDLGenerator {
     labels.add("lcd_en");
     labels.add("lcd_rw");
     labels.add("lcd_rs");
-    hiddenPort = new IOComponentInformationContainer(
-        0/*in*/, 0/*out*/, 12/*inout*/,
-        null, null, labels, IOComponentInformationContainer.PortIO);
-    hiddenPort.AddAlternateMapType(IOComponentInformationContainer.Pin);
+    hiddenPort = HiddenPort.makeInOutport(labels, HiddenPort.PortIO /*, HiddenPort.Pin*/);
   }
 
   @Override

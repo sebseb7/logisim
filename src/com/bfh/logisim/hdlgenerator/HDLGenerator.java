@@ -33,7 +33,7 @@ package com.bfh.logisim.hdlgenerator;
 import java.io.File;
 import java.util.ArrayList;
 
-import com.bfh.logisim.designrulecheck.NetlistComponent;
+import com.bfh.logisim.netlist.NetlistComponent;
 import com.cburch.logisim.hdl.Hdl;
 
 public class HDLGenerator extends HDLSupport {
@@ -172,8 +172,7 @@ public class HDLGenerator extends HDLSupport {
   // object, if not null, holds info about what type of FPGA resource is most
   // suitable, alternate resource types, how many in/out/inout pins are
   // involved, names for the signals, etc.
-  protected IOComponentInformationContainer hiddenPort = null;
-  // public final IOComponentInformationContainer getHiddenPort() { return hiddenPort; }
+  protected HiddenPort hiddenPort = null;
 
   // A suitable subdirectory for storing HDL files.
   protected final String subdir;
@@ -514,14 +513,14 @@ public class HDLGenerator extends HDLSupport {
 todo: add clock info to ports and params
 
   protected void getClockPortMappings(Hdl.Map map, NetlistComponent comp) {
-    if (clockPort.index < 0 || clockPort.index >= comp.NrOfEnds()) {
+    if (clockPort.index < 0 || clockPort.index >= comp.ports.size()) {
       _err.AddFatalError("INTERNAL ERROR: Clock port %d of '%s' is missing.",
           clockPort.index, hdlComponentName);
       map.add(clockPort.ckPortName, _hdl.zero);
       map.add(clockPort.enPortName, _hdl.zero);
       return;
     }
-    if (!comp.EndIsConnected(clockPort.index)) {
+    if (!comp.endIsConnected(clockPort.index)) {
       _err.AddSevereWarning("ERROR: Clock port of '%s' in circuit '%s' is not connected."
           hdlComponentName, _nets.getCircuitName()
       _err.AddSevereWarning("  The component will likely malfunction without a clock.");
@@ -529,7 +528,7 @@ todo: add clock info to ports and params
       map.add(clockPort.enPortName, _hdl.zero);
       return;
     }
-    ConnectionEnd end = comp.getEnd(clockPort.index);
+    ConnectionEnd end = comp.ports.get(clockPort.index);
     if (end.NrOfBits() != 1) {
       _err.AddFatalError("ERROR: Clock port of '%s' in '%s' is connected to a bus.",
           hdlComponentName, _nets.getCircuitName());
@@ -585,14 +584,6 @@ todo: add clock info to ports and params
 
   protected void getHiddenPortMappings(Hdl.Map map, NetlistComponent comp) {
     int i, b;
-    // This is handled in ClockHDLGenerator now.
-    // if (hiddenPort.GetMainMapType() == IOComponentInformationContainer.TickGenerator) {
-    //   // Special case: tick generator isn't actually a hidden input, it is just a
-    //   // reference to the primary ticker clock net.
-    //   map.add(comp.GetInportLabel(0), TickHDLGenerator.FPGA_CLK_NET);
-    //   map.add(comp.GetInportLabel(1), TickHDLGenerator.FPGA_TICK_NET);
-    //   return;
-    // }
     i = 0;
     b = comp.GetLocalBubbleInputStartId();
     for (String name : hiddenPort.GetInportLabels())
@@ -600,7 +591,7 @@ todo: add clock info to ports and params
     i = 0;
     b = comp.GetLocalBubbleInOutStartId();
     for (String name : hiddenPort.GetInOutLabels())
-      map.add(name, "LOGISIM_HIDDEN_FPGA_INOUT" + (i++);
+      map.add(name, "LOGISIM_HIDDEN_FPGA_INOUT" + (i++); // fixme: at top level, these *must* go directly to pins
     i = 0;
     b = comp.GetLocalBubbleOutputStartId();
     for (String name : hiddenPort.GetOutputLabels())
@@ -617,12 +608,12 @@ todo: add clock info to ports and params
   }
 
   protected void getPortMappings(Hdl.Map map, NetlistComponent comp, PortInfo p) {
-    if (p.index == UNCONNECTED || p.index < 0 || p.index >= comp.NrOfEnds()) {
+    if (p.index == UNCONNECTED || p.index < 0 || p.index >= comp.ports.size()) {
       // For output and inout ports, default value *should* be null, making
       // those ones be open. Sadly, we can't do a sanity check for those here.
       getUnconnectedPortMappings(map, p);
     } else {
-      ConnectionEnd end = comp.getEnd(endIdx);
+      ConnectionEnd end = comp.ports.get(endIdx);
       // Sanity check to ensure default value for output ports is null.
       if (end.IsOutputEnd() && p.defaultValue != null) {
         err.AddSevereWarning("INTERNAL ERROR: ignoring default value for output pin '%s' of '%s' in circuit '%s'.",

@@ -30,7 +30,7 @@
 
 package com.bfh.logisim.hdlgenerator;
 
-import com.bfh.logisim.designrulecheck.NetlistComponent;
+import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.library.DynamicClock;
 import com.cburch.logisim.hdl.Hdl;
 
@@ -118,7 +118,7 @@ public class TickHDLGenerator extends HDLGenerator {
   // FPGA_GlobalClock:    __@~~\__@~~\__@~~\__@~~\__@~~\__@~~\__@~~\__@~~\__@~~\
   // FPGA_Tick:           __/~~~~~\___________/~~~~~\___________/~~~~~\_________
   // enabled rising edges         |                 |                 |
-  // ClockTickGenerator, assuming 1:1 hi:lo shape
+  // ClockHDLGenerator, assuming 1:1 hi:lo shape
   // DerivedClock         ________/~~~~~~~~~~~~~~~~~\_________________/~~~~~~~~~
   // InvertedDerivedClock ~~~~~~~~\_________________/~~~~~~~~~~~~~~~~~\_________
   // PositiveEdgeTick     __/~~~~~\_____________________________/~~~~~\_________
@@ -131,7 +131,7 @@ public class TickHDLGenerator extends HDLGenerator {
   // FPGA_GlobalClock:    __@~~\__@~~\__@~~\__@~~\__@~~\__@~~\__@~~\__@~~\__@~~\
   // FPGA_Tick:           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // enabled rising edges   |     |     |     |     |     |     |     |     |
-  // ClockTickGenerator, assuming 1:1 hi:lo shape
+  // ClockHDLGenerator, assuming 1:1 hi:lo shape
   // DerivedClock         __/~~~~~\_____/~~~~~\_____/~~~~~\_____/~~~~~\_____/~~~
   // InvertedDerivedClock ~~\_____/~~~~~\_____/~~~~~\_____/~~~~~\_____/~~~~~\___
   // PositiveEdgeTick     ~~\_____/~~~~~\_____/~~~~~\_____/~~~~~\_____/~~~~~\___
@@ -144,7 +144,7 @@ public class TickHDLGenerator extends HDLGenerator {
   // FPGA_GlobalClock:    __@~~\__@~~\__@~~\__@~~\__@~~\__@~~\__@~~\__@~~\__@~~\
   // FPGA_Tick:           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // enabled rising edges   |     |     |     |     |     |     |     |     |
-  // ClockTickGenerator, assuming 1:1 hi:lo shape
+  // ClockHDLGenerator, assuming 1:1 hi:lo shape
   // DerivedClock         __/~~\__/~~\__/~~\__/~~\__/~~\__/~~\__/~~\__/~~\__/~~\
   // InvertedDerivedClock ~~\__@~~\__@~~\__@~~\__@~~\__@~~\__@~~\__@~~\__@~~\__@
   // PositiveEdgeTick     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

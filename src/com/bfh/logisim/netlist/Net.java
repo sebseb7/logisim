@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.designrulecheck;
+package com.bfh.logisim.netlist;
 
 import java.util.ArrayList;
 import java.util.HashSet;

@@ -29,7 +29,7 @@
  */
 package com.cburch.logisim.std.wiring;
 
-import com.bfh.logisim.designrulecheck.NetlistComponent;
+import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.hdlgenerator.HDLInliner;
 import com.cburch.logisim.hdl.Hdl;
 
@@ -41,23 +41,23 @@ public class BitExtenderHDLGenerator extends HDLInliner {
 
   @Override
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
-    if (!comp.EndIsConnected(0))
+    if (!comp.endIsConnected(0))
       return; // output not connected, nothing to do
     
-    if (!comp.EndIsConnected(1)) {
+    if (!comp.endIsConnected(1)) {
       _err.AddError("Bit Extender has floating input in circuit \"" + nets.getCircuitName() + "\"");
       return;
     }
 
     String type = attrs.getValue(BitExtender.ATTR_TYPE);
 
-    if (type.equals("input") && !comp.EndIsConnected(2)) {
+    if (type.equals("input") && !comp.endIsConnected(2)) {
       _err.AddSevereWarning("Bit Extender has floating input in circuit \"" + nets.getCircuitName() + "\"");
       type = "zero";
     }
 
-    int wo = comp.getEnd(0).getWidth().getWidth();
-    int wi = comp.getEnd(1).getWidth().getWidth();
+    int wo = comp.ports.get(0).getWidth().getWidth();
+    int wi = comp.ports.get(1).getWidth().getWidth();
 
     String e = "???";
     if (type.equals("zero"))

@@ -29,9 +29,7 @@
  */
 package com.cburch.logisim.std.wiring;
 
-import java.util.ArrayList;
-
-import com.bfh.logisim.designrulecheck.NetlistComponent;
+import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.hdlgenerator.HDLInliner;
 import com.cburch.logisim.hdl.Hdl;
 
@@ -46,10 +44,10 @@ public class ConstantHDLGenerator extends HDLInliner {
 
   @Override
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
-    if (!comp.EndIsConnected(0))
+    if (!comp.endIsConnected(0))
       return;
     
-    ConnectionEnd end = comp.getEnd(0);
+    ConnectionEnd end = comp.ports.get(0);
     int w = end.NrOfBits();
 
     if (w == 1) { // easy case: single bit

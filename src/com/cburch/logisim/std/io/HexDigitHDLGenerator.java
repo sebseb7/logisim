@@ -32,6 +32,7 @@ package com.cburch.logisim.std.io;
 import java.util.ArrayList;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
+import com.bfh.logisim.hdlgenerator.HiddenPort;
 import com.cburch.logisim.hdl.Hdl;
 
 public class HexDigitHDLGenerator extends HDLGenerator {
@@ -61,11 +62,8 @@ public class HexDigitHDLGenerator extends HDLGenerator {
     inPorts.add("DecimalPoint", 1, HexDigit.DP, false);
     wires.add("s_pattern", 7);
 
-    hiddenPort = new IOComponentInformationContainer(
-        0/*in*/, 8/*out*/, 0/*inout*/,
-        null, labels(), null, IOComponentInformationContainer.SevenSegment);
-    hiddenPort.AddAlternateMapType(IOComponentInformationContainer.LED);
-    hiddenPort.AddAlternateMapType(IOComponentInformationContainer.Pin);
+    hiddenPort = HiddenPort.makeOutport(labels(),
+        HiddenPort.SevenSegment, HiddenPort.LED, HiddenPort.Pin);
   }
 
   @Override

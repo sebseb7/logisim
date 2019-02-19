@@ -63,11 +63,16 @@ import com.cburch.logisim.std.io.SevenSegment;
 public class FPGAIOInformationContainer {
 
 	public static enum IOComponentTypes {
-
-		LED, Button, Pin, SevenSegment, DIPSwitch, RGBLED, PortIO, Bus, Unknown, TickGenerator;
-
-    // Note: Bus is just a placeholder for a multi-bit pin. It should not be
-    // used for mappable components. (fixme: huh?)
+    
+		LED,           // out
+    Button,        // in
+    Pin,           // in or out
+    SevenSegment,  // out
+    DIPSwitch,     // in
+    RGBLED,        // out
+    PortIO,        // inout
+    Bus,           // in or out (this is a multi-bit version of Pin)
+    Unknown;
 
 		public static IOComponentTypes getEnumFromString(String str) {
 			for (IOComponentTypes elem : KnownComponentSet) {

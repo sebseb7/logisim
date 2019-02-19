@@ -29,7 +29,7 @@
  */
 package com.cburch.logisim.std.wiring;
 
-import com.bfh.logisim.designrulecheck.NetlistComponent;
+import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.bfh.logisim.hdlgenerator.TickHDLGenerator;
 import com.cburch.logisim.hdl.Hdl;

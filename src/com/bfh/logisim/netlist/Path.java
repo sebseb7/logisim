@@ -28,28 +28,25 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.library;
+package com.bfh.logisim.netlist;
 
-import com.bfh.logisim.hdlgenerator.HDLInliner;
+import java.util.ArrayList;
 
-public class DynamicClockHDLGenerator extends HDLInliner {
+// A heirarchical path to a component within the tree of circuits and
+// subcircuits.
+public class Path {
 
-  public DynamicClockHDLGenerator(HDLCTX ctx) {
-    super(ctx, "DynamicClock");
+  String path;
+  ArrayList<String> elts;
+
+  @Override
+  public boolean equals(Object other) {
+    return (other instanceof Path) && path.equals(((Path)other).path);
   }
 
   @Override
-	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
-		int w = _attrs.getValue(DynamicClock.WIDTH_ATTR).getWidth();
-    if (!comp.endIsConnected(0)) {
-      out.err.AddWarning("Dynamic Clock Control component input is not connected.");
-      out.err.AddWarning("Clock speed will be set to the maximum possible.");
-      out.assign("LOGISIM_DYNAMIC_CLOCK_OUT", out.ones(w));
-    } else {
-        // fixme: does not handle mixed or partial connections
-      String signal = _nets.signalForEndBus(comp, 0, w-1, 0, out);
-      out.assign("LOGISIM_DYNAMIC_CLOCK_OUT", signal);
-    }
+  public int hashCode() {
+    return path.hashCode();
   }
 
 }

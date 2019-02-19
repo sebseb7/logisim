@@ -35,11 +35,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import com.bfh.logisim.designrulecheck.ConnectionEnd;
-import com.bfh.logisim.designrulecheck.ConnectionPoint;
-import com.bfh.logisim.designrulecheck.CorrectLabel;
-import com.bfh.logisim.designrulecheck.Net;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
+import com.bfh.logisim.netlist.ConnectionEnd;
+import com.bfh.logisim.netlist.ConnectionPoint;
+import com.bfh.logisim.netlist.CorrectLabel;
+import com.bfh.logisim.netlist.Net;
+import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.library.DynamicClock;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.circuit.Circuit;
@@ -217,7 +217,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
 
 		// Generate this circuit's normal components next
 		for (NetlistComponent comp : _circNets.GetNormalComponents()) {
-      HDLSupport g = getHDLSupport(comp);
+      HDLSupport g = comp.hdlSupport; // getHDLSupport(comp);
       if (g == null)
         return false;
 			String name = g.getComponentName();
@@ -230,7 +230,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
 
     // Recurse for subcircuits last
 		for (NetlistComponent subcirc : _circNets.GetSubCircuits()) {
-      CircuitHDLGenerator g = (CircuitHDLGenerator)getHDLSupport(subcirc);
+      CircuitHDLGenerator g = (CircuitHDLGenerator)subcirc.hdlSupport; // getHDLSupport(subcirc);
 			if (g == null)
         return;
       path.add(CorrectLabel.getCorrectLabel(subcirc
@@ -260,20 +260,20 @@ public class CircuitHDLGenerator extends HDLGenerator {
     }
   }
 
-  private HashMap<NetlistComp, HDLSupport> generators = new HashMap<>();
-  private HDLSupport getHDLSupport(NetlistComponent comp) {
-    HDLSupport g = generators.get(comp);
-    if (generators.containsKey(comp))
-      return generators.get(comp);;
-    ComponentFactory factory = comp.GetComponent().getFactory();
-    AttributeSet compAttrs = comp.GetComponent().getAttributeSet();
-    HDLSupport g = factory.getHDLSupport(_lang, _err, _circNets, compAttrs, _vendor);
-    if (g == null)
-      _err.AddFatalError("INTERNAL ERROR: Missing HDL support for component of type '%s'.",
-          factory.getName());
-    generators.put(comp, g);
-    return g;
-  }
+  // private HashMap<NetlistComp, HDLSupport> generators = new HashMap<>();
+  // private HDLSupport getHDLSupport(NetlistComponent comp) {
+  //   HDLSupport g = generators.get(comp);
+  //   if (generators.containsKey(comp))
+  //     return generators.get(comp);;
+  //   ComponentFactory factory = comp.GetComponent().getFactory();
+  //   AttributeSet compAttrs = comp.GetComponent().getAttributeSet();
+  //   HDLSupport g = factory.getHDLSupport(_lang, _err, _circNets, compAttrs, _vendor);
+  //   if (g == null)
+  //     _err.AddFatalError("INTERNAL ERROR: Missing HDL support for component of type '%s'.",
+  //         factory.getName());
+  //   generators.put(comp, g);
+  //   return g;
+  // }
 
 	@Override
 	public void generateVhdlComponentDeclarations(Hdl out) {
@@ -284,7 +284,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
   private generateDeclarations(ArrayList<NetlistComponent> components) {
 		HashSet<String> done = new HashSet<>();
 		for (NetlistComponent comp: components) {
-      HDLSupport g = getHDLSupport(comp);
+      HDLSupport g = comp.hdlSupport; // getHDLSupport(comp);
       if (g == null)
         continue;
 			String name = g.getComponentName();
@@ -315,7 +315,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
     // Handle normal components.
 		HashMap<String, Long> ids = new HashMap<>();
 		for (NetlistComponent comp: _circNets.GetNormalComponents()) {
-      HDLSupport g = getHDLSupport(comp);
+      HDLSupport g = comp.hdlSupport; // getHDLSupport(comp);
       if (g == null)
         continue;
       if (g.inlined) {
@@ -330,7 +330,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
 
     // Handle subcircuits.
 		for (NetlistComponent comp : _circNets.GetSubCircuits()) {
-      HDLSupport g = getHDLSupport(comp);
+      HDLSupport g = comp.hdlSupport; // getHDLSupport(comp);
       if (g == null)
         continue;
       String prefix = g.getInstanceNamePrefix();

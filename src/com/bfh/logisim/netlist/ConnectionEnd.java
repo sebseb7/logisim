@@ -28,31 +28,60 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.designrulecheck;
+package com.bfh.logisim.netlist;
 
 import java.util.ArrayList;
 
-class ConnectionPointArray {
+public class ConnectionEnd {
 
+	private boolean IsOutput;
+	private Byte nr_of_bits;
 	private ArrayList<ConnectionPoint> MyConnections;
 
-	public ConnectionPointArray() {
+	public ConnectionEnd(boolean OutputEnd, Byte nr_of_bits) {
+		IsOutput = OutputEnd;
+		this.nr_of_bits = nr_of_bits;
 		MyConnections = new ArrayList<ConnectionPoint>();
+		for (byte i = 0; i < nr_of_bits; i++)
+			MyConnections.add(new ConnectionPoint());
 	}
 
-	public void AddConnection(ConnectionPoint Connection) {
-		MyConnections.add(Connection);
+	public ConnectionPoint GetConnection(Byte BitIndex) {
+		if ((BitIndex < 0) || (BitIndex >= nr_of_bits))
+			return null;
+		return MyConnections.get(BitIndex);
 	}
 
-	public void ClearConnections() {
-		MyConnections.clear();
+	public boolean IsOutputEnd() {
+		return IsOutput;
 	}
 
-	public ArrayList<ConnectionPoint> GetConnections() {
-		return MyConnections;
+	public int NrOfBits() {
+		return nr_of_bits;
 	}
 
-	public int NrOfConnections() {
-		return MyConnections.size();
+	public boolean SetChildPortIndex(Net ConnectedNet, Byte BitIndex,
+			int PortIndex) {
+		if ((BitIndex < 0) || (BitIndex >= nr_of_bits))
+			return false;
+		ConnectionPoint Connection = MyConnections.get(BitIndex);
+		if (Connection == null)
+			return false;
+		Connection.setChildsPortIndex(PortIndex);
+		return true;
 	}
+
+	public boolean SetConnection(ConnectionPoint Connection, Byte BitIndex) {
+		if ((BitIndex < 0) || (BitIndex >= nr_of_bits))
+			return false;
+		MyConnections.set(BitIndex, Connection);
+		return true;
+	}
+
+  public boolean isConnected() {
+		for (int i = 0; i < nr_of_bits; i++)
+		  if (MyConnections.get(BitIndex).GetParrentNet() != null)
+        return true;
+    return false;
+  }
 }

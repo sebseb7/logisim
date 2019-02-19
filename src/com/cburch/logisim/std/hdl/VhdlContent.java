@@ -52,7 +52,7 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.instance.Port;
-import com.bfh.logisim.designrulecheck.CorrectLabel;
+import com.bfh.logisim.netlist.CorrectLabel;
 
 public class VhdlContent extends HdlContent {
 

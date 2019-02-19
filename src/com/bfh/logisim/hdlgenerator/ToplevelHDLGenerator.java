@@ -32,8 +32,8 @@ package com.bfh.logisim.hdlgenerator;
 
 import java.util.ArrayList;
 
-import com.bfh.logisim.designrulecheck.CorrectLabel;
-import com.bfh.logisim.designrulecheck.NetlistComponent;
+import com.bfh.logisim.netlist.CorrectLabel;
+import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
 import com.bfh.logisim.library.DynamicClock;
 import com.cburch.logisim.circuit.Circuit;
@@ -47,14 +47,6 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 
   // Name of the top-level HDL module.
   public static final String HDL_NAME = "LogisimToplevelShell";
-
-  // Names for top-level ioResource ports.
-  // public static final String FPGA_INPUT_PIN = "FPGA_INPUT_PIN_"; // %d
-  // public static final String FPGA_INOUT_PIN = "FPGA_INOUT_PIN_"; // %d
-  // public static final String FPGA_OUTPUT_PIN = "FPGA_OUTPUT_PIN_"; // %d
-	// public static final String FPGAInputPinName = "FPGA_INPUT_PIN";
-	// public static final String FPGAInOutPinName = "FPGA_INOUT_PIN";
-	// public static final String FPGAOutputPinName = "FPGA_OUTPUT_PIN";
 
 	private long fpgaClockFreq;
 	private int tickerPeriod; // 0:"use fpga clock", -1:"dynamic", >0:"divided clock"
@@ -266,16 +258,14 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 		ArrayList<String> partialpath = new ArrayList<>();
 		partialpath.addAll(path);
 		partialpath.remove(0); // ?? removes TopLevel from path?
-		BubbleInformationContainer bubbles = comp.GetGlobalBubbleId(partialpath);
-		if (bubbles == null) {
-			out.err.AddFatalError("INTERNAL ERROR: Missing bubble data for I/O component %s", pathstr);
+    NetlistComponent.PortIndices3 indices = comp.getGlobalHiddenPortIndices(partialpath);
+		if (indices == null) {
+			out.err.AddFatalError("INTERNAL ERROR: Missing index data for I/O component %s", pathstr);
 			return;
 		}
 
-    int inputIdx = bubbles.GetInputStartIndex();
-    int inputIdxEnd = bubbles.GetInputEndIndex();
-    int outputIdx = bubbles.GetOutputStartIndex();
-    int outputIdxEnd = bubbles.GetOutputEndIndex();
+    int inputIdx = indices.in.start;
+    int outputIdx = indices.out.start;
 
 		for (String signal : ioResources.GetMapNamesList(path);
 			boolean invert = ioResources.RequiresToplevelInversion(path, signal);
@@ -283,15 +273,16 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 			int inputId = ioResources.GetFPGAInputPinId(signal);
 			int outputId = ioResources.GetFPGAOutputPinId(signal);
 			int n = ioResources.GetNrOfPins(signal);
+      // Note: inout ports are included here (see note above).
 			for (int pin = 0; pin < n; pin++) {
         // Example VHDL for input pin:
         //   s_LOGISIM_HIDDEN_FPGA_INPUT(3) <= FPGA_INPUT_PIN_28;
-				if (inputId >= 0 && inputIdx <= inputIdxEnd)
+				if (inputId >= 0 && inputIdx <= indices.in.end)
 					out.assign("s_LOGISIM_HIDDEN_FPGA_INPUT", inputIdx++,
               maybeNot + "FPGA_INPUT_PIN_"+ (inputId + pin));
         // Example VHDL for output pin:
         //   FPGA_OUTPUT_PIN_35 <= s_LOGISIM_HIDEN_FPGA_OUTPUT(4);
-				if (outputId >= 0 && outputIdx <= outputIdxEnd)
+				if (outputId >= 0 && outputIdx <= indices.out.end)
           out.assign("FPGA_OUTPUT_PIN_" + (outputId + pin),
               maybeNot + "s_LOGISIM_HIDEN_FPGA_OUTPUT", outputIdx++);
 			}

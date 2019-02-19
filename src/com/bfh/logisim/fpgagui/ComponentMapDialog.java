@@ -81,13 +81,13 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.bfh.logisim.designrulecheck.CorrectLabel;
+import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.fpgaboardeditor.BoardInformation;
 import com.bfh.logisim.fpgaboardeditor.BoardRectangle;
 import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
 import com.bfh.logisim.fpgaboardeditor.Strings;
 import com.bfh.logisim.fpgaboardeditor.Strings;
-import com.bfh.logisim.hdlgenerator.IOComponentInformationContainer;
+import com.bfh.logisim.hdlgenerator.HiddenPort;
 
 public class ComponentMapDialog implements ActionListener,
        ListSelectionListener {
@@ -981,12 +981,12 @@ public class ComponentMapDialog implements ActionListener,
         SelectableItems.clear();
         String DisplayName = MappedList.getSelectedValue().toString();
         SelectableItems = MappableComponents.GetSelectableItemsList(DisplayName, BoardInfo);
-        IOComponentInformationContainer info = MappableComponents.getTypeFor(DisplayName);
-        ones.setEnabled(info.CanBeAllOnesInput());
-        zeros.setEnabled(info.CanBeAllZerosInput());
-        constants.setEnabled(info.CanBeConstantInput());
-        // undef.setEnabled(info.CanBeUndefinedInput());
-        bitbucket.setEnabled(info.CanBeDisconnectedOutput());
+        HiddenPort example = MappableComponents.getTypeFor(DisplayName);
+        ones.setEnabled(example.canBeAllOnesInput());
+        zeros.setEnabled(example.canBeAllZerosInput());
+        constants.setEnabled(example.canBeConstantInput());
+        // undef.setEnabled(example.canBeUndefinedInput());
+        bitbucket.setEnabled(example.canBeDisconnectedOutput());
         ones.setSelected(MappedHighlightItem.isAllOnesInput());
         zeros.setSelected(MappedHighlightItem.isAllZerosInput());
         constants.setSelected(MappedHighlightItem.isConstantInput());
@@ -1021,12 +1021,12 @@ public class ComponentMapDialog implements ActionListener,
         SelectableItems.clear();
         String DisplayName = UnmappedList.getSelectedValue().toString();
         SelectableItems = MappableComponents.GetSelectableItemsList(DisplayName, BoardInfo);
-        IOComponentInformationContainer info = MappableComponents.getTypeFor(DisplayName);
-        ones.setEnabled(info.CanBeAllOnesInput());
-        zeros.setEnabled(info.CanBeAllZerosInput());
-        constants.setEnabled(info.CanBeConstantInput());
-        // undef.setEnabled(info.CanBeUndefinedInput());
-        bitbucket.setEnabled(info.CanBeDisconnectedOutput());
+        HiddenPort example = MappableComponents.getTypeFor(DisplayName);
+        ones.setEnabled(example.canBeAllOnesInput());
+        zeros.setEnabled(example.canBeAllZerosInput());
+        constants.setEnabled(example.canBeConstantInput());
+        // undef.setEnabled(example.canBeUndefinedInput());
+        bitbucket.setEnabled(example.canBeDisconnectedOutput());
         for (JToggleButton b : constbuttons)
           b.setSelected(false);
       }
