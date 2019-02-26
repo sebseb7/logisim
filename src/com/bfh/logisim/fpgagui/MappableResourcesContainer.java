@@ -113,7 +113,7 @@ public class MappableResourcesContainer {
           continue;
 				FPGAIOInformationContainer BoardComp = currentUsedBoard.GetComponent(r);
 				if (BoardComp.GetType().equals(IOComponentTypes.Pin)) {
-					if (comp.getEnd(0).IsOutputEnd()) {
+					if (comp.ports.get(0).isOutput) {
 						fpgaInputsList.put(Map, nrOfFPGAInputPins);
 						nrOfFPGAInputPins++;
 					} else {

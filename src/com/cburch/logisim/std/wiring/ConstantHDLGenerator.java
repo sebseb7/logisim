@@ -47,7 +47,7 @@ public class ConstantHDLGenerator extends HDLInliner {
     if (!comp.endIsConnected(0))
       return;
     
-    ConnectionEnd end = comp.ports.get(0);
+    NetlistComponent.PortConnection end = comp.ports.get(0);
     int w = end.NrOfBits();
 
     if (w == 1) { // easy case: single bit

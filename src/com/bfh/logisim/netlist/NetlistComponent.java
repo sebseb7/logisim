@@ -51,6 +51,39 @@ import com.cburch.logisim.std.wiring.Pin;
 // (main or one of the alternates) is enabled, etc.
 public class NetlistComponent {
 
+  // Info about a connection of one or more bits to a port of a (shadow) component.
+  public static class PortConnection {
+    public final boolean isOutput; // is data being output from component
+    public final byte width; // number of bits in the connection
+    public final List<ConnectionPoint> bits; // info for each bit of connection
+
+    public PortConnection(boolean isOutput, byte width) {
+      this.isOutput = isOutput;
+      this.width = width;
+
+      new ArrayList<ConnectionPoint> pts = new ArrayList<>(width);
+      for (byte i = 0; i < width; i++)
+        pts.add(new ConnectionPoint(null, -1));
+      bits = Collections.unmodifiableList(pts);
+    }
+
+    public boolean isConnected() {
+      for (int i = 0; i < width; i++)
+        if (bits.get(i).net != null)
+          return true;
+      return false;
+    }
+  }
+
+  // Info about a single bit of a PortConnection.
+  public class ConnectionPoint {
+    private Net net = null;
+    private byte bit = -1; //
+    public int subcircPortIndex = -1; // used when the NetlistComponent is for a subcircuit
+    public ConnectionPoint(Net n, byte b) { net = n; bit = b; }
+    public void set(Net n, byte b) { net = n; bit = b; }
+  }
+
   // A range [end:start] of bit indices for a port or bus.
   public static class PortIndices {
     public final int end, start;
@@ -71,7 +104,7 @@ public class NetlistComponent {
 	private Component original;
 
   // Shadow data for normal ports
-	public final List<ConnectionEnd> ports;
+	public final List<PortConnection> ports;
 
   // HDL generation
   public final HDLSupport hdlSupport;
@@ -93,9 +126,9 @@ public class NetlistComponent {
 
 		this.original = comp;
 
-    ArrayList<ConnectionEnd> ports = new ArrayList<>();
+    ArrayList<PortConnection> ports = new ArrayList<>();
     for (EndData end : comp.getEnds())
-			ports.add(new ConnectionEnd(end.isOutput(), (byte) end.getWidth().getWidth()));
+			ports.add(new PortConnection(end.isOutput(), (byte) end.getWidth().getWidth()));
     this.ports = Collections.unmodifiableList(ports);
 
     if (factory instanceof Pin) {
@@ -192,13 +225,11 @@ public class NetlistComponent {
 	}
 
 	public byte GetConnectionBitIndex(Net rootNet, byte BitIndex) {
-		for (ConnectionEnd p : ports) {
-			for (byte bit = 0; bit < p.NrOfBits(); bit++) {
-				ConnectionPoint connection = p.GetConnection(bit);
-				if (connection.GetParrentNet() == rootNet
-						&& connection.GetParrentNetBitIndex() == BitIndex) {
+		for (PortConnection p : ports) {
+			for (byte bit = 0; bit < p.width; bit++) {
+				ConnectionPoint connection = p.connections.get(bit);
+				if (connection.net == rootNet && connection.bit == BitIndex)
 					return bit;
-				}
 			}
 		}
 		return -1;
@@ -206,12 +237,9 @@ public class NetlistComponent {
 
 	public ArrayList<ConnectionPoint> GetConnections(Net rootNet, byte BitIndex, boolean IsOutput) {
 		ArrayList<ConnectionPoint> Connections = new ArrayList<>();
-		for (ConnectionEnd p : Ends) {
-			for (byte bit = 0; bit < p.NrOfBits(); bit++) {
-				ConnectionPoint connection = p.GetConnection(bit);
-				if (connection.GetParrentNet() == rootNet
-						&& connection.GetParrentNetBitIndex() == BitIndex
-						&& p.IsOutputEnd() == IsOutput) {
+		for (PortConnection p : ports) {
+			for (ConnectionPoint connection: p.connections) {
+				if (connection.net == rootNet && connection.bit == BitIndex && p.isOutput == IsOutput) {
 					Connections.add(connection);
 				}
 			}

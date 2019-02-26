@@ -528,15 +528,15 @@ todo: add clock info to ports and params
       map.add(clockPort.enPortName, _hdl.zero);
       return;
     }
-    ConnectionEnd end = comp.ports.get(clockPort.index);
-    if (end.NrOfBits() != 1) {
+    NetlistComponent.PortConnection end = comp.ports.get(clockPort.index);
+    if (end.width != 1) {
       _err.AddFatalError("ERROR: Clock port of '%s' in '%s' is connected to a bus.",
           hdlComponentName, _nets.getCircuitName());
       map.add(clockPort.ckPortName, _hdl.zero);
       map.add(clockPort.enPortName, _hdl.zero);
       return;
     }
-    Net net = end.GetConnection((byte) 0).GetParrentNet();
+    Net net = end.GetConnection((byte) 0).net;
     if (net == null) {
       _err.AddFatalError("INTERNAL ERROR: Unexpected unconnected clock port of '%s' in circuit '%s'.",
           hdlComponentName, _nets.getCircuitName());
@@ -545,7 +545,7 @@ todo: add clock info to ports and params
       return;
     }
 
-    byte bit = end.GetConnection((byte) 0).GetParrentNetBitIndex();
+    byte bit = end.GetConnection((byte) 0).bit;
     int clkId = _nets.GetClockSourceId(net, bit);
     if (clkId < 0) {
       // In this case, we use the potentially noisy logic signal (or it's
@@ -613,14 +613,14 @@ todo: add clock info to ports and params
       // those ones be open. Sadly, we can't do a sanity check for those here.
       getUnconnectedPortMappings(map, p);
     } else {
-      ConnectionEnd end = comp.ports.get(endIdx);
+      NetlistComponent.PortConnection end = comp.ports.get(endIdx);
       // Sanity check to ensure default value for output ports is null.
-      if (end.IsOutputEnd() && p.defaultValue != null) {
+      if (end.isOutput && p.defaultValue != null) {
         err.AddSevereWarning("INTERNAL ERROR: ignoring default value for output pin '%s' of '%s' in circuit '%s'.",
             p.name, hdlComponentName, _nets.getCircuitName());
         p.defaultValue = null;
       }
-      int w = end.NrOfBits();
+      int w = end.width;
       if (w == 1 && !p.width.equals("1")) {
         // Special VHDL case: When port is anything other than width "1", it
         // will be a std_logic_vector. And if the end is 1 bit, then the port
@@ -659,12 +659,12 @@ todo: add clock info to ports and params
           // For verilog, we need something like:
           //    .portName({foo[6:2], bar[7:5], foo[9]})
           ArrayList<String> signals = new ArrayList<>();
-          Net prevnet = end.getConnection((byte)(w-1)).GetParrentNet();
-          byte prevbit = end.GetConnection((byte)(w-1)).GetParrentNetBitIndex();
+          Net prevnet = end.getConnection((byte)(w-1)).net;
+          byte prevbit = end.GetConnection((byte)(w-1)).bit;
           int n = 1;
           for (int i = w-2; i >= -1; i--) {
-            Net net = i < 0 ? null : end.getConnection((byte)i).GetParrentNet();
-            byte bit = i < 0 ? 0 : end.GetConnection((byte)i).GetParrentNetBitIndex();
+            Net net = i < 0 ? null : end.getConnection((byte)i).net;
+            byte bit = i < 0 ? 0 : end.GetConnection((byte)i).bit;
             if (net == prevnet && bit == prevbit-n) {
               n++;
               continue;

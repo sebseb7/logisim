@@ -38,221 +38,190 @@ import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.data.Location;
 
 public class Net {
-	private Set<Location> MyPoints = new HashSet<Location>();
-	private Set<String> TunnelNames = new HashSet<String>();
-	private int nr_of_bits;
-	private Net MyParent;
-	private Boolean Requires_to_be_root;
-	private ArrayList<Byte> InheritedBits = new ArrayList<Byte>();
-	private ArrayList<ConnectionPointArray> SourceList = new ArrayList<ConnectionPointArray>();
-	private ArrayList<ConnectionPointArray> SinkList = new ArrayList<ConnectionPointArray>();
-	private ArrayList<ConnectionPointArray> SourceNetsList = new ArrayList<ConnectionPointArray>();
-	private ArrayList<ConnectionPointArray> SinkNetsList = new ArrayList<ConnectionPointArray>();
 
-	public Net() {
-		cleanup();
-	}
+  static class ConnectionPoints extends ArrayList<NetlistComponent.ConnectionPoint> { }
 
-	public Net(Location loc) {
-		cleanup();
-		MyPoints.add(loc);
-	}
+	public int width = 1; // number of bits in this network
+	private Set<Location> points = new HashSet<>(); // points this net touches
+	private boolean forcedRoot  = false;
+
+	private Net parent = null;
+
+	private Set<String> tunnelNames = new HashSet<>();
+	private ArrayList<Byte> inheritedBits = new ArrayList<>();
+
+  // Data for each bit of this network
+	private ArrayList<ConnectionPoints> sources = new ArrayList<>();
+	private ArrayList<ConnectionPoints> sinks = new ArrayList<>();
+	private ArrayList<ConnectionPoints> sourceNets = new ArrayList<>();
+	private ArrayList<ConnectionPoints> sinkNets = new ArrayList<>();
+
+	public Net() { }
+	public Net(Location loc) { points.add(loc); }
 
 	public void add(Wire segment) {
-		MyPoints.add(segment.getEnd0());
-		MyPoints.add(segment.getEnd1());
+		points.add(segment.getEnd0());
+		points.add(segment.getEnd1());
 	}
 
-	public boolean AddParrentBit(byte BitID) {
+	public boolean AddParentBit(byte BitID) {
 		if (BitID < 0)
 			return false;
-		InheritedBits.add(BitID);
+		inheritedBits.add(BitID);
 		return true;
 	}
 
-	public boolean addSink(int bitIndex, ConnectionPoint Sink) {
-		if ((bitIndex < 0) || (bitIndex >= SinkList.size()))
+	public boolean addSink(int bitIndex, ConnectionPoint sink) {
+		if ((bitIndex < 0) || (bitIndex >= sinks.size()))
 			return false;
-		SinkList.get(bitIndex).AddConnection(Sink);
+		sinks.get(bitIndex).add(sink);
 		return true;
 	}
 
-	public boolean addSinkNet(int bitIndex, ConnectionPoint SinkNet) {
-		if ((bitIndex < 0) || (bitIndex >= SinkNetsList.size()))
+	public boolean addSinkNet(int bitIndex, ConnectionPoint net) {
+		if ((bitIndex < 0) || (bitIndex >= sinkNets.size()))
 			return false;
-		SinkNetsList.get(bitIndex).AddConnection(SinkNet);
+		sinkNets.get(bitIndex).add(net);
 		return true;
 	}
 
-	public boolean addSource(int bitIndex, ConnectionPoint Source) {
-		if ((bitIndex < 0) || (bitIndex >= SourceList.size()))
+	public boolean addSource(int bitIndex, ConnectionPoint source) {
+		if ((bitIndex < 0) || (bitIndex >= sources.size()))
 			return false;
-		SourceList.get(bitIndex).AddConnection(Source);
+		sources.get(bitIndex).add(source);
 		return true;
 	}
 
-	public boolean addSourceNet(int bitIndex, ConnectionPoint SourceNet) {
-		if ((bitIndex < 0) || (bitIndex >= SourceNetsList.size()))
+	public boolean addSourceNet(int bitIndex, ConnectionPoint net) {
+		if ((bitIndex < 0) || (bitIndex >= sourceNets.size()))
 			return false;
-		SourceNetsList.get(bitIndex).AddConnection(SourceNet);
+		sourceNets.get(bitIndex).add(net);
 		return true;
-	}
-
-	public void addTunnel(String TunnelName) {
-		TunnelNames.add(TunnelName);
-	}
-
-	public int BitWidth() {
-		return nr_of_bits;
-	}
-
-	private void cleanup() {
-		MyPoints.clear();
-		TunnelNames.clear();
-		nr_of_bits = 1;
-		MyParent = null;
-		Requires_to_be_root = false;
-		InheritedBits.clear();
-		SourceList.clear();
-		SinkList.clear();
-		SourceNetsList.clear();
-		SinkNetsList.clear();
-	}
-
-	public boolean contains(Location point) {
-		return MyPoints.contains(point);
-	}
-
-	public boolean ContainsTunnel(String TunnelName) {
-		return TunnelNames.contains(TunnelName);
 	}
 
 	public void FinalCleanup() {
-		MyPoints.clear();
-		TunnelNames.clear();
-		InheritedBits.clear();
+		points.clear();
+		tunnelNames.clear();
+		inheritedBits.clear();
 	}
 
 	public void ForceRootNet() {
-		MyParent = null;
-		Requires_to_be_root = true;
-		InheritedBits.clear();
+		parent = null;
+		forcedRoot = true;
+		inheritedBits.clear();
 	}
 
 	public byte getBit(byte bit) {
-		if ((bit < 0) || (bit >= InheritedBits.size()) || IsRootNet())
+		if ((bit < 0) || (bit >= inheritedBits.size()) || isRootNet())
 			return -1;
-		return InheritedBits.get(bit);
+		return inheritedBits.get(bit);
 	}
 
 	public Net getParent() {
-		return MyParent;
-	}
-
-	public Set<Location> getPoints() {
-		return this.MyPoints;
+		return parent;
 	}
 
 	public ArrayList<ConnectionPoint> GetSinkNets(int bitIndex) {
-		if ((bitIndex < 0) || (bitIndex >= SinkNetsList.size()))
+		if ((bitIndex < 0) || (bitIndex >= sinkNets.size()))
 			return new ArrayList<ConnectionPoint>();
-		return SinkNetsList.get(bitIndex).GetConnections();
+		return sinkNets.get(bitIndex);
 	}
 
 	public ArrayList<ConnectionPoint> GetSourceNets(int bitIndex) {
-		if ((bitIndex < 0) || (bitIndex >= SourceNetsList.size()))
+		if ((bitIndex < 0) || (bitIndex >= sourceNets.size()))
 			return new ArrayList<ConnectionPoint>();
-		return SourceNetsList.get(bitIndex).GetConnections();
+		return sourceNets.get(bitIndex);
 	}
 
 	public boolean hasBitSinks(int bitid) {
-		if (bitid < 0 || bitid >= SinkList.size())
+		if (bitid < 0 || bitid >= sinks.size())
 			return false;
-		return SinkList.get(bitid).NrOfConnections() > 0;
+		return sinks.get(bitid).size() > 0;
 	}
 
 	public boolean hasBitSource(int bitid) {
-		if (bitid < 0 || bitid >= SourceList.size())
+		if (bitid < 0 || bitid >= sources.size())
 			return false;
-		return SourceList.get(bitid).NrOfConnections() > 0;
+		return sources.get(bitid).size() > 0;
 	}
 
 	public boolean hasShortCircuit() {
-		boolean ret = false;
-		for (int i = 0; i < nr_of_bits; i++)
-			ret |= SourceList.get(i).NrOfConnections() > 1;
-		return ret;
+		for (int i = 0; i < width; i++)
+			if (sources.get(i).size() > 1)
+        return true;
+		return false;
 	}
 
 	public boolean hasSinks() {
-		boolean ret = false;
-		for (int i = 0; i < nr_of_bits; i++)
-			ret |= SinkList.get(i).NrOfConnections() > 0;
-		return ret;
+		for (int i = 0; i < width; i++)
+			if (sinks.get(i).size() > 0)
+        return true;
+		return false;
 	}
 
 	public boolean hasSource() {
-		boolean ret = false;
-		for (int i = 0; i < nr_of_bits; i++)
-			ret |= SourceList.get(i).NrOfConnections() > 0;
-		return ret;
-	}
-
-	public boolean HasTunnel() {
-		return TunnelNames.size() != 0;
+		for (int i = 0; i < width; i++)
+			if (sources.get(i).size() > 0)
+        return true;
+		return false;
 	}
 
 	public void InitializeSourceSinks() {
-		SourceList.clear();
-		SinkList.clear();
-		SourceNetsList.clear();
-		SinkNetsList.clear();
-		for (int i = 0; i < nr_of_bits; i++) {
-			SourceList.add(new ConnectionPointArray());
-			SinkList.add(new ConnectionPointArray());
-			SourceNetsList.add(new ConnectionPointArray());
-			SinkNetsList.add(new ConnectionPointArray());
+		sources.clear();
+		sinks.clear();
+		sourceNets.clear();
+		sinkNets.clear();
+		for (int i = 0; i < width; i++) {
+			sources.add(new ConnectionPoints());
+			sinks.add(new ConnectionPoints());
+			sourceNets.add(new ConnectionPoints());
+			sinkNets.add(new ConnectionPoints());
 		}
 	}
 
-	public boolean isBus() {
-		return nr_of_bits > 1;
-	}
+  public int BitWidth() { return width; }
+	public boolean isBus() { return width > 1; }
+  public void setBitWidth(int w) { width = w; }; // clear?
 
-	public boolean isEmpty() {
-		return MyPoints.isEmpty();
-	}
+	public boolean isEmpty() { return points.isEmpty(); }
+	public Set<Location> getPoints() { return points; }
+	public boolean contains(Location point) { return points.contains(point); }
 
 	public boolean IsForcedRootNet() {
-		return Requires_to_be_root;
+		return forcedRoot;
 	}
 
-	public boolean IsRootNet() {
-		return (MyParent == null) || Requires_to_be_root;
+	public boolean isRootNet() {
+		return (parent == null) || forcedRoot;
 	}
 
-	public void merge(Net TheNet) {
-		MyPoints.addAll(TheNet.getPoints());
-		TunnelNames.addAll(TheNet.TunnelNames());
-	}
-
-	public void setBus(int Width) {
-		nr_of_bits = Width;
-	}
-
-	public boolean setParent(Net Parrent) {
-		if (Requires_to_be_root)
+	public boolean setParent(Net newParent) {
+		if (forcedRoot || newParent == null  || parent != null)
 			return false;
-		if (Parrent == null)
-			return false;
-		if (!IsRootNet())
-			return false;
-		MyParent = Parrent;
+		parent = newParent;
 		return true;
 	}
 
-	public Set<String> TunnelNames() {
-		return this.TunnelNames;
+	public void merge(Net other) {
+		points.addAll(other.getPoints());
+		tunnelNames.addAll(other.TunnelNames());
 	}
+
+	public Set<String> TunnelNames() {
+		return this.tunnelNames;
+	}
+
+	public boolean HasTunnel() {
+		return !tunnelNames.isEmpty();
+	}
+
+	public void addTunnel(String TunnelName) {
+		tunnelNames.add(TunnelName);
+	}
+
+	public boolean ContainsTunnel(String TunnelName) {
+		return tunnelNames.contains(TunnelName);
+	}
+
 
 }

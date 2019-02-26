@@ -35,13 +35,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import com.bfh.logisim.netlist.ConnectionEnd;
 import com.bfh.logisim.netlist.ConnectionPoint;
 import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Net;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.library.DynamicClock;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.circuit.SubcircuitFactory;
@@ -103,8 +101,8 @@ public class CircuitHDLGenerator extends HDLGenerator {
 	public int GetEndIndex(NetlistComponent comp, String label, boolean IsOutputPort) {
 		SubcircuitFactory sub = (SubcircuitFactory) comp.GetComponent().getFactory();
 		for (int end = 0; end < comp.NrOfEnds(); end++) {
-			if (comp.getEnd(end).IsOutputEnd() == IsOutputPort) {
-				if (comp.getEnd(end).GetConnection((byte) 0).getChildsPortIndex()
+			if (comp.ports.get(end).isOutput == IsOutputPort) {
+				if (comp.ports.get(end).GetConnection((byte) 0).subcircPortIndex
             == sub.getSubcircuit().getNetList().GetPortInfo(label)) {
 					return end;
 				}
@@ -352,8 +350,8 @@ public class CircuitHDLGenerator extends HDLGenerator {
 
         // First perform source connections
         for (ConnectionPoint srcPt : net.GetSourceNets(bit)) {
-          String srcNet = "s_LOGISIM_BUS_"+_circNets.GetNetId(srcPt.GetParrentNet());
-          int srcBit = srcPt.GetParrentNetBitIndex();
+          String srcNet = "s_LOGISIM_BUS_"+_circNets.GetNetId(srcPt.net);
+          int srcBit = srcPt.bit;
 
           int id = _circNets.GetNetId(net);
           if (net.isBus())
@@ -364,8 +362,8 @@ public class CircuitHDLGenerator extends HDLGenerator {
 
         // Next perform sink connections
         for (ConnectionPoint sinkPt : net.GetSinkNets(bit)) {
-          String sinkNet = "s_LOGISIM_BUS_"+_circNets.GetNetId(sinkPt.GetParrentNet());
-          int sinkBit = sinkPt.GetParrentNetBitIndex();
+          String sinkNet = "s_LOGISIM_BUS_"+_circNets.GetNetId(sinkPt.net);
+          int sinkBit = sinkPt.bit;
 
           int id = _circNets.GetNetId(net);
           if (net.isBus())
@@ -381,8 +379,8 @@ public class CircuitHDLGenerator extends HDLGenerator {
     AttributeSet attrs = pinComp.GetComponent().getAttributeSet();
     String name = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
     PortInfo p = new PortInfo(name, attrs.getValue(StdAttr.WIDTH).getWidth(), 0, null);
-    ConnectionEnd end = pinComp.getEnd(0);
-    int w = end.NrOfBits();
+    NetlistComponent.PortConnection end = pinComp.getEnd(0);
+    int w = end.width;
     if (w == 1) {
       if (isOutput)
         out.assign(name, _circNets.signalForEndBit(end, 0, out));
@@ -408,12 +406,12 @@ public class CircuitHDLGenerator extends HDLGenerator {
         // unused name[7:6]             name[7:6] not driven (warn)
         // foo[10:9] = name[5:4]        name[5:4] = foo[10:9]
         // foo[23:20] = name[3:0]       name[3:0] = foo[23:20]
-        Net prevnet = end.getConnection((byte)(w-1)).GetParrentNet();
-        byte prevbit = prevnet == null ? -1 : end.GetConnection((byte)(w-1)).GetParrentNetBitIndex();
+        Net prevnet = end.getConnection((byte)(w-1)).net;
+        byte prevbit = prevnet == null ? -1 : end.GetConnection((byte)(w-1)).bit;
         int n = 1;
         for (int i = w-2; i >= -1; i--) {
-          Net net = i < 0 ? null : end.getConnection((byte)i).GetParrentNet();
-          byte bit = i < 0 ? 0 : end.GetConnection((byte)i).GetParrentNetBitIndex();
+          Net net = i < 0 ? null : end.getConnection((byte)i).net;
+          byte bit = i < 0 ? 0 : end.GetConnection((byte)i).bit;
           if (i >= 0 && ((prevnet == null && net == null)
                 || (prevnet != null && net == prevnet && bit == prevbit-n))) {
             n++;

@@ -968,52 +968,40 @@ public class Netlist {
 							return false;
 						}
 						for (int endid = 1; endid < ends.size(); endid++) {
-							/*
-							 * we iterate through all bits to see if the current
-							 * net is connected to this splitter
-							 */
-							if (thisnet.contains(ends.get(endid).getLocation())) {
-								/*
-								 * first we have to get the bitindices of the
-								 * rootbus
-								 */
-								/*
-								 * Here we have to process the inherited bits of
-								 * the parent
-								 */
-								byte[] BusBitConnection = ((Splitter) comp).GetEndpoints();
-								ArrayList<Byte> IndexBits = new ArrayList<Byte>();
-								for (byte b = 0; b < BusBitConnection.length; b++) {
-									if (BusBitConnection[b] == endid) {
-										IndexBits.add(b);
-									}
-								}
-								byte ConnectedBusIndex = IndexBits.get(bit);
-								/* Figure out the rootbusid and rootbusindex */
-								Net Rootbus = MyNets.get(ConnectedBus);
-								while (!Rootbus.IsRootNet()) {
-									ConnectedBusIndex = Rootbus
-											.getBit(ConnectedBusIndex);
-									Rootbus = Rootbus.getParent();
-								}
-								ConnectionPoint SolderPoint = new ConnectionPoint();
-								SolderPoint.SetParrentNet(Rootbus,
-										ConnectedBusIndex);
-								Boolean IsSink = true;
-								if (!thisnet.hasBitSource(bit)) {
-									if (HasHiddenSource(Rootbus,
-											ConnectedBusIndex, SplitterList,
-											comp, new HashSet<String>())) {
-										IsSink = false;
-									}
-								}
-								if (IsSink) {
-									thisnet.addSinkNet(bit, SolderPoint);
-								} else {
-									thisnet.addSourceNet(bit, SolderPoint);
-								}
-							}
-						}
+							// Iterate through bits to see if the current net is connected to this splitter.
+							if (thisnet.contains(ends.get(endid).getLocation()))
+                continue;
+              // first we have to get the bitindices of the rootbus
+              // Here we have to process the inherited bits of the parent
+              byte[] BusBitConnection = ((Splitter) comp).GetEndpoints();
+              ArrayList<Byte> IndexBits = new ArrayList<Byte>();
+              for (byte b = 0; b < BusBitConnection.length; b++) {
+                if (BusBitConnection[b] == endid) {
+                  IndexBits.add(b);
+                }
+              }
+              byte ConnectedBusIndex = IndexBits.get(bit);
+              /* Figure out the rootbusid and rootbusindex */
+              Net Rootbus = MyNets.get(ConnectedBus);
+              while (!Rootbus.IsRootNet()) {
+                ConnectedBusIndex = Rootbus
+                    .getBit(ConnectedBusIndex);
+                Rootbus = Rootbus.getParent();
+              }
+              NetlistComponent.ConnectionPoint pt = new NetlistComponent.ConnectionPoint(Rootbus, ConnectedBusIndex);
+              Boolean IsSink = true;
+              if (!thisnet.hasBitSource(bit)) {
+                if (HasHiddenSource(Rootbus,
+                      ConnectedBusIndex, SplitterList,
+                      comp, new HashSet<String>())) {
+                  IsSink = false;
+                }
+              }
+              if (IsSink)
+                thisnet.addSinkNet(bit, pt);
+              else
+                thisnet.addSourceNet(bit, pt);
+            }
 					}
 				}
 			}
@@ -1065,27 +1053,22 @@ public class Netlist {
 		return CurrentHierarchyLevel;
 	}
 
-	private ArrayList<ConnectionPoint> GetHiddenSinks(Net thisNet,
+	private ArrayList<NetlistComponent.ConnectionPoint> GetHiddenSinks(Net thisNet,
 			Byte bitIndex, Set<Component> SplitterList,
 			Component ActiveSplitter, Set<String> HandledNets,
 			Boolean isSourceNet) {
-		ArrayList<ConnectionPoint> result = new ArrayList<ConnectionPoint>();
-		/*
-		 * to prevent deadlock situations we check if we already looked at this
-		 * net
-		 */
-		String NetId = Integer.toString(MyNets.indexOf(thisNet)) + "-"
-				+ Byte.toString(bitIndex);
-		if (HandledNets.contains(NetId)) {
+		ArrayList<NetlistComponent.ConnectionPoint> result = new ArrayList<>();
+
+		// Check if already handled to prevent infinite looping.
+		String NetId = MyNets.indexOf(thisNet) + "-" + bitIndex;
+		if (HandledNets.contains(NetId))
 			return result;
-		} else {
+		else
 			HandledNets.add(NetId);
-		}
-		if (thisNet.hasBitSinks(bitIndex) && !isSourceNet) {
-			ConnectionPoint SolderPoint = new ConnectionPoint();
-			SolderPoint.SetParrentNet(thisNet, bitIndex);
-			result.add(SolderPoint);
-		}
+
+		if (thisNet.hasBitSinks(bitIndex) && !isSourceNet)
+			result.add(new NetlistComponent.ConnectionPoint(thisNet, bitIndex));
+
 		/* Check if we have a connection to another splitter */
 		for (Component currentSplitter : SplitterList) {
 			if (ActiveSplitter != null) {
@@ -1273,7 +1256,7 @@ public class Netlist {
 		return MyNets.indexOf(selectedNet);
 	}
 
-	public ConnectionPoint GetNetlistConnectionForSubCircuit(String label,
+	public NetlistComponent.ConnectionPoint GetNetlistConnectionForSubCircuit(String label,
 			int portIndex, byte bitindex) {
     for (NetlistComponent comp : MySubCircuits) {
       // Check the label
@@ -1282,10 +1265,10 @@ public class Netlist {
       if (!s.equals(label))
         continue;
       // Found the component, now search the ports
-      for (ConnectionEnd end: comp.ports) {
-        if (end.IsOutputEnd() && bitindex < ThisEnd.NrOfBits()
-            && end.GetConnection(bitindex).getChildsPortIndex() == portIndex)
-          return end.GetConnection(bitindex);
+      for (NetlistComponent.PortConnection end: comp.ports) {
+        if (end.isOutput && bitindex < end.width
+            && end.connections.get(bitindex).subcircPortIndex == portIndex)
+          return end.connections.get(bitindex);
       }
     }
 		return null;
@@ -1474,17 +1457,17 @@ public class Netlist {
   static final int BUS_SIMPLYCONNECTED = 1; // connected to contiguous slice of a single named bus
   static final int BUS_MULTICONNECTED = 2;  // all bits connected, but non-contiguous or multi-bus
   static final int BUS_MIXCONNECTED = -1;   // mix of connected and unconnected bits
-  public int busConnectionStatus(ConnectionEnd end) {
-		int n = end.NrOfBits();
-		Net net0 = end.GetConnection((byte) 0).GetParrentNet();
-		byte idx = net0 == null ? -1 : end.GetConnection((byte) 0).GetParrentNetBitIndex();
+  public int busConnectionStatus(NetlistComponent.PortConnection end) {
+		int n = end.width;
+		Net net0 = end.connections.get(0).net;
+		byte idx = net0 == null ? -1 : end.connections.get(0).bit;
 		for (int i = 1; i < n; i++) {
-      Net neti = end.GetConnection((byte) i).GetParrentNet();
+      Net neti = end.connections.get(i).net;
       if ((net0 == null) != (neti == null))
         return BUS_MIXCONNECTED: // This bit is connected when other wasn't, or vice versa
 			if (net0 != neti)
 				return BUS_MULTICONNECTED; // This bit is connected to different bus
-			if (net0 != null && (idx + i) != end.GetConnection((byte)i).GetParrentNetBitIndex())
+			if (net0 != null && (idx + i) != end.connections.get(i).bit)
         return BUS_MULTICONNECTED; // This bit is connected to same bus, but indexes are not sequential
 		}
     return net0 == null ? BUS_UNCONNECTED : BUS_SIMPLYCONNECTED;
@@ -1495,7 +1478,7 @@ public class Netlist {
 	}
 
 	public void MarkClockNet(ArrayList<String> HierarchyNames,
-			int clocksourceid, ConnectionPoint connection) {
+			int clocksourceid, NetlistComponent.ConnectionPoint connection) {
 		MyClockInformation.AddClockNet(HierarchyNames, clocksourceid, connection);
 	}
 
@@ -1537,23 +1520,22 @@ public class Netlist {
 		}
 		/* Second pass: We mark all clock sources */
 		for (NetlistComponent source : MyClockGenerators) {
-			ConnectionEnd ClockConnection = source.ports.get(0);
-			if (ClockConnection.NrOfBits() != 1) {
+			NetlistComponent.PortConnection ClockConnection = source.ports.get(0);
+			if (ClockConnection.width != 1) {
 				Reporter.AddFatalError("INTERNAL ERROR: Found a clock source with a bus as output");
 				return false;
 			}
-			ConnectionPoint SolderPoint = ClockConnection
-					.GetConnection((byte) 0);
+			NetlistComponent.ConnectionPoint SolderPoint = ClockConnection.connections.get(0);
 			/* Check if the clock source is connected */
-			if (SolderPoint.GetParrentNet() != null) {
+			if (SolderPoint.net != null) {
 				/* Third pass: add this clock to the list of ClockSources */
 				int clockid = ClockSources.getClockId(source.GetComponent());
 				/* Forth pass: Add this source as clock source to the tree */
 				MyClockInformation.AddClockSource(HierarchyNames, clockid,
 						SolderPoint);
 				/* Fifth pass: trace the clock net all the way */
-				if (!TraceClockNet(SolderPoint.GetParrentNet(),
-						SolderPoint.GetParrentNetBitIndex(), clockid,
+				if (!TraceClockNet(SolderPoint.net,
+						SolderPoint.bit, clockid,
 						HierarchyNames, HierarchyNetlists, Reporter)) {
 					return false;
 				}
@@ -1562,14 +1544,14 @@ public class Netlist {
 				 * therefore we have also to trace through our own netlist to
 				 * find the clock connections
 				 */
-				ArrayList<ConnectionPoint> HiddenSinks = GetHiddenSinks(
-						SolderPoint.GetParrentNet(),
-						SolderPoint.GetParrentNetBitIndex(), SplitterList,
+				ArrayList<NetlistComponent.ConnectionPoint> HiddenSinks = GetHiddenSinks(
+						SolderPoint.net,
+						SolderPoint.bit, SplitterList,
 						null, new HashSet<String>(), true);
-				for (ConnectionPoint thisNet : HiddenSinks) {
+				for (NetlistComponent.ConnectionPoint thisNet : HiddenSinks) {
 					MarkClockNet(HierarchyNames, clockid, thisNet);
-					if (!TraceClockNet(thisNet.GetParrentNet(),
-							thisNet.GetParrentNetBitIndex(), clockid,
+					if (!TraceClockNet(thisNet.net,
+							thisNet.bit, clockid,
 							HierarchyNames, HierarchyNetlists, Reporter)) {
 						return false;
 					}
@@ -1621,7 +1603,7 @@ public class Netlist {
 	public int NumberOfInOutPortBits() {
 		int count = 0;
 		for (NetlistComponent inp : MyInOutPorts) {
-			count += inp.ports.get(0).NrOfBits();
+			count += inp.ports.get(0).width;
 		}
 		return count;
 	}
@@ -1637,7 +1619,7 @@ public class Netlist {
 	public int NumberOfInputPortBits() {
 		int count = 0;
 		for (NetlistComponent inp : MyInputPorts) {
-			count += inp.ports.get(0).NrOfBits();
+			count += inp.ports.get(0).width;
 		}
 		return count;
 	}
@@ -1663,7 +1645,7 @@ public class Netlist {
 	public int NumberOfOutputPortBits() {
 		int count = 0;
 		for (NetlistComponent outp : MyOutputPorts) {
-			count += outp.ports.get(0).NrOfBits();
+			count += outp.ports.get(0).width;
 		}
 		return count;
 	}
@@ -1684,31 +1666,29 @@ public class Netlist {
 				return false;
 			}
 			Net Connection = FindConnectedNet(ThisPin.getLocation());
-			if (Connection != null) {
-				int PinId = comp.getEnds().indexOf(ThisPin);
-				boolean PinIsSink = ThisPin.isInput();
-				ConnectionEnd ThisEnd = NormalComponent.ports.get(PinId);
-				Net RootNet = GetRootNet(Connection);
-				if (RootNet == null) {
-					Reporter.AddFatalError("INTERNAL ERROR: Unable to find a root net!");
-					return false;
-				}
-				for (byte bitid = 0; bitid < ThisPin.getWidth().getWidth(); bitid++) {
-					Byte RootNetBitIndex = GetRootNetIndex(Connection, bitid);
-					if (RootNetBitIndex < 0) {
-						Reporter.AddFatalError("INTERNAL ERROR: Unable to find a root-net bit-index!");
-						return false;
-					}
-					ConnectionPoint ThisSolderPoint = ThisEnd
-							.GetConnection(bitid);
-					ThisSolderPoint.SetParrentNet(RootNet, RootNetBitIndex);
-					if (PinIsSink) {
-						RootNet.addSink(RootNetBitIndex, ThisSolderPoint);
-					} else {
-						RootNet.addSource(RootNetBitIndex, ThisSolderPoint);
-					}
-				}
-			}
+			if (Connection == null)
+        continue;
+      int PinId = comp.getEnds().indexOf(ThisPin);
+      boolean PinIsSink = ThisPin.isInput();
+      NetlistComponent.PortConnection ThisEnd = NormalComponent.ports.get(PinId);
+      Net RootNet = GetRootNet(Connection);
+      if (RootNet == null) {
+        Reporter.AddFatalError("INTERNAL ERROR: Unable to find a root net!");
+        return false;
+      }
+      for (byte bitid = 0; bitid < ThisPin.getWidth().getWidth(); bitid++) {
+        Byte RootNetBitIndex = GetRootNetIndex(Connection, bitid);
+        if (RootNetBitIndex < 0) {
+          Reporter.AddFatalError("INTERNAL ERROR: Unable to find a root-net bit-index!");
+          return false;
+        }
+        NetlistComponent.ConnectionPoint ThisSolderPoint = ThisEnd.connections.get(bitid);
+        ThisSolderPoint.set(RootNet, RootNetBitIndex);
+        if (PinIsSink)
+          RootNet.addSink(RootNetBitIndex, ThisSolderPoint);
+        else
+          RootNet.addSource(RootNetBitIndex, ThisSolderPoint);
+      }
 		}
 		if (comp.getFactory() instanceof Clock) {
 			MyClockGenerators.add(NormalComponent);
@@ -1751,12 +1731,15 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
 			}
 			Net Connection = FindConnectedNet(ThisPin.getLocation());
 			int PinId = comp.getEnds().indexOf(ThisPin);
-			int SubPortIndex = subNetlist.GetPortInfo(subPins[PinId]
-					.getAttributeValue(StdAttr.LABEL));
+			int SubPortIndex = subNetlist.GetPortInfo(subPins[PinId].getAttributeValue(StdAttr.LABEL));
 			if (SubPortIndex < 0) {
 				Reporter.AddFatalError("INTERNAL ERROR: Unable to find pin in sub-circuit!");
 				return false;
 			}
+      // Special handling for sub-circuits; we have to find out the connection to the corresponding
+      // net in the underlying net-list; At this point the underlying net-lists have already been generated.
+      for (byte bitid = 0; bitid < ThisPin.getWidth().getWidth(); bitid++)
+        Subcircuit.ports.get(PinId).connections.get(bitid).subcircPortIndex = SubPortIndex;
 			if (Connection != null) {
 				boolean PinIsSink = ThisPin.isInput();
 				Net RootNet = GetRootNet(Connection);
@@ -1770,28 +1753,14 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
 						Reporter.AddFatalError("INTERNAL ERROR: Unable to find a root-net bit-index!");
 						return false;
 					}
-					Subcircuit.ports.get(PinId).GetConnection(bitid)
-							.SetParrentNet(RootNet, RootNetBitIndex);
+					Subcircuit.ports.get(PinId).connections.get(bitid).set(RootNet, RootNetBitIndex);
 					if (PinIsSink) {
 						RootNet.addSink(RootNetBitIndex,
-								Subcircuit.ports.get(PinId).GetConnection(bitid));
+								Subcircuit.ports.get(PinId).connections.get(bitid));
 					} else {
 						RootNet.addSource(RootNetBitIndex,
-								Subcircuit.ports.get(PinId).GetConnection(bitid));
+								Subcircuit.ports.get(PinId).connections.get(bitid));
 					}
-					/*
-					 * Special handling for sub-circuits; we have to find out
-					 * the connection to the corresponding net in the underlying
-					 * net-list; At this point the underlying net-lists have
-					 * already been generated.
-					 */
-					Subcircuit.ports.get(PinId).GetConnection(bitid)
-							.setChildsPortIndex(SubPortIndex);
-				}
-			} else {
-				for (byte bitid = 0; bitid < ThisPin.getWidth().getWidth(); bitid++) {
-					Subcircuit.ports.get(PinId).GetConnection(bitid)
-							.setChildsPortIndex(SubPortIndex);
 				}
 			}
 		}
@@ -1830,13 +1799,13 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
 		/* first pass, we check if the clock net goes down the hierarchy */
 		for (NetlistComponent search : MySubCircuits) {
 			SubcircuitFactory sub = (SubcircuitFactory) search.GetComponent().getFactory();
-			for (ConnectionPoint SolderPoint : search.GetConnections(ClockNet, ClockNetBitIndex, false)) {
-				if (SolderPoint.getChildsPortIndex() < 0) {
+			for (NetlistComponent.ConnectionPoint SolderPoint : search.GetConnections(ClockNet, ClockNetBitIndex, false)) {
+				if (SolderPoint.subcircPortIndex < 0) {
 					Reporter.AddFatalError("INTERNAL ERROR: Subcircuit port is not annotated!");
 					return false;
 				}
 				NetlistComponent InputPort = sub.getSubcircuit().getNetList()
-						.GetInputPort(SolderPoint.getChildsPortIndex());
+						.GetInputPort(SolderPoint.subcircPortIndex);
 				if (InputPort == null) {
 					Reporter.AddFatalError("INTERNAL ERROR: Unable to find Subcircuit input port!");
 					return false;
@@ -1847,9 +1816,8 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
 					Reporter.AddFatalError("INTERNAL ERROR: Unable to find the bit index of a Subcircuit input port!");
 					return false;
 				}
-				ConnectionPoint SubClockNet = InputPort.ports.get(0)
-						.GetConnection(BitIndex);
-				if (SubClockNet.GetParrentNet() == null) {
+				NetlistComponent.ConnectionPoint SubClockNet = InputPort.ports.get(0).connections.get(BitIndex);
+				if (SubClockNet.net == null) {
 					/* we do not have a connected pin */
 					continue;
 				}
@@ -1867,8 +1835,8 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
 								SubClockNet);
 				if (!sub.getSubcircuit()
 						.getNetList()
-						.TraceClockNet(SubClockNet.GetParrentNet(),
-								SubClockNet.GetParrentNetBitIndex(),
+						.TraceClockNet(SubClockNet.net,
+								SubClockNet.bit,
 								ClockSourceId, NewHierarchyNames,
 								NewHierarchyNetlists, Reporter)) {
 					return false;
@@ -1882,7 +1850,7 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
 						.isEmpty()) {
 					byte bitindex = search.GetConnectionBitIndex(ClockNet,
 							ClockNetBitIndex);
-					ConnectionPoint SubClockNet = HierarchyNetlists
+					NetlistComponent.ConnectionPoint SubClockNet = HierarchyNetlists
 							.get(HierarchyNetlists.size() - 2)
 							.GetNetlistConnectionForSubCircuit(
 									HierarchyNames
@@ -1892,7 +1860,7 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
 						Reporter.AddFatalError("INTERNAL ERROR! Could not find a sub-circuit connection in overlying hierarchy level!");
 						return false;
 					}
-					if (SubClockNet.GetParrentNet() == null) {
+					if (SubClockNet.net == null) {
 					} else {
 						ArrayList<String> NewHierarchyNames = new ArrayList<String>();
 						ArrayList<Netlist> NewHierarchyNetlists = new ArrayList<Netlist>();
@@ -1906,8 +1874,8 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
 										SubClockNet);
 						if (!HierarchyNetlists
 								.get(HierarchyNetlists.size() - 2)
-								.TraceClockNet(SubClockNet.GetParrentNet(),
-										SubClockNet.GetParrentNetBitIndex(),
+								.TraceClockNet(SubClockNet.net,
+										SubClockNet.bit,
 										ClockSourceId, NewHierarchyNames,
 										NewHierarchyNetlists, Reporter)) {
 							return false;
@@ -1926,11 +1894,11 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
   // xxx either and hdl "open" is returned (for outputs) or the given default value
   // xxx is returned instead (for inputs). But, if the default is null and the end
   // xxx is an input, null is returned instead.
-  private String signalForEndBit(ConnectionEnd end, int bit, /*Boolean defaultValue,*/ Hdl hdl) {
-    ConnectionPoint solderPoint = end.GetConnection((byte) bit);
-    Net net = solderPoint.GetParrentNet();
+  private String signalForEndBit(NetlistComponent.PortConnection end, int bit, /*Boolean defaultValue,*/ Hdl hdl) {
+    NetlistComponent.ConnectionPoint solderPoint = end.connections.get(bit);
+    Net net = solderPoint.net;
     if (net == null) { // unconnected net
-      // if (end.IsOutputEnd()) {
+      // if (end.isOutput) {
       //   return hdl.unconnected;
       // } else if (defaultValue == null) {
       //   hdl.err.AddFatalError("INTERNAL ERROR: Invalid component end/port.");
@@ -1944,7 +1912,7 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
     } else { // connected to one bit of a multi-bit bus
       return String.format("S_LOGISIM_BUS_%d"+hdl.idx,
           this.GetNetId(net),
-          solderPoint.GetParrentNetBitIndex());
+          solderPoint.bit);
     }
   }
 
@@ -1970,8 +1938,8 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
       return hdl.bit(defaultValue);
     }
 
-    ConnectionEnd end = comp.ports.get(endIdx);
-    int n = end.NrOfBits();
+    NetlistComponent.PortConnection end = comp.ports.get(endIdx);
+    int n = end.width;
     if (n != 1) {
       hdl.err.AddFatalError("INTERNAL ERROR: Unexpected %d-bit end/port '%d' for component '%s'", n, endIdx, comp);
       return "???";
@@ -1980,7 +1948,7 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
     String s = signalForEndBit(end, bitIdx, hdl);
     if (s != null) {
       return s;
-    } else if (end.IsOutputEnd()) {
+    } else if (end.isOutput) {
       return hdl.unconnected;
     } else if (defaultValue == null) {
       hdl.err.AddFatalError("INTERNAL ERROR: Unexpected unconnected end/port '%d' for component '%s'", endIdx, comp);
@@ -1995,8 +1963,8 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
   // the bus signal this end is connected to, for example:
   //    VHDL:    s_LOGISIM_BUS_27(31 downto 0)
   //    Verilog: s_LOGISIM_BUS_27[31:0]
-  public String signalForEndBus(ConnectionEnd end, int bitHi, int bitLo, Hdl hdl) {
-    Net net = end.getConnection((byte) bitLo).GetParrentNet();
+  public String signalForEndBus(NetlistComponent.PortConnection end, int bitHi, int bitLo, Hdl hdl) {
+    Net net = end.getConnection((byte) bitLo).net;
     // if (net == null) {
     //   if (isOutput) {
     //     return hdl.unconnected;
@@ -2008,8 +1976,8 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
     //     return defaultValue ? hdl.ones(n) : hdl.zeros(n);
     //   }
     // }
-    byte hi = end.GetConnection((byte)bitHi).GetParrentNetBitIndex();
-    byte lo = end.GetConnection((byte)bitLo).GetParrentNetBitIndex();
+    byte hi = end.connections.get(bitHi).bit;
+    byte lo = end.connections.get(bitLo).bit;
     return String.format("s_LOGISIM_BUS_%d"+hdl.range, this.GetNetId(net), hi, lo);
   } 
 
@@ -2029,8 +1997,8 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
       return result;
     }
 
-    ConnectionEnd end = comp.ports.get(endIdx);
-    int n = end.NrOfBits();
+    NetlistComponent.PortConnection end = comp.ports.get(endIdx);
+    int n = end.width;
 
     if (n == 1) {
       // example: somePort => s_LOGISIM_NET_5;
@@ -2038,11 +2006,11 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
       return result;
     }
 
-		boolean isOutput = end.IsOutputEnd();
+		boolean isOutput = end.isOutput;
 
     // boolean foundConnection = false;
     // for (int i = 0; i < n && !foundConnection; i++)
-    //   foundConnection |= end.GetConnection((byte) i).GetParrentNet() != null;
+    //   foundConnection |= end.connections.get(i).net != null;
 
     // if (!foundConnection) {
     //   if (isOutput) {
@@ -2057,7 +2025,7 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
 
     if (isConnectedToSingleNamedBus(end)) {
       // example: somePort => s_LOGISIM_BUS_27(4 downto 0)
-      Net net = end.getConnection((byte) 0).GetParrentNet();
+      Net net = end.getConnection((byte) 0).net;
       if (net == null) {
         if (isOutput) {
           return hdl.unconnected;
@@ -2068,8 +2036,8 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
           return defaultValue ? hdl.ones(n) : hdl.zeros(n);
         }
       }
-      byte hi = end.GetConnection((byte)(n-1)).GetParrentNetBitIndex();
-      byte lo = end.GetConnection((byte)0).GetParrentNetBitIndex();
+      byte hi = end.connections.get((n-1)).bit;
+      byte lo = end.connections.get(0).bit;
       results.put(portName,
           String.format("s_LOGISIM_BUS_%d"+hdl.range, this.GetNetId(net), hi, lo));
       return results;
@@ -2116,7 +2084,7 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
   // a signal, then either an HDL "open" is returned (for outputs) or the given
   // default value is returned instead (for inputs). But, if the default is null
   // and the end is an input, a fatal error is posted.
-  public String signalForEndBit(ConnectionEnd end, int bit, Boolean defaultValue, Hdl hdl) {
+  public String signalForEndBit(NetlistComponent.PortConnection end, int bit, Boolean defaultValue, Hdl hdl) {
     String s = signalForEndBit(end, bit, hdl);
     if (s != null) {
       return s;
@@ -2138,19 +2106,19 @@ fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
       return "???";
     }
 
-    ConnectionEnd end = comp.ports.get(endIdx);
-    if (end.NrOfBits() != 1) {
+    NetlistComponent.PortConnection end = comp.ports.get(endIdx);
+    if (end.width != 1) {
       hdl.err.AddFatalError("INTERNAL ERROR: Bus clock end/port '%d' for component '%s'", endIdx, comp);
       return "???";
     }
 
-    Net net = end.GetConnection((byte) 0).GetParrentNet();
+    Net net = end.connections.get(0).net;
     if (net == null) {
       hdl.err.AddFatalError("INTERNAL ERROR: Unexpected unconnected clock for end/port '%d' for component '%s'", endIdx, comp);
       return "???";
     }
 
-    byte idx = end.GetConnection((byte) 0).GetParrentNetBitIndex();
+    byte idx = end.connections.get(0).bit;
     int clkId = MyClockInformation.GetClockSourceId(CurrentHierarchyLevel, net, idx);
     if (clkId < 0) {
       hdl.err.AddSevereWarning("WARNING: Non-clock signal connected to clock for end/port '%d' for component '%s'", endIdx, comp);
