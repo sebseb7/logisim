@@ -30,14 +30,19 @@
 
 package com.bfh.logisim.netlist;
 
-import java.util.ArrayList;
-
 // A heirarchical path to a component within the tree of circuits and
-// subcircuits.
+// subcircuits. Path is immutable.
 public class Path {
 
-  String path;
-  ArrayList<String> elts;
+  private final String path; // slash-separated representation
+  private final String[] elts;
+
+  public static final Path ROOT = new Path();
+
+  public Path(String ...elts) {
+    this.path = String.join("/", elts);
+    this.elts = path.split("/", -1);
+  }
 
   @Override
   public boolean equals(Object other) {

@@ -610,12 +610,9 @@ public class Pin extends InstanceFactory {
 
   @Override
   public boolean HasThreeStateDrivers(AttributeSet attrs) {
-    /*
-     * We ignore for the moment the three-state property of the pin, as it
-     * is not an active component, just wiring
-     */
-    // PinAttributes myattrs = (PinAttributes) attrs;
-    // return myattrs.getValue(Pin.ATTR_TRISTATE);
+    // We deliberately ignore the tri-state property for Pin because a Pin
+    // configured for tri-state behavior causes problems for HDL if, and only
+    // if, there is some other tri-state component driving the line.
     return false;
   }
 

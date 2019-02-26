@@ -252,7 +252,7 @@ public class Ram extends Mem {
       ps[OE] = new Port(0, (classic ? 20 : 60), Port.INPUT, 1);
       ps[OE].setToolTip(S.getter("ramOETip"));
       for (int i = 0; i < dataLines; i++) {
-        ps[i==0?DATA:(DATA1+i-1)] = new Port(SymbolWidth + 50, ypos, Port.OUTPUT, DATA_ATTR);
+        ps[i==0?DATA:(DATA1+i-1)] = new Port(SymbolWidth + 50, ypos, Port.INOUT, DATA_ATTR);
         ps[i==0?DATA:(DATA1+i-1)].setToolTip(S.getter("memDataTip"+i));
         ypos += 10;
       }

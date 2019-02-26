@@ -32,22 +32,19 @@ package com.bfh.logisim.netlist;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Set;
 
-import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.data.Location;
 
 public class Net {
 
   static class ConnectionPoints extends ArrayList<NetlistComponent.ConnectionPoint> { }
 
-	public int width = 1; // number of bits in this network
-	private Set<Location> points = new HashSet<>(); // points this net touches
+	public int width = 0; // number of bits in this network, initially unknown
+	private HashSet<Location> points = new HashSet<>(); // points this net touches
 	private boolean forcedRoot  = false;
 
 	private Net parent = null;
 
-	private Set<String> tunnelNames = new HashSet<>();
 	private ArrayList<Byte> inheritedBits = new ArrayList<>();
 
   // Data for each bit of this network
@@ -56,12 +53,12 @@ public class Net {
 	private ArrayList<ConnectionPoints> sourceNets = new ArrayList<>();
 	private ArrayList<ConnectionPoints> sinkNets = new ArrayList<>();
 
-	public Net() { }
-	public Net(Location loc) { points.add(loc); }
+	public Net(HashSet<Location> locs) {
+    points.addAll(locs);
+  }
 
-	public void add(Wire segment) {
-		points.add(segment.getEnd0());
-		points.add(segment.getEnd1());
+	public void add(HashSet<Location> locs) {
+    points.addAll(locs); }
 	}
 
 	public boolean AddParentBit(byte BitID) {
@@ -101,7 +98,6 @@ public class Net {
 
 	public void FinalCleanup() {
 		points.clear();
-		tunnelNames.clear();
 		inheritedBits.clear();
 	}
 
@@ -179,12 +175,12 @@ public class Net {
 		}
 	}
 
-  public int BitWidth() { return width; }
+  public int bitWidth() { return width; }
 	public boolean isBus() { return width > 1; }
   public void setBitWidth(int w) { width = w; }; // clear?
 
 	public boolean isEmpty() { return points.isEmpty(); }
-	public Set<Location> getPoints() { return points; }
+	public HashSet<Location> getPoints() { return points; }
 	public boolean contains(Location point) { return points.contains(point); }
 
 	public boolean IsForcedRootNet() {
@@ -201,27 +197,5 @@ public class Net {
 		parent = newParent;
 		return true;
 	}
-
-	public void merge(Net other) {
-		points.addAll(other.getPoints());
-		tunnelNames.addAll(other.TunnelNames());
-	}
-
-	public Set<String> TunnelNames() {
-		return this.tunnelNames;
-	}
-
-	public boolean HasTunnel() {
-		return !tunnelNames.isEmpty();
-	}
-
-	public void addTunnel(String TunnelName) {
-		tunnelNames.add(TunnelName);
-	}
-
-	public boolean ContainsTunnel(String TunnelName) {
-		return tunnelNames.contains(TunnelName);
-	}
-
 
 }

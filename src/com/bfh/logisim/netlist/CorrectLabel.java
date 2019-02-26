@@ -43,108 +43,108 @@ public class CorrectLabel {
   // Replaces dashes with underscores.
   // Q: why doesn't this safe-ify the names? Or at least check for illegal
   // names?
-	public static String getCorrectLabel(String Label) {
-		if (Label == null || Label.isEmpty())
-			return "";
-		StringBuffer result = new StringBuffer();
-		if (Numbers.contains(Label.substring(0, 1)))
-			result.append("L_");
-		result.append(Label.replace(" ", "_").replace("-", "_"));
-		return result.toString();
-	}
+  public static String getCorrectLabel(String Label) {
+    if (Label == null || Label.isEmpty())
+      return "";
+    StringBuffer result = new StringBuffer();
+    if (Numbers.contains(Label.substring(0, 1)))
+      result.append("L_");
+    result.append(Label.replace(" ", "_").replace("-", "_"));
+    return result.toString();
+  }
 
-	public static String getCorrectLabelWithVariables(String Label) {
+  public static String getCorrectLabelWithVariables(String Label) {
     return getCorrectLabel(Label);
-	}
+  }
 
-	public static String VhdlNameErrors(String Label) {
-            return NameErrors(Label, Settings.VHDL, "VHDL entity name");
+  public static String VhdlNameErrors(String Label) {
+    return NameErrors(Label, Settings.VHDL, "VHDL entity name");
+  }
+
+  public static String NameErrors(String Label, String HDLIdentifier,
+      String ErrorIdentifierString) {
+    if (Label.isEmpty())
+      return null;
+    for (int i = 0; i < Label.length(); i++) {
+      if (!Chars.contains(Label.toLowerCase().substring(i, i + 1))
+          && !Numbers.contains(Label.substring(i, i + 1))) {
+        return ErrorIdentifierString
+            + " contains the illegal character \""
+            + Label.substring(i, i + 1) + "\", please rename.";
+      }
+    }
+    if (HDLIdentifier.equals(Settings.VHDL)) {
+      if (VHDLKeywords.contains(Label.toLowerCase())) {
+        return ErrorIdentifierString
+            + " is a reserved VHDL keyword, please rename.";
+      }
+    } else {
+      if (HDLIdentifier.equals(Settings.VERILOG)) {
+        if (VerilogKeywords.contains(Label)) {
+          return ErrorIdentifierString
+              + " is a reserved Verilog keyword, please rename.";
         }
+      }
+    }
+    return null;
+  }
 
-	public static String NameErrors(String Label, String HDLIdentifier,
-			String ErrorIdentifierString) {
-		if (Label.isEmpty())
-			return null;
-		for (int i = 0; i < Label.length(); i++) {
-			if (!Chars.contains(Label.toLowerCase().substring(i, i + 1))
-					&& !Numbers.contains(Label.substring(i, i + 1))) {
-				return ErrorIdentifierString
-						+ " contains the illegal character \""
-						+ Label.substring(i, i + 1) + "\", please rename.";
-			}
-		}
-		if (HDLIdentifier.equals(Settings.VHDL)) {
-			if (VHDLKeywords.contains(Label.toLowerCase())) {
-				return ErrorIdentifierString
-						+ " is a reserved VHDL keyword, please rename.";
-			}
-		} else {
-			if (HDLIdentifier.equals(Settings.VERILOG)) {
-				if (VerilogKeywords.contains(Label)) {
-					return ErrorIdentifierString
-							+ " is a reserved Verilog keyword, please rename.";
-				}
-			}
-		}
-		return null;
-	}
+  public static boolean IsCorrectLabel(String Label, String HDLIdentifier,
+      String ErrorIdentifierString, FPGAReport Reporter) {
+    String err = NameErrors(Label, HDLIdentifier, ErrorIdentifierString);
+    if (err != null) {
+      Reporter.AddFatalError(err);
+      return false;
+    }
+    return true;
+  }
 
-	public static boolean IsCorrectLabel(String Label, String HDLIdentifier,
-			String ErrorIdentifierString, FPGAReport Reporter) {
-            String err = NameErrors(Label, HDLIdentifier, ErrorIdentifierString);
-            if (err != null) {
-                Reporter.AddFatalError(err);
-                return false;
-            }
-            return true;
-        }
+  private static final String[] NumbersStr = { "0", "1", "2", "3", "4", "5",
+    "6", "7", "8", "9" };
+  private static final List<String> Numbers = Arrays.asList(NumbersStr);
+  private static final String[] AllowedStrings = { "a", "b", "c", "d", "e",
+    "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
+    "s", "t", "u", "v", "w", "x", "y", "z", " ", "-", "_" };
+  private static final List<String> Chars = Arrays.asList(AllowedStrings);
+  private static final String[] ReservedVHDLWords = { "abs", "access",
+    "after", "alias", "all", "and", "architecture", "array", "assert",
+    "attribute", "begin", "block", "body", "buffer", "bus", "case",
+    "component", "configuration", "constant", "disconnect", "downto",
+    "else", "elsif", "end", "entity", "exit", "file", "for",
+    "function", "generate", "generic", "group", "guarded", "if",
+    "impure", "in", "inertial", "inout", "is", "label", "library",
+    "linkage", "literal", "loop", "map", "mod", "nand", "new", "next",
+    "nor", "not", "null", "of", "on", "open", "or", "others", "out",
+    "package", "port", "postponed", "procedure", "process", "pure",
+    "range", "record", "register", "reject", "rem", "report", "return",
+    "rol", "ror", "select", "severity", "signal", "shared", "sla",
+    "sll", "sra", "srl", "subtype", "then", "to", "transport", "type",
+    "unaffected", "units", "until", "use", "variable", "wait", "when",
+    "while", "with", "xnor", "xor" };
+  public static final List<String> VHDLKeywords = Arrays
+      .asList(ReservedVHDLWords);
 
-	private static final String[] NumbersStr = { "0", "1", "2", "3", "4", "5",
-			"6", "7", "8", "9" };
-	private static final List<String> Numbers = Arrays.asList(NumbersStr);
-	private static final String[] AllowedStrings = { "a", "b", "c", "d", "e",
-			"f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
-			"s", "t", "u", "v", "w", "x", "y", "z", " ", "-", "_" };
-	private static final List<String> Chars = Arrays.asList(AllowedStrings);
-	private static final String[] ReservedVHDLWords = { "abs", "access",
-			"after", "alias", "all", "and", "architecture", "array", "assert",
-			"attribute", "begin", "block", "body", "buffer", "bus", "case",
-			"component", "configuration", "constant", "disconnect", "downto",
-			"else", "elsif", "end", "entity", "exit", "file", "for",
-			"function", "generate", "generic", "group", "guarded", "if",
-			"impure", "in", "inertial", "inout", "is", "label", "library",
-			"linkage", "literal", "loop", "map", "mod", "nand", "new", "next",
-			"nor", "not", "null", "of", "on", "open", "or", "others", "out",
-			"package", "port", "postponed", "procedure", "process", "pure",
-			"range", "record", "register", "reject", "rem", "report", "return",
-			"rol", "ror", "select", "severity", "signal", "shared", "sla",
-			"sll", "sra", "srl", "subtype", "then", "to", "transport", "type",
-			"unaffected", "units", "until", "use", "variable", "wait", "when",
-			"while", "with", "xnor", "xor" };
-	public static final List<String> VHDLKeywords = Arrays
-			.asList(ReservedVHDLWords);
+  private static final String[] ReservedVerilogWords = { "always", "ifnone",
+    "rpmos", "and", "initial", "rtran", "assign", "inout", "rtranif0",
+    "begin", "input", "rtranif1", "buf", "integer", "scalared",
+    "bufif0", "join", "small", "bufif1", "large", "specify", "case",
+    "macromodule", "specparam", "casex", "medium", "strong0", "casez",
+    "module", "strong1", "cmos", "nand", "supply0", "deassign",
+    "negedge", "supply1", "default", "nmos", "table", "defparam",
+    "nor", "task", "disable", "not", "time", "edge", "notif0", "tran",
+    "else", "notif1", "tranif0", "end", "or", "tranif1", "endcase",
+    "output", "tri", "endmodule", "parameter", "tri0", "endfunction",
+    "pmos", "tri1", "endprimitive", "posedge", "triand", "endspecify",
+    "primitive", "trior", "endtable", "pull0", "trireg", "endtask",
+    "pull1", "vectored", "event", "pullup", "wait", "for", "pulldown",
+    "wand", "force", "rcmos", "weak0", "forever", "real", "weak1",
+    "fork", "realtime", "while", "function", "reg", "wire", "highz0",
+    "release", "wor", "highz1", "repeat", "xnor", "if", "rnmos", "xor",
+    "automatic", "incdir", "pulsestyle_ondetect", "cell", "include",
+    "pulsestyle_onevent", "config", "instance", "signed", "endconfig",
+    "liblist", "showcancelled", "endgenerate", "library", "unsigned",
+    "generate", "localparam", "use", "genvar", "noshowcancelled" };
 
-	private static final String[] ReservedVerilogWords = { "always", "ifnone",
-			"rpmos", "and", "initial", "rtran", "assign", "inout", "rtranif0",
-			"begin", "input", "rtranif1", "buf", "integer", "scalared",
-			"bufif0", "join", "small", "bufif1", "large", "specify", "case",
-			"macromodule", "specparam", "casex", "medium", "strong0", "casez",
-			"module", "strong1", "cmos", "nand", "supply0", "deassign",
-			"negedge", "supply1", "default", "nmos", "table", "defparam",
-			"nor", "task", "disable", "not", "time", "edge", "notif0", "tran",
-			"else", "notif1", "tranif0", "end", "or", "tranif1", "endcase",
-			"output", "tri", "endmodule", "parameter", "tri0", "endfunction",
-			"pmos", "tri1", "endprimitive", "posedge", "triand", "endspecify",
-			"primitive", "trior", "endtable", "pull0", "trireg", "endtask",
-			"pull1", "vectored", "event", "pullup", "wait", "for", "pulldown",
-			"wand", "force", "rcmos", "weak0", "forever", "real", "weak1",
-			"fork", "realtime", "while", "function", "reg", "wire", "highz0",
-			"release", "wor", "highz1", "repeat", "xnor", "if", "rnmos", "xor",
-			"automatic", "incdir", "pulsestyle_ondetect", "cell", "include",
-			"pulsestyle_onevent", "config", "instance", "signed", "endconfig",
-			"liblist", "showcancelled", "endgenerate", "library", "unsigned",
-			"generate", "localparam", "use", "genvar", "noshowcancelled" };
-
-	private static final List<String> VerilogKeywords = Arrays
-			.asList(ReservedVerilogWords);
+  private static final List<String> VerilogKeywords = Arrays
+      .asList(ReservedVerilogWords);
 }

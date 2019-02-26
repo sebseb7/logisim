@@ -121,8 +121,8 @@ public class NetlistComponent {
 	private HashMap<Path, Boolean> altLocked = new HashMap<>();
 
 	public NetlistComponent(Component comp, HDLCTX ctx) {
-    ComponentFactory factory = Ref.getFactory();
-    AttributeSet attrs = Ref.getAttributeSet();
+    ComponentFactory factory = comp.getFactory();
+    AttributeSet attrs = comp.getAttributeSet();
 
 		this.original = comp;
 
@@ -255,5 +255,8 @@ public class NetlistComponent {
 		boardMaps.remove(MapName);
 	}
 
+  public String label() {
+    return CorrectLabel.getCorrectLabel(comp.getAttributeSet().getValue(StdAttr.LABEL));
+  }
 
 }

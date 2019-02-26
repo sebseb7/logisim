@@ -1121,17 +1121,11 @@ public class FPGACommanderGui implements ActionListener {
 		clearAllMessages();
 		String CircuitName = circuitsList.getSelectedItem().toString();
 		Circuit root = MyProject.getLogisimFile().getCircuit(CircuitName);
-		ArrayList<String> SheetNames = new ArrayList<String>();
-		int DRCResult;
-		if (root == null) {
-			DRCResult = Netlist.DRC_ERROR;
-		} else {
-			root.getNetList().ClearNetlist();
-			DRCResult = root.getNetList().DesignRuleCheckResult(MyReporter,
-					HDLType.getSelectedItem().toString(), true,
-					MyBoardInformation.fpga.getVendor(), SheetNames);
-		}
-		return (DRCResult == Netlist.DRC_PASSED);
+    if (root == null)
+      return false; // huh? no circuit found
+		return root.getNetList().validate(MyReporter,
+					HDLType.getSelectedItem().toString(), 
+					MyBoardInformation.fpga.getVendor());
 	}
 
 	private void RebuildCircuitSelection() {

@@ -233,7 +233,7 @@ public class Circuit implements AttributeDefaultProvider {
             lang, reporter, 
             null, /* no nets net */
             comp.getAttributeSet(), vendor);
-        if (g == null || !g.RequiresNonZeroLabel())
+        if (g == null || !g.requiresUniqueLabel())
           continue;
         sortedComps.add(comp);
         generators.put(comp, g);

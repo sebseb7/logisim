@@ -80,6 +80,6 @@ public class VhdlHDLGenerator extends HDLGenerator {
     return ((VhdlEntityAttributes) attrs).getContent();
   }
 
-  @Override
-  public boolean RequiresNonZeroLabel() { return true; }
+  // @Override
+  // public boolean requiresUniqueLabel() { return true; } // unique label not necessary?
 }

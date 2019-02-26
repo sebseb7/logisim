@@ -74,12 +74,13 @@ public class ClockTreeFactory {
 	}
 
 	public void clean() {
-		for (ClockTreeContainer tree : sourcetrees) {
+		for (ClockTreeContainer tree : sourcetrees)
 			tree.clear();
-		}
 		sourcetrees.clear();
-		if (sources != null)
+		if (sources != null) {
 			sources.clear();
+      sources = null;
+    }
 	}
 
 	public int GetClockSourceId(ArrayList<String> Hierarchy, Net SelectedNet,
@@ -108,14 +109,11 @@ public class ClockTreeFactory {
 		return sources.getClockId(comp);
 	}
 
-	public ClockSourceContainer GetSourceContainer() {
-		if (sources == null) {
-			sources = new ClockSourceContainer();
-		}
+	public ClockSourceContainer getSource() {
 		return sources;
 	}
 
-	public void SetSourceContainer(ClockSourceContainer source) {
+	public void setSource(ClockSourceContainer source) {
 		sources = source;
 	}
 }

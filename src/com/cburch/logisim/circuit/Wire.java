@@ -58,6 +58,7 @@ import com.cburch.logisim.util.GraphicsUtil;
 
 public final class Wire
   implements Component, AttributeSet, CustomHandles, Iterable<Location> {
+
   private class EndList extends AbstractList<EndData> {
     @Override
     public EndData get(int i) {

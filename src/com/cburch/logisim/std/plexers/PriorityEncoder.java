@@ -92,7 +92,7 @@ public class PriorityEncoder extends InstanceFactory {
 
   @Override
   public boolean HasThreeStateDrivers(AttributeSet attrs) {
-    return (attrs.getValue(Plexers.ATTR_DISABLED) == Plexers.DISABLED_FLOATING);
+    return attrs.getValue(Plexers.ATTR_DISABLED) == Plexers.DISABLED_FLOATING;
   }
 
   @Override

@@ -152,10 +152,11 @@ public abstract class HDLSupport {
   // Note: For ROM and non-volatile RAM components, the generated HDL code
   // depends on the contents of the memory, which is too large of an attribute
   // for getComponentName() to simply include in the name as is done for other
-  // attributes. Instead, we require each ROM and non-volatile RAM to have a
-  // non-zero label unique within the circuit, then getComponentName() computes a
-  // name as a function of the circuit name (which is globally unique) and the
-  // label.
+  // attributes. We could include a concise unique hash, perhaps. But instead,
+  // we require each ROM and non-volatile RAM to have a non-zero label unique
+  // within the circuit, and also have getComponentName() in this case produce a
+  // name that is a function of both the circuit name (which is globally unique)
+  // and the label.
   private static String deriveHDLNameWithinCircuit(String nameTemplate,
       AttributeSet attrs, String circuitName) {
     String s = hdlComponentName;
@@ -195,10 +196,10 @@ public abstract class HDLSupport {
   // shows up in the component-mapping GUI dialog where the user assigns FPGA
   // resources. This is the case for Pin, PortIO, LED, BUtton, and similar
   // components. These components should include "${LABEL}" in their name. ROM
-  // and volatile RAM components also do the same (see note below). Also,
+  // and volatile RAM components also do the same (see note above). Also,
   // Subcircuit and VhdlEntity need labels for the same reason, and override
   // this method to return true.
-  public boolean RequiresNonZeroLabel() {
+  public boolean requiresUniqueLabel() {
     return hdlComponentName.contains("${LABEL}");
   }
 

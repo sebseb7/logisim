@@ -62,7 +62,6 @@ import com.cburch.logisim.instance.StdAttr;
 
 public interface Component extends Location.At {
 
-  // listener methods
   public void addComponentListener(ComponentListener l);
 
   public boolean contains(Location pt);
@@ -75,7 +74,6 @@ public interface Component extends Location.At {
 
   public boolean endsAt(Location pt);
 
-  // user interface methods
   public void expose(ComponentDrawContext context);
 
   public AttributeSet getAttributeSet();
@@ -86,9 +84,7 @@ public interface Component extends Location.At {
 
   public EndData getEnd(int index);
 
-  // propagation methods
-  public List<EndData> getEnds(); // list of EndDatas
-  // basic information methods
+  public List<EndData> getEnds();
 
   public ComponentFactory getFactory();
 
