@@ -31,31 +31,35 @@
 package com.bfh.logisim.netlist;
 
 // A heirarchical path to a component within the tree of circuits and
-// subcircuits. Path is immutable.
+// subcircuits. Path is immutable. Examples:
+//   MainCirc
+//   MainCirc/FooSubCirc0/
+//   MainCirc/FooSubCirc1/
+//   MainCirc/FooSubCirc1/BarSubcirc
 public class Path {
 
   private final String path; // slash-separated representation
-  private final String[] elts;
 
-  public static final Path ROOT = new Path();
+  private Path(String s) { path = s; }
 
-//   public Path(String ...elts) {
-//     this.path = String.join("/", elts);
-//     this.elts = path.split("/", -1);
-//   }
-
-  private Path() {
-    path = "/";
-    elts = new String[] { "" };
+  // Construct a root path for a top-level circuit.
+  public Path(Circuit circ) {
+    this(CorrectLabel.getCorrectLabel(circ.getName().toUpperCase()));
   }
 
-  private Path(String p) {
-    path = p;
-    elts = p.split("/", -1);
+  // Construct a non-root path for component or subcircuit in some circuit.
+  public extend(NetlistComponent shadow) {
+    return new Path(path + "/" + shadow.label());
   }
 
-  public static Path join(Path base, String elt) {
-    return new Path(base.path + "/" + elt);
+  // Return the parent's path for this non-root path. Fails for root path.
+  public Path parent() {
+    return new Path(path.substring(0, path.indexOf('/')));
+  }
+
+  // Return the last part of this path. Works even for root paths.
+  public String tail() {
+    return path.substring(path.indexOf('/')+1);
   }
 
   @Override

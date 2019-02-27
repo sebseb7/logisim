@@ -58,10 +58,12 @@ public class NetlistComponent {
       end = new Int3();
       start = new Int3();
     }
-    // public Range3(Int3 end, Int3 start) {
-    //   this.end = end.copy();
-    //   this.start = start.copy();
-    // }
+    void update(Int3 start, Int3 count) {
+      start = start.copy();
+      end.in = start.in + count.in - 1;
+      end.inout = start.inout + count.inout - 1;
+      end.out = start.out + count.out - 1;
+    }
   }
 
   // The real, original logisim component we are shadowing
@@ -125,31 +127,23 @@ public class NetlistComponent {
     }
 	}
 
-	public void setGlobalHiddenPortIndices(Path path,
-			int inStart, int inCount,
-			int inoutStart, int inoutCount
-			int outStart, int outCount) {
-		if ((inCount == 0) && (inoutCount == 0) && (outCount == 0))
+	public void setGlobalHiddenPortIndices(Path path, Int3 start, Int3 count) {
+		if (count.size() == 0)
 			return;
-    globalIndices.put(path,
-        new PortIndices3(
-          new PortIndices(inStart, inStart + inCount - 1),
-          new PortIndices(inoutStart, inoutStart + inoutCount - 1),
-          new PortIndices(outStart, outStart + outCount - 1)));
+    Range3 range = new Range3();
+    range.update(start, count);
+    globalIndices.put(path, range);
 	}
 
-	public BubbleInformationContainer getGlobalHiddenPortIndices(Path path) {
+	public Range3 getGlobalHiddenPortIndices(Path path) {
     return globalIndices.get(path);
 	}
 
 	public void setLocalHiddenPortIndices(Int3 start, Int3 count) {
-    localIndices.start = start;
-    localIndices.end.in = start.in + count.in - 1;
-    localIndices.end.inout = start.inout + count.inout - 1;
-    localIndices.end.out = start.out + count.out - 1;
+    localIndices.update(start, count);
   }
 
-	public PortIndices3 getLocalHiddenPortIndices() {
+	public Range3 getLocalHiddenPortIndices() {
     return localIndices;
   }
 

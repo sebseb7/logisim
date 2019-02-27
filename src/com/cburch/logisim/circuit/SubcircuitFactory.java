@@ -47,8 +47,7 @@ import java.util.Map;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
-import com.bfh.logisim.hdlgenerator.CircuitHDLGeneratorFactory;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -332,9 +331,9 @@ public class SubcircuitFactory extends InstanceFactory {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    return new CircuitHDLGeneratorFactory(ctx.lang, ctx.err, this.source, ctx.nets, ctx.vendor);
-    // don't send attrs -- circuit doesn't use them anyway
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+    // don't need attrs, since circuit doesn't use them anyway
+    return new CircuitHDLGenerator(ctx.lang, ctx.err, this.source, ctx.nets, ctx.vendor);
   }
 
   @Override

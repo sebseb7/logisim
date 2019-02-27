@@ -68,7 +68,6 @@ import com.cburch.logisim.std.wiring.Tunnel;
 // - "normal" components (muxes, adders, vhdl entities, etc.)
 // - subcircuit components
 // - clock components within the circuit
-// - clock networks (?) FIXME
 // - dynamic clock control (if that component is present)
 // - hidden nets (needed for Button, Tty, Keyboard, subcircuit, and other I/O components)
 //
@@ -89,8 +88,8 @@ public class Netlist {
 	private final ArrayList<NetlistComponent> outpins = new ArrayList<>(); // Pin (output)
   private NetlistComponent dynClock; // DynamicClock
 
-  // Something about clock trees ? FIXME
-	private final ClockTreeFactory clocktree = new ClockTreeFactory();
+  // Reference to the single global clock bus used by all Netlists in the design.
+	private final ClockBus clockbus = null;
 
   // Info about hidden networks, needed by certain I/O-related components.
 	private Int3 numHiddenBits;
@@ -102,9 +101,9 @@ public class Netlist {
 
   // Info about design rule checks.
 	private int status;
-	public static final int DRC_REQUIRED = -1;
-	public static final int DRC_PASSED = 0;
-	public static final int DRC_ERROR = 1;
+	public static final int DRC_ERROR = -1;
+	public static final int DRC_REQUIRED = 0;
+	public static final int DRC_PASSED = 1;
 
 	public Netlist(Circuit c) {
 		circ = c;
@@ -120,7 +119,10 @@ public class Netlist {
 		inpins.clear();
 		outpins.clear();
     dynClock = null;
-    clocktree.clean();
+    if (clockbus != null) {
+      clockbus.clear();
+      clockbus = null;
+    }
 		numHiddenBits.clear();
     currentPath = null;
 		status = DRC_REQUIRED;
@@ -136,10 +138,41 @@ public class Netlist {
 		}
 	}
 
-  // Primary entry point for performing design-rule-check (DRC) validation.
+  // Primary entry point for performing design-rule-check (DRC) validation on
+  // the Netlist for the top-level circuit.
   public boolean validate(FPGAReport err, String lang, char vendor) {
     recursiveClear();
-    return recursiveValidate(err, lang, vendor, new ArrayList<>(), true) == DRC_PASSED:
+
+    // Create global hidden clock bus at the top level.
+    clockbus = new ClockBus();
+
+    // Recursively validate this Netlist and those of all subcircuits.
+    if (!recursiveValidate(err, lang, vendor, new ArrayList<>(), true)) {
+      recursiveClear();
+      return false;
+    }
+
+    // Sanity check for effectively-blank designs at the top level.
+    if (inpins.size() + outpins.size() + numHiddenBits.size() == 0) {
+      err.AddFatalError("Top-level circuit '%s' has no input pins, output pins, "
+          +" or I/O devices, so would produce no visible behavior.", circ.getName());
+      recursiveClear();
+      return false;
+    }
+
+    Path root = new Path(circ);
+
+    // Recursively trace all clock nets to build the global clock bus.
+    HashMap<Path, Netlist> netlists = new HashMap<>();
+    recursiveEnumerateNetlists(root, netlists);
+    recursiveTraceClockNets(root, netlists);
+
+    // Recursively build other hidden nets.
+    HashSet<Netlist> visited = new HashSet<>();
+    recursiveAssignLocalHiddenNets(visited);
+    recursiveAssignGlobalHiddenNets(root, new Int3());
+
+    return true;
   }
 
   private boolean recursiveValidate(FPGAReport err, String lang, char vendor,
@@ -162,16 +195,15 @@ public class Netlist {
     sheets.add(name);
 
     // Perform the actual DRC and cache the result.
-    status = drc(err, lang, vendor, sheets, isTop);
-    if (status != DRC_PASSED) {
-			this.clear();
+    if (!drc(err, lang, vendor, sheets, isTop)) {
       status = DRC_ERROR;
       return false;
     }
+
     return true;
   }
 
-  private int drc(FPGAReport err, String lang, char vendor,
+  private boolean drc(FPGAReport err, String lang, char vendor,
       ArrayList<String> sheets, boolean isTop) {
 
     String circName = circ.getName();
@@ -278,8 +310,8 @@ public class Netlist {
       String name = g.getHDLNameWithinCircuit(circName);
       Component clash = namedComponents.get(name);
       if (clash != null)
-        return drcFail(err, comp, "component '%s' has same the same name. "
-            + "Labels must be unique within a circuit.", nameOf(clash));
+        return drcFail(err, comp, "component '%s' has same the same name, "
+            + "but labels must be unique within a circuit.", nameOf(clash));
       namedComponents.put(name, comp);
     }
 
@@ -288,36 +320,10 @@ public class Netlist {
       Component comp = shadow.getComponent();
       SubcircuitFactory sub = (SubcircuitFactory)comp.getFactory();
       Circuit subcirc = sub.getSubcircuit();
-      Netlist subnet = subcirc.getNetList();
-      if (!subnet.recursiveValidate(err, lang, vendor, sheets, false))
+      Netlist subnets = subcirc.getNetList();
+      subnets.clockbus = clockbus;
+      if (!subnets.recursiveValidate(err, lang, vendor, sheets, false))
         return DRC_ERROR;
-    }
-
-    // DRC Step 7: From the top-level, recursively build clock tree and hidden nets.
-		if (isTop) {
-      recursiveSetClockSource(new ClockSourceContainer());
-
-      ArrayList<String> allNames = new ArrayList<>();
-      ArrayList<Netlist> topAndParentNetlists = new ArrayList<>();
-      topAndParentNetlists.add(this);
-      if (!recursiveMarkClockSources(allNames, topAndParentNetlists, err))
-        return DRC_ERROR;
-
-      HashSet<Netlist> visited = new HashSet<>();
-      recursiveAssignLocalHiddenNets(visited);
-
-      recursiveAssignGlobalHiddenNets(Path.ROOT, new Int3());
-		}
-
-    // DRC Step 8: One last sanity check for effectively-blank designs.
-    if (isTop) {
-      int ports = inpins.size() + outpins.size()
-          + numHiddenInbits + numHiddenInOutbits + numHiddenOutbits;
-			if (ports == 0) {
-				err.AddFatalError("Top-level circuit '%s' has no input or output pins "
-            +" and no I/O devices, so would produce no visible behavior.", circName);
-				return DRC_ERROR;
-			}
     }
 
 		err.AddInfo("Circuit '%s' passed all design rule checks.", circName);
@@ -325,14 +331,6 @@ public class Netlist {
 	}
 
   // here good functions
-
-	private void recursiveSetClockSource(ClockSourceContainer clkSource) {
-		clocktree.setSource(clkSource);
-		for (Component comp : subcircuits) {
-      SubcircuitFactory fac = (SubcircuitFactory) comp.getComponent().getFactory();
-      fac.getSubcircuit().getNetList().setClockSource(clkSource);
-    }
-  }
  
   private void printNetlistStats(FPGAReport err) {
     int n = 0, b = 0;
@@ -354,11 +352,11 @@ public class Netlist {
       return String.format("'%s' with label '%s'", name, label);
   }
  
-  private int drcFail(FPGAReport err, Component comp, String msg, String ...args) {
+  private boolean drcFail(FPGAReport err, Component comp, String msg, String ...args) {
     String prefix = String.format("Component %s in circuit '%s': ",
         nameOf(comp), circ.getName());
     err.AddSevereError(prefix + String.format(msg, args));
-    return DRC_ERROR;
+    return false;
   }
 
   static class Int3 {
@@ -377,6 +375,9 @@ public class Netlist {
       inout += amt.inout
       out += amt.out;
     }
+    int size() {
+      return in + inout + out;
+    }
   }
 
 	private void recursiveAssignLocalHiddenNets(HashSet<Netlist> visited) {
@@ -387,10 +388,10 @@ public class Netlist {
       Component comp = shadow.GetComponent();
 			SubcircuitFactory sub = (SubcircuitFactory)comp.getFactory();
       Circuit subcirc = sub.getSubcircuit();
-      Netlist subnet = subcirc.getNetList();
+      Netlist subnets = subcirc.getNetList();
 
-      if (!visited.contains(subnet))
-        subnet.recursiveBuildHiddenNets(visited);
+      if (!visited.contains(subnets))
+        subnets.recursiveBuildHiddenNets(visited);
 
       Int3 count = subnets.numHiddenBits;
 			shadow.setLocalHiddenPortIndices(start.copy(), count);
@@ -411,20 +412,20 @@ public class Netlist {
       Component comp = shadow.GetComponent();
 			SubcircuitFactory sub = (SubcircuitFactory)comp.getFactory();
       Circuit subcirc = sub.getSubcircuit();
-      Netlist subnet = subcirc.getNetList();
-      Path subPath = Path.join(path, shadow.label());
+      Netlist subnets = subcirc.getNetList();
+      Path subpath = path.extend(shadow);
 
       Int3 count = subnets.numHiddenBits;
-      shadow.setGlobalHiddenPortIndices(subPath, start.copy(), count);
-      subnet.recursiveAssignGlobalHiddenNets(subPath, start);
+      shadow.setGlobalHiddenPortIndices(subpath, start.copy(), count);
+      subnets.recursiveAssignGlobalHiddenNets(subpath, start);
     }
 
 		for (NetlistComponent shadow : components) {
 			if (shadow.hiddenPort == null)
         continue;
-      Path subPath = Path.join(path, shadow.label());
+      Path subpath = path.extend(shadow);
       Int3 count = shadow.hiddenPort.size();
-      shadow.setGlobalHiddenPortIndices(subPath, start.copy(), count);
+      shadow.setGlobalHiddenPortIndices(subpath, start.copy(), count);
     }
   }
 
@@ -518,12 +519,10 @@ public class Netlist {
         if (net == null)
           continue; // input ports can be unconnected, safe to ignore.
         int nw = net.bitWidth();
-        if (nw == 0) {
+        if (nw == 0)
           net.setBitWidth(w);
-        } else if (nw != w) {
-          drcFail(err, comp, "%d-bit port is connected to a %d-bit bus.", w, nw);
-          return false;
-        }
+        else if (nw != w)
+          return drcFail(err, comp, "%d-bit port is connected to a %d-bit bus.", w, nw);
       }
     }
 
@@ -560,16 +559,13 @@ public class Netlist {
           if (c == null) {
             net.setSourceComponent(comp, end);
           } else {
-            if (c != comp) {
-              drcFail(err, comp, "component is driving a bus that is also driven by component %s.",
-                  nameOf(c));
-              return false;
-            }
+            if (c != comp)
+              return drcFail(err, comp, "component is driving a bus that is also "
+                  + "driven by component %s.", nameOf(c));
             int end = net.getSourceEnd();
-            if (end != idx) {
-              drcFail(err, comp, "port %d and port %d are both driving the same bus.", idx, end);
-              return false;
-            }
+            if (end != idx)
+              return drcFail(err, comp, "port %d and port %d are both "
+                  + "driving the same bus.", idx, end);
           }
         }
       }
@@ -600,18 +596,13 @@ public class Netlist {
     // If a bit is not mapped to a split end, then we can ignore the splitter
     // entirely for that bit, as it won't affect the bit.
    
-    // Find all splitters touching each Net.
-    HashMap<Net, LinkedList<Splitter>> splitters = new LinkedList<>();
+    // Annotate each Net with the list of splitters the Net touches.
     for (Component comp : circ.getNonWires()) {
 			if (comp.getFactory() instanceof SplitterFactory) {
+        int idx = 0;
         for (EndData end : comp.getEnds()) {
           Net net = netAt.get(end.getLocation());
-          LinkedList<Component> ll = splitters.get(net);
-          if (ll == null) {
-            ll = new LinkedList<Splitter>();
-            splitters.put(net, ll);
-          }
-          ll.add((Splitter)comp);
+          net.splitters.add(new Net.SplitterPort((Splitter)comp, idx++));
         }
       }
     }
@@ -623,70 +614,67 @@ public class Netlist {
         workingset.add(net);
     while (!workingset.isEmpty()) {
       Net net = workingset.pop();
-      for (Splitter splitter : splitters.get(net)) {
-        int n = splitter.getEnds().size();
-        byte[] dest = splitter.getEndpoints();
-        for (int idx = 0; idx < n; idx++) {
-          EndData end = splitter.getEnd(idx);
-          if (!net.contains(end.getLocation()))
-            continue;
-          if (idx == 0) {
-            // net is the big combined end of splitter, and drives every bit of
-            // small split ends (except those small split ends with width = 0,
-            // but that gets ignored in the loop here, and except for bits in
-            // net that aren't actually driven).
-            for (int split = 1; split < n; i++) {
-              Net small = netAt.get(splitter.getEnd(split).getLocation());
-              int s = -1;
-              for (int b = 0; b < dest.length; b++) {
-                if (dest[b] != split)
-                  continue; // net[b] does not map to this split end
-                s++;
-                // net[b] drives small[s]
-                Net.Source src = net.getSourceForBit(b);
-                if (src == null)
-                  continue; // actually, net[b] isn't driven, so nevermind
-                Net.Source sink = small.getSourceForBit(s);
-                if (sink == null) {
-                  small.setSourceForBit(s, net, b);
-                  workingset.add(small);
-                } else if (!sink.equals(src)) {
-                  drcFail(err, splitter, "splitter bit %d is being driven by both %s (port %d bit %d) and %s (port %d bit %d).",
-                      b,
-                      nameOf(src.comp), src.end, src.bit,
-                      nameOf(sink.comp), sink.end, sink.bit);
-                  return false;
-                }
-              } // for each bit in splitter
-            } // for each small split end
-          } else {
-            // net is the small split end of splitter, and every bit of net is
-            // being driven by some bit of big combined end (unless this split
-            // end has width = 0, but that is filtered out above).
-            Net big = netAt.get(splitter.getEnd(0).getLocation());
+      for (Net.SplitterPort sp : net.splitters) {
+        int n = sp.splitter.getEnds().size();
+        byte[] dest = sp.splitter.getEndpoints();
+        if (sp.end == 0) {
+          // net is the big combined end of splitter, and drives every bit of
+          // small split ends (except those small split ends with width = 0,
+          // but that gets ignored in the loop here, and except for bits in
+          // net that aren't actually driven).
+          for (int split = 1; split < n; i++) {
+            Net small = netAt.get(sp.splitter.getEnd(split).getLocation());
             int s = -1;
             for (int b = 0; b < dest.length; b++) {
-              if (dest[b] != idx)
-                continue; // big[b] does not map to this small split end
+              if (dest[b] != split)
+                continue; // net[b] does not map to this split end
               s++;
-              // big[b] is driven by net[s]
-              Net.Source src = net.getSourceForBit(s);
+              // net[b] drives small[s]
+              Net.Source src = net.getSourceForBit(b);
               if (src == null)
-                continue; // actually, net[s] isn't driven, so nevermind
-              Net.Source sink = big.getSourceForBit(b);
+                continue; // actually, net[b] isn't driven, so nevermind
+              Net.Source sink = small.getSourceForBit(s);
               if (sink == null) {
-                big.setSourceForBit(b, net, s);
-                workingset.add(big);
+                small.setSourceForBit(s, net, b);
+                workingset.add(small);
               } else if (!sink.equals(src)) {
-                drcFail(err, splitter, "splitter bit %d is being driven by both %s (port %d bit %d) and %s (port %d bit %d).",
+                return drcFail(err, sp.splitter,
+                    "splitter bit %d is being driven by both "
+                    + " %s (port %d bit %d) and %s (port %d bit %d).",
                     b,
                     nameOf(src.comp), src.end, src.bit,
                     nameOf(sink.comp), sink.end, sink.bit);
-                return false;
               }
             } // for each bit in splitter
-          }
-        } // for each potential splitter end touching this Net
+          } // for each small split end
+        } else {
+          // net is the small split end of splitter, and every bit of net is
+          // being driven by some bit of big combined end (unless this split
+          // end has width = 0, but that is filtered out above).
+          Net big = netAt.get(sp.splitter.getEnd(0).getLocation());
+          int s = -1;
+          for (int b = 0; b < dest.length; b++) {
+            if (dest[b] != sp.end)
+              continue; // big[b] does not map to this small split end
+            s++;
+            // big[b] is driven by net[s]
+            Net.Source src = net.getSourceForBit(s);
+            if (src == null)
+              continue; // actually, net[s] isn't driven, so nevermind
+            Net.Source sink = big.getSourceForBit(b);
+            if (sink == null) {
+              big.setSourceForBit(b, net, s);
+              workingset.add(big);
+            } else if (!sink.equals(src)) {
+              return drcFail(err, sp.splitter,
+                  "splitter bit %d is being driven by both %s (port %d bit %d) "
+                  + " and %s (port %d bit %d).",
+                  b,
+                  nameOf(src.comp), src.end, src.bit,
+                  nameOf(sink.comp), sink.end, sink.bit);
+            }
+          } // for each bit in splitter
+        }
       } // for each splitter touching this Net
     }
 
@@ -695,16 +683,17 @@ public class Netlist {
     // indirectly (through one or more splitters and eventually by some
     // component on some other Net).
     for (Net net : nets) {
-      if (!net.getSinkComponents().isEmpty())
+      if (!net.getSinks().isEmpty())
         continue; // no direct sinks, ignore
       if (net.getSourceComponent() != null)
         continue; // net has a direct source, done
       for (int b = 0; b < net.bitWidth()) {
         if (net.getSourceForBit(b) == null) {
-          Net.DirectSink sink = net.getSinkComponents().get(0);
-          drcFail(err, sink.comp, "component port %d is connected to a %d-bit bus with some undriven signals (e.g. bit %d)",
+          Net.DirectSink sink = net.getSinks().get(0);
+          return drcFail(err, sink.comp,
+              "component port %d is connected to a %d-bit bus with some "
+              + "undriven signals (e.g. bit %d)",
               sink.end, net.bitWidth(), b);
-          return false;
         }
       }
     }
@@ -1252,66 +1241,134 @@ public class Netlist {
 	// public boolean IsValid() {
 	// 	return status == DRC_PASSED;
 	// }
+	
+  private void recursiveEnumerateNetlists(Path path, HashMap<Path, Netlist> netlists) {
+    netlists.put(path, this);
+		for (NetlistComponent shadow : subcircuits) {
+      Component comp = shadow.getComponent();
+      SubcircuitFactory sub = (SubcircuitFactory)comp.getFactory();
+      Circuit subcirc = sub.getSubcircuit();
+      Netlist subnets = subcirc.getNetList();
+      Path subpath = path.extend(shadow);
+      subnets.recursiveEnumerateNetlists(subpath, netlists);
+    }
+  }
 
-  // FIXME
-	private boolean recursiveMarkClockSources(ArrayList<String> allNames, ArrayList<Netlist> topAndParentNetlists, FPGAReport err) {
-    // Depth-first recursion, to start work from leaf circuits and move upwards.
-		for (NetlistComponent sub : subcircuits) {
-      SubcircuitFactory fac = (SubcircuitFactory) sub.getComponent().getFactory();
+	private void recursiveTraceClockNets(Path path, HashMap<Path, Netlist> netlists) {
+    traceClockNets(path, netlists);
+		for (NetlistComponent shadow : subcircuits) {
+      Component comp = shadow.getComponent();
+      SubcircuitFactory sub = (SubcircuitFactory)comp.getFactory();
+      Circuit subcirc = sub.getSubcircuit();
+      Netlist subnets = subcirc.getNetList();
+      Path subpath = path.extend(shadow);
+      subnets.recursiveTraceClockNets(subpath, netlists);
+    }
+  }
 
-			ArrayList<String> moreNames = new ArrayList<>(allNames);
-			moreNames.add(sub.label());
+	private void traceClockNets(Path path, HashMap<Path, Netlist> netlists) {
+    for (NetlistComponent shadow : clocks) {
+      Component clk = shadow.getComponent();
+      int clkid = clockbus.id(clk);
+      Net clknet = netAt.get(clk.getEnd(0).getLocation());
+      traceClockNet(clkid, path, clknet, 0, netlists);
+    }
+  }
 
-			ArrayList<Netlist> moreNetlists = new ArrayList<>(topAndParentNetlists);
-			moreNetlists.add(this);
+  private NetlistComponent shadowForSubcirc(Path childPath) {
+    String label = child.tail();
+		for (NetlistComponent shadow : subcircuits) {
+      if (shadow.label().equals(label))
+        return shadow;
+    }
+    return null;
+  }
 
-			if (!fac.getSubcircuit().getNetList().recursiveMarkClockSources(
-            moreNames, moreNetlists, err))
-				return false;
-		}
+  // Associate the signal Path:net:bit, and all downstream signals, with the
+  // given clock id. We trace the signal down into subcircuits, up through
+  // output pins to parent circuits, and across through tunnels (for free) and
+  // splitters (below).
+  private void traceClockNet(int clkid, Net net, int bit, Path path, HashMap<Path, Netlist> netlists) {
 
-    // Enumerate splitters.
-		HashSet<Component> splitters = new HashSet<>();
-		for (Component comp : circ.getNonWires())
-			if (comp.getFactory() instanceof SplitterFactory)
-				splitters.add(comp);
+    // Start by marking Path:net:bit.
+    if (!clockbus.associate(clkid, path, net, bit))
+      return; // already marked this net and all downstream signals.
 
-		// Examine clock sources.
-		for (NetlistComponent clk : clocks) {
-			NetlistComponent.ConnectionPoint pt = clk.ports.get(0).connections.get(0);
-      // Ignore clocks with disconnected outputs.
-      if (pt.net == null)
+    // Then find and mark all downstream signals from net:bit.
+
+    // Look for subcircuits and follow signal down into them.
+    for (Net.DirectSink sink : net.getSinks()) {
+      if (!(sink.comp.getFactory() instanceof SubcircuitFactory))
         continue;
-      // Track this clock source.
-      int clkId = clocktree.getSource().getClockId(clk.GetComponent());
-      clocktree.AddClockSource(allNames, clockid, pt);
-      // Trace the clock source output net.
-      if (!TraceClockNet(pt.net, pt.bit, clockid, allNames, topAndParentNetlists, err))
-        return false;
-      // To account for splitters, trace through our own netlist to find connections.
-      for (NetlistComponent.ConnectionPoint pt2 :
-          GetHiddenSinks(pt.net, pt.bit, splitters, null, new HashSet<String>(), true)) {
-        clocktree.AddClockNet(allNames, clkid, pt2);
-        if (!TraceClockNet(pt2.net,
-              pt2.bit, clockid,
-              allNames, topAndParentNetlists, err))
-          return false;
-			}
-		}
-    // Now that clock sources are marked, we can remove all non-root nets.
-	  nets.removeIf(net -> !net.isRootNet());	
-    // We can also clean up any remaining root nets now.
-    // nets.forEach(net -> net.clearPoints());
-		return true;
+      SubcircuitFactory sub = (SubcircuitFactory)sink.comp.getFactory();
+      Circuit subcirc = sub.getSubcircuit();
+      Netlist subnets = subcirc.getNetList();
+      Path subpath = path.extend(shadow);
+      NetlistComponent shadow = shadowForSubcirc(subpath);
+      // within child, find the Pin that corresponds to this end
+      CircuitHDLGenerator g = (CircuitHDLGenerator)shadow.hdlSupport;
+      Net childNet = g.getPortMappingForEnd(sink.end);
+      subnets.traceClockNet(clkid, childNet, bit, subpath, netlists);
+    }
+
+    // If in a subcircuit, look for output pins and follow them up to parent circuit.
+    if (!path.equals(Path.ROOT)) {
+      for (Net.DirectSink sink : net.getSinks()) {
+        if (!(sink.comp.getFactory() instanceof Pin))
+          continue;
+        End end = sink.comp.getEnd(0);
+        if (!end.isOutput())
+          continue;
+        Path parentpath = path.parent();
+        Netlist parent = netlists.get(parentpath);
+        // within parent, find the component that corresponds to this subcircuit
+        NetlistComponent shadow = parent.shadowForSubcirc(path);
+        // within that component, find the Net connecting to this Pin
+        CircuitHDLGenerator g = (CircuitHDLGenerator)shadow.hdlSupport;
+        Net parentNet = g.getPortMappingForPin(sink.comp);
+        if (parentNet != null)
+          parent.traceClockNet(clkid, parentNet, bit, parentpath, netlists);
+      }
+    }
+
+    // Follow signal through splitters.
+    for (Net.SplitterPort sp : net.splitters) {
+      int n = sp.splitter.getEnds().size();
+      byte[] dest = sp.splitter.getEndpoints();
+      if (sp.end == 0) { // net goes into big combined end
+        int end2 = dest[bit];
+        if (end2 < 0)
+          continue; // net:bit doesn't map to any of the small split ends
+        Net net2 = netAt.get(sp.splitter.getEnd(end2).getLocation());
+        int bit2 = 0;
+        for (int b = 0; b < bit; b++) {
+          if (dest[b] == end2)
+              bit2++; // net:bit signal comes after any lower numbered net:b for same end
+        }
+        traceClockNet(clkid, net2, bit2, path, netlists);
+      } else { // net goes into small split end
+        Net net2 = netAt.get(sp.splitter.getEnd(0).getLocation());
+        int bit1 = 0;
+        for (int bit2 = 0; bit2 < dest.length; bit2++) {
+          if (dest[bit2] == sp.end && bit1 == bit) {
+            traceClockNet(clkid, net2, bit2, path, netlists);
+            break;
+          } else if (dest[bit2) == sp.end) {
+            bit1++;
+          }
+        }
+      }
+    }
+
 	}
 
-	public int NumberOfClockTrees() {
-		return clocktree.getSource().getNrofSources();
-	}
+	// public int NumberOfClockTrees() {
+	// 	return clocktree.getSource().getNrofSources();
+	// }
 
-	public int NumberOfInOutBubbles() {
-		return numHiddenInOutbits;
-	}
+	// public int NumberOfInOutBubbles() {
+	// 	return numHiddenInOutbits;
+	// }
 
 	// public int NumberOfInOutPortBits() {
 	// 	int count = 0;
@@ -1325,9 +1382,9 @@ public class Netlist {
 	// 	return MyInOutPorts.size();
 	// }
 
-	public int NumberOfInputBubbles() {
-		return numHiddenInbits;
-	}
+//	public int NumberOfInputBubbles() {
+//		return numHiddenInbits;
+//	}
 
 	// public int NumberOfInputPortBits() {
 	// 	int count = 0;

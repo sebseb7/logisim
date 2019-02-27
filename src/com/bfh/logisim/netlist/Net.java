@@ -123,6 +123,16 @@ public class Net {
   //   no direct driver for the entire bus. This is fine as long as there are no
   //   direct sinks or indirect sinks for those bits.
 
+  // A list of splitters (and the port on the splitter) touching this Net. This
+  // is used by Netlist when propagating sources and tracing clock signals.
+  final ArrayList<SplitterPort> splitters = new ArrayList<>();
+
+  static class SplitterPort {
+    final Splitter splitter;
+    final int end;
+    SplitterPort(Splitter s, int e) { splitter = s; end = e; }
+  }
+
 	public Net(HashSet<Location> locs) {
     points.addAll(locs);
   }
@@ -175,6 +185,5 @@ public class Net {
   public ArrayList<DirectSink> getSinkComponents() {
     return directSinks;
   }
-
 
 }
