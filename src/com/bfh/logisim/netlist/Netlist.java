@@ -93,9 +93,7 @@ public class Netlist {
 	private final ClockTreeFactory clocktree = new ClockTreeFactory();
 
   // Info about hidden networks, needed by certain I/O-related components.
-	private int numHiddenInbits;
-	private int numHiddenInOutbits;
-	private int numHiddenOutbits;
+	private Int3 numHiddenBits;
   
   // Path to one of the instantiations of this circuit. For a circuit that gets
   // instantiated several times, there is one Netlist for the circuit, and the
@@ -123,9 +121,7 @@ public class Netlist {
 		outpins.clear();
     dynClock = null;
     clocktree.clean();
-		numHiddenInbits = 0;
-		numHiddenOutbits = 0;
-		numHiddenInOutbits = 0;
+		numHiddenBits.clear();
     currentPath = null;
 		status = DRC_REQUIRED;
 	}
@@ -135,7 +131,7 @@ public class Netlist {
 		for (Component comp : circ.getNonWires()) {
 			if (comp.getFactory() instanceof SubcircuitFactory) {
 				SubcircuitFactory fac = (SubcircuitFactory) comp.getFactory();
-				fac.getSubcircuit().getNetList().ClearNetlist();
+				fac.getSubcircuit().getNetList().recursiveClear();
 			}
 		}
 	}
@@ -181,31 +177,123 @@ public class Netlist {
     String circName = circ.getName();
 
     // DRC Step 1: Check for presence of tri-state devices or bidirectional
-    // ports, neither of which are typicallysupported for HDL synthesis.
+    // ports, neither of which are typically supported for HDL synthesis.
 		err.AddInfo("Checking for tri-state drivers or bidirectional ports in circuit '%s'.", circName);
 		for (Component comp : circ.getNonWires()) {
+      // Note: Splitters and Tunnels can be bidirectional, as those cases are
+      // handled as special cases in buildNets().
+      if (comp.getFactory() instanceof SplitterFactory)
+        continue;
+      if (comp.getFactory() instanceof Tunnel) 
+        continue;
+      if (comp.getFactory().HDLIgnore())
+        continue;
 			if (comp.getFactory().HasThreeStateDrivers(comp.getAttributeSet()))
         return drcFail(err, comp, "component has tri-state output drivers or is configured "
             "to allow floating outputs, features typically not supported for FPGA synthesis.");
       for (EndData end : comp.getEnds())
-        if (end.isInput() && end.isOutput())
+        if (end.getWidth() > 0 && (end.isInput() && end.isOutput()))
           return drcFail(err, comp, "component has a bidirectional port, a feature not yet supported.");
     }
 
-    // DRC Step 2: Check connectivity and attempt to build nets.
-		err.AddInfo("Checking wire, tunnel, and splitter connectivity in circuit '%s'.", circName);
+    // DRC Step 2: Validate names and labels for a few basic component types.
+    if (!CorrectLabel.IsCorrectLabel(circName, lang, "Circuit has illegal name."))
+      return DRC_ERROR;
+    HashSet<String> pinNames = new HashSet<>();
+		for (Component comp : circ.getNonWires()) {
+      if (comp.getFactory().HDLIgnore())
+        continue; // Text, Probe, and other similarly irrelevant components
+      if (comp.getFactory() instanceof Pin) {
+				String label = NetlistComponent.labelOf(comp);
+				if (!CorrectLabel.IsCorrectLabel(label,
+						lang, "Bad label for pin '"+nameOf(comp)+"' in circuit '"+circName+"'", err))
+					return DRC_ERROR;
+        if (pinNames.contains(label))
+          return drcFail(err, comp, "pin has the same label as another pin in same circuit.");
+        pinNames.add(label);
+      } else if (comp.getFactory() instanceof SubcircuitFactory
+          || comp.getFactory() instanceof VhdlEntity) {
+        String compName = comp.getFactory().getName();
+				if (!CorrectLabel.IsCorrectLabel(compName,
+						lang, "Bad name for component '"+compName+"' in circuit '"+circName+"'", err))
+					return DRC_ERROR;
+			}
+    }
 
+    // DRC Step 3: Check connectivity (e.g. splitters, tunnels, wires) and build nets.
+		err.AddInfo("Checking wire, tunnel, and splitter connectivity in circuit '%s'.", circName);
 		if (!buildNets(err, lang, vendor))
 			return DRC_ERROR;
-
-		if (hasShortCircuits()) {
-			err.AddFatalError("Circuit '%s' has short-circuit faults.", circName);
-			return DRC_ERROR;
-		}
-
     printNetlistStats(err);
 
-    // DRC Step 3: For top-level, build clock tree.
+    // DRC Step 4: Create NetlistComponent shadow objects for each Component,
+    // and perform sanity checks.
+    HDLCTX ctx = new HDLCTX(lang, err, this, null /* attrs */, vendor);
+		for (Component comp : circ.getNonWires()) {
+      if (comp.getFactory() instanceof SplitterFactory)
+        continue;
+      if (comp.getFactory() instanceof Tunnel) 
+        continue;
+      if (comp.getFactory().HDLIgnore())
+        continue;
+      NetlistComponent shadow = new NetlistComponent(comp, ctx);
+      if (shadow.hdlSupport == null)
+        return drcFail(err, comp, "component does not support HDL generation.");
+      components.add(shadow);
+      if (comp.getFactory() instanceof SubcircuitFactory) 
+        subcircuits.add(shadow);
+      else if (comp.getFactory() instanceof Clock) 
+        clocks.add(shadow);
+      else if (comp.getFactory() instanceof Pin && comp.getEnd(0).isInput())
+        inpins.add(shadow);
+      else if (comp.getFactory() instanceof Pin && comp.getEnd(0).isOutput())
+        outpins.add(shadow);
+      else if (comp.getFactory() instanceof DynamicClock) {
+        if (isTop && dynClock == null)
+          dynClock = shadow;
+        else if (isTop)
+          return drcFail(err, comp, "multiple dynamic clock controls found, but at most one allowed.");
+        else
+          return drcFail(err, comp, "dynamic clock control found in sub-circuit, but this is allowed only in main top-level circuit.");
+      }
+    }
+
+    // DRC Step 5: Ensure labels are sufficiently unique. Components like LED,
+    // DipSwitch, etc., need unique labels because they show up in the mapping
+    // gui, or because the HDL they generate is specific to each instance.
+    HashMap<String, Component> namedComponents = new HashMap<>();
+    for (NetlistComponent shadow : components) {
+      Component comp = shadow.getComponent();
+      if (comp.getFactory() instanceof Pin)
+        continue; // handled above
+      if (!shadow.hdlSupport.requiresUniqueLabel())
+        continue;
+      String label = shadow.label();
+      if (label.isEmpty())
+        return drcFail(err, comp, "a unique label is required for this component. "
+            + "Run annotate, or manually add labels.");
+      if (!CorrectLabel.IsCorrectLabel(label,
+            lang, "Bad label for component '"+nameOf(comp)+"' in circuit '"+circName+"'", err))
+        return DRC_ERROR;
+      String name = g.getHDLNameWithinCircuit(circName);
+      Component clash = namedComponents.get(name);
+      if (clash != null)
+        return drcFail(err, comp, "component '%s' has same the same name. "
+            + "Labels must be unique within a circuit.", nameOf(clash));
+      namedComponents.put(name, comp);
+    }
+
+    // DRC Step 6: Recurse to validate subcircuits.
+    for (NetlistComponent shadow : subcircuits) {
+      Component comp = shadow.getComponent();
+      SubcircuitFactory sub = (SubcircuitFactory)comp.getFactory();
+      Circuit subcirc = sub.getSubcircuit();
+      Netlist subnet = subcirc.getNetList();
+      if (!subnet.recursiveValidate(err, lang, vendor, sheets, false))
+        return DRC_ERROR;
+    }
+
+    // DRC Step 7: From the top-level, recursively build clock tree and hidden nets.
 		if (isTop) {
       recursiveSetClockSource(new ClockSourceContainer());
 
@@ -215,248 +303,26 @@ public class Netlist {
       if (!recursiveMarkClockSources(allNames, topAndParentNetlists, err))
         return DRC_ERROR;
 
-      // here
-			ConstructHierarchyTree(null, new ArrayList<String>(),
-					new Integer(0), new Integer(0), new Integer(0));
-			int ports = NumberOfInputPorts() + NumberOfOutputPorts()
-					+ numHiddenInbits + numHiddenOutbits
-					+ numHiddenInOutbits;
-			if (ports == 0) {
-				err.AddFatalError("Toplevel \"" + circ.getName()
-						+ "\" has no input(s) and/or no output(s)!");
-				status = DRC_ERROR;
-				return status;
-			}
+      HashSet<Netlist> visited = new HashSet<>();
+      recursiveAssignLocalHiddenNets(visited);
+
+      recursiveAssignGlobalHiddenNets(Path.ROOT, new Int3());
 		}
 
-
-
-    // Step 1: Check for illegal dynamic clocks in non-top-level circuits, or
-    // multiple dynamic clocks in a top-level circuit.
-    if (isTop && countDynamicClocks() > 1) {
-      err.AddFatalError("Found multiple dynamic clock controls in " +
-          " circuit '%s'. At most one is allowed.", circName);
-      return DRC_ERROR;
-    } else if (!isTop && countDynamicClocks() > 0) {
-      err.AddFatalError("Found a dynamic clock control in " +
-          " sub-circuit '%s'. These can only be placed in " +
-          " the top-level main circuit.", circName);
-      return DRC_ERROR;
+    // DRC Step 8: One last sanity check for effectively-blank designs.
+    if (isTop) {
+      int ports = inpins.size() + outpins.size()
+          + numHiddenInbits + numHiddenInOutbits + numHiddenOutbits;
+			if (ports == 0) {
+				err.AddFatalError("Top-level circuit '%s' has no input or output pins "
+            +" and no I/O devices, so would produce no visible behavior.", circName);
+				return DRC_ERROR;
+			}
     }
 
-    // Step 2: Ensure all components support this HDL configuration, and perform
-    // some simple name validation.
-    HashMap<Component, HDLGeneratorFactory> generators = new HashMap<>();
-		for (Component comp : circ.getNonWires()) {
-      if (comp.getFactory().HDLIgnore())
-        continue; // Text, Probe, and other similarly irrelevant components
-      if (comp.getFactory() instanceof Pin)
-        continue; // supported, but handled later
-			if (comp.getFactory() instanceof SubcircuitFactory
-          || comp.getFactory() instanceof VhdlEntity) {
-        String compName = comp.getFactory().getName();
-				if (!CorrectLabel.IsCorrectLabel(compName,
-						lang, "Bad name for component '"+compName+"' in circuit '"+circName+"'", err))
-					return DRC_ERROR;
-			}
-
-
-
-      // if (comp.getFactory().HDLSpecialHandling())
-      //  continue; // ? maybe ..?
-      HDLGeneratorFactory g = comp.getFactory().getHDLGenerator(lang, err,
-            null, /* fixme - no nets yet... */
-					comp.getAttributeSet(), vendor);
-      if (g == null) {
-				err.AddFatalError("Found unsupported component: \""
-						+ comp.getFactory().getName() + "\" for "
-						+ lang.toString()
-						+ " generation in circuit : \"" + circ.getName()
-						+ "\"");
-				status = DRC_ERROR;
-				return status;
-			}
-			/* Now we add the name to the set if it is not already in */
-      String ComponentName = g.getHDLNameWithinCircuit(circ.getName());
-			if (!CompName.contains(ComponentName)) {
-				CompName.add(ComponentName);
-				AnnotationNames.add(new HashSet<String>());
-        generators.put(comp, g);
-			}
-		}
-    
-    
-    ArrayList<String> uniqueLabels = new ArrayList<>();
-		ArrayList<String> CompName = new ArrayList<>();
-		ArrayList<Set<String>> AnnotationNames = new ArrayList<>();
-		for (Component comp : circ.getNonWires()) {
-      if (comp.getFactory() instanceof DynamicClock) {
-        if (!isTop) {
-          err.AddFatalError("Found dynamic clock control in " +
-              " sub-circuit \"" + circ.getName() + "\"." +
-              " This component must only be placed in the top-level main circuit.");
-          status = DRC_ERROR;
-          return status;
-        }
-        if (dynClock != null) {
-          err.AddFatalError("Found multiple dynamic clock controls in " +
-              " circuit \"" + circ.getName() + "\"." +
-              " Only a single instance of this component is allowed.");
-          status = DRC_ERROR;
-          return status;
-        }
-        // dynClock = new NetlistComponent(comp);
-        continue;
-      }
-			/*
-			 * Here we check if the components are supported for the HDL
-			 * generation
-			 */
-      if (comp.getFactory().HDLIgnore())
-        continue;
-      if (comp.getFactory() instanceof Pin)
-        continue;
-			if (comp.getFactory() instanceof SubcircuitFactory
-          || comp.getFactory() instanceof VhdlEntity) {
-				/* Special care has to be taken for sub-circuits and vhdl entities*/
-        // discard
-				if (!CorrectLabel.IsCorrectLabel(comp.getFactory().getName(),
-						lang, "Bad name for component \""
-								+ comp.getFactory().getName() + "\" in circuit \"" + circ.getName(), err)) {
-					status = DRC_ERROR;
-					return status;
-				}
-			}
-      // if (comp.getFactory().HDLSpecialHandling())
-      //  continue; // ? maybe ..?
-      HDLGeneratorFactory g = comp.getFactory().getHDLGenerator(lang, err,
-            null, /* fixme - no nets yet... */
-					comp.getAttributeSet(), vendor);
-      if (g == null) {
-				err.AddFatalError("Found unsupported component: \""
-						+ comp.getFactory().getName() + "\" for "
-						+ lang.toString()
-						+ " generation in circuit : \"" + circ.getName()
-						+ "\"");
-				status = DRC_ERROR;
-				return status;
-			}
-			/* Now we add the name to the set if it is not already in */
-      String ComponentName = g.getHDLNameWithinCircuit(circ.getName());
-			if (!CompName.contains(ComponentName)) {
-				CompName.add(ComponentName);
-				AnnotationNames.add(new HashSet<String>());
-        generators.put(comp, g);
-			}
-		}
-
-		for (Component comp : circ.getNonWires()) {
-			/*
-       * we check that all components that require a non zero label (annotation)
-       * have a label set. These are components like LED, Pin, DipSwitch, etc.,
-       * which maybe need the label b/c they might show up in the mapping gui
-       * and/or b/c the vhdl they generate is unique to each instance so we need
-       * a unique name for each.
-       * In any case, they should all have a generator, because none of them
-       * have HDLIgnore set (which would cause them to be skipped above).
-			 */
-      HDLGeneratorFactory g = generators.get(comp);
-			if (g.requiresUniqueLabel()) {
-				String Label = CorrectLabel.getCorrectLabel(comp.getAttributeSet().getValue(StdAttr.LABEL).toString()).toUpperCase();
-				if (Label.isEmpty()) {
-					err.AddError("Component \""
-							+ comp.getFactory().getName()
-							+ "\" in sheet "
-							+ circ.getName()
-							+ " does not have a label! Run annotate, or manually add labels.");
-					status = DRC_ERROR;
-					return status;
-				}
-				if (CompName.contains(Label)) {
-					err.AddSevereError("Sheet \""
-							+ circ.getName()
-							+ "\" has one or more components with the name \""
-							+ Label
-							+ "\" and also components with a label of the same name. This is not supported!");
-					status = DRC_ERROR;
-					return status;
-				}
-				if (!CorrectLabel
-						.IsCorrectLabel(Label, lang, "Component \""
-								+ comp.getFactory().getName() + "\" in sheet "
-								+ circ.getName() + " with label \""
-								+ Label.toString(), err)) {
-					status = DRC_ERROR;
-					return status;
-				}
-				String ComponentName = g.getHDLNameWithinCircuit(circ.getName());
-				if (AnnotationNames.get(CompName.indexOf(ComponentName)).contains(Label)) {
-					err.AddSevereError("Duplicated label \""
-							+ comp.getAttributeSet().getValue(StdAttr.LABEL)
-									.toString() + "\" found for component "
-							+ comp.getFactory().getName() + " in sheet "
-							+ circ.getName());
-					status = DRC_ERROR;
-					return status;
-				} else {
-					AnnotationNames.get(CompName.indexOf(ComponentName)).add(Label);
-				}
-				if (comp.getFactory() instanceof SubcircuitFactory) {
-					/* Special care has to be taken for sub-circuits */
-					if (Label.equals(ComponentName.toUpperCase())) {
-						err.AddError("Found that the component \""
-								+ comp.getFactory().getName() + "\" in sheet "
-								+ circ.getName() + " has a label that"
-								+ " corresponds to the component name!");
-						err.AddError("Labels must be unique and may not correspond to the component name!");
-						status = DRC_ERROR;
-						return status;
-					}
-					if (CompName.contains(Label)) {
-						err.AddError("Subcircuit name "
-								+ comp.getFactory().getName() + " in sheet "
-								+ circ.getName()
-								+ " is a reserved name; please rename!");
-						status = DRC_ERROR;
-						return status;
-					}
-					SubcircuitFactory sub = (SubcircuitFactory) comp
-							.getFactory();
-					/* Here we recurse into the sub-circuits */
-					status = sub
-							.getSubcircuit()
-							.getNetList()
-							.recursiveValidate(err, lang, vendor, sheets, false);
-					if (status != DRC_PASSED) {
-						return status;
-					}
-					numHiddenInbits = numHiddenInbits
-							+ sub.getSubcircuit().getNetList()
-									.NumberOfInputBubbles();
-					numHiddenOutbits = numHiddenOutbits
-							+ sub.getSubcircuit().getNetList()
-									.NumberOfOutputBubbles();
-					numHiddenInOutbits = numHiddenInOutbits
-							+ sub.getSubcircuit().getNetList()
-									.NumberOfInOutBubbles();
-				}
-			}
-		}
-
-		err.AddInfo("Circuit \"" + circ.getName()
-				+ "\" passed DRC check");
-		status = DRC_PASSED;
-		return status;
+		err.AddInfo("Circuit '%s' passed all design rule checks.", circName);
+    return true;
 	}
-
-  private int countDynamicClocks() {
-    int n = 0;
-    for (Component comp : circ.getNonWires())
-      if (comp.getFactory() instanceof DynamicClock)
-        n++;
-    return n;
-  }
-
 
   // here good functions
 
@@ -471,157 +337,98 @@ public class Netlist {
   private void printNetlistStats(FPGAReport err) {
     int n = 0, b = 0;
 		for (Net net : nets) {
-			if (net.IsRootNet() && net.isBus())
+			if (net.isBus())
         b++;
-			if (net.IsRootNet() && !net.isBus())
+      else
 				n++;
     }
     err.AddInfo("Circuit '%s' contains %d signal nets and %d bus nets.", circ.getName(), n, b);
   }
 
-  private boolean hasShortCircuits() {
-		for (Net net : nets)
-			if (net.IsRootNet() && net.hasShortCircuit())
-        return true;
-		return false;
-	}
+  private String nameOf(Component comp) {
+    String name = comp.getFactory().getName();
+    String label = comp.getAttributeSet().getValue(StdAttr.LABEL).toString();
+    if (label.isEmpty())
+      return String.format("'%s' at %s", name, comp.getLocation().toString());
+    else
+      return String.format("'%s' with label '%s'", name, label);
+  }
  
   private int drcFail(FPGAReport err, Component comp, String msg, String ...args) {
-    String label = comp.getAttributeSet().getValue(StdAttr.LABEL).toString();
-    String prefix;
-    if (label.isEmpty())
-      prefix = String.format("Component '%s' at %s in circuit '%s': ",
-          comp.getFactory().getName(), comp.getLocation().toString(), label, circ.getName());
-    else
-      prefix = String.format("Component '%s' with label '%s' in circuit '%s': ",
-          comp.getFactory().getName(), label, circ.getName());
+    String prefix = String.format("Component %s in circuit '%s': ",
+        nameOf(comp), circ.getName());
     err.AddSevereError(prefix + String.format(msg, args));
     return DRC_ERROR;
   }
 
+  static class Int3 {
+    int in, inout, out;
+    Int3() { }
+    void clear() { in = inout = out = 0; }
+    Int3 copy() {
+      Int3 o = new Int3();
+      o.in = in;
+      o.inout = inout;
+      o.out = out;
+      return o;
+    }
+    void increment(Int3 amt) {
+      in += amt.in;
+      inout += amt.inout
+      out += amt.out;
+    }
+  }
 
-	private void ConstructHierarchyTree(Set<String> ProcessedCircuits,
-			ArrayList<String> HierarchyName, Integer GlobalInputID,
-			Integer GlobalOutputID, Integer GlobalInOutID) {
-		if (ProcessedCircuits == null) {
-			ProcessedCircuits = new HashSet<String>();
-		}
-		/*
-		 * The first step is to go down to the leaves and visit all involved
-		 * sub-circuits to construct the local bubble information and form the
-		 * Mappable components tree
-		 */
-		numHiddenInbits = 0;
-		numHiddenOutbits = 0;
-		numHiddenInOutbits = 0;
-		for (NetlistComponent comp : subcircuits) {
-			SubcircuitFactory sub = (SubcircuitFactory) comp.GetComponent()
-					.getFactory();
-			ArrayList<String> MyHierarchyName = new ArrayList<String>();
-			MyHierarchyName.addAll(HierarchyName);
-			MyHierarchyName.add(CorrectLabel.getCorrectLabel(comp
-					.GetComponent().getAttributeSet().getValue(StdAttr.LABEL)
-					.toString()));
-			boolean FirstTime = !ProcessedCircuits.contains(sub.getName()
-					.toString());
-			if (FirstTime) {
-				ProcessedCircuits.add(sub.getName());
-				sub.getSubcircuit()
-						.getNetList()
-						.ConstructHierarchyTree(ProcessedCircuits,
-								MyHierarchyName, GlobalInputID, GlobalOutputID,
-								GlobalInOutID);
-			}
-			int subInputBubbles = sub.getSubcircuit().getNetList().NumberOfInputBubbles();
-			int subInOutBubbles = sub.getSubcircuit().getNetList().NumberOfInOutBubbles();
-			int subOutputBubbles = sub.getSubcircuit().getNetList().NumberOfOutputBubbles();
-			comp.setLocalHiddenPortIndices(
-          numHiddenInbits, subInputBubbles,
-					numHiddenInOutbits, subInOutBubbles,
-					numHiddenOutbits, subOutputBubbles);
-			numHiddenInbits += subInputBubbles;
-			numHiddenInOutbits += subInOutBubbles;
-			numHiddenOutbits += subOutputBubbles;
-			comp.setGlobalHiddenPortIndices(MyHierarchyName,
-          GlobalInputID, subInputBubbles,
-					GlobalInOutID, subInOutBubbles
-          GlobalOutputID, subOutputBubbles);
-			if (!FirstTime) {
-				sub.getSubcircuit()
-						.getNetList()
-						.EnumerateGlobalBubbleTree(MyHierarchyName,
-								GlobalInputID, GlobalOutputID, GlobalInOutID);
-			}
-			GlobalInputID += subInputBubbles;
-			GlobalInOutID += subInOutBubbles;
-			GlobalOutputID += subOutputBubbles;
-		}
-		/*
-		 * Here we processed all sub-circuits of the local hierarchy level, now
-		 * we have to process the IO components
-		 */
-		for (NetlistComponent comp : components) {
-			if (comp.hiddenPort != null) {
-				ArrayList<String> MyHierarchyName = new ArrayList<String>();
-				MyHierarchyName.addAll(HierarchyName);
-				MyHierarchyName.add(CorrectLabel.getCorrectLabel(comp
-						.GetComponent().getAttributeSet()
-						.getValue(StdAttr.LABEL).toString()));
-				int subInputBubbles = comp.hiddenPort.inports.size();
-				int subInOutBubbles = comp.hiddenPort.inoutports.size();
-				int subOutputBubbles = comp.hiddenPort.outports.size();
-				comp.setLocalHiddenPortIndices(
-            numHiddenInbits, subInputBubbles,
-						numHiddenInOutbits, subInOutBubbles,
-						numHiddenOutbits, subOutputBubbles);
-				numHiddenInbits += subInputBubbles;
-				numHiddenInOutbits += subInOutBubbles;
-				numHiddenOutbits += subOutputBubbles;
-				comp.setGlobalHiddenPortIndices(MyHierarchyName,
-            GlobalInputID, subInputBubbles,
-						GlobalInOutID, subInOutBubbles,
-            GlobalOutputID, subOutputBubbles);
-				GlobalInputID += subInputBubbles;
-				GlobalInOutID += subInOutBubbles;
-				GlobalOutputID += subOutputBubbles;
-			}
-		}
-	}
+	private void recursiveAssignLocalHiddenNets(HashSet<Netlist> visited) {
+    visited.add(this);
 
-	private void EnumerateGlobalBubbleTree(ArrayList<String> HierarchyName,
-			int StartInputID, int StartOutputID, int StartInOutID) {
-		for (NetlistComponent comp : subcircuits) {
-			SubcircuitFactory sub = (SubcircuitFactory) comp.GetComponent()
-					.getFactory();
-			ArrayList<String> MyHierarchyName = new ArrayList<String>();
-			MyHierarchyName.addAll(HierarchyName);
-			MyHierarchyName.add(CorrectLabel.getCorrectLabel(comp
-					.GetComponent().getAttributeSet().getValue(StdAttr.LABEL)
-					.toString()));
-			sub.getSubcircuit()
-					.getNetList()
-					.EnumerateGlobalBubbleTree(MyHierarchyName,
-							StartInputID + comp.GetLocalBubbleInputStartId(),
-							StartOutputID + comp.GetLocalBubbleOutputStartId(),
-							StartInOutID + comp.GetLocalBubbleInOutStartId());
-		}
-		for (NetlistComponent comp : components) {
-			if (comp.hiddenPort != null) {
-				ArrayList<String> MyHierarchyName = new ArrayList<String>();
-				MyHierarchyName.addAll(HierarchyName);
-				MyHierarchyName.add(CorrectLabel.getCorrectLabel(comp
-						.GetComponent().getAttributeSet()
-						.getValue(StdAttr.LABEL).toString()));
-				int subInputBubbles = comp.hiddenPort.inports.size();
-				int subInOutBubbles = comp.hiddenPort.inoutports.size();
-				int subOutputBubbles = comp.hiddenPort.outports.size();
-				comp.setGlobalHiddenPortIndices(MyHierarchyName,
-						StartInputID + comp.GetLocalBubbleInputStartId(), subInputBubbles,
-            StartInOutID, subInOutBubbles,
-						StartOutputID + comp.GetLocalBubbleOutputStartId(), subOutputBubbles);
-			}
-		}
-	}
+    Int3 start = numHiddenBits;
+		for (NetlistComponent shadow : subcircuits) {
+      Component comp = shadow.GetComponent();
+			SubcircuitFactory sub = (SubcircuitFactory)comp.getFactory();
+      Circuit subcirc = sub.getSubcircuit();
+      Netlist subnet = subcirc.getNetList();
+
+      if (!visited.contains(subnet))
+        subnet.recursiveBuildHiddenNets(visited);
+
+      Int3 count = subnets.numHiddenBits;
+			shadow.setLocalHiddenPortIndices(start.copy(), count);
+      start.increment(count);
+    }
+
+		for (NetlistComponent shadow : components) {
+			if (shadow.hiddenPort == null)
+        continue;
+      Int3 count = shadow.hiddenPort.size();
+      shadow.setLocalHiddenPortIndices(start.copy(), count);
+      start.increment(count);
+    }
+  }
+
+	private void recursiveAssignGlobalHiddenNets(Path path, Int3 start) {
+		for (NetlistComponent shadow : subcircuits) {
+      Component comp = shadow.GetComponent();
+			SubcircuitFactory sub = (SubcircuitFactory)comp.getFactory();
+      Circuit subcirc = sub.getSubcircuit();
+      Netlist subnet = subcirc.getNetList();
+      Path subPath = Path.join(path, shadow.label());
+
+      Int3 count = subnets.numHiddenBits;
+      shadow.setGlobalHiddenPortIndices(subPath, start.copy(), count);
+      subnet.recursiveAssignGlobalHiddenNets(subPath, start);
+    }
+
+		for (NetlistComponent shadow : components) {
+			if (shadow.hiddenPort == null)
+        continue;
+      Path subPath = Path.join(path, shadow.label());
+      Int3 count = shadow.hiddenPort.size();
+      shadow.setGlobalHiddenPortIndices(subPath, start.copy(), count);
+    }
+  }
+
+  // here 
 
 	private Net FindConnectedNet(Location loc) {
 		for (Net Current : nets) {
@@ -668,10 +475,11 @@ public class Netlist {
       }
     }
 
-    // Make a CopperTrace for every component port.
+    // Make a CopperTrace for every component output port.
     for (Component comp : circ.getNonWires())
       for (EndData end : comp.getEnds())
-        traces.add(new CopperTrace(end.getLocation()));
+        if (end.isOutput())
+          traces.add(new CopperTrace(end.getLocation()));
 
     // Make a Net for each set of touching CopperTraces.
 		while (traces.size() != 0) {
@@ -704,7 +512,11 @@ public class Netlist {
       for (EndData end : comp.getEnds()) {
         Location pt = end.getLocation();
         int w = end.getWidth().getWidth();
+        if (w == 0)
+          continue; // splitters can have zero-width ends, safe to ignore.
         Net net = netAt.get(pt);
+        if (net == null)
+          continue; // input ports can be unconnected, safe to ignore.
         int nw = net.bitWidth();
         if (nw == 0) {
           net.setBitWidth(w);
@@ -715,99 +527,196 @@ public class Netlist {
       }
     }
 
-    // If a Net has zero width, it must be entirely unconnected, so remove it.
+    // If a Net has zero width, it must be entirely unconnected (or perhaps
+    // connected only to splitter ends with no connections), so remove it.
     for (Net net : nets)
       if (net.bitWidth() == 0)
         for (Location pt : net.getPoints())
           netAt.remove(pt);
     nets.removeIf(net -> net.bitWidth() == 0);
 
-    // Lastly, process the splitters.
-    for (Component comp : circ.getNonWires()) {
-			if (!(comp.getFactory() instanceof SplitterFactory))
+    // Every single-bit signal of every Net should be driven by zero or one
+    // component ports and should drive zero or more component ports. First
+    // identify all source and sink ports belonging to normal components like
+    // Adder or AndGate (anything other than Splitter or Tunnel).
+		for (Component comp : circ.getNonWires()) {
+      if (comp.getFactory() instanceof SplitterFactory)
         continue;
+      if (comp.getFactory() instanceof Tunnel)
+        continue;
+      if (comp.getFactory().HDLIgnore())
+        continue;
+      int idx = -1;
+      for (EndData end : comp.getEnds()) {
+        idx++;
+        if (end.getWidth() == 0)
+          continue;
+        Location pt = end.getLocation();
+        Net net = netAt.get(pt);
+        if (end.isInput()) {
+          net.addSink(comp, idx);
+        } else {
+          Component c = net.getSourceComponent();
+          if (c == null) {
+            net.setSourceComponent(comp, end);
+          } else {
+            if (c != comp) {
+              drcFail(err, comp, "component is driving a bus that is also driven by component %s.",
+                  nameOf(c));
+              return false;
+            }
+            int end = net.getSourceEnd();
+            if (end != idx) {
+              drcFail(err, comp, "port %d and port %d are both driving the same bus.", idx, end);
+              return false;
+            }
+          }
+        }
+      }
+    }
 
-		/*
-		 * Finally we have to process the splitters to determine the bus
-		 * hierarchy (if any)
-		 */
-		/*
-		 * In this round we only process the evident splitters and remove them
-		 * from the list
-		 */
-		Iterator<Component> MySplitters = SplitterList.iterator();
-		while (MySplitters.hasNext()) {
-			Component com = MySplitters.next();
-			/*
-			 * Currently by definition end(0) is the combined end of the
-			 * splitter
-			 */
-			List<EndData> ends = com.getEnds();
-			EndData CombinedEnd = ends.get(0);
-			int RootNet = -1;
-			/* We search for the root net in the list of nets */
-			for (int i = 0; i < nets.size() && RootNet < 0; i++) {
-				if (nets.get(i).contains(CombinedEnd.getLocation())) {
-					RootNet = i;
-				}
-			}
-			if (RootNet < 0) {
-				err.AddFatalError("Could not find the rootnet of a Splitter in circuit \""
-						+ circ.getName() + "\"!");
-				this.clear();
-				return false;
-			}
-			/*
-			 * Now we process all the other ends to find the child busses/nets
-			 * of this root bus
-			 */
-			ArrayList<Integer> Connections = new ArrayList<Integer>();
-			for (int i = 1; i < ends.size(); i++) {
-				EndData ThisEnd = ends.get(i);
-				/* Find the connected net */
-				int ConnectedNet = -1;
-				for (int j = 0; j < nets.size() && ConnectedNet < 1; j++) {
-					if (nets.get(j).contains(ThisEnd.getLocation())) {
-						ConnectedNet = j;
-					}
-				}
-				Connections.add(ConnectedNet);
-			}
-			for (int i = 1; i < ends.size(); i++) {
-				int ConnectedNet = Connections.get(i - 1);
-				if (ConnectedNet >= 0) {
-					/* There is a net connected to this splitter's end point */
-					if (!nets.get(ConnectedNet)
-							.setParent(nets.get(RootNet))) {
-						nets.get(ConnectedNet).ForceRootNet();
-					}
-					/* Here we have to process the inherited bits of the parent */
-					byte[] BusBitConnection = ((Splitter) com).GetEndpoints();
-					for (byte b = 0; b < BusBitConnection.length; b++) {
-						if (BusBitConnection[b] == i) {
-							nets.get(ConnectedNet).AddParrentBit(b);
-						}
-					}
-				}
-			}
-		}
-		/*
-		 * Now the complete netlist is created, we have to check that each
-		 * net/bus entry has only 1 source and 1 or more sinks. If there exist
-		 * more than 1 source we have a short circuit! We keep track of the
-		 * sources and sinks at the root nets/buses
-		 */
-		for (Net ThisNet : nets) {
-			if (ThisNet.IsRootNet()) {
-				ThisNet.InitializeSourceSinks();
-			}
-		}
-		/*
-		 * We are going to iterate through all components and their respective
-		 * pins to see if they are connected to a net, and if yes if they
-		 * present a source or sink. We omit the splitter and tunnel as we
-		 * already processed those
-		 */
+    // Next identify indirect sources and sinks due to splitters. End 0 of each
+    // splitter is the "combined end", and will be connected to some Net with
+    // matching width. Each bit of the combined end maps to one or none of the
+    // other "split ends". Each split end can be the target for zero, one, or
+    // multiple bits from the combined end. Example 5-bit, 4-way Splitter:
+    //
+    // End0{bit4,bit3,bit2,bit1,bit0}  ====\-- End1{bit4,bit0}
+    //                                     |-- End2{bit1}
+    //                                     |-- End3{(empty)}
+    //                                     |-- End4{bit3}
+    // Note: bit2 of the combined end does not map to any of the split ends, and
+    // End3 is not the target of any bits from the combined end.
+    //
+    // If a bit is mapped to a split end, and the bit on one side (either the
+    // combined or split end) already has a known source, then that source
+    // becomes the source for the other side's bit (either the split or combined
+    // end).
+    //
+    // If a bit is mapped to a split end, and the bit on *both* sides already
+    // have a known source, then those sources better be identical otherwise we
+    // have found a short circuit.
+    //
+    // If a bit is not mapped to a split end, then we can ignore the splitter
+    // entirely for that bit, as it won't affect the bit.
+   
+    // Find all splitters touching each Net.
+    HashMap<Net, LinkedList<Splitter>> splitters = new LinkedList<>();
+    for (Component comp : circ.getNonWires()) {
+			if (comp.getFactory() instanceof SplitterFactory) {
+        for (EndData end : comp.getEnds()) {
+          Net net = netAt.get(end.getLocation());
+          LinkedList<Component> ll = splitters.get(net);
+          if (ll == null) {
+            ll = new LinkedList<Splitter>();
+            splitters.put(net, ll);
+          }
+          ll.add((Splitter)comp);
+        }
+      }
+    }
+
+    // Propagate sources from Net, through Splitter, to other Nets.
+    LinkedList<Net> workingset = new LinkedList<>();
+    for (Net net : nets)
+      if (net.getSourceComponent() != null)
+        workingset.add(net);
+    while (!workingset.isEmpty()) {
+      Net net = workingset.pop();
+      for (Splitter splitter : splitters.get(net)) {
+        int n = splitter.getEnds().size();
+        byte[] dest = splitter.getEndpoints();
+        for (int idx = 0; idx < n; idx++) {
+          EndData end = splitter.getEnd(idx);
+          if (!net.contains(end.getLocation()))
+            continue;
+          if (idx == 0) {
+            // net is the big combined end of splitter, and drives every bit of
+            // small split ends (except those small split ends with width = 0,
+            // but that gets ignored in the loop here, and except for bits in
+            // net that aren't actually driven).
+            for (int split = 1; split < n; i++) {
+              Net small = netAt.get(splitter.getEnd(split).getLocation());
+              int s = -1;
+              for (int b = 0; b < dest.length; b++) {
+                if (dest[b] != split)
+                  continue; // net[b] does not map to this split end
+                s++;
+                // net[b] drives small[s]
+                Net.Source src = net.getSourceForBit(b);
+                if (src == null)
+                  continue; // actually, net[b] isn't driven, so nevermind
+                Net.Source sink = small.getSourceForBit(s);
+                if (sink == null) {
+                  small.setSourceForBit(s, net, b);
+                  workingset.add(small);
+                } else if (!sink.equals(src)) {
+                  drcFail(err, splitter, "splitter bit %d is being driven by both %s (port %d bit %d) and %s (port %d bit %d).",
+                      b,
+                      nameOf(src.comp), src.end, src.bit,
+                      nameOf(sink.comp), sink.end, sink.bit);
+                  return false;
+                }
+              } // for each bit in splitter
+            } // for each small split end
+          } else {
+            // net is the small split end of splitter, and every bit of net is
+            // being driven by some bit of big combined end (unless this split
+            // end has width = 0, but that is filtered out above).
+            Net big = netAt.get(splitter.getEnd(0).getLocation());
+            int s = -1;
+            for (int b = 0; b < dest.length; b++) {
+              if (dest[b] != idx)
+                continue; // big[b] does not map to this small split end
+              s++;
+              // big[b] is driven by net[s]
+              Net.Source src = net.getSourceForBit(s);
+              if (src == null)
+                continue; // actually, net[s] isn't driven, so nevermind
+              Net.Source sink = big.getSourceForBit(b);
+              if (sink == null) {
+                big.setSourceForBit(b, net, s);
+                workingset.add(big);
+              } else if (!sink.equals(src)) {
+                drcFail(err, splitter, "splitter bit %d is being driven by both %s (port %d bit %d) and %s (port %d bit %d).",
+                    b,
+                    nameOf(src.comp), src.end, src.bit,
+                    nameOf(sink.comp), sink.end, sink.bit);
+                return false;
+              }
+            } // for each bit in splitter
+          }
+        } // for each potential splitter end touching this Net
+      } // for each splitter touching this Net
+    }
+
+    // For each Net that has direct sinks, ensure that every bit of the Net is
+    // driven by something, either directly (by a component on the same Net) or
+    // indirectly (through one or more splitters and eventually by some
+    // component on some other Net).
+    for (Net net : nets) {
+      if (!net.getSinkComponents().isEmpty())
+        continue; // no direct sinks, ignore
+      if (net.getSourceComponent() != null)
+        continue; // net has a direct source, done
+      for (int b = 0; b < net.bitWidth()) {
+        if (net.getSourceForBit(b) == null) {
+          Net.DirectSink sink = net.getSinkComponents().get(0);
+          drcFail(err, sink.comp, "component port %d is connected to a %d-bit bus with some undriven signals (e.g. bit %d)",
+              sink.end, net.bitWidth(), b);
+          return false;
+        }
+      }
+    }
+
+    // If there are nets with all bits undriven, they could removed now. But we
+    // don't bother, since these will cause synthesis warnings but not errors.
+    return true;
+  }
+
+  junk {
+    // 
+    // Nere.
 		for (Component comp : allComponents) {
 			if (comp.getFactory() instanceof SubcircuitFactory) {
 				if (!ProcessSubcircuit(comp, err)) {
@@ -826,6 +735,7 @@ public class Netlist {
 				}
 			}
 		}
+
 		/*
 		 * Here we are going to process the complex splitters, note that in the
 		 * previous handling of the splitters we marked all nets connected to a
@@ -1343,6 +1253,7 @@ public class Netlist {
 	// 	return status == DRC_PASSED;
 	// }
 
+  // FIXME
 	private boolean recursiveMarkClockSources(ArrayList<String> allNames, ArrayList<Netlist> topAndParentNetlists, FPGAReport err) {
     // Depth-first recursion, to start work from leaf circuits and move upwards.
 		for (NetlistComponent sub : subcircuits) {
@@ -1390,7 +1301,7 @@ public class Netlist {
     // Now that clock sources are marked, we can remove all non-root nets.
 	  nets.removeIf(net -> !net.isRootNet());	
     // We can also clean up any remaining root nets now.
-    nets.forEach(net -> net.FinalCleanup());
+    // nets.forEach(net -> net.clearPoints());
 		return true;
 	}
 
@@ -1508,57 +1419,57 @@ public class Netlist {
 	}
 fixme: MyInOutPorts no longer has PortIO, Tty, Keyboard
 
-	private boolean ProcessSubcircuit(Component comp, FPGAReport err) {
-		NetlistComponent Subcircuit = new NetlistComponent(comp);
-		SubcircuitFactory sub = (SubcircuitFactory) comp.getFactory();
-		Instance[] subPins = ((CircuitAttributes) comp.getAttributeSet())
-				.getPinInstances();
-		Netlist subNetlist = sub.getSubcircuit().getNetList();
-		for (EndData ThisPin : comp.getEnds()) {
-			if (ThisPin.isInput() && ThisPin.isOutput()) {
-				err.AddFatalError("Found IO pin on component \""
-						+ comp.getFactory().getName() + "\" in circuit \""
-						+ circ.getName() + "\"! (subCirc)");
-				return false;
-			}
-			Net Connection = FindConnectedNet(ThisPin.getLocation());
-			int PinId = comp.getEnds().indexOf(ThisPin);
-			int SubPortIndex = subNetlist.GetPortInfo(subPins[PinId].getAttributeValue(StdAttr.LABEL));
-			if (SubPortIndex < 0) {
-				err.AddFatalError("INTERNAL ERROR: Unable to find pin in sub-circuit!");
-				return false;
-			}
-      // Special handling for sub-circuits; we have to find out the connection to the corresponding
-      // net in the underlying net-list; At this point the underlying net-lists have already been generated.
-      for (byte bitid = 0; bitid < ThisPin.getWidth().getWidth(); bitid++)
-        Subcircuit.ports.get(PinId).connections.get(bitid).subcircPortIndex = SubPortIndex;
-			if (Connection != null) {
-				boolean PinIsSink = ThisPin.isInput();
-				Net RootNet = GetRootNet(Connection);
-				if (RootNet == null) {
-					err.AddFatalError("INTERNAL ERROR: Unable to find a root net!");
-					return false;
-				}
-				for (byte bitid = 0; bitid < ThisPin.getWidth().getWidth(); bitid++) {
-					Byte RootNetBitIndex = GetRootNetIndex(Connection, bitid);
-					if (RootNetBitIndex < 0) {
-						err.AddFatalError("INTERNAL ERROR: Unable to find a root-net bit-index!");
-						return false;
-					}
-					Subcircuit.ports.get(PinId).connections.get(bitid).set(RootNet, RootNetBitIndex);
-					if (PinIsSink) {
-						RootNet.addSink(RootNetBitIndex,
-								Subcircuit.ports.get(PinId).connections.get(bitid));
-					} else {
-						RootNet.addSource(RootNetBitIndex,
-								Subcircuit.ports.get(PinId).connections.get(bitid));
-					}
-				}
-			}
-		}
-		subcircuits.add(Subcircuit);
-		return true;
-	}
+	// private boolean ProcessSubcircuit(Component comp, FPGAReport err) {
+	// 	NetlistComponent Subcircuit = new NetlistComponent(comp);
+	// 	SubcircuitFactory sub = (SubcircuitFactory) comp.getFactory();
+	// 	Instance[] subPins = ((CircuitAttributes) comp.getAttributeSet())
+	// 			.getPinInstances();
+	// 	Netlist subNetlist = sub.getSubcircuit().getNetList();
+	// 	for (EndData ThisPin : comp.getEnds()) {
+	// 		if (ThisPin.isInput() && ThisPin.isOutput()) {
+	// 			err.AddFatalError("Found IO pin on component \""
+	// 					+ comp.getFactory().getName() + "\" in circuit \""
+	// 					+ circ.getName() + "\"! (subCirc)");
+	// 			return false;
+	// 		}
+	// 		Net Connection = FindConnectedNet(ThisPin.getLocation());
+	// 		int PinId = comp.getEnds().indexOf(ThisPin);
+	// 		int SubPortIndex = subNetlist.GetPortInfo(subPins[PinId].getAttributeValue(StdAttr.LABEL));
+	// 		if (SubPortIndex < 0) {
+	// 			err.AddFatalError("INTERNAL ERROR: Unable to find pin in sub-circuit!");
+	// 			return false;
+	// 		}
+  //     // Special handling for sub-circuits; we have to find out the connection to the corresponding
+  //     // net in the underlying net-list; At this point the underlying net-lists have already been generated.
+  //     for (byte bitid = 0; bitid < ThisPin.getWidth().getWidth(); bitid++)
+  //       Subcircuit.ports.get(PinId).connections.get(bitid).subcircPortIndex = SubPortIndex;
+	// 		if (Connection != null) {
+	// 			boolean PinIsSink = ThisPin.isInput();
+	// 			Net RootNet = GetRootNet(Connection);
+	// 			if (RootNet == null) {
+	// 				err.AddFatalError("INTERNAL ERROR: Unable to find a root net!");
+	// 				return false;
+	// 			}
+	// 			for (byte bitid = 0; bitid < ThisPin.getWidth().getWidth(); bitid++) {
+	// 				Byte RootNetBitIndex = GetRootNetIndex(Connection, bitid);
+	// 				if (RootNetBitIndex < 0) {
+	// 					err.AddFatalError("INTERNAL ERROR: Unable to find a root-net bit-index!");
+	// 					return false;
+	// 				}
+	// 				Subcircuit.ports.get(PinId).connections.get(bitid).set(RootNet, RootNetBitIndex);
+	// 				if (PinIsSink) {
+	// 					RootNet.addSink(RootNetBitIndex,
+	// 							Subcircuit.ports.get(PinId).connections.get(bitid));
+	// 				} else {
+	// 					RootNet.addSource(RootNetBitIndex,
+	// 							Subcircuit.ports.get(PinId).connections.get(bitid));
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// 	subcircuits.add(Subcircuit);
+	// 	return true;
+	// }
 
 	public String projName() {
 		return circ.getProjName();

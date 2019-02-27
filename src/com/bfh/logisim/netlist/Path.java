@@ -39,9 +39,23 @@ public class Path {
 
   public static final Path ROOT = new Path();
 
-  public Path(String ...elts) {
-    this.path = String.join("/", elts);
-    this.elts = path.split("/", -1);
+//   public Path(String ...elts) {
+//     this.path = String.join("/", elts);
+//     this.elts = path.split("/", -1);
+//   }
+
+  private Path() {
+    path = "/";
+    elts = new String[] { "" };
+  }
+
+  private Path(String p) {
+    path = p;
+    elts = p.split("/", -1);
+  }
+
+  public static Path join(Path base, String elt) {
+    return new Path(base.path + "/" + elt);
   }
 
   @Override

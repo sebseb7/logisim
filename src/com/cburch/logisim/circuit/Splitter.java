@@ -54,13 +54,13 @@ import com.cburch.logisim.tools.WireRepairData;
 
 public class Splitter extends ManagedComponent
   implements WireRepair, ToolTipMaker, MenuExtender, AttributeListener {
-  private static void appendBuf(StringBuilder buf, int start, int end) {
+  private static void appendBuf(StringBuilder buf, int hi, int lo) {
     if (buf.length() > 0)
       buf.append(",");
-    if (start == end) {
-      buf.append(start);
+    if (hi == lo) {
+      buf.append(hi);
     } else {
-      buf.append(start + "-" + end);
+      buf.append(hi + "-" + lo);
     }
   }
 
@@ -166,7 +166,7 @@ public class Splitter extends ManagedComponent
     }
   }
 
-  public byte[] GetEndpoints() {
+  public byte[] getEndpoints() {
     SplitterAttributes attrs = (SplitterAttributes) getAttributeSet();
     return attrs.bit_end;
   }

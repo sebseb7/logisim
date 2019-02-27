@@ -34,6 +34,7 @@ import java.util.ArrayList;
 
 import com.cburch.logisim.comp.Component;
 import static com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer.IOComponentTypes;
+import static com.bfh.logisim.netlist.Netlist.Int3;
 
 public class HiddenPort {
 
@@ -110,6 +111,14 @@ public class HiddenPort {
 
 	public int numPorts() {
     return inports.size() + inoutports.size() + outports.size();
+  }
+
+  public Int3 size() {
+    Int3 count = new Int3();
+    count.in = inports.size();
+    count.inout = inoutports.size();
+    count.out = outports.size();
+    return count;
   }
 
   public boolean canBeAllOnesInput() {
