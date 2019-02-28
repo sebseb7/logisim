@@ -123,7 +123,7 @@ public class Circuit implements AttributeDefaultProvider {
     public void endChanged(ComponentEvent e) {
       locker.checkForWritePermission("ends changed", Circuit.this);
       Annotated = false;
-      MyNetList.clear();
+      netlist.clear();
       Component comp = e.getSource();
       HashMap<Location, EndData> toRemove = toMap(e.getOldData());
       HashMap<Location, EndData> toAdd = toMap(e.getData());
@@ -167,7 +167,7 @@ public class Circuit implements AttributeDefaultProvider {
   private CircuitLocker locker;
 
   private WeakHashMap<Component, Circuit> circuitsUsingThis;
-  private Netlist MyNetList;
+  private Netlist netlist;
   private boolean Annotated;
 
   private LogisimFile logiFile;
@@ -178,7 +178,7 @@ public class Circuit implements AttributeDefaultProvider {
     subcircuitFactory = new SubcircuitFactory(this);
     locker = new CircuitLocker();
     circuitsUsingThis = new WeakHashMap<Component, Circuit>();
-    MyNetList = new Netlist(this);
+    netlist = new Netlist(this);
     Annotated = false;
     logiFile = file;
   }
@@ -313,7 +313,7 @@ public class Circuit implements AttributeDefaultProvider {
   // Annotation module for all components that require a non-zero-length label
   public void ClearAnnotationLevel() {
     Annotated = false;
-    MyNetList.clear();
+    netlist.clear();
     for (Component comp : this.getNonWires()) {
       if (comp.getFactory() instanceof SubcircuitFactory) {
         SubcircuitFactory sub = (SubcircuitFactory) comp.getFactory();
@@ -571,8 +571,8 @@ public class Circuit implements AttributeDefaultProvider {
     return staticAttrs.getValue(CircuitAttributes.NAME_ATTR);
   }
 
-  public Netlist getNetList() {
-    return MyNetList;
+  public Netlist getNetlist() {
+    return netlist;
   }
 
   public Set<Component> getNonWires() {
@@ -678,7 +678,7 @@ public class Circuit implements AttributeDefaultProvider {
     locker.checkForWritePermission("add", this);
 
     Annotated = false;
-    MyNetList.clear();
+    netlist.clear();
     if (c instanceof Wire) {
       Wire w = (Wire) c;
       if (w.getEnd0().equals(w.getEnd1()))
@@ -717,7 +717,7 @@ public class Circuit implements AttributeDefaultProvider {
     comps = new HashSet<Component>();
     wires = new CircuitWires();
     clocks.clear();
-    MyNetList.clear();
+    netlist.clear();
     Annotated = false;
     for (Component comp : oldComps) {
       if (comp.getFactory() instanceof SubcircuitFactory) {
@@ -736,7 +736,7 @@ public class Circuit implements AttributeDefaultProvider {
     locker.checkForWritePermission("remove", this);
 
     Annotated = false;
-    MyNetList.clear();
+    netlist.clear();
     if (c instanceof Wire) {
       wires.remove(c);
     } else {

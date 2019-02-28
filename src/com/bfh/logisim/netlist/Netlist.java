@@ -101,6 +101,8 @@ public class Netlist {
 	}
 
 	public void clear() {
+    if (status = DRC_REQUIRED)
+      return;
 		nets.clear();
 		netAt.clear();
 		components.clear();
@@ -132,6 +134,7 @@ public class Netlist {
   // the Netlist for the top-level circuit.
   public boolean validate(FPGAReport err, String lang, char vendor) {
     recursiveClear();
+fixme: set clock params here;
 
     // Create global hidden clock bus at the top level.
     clockbus = new ClockBus();

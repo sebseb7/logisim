@@ -86,7 +86,7 @@ public class ClockHDLGenerator extends HDLGenerator {
     super(ctx, "base", "LogisimClock", "i_ClockGen");
     int hi = attrs.getValueOrElse(Clock.ATTR_HIGH, 1);
     int lo = attrs.getValueOrElse(Clock.ATTR_LOW, 1);
-    int raw = nets.RawFPGAClock() ? 1 : 0;
+    int raw = _nets.RawFPGAClock() ? 1 : 0;
     if (raw && hi != lo)
       _err.AddFatalError("Clock component detected with " +hi+":"+lo+ " hi:lo duty cycle,"
           + " but maximum clock speed was selected. Only 1:1 duty cycle is supported with "
@@ -217,12 +217,17 @@ public class ClockHDLGenerator extends HDLGenerator {
     } else if (p.name.equals("FPGATick")) {
       map.add(p.name, TickHDLGenerator.FPGA_TICK_NET);
     } else if (p.name.equals("ClockBus")) {
-      int id = _nets.GetClockSourceId(comp.GetComponent());
+      int id = _nets.GetClockSourceId(comp.original);
       if (id < 0)
         err.AddFatalError("INTERNAL ERROR: missing clock net for pin '%s' of '%s' in circuit '%s'.",
             p.name, hdlComponentName, _nets.getCircuitName());
       map.add(p.name, CLK_TREE_NET + id);
     }
   }
+
+  // fixme: this isn't clearly split between the counter part in the toplevel
+  // and the stub part in the circuit; also isn't deduplicated properly. The
+  // stub part behavior could just be inline, taking from hidden net and putting
+  // into CLockBus. 
 
 }

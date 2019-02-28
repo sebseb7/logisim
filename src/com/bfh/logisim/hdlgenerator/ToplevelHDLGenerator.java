@@ -30,16 +30,12 @@
 
 package com.bfh.logisim.hdlgenerator;
 
-import java.util.ArrayList;
-
-import com.bfh.logisim.netlist.CorrectLabel;
-import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
 import com.bfh.logisim.library.DynamicClock;
+import com.bfh.logisim.netlist.NetlistComponent;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.hdl.Hdl;
-import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.ClockHDLGenerator;
 import com.cburch.logisim.std.wiring.Pin;
 
@@ -52,18 +48,34 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 	private int tickerPeriod; // 0:"use fpga clock", -1:"dynamic", >0:"divided clock"
 	private Circuit circUnderTest;
 	private MappableResourcesContainer ioResources;
+  private Netlist _circNets; // Netlist of the circUnderTest.
+
+  private TickHDLGenerator ticker;
+  private CircuitHDLGenerator circgen;
+  private HDLCTX ctx;
+
+	public ToplevelHDLGenerator(String lang, FPGAReport err, char vendor,
+      long fpgaClockFreq, int tickerPeriod,
+			Circuit circUnderTest, MappableResourcesContainer ioResources) {
+    this(new HDLCTX(lang, err, null /*nets*/, null /*attrs*/, vendor),
+      fpgaClockFreq, tickerPeriod, circUnderTest, ioResources);
+  }
 
 	public ToplevelHDLGenerator(HDLCTX ctx, long fpgaClockFreq, int tickerPeriod,
-			Circuit designUnderTest, MappableResourcesContainer ioResources) {
+			Circuit circUnderTest, MappableResourcesContainer ioResources) {
     super(ctx, "toplevel", HDL_NAME, "i_Toplevel");
 
 		this.fpgaClockFreq = fpgaClockFreq;
 		this.tickerPeriod = tickerPeriod;
 		this.circUnderTest = circUnderTest;
 		this.ioResources = ioResources;
+    this.ctx = ctx;
+
+    _circNets = circUnderTest.getNetlist();
+    int numclk = _circNets.clockbus.shapes().size();
 
     // raw oscillator input
-    if (_nets.NumberOfClockTrees() > 0)
+    if (numclk > 0)
       inPorts.add(new PortInfo(TickHDLGenerator.FPGA_CLK_NET, 1, -1, null));
 
     // io resources
@@ -75,37 +87,41 @@ public class ToplevelHDLGenerator extends HDLGenerator {
       outPorts.add(new PortInfo("FPGA_OUTPUT_PIN_"+i, 1, -1, null));
 
     // internal clock networks
-    int nClk = Nets.NumberOfClockTrees();
-		if (nClk > 0) {
+		if (numclk > 0) {
       wires.add(new WireInfo(TickHDLGenerator.FPGA_TICK_NET, 1));
-			for (int i = 0; i < nClk; i++)
+			for (int i = 0; i < numclk; i++)
 				wires.add(new WireInfo("s_"+ClockHDLGenerator.CLK_TREE_NET+i,
               ClockHDLGenerator.CLK_TREE_WIDTH));
 		}
 
     // wires for hidden ports for circuit design under test
-    addWireVector("s_LOGISIM_HIDDEN_FPGA_INPUT", Nets.NumberOfInputBubbles());
-		// addWireVector("s_LOGISIM_HIDDEN_FPGA_INOUT", Nets.NumberOfInOutBubbles()); // not needed
-    addWireVector("s_LOGISIM_HIDDEN_FPGA_OUTPUT", Nets.NumberOfOutputBubbles());
+    // note: inout ports never get inversions, so no wire for those
+    Netlist.Int3 hidden = _circNets.numHiddenBits();
+    addWireVector("s_LOGISIM_HIDDEN_FPGA_INPUT", hidden.in);
+		// skip: addWireVector("s_LOGISIM_HIDDEN_FPGA_INOUT", hidden.inout);
+    addWireVector("s_LOGISIM_HIDDEN_FPGA_OUTPUT", hidden.out);
 
     // wires for normal ports for circuit design under test
-    ArrayList<NetlistComponent> ports = new ArrayList<>();
-    ports.addAll(Nets.GetInputPorts());
-    ports.addAll(Nets.GetInOutPorts());
-    ports.addAll(Nets.GetOutputPorts());
-    for (NetlistComponent port : ports) {
-      Component comp = port.getComponent();
-      String name = comp.getAttributeSet().getValue(StdAttr.LABEL);
-      int w = comp.getEnd(0).getWidth().getWidth();
-      wires.add(new WireInfo("s_"+CorrectLabel.getCorrectLabel(name), w));
+    for (NetlistComponent shadow : _circNets.inpins) {
+      int w = shadow.original.getEnd(0).getWidth().getWidth();
+      wires.add(new WireInfo("s_"+shadow.label(), w));
+    }
+    for (NetlistComponent shadow : _circNets.outpins) {
+      int w = shadow.original.getEnd(0).getWidth().getWidth();
+      wires.add(new WireInfo("s_"+shadow.label(), w));
     }
 
     // wires for dynamic clock
-    NetlistComponent dynClock = Nets.GetDynamicClock();
+    NetlistComponent dynClock = _circNets.dynamicClock();
     if (dynClock != null) {
-      int w = dynClock.GetComponent().getAttributeSet().getValue(DynamicClock.WIDTH_ATTR).getWidth();
+      int w = dynClock.original.getAttributeSet().getValue(DynamicClock.WIDTH_ATTR).getWidth();
       wires.add(new WireInfo("s_LOGISIM_DYNAMIC_CLOCK", w));
     }
+
+		if (numclk > 0)
+			ticker = new TickHDLGenerator(ctx, fpgaClockFreq, tickerPeriod);
+
+		circgen = new CircuitHDLGenerator(ctx, circUnderTest);
 	}
 
   private void addWireVector(String busname, int w) {
@@ -117,63 +133,49 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 
 	@Override
 	protected void generateComponentDeclaration(Hdl out) {
-    _nets.SetRawFPGAClock(tickerPeriod == 0);
-    _nets.SetRawFPGAClockFreq(fpgaClockFreq);
-
-		if (_nets.NumberOfClockTrees() > 0) {
-      HDLCTX ctx = new HDLCTX(_lang, _err, _nets /*wrong nets?*/, null /*attrs*/, _vendor);
-			TickHDLGenerator ticker = new TickHDLGenerator(ctx, fpgaClockFreq, tickerPeriod);
+		if (ticker != null) {
       ticker.generateComponentDeclaration(out);
       // Clock components are lifted to the top level, so declare one here.
-			ClockHDLGenerator clk = new ClockHDLGenerator(ctx);
-      clk.generateComponentDeclaration(out);
+      _circNets.clocks.get(0).hdlSupport.generateComponentDeclaration(out);
 		}
-
-		CircuitHDLGenerator g = new CircuitHDLGenerator(ctx, circUnderTest);
-    g.generateComponentDeclaration(out);
+    circgen.generateComponentDeclaration(out);
 	}
 
 	@Override
   protected void generateBehavior(Hdl out) {
 
     out.comment("signal adaptions for pin components");
-		for (ArrayList<String> path : ioResources.GetComponents()) {
-      Component pin = ioResources.GetComponent(path).GetComponent();
-      if (!(pin.getFactory() instanceof Pin))
-        continue;
-      generateInlinedCodeForPinSignals(out, path, pin);
+		for (Path path : ioResources.GetComponents()) {
+      Component pin = ioResources.GetComponent(path).original;
+      if (pin.getFactory() instanceof Pin)
+        generateInlinedCodeForPinSignals(out, path, pin);
 		}
     out.stmt();
 
     out.comment("signal adaptions for hidden signals");
-		for (ArrayList<String> path : ioResources.GetComponents())
+		for (Path path : ioResources.GetComponents()) {
+      // Component comp = ioResources.GetComponent(path).original;
+      // if (!(comp.getFactory() instanceof Pin))
       generateInlinedCodeForHiddenSignals(out, path);
+    }
     out.stmt();
 
 		if (nets.NumberOfClockTrees() > 0) {
       out.comment("clock signal distribution");
-      HDLCTX ctx = new HDLCTX(_lang, _err, _nets /*wrong nets?*/, null /*attrs*/, _vendor);
-			TickHDLGenerator ticker = new TickHDLGenerator(ctx, fpgaClockFreq, tickerPeriod);
       ticker.generateComponentInstance(out, 0L /*id*/, null /*comp*/);
 
 			long id = 0;
-			for (Component clk : _nets.GetAllClockSources()) {
-        HDLGenerator g = clk.getFactory().getHDLGenerator(_lang, _err,
-            _nets /*wrong nets?*/, clk.getAttributeSet(), _vendor);
-        g.generateComponentInstance(out, id++, new NetlistComponent(clk));
-      }
+			for (NetlistComponent clk : _circNets.clocks)
+        clk.hdlSupport.generateComponentInstance(out, id++, clk); // FIXME
       out.stmt();
 		}
 
     out.comment("connections for circuit design under test");
-
-		CircuitHDLGenerator g = new CircuitHDLGenerator(_lang, _err, _nets, _vendor, circUnderTest);
-    g.generateComponentInstance(out, 0L /*id*/, null /*comp*/);
+    circgen.generateComponentInstance(out, 0L /*id*/, null /*comp*/);
 	}
 
-  private static void generateInlinedCodeForPinSignals(Hdl out, ArrayList<String> path, Component pin) {
-    String pinName = "s_" + pin.getAttributeSet().getValue(StdAttr.LABEL);
-    pinName = CorrectLabel.getCorrectLabel(pinName);
+  private static void generateInlinedCodeForPinSignals(Hdl out, Path path, Component pin) {
+    String pinName = "s_" + NetlistComponent.labelOf(pin);
     int signalIdx = 0;
     for (String signal : ioResources.GetMapNamesList(path)) {
       String signal = signalNames.get(MapOffset);
@@ -224,43 +226,21 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     }
   }
 
-	private static void generateInlinedCodeForHiddenSignals(Hdl out, ArrayList<String> path) {
+	private static void generateInlinedCodeForHiddenSignals(Hdl out, Path path) {
     // Note: This only happens for input and output ports, as only they can get
     // inversions. InOut ports do not get inversions, so don't get touched here.
 
-    // FIXME Q: is this only for Button? or also other things like LED?
-    // FIXME Q: Why are only these three discarded, specifically?
-    // I suspect that PortIO, Tty, and Keyboard used to do their own mappings to
-    // things like FPGA_INPUT_PIN_, and maybe they used to only be able to appear
-    // at the top level. That seems unnecessary.
-    // InstanceFactory factory = ioResources.GetComponent(path).GetComponent().getFactory();
-    // if (factory instanceof PortIO) {
-    //   // ((PortIO)factory).setMapInfo(ioResources);
-    //   return;
-    // } else if (factory instanceof Tty) {
-    //   // ((Tty)factory).setMapInfo(ioResources);
-    //   return;
-    // } else if (factory instanceof Keyboard) {
-    //   // ((Keyboard)factory).setMapInfo(ioResources);
-    //   return;
-    // }
-
-    String pathstr = String.join("/", path);
-    System.out.println("Generating inline code for I/O type " + factory);
-    System.out.println("Path is: " + String.join("/", path);
+    System.out.printf("Generating inline code for I/O type %s path %s\n", factory, path);
 
 		NetlistComponent comp = ioResources.GetComponent(path);
 		if (comp == null) {
-			out.err.AddFatalError("INTERNAL ERROR: Shadow I/O component missing for %s", pathstr);
+			out.err.AddFatalError("INTERNAL ERROR: Shadow I/O component missing for %s", path);
 			return;
 		}
 
-		ArrayList<String> partialpath = new ArrayList<>();
-		partialpath.addAll(path);
-		partialpath.remove(0); // ?? removes TopLevel from path?
-    NetlistComponent.PortIndices3 indices = comp.getGlobalHiddenPortIndices(partialpath);
+    NetlistComponent.PortIndices3 indices = comp.getGlobalHiddenPortIndices(path);
 		if (indices == null) {
-			out.err.AddFatalError("INTERNAL ERROR: Missing index data for I/O component %s", pathstr);
+			out.err.AddFatalError("INTERNAL ERROR: Missing index data for I/O component %s", path);
 			return;
 		}
 
