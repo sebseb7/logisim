@@ -122,7 +122,7 @@ public class ClockBus {
     return idx;
   }
 
-  public int id(Path path, Net net, int bit) { // FIXME: bit is always 0?
+  public int id(Path path, Net net, int bit) {
     Point p = new Point(path, net, bit);
     return points.getOrDefault(p, -1);
   }

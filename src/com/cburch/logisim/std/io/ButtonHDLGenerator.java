@@ -56,13 +56,11 @@ public class ButtonHDLGenerator extends HDLInliner {
 
   @Override
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
-    int b = comp.GetLocalBubbleInputStartId();
+    int b = comp.getLocalHiddenPortIndices().in.start;
     for (int i = 0; i < comp.ports.size(); i++) {
-      if (comp.ports.get(i).isConnected()) {
-        // fixme: does not handle mixed or partial connections
-        String name = _nets.signalForEnd1(comp, i, null, out);
-        out.assign(name, "LOGISIM_HIDDEN_FPGA_INPUT", b + i);
-      }
+      Net net = comp.getConnection(i);
+      if (net != null)
+        out.assign(net.name, "LOGISIM_HIDDEN_FPGA_INPUT", b + i);
     }
   }
 

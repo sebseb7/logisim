@@ -41,23 +41,34 @@ public class BitExtenderHDLGenerator extends HDLInliner {
 
   @Override
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
-    if (!comp.endIsConnected(0))
+    Net dest = comp.getConnection(0);
+    if (dest == null)
       return; // output not connected, nothing to do
     
-    if (!comp.endIsConnected(1)) {
-      _err.AddError("Bit Extender has floating input in circuit \"" + nets.getCircuitName() + "\"");
+    Net src = comp.getConnection(1);
+    if (src == null) {
+      _err.AddError("BitExtender has floating input in circuit '%s'", nets.circName());
+      return;
+    }
+
+    int wo = dest.width;
+    int wi = src.width;
+
+    if (wo <= wi) {
+      out.assign(dst, src.slice(wo-1, 0));
       return;
     }
 
     String type = attrs.getValue(BitExtender.ATTR_TYPE);
 
-    if (type.equals("input") && !comp.endIsConnected(2)) {
-      _err.AddSevereWarning("Bit Extender has floating input in circuit \"" + nets.getCircuitName() + "\"");
-      type = "zero";
+    Net inp = null;
+    if (type.equals("input")) {
+      inp = comp.getConnection(2);
+      if (inp == null) {
+        err.AddSevereWarning("Bit Extender has floating input in circuit '%s'", nets.circName());
+        type = "zero";
+      }
     }
-
-    int wo = comp.ports.get(0).getWidth().getWidth();
-    int wi = comp.ports.get(1).getWidth().getWidth();
 
     String e = "???";
     if (type.equals("zero"))
@@ -65,15 +76,17 @@ public class BitExtenderHDLGenerator extends HDLInliner {
     else if (type.equals("one"))
       e = out.one;
     else if (type.equals("sign"))
-      e = _nets.signalForEndBit(comp, 1, wi-1, false, out);
+      e = src.bit(wi-1);
     else if (type.equals("input"))
-      e = _nets.signalForEnd1(comp, 2, false, out);
+      e = inp.name;
 
-    for (int bit = 0; bit < wo; bit++) {
-      String outSignal = _nets.signalForEndBit(comp, 0, bit, false, out);
-      String inSignal = bit < wi ? _nets.signalForEndBit(comp, 1, bit, null, out) : e;
-      out.assign(outSignal, inSignal)
-    }
-    out.stmt();
+    if (out.isVhdl && wo == wi+1)
+      out.assign(dst, String.format("%s & %s", e, src.name));
+    else if (out.isVhdl)
+      out.assign(dst, String.format("(%d downto %d => %s) & %s", wo-1, wi, e, src.name));
+    else if (wo == wi+1)
+      out.assign(dst, String.format("{%s, %s}", e, src.name));
+    else
+      out.assign(dst, String.format("{{%d{%s}}, %s}", wo-wi, e, src.name));
   }
 }

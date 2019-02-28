@@ -44,41 +44,11 @@ public class ConstantHDLGenerator extends HDLInliner {
 
   @Override
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
-    if (!comp.endIsConnected(0))
+    Net net = comp.getConnection(0);
+    if (net == null)
       return;
-    
-    NetlistComponent.PortConnection end = comp.ports.get(0);
-    int w = end.NrOfBits();
-
-    if (w == 1) { // easy case: single bit
-      String signal = _nets.signalForEndBit(end, 0, out);
-      out.assign(signal, out.literal(val, w));
-      return;
-    }
-
-    int status = _nets.busConnectionStatus(end);
-    if (status == Netlist.BUS_UNCONNECTED) {
-      return; // should not happen?
-    } else if (status == Netlist.BUS_SIMPLYCONNECTED) {
-    } else if (status == Netlist.BUS_MULTICONNECTED) {
-    } else { // status == BUS_MIXCONNECTED
-
-    }
-
-    // here
-
-    } else if (_nets.IsContinuesBus(comp, 0)) { // another easy case
-      String signal = GetBusNameContinues(comp, 0, _lang, _nets);
-      out.assign(signal, out.literal(val, w));
-    } else { // worst case: we have to enumerate all bits
-      for (byte bit = 0; bit < w; bit++) {
-        String signal = GetBusEntryName(comp, 0, true, bit, _lang, _nets);
-        out.assign(signal, out.literal((val>>>bit)&1, 1));
-      }
-    }
-    
+    out.assign(net.name, out.literal(val, net.width));
     out.stmt("");
-    return out;
   }
 
 }

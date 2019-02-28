@@ -40,15 +40,14 @@ public class DynamicClockHDLGenerator extends HDLInliner {
 
   @Override
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
-		int w = _attrs.getValue(DynamicClock.WIDTH_ATTR).getWidth();
-    if (!comp.endIsConnected(0)) {
+    Net net = comp.getConnection(0);
+    if (net == null)
       out.err.AddWarning("Dynamic Clock Control component input is not connected.");
       out.err.AddWarning("Clock speed will be set to the maximum possible.");
+      int w = _attrs.getValue(DynamicClock.WIDTH_ATTR).getWidth();
       out.assign("LOGISIM_DYNAMIC_CLOCK_OUT", out.ones(w));
     } else {
-        // fixme: does not handle mixed or partial connections
-      String signal = _nets.signalForEndBus(comp, 0, w-1, 0, out);
-      out.assign("LOGISIM_DYNAMIC_CLOCK_OUT", signal);
+      out.assign("LOGISIM_DYNAMIC_CLOCK_OUT", net.name);
     }
   }
 

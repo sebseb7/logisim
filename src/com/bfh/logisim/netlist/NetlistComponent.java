@@ -67,7 +67,7 @@ public class NetlistComponent {
   }
 
   // The real, original logisim component we are shadowing
-	private Component original;
+	public final Component original;
 
   // The Net connected to each port, if any, in order.
 	public final List<Net> portConnections;
@@ -136,7 +136,8 @@ public class NetlistComponent {
 	}
 
 	public Range3 getGlobalHiddenPortIndices(Path path) {
-    return globalIndices.get(path);
+    Range3 r = globalIndices.get(path);
+    return r == null ? null : r.copy();
 	}
 
 	public void setLocalHiddenPortIndices(Int3 start, Int3 count) {
@@ -144,7 +145,7 @@ public class NetlistComponent {
   }
 
 	public Range3 getLocalHiddenPortIndices() {
-    return localIndices;
+    return localIndices.copy();
   }
 
 	public void addMap(String MapName, BoardRectangle map) {
@@ -196,10 +197,6 @@ public class NetlistComponent {
 
 	public Net getConnection(int index) {
     return index >= 0 && index < portConnections.size() ? portConnections.get(index) : null;
-	}
-
-	public Component GetComponent() {
-		return original;
 	}
 
 	public void LockAlternateMapping(Path key) {

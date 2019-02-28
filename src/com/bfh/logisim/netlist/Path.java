@@ -57,6 +57,10 @@ public class Path {
     return new Path(path.substring(0, path.indexOf('/')));
   }
 
+  public boolean isRoot() {
+    return path.indexOf('/') < 0;
+  }
+
   // Return the last part of this path. Works even for root paths.
   public String tail() {
     return path.substring(path.indexOf('/')+1);

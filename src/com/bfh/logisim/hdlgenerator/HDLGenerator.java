@@ -164,14 +164,14 @@ public class HDLGenerator extends HDLSupport {
 
   // Some components can have hidden connections to FPGA board resource, e.g. an
   // LED component has a regular logisim input, but it also has a hidden FPGA
-  // output that needs to "bubble up" to the top-level HDL circuit and
-  // eventually be connected to an FPGA "LED" or "Pin" resource. Similarly, a
-  // Button component has a regular logisim output and a hidden FPGA input that
-  // "bubbles up" to the top level and can be connected to an FPGA "Button",
-  // "DipSwitch", "Pin", or other compatable FPGA resource. The hiddenPorts
-  // object, if not null, holds info about what type of FPGA resource is most
-  // suitable, alternate resource types, how many in/out/inout pins are
-  // involved, names for the signals, etc.
+  // output that needs to routed up to the top-level HDL circuit and eventually
+  // be connected to an FPGA "LED" or "Pin" resource. Similarly, a Button
+  // component has a regular logisim output, but also a separate hidden FPGA
+  // input that gets routed up to the top level and can be connected to an FPGA
+  // "Button", "DipSwitch", "Pin", or other compatable FPGA resource. The
+  // hiddenPorts object, if not null, holds info about what type of FPGA
+  // resource is most suitable, alternate resource types, how many in/out/inout
+  // pins are involved, names for the signals, etc.
   protected HiddenPort hiddenPort = null;
 
   // A suitable subdirectory for storing HDL files.
@@ -510,8 +510,6 @@ public class HDLGenerator extends HDLSupport {
     return map;
   }
 
-todo: add clock info to ports and params
-
   protected void getClockPortMappings(Hdl.Map map, NetlistComponent comp) {
     if (clockPort.index < 0 || clockPort.index >= comp.ports.size()) {
       _err.AddFatalError("INTERNAL ERROR: Clock port %d of '%s' is missing.",
@@ -520,52 +518,44 @@ todo: add clock info to ports and params
       map.add(clockPort.enPortName, _hdl.zero);
       return;
     }
-    if (!comp.endIsConnected(clockPort.index)) {
+    Net net = comp.getConnection(clockPort.index);
+    if (net == null) {
       _err.AddSevereWarning("ERROR: Clock port of '%s' in circuit '%s' is not connected."
-          hdlComponentName, _nets.getCircuitName()
+          hdlComponentName, _nets.circName()
       _err.AddSevereWarning("  The component will likely malfunction without a clock.");
       map.add(clockPort.ckPortName, _hdl.zero);
       map.add(clockPort.enPortName, _hdl.zero);
       return;
     }
     NetlistComponent.PortConnection end = comp.ports.get(clockPort.index);
-    if (end.width != 1) {
-      _err.AddFatalError("ERROR: Clock port of '%s' in '%s' is connected to a bus.",
-          hdlComponentName, _nets.getCircuitName());
+    if (net.width != 1) {
+      _err.AddFatalError("INTERNAL ERROR: Clock port of '%s' in '%s' is connected to a bus.",
+          hdlComponentName, _nets.circName());
       map.add(clockPort.ckPortName, _hdl.zero);
       map.add(clockPort.enPortName, _hdl.zero);
       return;
     }
-    Net net = end.GetConnection((byte) 0).net;
-    if (net == null) {
-      _err.AddFatalError("INTERNAL ERROR: Unexpected unconnected clock port of '%s' in circuit '%s'.",
-          hdlComponentName, _nets.getCircuitName());
-      map.add(clockPort.ckPortName, _hdl.zero);
-      map.add(clockPort.enPortName, _hdl.zero);
-      return;
-    }
-
-    byte bit = end.GetConnection((byte) 0).bit;
-    int clkId = _nets.GetClockSourceId(net, bit);
-    if (clkId < 0) {
-      // In this case, we use the potentially noisy logic signal (or it's
-      // inverse, for TRIG_LOW or TRIG_FALLING) that the user connected as the
-      // clock signal, and set the enable signal to one. Note: currently only
-      // Ram, Register, and some FlipFlops can be level-sensitive in Logisim,
-      // but even here, only only Register and the FlipFlops support it in HDL).
-      // All other cases are edge triggered.
+    int clkid = _nets.getClockId(net);
+    if (clkid < 0) {
+      // The port is connected to a (potentially noisy) logic signal from
+      // something other than a Clock. In this case, we use the noisy signal (or
+      // it's inverse, for TRIG_LOW or TRIG_FALLING) as the clock, and set the
+      // enable signal to one. Note: currently only Ram, Register, and some
+      // FlipFlops can be level-sensitive in Logisim, but even here, only only
+      // Register and the FlipFlops support it in HDL). All other cases are edge
+      // triggered.
       if (edgeTriggered()) {
         _err.AddSevereWarning("WARNING: Non-clock signal (or \"gated clock\") connected to clock port for edge-triggered '%s' in circuit '%s'",
-            hdlComponentName, _nets.getCircuitName());
+            hdlComponentName, _nets.circName());
         _err.AddSevereWarning("         Expect functional differences between Logisim simulation and FPGA behavior.");
       }
       if (edgeTriggered() && clockPort.ckPortName.equals("FPGAClock")) {
         _err.AddSevereWarning("         Actually, this component is almost certain to malfunction "
             + "unless it's clock input is connected to a proper clock signal, "
-            + "due to explicit timing requirements in the synthesized HDL and, "
+            + "due to explicit timing requirements in the synthesized HDL and "
             + "the need for signals to traverse multiple clock domains.");
       }
-      String clkSignal = _nets.signalForEndBit(end, 0, _hdl);
+      String clkSignal = net.name;
       if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING 
           || _attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
           || _attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW) {
@@ -576,31 +566,25 @@ todo: add clock info to ports and params
     } else {
       // Here we have a proper connection to one of the clock buses that come
       // from a Clock component. We just need to select the right bits from it.
-      String[] clkSignals = ClockHDLGenerator.clkSignalFor(this, clkId);
+      String[] clkSignals = ClockHDLGenerator.clkSignalFor(this, clkid);
       map.add(clockPort.ckPortName, clkSignals[0]);
       map.add(clockPort.enPortName, clkSignals[1]);
     }
   }
 
   protected void getHiddenPortMappings(Hdl.Map map, NetlistComponent comp) {
-    int i, b;
-    i = 0;
-    b = comp.GetLocalBubbleInputStartId();
+    NetlistComponent.Range3 r = comp.getLocalHiddenPortIndices();
     for (String name : hiddenPort.GetInportLabels())
-      map.add(name, "LOGISIM_HIDDEN_FPGA_INPUT" + (i++);
-    i = 0;
-    b = comp.GetLocalBubbleInOutStartId();
+      map.add(name, "LOGISIM_HIDDEN_FPGA_INPUT" + (r.in++);
     for (String name : hiddenPort.GetInOutLabels())
-      map.add(name, "LOGISIM_HIDDEN_FPGA_INOUT" + (i++); // fixme: at top level, these *must* go directly to pins
-    i = 0;
-    b = comp.GetLocalBubbleOutputStartId();
+      map.add(name, "LOGISIM_HIDDEN_FPGA_INOUT" + (r.inout++); // fixme: at top level, these *must* go directly to pins
     for (String name : hiddenPort.GetOutputLabels())
-      map.add(name, "LOGISIM_HIDDEN_FPGA_OUTPUT" + (i++);
+      map.add(name, "LOGISIM_HIDDEN_FPGA_OUTPUT" + (r.out++);
   }
 
   protected void getUnconnectedPortMappings(Hdl.Map map, PortInfo p) {
     if (p.defaultValue == null)
-      map.add(p.name, map.unconnected); // "name => open" or ".name()"
+      map.add(p.name, map.unconnected); // "name => open" or ".circName()"
     else if (p.width.equals("1"))
       map.add(p.name, map.bit(p.defaultValue)); // "name => '1'" or ".name(1'b1)"
     else 
@@ -608,85 +592,31 @@ todo: add clock info to ports and params
   }
 
   protected void getPortMappings(Hdl.Map map, NetlistComponent comp, PortInfo p) {
-    if (p.index == UNCONNECTED || p.index < 0 || p.index >= comp.ports.size()) {
+    Net net = comp.getPortConnection(p.index);
+    if (net == null) {
       // For output and inout ports, default value *should* be null, making
-      // those ones be open. Sadly, we can't do a sanity check for those here.
-      getUnconnectedPortMappings(map, p);
-    } else {
-      NetlistComponent.PortConnection end = comp.ports.get(endIdx);
-      // Sanity check to ensure default value for output ports is null.
-      if (end.isOutput && p.defaultValue != null) {
-        err.AddSevereWarning("INTERNAL ERROR: ignoring default value for output pin '%s' of '%s' in circuit '%s'.",
-            p.name, hdlComponentName, _nets.getCircuitName());
+      // those ones be open. We do a sanity check unless p.index is out of
+      // bounds (e.g. UNCONNECTED).
+      if (p.index >= 0 && p.index < comp.original.getEnds().size()
+          && comp.original.getEnd(p.index).isOutput() && p.defaultValue != null) {
+        err.AddSevereWarning("INTERNAL ERROR: ignoring default value for "
+            + "output pin '%s' of '%s' in circuit '%s'.",
+            p.name, hdlComponentName, _nets.circName());
         p.defaultValue = null;
       }
-      int w = end.width;
-      if (w == 1 && !p.width.equals("1")) {
-        // Special VHDL case: When port is anything other than width "1", it
-        // will be a std_logic_vector. And if the end is 1 bit, then the port
-        // vector must be of type std_logic_vector(0 downto 0), but the signal
-        // being assigned is of type std_logic. These can't be directly assigned
-        // using "portname => signal" because of the mismatched types. We need
-        // to do "portname(0) => signal" instead.
-        map.add0(p.name, _nets.signalForEndBit(end, 0, _hdl));
-      } else if (w == 1) {
-        map.add(p.name, _nets.signalForEndBit(end, 0, _hdl));
-      } else {
-        int status = _nets.busConnectionStatus(end);
-        if (status == Netlist.BUS_MIXCONNECTED) {
-          // Neither Verilog nor VHDL can handle this case properly without
-          // dummy signals. Hopefully it doesn't ever happen, since Logisim
-          // would have noticed any width mismatch error. Just in case this is
-          // part of some circuit that doesn't matter, let's just issue a severe
-          // warning and treat this as entirely unconnected.
-          // FIXME: We might want to instead introduce dummy signals to make
-          // this work, if the Logisim circuit could possibly have been doing
-          // something useful even with the strange port connection.
-          _err.AddSevereWarning("BUS WIDTH MISMATCH: Some bits of pin '%s' of '%s' in circuit '%s' are connected, but others are not.",
-              p.name, hdlComponentName, _nets.getCircuitName());
-          _err.AddSevereWarning("                    All bits will be treated as disconnected.");
-          getUnconnectedPortMappings(map, p);
-        } else if (status == Netlist.BUS_UNCONNECTED) {
-          getUnconnectedPortMappings(map, p);
-        } else if (status == Netlist.BUS_SIMPLYCONNECTED ) {
-          map.add(p.name, _nets.signalForEndBus(end, w-1, 0, _hdl));
-        } else { // Netlist.BUS_MULTICONNECTED
-          // Port has a bus connection to multiple separate signals. For VHDL,
-          // we need something like:
-          //    portName(7 downto 4) => foo(6 downto 2)
-          //    portName(3 downto 1) => bar(7 downto 5)
-          //    portName(0) => foo(9)
-          // For verilog, we need something like:
-          //    .portName({foo[6:2], bar[7:5], foo[9]})
-          ArrayList<String> signals = new ArrayList<>();
-          Net prevnet = end.getConnection((byte)(w-1)).net;
-          byte prevbit = end.GetConnection((byte)(w-1)).bit;
-          int n = 1;
-          for (int i = w-2; i >= -1; i--) {
-            Net net = i < 0 ? null : end.getConnection((byte)i).net;
-            byte bit = i < 0 ? 0 : end.GetConnection((byte)i).bit;
-            if (net == prevnet && bit == prevbit-n) {
-              n++;
-              continue;
-            }
-            // emit the n-bit slice, or accumulate it
-            String signal;
-            if (n == 1 && prevnet.BitWidth() == 1)
-              signal = String.format("s_LOGISIM_NET_%d", _nets.GetNetId(prevnet));
-            else if (n == 1)
-              signal = String.format("s_LOGISIM_BUS_%d"+_hdl.idx, _nets.GetNetId(prevnet), prevbit);
-            else
-              signal = String.format("s_LOGISIM_BUS_%d"+_hdl.range, _nets.GetNetId(prevnet), prevbit, prevbit-n+1);
-            if (_hdl.isVerilog)
-              signals.add(signal);
-            else
-              map.vhdlAdd(p.name, i+n, i+1, signal);
-          }
-          if (_hdl.isVerilog)
-            map.add(p.name, "{" + String.join(", ", signals + "}");
-        }
-      }
+      getUnconnectedPortMappings(map, p);
+    } else if (net.width == 1 && !p.width.equals("1")) {
+      // Special VHDL case: When port is anything other than width "1", it
+      // will be a std_logic_vector. And if the end is 1 bit, then the port
+      // vector must be of type std_logic_vector(0 downto 0), but the signal
+      // being assigned is of type std_logic. These can't be directly assigned
+      // using "portname => signal" because of the mismatched types. We need
+      // to do "portname(0) => signal" instead.
+      map.add0(p.name, net.name);
+    } else {
+      map.add(p.name, net.name);
     }
   }
+
 
 }

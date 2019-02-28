@@ -90,21 +90,6 @@ public abstract class HDLSupport {
     this._hdl = new Hdl(_lang, _err);
   }
 
-// 	public static final String FPGAToplevelName = "LogisimToplevelShell"; -- TopLevelHDLGenerator.HDL_NAME
-
-  // TODO - fixme these only serve to make code more impenetrable
-	
-  // public static final String NetName = "s_LOGISIM_NET_";
-	// public static final String BusName = "s_LOGISIM_BUS_";
-	// public static final String LocalInputBubbleBusname = "LOGISIM_INPUT_BUBBLES"; LOGISIM_HIDDEN_FPGA_INPUT
-	// public static final String LocalOutputBubbleBusname = "LOGISIM_OUTPUT_BUBBLES"; LOGISIM_HIDDEN_FPGA_INOUT
-	// public static final String LocalInOutBubbleBusname = "LOGISIM_INOUT_BUBBLES"; LOGISIM_HIDDEN_FPGA_OUTPUT
-	// public static final String InputBubblePortName = "LOGISIM_INPUT_BUBBLE_";
-	// public static final String OutputBubblePortName = "LOGISIM_OUTPUT_BUBBLE_";
-	// public static final String InOutBubblePortName = "LOGISIM_INOUTT_BUBBLE_";
-	// public static final String BusToBitAddendum = "_bit_";
-	// public static final String ClockTreeName = "LOGISIM_CLOCK_TREE_";
-
   // Return the component name.
   public final String getComponentName() { return hdlComponentName; }
 

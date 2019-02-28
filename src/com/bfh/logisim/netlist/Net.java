@@ -90,7 +90,8 @@ public class Net {
     IndirectSink(Net n, int b) { net = n; bit = b; }
   }
 
-	public int width = 0; // number of bits in this network, initially unknown
+  public String name = null;
+	private int width = 0; // number of bits in this network, initially unknown
 	private HashSet<Location> points = new HashSet<>(); // points this net touches
 
   // Sink can be any combination of these cases, or none of them:
@@ -116,7 +117,7 @@ public class Net {
   //   eventually lead back to the same source component port and bit. If the
   //   entire Net is also directly driven, then the indirect and direct sources
   //   must be the same. We track one indirect source for each bit to warn about
-  //   short-circuit errors.
+  //   short-circuit errors, and to generate the necessary HDL assignments.
   private IndirectSource[] indirectSource;
   // - [partial or no sources] All or some of the bits of this net may be
   //   entirely undriven, when there are no indirect drivers for those bits and
@@ -184,6 +185,22 @@ public class Net {
 
   public ArrayList<DirectSink> getSinkComponents() {
     return directSinks;
+  }
+
+  public String slice(Hdl hdl, int hi, int lo) {
+    if (hi == width-1 && lo == 0)
+      return name;
+    else if (hi == lo)
+      return String.format(name + hdl.idx, lo);
+    else
+      return String.format(name + hdl.range, hi, lo);
+  }
+
+  public String bit(Hdl hdl, int b) {
+    if (b == 0 && width == 1)
+      return name;
+    else
+      return String.format(name + hdl.idx, b);
   }
 
 }

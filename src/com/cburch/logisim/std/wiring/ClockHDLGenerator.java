@@ -47,8 +47,8 @@ public class ClockHDLGenerator extends HDLGenerator {
   public static final int CLK_RAW = 4;  // The underlying raw FPGA clock
 
   // See TickHDLGenerator for details on the rationale for these.
-  public static String[] clkSignalFor(HDLGenerator downstream, int clkId) {
-    String clkNet = "LOGISIM_LOCK_TREE_"+ clkId + downstream._hdl.idx;
+  public static String[] clkSignalFor(HDLGenerator downstream, int clkid) {
+    String clkNet = "LOGISIM_CLOCK_TREE_"+ clkid + downstream._hdl.idx;
     String one = downstream._hdl.one;
     if (downstream.nets.RawFPGAClock()) {
       // Raw mode: use ck=CLK_RAW en=1 or ck=~CLK_RAW en=1

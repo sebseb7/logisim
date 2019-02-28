@@ -127,8 +127,7 @@ public class SubcircuitFactory extends InstanceFactory {
       i++;
       Location loc = portLoc.getKey();
       Instance pin = portLoc.getValue();
-      String type = Pin.FACTORY.isInputPin(pin) ? Port.INPUT
-          : Port.OUTPUT;
+      String type = Pin.FACTORY.isInputPin(pin) ? Port.INPUT : Port.OUTPUT;
       BitWidth width = pin.getAttributeValue(StdAttr.WIDTH);
       ports[i] = new Port(loc.getX(), loc.getY(), type, width);
       pins[i] = pin;

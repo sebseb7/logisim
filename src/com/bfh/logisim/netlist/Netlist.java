@@ -34,9 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.bfh.logisim.library.DynamicClock;
 import com.bfh.logisim.fpgagui.FPGAReport;
@@ -69,19 +67,19 @@ public class Netlist {
 	private final Circuit circ;
 
   // Signal nets, each defining a collection of connected points.
-	private final ArrayList<Net> nets = new ArrayList<>();
-  private final HashMap<Location, Net> netAt = new HashMap<>();
+	public final ArrayList<Net> nets = new ArrayList<>();
+  public final HashMap<Location, Net> netAt = new HashMap<>();
 
   // Shadow data for components within this circuit, arranged by factory type.
-  private final ArrayList<NetlistComponent> components = new ArrayList<>(); // any factory
-	private final ArrayList<NetlistComponent> subcircuits = new ArrayList<>(); // SubCircuitFactory
-	private final ArrayList<NetlistComponent> clocks = new ArrayList<>(); // Clock
-	private final ArrayList<NetlistComponent> inpins = new ArrayList<>(); // Pin (input)
-	private final ArrayList<NetlistComponent> outpins = new ArrayList<>(); // Pin (output)
+  public final ArrayList<NetlistComponent> components = new ArrayList<>(); // all but Splitter, Tunnel, and ignored
+	public final ArrayList<NetlistComponent> subcircuits = new ArrayList<>(); // SubCircuitFactory
+	public final ArrayList<NetlistComponent> clocks = new ArrayList<>(); // Clock
+	public final ArrayList<NetlistComponent> inpins = new ArrayList<>(); // Pin (input)
+	public final ArrayList<NetlistComponent> outpins = new ArrayList<>(); // Pin (output)
   private NetlistComponent dynClock; // DynamicClock
 
   // Reference to the single global clock bus used by all Netlists in the design.
-	private final ClockBus clockbus = null;
+	public final ClockBus clockbus = null;
 
   // Info about hidden networks, needed by certain I/O-related components.
 	private Int3 numHiddenBits;
@@ -157,11 +155,11 @@ public class Netlist {
     // Recursively trace all clock nets to build the global clock bus.
     HashMap<Path, Netlist> netlists = new HashMap<>();
     recursiveEnumerateNetlists(root, netlists);
-    recursiveTraceClockNets(root, netlists);
+    recursiveTraceClockNets(root, netlists); // also adds hidden clock in ports
 
     // Recursively build other hidden nets.
     HashSet<Netlist> visited = new HashSet<>();
-    recursiveAssignLocalHiddenNets(visited);
+    recursiveAssignLocalHiddenNets(visited); // also adds hidden in/inout/out ports
     recursiveAssignGlobalHiddenNets(root, new Int3());
 
     return true;
@@ -268,9 +266,9 @@ public class Netlist {
         subcircuits.add(shadow);
       else if (comp.getFactory() instanceof Clock) 
         clocks.add(shadow);
-      else if (comp.getFactory() instanceof Pin && comp.getEnd(0).isInput())
-        inpins.add(shadow);
       else if (comp.getFactory() instanceof Pin && comp.getEnd(0).isOutput())
+        inpins.add(shadow);
+      else if (comp.getFactory() instanceof Pin && comp.getEnd(0).isInput())
         outpins.add(shadow);
       else if (comp.getFactory() instanceof DynamicClock) {
         if (isTop && dynClock == null)
@@ -375,8 +373,7 @@ public class Netlist {
 
     Int3 start = numHiddenBits;
 		for (NetlistComponent shadow : subcircuits) {
-      Component comp = shadow.GetComponent();
-			SubcircuitFactory sub = (SubcircuitFactory)comp.getFactory();
+			SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
       Circuit subcirc = sub.getSubcircuit();
       Netlist subnets = subcirc.getNetList();
 
@@ -399,8 +396,7 @@ public class Netlist {
 
 	private void recursiveAssignGlobalHiddenNets(Path path, Int3 start) {
 		for (NetlistComponent shadow : subcircuits) {
-      Component comp = shadow.GetComponent();
-			SubcircuitFactory sub = (SubcircuitFactory)comp.getFactory();
+			SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
       Circuit subcirc = sub.getSubcircuit();
       Netlist subnets = subcirc.getNetList();
       Path subpath = path.extend(shadow);
@@ -505,6 +501,42 @@ public class Netlist {
         for (Location pt : net.getPoints())
           netAt.remove(pt);
     nets.removeIf(net -> net.bitWidth() == 0);
+
+    // Give each Net a suitable name.
+		for (Component comp : circ.getNonWires()) {
+      // A Net connected to input pin "Foo" is named "p_Foo"
+      if (!(comp.getFactory() instanceof Pin))
+        continue;
+      EndData end = comp.getEnd(0);
+      if (!end.isOutput())
+        continue;
+      Net net = netAt.get(end.getLocation());
+      if (net == null || net.name != null)
+        continue;
+      net.name = "p_" + comp.label();
+    }
+		for (Component comp : circ.getNonWires()) {
+      // A Net connected to output pin "Bar" is named "p_Bar"
+      if (!(comp.getFactory() instanceof Pin))
+        continue;
+      EndData end = comp.getEnd(0);
+      if (!end.isInput())
+        continue;
+      Net net = netAt.get(end.getLocation());
+      if (net == null || net.name != null)
+        continue;
+      net.name = "p_" + comp.label();
+    }
+    // Other nets are named s_NET_A, s_BUS_B, ... s_NET_AAAA, etc.
+    int id = 0; 
+    for (Net net : nets) {
+      if (net.name != null)
+        continue;
+      if (net.width == 1)
+        net.name = "s_NET_"+uid(id++);
+      else
+        net.name = "s_BUS_"+uid(id++);
+    }
 
     // Every single-bit signal of every Net should be driven by zero or one
     // component ports and should drive zero or more component ports. First
@@ -678,8 +710,7 @@ public class Netlist {
   private void recursiveEnumerateNetlists(Path path, HashMap<Path, Netlist> netlists) {
     netlists.put(path, this);
 		for (NetlistComponent shadow : subcircuits) {
-      Component comp = shadow.getComponent();
-      SubcircuitFactory sub = (SubcircuitFactory)comp.getFactory();
+      SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
       Circuit subcirc = sub.getSubcircuit();
       Netlist subnets = subcirc.getNetList();
       Path subpath = path.extend(shadow);
@@ -690,8 +721,7 @@ public class Netlist {
 	private void recursiveTraceClockNets(Path path, HashMap<Path, Netlist> netlists) {
     traceClockNets(path, netlists);
 		for (NetlistComponent shadow : subcircuits) {
-      Component comp = shadow.getComponent();
-      SubcircuitFactory sub = (SubcircuitFactory)comp.getFactory();
+      SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
       Circuit subcirc = sub.getSubcircuit();
       Netlist subnets = subcirc.getNetList();
       Path subpath = path.extend(shadow);
@@ -732,7 +762,7 @@ public class Netlist {
       NetlistComponent shadow = shadowForSubcirc(subpath);
       // within child, find the Pin that corresponds to this end
       CircuitHDLGenerator g = (CircuitHDLGenerator)shadow.hdlSupport;
-      Net childNet = g.getPortMappingForEnd(sink.end);
+      Net childNet = g.getInternalNetForEnd(shadow, sink.end);
       subnets.traceClockNet(clkid, childNet, bit, subpath, netlists);
     }
 
@@ -741,8 +771,8 @@ public class Netlist {
       for (Net.DirectSink sink : net.getSinks()) {
         if (!(sink.comp.getFactory() instanceof Pin))
           continue;
-        End end = sink.comp.getEnd(0);
-        if (!end.isOutput())
+        EndData end = sink.comp.getEnd(0);
+        if (!end.isInput())
           continue;
         Path parentpath = path.parent();
         Netlist parent = netlists.get(parentpath);
@@ -796,237 +826,66 @@ public class Netlist {
     return null;
   }
 
-	// public ArrayList<NetlistComponent> GetInputPorts() { return inpins; }
-	// public ArrayList<NetlistComponent> GetInOutPorts() { return MyInOutPorts; }
-	// public ArrayList<NetlistComponent> GetOutputPorts() { return outpins; }
+  // Return a collection of paths and components that need to be assigned
+  // FPGA I/O resources.
+	public HashMap<Path, NetlistComponent> getMappableComponents() {
+    HashMap<Path, NetlistComponent> result = new HashMap<>();
+    getMappableComponents(result, new Path(circ));
+    return result;
+  }
 
-  // FIXME: rewrite this main entry point...
-	public Map<ArrayList<String>, NetlistComponent> GetMappableResources(
-			ArrayList<String> Hierarchy, boolean toplevel) {
-		Map<ArrayList<String>, NetlistComponent> Components = new HashMap<ArrayList<String>, NetlistComponent>();
-		/* First we search through my sub-circuits and add those IO components */
-		for (NetlistComponent comp : subcircuits) {
-			SubcircuitFactory sub = (SubcircuitFactory) comp.GetComponent()
-					.getFactory();
-			ArrayList<String> MyHierarchyName = new ArrayList<String>();
-			MyHierarchyName.addAll(Hierarchy);
-			MyHierarchyName.add(CorrectLabel.getCorrectLabel(comp
-					.GetComponent().getAttributeSet().getValue(StdAttr.LABEL)
-					.toString()));
-			Components.putAll(sub.getSubcircuit().getNetList()
-					.GetMappableResources(MyHierarchyName, false));
-		}
-		/* Now we search for all local IO components */
-		for (NetlistComponent comp : components) {
-			if (comp.hiddenPort != null) {
-				ArrayList<String> MyHierarchyName = new ArrayList<String>();
-				MyHierarchyName.addAll(Hierarchy);
-				MyHierarchyName.add(CorrectLabel.getCorrectLabel(comp
-						.GetComponent().getAttributeSet()
-						.getValue(StdAttr.LABEL).toString()));
-				Components.put(MyHierarchyName, comp);
-			}
-		}
-		/* On the toplevel we have to add the pins */
-		if (toplevel) {
-			for (NetlistComponent comp : inpins) {
-				ArrayList<String> MyHierarchyName = new ArrayList<String>();
-				MyHierarchyName.addAll(Hierarchy);
-				MyHierarchyName.add(CorrectLabel.getCorrectLabel(comp
-						.GetComponent().getAttributeSet()
-						.getValue(StdAttr.LABEL).toString()));
-				Components.put(MyHierarchyName, comp);
-			}
-			for (NetlistComponent comp : MyInOutPorts) {
-				ArrayList<String> MyHierarchyName = new ArrayList<String>();
-				MyHierarchyName.addAll(Hierarchy);
-				MyHierarchyName.add(CorrectLabel.getCorrectLabel(comp
-						.GetComponent().getAttributeSet()
-						.getValue(StdAttr.LABEL).toString()));
-				Components.put(MyHierarchyName, comp);
-			}
-			for (NetlistComponent comp : outpins) {
-				ArrayList<String> MyHierarchyName = new ArrayList<String>();
-				MyHierarchyName.addAll(Hierarchy);
-				MyHierarchyName.add(CorrectLabel.getCorrectLabel(comp
-						.GetComponent().getAttributeSet()
-						.getValue(StdAttr.LABEL).toString()));
-				Components.put(MyHierarchyName, comp);
-			}
-		}
-		return Components;
-	}
-
-  ///////////////// FIXME: everything below here is a mess /////////////////////
-  
-  static final int BUS_UNCONNECTED = 0;     // all bits unconnected
-  static final int BUS_SIMPLYCONNECTED = 1; // connected to contiguous slice of a single named bus
-  static final int BUS_MULTICONNECTED = 2;  // all bits connected, but non-contiguous or multi-bus
-  static final int BUS_MIXCONNECTED = -1;   // mix of connected and unconnected bits
-  public int busConnectionStatus(NetlistComponent.PortConnection end) {
-		int n = end.width;
-		Net net0 = end.connections.get(0).net;
-		byte idx = net0 == null ? -1 : end.connections.get(0).bit;
-		for (int i = 1; i < n; i++) {
-      Net neti = end.connections.get(i).net;
-      if ((net0 == null) != (neti == null))
-        return BUS_MIXCONNECTED: // This bit is connected when other wasn't, or vice versa
-			if (net0 != neti)
-				return BUS_MULTICONNECTED; // This bit is connected to different bus
-			if (net0 != null && (idx + i) != end.connections.get(i).bit)
-        return BUS_MULTICONNECTED; // This bit is connected to same bus, but indexes are not sequential
-		}
-    return net0 == null ? BUS_UNCONNECTED : BUS_SIMPLYCONNECTED;
-	}
-	
-
-  // TODO here
-  // Determine the single-bit HDL signal name that is connected to the given
-  // "end" (aka component port). If the end is not connected to a signal, then
-  // null is returned.
-  // xxx either and hdl "open" is returned (for outputs) or the given default value
-  // xxx is returned instead (for inputs). But, if the default is null and the end
-  // xxx is an input, null is returned instead.
-  private String signalForEndBit(NetlistComponent.PortConnection end, int bit, /*Boolean defaultValue,*/ Hdl hdl) {
-    NetlistComponent.ConnectionPoint solderPoint = end.connections.get(bit);
-    Net net = solderPoint.net;
-    if (net == null) { // unconnected net
-      // if (end.isOutput) {
-      //   return hdl.unconnected;
-      // } else if (defaultValue == null) {
-      //   hdl.err.AddFatalError("INTERNAL ERROR: Invalid component end/port.");
-      //   return "???";
-      // } else {
-      //   return hdl.bit(defaultValue);
-      // }
-      return null;
-    } else if (net.BitWidth() == 1) { // connected to a single-bit net
-      return "s_LOGISIM_NET_" + this.GetNetId(net);
-    } else { // connected to one bit of a multi-bit bus
-      return String.format("S_LOGISIM_BUS_%d"+hdl.idx,
-          this.GetNetId(net),
-          solderPoint.bit);
+	private void getMappableComponents(HashMap<Path, NetlistComponent> result, Path path) {
+    // components in subcircuits
+    for (NetlistComponent shadow : subcircuits) {
+      SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
+      Circuit subcirc = sub.getSubcircuit();
+      Netlist subnets = subcirc.getNetList();
+      Path subpath = path.extend(shadow);
+      subnets.getMappableComponents(result, subpath);
     }
-  }
-
-	public Integer GetNetId(Net selectedNet) {
-		return nets.indexOf(selectedNet);
-	}
-
-
-  // Determine the single-bit HDL signal name that is connected to one of the
-  // given component's ports (aka "ends"). If the end is not connected to a
-  // signal, then either an HDL "open" is returned (for outputs) or the given
-  // default value is returned instead (for inputs). But, if the default is null
-  // and the end is an input, a fatal error is posted.
-	public String signalForEnd1(NetlistComponent comp, int endIdx, Boolean defaultValue, Hdl hdl) {
-    return signalForEndBit(comp, endIdx, 0, defaultValue, hdl);
-  }
-
-	public String signalForEndBit(NetlistComponent comp, int endIdx, int bitIdx, Boolean defaultValue, Hdl hdl) {
-    if (endIdx < 0 || endIdx >= comp.ports.size()) {
-      if (defaultValue == null) {
-        hdl.err.AddFatalError("INTERNAL ERROR: Invalid end/port '%d' for component '%s'", endIdx, comp);
-        return "???";
+    // local components
+		for (NetlistComponent shadow : components) {
+			if (shadow.hiddenPort == null)
+        continue;
+      Path subpath = path.extend(shadow);
+      result.put(subpath, shadow);
+    }
+    // top-level pins
+    if (path.isRoot()) {
+      for (NetlistComponent shadow : inpins) {
+        Path subpath = path.extend(shadow);
+        result.put(subpath, shadow);
       }
-      // In some HDLGenerator subclasses, missing pins are sometimes expected
-      // (e.g. an enable pin that is configured to be invisible). Returning the
-      // default here allows those cases to work.
-      return hdl.bit(defaultValue);
+      for (NetlistComponent shadow : outpins) {
+        Path subpath = path.extend(shadow);
+        result.put(subpath, shadow);
+      }
     }
-
-    NetlistComponent.PortConnection end = comp.ports.get(endIdx);
-    int n = end.width;
-    if (n != 1) {
-      hdl.err.AddFatalError("INTERNAL ERROR: Unexpected %d-bit end/port '%d' for component '%s'", n, endIdx, comp);
-      return "???";
-    }
-
-    String s = signalForEndBit(end, bitIdx, hdl);
-    if (s != null) {
-      return s;
-    } else if (end.isOutput) {
-      return hdl.unconnected;
-    } else if (defaultValue == null) {
-      hdl.err.AddFatalError("INTERNAL ERROR: Unexpected unconnected end/port '%d' for component '%s'", endIdx, comp);
-      return "???";
-    } else {
-      return hdl.bit(defaultValue);
-    }
-
 	}
 
-  // Assuming isConnectedToSingleNamedBus(end)), returns the name (or slice) of
-  // the bus signal this end is connected to, for example:
-  //    VHDL:    s_LOGISIM_BUS_27(31 downto 0)
-  //    Verilog: s_LOGISIM_BUS_27[31:0]
-  public String signalForEndBus(NetlistComponent.PortConnection end, int bitHi, int bitLo, Hdl hdl) {
-    Net net = end.getConnection((byte) bitLo).net;
-    // if (net == null) {
-    //   if (isOutput) {
-    //     return hdl.unconnected;
-    //   } else if (defaultValue == null) {
-    //     hdl.err.AddFatalError("INTERNAL ERROR: Unexpected unconnected net to end/port '%d' for component '%s'", endIdx, comp);
-    //     return "???";
-    //   } else {
-    //     int n = bitHi - bitLo + 1;
-    //     return defaultValue ? hdl.ones(n) : hdl.zeros(n);
-    //   }
-    // }
-    byte hi = end.connections.get(bitHi).bit;
-    byte lo = end.connections.get(bitLo).bit;
-    return String.format("s_LOGISIM_BUS_%d"+hdl.range, this.GetNetId(net), hi, lo);
-  } 
+  public NetlistComponent dynamicClock() {
+    return dynClock;
+  }
 
-  // TODO here - i don't like this interface...
-  // Determine the HDL signal names (or name) that are connected to one of the
-  // given component's ports (aka "ends"). If the end is not connected to a
-  // signal, then given default value is returned instead. Or, if the default is
-  // null, a fatal error is posted instead. For a 1-bit signal, a single mapping
-  // from name to signal is returned. For a multi-bit signal, one or more
-  // mappings are returned, as need.
-	// public Map<String, String> signalForEnd(String portName,
-  //     NetlistComponent comp, int endIdx, Boolean defaultValue, Hdl hdl) {
+  public Int3 numHiddenBits() {
+    return numHiddenBits.copy();
+  }
 
-	// 	Map<String, String> result = new HashMap<String, String>();
-  //   if (endIdx < 0 || endIdx >= comp.ports.size()) {
-  //     hdl.err.AddFatalError("INTERNAL ERROR: Invalid end/port '%d' for component '%s'", endIdx, comp);
-  //     return result;
-  //   }
+  private uid(int i) {
+    String s = "";
+    do {
+      s = ('A' + (i % 26)) + s;
+      i /= 26;
+    } while (i > 0);
+    return s;
+  }
 
-  //   NetlistComponent.PortConnection end = comp.ports.get(endIdx);
-  //   int n = end.width;
+  public int getClockId(Net net) {
+    return clockbus.id(currentPath, net, 0);
+  }
 
-  //   if (n == 1) {
-  //     // example: somePort => s_LOGISIM_NET_5;
-  //     result.put(portName, signalForEnd1(comp, endIdx, defaultValue, hdl));
-  //     return result;
-  //   }
-
-	// 	boolean isOutput = end.isOutput;
-
-  //   // boolean foundConnection = false;
-  //   // for (int i = 0; i < n && !foundConnection; i++)
-  //   //   foundConnection |= end.connections.get(i).net != null;
-
-  // TODO here - i don't like this interface...
-  // Determine the single-bit HDL signal name that is connected to a given bit
-  // of the given component's ports (aka "ends"). If the end is not connected to
-  // a signal, then either an HDL "open" is returned (for outputs) or the given
-  // default value is returned instead (for inputs). But, if the default is null
-  // and the end is an input, a fatal error is posted.
-  public String signalForEndBit(NetlistComponent.PortConnection end, int bit, Boolean defaultValue, Hdl hdl) {
-    String s = signalForEndBit(end, bit, hdl);
-    if (s != null) {
-      return s;
-    } else if (isOutput) {
-      return hdl.unconnected;
-    } else if (defaultValue == null) {
-      hdl.err.AddFatalError("INTERNAL ERROR: Unexpected unconnected bit %d of %d in end/port '%d' for component '%s'", i, n, endIdx, comp);
-      return "???";
-    } else {
-      return hdl.bit(defaultValue);
-    }
+  public String circName() {
+    return circ.getName();
   }
 
 }

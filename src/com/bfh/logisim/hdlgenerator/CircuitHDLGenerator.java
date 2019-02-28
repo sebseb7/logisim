@@ -35,11 +35,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import com.bfh.logisim.library.DynamicClock;
 import com.bfh.logisim.netlist.ConnectionPoint;
 import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Net;
+import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
-import com.bfh.logisim.library.DynamicClock;
+import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.circuit.SubcircuitFactory;
@@ -55,40 +57,50 @@ public class CircuitHDLGenerator extends HDLGenerator {
     super(new HDLCTX(lang, err, nets, AttributeSets.EMPTY, vendor), "circuit", "Circuit_${LABEL}", "i_Circ");
 		this.circ = circ;
 		this._circNets = circ.getNetList();
+    
+    // Normal ports
+    for (Component pin : circ.getNonWires()) {
+      if (!(pin.getFactory() instanceof Pin))
+        continue;
+      String label = NetlistComponent.labelOf(pin);
+      EndData end = pin.getEnd(0);
+      if (end.isInput())
+        inPorts.add(label, end.getWidth().getWidth(), -1, null);
+      else
+        outPorts.add(label, end.getWidth().getWidth(), -1, null);
+    }
 
-    // Clock trees
-    for (int i = 0; i < _circNets.NumberOfClockTrees(); i++)
-			inPort.put(ClockHDLGenerator.CLK_TREE_NET_ + i, ClockHDLGenerator.CLK_TREE_WIDTH);
+    // Note: Other setup is deferred until later, because it depends on Netlist
+    // state that won't be ready until during or after global
+    // validation/analysis of the entire design hierarchy and all Netslists.
+  }
 
-    // Dynamic clock
-    NetlistComponent dynClock = _circNets.GetDynamicClock();
+  private boolean finishedSetup = false;
+  private void setup() {
+    if (finishedSetup)
+      return;
+    finishedSetup = true;
+
+    // hidden ports
+    Netlist.Int3 hidden = _circNets.numHiddenBits();
+    addVectorPort(inPorts, "LOGISIM_HIDDEN_FPGA_INPUT", hidden.in);
+    addVectorPort(inOutPorts, "LOGISIM_HIDDEN_FPGA_INOUT", hidden.inout);
+    addVectorPort(outPorts, "LOGISIM_HIDDEN_FPGA_OUTPUT", hidden.out);
+
+    // global clock buses
+    for (int i = 0; i < _circNets.clockbus.shapes().size(); i++)
+			inPort.put(ClockHDLGenerator.CLK_TREE_NET_ + i, ClockHDLGenerator.CLK_TREE_WIDTH, -1, null);
+
+    // dynamic clock
+    NetlistComponent dynClock = _circNets.dynamicClock();
     if (dynClock != null)
       outPorts.add("LOGISIM_DYNAMIC_CLOCK_OUT",
-          dynClock.GetComponent().getAttributeSet().getValue(DynamicClock.WIDTH_ATTR).getWidth(), -1, null);
-
-    // Hidden ports
-    addVectorPort(inPorts, "LOGISIM_HIDDEN_FPGA_INPUT", _circNets.NumberOfInputBubbles());
-    addVectorPort(inOutPorts, "LOGISIM_HIDDEN_FPGA_INOUT", _circNets.NumberOfInOutBubbles());
-    addVectorPort(outPorts, "LOGISIM_HIDDEN_FPGA_OUTPUT", _circNets.NumberOfOutputBubbles());
-
-    // Normal ports
-		for (int i = 0; i < _circNets.NumberOfInputPorts(); i++) {
-			AttributeSet attrs = _circNets.GetInputPin(i).GetComponent().getAttributeSet();
-      inPorts.add(CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL)), attrs.getValue(StdAttr.WIDTH).getWidth(), -1, null);
-    }
-		for (int i = 0; i < _circNets.NumberOfOutputPorts(); i++) {
-			AttributeSet attrs = _circNets.GetInputPin(i).GetComponent().getAttributeSet();
-      outPorts.add(CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL)), attrs.getValue(StdAttr.WIDTH).getWidth(), -1, null);
-		}
+          dynClock.original.getAttributeSet().getValue(DynamicClock.WIDTH_ATTR).getWidth(), -1, null);
 
     // Nets
-    for (Net net: _circNets.GetAllNets()) {
-      if (net.isBus())
-				wires.add("s_LOGISIM_BUS_" + _circNets.GetNetId(net), 1);
-      else
-				wires.add("s_LOGISIM_NET_" + _circNets.GetNetId(net), net.BitWidth());
-    }
-	}
+    for (Net net: _circNets.nets)
+      wires.add(net.name, net.width);
+  }
 
   private void addVectorPort(Arraylist<PortInfo> ports, String busname, int w) {
     // Note: the parens around "(1)" are a hack to force vector creation.
@@ -97,30 +109,47 @@ public class CircuitHDLGenerator extends HDLGenerator {
       ports.add(busname, w == 1 ? "(1)" : ""+w, -1, null);
   }
 
-  // FIXME: this is convoluted, can't this be done earlier and more directly?
-	public int GetEndIndex(NetlistComponent comp, String label, boolean IsOutputPort) {
-		SubcircuitFactory sub = (SubcircuitFactory) comp.GetComponent().getFactory();
-		for (int end = 0; end < comp.NrOfEnds(); end++) {
-			if (comp.ports.get(end).isOutput == IsOutputPort) {
-				if (comp.ports.get(end).GetConnection((byte) 0).subcircPortIndex
-            == sub.getSubcircuit().getNetList().GetPortInfo(label)) {
-					return end;
-				}
-			}
-		}
-		return -1;
+  // For a given external end corresponding to some internal Pin, return the
+  // internal net connected to that Pin.
+  public Net getInternalNetFor(NetlistComponent comp, int end) {
+    // The NetlistComponent is embedded in some parent circuit, and the end
+    // refers to the port ordering as seen from that parent. This matches the
+    // ordering used by NetlistComponent, which uses the ordering defined by
+    // Component.getEnds(), which in turn comes from CircuitAttributes, which is
+    // based ultimately on the appearance and the sorting order of the pins
+    // within the appearance (not on the canvas). Here we need to figure out
+    // which Pin underlies that end, so that we can figure out which internal
+    // net it belongs to. Forunately, SubcircuitFactory tucks the needed
+    // correspondence away inside the circuit attributes.
+    CircuitAttributes attrs = (CircuitAttributes)comp.original.getAttributeSet();
+    Component pin = attrs.getPinInstances()[end].getComponent();
+    return getPortMappingForPin(pin);
+  }
+
+  // For a given internal Pin, get the internal net conncted to it.
+  public Net getPortMappingForPin(Component pin) {
+    return _circNets.netAt.get(pin.getEnd(0).getLocation());
+  }
+
+  // For a given internal Pin, get the external end number.
+	private int getEndIndex(NetlistComponent comp, NetlistComponent pin) {
+    CircuitAttributes attrs = (CircuitAttributes)comp.original.getAttributeSet();
+    Instance[] ports = attrs.getPinInstances();
+    for (int i = 0; i < ports.length; i++)
+      if (ports[i].getComponent() == pin)
+        return i;
+    return -1;
 	}
 
-  // FIXME: convoluted
-  private void getMapForCircuitPort(Hdl.Map map, NetlistComponent pinComp, NetlistComponent comp, boolean isOutput) {
-    AttributeSet attrs = pinComp.GetComponent().getAttributeSet();
-    String name = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
-    int endid = GetEndIndex(comp, name, isOutput);
+  // For a given internal Pin, get a mapping to an externally connected Net
+  private void getMapForCircuitPort(Hdl.Map map, NetlistComponent comp, NetlistComponent pin, boolean isOutput) {
+    int endid = getEndIndex(comp, pin);
     if (endid < 0) {
-      _err.AddFatalError("INTERNAL ERROR: Missing sub-circuit port '%s'.", name);
+      _err.AddFatalError("INTERNAL ERROR: Missing sub-circuit port '%s'.", pin.label());
       return;
     }
-    PortInfo p = new PortInfo(name, attrs.getValue(StdAttr.WIDTH).getWidth(), endid, null);
+    int w = pin.original.getEnd(0).getWidth().getWidth();
+    PortInfo p = new PortInfo(pin.label(), w, endid, isOutput ? null : false);
     super.getPortMappings(map, comp, p);
   }
 
@@ -129,10 +158,10 @@ public class CircuitHDLGenerator extends HDLGenerator {
     Hdl.Map map = new Hdl.Map(_lang, _err);
 		if (comp != null) {
       // Mappings for a subcircuit within the circuit design under tests
-			SubcircuitFactory sub = (SubcircuitFactory) comp.GetComponent().getFactory();
+			SubcircuitFactory sub = (SubcircuitFactory) comp.original.getFactory();
 
       // Clock trees
-      for (int i = 0; i < _circNets.NumberOfClockTrees(); i++) {
+      for (int i = 0; i < _circNets.clockbus.shapes().size(); i++) {
         String clkTree = ClockHDLGenerator.CLK_TREE_NET_ + i;
         map.add(clkTree, clkTree);
 			}
@@ -140,57 +169,49 @@ public class CircuitHDLGenerator extends HDLGenerator {
       // Dynamic clock - should not be present in subcircuit
 
       // Hidden ports
-			if (_circNets.NumberOfInputBubbles() > 0)
-        map.add("LOGISIM_HIDDEN_FPGA_INPUT", "LOGISIM_HIDDEN_FPGA_INPUT",
-					comp.GetLocalBubbleInputEndId(), comp.GetLocalBubbleInputStartId());
-			if (_circNets.NumberOfInOutBubbles() > 0)
-        map.add("LOGISIM_HIDDEN_FPGA_INOUT", "LOGISIM_HIDDEN_FPGA_INOUT",
-					comp.GetLocalBubbleInOutEndId(), comp.GetLocalBubbleInOutStartId());
-			if (_circNets.NumberOfOutputBubbles() > 0)
-        map.add("LOGISIM_HIDDEN_FPGA_OUTPUT", "LOGISIM_HIDDEN_FPGA_OUTPUT",
-					comp.GetLocalBubbleOutputEndId(), comp.GetLocalBubbleOutputStartId());
+      NetlistComponent.Range3 r = comp.getLocalHiddenPortIndices();
+			if (r.in.end >= r.in.start)
+        map.add("LOGISIM_HIDDEN_FPGA_INPUT", "LOGISIM_HIDDEN_FPGA_INPUT", r.in.end, r.in.start);
+			if (r.inout.end >= r.inout.start)
+        map.add("LOGISIM_HIDDEN_FPGA_INOUT", "LOGISIM_HIDDEN_FPGA_INOUT", r.inout.end, r.inout.start);
+			if (r.out.end >= r.out.start)
+        map.add("LOGISIM_HIDDEN_FPGA_OUTPUT", "LOGISIM_HIDDEN_FPGA_OUTPUT", r.out.end, r.out.start);
 
       // Normal ports
-      for (int i = 0; i < _circNets.NumberOfInputPorts(); i++)
-        getMapForCircuitPort(map, _cirNets.GetInputPin(i), comp, false);
-      for (int i = 0; i < _circNets.NumberOfOutputPorts(); i++)
-        getMapForCircuitPort(map, _cirNets.GetOutputPin(i), comp, true);
+      for (NetlistComponent pin : _circNets.inpins)
+        getMapForCircuitPort(map, comp, pin, false);
+      for (NetlistComponent pin : _circNets.outpins)
+        getMapForCircuitPort(map, comp, pin, true);
 
 		} else {
       // Mappings for the circuit design under test, within the TopLevelHDLGenerator circuit
       
       // Clock trees
-      for (int i = 0; i < _circNets.NumberOfClockTrees(); i++) {
+      for (int i = 0; i < _circNets.clockbus.shapes().size(); i++) {
         String clkTree = ClockHDLGenerator.CLK_TREE_NET_ + i;
         map.add(clkTree, "s_" + clkTree); // fixme: why different from above?
 			}
 
       // Dynamic clock
-      NetlistComponent dynClock = _circNets.GetDynamicClock();
+      NetlistComponent dynClock = _circNets.dynamicClock();
       if (dynClock != null)
         map.add("LOGISIM_DYNAMIC_CLOCK_OUT", "s_LOGISIM_DYNAMIC_CLOCK");
 
       // Hidden ports
-			if (_circNets.NumberOfInputBubbles() > 0)
-				map.add("LOGISIM_HIDDEN_FPGA_INPUT", "s_LOGISIM_HIDDEN_FPGA_INPUT");
-			if (_circNets.NumberOfInputBubbles() > 0)
-				map.add("LOGISIM_HIDDEN_FPGA_INOUT", "LOGISIM_HIDDEN_FPGA_INOUT"); // note: no Toplevel inversions for InOut ports
-			if (_circNets.NumberOfOutputBubbles() > 0)
-				map.add("LOGISIM_HIDDEN_FPGA_OUTPUT", "s_LOGISIM_HIDDEN_FPGA_OUTPUT");
+      // note: Toplevel has direct connection and inversions for InOut ports
+      NetlistComponent.Range3 r = comp.getLocalHiddenPortIndices();
+			if (r.in.end >= r.in.start)
+        map.add("LOGISIM_HIDDEN_FPGA_INPUT", "s_LOGISIM_HIDDEN_FPGA_INPUT", r.in.end, r.in.start);
+			if (r.inout.end >= r.inout.start)
+        map.add("LOGISIM_HIDDEN_FPGA_INOUT", "LOGISIM_HIDDEN_FPGA_INOUT", r.inout.end, r.inout.start);
+			if (r.out.end >= r.out.start)
+        map.add("LOGISIM_HIDDEN_FPGA_OUTPUT", "s_LOGISIM_HIDDEN_FPGA_OUTPUT", r.out.end, r.out.start);
       
       // Normal ports
-      for (int i = 0; i < _circNets.NumberOfInputPorts(); i++) {
-        NetlistComponent pinComp = _circNets.GetInputPin(i);
-        AttributeSet attrs = pinComp.GetComponent().getAttributeSet();
-        String name = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
-        map.put(name, "s_" + name);
-      }
-      for (int i = 0; i < _circNets.NumberOfOutputPorts(); i++) {
-        NetlistComponent pinComp = _circNets.GetOutputPin(i);
-        AttributeSet attrs = pinComp.GetComponent().getAttributeSet();
-        String name = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
-        map.put(name, "s_" + name);
-      }
+      for (NetlistComponent pin : _circNets.inpins)
+        map.put(pin.label(), "s_" + pin.label());
+      for (NetlistComponent pin : _circNets.outpins)
+        map.put(pin.label(), "s_" + pin.label());
 		}
     return map;
 	}
@@ -199,47 +220,49 @@ public class CircuitHDLGenerator extends HDLGenerator {
   public boolean writeAllHDLFiles(String rootDir) {
 		if (!rootDir.endsWith(File.separator))
 			rootDir += File.separator;
-    return writeAllHDLFiles(rootDir, new HashSet<String>(), new ArrayList<String>());
+    return writeAllHDLFiles(rootDir, new HashSet<String>(), new Path(circ));
   }
 
-	private boolean writeAllHDLFiles(String rootDir, HashSet<String> writtenComponents, ArrayList<String> path) {
-		_circNets.SetCurrentHierarchyLevel(path);
-
-		// Generate this circuit first
-		String name = CorrectLabel.getCorrectLabel(circ.getName());
-		if (writtenComponents.contains(name))
-      return;
-    if (!writeHDLFiles(rootDir))
-      return false;
-    writtenComponents.add(name);
-
-		// Generate this circuit's normal components next
-		for (NetlistComponent comp : _circNets.GetNormalComponents()) {
-      HDLSupport g = comp.hdlSupport; // getHDLSupport(comp);
-      if (g == null)
-        return false;
-			String name = g.getComponentName();
-			if (!writtenComponents.contains(name) && !g.inlined) {
-        if (!g.writeHDLFiles(rootDir))
-          return false;
-        writtenComponents.add(name);
-      }
-		}
-
-    // Recurse for subcircuits last
-		for (NetlistComponent subcirc : _circNets.GetSubCircuits()) {
-      CircuitHDLGenerator g = (CircuitHDLGenerator)subcirc.hdlSupport; // getHDLSupport(subcirc);
-			if (g == null)
+	private boolean writeAllHDLFiles(String rootDir, HashSet<String> writtenComponents, Path path) {
+		_circNets.currentPath = path;
+    try {
+      // Generate this circuit first
+      String name = CorrectLabel.getCorrectLabel(circ.getName());
+      if (writtenComponents.contains(name))
         return;
-      path.add(CorrectLabel.getCorrectLabel(subcirc
-            .GetComponent().getAttributeSet().getValue(StdAttr.LABEL)));
-			if (!g.writeAllHDLFiles(rootDir, writtenComponents, path)) {
-				return false;
-			}
-			path.remove(path.size() - 1);
-		}
+      if (!writeHDLFiles(rootDir))
+        return false;
+      writtenComponents.add(name);
 
-		return true;
+      // Generate this circuit's normal components next
+      for (NetlistComponent comp : _circNets.components) {
+        if (comp.original.getFactory() instanceof SubcircuitFactory)
+          continue;
+        HDLSupport g = comp.hdlSupport;
+        if (g == null)
+          return false;
+        String name = g.getComponentName();
+        if (!writtenComponents.contains(name) && !g.inlined) {
+          if (!g.writeHDLFiles(rootDir))
+            return false;
+          writtenComponents.add(name);
+        }
+      }
+
+      // Recurse for subcircuits last
+      for (NetlistComponent subcirc : _circNets.subcircuits) {
+        CircuitHDLGenerator g = (CircuitHDLGenerator)subcirc.hdlSupport;
+        if (g == null)
+          return;
+        Path subpath = path.extend(subcirc);
+        if (!g.writeAllHDLFiles(rootDir, writtenComponents, subpath))
+          return false;
+      }
+
+      return true;
+    } finally {
+      _circNets.currentPath = null;
+    }
 	}
 
   @Override
@@ -258,31 +281,15 @@ public class CircuitHDLGenerator extends HDLGenerator {
     }
   }
 
-  // private HashMap<NetlistComp, HDLSupport> generators = new HashMap<>();
-  // private HDLSupport getHDLSupport(NetlistComponent comp) {
-  //   HDLSupport g = generators.get(comp);
-  //   if (generators.containsKey(comp))
-  //     return generators.get(comp);;
-  //   ComponentFactory factory = comp.GetComponent().getFactory();
-  //   AttributeSet compAttrs = comp.GetComponent().getAttributeSet();
-  //   HDLSupport g = factory.getHDLSupport(_lang, _err, _circNets, compAttrs, _vendor);
-  //   if (g == null)
-  //     _err.AddFatalError("INTERNAL ERROR: Missing HDL support for component of type '%s'.",
-  //         factory.getName());
-  //   generators.put(comp, g);
-  //   return g;
-  // }
-
 	@Override
 	public void generateVhdlComponentDeclarations(Hdl out) {
-    generateDeclarations(out, _circNets.GetNormalComponents());
-    generateDeclarations(out, _circNets.GetSubCircuits());
+    generateDeclarations(out, _circNets.components);
   }
 
   private generateDeclarations(ArrayList<NetlistComponent> components) {
 		HashSet<String> done = new HashSet<>();
 		for (NetlistComponent comp: components) {
-      HDLSupport g = comp.hdlSupport; // getHDLSupport(comp);
+      HDLSupport g = comp.hdlSupport;
       if (g == null)
         continue;
 			String name = g.getComponentName();
@@ -292,28 +299,40 @@ public class CircuitHDLGenerator extends HDLGenerator {
       done.add(name);
 		}
 	}
+    
+  private void generatePortAssignments(Hdl out, NetlistComponent pin, boolean isOutput) {
+    Net net = getPortMappingForPin(Component pin);
+    if (net == null && isOutput)
+      _err.AddSevereWarning("INTERNAL ERROR: Output pin '%s' of circuit '%s' has "
+          + " no driving signal.", pin.label(), circ.getName());
+    else if (net == null)
+      return; // input pin not driving anything, no error
+    else if (isOutput)
+      out.assign(net.name, pin.label())
+    else
+      out.assign(pin.label(), net.name);
+  }
 
 	@Override
   protected void generateBehavior(Hdl out) {
 
-    // Handle splitters and tunnels.
     generateWiring(out);
 
 		// Connect each HDL port to the net connected to the corresponding circuit pin.
     // Note: This is almost exactly the same as getPortMappings(), but
     // creating signal assignments instead of port mappings, and also with
     // different logic for handling unconnected pins.
-		for (int i = 0; i < _circNets.NumberOfInputPorts(); i++)
-      generatePortAssignments(out, _circNets.GetInputPin(i), false /* not output */);
-		for (int i = 0; i < _circNets.NumberOfOutputPorts(); i++)
-      generatePortAssignments(out, _circNets.GetOutputPin(i), true /* yes output */);
+    for (NetlistComponent pin : _circNets.inpins)
+      generatePortAssignments(out, pin, false);
+    for (NetlistComponent pin : _circNets.outpins)
+      generatePortAssignments(out, pin, true);
 
     // Dynamic clock - DynamicClockHDLGenerator will connected directly to output port
 
-    // Handle normal components.
+    // Handle normal components and subcircuits.
 		HashMap<String, Long> ids = new HashMap<>();
-		for (NetlistComponent comp: _circNets.GetNormalComponents()) {
-      HDLSupport g = comp.hdlSupport; // getHDLSupport(comp);
+		for (NetlistComponent comp: _circNets.components) {
+      HDLSupport g = comp.hdlSupport;
       if (g == null)
         continue;
       if (g.inlined) {
@@ -325,121 +344,32 @@ public class CircuitHDLGenerator extends HDLGenerator {
         g.generateComponentInstance(out, id, comp);
       }
     }
-
-    // Handle subcircuits.
-		for (NetlistComponent comp : _circNets.GetSubCircuits()) {
-      HDLSupport g = comp.hdlSupport; // getHDLSupport(comp);
-      if (g == null)
-        continue;
-      String prefix = g.getInstanceNamePrefix();
-      long id = ids.getOrDefault(prefix, 0) + 1;
-      ids.put(prefix, id);
-      g.generateComponentInstance(out, id, comp);
-    }
 	}
+
+  private boolean sequential(Net.IndirectSource prev, Net.IndirectSource cur) {
+    return prev != null && cur != null && prev.net == cur.net && prev.bit+1 == cur.bit;
+  }
+
+  private void emit(Hdl out, Net dest, int b, Net.IndirectSource last, int n) {
+    if (last != null || n > 0)
+      out.assign(dest.slice(b, b-n+1), last.net.slice(last.net.bit, last.net.bit-n+1));
+  }
 
 	private void generateWiring(Hdl out) {
-
-		// Process nets with ForcedRoot annotation
-		for (Net net : _circNets.GetAllNets()) {
-			if (!net.IsForcedRootNet())
-        continue;
-
-      // Process each bit
-      for (int bit = 0; bit < net.BitWidth(); bit++) {
-
-        // First perform source connections
-        for (ConnectionPoint srcPt : net.GetSourceNets(bit)) {
-          String srcNet = "s_LOGISIM_BUS_"+_circNets.GetNetId(srcPt.net);
-          int srcBit = srcPt.bit;
-
-          int id = _circNets.GetNetId(net);
-          if (net.isBus())
-            s.assn("s_LOGISIM_BUS_"+id, bit, srcNet, srcBit);
-          else
-            s.assn("s_LOGISIM_NET_"+id, srcNet, srcBit);
+		for (Net net : _circNets.nets) {
+      Net.IndirectSource prev = null;
+      int w = net.indirectSource.length;
+      int n = 0;
+      for (int b = 0; b < w; b++) {
+        Net.IndirectSource src = net.indirectSource[b];
+        if (!sequential(prev, src)) {
+          emit(out, net, b-1, prev, n);
+          n = 0;
         }
-
-        // Next perform sink connections
-        for (ConnectionPoint sinkPt : net.GetSinkNets(bit)) {
-          String sinkNet = "s_LOGISIM_BUS_"+_circNets.GetNetId(sinkPt.net);
-          int sinkBit = sinkPt.bit;
-
-          int id = _circNets.GetNetId(net);
-          if (net.isBus())
-            s.assn(sinkNet, sinkBit, "s_LOGISIM_BUS_"+id);
-          else
-            s.assn(sinkNet, sinkBit, "s_LOGISIM_NET_"+id);
-        }
+        prev = src;
+        n++;
       }
-		}
-	}
-
-  private void generatePortAssignments(Hdl out, NetlistComponent pinComp, boolean isOutput) {
-    AttributeSet attrs = pinComp.GetComponent().getAttributeSet();
-    String name = CorrectLabel.getCorrectLabel(attrs.getValue(StdAttr.LABEL));
-    PortInfo p = new PortInfo(name, attrs.getValue(StdAttr.WIDTH).getWidth(), 0, null);
-    NetlistComponent.PortConnection end = pinComp.getEnd(0);
-    int w = end.width;
-    if (w == 1) {
-      if (isOutput)
-        out.assign(name, _circNets.signalForEndBit(end, 0, out));
-      else
-        out.assign(_circNets.signalForEndBit(end, 0, out), name);
-    } else {
-      int status = _circNets.busConnectionStatus(end);
-      if (status == Netlist.BUS_UNCONNECTED) {
-        if (isOutput) {
-          _err.AddWarning("Output pin '%s' of circuit '%s' has no driving signal.",
-              name, circ.getName());
-        } else {
-          // Input pin driving nothing is fine.
-        }
-      } else if (status == Netlist.BUS_SIMPLYCONNECTED ) {
-        if (isOutput)
-          map.assign(name, _circNets.signalForEndBus(end, w-1, 0, _hdl));
-        else
-          map.assign(_circNets.signalForEndBus(end, w-1, 0, _hdl), name);
-      } else { // Netlist.BUS_MULTICONNECTED || Netlist.BUS_MIXCONNECTED
-        // Verilog input example:       Verilog output example:
-        // bar[7:5] = name[10:8]        name[10:8] = bar[7:5]
-        // unused name[7:6]             name[7:6] not driven (warn)
-        // foo[10:9] = name[5:4]        name[5:4] = foo[10:9]
-        // foo[23:20] = name[3:0]       name[3:0] = foo[23:20]
-        Net prevnet = end.getConnection((byte)(w-1)).net;
-        byte prevbit = prevnet == null ? -1 : end.GetConnection((byte)(w-1)).bit;
-        int n = 1;
-        for (int i = w-2; i >= -1; i--) {
-          Net net = i < 0 ? null : end.getConnection((byte)i).net;
-          byte bit = i < 0 ? 0 : end.GetConnection((byte)i).bit;
-          if (i >= 0 && ((prevnet == null && net == null)
-                || (prevnet != null && net == prevnet && bit == prevbit-n))) {
-            n++;
-            continue;
-          }
-          // emit the n-bit slice, or accumulate it
-          if (prevnet == null) {
-            if (isOutput && n == 1)
-              _err.AddWarning("Output pin '%s' bit %d of circuit '%s', has no driving signal.",
-                  name, i+1, circ.getName());
-            else if (isOutput)
-              _err.AddWarning("Output pin '%s' bits %d downto %d of circuit '%s', have no driving signal.",
-                  name, i+n, i+1, circ.getName());
-            continue;
-          }
-          String signal;
-          if (n == 1 && prevnet.BitWidth() == 1)
-            signal = String.format("s_LOGISIM_NET_%d", _circNets.GetNetId(prevnet));
-          else if (n == 1)
-            signal = String.format("s_LOGISIM_BUS_%d"+_hdl.idx, _circNets.GetNetId(prevnet), prevbit);
-          else
-            signal = String.format("s_LOGISIM_BUS_%d"+_hdl.range, _circNets.GetNetId(prevnet), prevbit, prevbit-n+1);
-          if (isOutput)
-            out.assign(name, i+n, i+1, signal);
-          else
-            out.assign(signal, name, i+n, i+1);
-        }
-      }
+      emit(out, net, w-1, prev, n);
     }
   }
 
