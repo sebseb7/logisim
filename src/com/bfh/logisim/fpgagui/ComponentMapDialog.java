@@ -82,9 +82,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.bfh.logisim.netlist.CorrectLabel;
-import com.bfh.logisim.fpgaboardeditor.BoardInformation;
+import com.bfh.logisim.fpgaboardeditor.Board;
 import com.bfh.logisim.fpgaboardeditor.BoardRectangle;
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
+import com.bfh.logisim.fpgaboardeditor.BoardIO;
 import com.bfh.logisim.fpgaboardeditor.Strings;
 import com.bfh.logisim.fpgaboardeditor.Strings;
 import com.bfh.logisim.hdlgenerator.HiddenPort;
@@ -343,7 +343,7 @@ public class ComponentMapDialog implements ActionListener,
   private BoardRectangle MappedHighlightItem = null;
   private int image_width = 740;
   private int image_height = 400;
-  private BoardInformation BoardInfo;
+  private Board BoardInfo;
   private ArrayList<BoardRectangle> SelectableItems = new ArrayList<BoardRectangle>();
   private String OldDirectory = "";
   private String[] MapSectionStrings = { "Key", "LocationX", "LocationY",
@@ -779,7 +779,7 @@ public class ComponentMapDialog implements ActionListener,
               rect = BoardRectangle.constant(constval);
             } else if ("device".equals(kind) || "".equals(kind)) {
               if ((x > 0) && (y > 0) && (width > 0) && (height > 0)) {
-                for (FPGAIOInformationContainer comp : BoardInfo.GetAllComponents()) {
+                for (BoardIO comp : BoardInfo.GetAllComponents()) {
                   if ((comp.GetRectangle().getXpos() == x)
                       && (comp.GetRectangle().getYpos() == y)
                       && (comp.GetRectangle().getWidth() == width)
@@ -933,8 +933,8 @@ public class ComponentMapDialog implements ActionListener,
     panel.setVisible(true);
   }
 
-  public void SetBoardInformation(BoardInformation Board) {
-    BoardInfo = Board;
+  public void SetBoard(Board info) {
+    BoardInfo = info;
   }
 
   public void SetMappebleComponents(MappableResourcesContainer mappable) {

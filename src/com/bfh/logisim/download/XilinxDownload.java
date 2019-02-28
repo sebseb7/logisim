@@ -51,8 +51,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 
 import com.bfh.logisim.netlist.Netlist;
-import com.bfh.logisim.fpgaboardeditor.BoardInformation;
-import com.bfh.logisim.fpgaboardeditor.FPGAClass;
+import com.bfh.logisim.fpgaboardeditor.Board;
+import com.bfh.logisim.fpgaboardeditor.Chipset;
 import com.bfh.logisim.fpgaboardeditor.IoStandards;
 import com.bfh.logisim.fpgaboardeditor.PullBehaviors;
 import com.bfh.logisim.fpgagui.FPGAReport;
@@ -65,7 +65,7 @@ import com.cburch.logisim.proj.Projects;
 
 public class XilinxDownload {
 	public static boolean Download(Settings MySettings,
-			BoardInformation BoardInfo, String scriptPath, String UcfPath,
+			Board BoardInfo, String scriptPath, String UcfPath,
 			String ProjectPath, String SandboxPath, FPGAReport MyReporter) {
 		boolean IsCPLD = BoardInfo.fpga.getPart().toUpperCase()
 				.startsWith("XC2C")
@@ -295,13 +295,8 @@ public class XilinxDownload {
 					command.add("ise");
 					/* TODO: do correct termination type */
 					command.add("-terminate");
-					if (BoardInfo.fpga.getUnusedPinsBehavior() == PullBehaviors.PullUp) {
-						command.add("pullup");
-					} else if (BoardInfo.fpga.getUnusedPinsBehavior() == PullBehaviors.PullDown) {
-						command.add("pulldown");
-					} else {
-						command.add("float");
-					}
+          char dir = BoardInfo.fpga.getUnusedPinsBehavior();
+          command.add(PullBehaviors.XILINX_PULL[dir]);
 					command.add("-loc");
 					command.add("on");
 					command.add("-log");
@@ -355,13 +350,10 @@ public class XilinxDownload {
 					command.add(MySettings.GetXilinxToolPath() + File.separator
 							+ Settings.XilinxPrograms[4]);
 					command.add("-w");
-					if (BoardInfo.fpga.getUnusedPinsBehavior() == PullBehaviors.PullUp) {
+          char dir = BoardInfo.fpga.getUnusedPinsBehavior();
+					if (dir == PullBehaviors.PULL_UP || dir == PullBehaviors.PULL_DOWN) {
 						command.add("-g");
-						command.add("UnusedPin:PULLUP");
-					}
-					if (BoardInfo.fpga.getUnusedPinsBehavior() == PullBehaviors.PullDown) {
-						command.add("-g");
-						command.add("UnusedPin:PULLDOWN");
+						command.add("UnusedPin:"+PullBehaviors.XILINX_PULL[dir].toUpperCase());
 					}
 					command.add("-g");
 					command.add("StartupClk:CCLK");
@@ -500,7 +492,7 @@ public class XilinxDownload {
 	public static boolean GenerateISEScripts(FPGAReport MyReporter,
 			String ProjectPath, String ScriptPath, String UcfPath,
 			Netlist RootNetlist, MappableResourcesContainer MapInfo,
-			BoardInformation BoardInfo, ArrayList<String> Entities,
+			Board BoardInfo, ArrayList<String> Entities,
 			ArrayList<String> Architectures, String HDLType,
 			boolean writeToFlash) {
 		boolean IsCPLD = BoardInfo.fpga.getPart().toUpperCase()
@@ -596,11 +588,11 @@ public class XilinxDownload {
 					+ GetClockFrequencyString(BoardInfo) + " HIGH 50 % ;");
 			Contents.add("");
 		}
-		Contents.addAll(MapInfo.GetFPGAPinLocs(FPGAClass.VendorXilinx));
+		Contents.addAll(MapInfo.GetFPGAPinLocs(Chipset.XILINX));
 		return FileWriter.WriteContents(UcfFile, Contents, MyReporter);
 	}
 
-	private static String GetClockFrequencyString(BoardInformation CurrentBoard) {
+	private static String GetClockFrequencyString(Board CurrentBoard) {
 		long clkfreq = CurrentBoard.fpga.getClockFrequency();
 		if (clkfreq % 1000000 == 0) {
 			clkfreq /= 1000000;
@@ -612,7 +604,7 @@ public class XilinxDownload {
 		return Long.toString(clkfreq);
 	}
 
-	private static String GetFPGADeviceString(BoardInformation CurrentBoard) {
+	private static String GetFPGADeviceString(Board CurrentBoard) {
 		StringBuffer result = new StringBuffer();
 		result.append(CurrentBoard.fpga.getPart());
 		result.append("-");
@@ -622,22 +614,15 @@ public class XilinxDownload {
 		return result.toString();
 	}
 
-	private static String GetXilinxClockPin(BoardInformation CurrentBoard) {
+	private static String GetXilinxClockPin(Board CurrentBoard) {
 		StringBuffer result = new StringBuffer();
-		result.append("LOC = \"" + CurrentBoard.fpga.getClockPinLocation()
-				+ "\"");
-		if (CurrentBoard.fpga.getClockPull() == PullBehaviors.PullUp) {
-			result.append(" | PULLUP");
-		}
-		if (CurrentBoard.fpga.getClockPull() == PullBehaviors.PullDown) {
-			result.append(" | PULLDOWN");
-		}
-		if (CurrentBoard.fpga.getClockStandard() != IoStandards.DefaulStandard
-				&& CurrentBoard.fpga.getClockStandard() != IoStandards.Unknown) {
-			result.append(" | IOSTANDARD = "
-					+ IoStandards.Behavior_strings[CurrentBoard.fpga
-							.getClockStandard()]);
-		}
+		result.append("LOC = \"" + CurrentBoard.fpga.getClockPinLocation() + "\"");
+    char dir = CurrentBoard.fpga.getClockPull();
+		if (dir == PullBehaviors.PULL_UP || dir == PullBehaviors.PULL_DOWN)
+			result.append(" | " + PullBehaviors.XILINX_PULL[dir].toUpperCase());
+    char std = CurrentBoard.fpga.getClockStandard();
+		if (std != IoStandards.DEFAULT && std != IoStandards.UNKNOWN)
+			result.append(" | IOSTANDARD = " + IoStandards.DESC[std]);
 		return result.toString();
 	}
 

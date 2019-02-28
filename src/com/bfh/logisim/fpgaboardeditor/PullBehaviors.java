@@ -30,51 +30,24 @@
 
 package com.bfh.logisim.fpgaboardeditor;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-
 public class PullBehaviors {
-	public static String getContraintedPullString(char id) {
-		switch (id) {
-		case PullUp:
-			return "PULLUP";
-		case PullDown:
-			return "PULLDOWN";
-		default:
-			return "";
-		}
-	}
+  
+  public static final char FLOAT = 0;
+  public static final char PULL_UP = 1;
+  public static final char PULL_DOWN = 2;
+  public static final char UNKNOWN = 255;
+  
+  public static final String[] DESC = { "Float", "Pull Up", "Pull Down" };
+	public static final String ATTR = "FPGAPinPullBehavior";
 
-	public static char getId(String identifier) {
-		char result = 0;
-		LinkedList<String> thelist = PullBehaviors.getStrings();
-		Iterator<String> iter = thelist.iterator();
-		result = 0;
-		while (iter.hasNext()) {
-			if (iter.next().equals(identifier))
-				return result;
-			result++;
-		}
-		return PullBehaviors.Unknown;
-	}
+  public static final String[] ALTERA_PULL = { "TRI-STATED", "PULLUP", "PULLDOWN", "" };
+  public static final String[] XILINX_PULL = { "float", "pullup", "pulldown", "float" };
 
-	public static LinkedList<String> getStrings() {
-		LinkedList<String> result = new LinkedList<String>();
+  public char get(String desc) {
+    for (char i = 0; i < DESC.length; i++)
+      if (DESC[i].equals(desc))
+        return i;
+    return UNKNOWN;
+  }
 
-		result.add(Behavior_strings[0]);
-		result.add(Behavior_strings[1]);
-		result.add(Behavior_strings[2]);
-
-		return result;
-	}
-
-	public static String PullAttributeString = "FPGAPinPullBehavior";
-	public static final char Float = 0;
-	public static final char PullUp = 1;
-
-	public static final char PullDown = 2;
-
-	public static final char Unknown = 255;
-
-	public static String[] Behavior_strings = { "Float", "Pull Up", "Pull Down" };
 }

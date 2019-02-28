@@ -48,8 +48,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 
 import com.bfh.logisim.netlist.Netlist;
-import com.bfh.logisim.fpgaboardeditor.BoardInformation;
-import com.bfh.logisim.fpgaboardeditor.FPGAClass;
+import com.bfh.logisim.fpgaboardeditor.Board;
+import com.bfh.logisim.fpgaboardeditor.Chipset;
 import com.bfh.logisim.fpgaboardeditor.PullBehaviors;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
@@ -356,7 +356,7 @@ public class AlteraDownload implements Runnable {
 
 	public static boolean GenerateQuartusScript(FPGAReport MyReporter,
 			String ScriptPath, Netlist RootNetList,
-			MappableResourcesContainer MapInfo, BoardInformation BoardInfo,
+			MappableResourcesContainer MapInfo, Board BoardInfo,
 			ArrayList<String> Entities, ArrayList<String> Architectures,
 			String HDLType) {
 		File ScriptFile = FileWriter.GetFilePointer(ScriptPath,
@@ -422,7 +422,7 @@ public class AlteraDownload implements Runnable {
 					+ BoardInfo.fpga.getClockPinLocation() + " -to "
 					+ TickComponentHDLGeneratorFactory.FPGAClock);
 		}
-		Contents.addAll(MapInfo.GetFPGAPinLocs(FPGAClass.VendorAltera));
+		Contents.addAll(MapInfo.GetFPGAPinLocs(Chipset.ALTERA));
 		Contents.add("    # Commit assignments");
 		Contents.add("    export_assignments");
 		Contents.add("");
@@ -435,7 +435,7 @@ public class AlteraDownload implements Runnable {
 	}
 
 	private static ArrayList<String> GetAlteraAssignments(
-			BoardInformation CurrentBoard) {
+			Board CurrentBoard) {
 		ArrayList<String> result = new ArrayList<String>();
 		String Assignment = "    set_global_assignment -name ";
 		result.add(Assignment + "FAMILY \"" + CurrentBoard.fpga.getTechnology()
@@ -444,18 +444,10 @@ public class AlteraDownload implements Runnable {
 		String[] Package = CurrentBoard.fpga.getPackage().split(" ");
 		result.add(Assignment + "DEVICE_FILTER_PACKAGE " + Package[0]);
 		result.add(Assignment + "DEVICE_FILTER_PIN_COUNT " + Package[1]);
-		if (CurrentBoard.fpga.getUnusedPinsBehavior() == PullBehaviors.Float) {
+    char dir = CurrentBoard.fpga.getUnusedPinsBehavior();
+    if (dir != PullBehaviors.UNKNOWN)
 			result.add(Assignment
-					+ "RESERVE_ALL_UNUSED_PINS \"AS INPUT TRI-STATED\"");
-		}
-		if (CurrentBoard.fpga.getUnusedPinsBehavior() == PullBehaviors.PullUp) {
-			result.add(Assignment
-					+ "RESERVE_ALL_UNUSED_PINS \"AS INPUT PULLUP\"");
-		}
-		if (CurrentBoard.fpga.getUnusedPinsBehavior() == PullBehaviors.PullDown) {
-			result.add(Assignment
-					+ "RESERVE_ALL_UNUSED_PINS \"AS INPUT PULLDOWN\"");
-		}
+					+ String.format("RESERVE_ALL_UNUSED_PINS \"AS INPUT %s\"", PullBehaviors.ALTERA_PULL[dir]);
 		result.add(Assignment + "FMAX_REQUIREMENT \""
 				+ GetClockFrequencyString(CurrentBoard) + "\"");
 		result.add(Assignment + "RESERVE_NCEO_AFTER_CONFIGURATION \"USE AS REGULAR IO\"");
@@ -463,7 +455,7 @@ public class AlteraDownload implements Runnable {
 		return result;
 	}
 
-	private static String GetClockFrequencyString(BoardInformation CurrentBoard) {
+	private static String GetClockFrequencyString(Board CurrentBoard) {
 		long clkfreq = CurrentBoard.fpga.getClockFrequency();
 		if (clkfreq % 1000000 == 0) {
 			clkfreq /= 1000000;

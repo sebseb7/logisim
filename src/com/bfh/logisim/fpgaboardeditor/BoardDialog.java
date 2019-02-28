@@ -52,7 +52,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileFilter;
 
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer.IOComponentTypes;
+import com.bfh.logisim.fpgaboardeditor.BoardIO.IOComponentTypes;
 import com.cburch.logisim.proj.Projects;
 
 public class BoardDialog implements ActionListener, ComponentListener {
@@ -75,7 +75,7 @@ public class BoardDialog implements ActionListener, ComponentListener {
 	public static final String pictureWarning = "/resources/logisim/warning.png";
 	private String action_id;
 	boolean abort;
-	private BoardInformation TheBoard = new BoardInformation();
+	private Board TheBoard = new Board();
 	private JTextField BoardNameInput;
 	private JButton saveButton;
 	private JButton loadButton;
@@ -158,10 +158,6 @@ public class BoardDialog implements ActionListener, ComponentListener {
 		panel.add(ButtonPanel, gbc);
 
 		panel.pack();
-		/*
-		 * panel.setLocation(Projects.getCenteredLoc(panel.getWidth(),
-		 * panel.getHeight()));
-		 */
 		panel.setLocationRelativeTo(null);
 		panel.setVisible(true);
 	}
@@ -176,10 +172,9 @@ public class BoardDialog implements ActionListener, ComponentListener {
 			String filename = getDirName("",
 					"Select directory to save board file:");
 			filename += TheBoard.getBoardName() + ".xml";
-			BoardWriterClass xmlwriter = new BoardWriterClass(TheBoard,
-					picturepanel.getScaledImage(picturepanel.getWidth(),
-							picturepanel.getHeight()));
-			xmlwriter.PrintXml(filename);
+      int w = picturepanel.getWidth();
+      int h = picturepanel.getHeight();
+			BoardWriter.write(filename, TheBoard, picturepanel.getScaledImage(w, h));
 			this.clear();
 		} else if (e.getActionCommand().equals("load")) {
 			JFileChooser fc = new JFileChooser();
@@ -192,11 +187,9 @@ public class BoardDialog implements ActionListener, ComponentListener {
 				File file = fc.getSelectedFile();
 				SetBoardName(file.getName());
 				String FileName = file.getPath();
-				BoardReaderClass reader = new BoardReaderClass(FileName);
-				TheBoard = reader.GetBoardInformation();
+				TheBoard = BoardReader.read(FileName);
 				picturepanel.SetImage(TheBoard.GetImage());
-				for (FPGAIOInformationContainer comp : TheBoard
-						.GetAllComponents())
+				for (BoardIO comp : TheBoard.GetAllComponents())
 					defined_components.add(comp.GetRectangle());
 				if ((TheBoard.GetNrOfDefinedComponents() > 0)
 						&& TheBoard.fpga.FpgaInfoPresent())
@@ -269,221 +262,6 @@ public class BoardDialog implements ActionListener, ComponentListener {
 		return old;
 	}
 
-	/*
-	 * private ButtonClass getButtonInformation(BoardRectangle rect) {
-	 * button_info.SetId(-1); final JDialog selWindow = new
-	 * JDialog(panel,"Button properties"); /* here the action listener is
-	 * defined
-	 */
-	/*
-	 * ActionListener actionListener = new ActionListener(){ public void
-	 * actionPerformed(ActionEvent e){ if
-	 * (e.getActionCommand().equals("cancel")) { abort = true; }
-	 * selWindow.setVisible(false); } }; GridBagLayout dialogLayout = new
-	 * GridBagLayout(); GridBagConstraints c = new GridBagConstraints();
-	 * selWindow.setLayout(dialogLayout);
-	 * 
-	 * JLabel LocText = new JLabel("Specify FPGA pin location:"); c.gridx = 0;
-	 * c.gridy = 0; c.fill = GridBagConstraints.HORIZONTAL;
-	 * selWindow.add(LocText,c);
-	 * 
-	 * JTextField LocInput = new JTextField(); c.gridx = 0; c.gridy = 1; c.fill
-	 * = GridBagConstraints.HORIZONTAL; selWindow.add(LocInput,c);
-	 * 
-	 * JLabel PullText = new JLabel("Specify FPGA pin pull behavior:"); c.gridx
-	 * = 0; c.gridy = 2; c.fill = GridBagConstraints.HORIZONTAL;
-	 * selWindow.add(PullText,c);
-	 * 
-	 * JComboBox PullInput = new JComboBox(PullBehaviors.Behavior_strings);
-	 * PullInput.setSelectedIndex(DefaultPullSelection); c.gridx = 0; c.gridy =
-	 * 3; c.fill = GridBagConstraints.HORIZONTAL; selWindow.add(PullInput,c);
-	 * 
-	 * JLabel ActiveText = new JLabel("Specify Button activity:"); c.gridx = 0;
-	 * c.gridy = 4; c.fill = GridBagConstraints.HORIZONTAL;
-	 * selWindow.add(ActiveText,c);
-	 * 
-	 * JComboBox ActiveInput = new JComboBox(PinActivity.Behavior_strings);
-	 * ActiveInput.setSelectedIndex(DefaultActivity); c.gridx = 0; c.gridy = 5;
-	 * c.fill = GridBagConstraints.HORIZONTAL; selWindow.add(ActiveInput,c);
-	 * 
-	 * JLabel StandardText = new JLabel("Specify FPGA pin standard:"); c.gridx =
-	 * 0; c.gridy = 6; c.fill = GridBagConstraints.HORIZONTAL;
-	 * selWindow.add(StandardText,c);
-	 * 
-	 * JComboBox StandardInput = new JComboBox(IoStandards.Behavior_strings);
-	 * StandardInput.setSelectedIndex(DefaultStandard); c.gridx = 0; c.gridy =
-	 * 7; c.fill = GridBagConstraints.HORIZONTAL;
-	 * selWindow.add(StandardInput,c);
-	 * 
-	 * JButton OkayButton = new JButton("Done and Store");
-	 * OkayButton.setActionCommand("done");
-	 * OkayButton.addActionListener(actionListener); c.gridx = 0; c.gridy = 8;
-	 * c.fill = GridBagConstraints.HORIZONTAL; selWindow.add(OkayButton,c);
-	 * 
-	 * JButton CancelButton = new JButton("Cancel");
-	 * CancelButton.setActionCommand("cancel");
-	 * CancelButton.addActionListener(actionListener); c.gridx = 0; c.gridy = 9;
-	 * c.fill = GridBagConstraints.HORIZONTAL; selWindow.add(CancelButton,c);
-	 * 
-	 * selWindow.pack(); PointerInfo mouseloc = MouseInfo.getPointerInfo();
-	 * Point mlocation = mouseloc.getLocation();
-	 * selWindow.setLocation(mlocation.x,mlocation.y); selWindow.setModal(true);
-	 * selWindow.setResizable(false);
-	 * selWindow.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-	 * selWindow.setAlwaysOnTop(true); abort = false; while (!abort){
-	 * selWindow.setVisible(true); if (LocInput.getText().isEmpty()&& !abort) {
-	 * showDialogNotification(selWindow,"Error",
-	 * "<html>You have to specify a pin location!</html>"); } else { if (!abort)
-	 * { DefaultActivity = ActiveInput.getSelectedIndex(); DefaultPullSelection
-	 * = PullInput.getSelectedIndex(); DefaultStandard =
-	 * StandardInput.getSelectedIndex(); button_info.Set(rect,
-	 * LocInput.getText(), PullInput.getSelectedItem().toString(),
-	 * ActiveInput.getSelectedItem().toString(),
-	 * StandardInput.getSelectedItem().toString()); abort=true; } } }
-	 * selWindow.dispose(); return button_info; }
-	 * 
-	 * private LEDClass getLEDInformation(BoardRectangle rect) {
-	 * led_info.SetId(-1); final JDialog selWindow = new
-	 * JDialog(panel,"LED properties"); /* here the action listener is defined
-	 */
-	/*
-	 * ActionListener actionListener = new ActionListener(){ public void
-	 * actionPerformed(ActionEvent e){ if
-	 * (e.getActionCommand().equals("cancel")) { abort = true; }
-	 * selWindow.setVisible(false); } }; GridBagLayout dialogLayout = new
-	 * GridBagLayout(); GridBagConstraints c = new GridBagConstraints();
-	 * selWindow.setLayout(dialogLayout);
-	 * 
-	 * JLabel LocText = new JLabel("Specify FPGA pin location:"); c.gridx = 0;
-	 * c.gridy = 0; c.fill = GridBagConstraints.HORIZONTAL;
-	 * selWindow.add(LocText,c);
-	 * 
-	 * JTextField LocInput = new JTextField(); c.gridx = 0; c.gridy = 1; c.fill
-	 * = GridBagConstraints.HORIZONTAL; selWindow.add(LocInput,c);
-	 * 
-	 * JLabel DriveText = new JLabel("Specify FPGA pin drive strength:");
-	 * c.gridx = 0; c.gridy = 2; c.fill = GridBagConstraints.HORIZONTAL;
-	 * selWindow.add(DriveText,c);
-	 * 
-	 * JComboBox DriveInput = new JComboBox(DriveStrength.Behavior_strings);
-	 * DriveInput.setSelectedIndex(DefaultDriveStrength); c.gridx = 0; c.gridy =
-	 * 3; c.fill = GridBagConstraints.HORIZONTAL; selWindow.add(DriveInput,c);
-	 * 
-	 * JLabel ActiveText = new JLabel("Specify LED activity:"); c.gridx = 0;
-	 * c.gridy = 4; c.fill = GridBagConstraints.HORIZONTAL;
-	 * selWindow.add(ActiveText,c);
-	 * 
-	 * JComboBox ActiveInput = new JComboBox(PinActivity.Behavior_strings);
-	 * ActiveInput.setSelectedIndex(DefaultActivity); c.gridx = 0; c.gridy = 5;
-	 * c.fill = GridBagConstraints.HORIZONTAL; selWindow.add(ActiveInput,c);
-	 * 
-	 * JLabel StandardText = new JLabel("Specify FPGA pin standard:"); c.gridx =
-	 * 0; c.gridy = 6; c.fill = GridBagConstraints.HORIZONTAL;
-	 * selWindow.add(StandardText,c);
-	 * 
-	 * JComboBox StandardInput = new JComboBox(IoStandards.Behavior_strings);
-	 * StandardInput.setSelectedIndex(DefaultStandard); c.gridx = 0; c.gridy =
-	 * 7; c.fill = GridBagConstraints.HORIZONTAL;
-	 * selWindow.add(StandardInput,c);
-	 * 
-	 * JButton OkayButton = new JButton("Done and Store");
-	 * OkayButton.setActionCommand("done");
-	 * OkayButton.addActionListener(actionListener); c.gridx = 0; c.gridy = 8;
-	 * c.fill = GridBagConstraints.HORIZONTAL; selWindow.add(OkayButton,c);
-	 * 
-	 * JButton CancelButton = new JButton("Cancel");
-	 * CancelButton.setActionCommand("cancel");
-	 * CancelButton.addActionListener(actionListener); c.gridx = 0; c.gridy = 9;
-	 * c.fill = GridBagConstraints.HORIZONTAL; selWindow.add(CancelButton,c);
-	 * 
-	 * selWindow.pack(); PointerInfo mouseloc = MouseInfo.getPointerInfo();
-	 * Point mlocation = mouseloc.getLocation();
-	 * selWindow.setLocation(mlocation.x,mlocation.y); selWindow.setModal(true);
-	 * selWindow.setResizable(false);
-	 * selWindow.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-	 * selWindow.setAlwaysOnTop(true); abort = false; while (!abort){
-	 * selWindow.setVisible(true); if (LocInput.getText().isEmpty()&& !abort) {
-	 * showDialogNotification(selWindow,"Error",
-	 * "<html>You have to specify a pin location!</html>"); } else { if (!abort)
-	 * { DefaultActivity = ActiveInput.getSelectedIndex(); DefaultDriveStrength
-	 * = DriveInput.getSelectedIndex(); DefaultStandard =
-	 * StandardInput.getSelectedIndex(); led_info.Set(rect, LocInput.getText(),
-	 * DriveInput.getSelectedItem().toString(),
-	 * ActiveInput.getSelectedItem().toString(),
-	 * StandardInput.getSelectedItem().toString()); abort=true; } } }
-	 * selWindow.dispose(); return led_info; }
-	 * 
-	 * private PinClass getPinInformation(BoardRectangle rect) {
-	 * pin_info.SetId(-1); final JDialog selWindow = new
-	 * JDialog(panel,"Pin properties"); /* here the action listener is defined
-	 */
-	/*
-	 * ActionListener actionListener = new ActionListener(){ public void
-	 * actionPerformed(ActionEvent e){ if
-	 * (e.getActionCommand().equals("cancel")) { abort = true; }
-	 * selWindow.setVisible(false); } }; GridBagLayout dialogLayout = new
-	 * GridBagLayout(); GridBagConstraints c = new GridBagConstraints();
-	 * selWindow.setLayout(dialogLayout);
-	 * 
-	 * JLabel LocText = new JLabel("Specify FPGA pin location:"); c.gridx = 0;
-	 * c.gridy = 0; c.fill = GridBagConstraints.HORIZONTAL;
-	 * selWindow.add(LocText,c);
-	 * 
-	 * JTextField LocInput = new JTextField(); c.gridx = 0; c.gridy = 1; c.fill
-	 * = GridBagConstraints.HORIZONTAL; selWindow.add(LocInput,c);
-	 * 
-	 * JLabel DriveText = new JLabel("Specify FPGA pin drive strength:");
-	 * c.gridx = 0; c.gridy = 2; c.fill = GridBagConstraints.HORIZONTAL;
-	 * selWindow.add(DriveText,c);
-	 * 
-	 * JComboBox DriveInput = new JComboBox(DriveStrength.Behavior_strings);
-	 * DriveInput.setSelectedIndex(DefaultDriveStrength); c.gridx = 0; c.gridy =
-	 * 3; c.fill = GridBagConstraints.HORIZONTAL; selWindow.add(DriveInput,c);
-	 * 
-	 * JLabel PullText = new JLabel("Specify FPGA pin pull behavior:"); c.gridx
-	 * = 0; c.gridy = 4; c.fill = GridBagConstraints.HORIZONTAL;
-	 * selWindow.add(PullText,c);
-	 * 
-	 * JComboBox PullInput = new JComboBox(PullBehaviors.Behavior_strings);
-	 * PullInput.setSelectedIndex(DefaultPullSelection); c.gridx = 0; c.gridy =
-	 * 5; c.fill = GridBagConstraints.HORIZONTAL; selWindow.add(PullInput,c);
-	 * 
-	 * JLabel StandardText = new JLabel("Specify FPGA pin standard:"); c.gridx =
-	 * 0; c.gridy = 6; c.fill = GridBagConstraints.HORIZONTAL;
-	 * selWindow.add(StandardText,c);
-	 * 
-	 * JComboBox StandardInput = new JComboBox(IoStandards.Behavior_strings);
-	 * StandardInput.setSelectedIndex(DefaultStandard); c.gridx = 0; c.gridy =
-	 * 7; c.fill = GridBagConstraints.HORIZONTAL;
-	 * selWindow.add(StandardInput,c);
-	 * 
-	 * JButton OkayButton = new JButton("Done and Store");
-	 * OkayButton.setActionCommand("done");
-	 * OkayButton.addActionListener(actionListener); c.gridx = 0; c.gridy = 8;
-	 * c.fill = GridBagConstraints.HORIZONTAL; selWindow.add(OkayButton,c);
-	 * 
-	 * JButton CancelButton = new JButton("Cancel");
-	 * CancelButton.setActionCommand("cancel");
-	 * CancelButton.addActionListener(actionListener); c.gridx = 0; c.gridy = 9;
-	 * c.fill = GridBagConstraints.HORIZONTAL; selWindow.add(CancelButton,c);
-	 * 
-	 * selWindow.pack(); PointerInfo mouseloc = MouseInfo.getPointerInfo();
-	 * Point mlocation = mouseloc.getLocation();
-	 * selWindow.setLocation(mlocation.x,mlocation.y); selWindow.setModal(true);
-	 * selWindow.setResizable(false);
-	 * selWindow.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-	 * selWindow.setAlwaysOnTop(true); abort = false; while (!abort){
-	 * selWindow.setVisible(true); if (LocInput.getText().isEmpty()&& !abort) {
-	 * showDialogNotification(selWindow,"Error",
-	 * "<html>You have to specify a pin location!</html>"); } else { if (!abort)
-	 * { DefaultPullSelection = PullInput.getSelectedIndex();
-	 * DefaultDriveStrength = DriveInput.getSelectedIndex(); DefaultStandard =
-	 * StandardInput.getSelectedIndex(); pin_info.Set(rect, LocInput.getText(),
-	 * DriveInput.getSelectedItem().toString(),
-	 * StandardInput.getSelectedItem().toString(),
-	 * PullInput.getSelectedItem().toString()); abort=true; } } }
-	 * selWindow.dispose(); return pin_info; }
-	 */
 	private void getFpgaInformation() {
 		final JDialog selWindow = new JDialog(panel, "FPGA properties");
 		/* here the action listener is defined */
@@ -551,8 +329,7 @@ public class BoardDialog implements ActionListener, ComponentListener {
 		c.fill = GridBagConstraints.HORIZONTAL;
 		ClockPanel.add(PullText, c);
 
-		JComboBox<String> PullInput = new JComboBox<>(
-				PullBehaviors.Behavior_strings);
+		JComboBox<String> PullInput = new JComboBox<>(PullBehaviors.DESC);
 		PullInput.setSelectedIndex(0);
 		c.gridx = 0;
 		c.gridy = 5;
@@ -565,8 +342,7 @@ public class BoardDialog implements ActionListener, ComponentListener {
 		c.fill = GridBagConstraints.HORIZONTAL;
 		ClockPanel.add(StandardText, c);
 
-		JComboBox<String> StdInput = new JComboBox<>(
-				IoStandards.Behavior_strings);
+		JComboBox<String> StdInput = new JComboBox<>(IoStandards.DESC);
 		StdInput.setSelectedIndex(0);
 		c.gridx = 0;
 		c.gridy = 7;
@@ -579,8 +355,7 @@ public class BoardDialog implements ActionListener, ComponentListener {
 		c.fill = GridBagConstraints.HORIZONTAL;
 		ClockPanel.add(UnusedPinsText, c);
 
-		JComboBox<String> UnusedPinsInput = new JComboBox<>(
-				PullBehaviors.Behavior_strings);
+		JComboBox<String> UnusedPinsInput = new JComboBox<>(PullBehaviors.DESC);
 		UnusedPinsInput.setSelectedIndex(0);
 		c.gridx = 0;
 		c.gridy = 9;
@@ -613,7 +388,7 @@ public class BoardDialog implements ActionListener, ComponentListener {
 		c.fill = GridBagConstraints.HORIZONTAL;
 		FPGAPanel.add(VendorText, c);
 
-		JComboBox<String> VendorInput = new JComboBox<>(FPGAClass.Vendors);
+		JComboBox<String> VendorInput = new JComboBox<>(Chipset.DESC);
 		VendorInput.setSelectedIndex(0);
 		c.gridx = 0;
 		c.gridy = 1;
@@ -866,7 +641,7 @@ public class BoardDialog implements ActionListener, ComponentListener {
 			if (TheBoard.fpga.FpgaInfoPresent())
 				defined_components.add(rect);
 		} else {
-			FPGAIOInformationContainer comp = new FPGAIOInformationContainer(
+			BoardIO comp = new BoardIO(
 					IOComponentTypes.valueOf(res), rect, this);
 			if (comp.IsKnownComponent()) {
 				TheBoard.AddComponent(comp);
@@ -1012,7 +787,7 @@ public class BoardDialog implements ActionListener, ComponentListener {
 		c.fill = GridBagConstraints.HORIZONTAL;
 		selWindow.add(fpga, c);
 		JButton button;
-		for (String comp : FPGAIOInformationContainer.GetComponentTypes()) {
+		for (String comp : BoardIO.GetComponentTypes()) {
 			button = new JButton("Define a " + comp);
 			button.setActionCommand(comp);
 			button.addActionListener(actionListener);

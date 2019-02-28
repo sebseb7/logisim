@@ -30,37 +30,20 @@
 
 package com.bfh.logisim.fpgaboardeditor;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-
 public class PinActivity {
-	public static char getId(String identifier) {
-		char result = 0;
-		LinkedList<String> thelist = PinActivity.getStrings();
-		Iterator<String> iter = thelist.iterator();
-		result = 0;
-		while (iter.hasNext()) {
-			if (iter.next().equals(identifier))
-				return result;
-			result++;
-		}
-		return Unknown;
-	}
 
-	public static LinkedList<String> getStrings() {
-		LinkedList<String> result = new LinkedList<String>();
+  public static final char ACTIVE_LOW = 0;
+  public static final char ACTIVE_HIGH = 1;
+  public static final char UNKNOWN = 255;
 
-		result.add(Behavior_strings[0]);
-		result.add(Behavior_strings[1]);
+  public static final String[] DESC = { "Active low", "Active high" };
+	public static final String ATTR = "ActivityLevel";
 
-		return result;
-	}
+  public char get(String desc) {
+    for (char i = 0; i < DESC.length; i++)
+      if (DESC[i].equals(desc))
+        return i;
+    return UNKNOWN;
+  }
 
-	public static String ActivityAttributeString = "ActivityLevel";
-	public static char ActiveLow = 0;
-	public static char ActiveHigh = 1;
-
-	public static char Unknown = 255;
-
-	public static String[] Behavior_strings = { "Active low", "Active high" };
 }

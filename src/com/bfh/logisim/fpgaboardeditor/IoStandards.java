@@ -30,57 +30,26 @@
 
 package com.bfh.logisim.fpgaboardeditor;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-
 public class IoStandards {
-	public static String GetConstraintedIoStandard(char id) {
-		if ((id > DefaulStandard) && (id <= LVTTL)) {
-			return Behavior_strings[id];
-		}
-		return "";
-	}
 
-	public static char getId(String identifier) {
-		char result = 0;
-		LinkedList<String> thelist = IoStandards.getStrings();
-		Iterator<String> iter = thelist.iterator();
-		result = 0;
-		while (iter.hasNext()) {
-			if (iter.next().equals(identifier))
-				return result;
-			result++;
-		}
-		return Unknown;
-	}
+	public static final char DEFAULT = 0;
+	public static final char LVCMOS12 = 1;
+	public static final char LVCMOS15 = 2;
+	public static final char LVCMOS18 = 3;
+	public static final char LVCMOS25 = 4;
+	public static final char LVCMOS33 = 5;
+	public static final char LVTTL = 6;
+	public static final char UNKNOWN = 255;
 
-	public static LinkedList<String> getStrings() {
-		LinkedList<String> result = new LinkedList<String>();
-
-		result.add(Behavior_strings[0]);
-		result.add(Behavior_strings[1]);
-		result.add(Behavior_strings[2]);
-		result.add(Behavior_strings[3]);
-		result.add(Behavior_strings[4]);
-		result.add(Behavior_strings[5]);
-		result.add(Behavior_strings[6]);
-
-		return result;
-	}
-
-	public static String IOAttributeString = "FPGAPinIOStandard";
-	public static char DefaulStandard = 0;
-	public static char LVCMOS12 = 1;
-	public static char LVCMOS15 = 2;
-	public static char LVCMOS18 = 3;
-	public static char LVCMOS25 = 4;
-	public static char LVCMOS33 = 5;
-
-	public static char LVTTL = 6;
-
-	public static char Unknown = 255;
-
-	public static String[] Behavior_strings = { "Default", "LVCMOS12",
+	public static final String[] DESC = { "Default", "LVCMOS12",
 			"LVCMOS15", "LVCMOS18", "LVCMOS25", "LVCMOS33", "LVTTL" };
+	public static final String ATTR = "FPGAPinIOStandard";
+
+	public static char get(String desc) {
+    for (char i = 0; i < DESC.length; i++)
+      if (DESC[i].equals(desc))
+        return i;
+    return UNKNOWN;
+	}
 
 }

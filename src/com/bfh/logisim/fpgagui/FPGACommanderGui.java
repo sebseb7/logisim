@@ -54,9 +54,9 @@ import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.download.AlteraDownload;
 import com.bfh.logisim.download.XilinxDownload;
-import com.bfh.logisim.fpgaboardeditor.BoardInformation;
-import com.bfh.logisim.fpgaboardeditor.BoardReaderClass;
-import com.bfh.logisim.fpgaboardeditor.FPGAClass;
+import com.bfh.logisim.fpgaboardeditor.Board;
+import com.bfh.logisim.fpgaboardeditor.BoardReader;
+import com.bfh.logisim.fpgaboardeditor.Chipset;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
@@ -140,7 +140,7 @@ public class FPGACommanderGui implements ActionListener {
 	private Project MyProject;
   public String getProjectName() { return MyProject.getLogisimFile().getName(); }
 	private Settings MySettings = new Settings();
-	private BoardInformation MyBoardInformation = null;
+	private Board MyBoard = null;
 	private MyProjListener myprojList = new MyProjListener();
 	private MyLibraryListener myliblistener = new MyLibraryListener();
 	private MySimulatorListener mysimlistener = new MySimulatorListener();
@@ -156,31 +156,31 @@ public class FPGACommanderGui implements ActionListener {
 	private static final Integer UCFPath = 4;
 	private FPGAReport MyReporter = new FPGAReport(this);
 
-        void HDLOnlyUpdate() {
-		if ((MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera && MySettings
-				.GetAlteraToolPath().equals(Settings.Unknown))
-				|| (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorXilinx && MySettings
-						.GetXilinxToolPath().equals(Settings.Unknown))) {
-                        // Synthesis/download not possible.
-			if (!MySettings.GetHDLOnly()) {
-				MySettings.SetHdlOnly(true);
-				MySettings.UpdateSettingsFile();
-			}
-                        HDLOnly.setSelectedItem(OnlyHDLMessage);
-                        HDLOnly.setEnabled(false);
-			AddInfo("Tool path is not set correctly. " +
-				"Synthesis and download will not be available.");
-			AddInfo("Please set the path to Altera or Xilinx tools using the \"Settings\" button");
-		} else if (MySettings.GetHDLOnly()) {
-                        // Synthesis/download possible, but user selected to only generate HDL.
-                        HDLOnly.setSelectedItem(OnlyHDLMessage);
-                        HDLOnly.setEnabled(true);
-                } else {
-                        // Synthesis/download possible, user elects to do so.
-                        HDLOnly.setSelectedItem(HDLandDownloadMessage);
-                        HDLOnly.setEnabled(true);
-		}
-        }
+  void HDLOnlyUpdate() {
+    if ((MyBoard.fpga.getVendor() == Chipset.ALTERA
+          && MySettings.GetAlteraToolPath().equals(Settings.Unknown))
+        || (MyBoard.fpga.getVendor() == Chipset.XILINX
+          && MySettings.GetXilinxToolPath().equals(Settings.Unknown))) {
+      // Synthesis/download not possible.
+      if (!MySettings.GetHDLOnly()) {
+        MySettings.SetHdlOnly(true);
+        MySettings.UpdateSettingsFile();
+      }
+      HDLOnly.setSelectedItem(OnlyHDLMessage);
+      HDLOnly.setEnabled(false);
+      AddInfo("Tool path is not set correctly. " +
+          "Synthesis and download will not be available.");
+      AddInfo("Please set the path to Altera or Xilinx tools using the \"Settings\" button");
+    } else if (MySettings.GetHDLOnly()) {
+      // Synthesis/download possible, but user selected to only generate HDL.
+      HDLOnly.setSelectedItem(OnlyHDLMessage);
+      HDLOnly.setEnabled(true);
+    } else {
+      // Synthesis/download possible, user elects to do so.
+      HDLOnly.setSelectedItem(HDLandDownloadMessage);
+      HDLOnly.setEnabled(true);
+    }
+  }
 
 	public FPGACommanderGui(Project Main) {
 		MyProject = Main;
@@ -295,11 +295,9 @@ public class FPGACommanderGui implements ActionListener {
 		panel.add(annotationList, c);
 
 		/* Read the selected board information to retrieve board picture */
-		MyBoardInformation = new BoardReaderClass(
-				MySettings.GetSelectedBoardFileName()).GetBoardInformation();
-		MyBoardInformation
-				.setBoardName(boardsList.getSelectedItem().toString());
-		boardIcon = new BoardIcon(MyBoardInformation.GetImage());
+		MyBoard = BoardReader.read(MySettings.GetSelectedBoardFileName());
+		MyBoard.setBoardName(boardsList.getSelectedItem().toString());
+		boardIcon = new BoardIcon(MyBoard.GetImage());
 		// set board image on panel creation
 		boardPic.setIcon(boardIcon);
 		c.gridx = 3;
@@ -325,7 +323,7 @@ public class FPGACommanderGui implements ActionListener {
 		panel.add(validateButton, c);
 
 		// write to flash
-		writeToFlash.setVisible(MyBoardInformation.fpga.isFlashDefined());
+		writeToFlash.setVisible(MyBoard.fpga.isFlashDefined());
 		writeToFlash.setSelected(false);
 		c.gridx = 2;
 		c.gridy = 7;
@@ -400,7 +398,7 @@ public class FPGACommanderGui implements ActionListener {
 		} else {
 			MapPannel = new ComponentMapDialog(panel, "");
 		}
-		MapPannel.SetBoardInformation(MyBoardInformation);
+		MapPannel.SetBoard(MyBoard);
 
                 HDLOnlyUpdate();
 		validateButton.requestFocus();
@@ -423,7 +421,7 @@ public class FPGACommanderGui implements ActionListener {
 			updatingClockMenus = true;
             clockDivCount.removeAllItems();
             clockDivRate.removeAllItems();
-            long base = MyBoardInformation.fpga.getClockFrequency();
+            long base = MyBoard.fpga.getClockFrequency();
             ArrayList<Integer> counts = new ArrayList<>();
             ArrayList<Double> freqs = new ArrayList<>();
             double ff = (double)base;
@@ -463,7 +461,7 @@ public class FPGACommanderGui implements ActionListener {
             clockDivRate.setEnabled(div);
             clockDivCount.setEnabled(div);
             // textTargetDiv.setEnabled(div);
-            long base = MyBoardInformation.fpga.getClockFrequency();
+            long base = MyBoard.fpga.getClockFrequency();
             if (max) {
                 clockDivRate.setSelectedItem(new ExactRate(base, 0));
                 clockDivCount.setSelectedItem("undivided");
@@ -519,7 +517,7 @@ public class FPGACommanderGui implements ActionListener {
 			}
             if (!clockOption.getSelectedItem().equals(clockDiv))
                 return;
-            long base = MyBoardInformation.fpga.getClockFrequency();
+            long base = MyBoard.fpga.getClockFrequency();
             Object o = clockDivRate.getSelectedItem();
             Integer i;
             if (o instanceof ExactRate) {
@@ -553,7 +551,7 @@ public class FPGACommanderGui implements ActionListener {
 
             if (!clockOption.getSelectedItem().equals(clockDiv))
                 return;
-            long base = MyBoardInformation.fpga.getClockFrequency();
+            long base = MyBoard.fpga.getClockFrequency();
 			Object item = clockDivCount.getSelectedItem();
             String s = item == null ? "-1" : item.toString();
             int count = -1;
@@ -688,22 +686,20 @@ public class FPGACommanderGui implements ActionListener {
 				MySettings.SetSelectedBoard(boardsList.getSelectedItem()
 						.toString());
 				MySettings.UpdateSettingsFile();
-				MyBoardInformation = new BoardReaderClass(
-						MySettings.GetSelectedBoardFileName())
-						.GetBoardInformation();
-				MyBoardInformation.setBoardName(boardsList.getSelectedItem()
+				MyBoard = BoardReader.read(MySettings.GetSelectedBoardFileName());
+				MyBoard.setBoardName(boardsList.getSelectedItem()
 						.toString());
-				MapPannel.SetBoardInformation(MyBoardInformation);
-				boardIcon = new BoardIcon(MyBoardInformation.GetImage());
+				MapPannel.SetBoard(MyBoard);
+				boardIcon = new BoardIcon(MyBoard.GetImage());
 				boardPic.setIcon(boardIcon);
 				boardPic.repaint();
                                 HDLOnlyUpdate();
 				writeToFlash.setSelected(false);
-				writeToFlash.setVisible(MyBoardInformation.fpga.isFlashDefined());
+				writeToFlash.setVisible(MyBoard.fpga.isFlashDefined());
 			} else {
 				String NewBoardFileName = GetBoardFile();
-				MyBoardInformation = new BoardReaderClass(NewBoardFileName).GetBoardInformation();
-				if (MyBoardInformation == null) {
+				MyBoard = BoardReader.read(NewBoardFileName);
+				if (MyBoard == null) {
 					for (int index = 0 ; index < boardsList.getItemCount() ; index ++)
 						if (boardsList.getItemAt(index).equals(MySettings.GetSelectedBoard()))
 							boardsList.setSelectedIndex(index);
@@ -725,14 +721,14 @@ public class FPGACommanderGui implements ActionListener {
 						for (int index = 0 ; index < boardsList.getItemCount() ; index ++)
 							if (boardsList.getItemAt(index).equals(BoardInfo))
 								boardsList.setSelectedIndex(index);
-						MyBoardInformation.setBoardName(BoardInfo);
-						MapPannel.SetBoardInformation(MyBoardInformation);
-						boardIcon = new BoardIcon(MyBoardInformation.GetImage());
+						MyBoard.setBoardName(BoardInfo);
+						MapPannel.SetBoard(MyBoard);
+						boardIcon = new BoardIcon(MyBoard.GetImage());
 						boardPic.setIcon(boardIcon);
 						boardPic.repaint();
                                                 HDLOnlyUpdate();
 						writeToFlash.setSelected(false);
-						writeToFlash.setVisible(MyBoardInformation.fpga.isFlashDefined());
+						writeToFlash.setVisible(MyBoard.fpga.isFlashDefined());
 					} else {
 						for (int index = 0 ; index < boardsList.getItemCount() ; index ++)
 							if (boardsList.getItemAt(index).equals(MySettings.GetSelectedBoard()))
@@ -783,7 +779,7 @@ public class FPGACommanderGui implements ActionListener {
 				root.ClearAnnotationLevel();
 			}
 			root.Annotate(ClearExistingLabels, MyReporter,
-          MySettings.GetHDLType(), MyBoardInformation.fpga.getVendor());
+          MySettings.GetHDLType(), MyBoard.fpga.getVendor());
 			MyReporter.AddInfo("Annotation done");
 			/* TODO: Dirty hack, see Circuit.java function Annotate for details */
 			MyProject.repaintCanvas();
@@ -792,7 +788,7 @@ public class FPGACommanderGui implements ActionListener {
 	}
 
 	private void ChangeTickFrequency() {
-            long base = MyBoardInformation.fpga.getClockFrequency();
+            long base = MyBoard.fpga.getClockFrequency();
             for (double f : MenuSimulate.SupportedTickFrequencies) {
                 int count = countForFreq(base, f);
                 if (Math.abs((MyProject.getSimulator().getTickFrequency() - f)/f) < 0.0001) {
@@ -911,7 +907,7 @@ public class FPGACommanderGui implements ActionListener {
 			    + File.separator;
 	    String SourcePath = ProjectDir + MySettings.GetHDLType().toLowerCase()
 			    + File.separator;
-	    if (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera) {
+	    if (MyBoard.fpga.getVendor() == Chipset.ALTERA) {
 		return AlteraDownload.readyForDownload(ProjectDir + HDLPaths[SandboxPath] + File.separator);
 	    } else {
 		// todo: xilinx readyForDownload()
@@ -946,11 +942,11 @@ public class FPGACommanderGui implements ActionListener {
 		    ArrayList<String> Behaviors = new ArrayList<String>();
 		    GetVHDLFiles(ProjectDir, SourcePath, Entities, Behaviors,
 				    MySettings.GetHDLType());
-		    if (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera) {
+		    if (MyBoard.fpga.getVendor() == Chipset.ALTERA) {
 			    if (!AlteraDownload.GenerateQuartusScript(MyReporter, ProjectDir
 					    + HDLPaths[ScriptPath] + File.separator,
 					    RootSheet.getNetList(), MyMappableResources,
-					    MyBoardInformation, Entities, Behaviors,
+					    MyBoard, Entities, Behaviors,
 					    MySettings.GetHDLType())) {
 				MyReporter.AddError("Can't generate quartus script");
 				return;
@@ -960,7 +956,7 @@ public class FPGACommanderGui implements ActionListener {
 					    ProjectDir + HDLPaths[ScriptPath] + File.separator,
 					    ProjectDir + HDLPaths[UCFPath] + File.separator,
 					    RootSheet.getNetList(), MyMappableResources,
-					    MyBoardInformation, Entities, Behaviors,
+					    MyBoard, Entities, Behaviors,
 					    MySettings.GetHDLType(),
 					    writeToFlash.isSelected())
 					    && !generateOnly) {
@@ -969,13 +965,13 @@ public class FPGACommanderGui implements ActionListener {
 			    }
 		    }
 		}
-		if (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera) {
+		if (MyBoard.fpga.getVendor() == Chipset.ALTERA) {
 		    AlteraDownload.Download(MySettings, ProjectDir
 				    + HDLPaths[ScriptPath] + File.separator, SourcePath,
 				    ProjectDir + HDLPaths[SandboxPath] + File.separator,
 				    MyReporter);
 		} else {
-		    XilinxDownload.Download(MySettings, MyBoardInformation,
+		    XilinxDownload.Download(MySettings, MyBoard,
 				    ProjectDir + HDLPaths[ScriptPath] + File.separator,
 				    ProjectDir + HDLPaths[UCFPath] + File.separator,
 				    ProjectDir, ProjectDir + HDLPaths[SandboxPath]
@@ -1070,20 +1066,14 @@ public class FPGACommanderGui implements ActionListener {
 		LogisimFile myfile = MyProject.getLogisimFile();
 		Circuit RootSheet = myfile.getCircuit(CircuitName);
 		Netlist RootNetlist = RootSheet.getNetList();
-		if (MyBoardInformation == null) {
+		if (MyBoard == null) {
 			MyReporter
 					.AddError("INTERNAL ERROR: No board information available ?!?");
 			return false;
 		}
 
-		Map<String, ArrayList<Integer>> BoardComponents = MyBoardInformation
-				.GetComponents();
-		MyReporter.AddInfo("The Board " + MyBoardInformation.getBoardName()
-				+ " has:");
-		for (String key : BoardComponents.keySet()) {
-			MyReporter.AddInfo(BoardComponents.get(key).size() + " " + key
-					+ "(s)");
-		}
+    MyBoard.printStats(MyReporter);
+
 		/*
 		 * At this point I require 2 sorts of information: 1) A hierarchical
 		 * netlist of all the wires that needs to be bubbled up to the toplevel
@@ -1093,12 +1083,9 @@ public class FPGACommanderGui implements ActionListener {
 		 * name plus component/sub-circuit name
 		 */
 		MyMappableResources = new MappableResourcesContainer(
-				MyBoardInformation, RootNetlist);
-		// if (!MyMappableResources.IsMappable(BoardComponents, MyReporter)) {
-		// 	return false;
-		// }
+				MyBoard, RootNetlist);
 
-		MapPannel.SetBoardInformation(MyBoardInformation);
+		MapPannel.SetBoard(MyBoard);
 		MapPannel.SetMappebleComponents(MyMappableResources);
 		panel.setVisible(false);
 		MapPannel.SetVisible(true);
@@ -1110,7 +1097,7 @@ public class FPGACommanderGui implements ActionListener {
 
 		MyReporter
 				.AddError("Not all IO components have been mapped to the board "
-						+ MyBoardInformation.getBoardName()
+						+ MyBoard.getBoardName()
 						+ " please map all components to continue!");
 		return false;
 	}
@@ -1123,7 +1110,7 @@ public class FPGACommanderGui implements ActionListener {
       return false; // huh? no circuit found
 		return root.getNetList().validate(MyReporter,
 					HDLType.getSelectedItem().toString(), 
-					MyBoardInformation.fpga.getVendor());
+					MyBoard.fpga.getVendor());
 	}
 
 	private void RebuildCircuitSelection() {
@@ -1148,7 +1135,7 @@ public class FPGACommanderGui implements ActionListener {
 			settings = new FPGASettingsDialog(panel, MySettings);
 		settings.SetVisible(true);
 
-		if (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorAltera) {
+		if (MyBoard.fpga.getVendor() == Chipset.ALTERA) {
 			if (!MySettings.GetAlteraToolPath().equals(Settings.Unknown)) {
 				HDLOnly.setEnabled(true);
 				MySettings.SetHdlOnly(false);
@@ -1166,7 +1153,7 @@ public class FPGACommanderGui implements ActionListener {
 				}
 				AddErrors("***INFO*** Please select a directory containing these Altera programs:" + prgs);
 			}
-		} else if (MyBoardInformation.fpga.getVendor() == FPGAClass.VendorXilinx) {
+		} else if (MyBoard.fpga.getVendor() == Chipset.XILINX) {
 			if (!MySettings.GetXilinxToolPath().equals(Settings.Unknown)) {
 				HDLOnly.setEnabled(true);
 				MySettings.SetHdlOnly(false);
@@ -1287,7 +1274,7 @@ public class FPGACommanderGui implements ActionListener {
         RootSheet.getSubcircuitFactory().getHDLGenerator(MySettings.GetHDLType(), MyReporter,
             null, /* no nets yet ... - fixme ? top level maybe */
 						RootSheet.getStaticAttributes(),
-						MyBoardInformation.fpga.getVendor());
+						MyBoard.fpga.getVendor());
     // if (!(cWorker instanceof CircuitHDLGeneratorFactory))
     //   throw new IllegalStateException();
     // ((CircuitHDLGeneratorFactory)cWorker).initHDLGen(); /* stateful hdl gen */
@@ -1317,9 +1304,9 @@ public class FPGACommanderGui implements ActionListener {
 		if (RootSheet.getNetList().NumberOfClockTrees() > 0) {
 			TickComponentHDLGeneratorFactory Ticker = new TickComponentHDLGeneratorFactory(
           MySettings.GetHDLType(), MyReporter,
-					MyBoardInformation.fpga.getClockFrequency(),
+					MyBoard.fpga.getClockFrequency(),
 					TickPeriod,
-          RootSheet.getNetList(), MyBoardInformation.fpga.getVendor()); /* stateful hdl gen */
+          RootSheet.getNetList(), MyBoard.fpga.getVendor()); /* stateful hdl gen */
 			if (!AbstractHDLGeneratorFactory.WriteEntity(
 					ProjectDir + Ticker.GetRelativeDirectory(/*MySettings.GetHDLType()*/),
               Ticker.GetEntity(
@@ -1345,7 +1332,7 @@ public class FPGACommanderGui implements ActionListener {
 							MySettings.GetHDLType(), MyReporter,
               RootSheet.getNetList(),
 							RootSheet.getNetList().GetAllClockSources().get(0).getAttributeSet(),
-							MyBoardInformation.fpga.getVendor());
+							MyBoard.fpga.getVendor());
 			String CompName = ClockGen.getHDLNameWithinCircuit(""); // toplevel
 			if (!AbstractHDLGeneratorFactory.WriteEntity(
 					ProjectDir + ClockGen.GetRelativeDirectory(/*MySettings.GetHDLType()*/),
@@ -1365,9 +1352,9 @@ public class FPGACommanderGui implements ActionListener {
 		}
 		ToplevelHDLGeneratorFactory Worker = new ToplevelHDLGeneratorFactory(
         MySettings.GetHDLType(), MyReporter,
-				MyBoardInformation.fpga.getClockFrequency(),
+				MyBoard.fpga.getClockFrequency(),
 						TickPeriod, RootSheet, MyMappableResources,
-            skipHdl(), RootSheet.getNetList(), MyBoardInformation.fpga.getVendor()); /* stateful hdl gen */
+            skipHdl(), RootSheet.getNetList(), MyBoard.fpga.getVendor()); /* stateful hdl gen */
 		if (!AbstractHDLGeneratorFactory.WriteEntity(
 				ProjectDir + Worker.GetRelativeDirectory(/*MySettings.GetHDLType()*/),
 				Worker.GetEntity(/* RootSheet.getNetList(),*/ /*null,*/

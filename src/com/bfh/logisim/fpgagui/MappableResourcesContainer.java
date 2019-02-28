@@ -43,10 +43,10 @@ import java.util.TreeSet;
 
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
-import com.bfh.logisim.fpgaboardeditor.BoardInformation;
+import com.bfh.logisim.fpgaboardeditor.Board;
 import com.bfh.logisim.fpgaboardeditor.BoardRectangle;
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer.IOComponentTypes;
-import com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer;
+import com.bfh.logisim.fpgaboardeditor.BoardIO.IOComponentTypes;
+import com.bfh.logisim.fpgaboardeditor.BoardIO;
 import com.bfh.logisim.fpgaboardeditor.PinActivity;
 import com.bfh.logisim.hdlgenerator.HiddenPort;
 import com.cburch.logisim.std.wiring.Pin;
@@ -55,7 +55,7 @@ public class MappableResourcesContainer {
 
 	private Map<ArrayList<String>, NetlistComponent> myMappableResources;
 	public String currentBoardName;
-	private BoardInformation currentUsedBoard;
+	private Board currentUsedBoard;
 	private Map<String, BoardRectangle> mappedList;
 	private String toplevelName;
 	private Map<String, Integer> fpgaInputsList;
@@ -75,7 +75,7 @@ public class MappableResourcesContainer {
 	 * 
 	 * The MappedList keeps track of the display names.
 	 */
-	public MappableResourcesContainer(BoardInformation CurrentBoard, Netlist RootNetlist) {
+	public MappableResourcesContainer(Board CurrentBoard, Netlist RootNetlist) {
 		ArrayList<String> Toplevel = new ArrayList<String>();
 		Toplevel.add(CurrentBoard.getBoardName());
 		myMappableResources = RootNetlist.GetMappableResources(Toplevel, true);
@@ -111,7 +111,7 @@ public class MappableResourcesContainer {
         BoardRectangle r = comp.getMap(Map);
         if (!r.isDeviceSignal())
           continue;
-				FPGAIOInformationContainer BoardComp = currentUsedBoard.GetComponent(r);
+				BoardIO BoardComp = currentUsedBoard.GetComponent(r);
 				if (BoardComp.GetType().equals(IOComponentTypes.Pin)) {
 					if (comp.ports.get(0).isOutput) {
 						fpgaInputsList.put(Map, nrOfFPGAInputPins);
@@ -228,7 +228,7 @@ public class MappableResourcesContainer {
 			}
 			BoardRectangle rect = mappedList.get(Map);
       if (rect.isDeviceSignal()) {
-        FPGAIOInformationContainer Comp = currentUsedBoard.GetComponent(rect);
+        BoardIO Comp = currentUsedBoard.GetComponent(rect);
         Contents.addAll(Comp.GetPinlocStrings(FPGAVendor, "in", InputId));
       } else {
         return null;
@@ -242,7 +242,7 @@ public class MappableResourcesContainer {
 			}
 			BoardRectangle rect = mappedList.get(Map);
       if (rect.isDeviceSignal()) {
-        FPGAIOInformationContainer Comp = currentUsedBoard.GetComponent(rect);
+        BoardIO Comp = currentUsedBoard.GetComponent(rect);
         Contents.addAll(Comp.GetPinlocStrings(FPGAVendor, "inout", InOutId));
       } else {
         return null;
@@ -256,7 +256,7 @@ public class MappableResourcesContainer {
 			}
 			BoardRectangle rect = mappedList.get(Map);
       if (rect.isDeviceSignal()) {
-        FPGAIOInformationContainer Comp = currentUsedBoard.GetComponent(rect);
+        BoardIO Comp = currentUsedBoard.GetComponent(rect);
         Contents.addAll(Comp.GetPinlocStrings(FPGAVendor, "out", OutputId));
       } else {
         return null;
@@ -347,7 +347,7 @@ public class MappableResourcesContainer {
       BoardRectangle rect = mappedList.get(MapName);
       if (!rect.isDeviceSignal())
         return -1;
-      FPGAIOInformationContainer BoardComp = currentUsedBoard.GetComponent(rect);
+      BoardIO BoardComp = currentUsedBoard.GetComponent(rect);
 			if (BoardComp.GetType().equals(IOComponentTypes.DIPSwitch)) {
 				return BoardComp.getNrOfPins();
 			} else if (BoardComp.GetType().equals(IOComponentTypes.PortIO)) {
@@ -378,7 +378,7 @@ public class MappableResourcesContainer {
   }
 
 	public ArrayList<BoardRectangle> GetSelectableItemsList(String DisplayName,
-			BoardInformation BoardInfo) {
+			Board BoardInfo) {
 		ArrayList<BoardRectangle> rects;
 		ArrayList<String> key = GetHierarchyKey(DisplayName);
 		NetlistComponent comp = myMappableResources.get(key);
@@ -495,8 +495,8 @@ public class MappableResourcesContainer {
     BoardRectangle r = mappedList.get(MapName);
     boolean BoardActiveHigh;
     if (r.isDeviceSignal()) {
-      FPGAIOInformationContainer BoardComp = currentUsedBoard.GetComponent(r);
-      BoardActiveHigh = (BoardComp.GetActivityLevel() == PinActivity.ActiveHigh);
+      BoardIO BoardComp = currentUsedBoard.GetComponent(r);
+      BoardActiveHigh = (BoardComp.GetActivityLevel() == PinActivity.ACTIVE_HIGH);
     } else {
       BoardActiveHigh = true;
     }

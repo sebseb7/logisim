@@ -36,7 +36,7 @@ import com.bfh.logisim.fpgagui.FPGAReport;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.instance.StdAttr;
-import static com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer.IOComponentTypes;
+import static com.bfh.logisim.fpgaboardeditor.BoardIO.IOComponentTypes;
 
 public abstract class HDLSupport {
 

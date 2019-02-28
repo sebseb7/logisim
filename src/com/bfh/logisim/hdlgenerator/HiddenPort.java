@@ -33,7 +33,7 @@ package com.bfh.logisim.hdlgenerator;
 import java.util.ArrayList;
 
 import com.cburch.logisim.comp.Component;
-import static com.bfh.logisim.fpgaboardeditor.FPGAIOInformationContainer.IOComponentTypes;
+import static com.bfh.logisim.fpgaboardeditor.BoardIO.IOComponentTypes;
 import static com.bfh.logisim.netlist.Netlist.Int3;
 
 public class HiddenPort {

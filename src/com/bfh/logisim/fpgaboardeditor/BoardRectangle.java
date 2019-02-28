@@ -31,166 +31,69 @@
 package com.bfh.logisim.fpgaboardeditor;
 
 public class BoardRectangle {
-	private int xPosition;
-	private int yPosition;
-	private int Width;
-	private int Height;
-	private boolean IsActiveHigh = true;
-	private String Label;
-  private String kind;
-  int val; // only for constant kind
-  int synthetic_bits; // only for non-device kind
+
+	public final int x, y, width, height;
+  public final String kind; // "device", "constant", "ones", "zeros", "disconnected"
+  public final int const_val; // only used when kind == "constant"
+
+	public boolean activeHigh = true; // variable, and not part of equality checks
+  public String label; // variable, and not part of equality checks
+
+  public int synthetic_bits; // only used when kind != "device"
 
 	public BoardRectangle(int x, int y, int w, int h) {
+    this.x = w < 0 ? x+w : x;
+    this.y = h < 0 ? y+h : y;
+    this.w = w < 0 ? -w : w;
+    this.h = h < 0 ? -h : h;
     kind = "device";
-		this.set(x, y, w, h);
+    const_val = 0; // not used
+    synthetic_bits = 0; // not used
+    label = null; // set elsewhere
 	}
 
-	private BoardRectangle(String kind, int val) {
-		this.set(0, 0, 0, 0);
-    this.kind = kind;
-    this.val = val;
-    this.Label = kind.equals("constant") ? String.format("0x%x", val) : kind;
+	private BoardRectangle(String synthetic_kind, int val) {
+    x = y = width = height = 0;
+    kind = synthetic_kind;
+    const_val = val;
+    label = kind.equals("constant") ? String.format("0x%x", val) : kind;
 	}
-  public static BoardRectangle constant(int val) {
-    return new BoardRectangle("constant", val);
-  }
 
+  public static BoardRectangle constant(int val) { return new BoardRectangle("constant", val); }
   public static BoardRectangle ones() { return new BoardRectangle("ones", -1); }
   public static BoardRectangle zeros() { return new BoardRectangle("zeros", 0); }
-  // public static undefined() { return new BoardRectangle("undefined", -1); }
   public static BoardRectangle disconnected() { return new BoardRectangle("disconnected", -2); }
 
-	@Override
-	public boolean equals(Object rect) {
-		if (!(rect instanceof BoardRectangle))
-			return false;
-		BoardRectangle Rect = (BoardRectangle) rect;
-    if (kind.equals("constant") && val != Rect.val)
-      return false;
-		return (Rect.kind.equals(kind)
-        && (Rect.getHeight() == Height) && (Rect.getWidth() == Width)
-				&& (Rect.getXpos() == xPosition) && (Rect.getYpos() == yPosition));
-	}
-
   public boolean isDeviceSignal() { return "device".equals(kind); }
+  public boolean isConstantInput() { return "constant".equals(kind); }
   public boolean isAllOnesInput() { return "ones".equals(kind); }
   public boolean isAllZerosInput() { return "zeros".equals(kind); }
-  public boolean isConstantInput() { return "constant".equals(kind); }
-  // public boolean isUndefinedInput() { return "undefined".equals(kind); }
   public boolean isDisconnectedOutput() { return "disconnected".equals(kind); }
-  public int getSyntheticInputValue() {
-    return val;
+
+	public boolean overlaps(BoardRectangle other) {
+    if (x >= other.x+other.w || other.x >= x+w) // side by side
+      return false;
+    if (y >= other.y+other.h || other.y >= y+h) // above and below
+      return false;
+    return true;
   }
 
-	public int getHeight() {
-		return Height;
+	public boolean contains(int px, int py) {
+		return x <= px && px <= x+w && y <= py && py <= y+h;
 	}
 
-	public int getWidth() {
-		return Width;
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof BoardRectangle))
+			return false;
+		BoardRectangle other = (BoardRectangle)o;
+		return kind.equals(other.kind) && const_val == other.const_val
+        && x == other.x && y == other.y && w == other.w && h == other.h;
 	}
 
-	public int getXpos() {
-		return xPosition;
-	}
-
-	public int getYpos() {
-		return yPosition;
-	}
-
-	public boolean IsActiveOnHigh() {
-		return IsActiveHigh;
-	}
-
-	public String GetLabel() {
-		return Label;
-	}
-
-	public Boolean Overlap(BoardRectangle rect) {
-		Boolean result;
-		int xl, xr, yt, yb;
-		xl = rect.getXpos();
-		xr = xl + rect.getWidth();
-		yt = rect.getYpos();
-		yb = yt + rect.getHeight();
-
-		/* first check for the other corner points inside myself */
-		result = this.PointInside(xl, yt);
-		result |= this.PointInside(xl, yb);
-		result |= this.PointInside(xr, yt);
-		result |= this.PointInside(xr, yb);
-
-		/* check for my corner points inside him */
-		result |= rect.PointInside(xPosition, yPosition);
-		result |= rect.PointInside(xPosition + Width, yPosition);
-		result |= rect.PointInside(xPosition, yPosition + Height);
-		result |= rect.PointInside(xPosition + Width, yPosition + Height);
-
-		/*
-		 * if result=false: for sure the corner points are not inside one of
-		 * each other
-		 */
-		/* we now have to check for partial overlap */
-		if (!result) {
-			result |= ((xl >= xPosition) && (xl <= (xPosition + Width))
-					&& (yt <= yPosition) && (yb >= (yPosition + Height)));
-			result |= ((xr >= xPosition) && (xr <= (xPosition + Width))
-					&& (yt <= yPosition) && (yb >= (yPosition + Height)));
-			result |= ((xl <= xPosition) && (xr >= (xPosition + Width))
-					&& (yt >= yPosition) && (yt <= (yPosition + Height)));
-			result |= ((xl <= xPosition) && (xr >= (xPosition + Width))
-					&& (yb >= yPosition) && (yb <= (yPosition + Height)));
-		}
-		if (!result) {
-			result |= ((xPosition >= xl) && (xPosition <= xr)
-					&& (yPosition <= yt) && ((yPosition + Height) >= yb));
-			result |= (((xPosition + Width) >= xl)
-					&& ((xPosition + Width) <= xr) && (yPosition <= yt) && ((yPosition + Height) >= yb));
-			result |= ((xPosition <= xl) && ((xPosition + Width) >= xr)
-					&& (yPosition >= yt) && (yPosition <= yb));
-			result |= ((xPosition <= xl) && ((xPosition + Width) >= xr)
-					&& ((yPosition + Height) >= yt) && ((yPosition + Height) <= yb));
-		}
-
-		return result;
-	}
-
-	public Boolean PointInside(int x, int y) {
-		return ((x >= xPosition) && (x <= (xPosition + Width))
-				&& (y >= yPosition) && (y <= (yPosition + Height)));
-	}
-
-	private void set(int x, int y, int w, int h) {
-		if (w < 0) {
-			xPosition = x + w;
-			Width = -w;
-		} else {
-			xPosition = x;
-			Width = w;
-		}
-		if (h < 0) {
-			yPosition = y + h;
-			Height = -h;
-		} else {
-			yPosition = y;
-			Height = h;
-		}
-	}
-
-	public void SetActiveOnHigh(boolean IsActiveHigh) {
-		this.IsActiveHigh = IsActiveHigh;
-	}
-
-	public void SetLabel(String Label) {
-		this.Label = Label;
-	}
-
-  public void SetNrOfSyntheticBits(int b) {
-    synthetic_bits = b;
+  @Override
+  public int hashCode() {
+    return String.format("(%d,%d) %d x %d %s %d", x, y, w, h, kind, const_val).hashCode();
   }
 
-  public int GetNrOfSyntheticBits() {
-    return synthetic_bits;
-  }
 }
