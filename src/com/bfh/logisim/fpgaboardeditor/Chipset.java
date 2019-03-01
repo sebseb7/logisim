@@ -56,6 +56,7 @@ public class Chipset {
 	public final String Package;
 	public final String SpeedGrade;
 	public final char Vendor;
+	public final String VendorName;
 	public final PullBehavior UnusedPinsBehavior;
 	public final boolean FPGADefined;
 	public final boolean USBTMCDownload;
@@ -75,7 +76,8 @@ public class Chipset {
 		Part = params.get("FPGAInformation/Part");
 		Package = params.get("FPGAInformation/Package");
 		SpeedGrade = params.get("FPGAInformation/Speedgrade");
-    Vendor = getVendor(params.get("FPGAInformation/Vendor"));
+    VendorName = params.get("FPGAInformation/Vendor");
+    Vendor = getVendor(VendorName);
 		USBTMCDownload = Boolean.parseBoolean(params.getOrDefault("FPGAInformation/USBTMC", "false"));
     JTAGPos = Integer.parseInt(params.getOrDefault("FPGAInformation/JTAGPos", "1"));
     FlashPos = Integer.parseInt(params.getOrDefault("FPGAInformation/FlashPos", "2"));
@@ -113,12 +115,12 @@ public class Chipset {
 	private static String freqToString(long clkfreq) {
 		if (clkfreq % 1000000 == 0) {
 			clkfreq /= 1000000;
-			return Long.toString(clkfreq) + " MHz ";
+			return clkfreq + " MHz";
 		} else if (clkfreq % 1000 == 0) {
 			clkfreq /= 1000;
-			return Long.toString(clkfreq) + " kHz ";
+			return clkfreq + " kHz";
 		}
-		return Long.toString(clkfreq);
+		return clkfreq + " Hz";
 	}
 
 }

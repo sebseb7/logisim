@@ -601,7 +601,7 @@ public class XilinxDownload {
     PullBehavior dir = CurrentBoard.fpga.ClockPullBehavior;
 		if (dir == PullBehavior.PULL_UP || dir == PullBehavior.PULL_DOWN)
 			result.append(" | " + dir.xilinx.toUpperCase());
-    IoStandard std = CurrentBoard.fpga.getClockStandard();
+    IoStandard std = CurrentBoard.fpga.ClockStandard;
 		if (std != IoStandard.DEFAULT && std != IoStandard.UNKNOWN)
 			result.append(" | IOSTANDARD = " + std);
 		return result.toString();

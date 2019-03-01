@@ -228,19 +228,12 @@ public class BoardDialog implements ComponentListener {
 
 		JTextField rate = new JTextField(10);
 		JComboBox<String> hz = new JComboBox<>(new String[] { "Hz", "kHz", "MHz" });
-		hz.setSelectedIndex(2);
-
 		JTextField clkLoc = new JTextField();
-
 		JComboBox<PullBehavior> clkPull = new JComboBox<>(PullBehavior.OPTIONS);
-		clkPull.setSelectedIndex(0);
 		JComboBox<IoStandard> clkStandard = new JComboBox<>(IoStandard.OPTIONS);
-		clkStandard.setSelectedIndex(0);
 		JComboBox<IoStandard> unusedPull = new JComboBox<>(PullBehavior.OPTIONS);
-		unusedPull.setSelectedIndex(0);
 		JTextField jtagPos = new JTextField("1");
 		JComboBox<String> vendor = new JComboBox<>(Chipset.VENDORS);
-		vendor.setSelectedIndex(0);
 		JTextField family = new JTextField();
 		JTextField part = new JTextField();
 		JTextField pkg = new JTextField();
@@ -248,7 +241,33 @@ public class BoardDialog implements ComponentListener {
 		JTextField flashName = new JTextField();
 		JTextField flashPos = new JTextField("2");
 		JCheckBox usbTmc = new JCheckBox("USBTMC Download");
-		usbTmc.setSelected(false);
+
+    if (fpga == null) {
+      // sensible default values
+      rate.setText("50");
+      hz.setSelectedIndex(2);
+      clkPull.setSelectedIndex(0);
+      clkStandard.setSelectedIndex(0);
+      unusedPull.setSelectedIndex(0);
+      vendor.setSelectedIndex(0);
+      usbTmc.setSelected(false);
+    } else {
+      rate.setText(fpga.speed.split(" ")[0]);
+      hz.setSelectedItem(fpga.speed.split(" ")[1]);
+      clkLoc.setText(fpga.ClockPinLocation);
+      clkPull.setSelectedItem(fpga.ClockPullBehavior);
+      clkStandard.setSelectedItem(fpga.ClockIOStandard);
+      unusedPull.setSelectedItem(fpga.UnusedPinsBehavior);
+      jtagPos.setText(fpga.JTAGPos);
+      vendor.setSelectedItem(fpga.VendorName);
+      family.setText(fpga.Technology);
+      part.setText(fpga.Part);
+      pkg.setText(fpga.Package);
+      speed.setText(fpga.SpeedGrade);
+      flashName.setText(fpga.FlashName);
+      flashPos.setText(fpga.FlashPos);
+      usbTmc.setselected(fpga.USBTMCDownload);
+    }
 
 		JPanel freqPanel = new JPanel();
 		freqPanel.setLayout(new GridBagLayout());
