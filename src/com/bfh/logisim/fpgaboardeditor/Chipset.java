@@ -36,10 +36,13 @@ public class Chipset {
 	public static final char XILINX = 'X';
 	public static final char UNKNOWN = '?';
 
+  public static final String[] VENDORS = { "Altera", "Xilinx" };
+
 	private static char getVendor(String desc) {
-    for (char i = 0; i < DESC.length; i++)
-      if (DESC[i].equals(desc))
-        return i;
+    if (desc.equalsIgnoreCase("Altera"))
+      return ALTERA;
+    if (desc.equalsIgnoreCase("Xilinx"))
+      return XILINX;
     return UNKNOWN;
 	}
 
@@ -60,27 +63,6 @@ public class Chipset {
 	public final String FlashName;
 	public final int FlashPos;
 	public final boolean FlashDefined;
-
-  private boolean empty;
-
-  public Chipset() {
-    ClockFrequency = 0;
-    ClockPinLocation = null;
-    ClockPullBehavior = 0;
-    ClockIOStandard = 0;
-    Technology = null;
-    Part = null;
-    Package = null;
-    SpeedGrade = null;
-    Vendor = 0;
-    UnusedPinsBehavior = 0;
-    USBTMCDownload = false;
-    JTAGPos = 1;
-    FlashName = null;
-    FlashPos = 2;
-    FlashDefined = false;
-    empty = true;
-  }
 
 	public Chipset(HashMap<String, String> params) throws Exception {
 

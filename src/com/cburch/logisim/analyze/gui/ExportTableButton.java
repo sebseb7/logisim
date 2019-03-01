@@ -211,16 +211,10 @@ class ExportTableButton extends JButton {
     }
   }
 
-  public static final FileFilter FILE_FILTER = new TableFilter();
-  private static class TableFilter extends FileFilter {
+  public static final FileFilter FILE_FILTER = new FileFilter {
     public boolean accept(File f) {
-      if (!f.isFile())
-        return true;
-      String name = f.getName();
-      int i = name.lastIndexOf('.');
-      return (i > 0 && name.substring(i).toLowerCase().equals(".txt"));
+      return (!f.isFile() || f.getName().toLowerCase().endsWith(".txt"));
     }
-
     public String getDescription() {
       return "Logisim-evolution Truth Table (*.txt)";
     }

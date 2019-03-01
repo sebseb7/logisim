@@ -42,13 +42,14 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import com.cburch.logisim.util.Errors;
+
 class BoardWriter {
 
-	public static write(String filename, Board board, Image image) {
+	public boolean write(String filename, Board board) {
     Document doc;
 		try {
       Chipset chip = board.fpga;
@@ -85,19 +86,19 @@ class BoardWriter {
 				io.appendChild(comp.encodeXml(doc));
 
 			ImageXmlFactory writer = new ImageXmlFactory();
-			writer.CreateStream(image);
+			writer.CreateStream(board.image);
 
       Element pic = put(doc, root, "BoardPicture", "Compressed image of board",
           make("PictureDimension",
-            "Width", image.getWidth(null),
-            "Height", image.getHeight(null)),
+            "Width", board.image.getWidth(null),
+            "Height", board.image.getHeight(null)),
           make("CompressionCodeTable",
             "TableData", writer.GetCodeTable()),
           make("PixelData",
             "PixelRGB", writer.GetCompressedString()));
 		} catch (Exception e) {
-      BoardDialog.showError("Error encoding XML data: " + e.getMessage());
-      return;
+      Errors.title("Error").show("Error encoding XML data: " + e.getMessage(), e);
+      return false;
 		}
 		try {
 			TransformerFactory tranFactory = TransformerFactory.newInstance();
@@ -109,8 +110,10 @@ class BoardWriter {
 			Result dest = new StreamResult(file);
 			aTransformer.transform(src, dest);
 		} catch (Exception e) {
-      BoardDialog.showError("Error writing XML data to "+filename+": " + e.getMessage());
+      Errors.title("Error").show("Error writing XML data to "+filename+": " + e.getMessage(), e);
+      return false;
 		}
+    return rue;
 	}
 
   private static Element put(Doc doc, Element root,

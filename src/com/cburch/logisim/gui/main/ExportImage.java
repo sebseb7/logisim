@@ -69,7 +69,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.GifEncoder;
-import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.UniquelyNamedThread;
 
 public class ExportImage {
@@ -78,20 +77,22 @@ public class ExportImage {
     Frame frame;
     Canvas canvas;
     File dest;
-    ImageFileFilter filter;
+    FileFilter filter;
+    String fmt;
     List<Circuit> circuits;
     double scale;
     boolean printerView;
     ProgressMonitor monitor;
 
-    ExportThread(Frame frame, Canvas canvas, File dest, ImageFileFilter f,
-        List<Circuit> circuits, double scale, boolean printerView,
+    ExportThread(Frame frame, Canvas canvas, File dest, FileFilter f,
+        String ext, List<Circuit> circuits, double scale, boolean printerView,
         ProgressMonitor monitor) {
       super("ExportThread");
       this.frame = frame;
       this.canvas = canvas;
       this.dest = dest;
       this.filter = f;
+      this.ext = ext;
       this.circuits = circuits;
       this.scale = scale;
       this.printerView = printerView;
@@ -101,15 +102,15 @@ public class ExportImage {
     private void export(Circuit circuit) {
       File filename;
       if (dest.isDirectory()) {
-        filename = new File(dest, circuit.getName() + filter.extensions[0]);
+        filename = new File(dest, circuit.getName() + fmt);
       } else if (filter.accept(dest)) {
         filename = dest;
       } else {
-        String newName = dest.getName() + filter.extensions[0];
+        String newName = dest.getName() + fmt;
         filename = new File(dest.getParentFile(), newName);
       }
       String msg = exportImage(canvas, circuit,
-          scale, printerView, filename, filter.type, monitor);
+          scale, printerView, filename, ext, monitor);
       if (msg != null) {
         JOptionPane.showMessageDialog(frame, msg);
       }
@@ -123,7 +124,7 @@ public class ExportImage {
     }
   }
 
-  public static String exportImage(Canvas canvas, Circuit circuit, double scale, boolean printerView, File dest, int format, ProgressMonitor monitor) {
+  public static String exportImage(Canvas canvas, Circuit circuit, double scale, boolean printerView, File dest, String format, ProgressMonitor monitor) {
     Bounds bds;
     if (!printerView) {
       bds = circuit.getBounds(canvas.getGraphics()).expand(BORDER_SIZE);
@@ -172,36 +173,6 @@ public class ExportImage {
         monitor.close();
     }
     return null;
-  }
-
-  public static class ImageFileFilter extends FileFilter {
-    private int type;
-    private String[] extensions;
-    private StringGetter desc;
-
-    public ImageFileFilter(int type, StringGetter desc, String[] exts) {
-      this.type = type;
-      this.desc = desc;
-      extensions = new String[exts.length];
-      for (int i = 0; i < exts.length; i++) {
-        extensions[i] = "." + exts[i].toLowerCase();
-      }
-    }
-
-    @Override
-    public boolean accept(File f) {
-      String name = f.getName().toLowerCase();
-      for (int i = 0; i < extensions.length; i++) {
-        if (name.endsWith(extensions[i]))
-          return true;
-      }
-      return f.isDirectory();
-    }
-
-    @Override
-    public String getDescription() {
-      return desc.toString();
-    }
   }
 
   private static class OptionsPanel extends JPanel implements ChangeListener {
@@ -306,18 +277,19 @@ public class ExportImage {
     }
   }
 
-  public static ImageFileFilter getFilter(int fmt) {
+  public static final FileFilter GIF_FILTER =
+      Loader.makeFileFilter(S.getter("exportGifFilter"), ".gif");
+  public static final FileFilter PNG_FILTER =
+      Loader.makeFileFilter(S.getter("exportPngFilter"), ".png");
+  public static final FileFilter JPG_FILTER =
+      Loader.makeFileFilter(S.getter("exportJpgFilter"),
+          ".jpg", ".jpeg", ".jpe", ".jfi", ".jfif", ".jfi");
+
+  public static FileFilter getFilter(String fmt) {
     switch (fmt) {
-    case FORMAT_GIF:
-      return new ImageFileFilter(fmt,
-          S.getter("exportGifFilter"), new String[] { "gif" });
-    case FORMAT_PNG:
-      return new ImageFileFilter(fmt,
-          S.getter("exportPngFilter"), new String[] { "png" });
-    case FORMAT_JPG:
-      return new ImageFileFilter(fmt,
-          S.getter("exportJpgFilter"), new String[] { "jpg",
-            "jpeg", "jpe", "jfi", "jfif", "jfi" });
+    case FORMAT_GIF: return GIF_FILTER;
+    case FORMAT_PNG: return PNG_FILTER;
+    case FORMAT_JPG: return JPG_FILTER;
     default:
       System.err.println("Unexpected image format; aborted!");
       return null;
@@ -347,8 +319,8 @@ public class ExportImage {
     if (circuits.isEmpty())
       return;
 
-    int fmt = options.getImageFormat();
-    ImageFileFilter filter = getFilter(fmt);
+    String fmt = options.getImageFormat();
+    FileFilter filter = getFilter(fmt);
     if (filter == null)
       return;
 
@@ -403,18 +375,18 @@ public class ExportImage {
     // And start a thread to actually perform the operation
     // (This is run in a thread so that Swing will update the
     // monitor.)
-    new ExportThread(frame, frame.getCanvas(), dest, filter, circuits,
+    new ExportThread(frame, frame.getCanvas(), dest, filter, fmt, circuits,
         scale, printerView, monitor).start();
 
   }
 
   private static final int SLIDER_DIVISIONS = 6;
 
-  public static final int FORMAT_GIF = 0;
+  public static final String FORMAT_GIF = ".gif";
 
-  public static final int FORMAT_PNG = 1;
+  public static final String FORMAT_PNG = ".png";
 
-  public static final int FORMAT_JPG = 2;
+  public static final String FORMAT_JPG = ".jpg";
 
   private static final int BORDER_SIZE = 5;
 

@@ -41,7 +41,6 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -52,6 +51,7 @@ import com.cburch.logisim.std.io.DipSwitch;
 import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.std.io.RGBLed;
 import com.cburch.logisim.std.io.SevenSegment;
+import com.cburch.logisim.util.Errors;
 
 // Each BoardIO represents one physical I/O resource, like an LED or button.
 public class BoardIO {
@@ -130,7 +130,6 @@ public class BoardIO {
 
 	}
 
-	public final long id;
 	public final Type type;
 	public final int width;
   public final String label;
@@ -142,9 +141,8 @@ public class BoardIO {
 
 	private final String[] pins;
 
-  private BoardIO(long i, Type t, int w, String l, BoardRectangle r,
+  private BoardIO(Type t, int w, String l, BoardRectangle r,
       IoStandard s, PullBehavior p, PinActivity a, DriveStrength g, String[] x) {
-    id = i;
     type = t;
     width = w;
     label = l;
@@ -156,7 +154,7 @@ public class BoardIO {
     pins = x;
   }
 
-  static BoardIO parseXml(long id, Node node) throws Exception {
+  static BoardIO parseXml(Node node) throws Exception {
     Type t = Type.get(node.getNodeName());
     if (t == Type.UNKNOWN)
       throw new Exception("unrecognized I/O resource type: " + node.getNodeName());
@@ -204,7 +202,7 @@ public class BoardIO {
       }
     }
 
-    return new BoardIO(id, t, width, label, r, s, p, a, g, pins);
+    return new BoardIO(t, width, label, r, s, p, a, g, pins);
 	}
 
 	public Element encodeXml(Document doc) throws Exception {
@@ -233,9 +231,9 @@ public class BoardIO {
     return elt;
   }
 
-	public static makeUserDefined(long i, Type t, BoardRectangle r, BoardDialog parent) {
+	public BoardIO makeUserDefined(Type t, BoardRectangle r, BoardDialog parent) {
     int w = t.defaultWidth();
-    BoardIO template = new BoardIO(i, t, w, null, r,
+    BoardIO template = new BoardIO(t, w, null, r,
         IoStandard.UNKNOWN, PullBehavior.UNKNOWN, PinActivity.UNKNOWN, DriveStrength.UNKOWN,
         null);
     if (t == Type.DIPSwitch || t == Type.PortIO)
@@ -251,7 +249,7 @@ public class BoardIO {
     int max = t.type == DIPSwitch ? DipSwitch.MAX_SWITCH : PortIO.MAX_IO;
     final int[] width = new int[] { t.width };
 
-    final JDialog dlg = new JDialog(parent.GetPanel(), t.type + " Size");
+    final JDialog dlg = new JDialog(parent.panel, t.type + " Size");
     dlg.setLayout(new GridBagLayout());
     GridBagConstraints c = new GridBagConstraints();
     c.fill = GridBagConstraints.HORIZONTAL;
@@ -288,7 +286,7 @@ public class BoardIO {
     dlg.setAlwaysOnTop(true);
     dlg.setVisible(true);
 
-    return new BoardIO(t.id, t.type, width[0], t.label,
+    return new BoardIO(t.type, width[0], t.label,
         t.rect, t.standard, t.pull, t.activity, t.strength  t.pins);
   }
 
@@ -299,7 +297,7 @@ public class BoardIO {
 
   private static void add(JDialog dlg, GridBagConstraints c,
       String caption, JComponent input) {
-      dlg.add(new JLabel(caption), c);
+      dlg.add(new JLabel(caption + " "), c);
       c.gridx++;
       dlg.add(input, c);
       c.gridx--;
@@ -307,7 +305,7 @@ public class BoardIO {
   }
 
   private static BoardIO doInfoDialog(BoardIO t, BoardDialog parent) {
-    final JDialog dlg = new JDialog(parent.GetPanel(), t.type + " Properties");
+    final JDialog dlg = new JDialog(parent.panel, t.type + " Properties");
     dlg.setLayout(new GridBagLayout());
     GridBagConstraints c = new GridBagConstraints();
     c.fill = GridBagConstraints.HORIZONTAL;
@@ -395,7 +393,7 @@ public class BoardIO {
       }
       if (!missing)
         break;
-      BoardDialog.showError("Please specify a location for all pins.");
+      Errors.title("Error").show("Please specify a location for all pins.");
     }
 
     String txt = label.getText();
@@ -414,7 +412,7 @@ public class BoardIO {
     if (t.type == Type.Pin)
       p = PullBehavior.ACTIVE_HIGH; // special case: Pin is always active high
 
-    return new BoardIO(t.id, t.type, t.width, txt, t.rect, defaultStandard, p,
+    return new BoardIO(t.type, t.width, txt, t.rect, defaultStandard, p,
         activity != null ? defaultActivity : PinActivity.UNKNOWN,
         strength != null ? defaultStrength : DriveStrength.UNKNOWN,
         pins);

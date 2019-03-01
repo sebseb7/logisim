@@ -33,8 +33,6 @@ import static com.cburch.logisim.file.Strings.S;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -80,19 +78,6 @@ public class Errors {
     return new Errors(null, circFile == null ? null : LogisimFile.toProjectName(circFile));
   }
 
-  // public Errors title(String title) {
-  //   return new Errors(title, name);
-  // }
-
-  // public Errors project(String name) {
-  //   return new Errors(title, name);
-  // }
-
-  // public Errors project(File circFile) {
-  //   return new Errors(title, circFile == null ? null : LogisimFile.toProjectName(circFile));
-  // }
-
-    // new Errors S.get("fileErrorTitle") : S.get("fileMessageTitle");
   public void show(String description, Throwable ...errs) {
     show(true, description, errs);
   }

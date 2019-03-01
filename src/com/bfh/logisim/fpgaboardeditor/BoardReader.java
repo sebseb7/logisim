@@ -34,11 +34,12 @@ import java.awt.image.BufferedImage;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import com.cburch.logisim.util.Errors;
 
 public class BoardReader {
 
@@ -47,21 +48,31 @@ public class BoardReader {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder parser = factory.newDocumentBuilder();
       Document doc;
-			if (path.startsWith("url:"))
-				doc = parser.parse(getClass().getResourceAsStream("/" + path.substring(4)));
-			else if (path.startsWith("file:"))
-				doc = parser.parse(new File(path.substring(5)));
-			else
-				doc = parser.parse(new File(path));
+      String name;
+			if (path.startsWith("url:")) {
+        name = path.substring(4);
+				doc = parser.parse(getClass().getResourceAsStream("/" + name);
+      } else if (path.startsWith("file:")) {
+        name = path.substring(5);
+				doc = parser.parse(new File(name));
+      } else {
+        name = path;
+				doc = parser.parse(new File(name));
+      }
 
-			Board b = new Board(parseChipset(doc), parsePicture(doc));
+      int i = name.indexofLast('/');
+      String name = i < 0 ? name : name.substring(i+1);
+      if (name.toLowerCase().endsWith(".xml"))
+        name = name.substring(0, name.length()-4);
+
+			Board b = new Board(name, parseChipset(doc), parsePicture(doc));
       parseComponents(doc, "PinsInformation", b); // backwards compatability	
 			parseComponents(doc, "ButtonsInformation", b); // backwards compatability	
 			parseComponents(doc, "LEDsInformation", b); // backwards compatability	
 			parseComponents(doc, "IOComponents", b); // new format
 			return b;
 		} catch (Exception e) {
-      BoardDialog.showError("The selected xml file was invalid: " + e.getMessage());
+      Errors.title("Error").show("The selected xml file was invalid: " + e.getMessage(), e);
       return null;
 		}
 	}

@@ -43,13 +43,14 @@ import com.bfh.logisim.fpgaboardeditor.BoardIO.IOComponentTypes;
 // of I/O resources.
 public class Board extends AbstractList<BoardIO> {
 
-	public String name;
+	public final String name;
 	public final Chipset fpga;
 	public final BufferedImage image;
 
 	private final ArrayList<BoardIO> components = new ArrayList<>();
 
-	public Board(Chipset fpga, BoardPicture image) {
+	public Board(String name, Chipset fpga, BufferedImage image) {
+    this.name = name;
     this.fpga = fpga;
     this.image = image;
 	}

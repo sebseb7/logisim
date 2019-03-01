@@ -30,17 +30,12 @@
 
 package com.bfh.logisim.fpgaboardeditor;
 
+import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
-import java.io.File;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.LinkedList;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -50,589 +45,150 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.filechooser.FileFilter;
 
-import com.bfh.logisim.fpgaboardeditor.BoardIO.IOComponentTypes;
 import com.cburch.logisim.proj.Projects;
+import com.cburch.logisim.file.Loader;
+import com.cburch.logisim.util.Errors;
 
-public class BoardDialog implements ActionListener, ComponentListener {
+public class BoardDialog implements ComponentListener {
 
-	private static final String ERR_ICON = "/resources/logisim/error.png";
-	private static final String WANR_ICON = "/resources/logisim/warning.png";
+	public final JFrame panel;
+	private JButton save, load;
 
-	private static class XMLFileFilter extends FileFilter {
-		@Override
-		public boolean accept(File f) {
-			return f.isDirectory() || f.getName().endsWith(XML_EXTENSION);
-		}
-
-		@Override
-		public String getDescription() {
-			return Strings.get("XMLFileFilter"); // TODO: language adaptation
-		}
-	}
-
-	private JFrame panel;
-	public LinkedList<BoardRectangle> defined_components = new LinkedList<BoardRectangle>();
-	public static final String pictureError = "/resources/logisim/error.png";
-	public static final String pictureWarning = "/resources/logisim/warning.png";
-	private String action_id;
-	boolean abort;
-	private Board TheBoard = new Board();
-	private JTextField BoardNameInput;
-	private JButton saveButton;
-	private JButton loadButton;
-	private BoardPanel picturepanel;
-	public static final String XML_EXTENSION = ".xml";
-	public static final FileFilter XML_FILTER = new XMLFileFilter();
-	private String CancelStr = "cancel";
-	private String FPGAStr = "fpgainfo";
-
-	/* BIg TODO: Add all language strings */
+	private JTextField name;
+	private BoardPanel image;
+  private Chipset fpga;
+	public LinkedList<BoardIO> ioComponents = new LinkedList<>();
 
 	public BoardDialog() {
-		GridBagConstraints gbc = new GridBagConstraints();
+		final GridBagConstraints c = new GridBagConstraints();
 
 		panel = new JFrame(Strings.get("FPGABoardEditor"));
 		panel.setResizable(false);
 		panel.addComponentListener(this);
 		panel.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		GridBagLayout thisLayout = new GridBagLayout();
-		panel.setLayout(thisLayout);
-		// PointerInfo mouseloc = MouseInfo.getPointerInfo();
-		// Point mlocation = mouseloc.getLocation();
-		// panel.setLocation(mlocation.x,mlocation.y);
+		panel.setLayout(new GridBagLayout());
 
 		// Set an empty board picture
-		picturepanel = new BoardPanel(this);
-		panel.add(picturepanel);
+		image = new BoardPanel(this);
+		panel.add(image);
 
-		JPanel ButtonPanel = new JPanel();
-		GridBagLayout ButtonLayout = new GridBagLayout();
-		ButtonPanel.setLayout(ButtonLayout);
+		JPanel buttons = new JPanel() {
+      @Override
+      public void add(Component comp) {
+        super.add(comp, c);
+        c.gridx++;
+      }
+    }
+		buttons.setLayout(new GridBagLayout());
 
-		JLabel LocText = new JLabel("Board Name:  ");
-		gbc.gridx = 0;
-		gbc.gridy = 0;
-		gbc.fill = GridBagConstraints.HORIZONTAL;
-		ButtonPanel.add(LocText, gbc);
+		c.gridx = 0;
+		c.gridy = 0;
+		c.fill = GridBagConstraints.HORIZONTAL;
 
-		BoardNameInput = new JTextField(32);
-		BoardNameInput.setEnabled(false);
-		gbc.gridx = 1;
-		gbc.gridy = 0;
-		gbc.fill = GridBagConstraints.HORIZONTAL;
-		ButtonPanel.add(BoardNameInput, gbc);
+		buttons.add(new JLabel("Board Name:"));
 
-		JButton cancelButton = new JButton("Cancel");
-		gbc.gridx = 2;
-		gbc.gridy = 0;
-		gbc.fill = GridBagConstraints.HORIZONTAL;
-		cancelButton.setActionCommand(CancelStr);
-		cancelButton.addActionListener(this);
-		ButtonPanel.add(cancelButton, gbc);
+		name = new JTextField(32);
+		name.setEnabled(true);
+		buttons.add(name);
 
-		loadButton = new JButton("Load");
-		gbc.gridx = 3;
-		gbc.gridy = 0;
-		gbc.fill = GridBagConstraints.HORIZONTAL;
-		loadButton.setActionCommand("load");
-		loadButton.addActionListener(this);
+		JButton chipset = new JButton("Configure FPGA Chipset");
+		cancel.addActionListener(e -> doChipsetDialog());
+		cancel.setEnabled(true);
+		buttons.add(cancel);
+
+		load = new JButton("Load");
+		loadButton.addActionListener(e -> doLoad());
 		loadButton.setEnabled(true);
-		ButtonPanel.add(loadButton, gbc);
+		buttons.add(load);
 
-		saveButton = new JButton("Done and save");
-		gbc.gridx = 4;
-		gbc.gridy = 0;
-		gbc.fill = GridBagConstraints.HORIZONTAL;
-		saveButton.setActionCommand("save");
-		saveButton.addActionListener(this);
-		saveButton.setEnabled(false);
-		ButtonPanel.add(saveButton, gbc);
+		JButton cancel = new JButton("Cancel");
+		cancel.addActionListener(e -> { panel.setVisible(false); clear(); });
+		cancel.setEnabled(true);
+		buttons.add(cancel);
 
-		gbc.gridx = 0;
-		gbc.gridy = 3;
-		gbc.fill = GridBagConstraints.HORIZONTAL;
-		panel.add(ButtonPanel, gbc);
+		save = new JButton("Done");
+		save.setActionCommand("save");
+		save.addActionListener(e -> doSave());
+		save.setEnabled(false);
+		buttons.add(save);
+
+		c.gridx = 0;
+		c.gridy = 1;
+		panel.add(buttons, c);
 
 		panel.pack();
 		panel.setLocationRelativeTo(null);
 		panel.setVisible(true);
 	}
 
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		if (e.getActionCommand().equals(CancelStr)) {
-			this.clear();
-		} else if (e.getActionCommand().equals("save")) {
-			panel.setVisible(false);
-			TheBoard.setBoardName(BoardNameInput.getText());
-			String filename = getDirName("",
-					"Select directory to save board file:");
-			filename += TheBoard.getBoardName() + ".xml";
-      int w = picturepanel.getWidth();
-      int h = picturepanel.getHeight();
-			BoardWriter.write(filename, TheBoard, picturepanel.getScaledImage(w, h));
-			this.clear();
-		} else if (e.getActionCommand().equals("load")) {
-			JFileChooser fc = new JFileChooser();
-			fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-			fc.setDialogTitle("Choose XML board description file to use");
-			fc.setFileFilter(XML_FILTER);
-			fc.setAcceptAllFileFilterUsed(false);
-			int retval = fc.showOpenDialog(null);
-			if (retval == JFileChooser.APPROVE_OPTION) {
-				File file = fc.getSelectedFile();
-				SetBoardName(file.getName());
-				String FileName = file.getPath();
-				TheBoard = BoardReader.read(FileName);
-				picturepanel.SetImage(TheBoard.GetImage());
-				for (BoardIO comp : TheBoard.GetAllComponents())
-					defined_components.add(comp.GetRectangle());
-				if ((TheBoard.GetNrOfDefinedComponents() > 0)
-						&& TheBoard.fpga.FpgaInfoPresent())
-					saveButton.setEnabled(true);
-				picturepanel.repaint();
-			}
+	private void doSave() {
+    Board board = new Board(name.getText(), fpga, image.getImage());
+    String dir = getSaveDirectory();
+    if (dir == null)
+      return;
+    String filename += dir + board.name + ".xml";
+    if (!BoardWriter.write(filename, board))
+      return;
+    panel.setVisible(false);
+    clear();
+  }
 
-		}
+  private void doLoad() {
+    JFileChooser fc = new JFileChooser();
+    fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+    fc.setDialogTitle("Choose XML board description");
+    fc.setFileFilter(Loader.XML_FILTER);
+    fc.setAcceptAllFileFilterUsed(false);
+    int retval = fc.showOpenDialog(null);
+    if (retval != JFileChooser.APPROVE_OPTION)
+      return;
+    String path = fc.getSelectedFile().getPath();
+    Board board = BoardReader.read(path);
+    if (board == null)
+      return;
+
+    name.setText(board.name);
+    fpga = board.fpga;
+    image.setImage(board.image);
+    ioComponents.clear();
+    ioComponents.addAll(board);
+
+    setEnables();
 	}
 
-	private String checkIfEndsWithSlash(String path) {
-		if (!path.endsWith("/")) {
-			path += "/";
-		}
-		return (path);
-	}
+  private void setEnables() {
+    save.setEnabled(!name.getText().isEmpty()
+        && fpga != null
+        && image.getImage() != null
+        && !ioComponents.isEmpty());
+  }
 
 	public void clear() {
 		if (panel.isVisible())
 			panel.setVisible(false);
-		picturepanel.clear();
-		defined_components.clear();
-		TheBoard.clear();
-		BoardNameInput.setText("");
-		saveButton.setEnabled(false);
-		loadButton.setEnabled(true);
+		image.clear();
+		ioComponents.clear();
+		fpga = null;
+		name.setText("");
+		save.setEnabled(false);
 	}
 
-	@Override
-	public void componentHidden(ComponentEvent e) {
-	}
-
-	@Override
-	public void componentMoved(ComponentEvent e) {
-	}
-
-	@Override
-	public void componentResized(ComponentEvent e) {
-	}
-
-	@Override
-	public void componentShown(ComponentEvent e) {
-	}
-
-	private String getDirName(String old, String window_name) {
+	private String getSaveDirectory() {
 		JFileChooser fc = new JFileChooser(old);
 		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		fc.setDialogTitle(window_name);
+		fc.setDialogTitle("Choose directory to save XML board description:");
 		int retval = fc.showOpenDialog(null);
-		if (retval == JFileChooser.APPROVE_OPTION) {
-			File file = fc.getSelectedFile();
-			old = checkIfEndsWithSlash(file.getPath());
-		}
-		return old;
-	}
-
-	private void getFpgaInformation() {
-		final JDialog selWindow = new JDialog(panel, "FPGA properties");
-		/* here the action listener is defined */
-		ActionListener actionListener = new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (e.getActionCommand().equals(CancelStr)) {
-					abort = true;
-				}
-				selWindow.setVisible(false);
-			}
-		};
-		GridBagLayout dialogLayout = new GridBagLayout();
-		GridBagConstraints c = new GridBagConstraints();
-		selWindow.setLayout(dialogLayout);
-		abort = false;
-
-		JPanel ClockPanel = new JPanel();
-		GridBagLayout ClockLayout = new GridBagLayout();
-		ClockPanel.setLayout(ClockLayout);
-
-		JLabel FreqText = new JLabel("Specify Clock frequency:");
-		c.gridx = 0;
-		c.gridy = 0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		ClockPanel.add(FreqText, c);
-
-		JPanel FreqPanel = new JPanel();
-		GridBagLayout FreqLayout = new GridBagLayout();
-		FreqPanel.setLayout(FreqLayout);
-
-		JTextField FreqInput = new JTextField(10);
-		c.gridx = 0;
-		c.gridy = 0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FreqPanel.add(FreqInput, c);
-
-		String[] freqStrs = { "Hz", "kHz", "MHz" };
-		JComboBox<String> StandardInput = new JComboBox<>(freqStrs);
-		StandardInput.setSelectedIndex(2);
-		c.gridx = 1;
-		c.gridy = 0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FreqPanel.add(StandardInput, c);
-
-		c.gridx = 0;
-		c.gridy = 1;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		ClockPanel.add(FreqPanel, c);
-
-		JLabel LocText = new JLabel("Specify Clock pin location:");
-		c.gridx = 0;
-		c.gridy = 2;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		ClockPanel.add(LocText, c);
-
-		JTextField LocInput = new JTextField();
-		c.gridx = 0;
-		c.gridy = 3;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		ClockPanel.add(LocInput, c);
-
-		JLabel PullText = new JLabel("Specify clock pin pull behavior:");
-		c.gridx = 0;
-		c.gridy = 4;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		ClockPanel.add(PullText, c);
-
-		JComboBox<String> PullInput = new JComboBox<>(PullBehaviors.DESC);
-		PullInput.setSelectedIndex(0);
-		c.gridx = 0;
-		c.gridy = 5;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		ClockPanel.add(PullInput, c);
-
-		JLabel StandardText = new JLabel("Specify clock pin standard:");
-		c.gridx = 0;
-		c.gridy = 6;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		ClockPanel.add(StandardText, c);
-
-		JComboBox<String> StdInput = new JComboBox<>(IoStandards.DESC);
-		StdInput.setSelectedIndex(0);
-		c.gridx = 0;
-		c.gridy = 7;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		ClockPanel.add(StdInput, c);
-
-		JLabel UnusedPinsText = new JLabel("Unused FPGA pin behavior:");
-		c.gridx = 0;
-		c.gridy = 8;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		ClockPanel.add(UnusedPinsText, c);
-
-		JComboBox<String> UnusedPinsInput = new JComboBox<>(PullBehaviors.DESC);
-		UnusedPinsInput.setSelectedIndex(0);
-		c.gridx = 0;
-		c.gridy = 9;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		ClockPanel.add(UnusedPinsInput, c);
-
-		JLabel PosText = new JLabel("Specify FPGA location in JTAG chain:");
-		c.gridx = 0;
-		c.gridy = 10;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		ClockPanel.add(PosText, c);
-		JTextField PosInput = new JTextField("1");
-		c.gridx = 0;
-		c.gridy = 11;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		ClockPanel.add(PosInput, c);
-
-		c.gridx = 0;
-		c.gridy = 0;
-		c.fill = GridBagConstraints.NORTH;
-		selWindow.add(ClockPanel, c);
-
-		JPanel FPGAPanel = new JPanel();
-		GridBagLayout FPGALayout = new GridBagLayout();
-		FPGAPanel.setLayout(FPGALayout);
-
-		JLabel VendorText = new JLabel("Specify FPGA vendor:");
-		c.gridx = 0;
-		c.gridy = 0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FPGAPanel.add(VendorText, c);
-
-		JComboBox<String> VendorInput = new JComboBox<>(Chipset.DESC);
-		VendorInput.setSelectedIndex(0);
-		c.gridx = 0;
-		c.gridy = 1;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FPGAPanel.add(VendorInput, c);
-
-		JLabel FamilyText = new JLabel("Specify FPGA family:");
-		c.gridx = 0;
-		c.gridy = 2;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FPGAPanel.add(FamilyText, c);
-
-		JTextField FamilyInput = new JTextField();
-		c.gridx = 0;
-		c.gridy = 3;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FPGAPanel.add(FamilyInput, c);
-
-		JLabel PartText = new JLabel("Specify FPGA part:");
-		c.gridx = 0;
-		c.gridy = 4;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FPGAPanel.add(PartText, c);
-
-		JTextField PartInput = new JTextField();
-		c.gridx = 0;
-		c.gridy = 5;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FPGAPanel.add(PartInput, c);
-
-		JLabel BoxText = new JLabel("Specify FPGA package:");
-		c.gridx = 0;
-		c.gridy = 6;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FPGAPanel.add(BoxText, c);
-
-		JTextField BoxInput = new JTextField();
-		c.gridx = 0;
-		c.gridy = 7;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FPGAPanel.add(BoxInput, c);
-
-		JLabel SpeedText = new JLabel("Specify FPGA speed grade:");
-		c.gridx = 0;
-		c.gridy = 8;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FPGAPanel.add(SpeedText, c);
-
-		JTextField SpeedInput = new JTextField();
-		c.gridx = 0;
-		c.gridy = 9;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FPGAPanel.add(SpeedInput, c);
-
-		JLabel FlashName = new JLabel("Specify flash name:");
-		c.gridx = 0;
-		c.gridy = 10;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FPGAPanel.add(FlashName,c);
-		JTextField FlashNameInput = new JTextField("");
-		c.gridx = 0;
-		c.gridy = 11;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FPGAPanel.add(FlashNameInput,c);
-
-		JLabel FlashPosText = new JLabel("Specify flash location in JTAG chain:");
-		c.gridx = 0;
-		c.gridy = 12;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FPGAPanel.add(FlashPosText,c);
-		JTextField FlashPosInput = new JTextField("2");
-		c.gridx = 0;
-		c.gridy = 13;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		FPGAPanel.add(FlashPosInput,c);
-
-		c.gridx = 1;
-		c.gridy = 0;
-		c.fill = GridBagConstraints.NORTH;
-		selWindow.add(FPGAPanel, c);
-
-		JCheckBox UsbTmc = new JCheckBox("USBTMC Download");
-		UsbTmc.setSelected(false);
-		c.gridx = 0;
-		c.gridy = 1;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		selWindow.add(UsbTmc, c);
-
-		JButton CancelButton = new JButton("Cancel");
-		CancelButton.addActionListener(actionListener);
-		CancelButton.setActionCommand(CancelStr);
-		c.gridx = 0;
-		c.gridy = 2;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		selWindow.add(CancelButton, c);
-
-		JButton SaveButton = new JButton("Done and Store");
-		SaveButton.addActionListener(actionListener);
-		SaveButton.setActionCommand("save");
-		c.gridx = 1;
-		c.gridy = 2;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		selWindow.add(SaveButton, c);
-
-		selWindow.pack();
-		selWindow.setLocation(Projects.getCenteredLoc(selWindow.getWidth(),
-				selWindow.getHeight()));
-		// PointerInfo mouseloc = MouseInfo.getPointerInfo();
-		// Point mlocation = mouseloc.getLocation();
-		// selWindow.setLocation(mlocation.x,mlocation.y);
-		selWindow.setModal(true);
-		selWindow.setResizable(false);
-		selWindow.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-		selWindow.setAlwaysOnTop(false);
-		boolean save_settings;
-		while ((!abort) && (!TheBoard.fpga.FpgaInfoPresent())) {
-			selWindow.setVisible(true);
-			if (!abort) {
-				save_settings = true;
-				switch ((int) getFrequency(FreqInput.getText(), StandardInput
-						.getSelectedItem().toString())) {
-				case -2:
-					save_settings = false;
-					showDialogNotification(selWindow, "Error",
-							"<html>The clock frequency should only contain the chars</BR>"
-									+ "'0'..'9' and '.'!</html>");
-					break;
-				case -1:
-					save_settings = false;
-					showDialogNotification(selWindow, "Error",
-							"<html>The clock frequency cannot be a fraction of a Hz</html>");
-					break;
-				case 0:
-					save_settings = false;
-					showDialogNotification(selWindow, "Error",
-							"<html>You have to specify the clock frequency!</html>");
-					break;
-				default:
-					break;
-				}
-				if (save_settings && LocInput.getText().isEmpty()) {
-					save_settings = false;
-					showDialogNotification(selWindow, "Error",
-							"<html>You have to specify the clock-pin location!</html>");
-				}
-				if (save_settings && FamilyInput.getText().isEmpty()) {
-					save_settings = false;
-					showDialogNotification(selWindow, "Error",
-							"<html>You have to specify the FPGA family!</html>");
-				}
-				if (save_settings && PartInput.getText().isEmpty()) {
-					save_settings = false;
-					showDialogNotification(selWindow, "Error",
-							"<html>You have to specify the FPGA part!</html>");
-				}
-				if (save_settings && BoxInput.getText().isEmpty()) {
-					save_settings = false;
-					showDialogNotification(selWindow, "Error",
-							"<html>You have to specify the FPGA package!</html>");
-				}
-				if (save_settings && SpeedInput.getText().isEmpty()) {
-					save_settings = false;
-					showDialogNotification(selWindow, "Error",
-							"<html>You have to specify the FPGA speed-grade!</html>");
-				}
-				if (save_settings) {
-					TheBoard.fpga.Set(
-							getFrequency(FreqInput.getText(), StandardInput
-									.getSelectedItem().toString()), LocInput
-									.getText(), PullInput.getSelectedItem()
-									.toString(), StdInput.getSelectedItem()
-									.toString(), FamilyInput.getText(),
-							PartInput.getText(), BoxInput.getText(), SpeedInput
-									.getText(), VendorInput.getSelectedItem()
-									.toString(), UnusedPinsInput
-									.getSelectedItem().toString(), UsbTmc
-									.isSelected(), PosInput.getText(),
-									FlashNameInput.getText(), FlashPosInput.getText());
-				}
-			}
-		}
-		selWindow.dispose();
-	}
-
-	private long getFrequency(String chars, String speed) {
-		long result = 0;
-		long multiplier = 1;
-		boolean dec_mult = false;
-
-		if (speed.equals("kHz"))
-			multiplier = 1000;
-		if (speed.equals("MHz"))
-			multiplier = 1000000;
-		for (int i = 0; i < chars.length(); i++) {
-			if (chars.charAt(i) >= '0' && chars.charAt(i) <= '9') {
-				result *= 10;
-				result += (chars.charAt(i) - '0');
-				if (dec_mult) {
-					multiplier /= 10;
-					if (multiplier == 0)
-						return -1;
-				}
-			} else {
-				if (chars.charAt(i) == '.') {
-					dec_mult = true;
-				} else {
-					return -2;
-				}
-
-			}
-		}
-		result *= multiplier;
-
-		return result;
-	}
-
-	public JFrame GetPanel() {
-		return panel;
+		if (retval != JFileChooser.APPROVE_OPTION)
+      return null;
+    String dir = fc.getSelectedFile().getPath();
+    if (!dir.endsWith("/"))
+      dir += "/";
+    return dir;
 	}
 
 	public boolean isActive() {
 		return panel.isVisible();
-	}
-
-	public void SelectDialog(BoardRectangle rect) {
-
-		/*
-		 * Before doing anything we have to check that this region does not
-		 * overlap with an already defined region. If we detect an overlap we
-		 * abort the action.
-		 */
-		Iterator<BoardRectangle> iter = defined_components.iterator();
-		Boolean overlap = false;
-		while (iter.hasNext()) {
-			overlap |= iter.next().Overlap(rect);
-		}
-		if (overlap) {
-			showDialogNotification("Error",
-					"<html>Found Overlapping regions!<br>Cannot process!</html>");
-			return;
-		}
-		String res = ShowItemSelectWindow();
-		if (res.equals(CancelStr))
-			return;
-		if (res.equals(FPGAStr)) {
-			getFpgaInformation();
-			if ((TheBoard.GetNrOfDefinedComponents() > 0)
-					&& TheBoard.fpga.FpgaInfoPresent())
-				saveButton.setEnabled(true);
-			if (TheBoard.fpga.FpgaInfoPresent())
-				defined_components.add(rect);
-		} else {
-			BoardIO comp = new BoardIO(
-					IOComponentTypes.valueOf(res), rect, this);
-			if (comp.IsKnownComponent()) {
-				TheBoard.AddComponent(comp);
-				defined_components.add(rect);
-				if ((TheBoard.GetNrOfDefinedComponents() > 0)
-						&& TheBoard.fpga.FpgaInfoPresent())
-					saveButton.setEnabled(true);
-			}
-		}
 	}
 
 	public void setActive() {
@@ -640,130 +196,238 @@ public class BoardDialog implements ActionListener, ComponentListener {
 		panel.setVisible(true);
 	}
 
-	public void SetBoardName(String name) {
-		String comps = name.toUpperCase();
-		comps = comps.replaceAll(".PNG", "");
-		comps = comps.replaceAll(".XML", "");
-		BoardNameInput.setEnabled(true);
-		BoardNameInput.setText(comps);
-		TheBoard.setBoardName(comps);
-		loadButton.setEnabled(false);
-	}
-
-	// private void showDialogNotification(JDialog parent, String type,
-	// 		String string) {
-	// 	final JDialog dialog = new JDialog(parent, type);
-	// 	JLabel pic = new JLabel();
-	// 	if (type.equals("Warning")) {
-	// 		pic.setIcon(new ImageIcon(getClass().getResource(pictureWarning)));
-	// 	} else {
-	// 		pic.setIcon(new ImageIcon(getClass().getResource(pictureError)));
-	// 	}
-	// 	GridBagLayout dialogLayout = new GridBagLayout();
-	// 	dialog.setLayout(dialogLayout);
-	// 	GridBagConstraints c = new GridBagConstraints();
-	// 	JLabel message = new JLabel(string);
-	// 	JButton close = new JButton("close");
-	// 	ActionListener actionListener = new ActionListener() {
-	// 		public void actionPerformed(ActionEvent e) {
-	// 			// panel.setAlwaysOnTop(true);
-	// 			dialog.dispose();
-	// 		}
-	// 	};
-	// 	close.addActionListener(actionListener);
-
-	// 	c.gridx = 0;
-	// 	c.gridy = 0;
-	// 	c.ipadx = 20;
-	// 	dialog.add(pic, c);
-
-	// 	c.gridx = 1;
-	// 	c.gridy = 0;
-	// 	dialog.add(message, c);
-
-	// 	c.gridx = 1;
-	// 	c.gridy = 1;
-	// 	dialog.add(close, c);
-	// 	dialog.pack();
-	// 	dialog.setLocationRelativeTo(panel);
-	// 	dialog.setAlwaysOnTop(false);
-	// 	dialog.setVisible(true);
-	// }
-
-  public static void showError(String msg) { showMessage(ERR_ICON, msg); }
-  public static void showWarning(String msg) { showMessage(WARN_ICON, msg); }
-  private static void showMessage(String icon, String msg) {
-    final JFrame dialog = new JFrame(type);
-    JLabel pic = new JLabel();
-    pic.setIcon(new ImageIcon(getClass().getResource(icon)));
-    GridBagLayout dialogLayout = new GridBagLayout();
-    dialog.setLayout(dialogLayout);
-    GridBagConstraints c = new GridBagConstraints();
-    JLabel message = new JLabel(msg);
-    JButton close = new JButton("close");
-    close.addActionListener(e -> dialog.dispose());
-
-    c.gridx = 0;
-    c.gridy = 0;
-    c.ipadx = 20;
-    dialog.add(pic, c);
-
-    c.gridx = 1;
-    c.gridy = 0;
-    dialog.add(message, c);
-
-    c.gridx = 1;
-    c.gridy = 1;
-    dialog.add(close, c);
-    dialog.pack();
-    dialog.setLocation(Projects.getCenteredLoc(dialog.getWidth(), dialog.getHeight()));
-    dialog.setAlwaysOnTop(true);
-    dialog.setVisible(true);
+  private static void add(JComponent dlg, GridBagConstraints c,
+      String caption, JComponent input) {
+      dlg.add(new JLabel(caption + " "), c);
+      c.gridx++;
+      dlg.add(input, c);
+      c.gridx--;
+      c.gridy++;
   }
 
-
-	private String ShowItemSelectWindow() {
-		action_id = CancelStr;
-		final JDialog selWindow = new JDialog(panel, "Action Select Window");
-		/* here the action listener is defined */
-		ActionListener actionListener = new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				action_id = e.getActionCommand();
-				selWindow.setVisible(false);
-			}
-		};
-		GridBagLayout dialogLayout = new GridBagLayout();
+	private void doChipsetDialog() {
+		final JDialog dlg = new JDialog(panel, "FPGA Chipset Properties");
 		GridBagConstraints c = new GridBagConstraints();
-		selWindow.setLayout(dialogLayout);
-		JButton fpga = new JButton("Define the FPGA parameters");
-		fpga.setActionCommand(FPGAStr);
-		fpga.addActionListener(actionListener);
-		fpga.setEnabled(!TheBoard.fpga.FpgaInfoPresent());
+		dlg.setLayout(new GridBagLayout());
 		c.gridx = 0;
 		c.gridy = 0;
 		c.fill = GridBagConstraints.HORIZONTAL;
-		selWindow.add(fpga, c);
-		JButton button;
-		for (String comp : BoardIO.GetComponentTypes()) {
-			button = new JButton("Define a " + comp);
-			button.setActionCommand(comp);
-			button.addActionListener(actionListener);
+
+    final boolean save[] = new boolean[] { false; }
+		JButton cancel = new JButton("Cancel");
+		cancel.addActionListener(e -> {
+      save[0] = false;
+      dlg.setVisible(false)
+    };
+		JButton save = new JButton("Done and Store");
+		save.addActionListener(e -> {
+      save[0] = true;
+      dlg.setVisible(false); 
+    });
+
+
+		JTextField rate = new JTextField(10);
+		JComboBox<String> hz = new JComboBox<>(new String[] { "Hz", "kHz", "MHz" });
+		hz.setSelectedIndex(2);
+
+		JTextField clkLoc = new JTextField();
+
+		JComboBox<PullBehavior> clkPull = new JComboBox<>(PullBehavior.OPTIONS);
+		clkPull.setSelectedIndex(0);
+		JComboBox<IoStandard> clkStandard = new JComboBox<>(IoStandard.OPTIONS);
+		clkStandard.setSelectedIndex(0);
+		JComboBox<IoStandard> unusedPull = new JComboBox<>(PullBehavior.OPTIONS);
+		unusedPull.setSelectedIndex(0);
+		JTextField jtagPos = new JTextField("1");
+		JComboBox<String> vendor = new JComboBox<>(Chipset.VENDORS);
+		vendor.setSelectedIndex(0);
+		JTextField family = new JTextField();
+		JTextField part = new JTextField();
+		JTextField pkg = new JTextField();
+		JTextField speed = new JTextField();
+		JTextField flashName = new JTextField();
+		JTextField flashPos = new JTextField("2");
+		JCheckBox usbTmc = new JCheckBox("USBTMC Download");
+		usbTmc.setSelected(false);
+
+		JPanel freqPanel = new JPanel();
+		freqPanel.setLayout(new GridBagLayout());
+		freqPanel.add(rate, c);
+		c.gridx++;
+		freqPanel.add(hz, c);
+
+		JPanel clockPanel = new JPanel();
+		clockPanel.setLayout(new GridBagLayout());
+    c.gridx = 0;
+    c.gridy = 0;
+    add(clockPanel, c, "Clock frequency:", freqPanel);
+    add(clockPanel, c, "Clock pin location:", clkLoc);
+    add(clockPanel, c, "Clock pin pull behavior:", clkPull);
+    add(clockPanel, c, "Clock pin I/O standard:", clkStandard);
+    add(clockPanel, c, "Unused FPGA pin behavior:", unusedPull);
+    add(clockPanel, c, "FPGA position in JTAG chain:", jtagPos);
+
+		JPanel devPanel = new JPanel();
+		devPanel.setLayout(new GridBagLayout());
+    c.gridx = 0;
+    c.gridy = 0;
+    add(devPanel, c, "FPGA vendor:", vendor);
+    add(devPanel, c, "FPGA family:", family);
+    add(devPanel, c, "FPGA part:", part);
+    add(devPanel, c, "FPGA package:", pkg);
+    add(devPanel, c, "FPGA speed grade:", speed);
+    add(devPanel, c, "Flash name:", flashName);
+    add(devPanel, c, "Flash position in JTAG chain:", flashPos);
+
+		c.gridx = 0;
+		c.gridy = 0;
+		c.fill = GridBagConstraints.NORTH;
+		dlg.add(clockPanel, c);
+
+		c.gridx = 1;
+		c.gridy = 0;
+		c.fill = GridBagConstraints.NORTH;
+		dlg.add(devPanel, c);
+
+		c.gridx = 0;
+		c.gridy = 1;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		dlg.add(usbTmc, c);
+
+		c.gridx = 0;
+		c.gridy = 2;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		dlg.add(cancel, c);
+
+		c.gridx = 1;
+		c.gridy = 2;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		dlg.add(save, c);
+
+		dlg.pack();
+		dlg.setLocation(Projects.getCenteredLoc(dlg.getWidth(), dlg.getHeight()));
+		dlg.setModal(true);
+		dlg.setResizable(false);
+		dlg.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+		dlg.setAlwaysOnTop(false);
+
+    for (;;) {
+      dlg.setVisible(true);
+      if (!save[0])
+        break;
+      long freq = getFrequency(rate.getText(), hz.getSelectedItem();
+      if (freq == 0) {
+        Errors.title("Error").show("Please specify a clock frequency.");
+      } else if (freq == -1) {
+        Errors.title("Error").show("Clock frequency must be a multiple of 1 Hz.");
+      } else if (freq < 0) {
+        Errors.title("Error").show("Invalid clock frequency.");
+      } else if (clkLoc.getText().isEmpty()) {
+        Errors.title("Error").show("Please specify clock pin location.");
+      } else if (family.getText().isEmpty()) {
+        Errors.title("Error").show("Please specify FPGA family.");
+      } else if (part.getText().isEmpty()) {
+        Errors.title("Error").show("Please specify FPGA part.");
+      } else if (pkg.getText().isEmpty()) {
+        Errors.title("Error").show("Please specify FPGA package.");
+      } else if (speed.getText().isEmpty()) {
+        Errors.title("Error").show("Please specify FPGA speed grade.");
+      } else {
+        HashMap<String, String> params;
+        params.put("ClockInformation/Frequency", freq);
+        params.put("ClockInformation/FPGApin", clkLoc.getText());
+        params.put("ClockInformation/PullBehavior", clkPull.getSelectedItem());
+        params.put("ClockInformation/IOStandard", clkStandard.getSelectedItem());
+        params.put("FPGAInformation/Family", family.getText() );
+        params.put("FPGAInformation/Part", part.getText());
+        params.put("FPGAInformation/Package", pkg.getText());
+        params.put("FPGAInformation/Speedgrade", speed.getText());
+        params.put("FPGAInformation/Vendor", vendor.getText());
+        params.put("FPGAInformation/USBTMC", usbTmc.isSelected());
+        params.put("FPGAInformation/JTAGPos", jtagPos.getText());
+        params.put("FPGAInformation/FlashPos", flashPos.getText());
+        params.put("FPGAInformation/FlashName", flashName.getText());
+        params.put("UnusedPins/PullBehavior", unusedPull.getSelectedItem());
+        try {
+          fpga = new Chipset(params);
+          break;
+        } catch (Exception e) {
+          Errors.title("Error").show("Invalid chipset parameters: " + e.getMessage(), e);
+        }
+      }
+    }
+		dlg.dispose();
+    save.setEnabled(true);
+	}
+
+	private long getFrequency(String str, String speed) {
+		long num = 0;
+		long multiplier = 1;
+		boolean dec_mult = false;
+
+		if (speed.equals("kHz"))
+			multiplier = 1000;
+		if (speed.equals("MHz"))
+			multiplier = 1000000;
+		for (int i = 0; i < str.length(); i++) {
+      char c = str.charAt(i);
+			if (c >= '0' && c <= '9') {
+				num *= 10;
+				num += (c - '0');
+				if (dec_mult) {
+					multiplier /= 10;
+					if (multiplier == 0)
+						return -1;
+				}
+			} else if (!dec_mult && c == '.') {
+					dec_mult = true;
+      } else {
+					return -2;
+			}
+		}
+		return num * multiplier;
+	}
+
+  // public void doRectClickDialog(BoardRectangle rect) {
+  // TODO
+  // }
+
+	public void doRectSelectDialog(BoardRectangle rect) {
+    for (BoardIO io : ioComponents) {
+      if (io.rect.overlaps(rect)) {
+        Errors.title("Error").show("Please ensure rectangles do not overlap.");
+        return;
+      }
+    }
+		final JDialog dlg = new JDialog(panel, "Add FPGA Board I/O Resource");
+		dlg.setLayout(new GridBagLayout());
+		GridBagConstraints c = new GridBagConstraints();
+		c.gridx = 0;
+		c.gridy = -1;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		for (BoardIO.Type type : BoardIO.KnownTypes) {
+      JButton button = new JButton("Define " + type + " Component");
+			button.addActionListener(e -> {
+        dlg.setVisible(false);
+        BoardIO io = BoardIO.makeUserDefined(type, rect, this);
+        if (io != null) {
+          ioComponents.add(io);
+          setEnables();
+        }
+      });
 			c.gridy++;
-			selWindow.add(button, c);
+			dlg.add(button, c);
 		}
 		JButton cancel = new JButton("Cancel");
-		cancel.setActionCommand(CancelStr);
-		cancel.addActionListener(actionListener);
+		cancel.addActionListener(e -> dlg.setVisible(false));
 		c.gridy++;
-		selWindow.add(cancel, c);
-		selWindow.pack();
-		selWindow.setLocation(Projects.getCenteredLoc(selWindow.getWidth(),
-				selWindow.getHeight()));
-		selWindow.setModal(true);
-		selWindow.setResizable(false);
-		selWindow.setAlwaysOnTop(false);
-		selWindow.setVisible(true);
-		selWindow.dispose();
-		return action_id;
+		dlg.add(cancel, c);
+		dlg.pack();
+		dlg.setLocation(Projects.getCenteredLoc(dlg.getWidth(), dlg.getHeight()));
+		dlg.setModal(true);
+		dlg.setResizable(false);
+		dlg.setAlwaysOnTop(false);
+		dlg.setVisible(true);
+		dlg.dispose();
 	}
 }

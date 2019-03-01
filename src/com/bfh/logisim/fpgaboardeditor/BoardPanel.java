@@ -48,20 +48,10 @@ import java.util.LinkedList;
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
-import javax.swing.filechooser.FileFilter;
+
+import com.cburch.logisim.gui.main.ExportImage;
 
 public class BoardPanel extends JPanel implements MouseListener, MouseMotionListener {
-
-	public static final FileFilter PNG_FILTER = new FileFilter {
-		@Override
-		public boolean accept(File f) {
-			return f.isDirectory() || f.getName().toLowerCase().endsWith(".png");
-		}
-		@Override
-		public String getDescription() {
-			return Strings.get("PNGFileFilter");
-		}
-	}
 
 	private BufferedImage image;
   private Image scaledImage;
@@ -86,19 +76,26 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
     this();
 		editing = false;
 		try {
-			image = ImageIO.read(filename);
-      scaledImage = image.getScaledInstance(getWidth(), getHeight(), 4);
+			setImage(ImageIO.read(filename));
 		} catch (IOException ex) { }
 	}
 	
   public void setImage(BufferedImage pic) {
 		image = pic;
-    scaledImage = image.getScaledInstance(getWidth(), getHeight(), 4);
+    if (image != null)
+      scaledImage = image.getScaledInstance(getWidth(), getHeight(), 4);
+    else
+      scaledImage = null;
 		this.repaint();
 	}
 
+  public Image getImage() {
+    return scaledImage;
+  }
+
 	public void clear() {
 		image = null;
+    scaledImage = false;
 	}
 
 	public Boolean isEmpty() {
@@ -118,18 +115,16 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 			JFileChooser fc = new JFileChooser();
 			fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 			fc.setDialogTitle("Choose FPGA board picture to use");
-			fc.setFileFilter(PNG_FILTER);
+			fc.setFileFilter(ExportImage.PNG_FILTER);
 			fc.setAcceptAllFileFilterUsed(false);
 			int retval = fc.showOpenDialog(null);
 			if (retval == JFileChooser.APPROVE_OPTION) {
 				File file = fc.getSelectedFile();
 				try {
-					image = ImageIO.read(file);
+					setImage(ImageIO.read(file));
 				} catch (IOException ex) {
-					image = null;
+					setImage(null);
 				}
-				this.repaint();
-				edit_parent.SetBoardName(file.getName());
 			}
 		}
 	}
@@ -161,6 +156,8 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 		}
 	}
 
+  // todo: support click-to-edit
+
   @Override
 	public void mouseReleased(MouseEvent e) {
 		if (editing && this.ImageLoaded()) {
@@ -187,11 +184,11 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 				hr = (h < 0) ? -h : h;
 				g.drawRect(xr, yr, wr, hr);
 			}
-      LinkedList<BoardRectangle> rects = editing ? edit_parent.defined_components : null;
-			if (rects != null) {
+      LinkedList<BoardIO> ioComponents = editing ? edit_parent.ioComponents : null;
+			if (ioComponents != null) {
 				g.setColor(Color.red);
-        for (BoardRectangle rect : rects)
-					g.fillRect(rect.x, rect.y, rect.width, rect.height);
+        for (BoardIO io : ioComponents)
+					g.fillRect(io.rect.x, io.rect.y, io.rect.width, io.rect.height);
 			}
 		} else {
 			g.setColor(Color.gray);

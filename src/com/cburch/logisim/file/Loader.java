@@ -53,61 +53,36 @@ import com.cburch.logisim.util.JFileChoosers;
 import com.cburch.logisim.util.ZipClassLoader;
 
 public class Loader implements LibraryLoader {
-  private static class JarFileFilter extends FileFilter {
-    @Override
-    public boolean accept(File f) {
-      return f.isDirectory() || f.getName().endsWith(".jar");
-    }
 
-    @Override
-    public String getDescription() {
-      return S.get("jarFileFilter");
-    }
+  public static class makeFileFilter(StringGetter desc, String ...extensions) {
+    return new FileFilter {
+      @Override
+      public boolean accept(File f) {
+        for (ext : extensions)
+          if (f.getName().toLowerCase().endsWith(ext.toLowerCase()))
+            return true;
+        return f.isDirectory();
+      }
+
+      @Override
+      public String getDescription() {
+        return desc.toString();
+      }
+    };
   }
 
-  private static class LogisimFileFilter extends FileFilter {
-    @Override
-    public boolean accept(File f) {
-      return f.isDirectory()
-          || f.getName().endsWith(LogisimFile.LOGISIM_EXTENSION)
-          || f.getName().endsWith(LogisimFile.LOGISIM_EXTENSION_ALT);
-    }
+  public static final FileFilter LOGISIM_FILTER =
+      makeFileFilter(S.getter("logisimFileFilter"),
+          LogisimFile.LOGISIM_EXTENSION, LogisimFile.LOGISIM_EXTENSION_ALT);
 
-    @Override
-    public String getDescription() {
-      return S.get("logisimFileFilter");
-    }
-  }
-
-  private static class TxtFileFilter extends FileFilter {
-    @Override
-    public boolean accept(File f) {
-      return f.isDirectory() || f.getName().endsWith(".txt");
-    }
-
-    @Override
-    public String getDescription() {
-      return S.get("txtFileFilter");
-    }
-  }
-
-  private static class VhdlFileFilter extends FileFilter {
-    @Override
-    public boolean accept(File f) {
-      return f.isDirectory() || f.getName().endsWith(".vhd") || f.getName().endsWith(".vhdl");
-    }
-
-    @Override
-    public String getDescription() {
-      return S.get("vhdlFileFilter");
-    }
-  }
-
-  public static final FileFilter LOGISIM_FILTER = new LogisimFileFilter();
-
-  public static final FileFilter JAR_FILTER = new JarFileFilter();
-  public static final FileFilter TXT_FILTER = new TxtFileFilter();
-  public static final FileFilter VHDL_FILTER = new VhdlFileFilter();
+  public static final FileFilter JAR_FILTER =
+      makeFileFilter(S.getter("jarFileFilter"), ".jar");
+  public static final FileFilter TXT_FILTER =
+      makeFileFilter(S.getter("txtFileFilter"), ".txt");
+  public static final FileFilter VHDL_FILTER =
+      makeFileFilter(S.getter("vhdlFileFilter"), ".vhd", ".vhdl");
+  public static final FileFilter XML_FILTER =
+      makeFileFilter(S.getter("xmlFileFilter"), ".xml");
 
   private Component parent;
   private Builtin builtin = new Builtin();
