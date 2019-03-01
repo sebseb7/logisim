@@ -31,24 +31,25 @@
 package com.bfh.logisim.fpgaboardeditor;
 
 public class DriveStrength {
+  public final String desc, ma;
 
-	public static final char DEFAULT = 0;
-	public static final char DRIVE_2 = 1;
-	public static final char DRIVE_4 = 2;
-	public static final char DRIVE_8 = 3;
-	public static final char DRIVE_16 = 4;
-	public static final char DRIVE_24 = 5;
-	public static final char UNKNOWN = 255;
+	public static final DriveStrength DEFAULT  = new DriveStrength("Default", "");
+	public static final DriveStrength DRIVE_2  = new DriveStrength("2 mA", "2");
+	public static final DriveStrength DRIVE_4  = new DriveStrength("4 mA", "4");
+	public static final DriveStrength DRIVE_8  = new DriveStrength("8 mA", "8");
+	public static final DriveStrength DRIVE_16 = new DriveStrength("16 mA", "16");
+	public static final DriveStrength DRIVE_24 = new DriveStrength("24 mA", "24");
+	public static final DriveStrength UNKNOWN  = new DriveStrength("Unknown", "");
+  public static final String[] OPTIONS = { DEFAULT,
+    DRIVE_2, DRIVE_4, DRIVE_8, DRIVE_16, DRIVE_24 }
 
-	public static final String[] mA = { "", "2", "4", "8", "16", "24", "" };
-	public static final String[] DESC = { "Default", "2 mA", "4 mA", "8 mA", "16 mA", "24 mA" };
-	public static final String ATTR = "FPGAPinDriveStrength";
-
-	public static char get(String desc) {
-    for (char i = 0; i < DESC.length; i++)
-      if (DESC[i].equals(desc))
-        return i;
+  public DriveStrength get(String desc) {
+    for (PullBehavior p : OPTIONS)
+      if (p.desc.equals(desc))
+        return p;
     return UNKNOWN;
-	}
+  }
 
+  @Override
+  public String toString() { return desc; }
 }

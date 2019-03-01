@@ -43,43 +43,10 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 class BoardWriter {
-
-	public static String LocationXString = "LocationX";
-	public static String LocationYString = "LocationY";
-	public static String WidthString = "Width";
-	public static String HeightString = "Height";
-	public static String LabelString = "Label";
-	public static String PinLocationString = "FPGAPinName";
-
-	public static String MultiPinInformationString = "NrOfPins";
-	public static String MultiPinPrefixString = "FPGAPin_";
-
-  private static Element put(Doc doc, Element root,
-      String section, String comment, Element ...elts) {
-    Element sec = doc.createElement(section);
-    root.appendChild(sec);
-    sec.appendChild(doc.createComment(comment));
-    for (Element e : elts)
-      sec.appendChild(e);
-    return sec;
-  }
-
-  private static Element make(Doc doc, String name, String ...keyval) {
-    Element e = doc.createElement(name);
-    // Note: no idea why setAttribute is used only for the first one...
-    e.setAttribute(keyval[0], keyval[1]);
-    for (int i = 2; i < keyval.length; i += 2) {
-      Attr a = doc.createAttribute(keyval[i]);
-      a.setValue(keyval[i+1]);
-      e.setAttributeNode(a);
-    }
-    return e;
-  }
 
 	public static write(String filename, Board board, Image image) {
     Document doc;
@@ -115,7 +82,7 @@ class BoardWriter {
 
       Element io = put(doc, root, "IOComponents", "Description of all board I/O components");
 			for (BoardIO comp : board)
-				io.appendChild(comp.GetDocumentElement(doc));
+				io.appendChild(comp.encodeXml(doc));
 
 			ImageXmlFactory writer = new ImageXmlFactory();
 			writer.CreateStream(image);
@@ -129,7 +96,7 @@ class BoardWriter {
           make("PixelData",
             "PixelRGB", writer.GetCompressedString()));
 		} catch (Exception e) {
-      BoardReader.showError("Error encoding XML data: " + e.getMessage());
+      BoardDialog.showError("Error encoding XML data: " + e.getMessage());
       return;
 		}
 		try {
@@ -142,8 +109,32 @@ class BoardWriter {
 			Result dest = new StreamResult(file);
 			aTransformer.transform(src, dest);
 		} catch (Exception e) {
-      BoardReader.showError("Error writing XML data to "+filename+": " + e.getMessage());
+      BoardDialog.showError("Error writing XML data to "+filename+": " + e.getMessage());
 		}
 	}
+
+  private static Element put(Doc doc, Element root,
+      String section, String comment, Element ...elts) {
+    Element sec = doc.createElement(section);
+    root.appendChild(sec);
+    sec.appendChild(doc.createComment(comment));
+    for (Element e : elts)
+      sec.appendChild(e);
+    return sec;
+  }
+
+  private static Element make(Doc doc, String name, String ...keyval) {
+    Element e = doc.createElement(name);
+    // Note: no idea why setAttribute would be used only for the first one...
+    // e.setAttribute(keyval[0], keyval[1]);
+    // for (int i = 2; i < keyval.length; i += 2) {
+    //   Attr a = doc.createAttribute(keyval[i]);
+    //   a.setValue(keyval[i+1]);
+    //   e.setAttributeNode(a);
+    // }
+    for (int i = 0; i < keyval.length; i += 2)
+      e.setAttribute(keyval[i], keyval[i+1]);
+    return e;
+  }
 
 }

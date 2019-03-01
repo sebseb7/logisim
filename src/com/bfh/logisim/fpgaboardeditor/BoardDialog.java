@@ -57,6 +57,9 @@ import com.cburch.logisim.proj.Projects;
 
 public class BoardDialog implements ActionListener, ComponentListener {
 
+	private static final String ERR_ICON = "/resources/logisim/error.png";
+	private static final String WANR_ICON = "/resources/logisim/warning.png";
+
 	private static class XMLFileFilter extends FileFilter {
 		@Override
 		public boolean accept(File f) {
@@ -84,11 +87,6 @@ public class BoardDialog implements ActionListener, ComponentListener {
 	public static final FileFilter XML_FILTER = new XMLFileFilter();
 	private String CancelStr = "cancel";
 	private String FPGAStr = "fpgainfo";
-	private int DefaultStandard = 0;
-	private int DefaultDriveStrength = 0;
-	private int DefaultPullSelection = 0;
-
-	private int DefaultActivity = 0;
 
 	/* BIg TODO: Add all language strings */
 
@@ -232,22 +230,6 @@ public class BoardDialog implements ActionListener, ComponentListener {
 
 	@Override
 	public void componentShown(ComponentEvent e) {
-	}
-
-	public int GetDefaultActivity() {
-		return DefaultActivity;
-	}
-
-	public int GetDefaultDriveStrength() {
-		return DefaultDriveStrength;
-	}
-
-	public int GetDefaultPullSelection() {
-		return DefaultPullSelection;
-	}
-
-	public int GetDefaultStandard() {
-		return DefaultStandard;
 	}
 
 	private String getDirName(String old, String window_name) {
@@ -668,102 +650,77 @@ public class BoardDialog implements ActionListener, ComponentListener {
 		loadButton.setEnabled(false);
 	}
 
-	public void SetDefaultActivity(int value) {
-		DefaultActivity = value;
-	}
+	// private void showDialogNotification(JDialog parent, String type,
+	// 		String string) {
+	// 	final JDialog dialog = new JDialog(parent, type);
+	// 	JLabel pic = new JLabel();
+	// 	if (type.equals("Warning")) {
+	// 		pic.setIcon(new ImageIcon(getClass().getResource(pictureWarning)));
+	// 	} else {
+	// 		pic.setIcon(new ImageIcon(getClass().getResource(pictureError)));
+	// 	}
+	// 	GridBagLayout dialogLayout = new GridBagLayout();
+	// 	dialog.setLayout(dialogLayout);
+	// 	GridBagConstraints c = new GridBagConstraints();
+	// 	JLabel message = new JLabel(string);
+	// 	JButton close = new JButton("close");
+	// 	ActionListener actionListener = new ActionListener() {
+	// 		public void actionPerformed(ActionEvent e) {
+	// 			// panel.setAlwaysOnTop(true);
+	// 			dialog.dispose();
+	// 		}
+	// 	};
+	// 	close.addActionListener(actionListener);
 
-	public void SetDefaultDriveStrength(int value) {
-		DefaultDriveStrength = value;
-	}
+	// 	c.gridx = 0;
+	// 	c.gridy = 0;
+	// 	c.ipadx = 20;
+	// 	dialog.add(pic, c);
 
-	public void SetDefaultPullSelection(int value) {
-		DefaultPullSelection = value;
-	}
+	// 	c.gridx = 1;
+	// 	c.gridy = 0;
+	// 	dialog.add(message, c);
 
-	public void SetDefaultStandard(int value) {
-		DefaultStandard = value;
-	}
+	// 	c.gridx = 1;
+	// 	c.gridy = 1;
+	// 	dialog.add(close, c);
+	// 	dialog.pack();
+	// 	dialog.setLocationRelativeTo(panel);
+	// 	dialog.setAlwaysOnTop(false);
+	// 	dialog.setVisible(true);
+	// }
 
-	private void showDialogNotification(JDialog parent, String type,
-			String string) {
-		final JDialog dialog = new JDialog(parent, type);
-		JLabel pic = new JLabel();
-		if (type.equals("Warning")) {
-			pic.setIcon(new ImageIcon(getClass().getResource(pictureWarning)));
-		} else {
-			pic.setIcon(new ImageIcon(getClass().getResource(pictureError)));
-		}
-		GridBagLayout dialogLayout = new GridBagLayout();
-		dialog.setLayout(dialogLayout);
-		GridBagConstraints c = new GridBagConstraints();
-		JLabel message = new JLabel(string);
-		JButton close = new JButton("close");
-		ActionListener actionListener = new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				// panel.setAlwaysOnTop(true);
-				dialog.dispose();
-			}
-		};
-		close.addActionListener(actionListener);
+  public static void showError(String msg) { showMessage(ERR_ICON, msg); }
+  public static void showWarning(String msg) { showMessage(WARN_ICON, msg); }
+  private static void showMessage(String icon, String msg) {
+    final JFrame dialog = new JFrame(type);
+    JLabel pic = new JLabel();
+    pic.setIcon(new ImageIcon(getClass().getResource(icon)));
+    GridBagLayout dialogLayout = new GridBagLayout();
+    dialog.setLayout(dialogLayout);
+    GridBagConstraints c = new GridBagConstraints();
+    JLabel message = new JLabel(msg);
+    JButton close = new JButton("close");
+    close.addActionListener(e -> dialog.dispose());
 
-		c.gridx = 0;
-		c.gridy = 0;
-		c.ipadx = 20;
-		dialog.add(pic, c);
+    c.gridx = 0;
+    c.gridy = 0;
+    c.ipadx = 20;
+    dialog.add(pic, c);
 
-		c.gridx = 1;
-		c.gridy = 0;
-		dialog.add(message, c);
+    c.gridx = 1;
+    c.gridy = 0;
+    dialog.add(message, c);
 
-		c.gridx = 1;
-		c.gridy = 1;
-		dialog.add(close, c);
-		dialog.pack();
-		dialog.setLocationRelativeTo(panel);
-		dialog.setAlwaysOnTop(false);
-		dialog.setVisible(true);
+    c.gridx = 1;
+    c.gridy = 1;
+    dialog.add(close, c);
+    dialog.pack();
+    dialog.setLocation(Projects.getCenteredLoc(dialog.getWidth(), dialog.getHeight()));
+    dialog.setAlwaysOnTop(true);
+    dialog.setVisible(true);
+  }
 
-	}
-
-	private void showDialogNotification(String type, String string) {
-		final JFrame dialog = new JFrame(type);
-		JLabel pic = new JLabel();
-		if (type.equals("Warning")) {
-			pic.setIcon(new ImageIcon(getClass().getResource(pictureWarning)));
-		} else {
-			pic.setIcon(new ImageIcon(getClass().getResource(pictureError)));
-		}
-		GridBagLayout dialogLayout = new GridBagLayout();
-		dialog.setLayout(dialogLayout);
-		GridBagConstraints c = new GridBagConstraints();
-		JLabel message = new JLabel(string);
-		JButton close = new JButton("close");
-		ActionListener actionListener = new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				// panel.setAlwaysOnTop(true);
-				dialog.dispose();
-			}
-		};
-		close.addActionListener(actionListener);
-
-		c.gridx = 0;
-		c.gridy = 0;
-		c.ipadx = 20;
-		dialog.add(pic, c);
-
-		c.gridx = 1;
-		c.gridy = 0;
-		dialog.add(message, c);
-
-		c.gridx = 1;
-		c.gridy = 1;
-		dialog.add(close, c);
-		dialog.pack();
-		dialog.setLocationRelativeTo(panel);
-		dialog.setAlwaysOnTop(false);
-		dialog.setVisible(true);
-
-	}
 
 	private String ShowItemSelectWindow() {
 		action_id = CancelStr;
@@ -802,9 +759,6 @@ public class BoardDialog implements ActionListener, ComponentListener {
 		selWindow.pack();
 		selWindow.setLocation(Projects.getCenteredLoc(selWindow.getWidth(),
 				selWindow.getHeight()));
-		// PointerInfo mouseloc = MouseInfo.getPointerInfo();
-		// Point mlocation = mouseloc.getLocation();
-		// selWindow.setLocation(mlocation.x,mlocation.y);
 		selWindow.setModal(true);
 		selWindow.setResizable(false);
 		selWindow.setAlwaysOnTop(false);

@@ -50,7 +50,7 @@ import javax.swing.JProgressBar;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.fpgaboardeditor.Board;
 import com.bfh.logisim.fpgaboardeditor.Chipset;
-import com.bfh.logisim.fpgaboardeditor.PullBehaviors;
+import com.bfh.logisim.fpgaboardeditor.PullBehavior;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
 import com.bfh.logisim.hdlgenerator.FileWriter;
@@ -356,7 +356,7 @@ public class AlteraDownload implements Runnable {
 
 	public static boolean GenerateQuartusScript(FPGAReport MyReporter,
 			String ScriptPath, Netlist RootNetList,
-			MappableResourcesContainer MapInfo, Board BoardInfo,
+			MappableResourcesContainer MapInfo, Board board,
 			ArrayList<String> Entities, ArrayList<String> Architectures,
 			String HDLType) {
 		File ScriptFile = FileWriter.GetFilePointer(ScriptPath,
@@ -403,7 +403,7 @@ public class AlteraDownload implements Runnable {
 		Contents.add("}");
 		Contents.add("# Make assignments");
 		Contents.add("if {$make_assignments} {");
-		Contents.addAll(GetAlteraAssignments(BoardInfo));
+		Contents.addAll(GetAlteraAssignments(board.fpga));
 		Contents.add("");
 		Contents.add("    # Include all entities and gates");
 		Contents.add("");
@@ -419,7 +419,7 @@ public class AlteraDownload implements Runnable {
 		Contents.add("    # Map fpga_clk and ionets to fpga pins");
 		if (RootNetList.NumberOfClockTrees() > 0) {
 			Contents.add("    set_location_assignment "
-					+ BoardInfo.fpga.getClockPinLocation() + " -to "
+					+ board.fpga.ClockPinLocation + " -to "
 					+ TickComponentHDLGeneratorFactory.FPGAClock);
 		}
 		Contents.addAll(MapInfo.GetFPGAPinLocs(Chipset.ALTERA));
@@ -434,36 +434,21 @@ public class AlteraDownload implements Runnable {
 		return FileWriter.WriteContents(ScriptFile, Contents, MyReporter);
 	}
 
-	private static ArrayList<String> GetAlteraAssignments(
-			Board CurrentBoard) {
+	private static ArrayList<String> GetAlteraAssignments(Chipset chip) {
 		ArrayList<String> result = new ArrayList<String>();
 		String Assignment = "    set_global_assignment -name ";
-		result.add(Assignment + "FAMILY \"" + CurrentBoard.fpga.getTechnology()
-				+ "\"");
-		result.add(Assignment + "DEVICE " + CurrentBoard.fpga.getPart());
-		String[] Package = CurrentBoard.fpga.getPackage().split(" ");
+		result.add(Assignment + "FAMILY \"" + chip.Technology + "\"");
+		result.add(Assignment + "DEVICE " + chip.Part);
+		String[] Package = chip.Package.split(" ");
 		result.add(Assignment + "DEVICE_FILTER_PACKAGE " + Package[0]);
 		result.add(Assignment + "DEVICE_FILTER_PIN_COUNT " + Package[1]);
-    char dir = CurrentBoard.fpga.getUnusedPinsBehavior();
-    if (dir != PullBehaviors.UNKNOWN)
-			result.add(Assignment
-					+ String.format("RESERVE_ALL_UNUSED_PINS \"AS INPUT %s\"", PullBehaviors.ALTERA_PULL[dir]);
-		result.add(Assignment + "FMAX_REQUIREMENT \""
-				+ GetClockFrequencyString(CurrentBoard) + "\"");
+    PullBehavior pull = chip.UnusedPinsBehavior;
+    if (pull != PullBehavior.UNKNOWN)
+			result.add(Assignment + String.format("RESERVE_ALL_UNUSED_PINS \"AS INPUT %s\"", pull.altera);
+		result.add(Assignment + "FMAX_REQUIREMENT \"" + chip.Speed + "\"");
 		result.add(Assignment + "RESERVE_NCEO_AFTER_CONFIGURATION \"USE AS REGULAR IO\"");
 		result.add(Assignment + "CYCLONEII_RESERVE_NCEO_AFTER_CONFIGURATION \"USE AS REGULAR IO\"");
 		return result;
 	}
 
-	private static String GetClockFrequencyString(Board CurrentBoard) {
-		long clkfreq = CurrentBoard.fpga.getClockFrequency();
-		if (clkfreq % 1000000 == 0) {
-			clkfreq /= 1000000;
-			return Long.toString(clkfreq) + " MHz ";
-		} else if (clkfreq % 1000 == 0) {
-			clkfreq /= 1000;
-			return Long.toString(clkfreq) + " kHz ";
-		}
-		return Long.toString(clkfreq);
-	}
 }

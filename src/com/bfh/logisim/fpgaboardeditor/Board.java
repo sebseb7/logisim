@@ -65,7 +65,6 @@ public class Board extends AbstractList<BoardIO> {
   }
 
 	public void addComponent(BoardIO comp) {
-		comp.SetId(components.size() + 1);
 		components.add(comp);
 	}
 

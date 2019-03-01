@@ -41,15 +41,15 @@ public class BoardRectangle {
 
   public int synthetic_bits; // only used when kind != "device"
 
-	public BoardRectangle(int x, int y, int w, int h) {
+	public BoardRectangle(int x, int y, int w, int h, String label) {
     this.x = w < 0 ? x+w : x;
     this.y = h < 0 ? y+h : y;
     this.w = w < 0 ? -w : w;
     this.h = h < 0 ? -h : h;
+    this.label = label;
     kind = "device";
     const_val = 0; // not used
     synthetic_bits = 0; // not used
-    label = null; // set elsewhere
 	}
 
 	private BoardRectangle(String synthetic_kind, int val) {

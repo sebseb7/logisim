@@ -53,8 +53,8 @@ import javax.swing.JProgressBar;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.fpgaboardeditor.Board;
 import com.bfh.logisim.fpgaboardeditor.Chipset;
-import com.bfh.logisim.fpgaboardeditor.IoStandards;
-import com.bfh.logisim.fpgaboardeditor.PullBehaviors;
+import com.bfh.logisim.fpgaboardeditor.IoStandard;
+import com.bfh.logisim.fpgaboardeditor.PullBehavior;
 import com.bfh.logisim.fpgagui.FPGAReport;
 import com.bfh.logisim.fpgagui.MappableResourcesContainer;
 import com.bfh.logisim.hdlgenerator.FileWriter;
@@ -64,15 +64,20 @@ import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.proj.Projects;
 
 public class XilinxDownload {
+
+  private static isCPLD(Chipset chip) {
+    String part = chip.Part.toUpperCase();
+    return part.startsWith("XC2C")
+        || part.startsWith("XA2C")
+        || part.startsWith("XCR3")
+        || part.startsWith("XC9500")
+        || part.startsWith("XA9500");
+  }
+
 	public static boolean Download(Settings MySettings,
-			Board BoardInfo, String scriptPath, String UcfPath,
+			Board board, String scriptPath, String UcfPath,
 			String ProjectPath, String SandboxPath, FPGAReport MyReporter) {
-		boolean IsCPLD = BoardInfo.fpga.getPart().toUpperCase()
-				.startsWith("XC2C")
-				|| BoardInfo.fpga.getPart().toUpperCase().startsWith("XA2C")
-				|| BoardInfo.fpga.getPart().toUpperCase().startsWith("XCR3")
-				|| BoardInfo.fpga.getPart().toUpperCase().startsWith("XC9500")
-				|| BoardInfo.fpga.getPart().toUpperCase().startsWith("XA9500");
+		boolean IsCPLD = isCPLD(board.fpga);
 		String BitfileExt = (IsCPLD) ? "jed" : "bit";
 		boolean BitFileExists = new File(SandboxPath
 				+ ToplevelHDLGeneratorFactory.FPGAToplevelName + "."
@@ -288,15 +293,14 @@ public class XilinxDownload {
 					command.add(MySettings.GetXilinxToolPath() + File.separator
 							+ Settings.XilinxPrograms[6]);
 					command.add("-p");
-					command.add(BoardInfo.fpga.getPart().toUpperCase() + "-"
-							+ BoardInfo.fpga.getSpeedGrade() + "-"
-							+ BoardInfo.fpga.getPackage().toUpperCase());
+					command.add(board.fpga.Part.toUpperCase() + "-"
+							+ board.fpga.SpeedGrade + "-"
+							+ board.fpga.Package.toUpperCase());
 					command.add("-intstyle");
 					command.add("ise");
 					/* TODO: do correct termination type */
 					command.add("-terminate");
-          char dir = BoardInfo.fpga.getUnusedPinsBehavior();
-          command.add(PullBehaviors.XILINX_PULL[dir]);
+          command.add(board.fpga.UnusedPinsBehavior.xilinx);
 					command.add("-loc");
 					command.add("on");
 					command.add("-log");
@@ -350,10 +354,10 @@ public class XilinxDownload {
 					command.add(MySettings.GetXilinxToolPath() + File.separator
 							+ Settings.XilinxPrograms[4]);
 					command.add("-w");
-          char dir = BoardInfo.fpga.getUnusedPinsBehavior();
-					if (dir == PullBehaviors.PULL_UP || dir == PullBehaviors.PULL_DOWN) {
+          PullBehavior dir = board.fpga.UnusedPinsBehavior;
+					if (dir == PullBehavior.PULL_UP || dir == PullBehavior.PULL_DOWN) {
 						command.add("-g");
-						command.add("UnusedPin:"+PullBehaviors.XILINX_PULL[dir].toUpperCase());
+						command.add("UnusedPin:"+dir.xilinx.toUpperCase());
 					}
 					command.add("-g");
 					command.add("StartupClk:CCLK");
@@ -420,7 +424,7 @@ public class XilinxDownload {
 				return false;
 			}
 			/* Until here update of status window */
-			if (!BoardInfo.fpga.USBTMCDownloadRequired()) {
+			if (!board.fpga.USBTMCDownload) {
 				command.clear();
 				command.add(MySettings.GetXilinxToolPath() + File.separator
 						+ Settings.XilinxPrograms[5]);
@@ -492,16 +496,11 @@ public class XilinxDownload {
 	public static boolean GenerateISEScripts(FPGAReport MyReporter,
 			String ProjectPath, String ScriptPath, String UcfPath,
 			Netlist RootNetlist, MappableResourcesContainer MapInfo,
-			Board BoardInfo, ArrayList<String> Entities,
+			Board board, ArrayList<String> Entities,
 			ArrayList<String> Architectures, String HDLType,
 			boolean writeToFlash) {
-		boolean IsCPLD = BoardInfo.fpga.getPart().toUpperCase()
-				.startsWith("XC2C")
-				|| BoardInfo.fpga.getPart().toUpperCase().startsWith("XA2C")
-				|| BoardInfo.fpga.getPart().toUpperCase().startsWith("XCR3")
-				|| BoardInfo.fpga.getPart().toUpperCase().startsWith("XC9500")
-				|| BoardInfo.fpga.getPart().toUpperCase().startsWith("XA9500");
-		String JTAGPos = String.valueOf(BoardInfo.fpga.getFpgaJTAGChainPosition());
+		boolean IsCPLD = isCPLD(board.fpga);
+		String JTAGPos = board.fpga.JTAGPos;
 		String BitfileExt = (IsCPLD) ? "jed" : "bit";
 		File ScriptFile = FileWriter.GetFilePointer(ScriptPath, script_file,
 				MyReporter);
@@ -534,20 +533,20 @@ public class XilinxDownload {
 		Contents.add("run -top " + ToplevelHDLGeneratorFactory.FPGAToplevelName
 				+ " -ofn logisim.ngc -ofmt NGC -ifn "
 				+ ScriptPath.replace(ProjectPath, "../") + vhdl_list_file
-				+ " -ifmt mixed -p " + GetFPGADeviceString(BoardInfo));
+				+ " -ifmt mixed -p " + GetFPGADeviceString(board));
 		if (!FileWriter.WriteContents(ScriptFile, Contents, MyReporter))
 			return false;
 		Contents.clear();
 		Contents.add("setmode -bscan");
-		if (writeToFlash && BoardInfo.fpga.isFlashDefined()) {
-			if (BoardInfo.fpga.getFlashName() == null) {
-				MyReporter.AddFatalError("Unable to find the flash on " + BoardInfo.getBoardName());
+		if (writeToFlash && board.fpga.FlashDefined) {
+			if (board.fpga.FlashName == null) {
+				MyReporter.AddFatalError("Unable to find the flash on " + board.name);
 			}
-			String FlashPos = String.valueOf(BoardInfo.fpga.getFlashJTAGChainPosition());
+			String FlashPos = String.valueOf(board.fpga.FlashPos);
 			String McsFile = ScriptPath + File.separator + mcs_file;
 			Contents.add("setmode -pff");
 			Contents.add("setSubMode -pffserial");
-			Contents.add("addPromDevice -p " + JTAGPos + " -size 0 -name " + BoardInfo.fpga.getFlashName());
+			Contents.add("addPromDevice -p " + JTAGPos + " -size 0 -name " + board.fpga.FlashName);
 			Contents.add("addDesign -version 0 -name \"0\"");
 			Contents.add("addDeviceChain -index 0");
 			Contents.add("addDevice -p " + JTAGPos + " -file " + ToplevelHDLGeneratorFactory.FPGAToplevelName + "." + BitfileExt);
@@ -577,7 +576,7 @@ public class XilinxDownload {
 		Contents.clear();
 		if (RootNetlist.NumberOfClockTrees() > 0) {
 			Contents.add("NET \"" + TickComponentHDLGeneratorFactory.FPGAClock
-					+ "\" " + GetXilinxClockPin(BoardInfo) + " ;");
+					+ "\" " + GetXilinxClockPin(board) + " ;");
 			Contents.add("NET \"" + TickComponentHDLGeneratorFactory.FPGAClock
 					+ "\" TNM_NET = \""
 					+ TickComponentHDLGeneratorFactory.FPGAClock + "\" ;");
@@ -585,44 +584,26 @@ public class XilinxDownload {
 					+ TickComponentHDLGeneratorFactory.FPGAClock
 					+ "\" = PERIOD \""
 					+ TickComponentHDLGeneratorFactory.FPGAClock + "\" "
-					+ GetClockFrequencyString(BoardInfo) + " HIGH 50 % ;");
+					+ board.fpga.Speed + " HIGH 50 % ;");
 			Contents.add("");
 		}
 		Contents.addAll(MapInfo.GetFPGAPinLocs(Chipset.XILINX));
 		return FileWriter.WriteContents(UcfFile, Contents, MyReporter);
 	}
 
-	private static String GetClockFrequencyString(Board CurrentBoard) {
-		long clkfreq = CurrentBoard.fpga.getClockFrequency();
-		if (clkfreq % 1000000 == 0) {
-			clkfreq /= 1000000;
-			return Long.toString(clkfreq) + " MHz ";
-		} else if (clkfreq % 1000 == 0) {
-			clkfreq /= 1000;
-			return Long.toString(clkfreq) + " kHz ";
-		}
-		return Long.toString(clkfreq);
-	}
-
-	private static String GetFPGADeviceString(Board CurrentBoard) {
-		StringBuffer result = new StringBuffer();
-		result.append(CurrentBoard.fpga.getPart());
-		result.append("-");
-		result.append(CurrentBoard.fpga.getPackage());
-		result.append("-");
-		result.append(CurrentBoard.fpga.getSpeedGrade());
-		return result.toString();
+	private static String GetFPGADeviceString(Chipset chip) {
+    return String.format("%s-%s-%s", chip.Part, chip.Package, chip.SpeedGrade);
 	}
 
 	private static String GetXilinxClockPin(Board CurrentBoard) {
 		StringBuffer result = new StringBuffer();
-		result.append("LOC = \"" + CurrentBoard.fpga.getClockPinLocation() + "\"");
-    char dir = CurrentBoard.fpga.getClockPull();
-		if (dir == PullBehaviors.PULL_UP || dir == PullBehaviors.PULL_DOWN)
-			result.append(" | " + PullBehaviors.XILINX_PULL[dir].toUpperCase());
-    char std = CurrentBoard.fpga.getClockStandard();
-		if (std != IoStandards.DEFAULT && std != IoStandards.UNKNOWN)
-			result.append(" | IOSTANDARD = " + IoStandards.DESC[std]);
+		result.append("LOC = \"" + CurrentBoard.fpga.ClockPinLocation + "\"");
+    PullBehavior dir = CurrentBoard.fpga.ClockPullBehavior;
+		if (dir == PullBehavior.PULL_UP || dir == PullBehavior.PULL_DOWN)
+			result.append(" | " + dir.xilinx.toUpperCase());
+    IoStandard std = CurrentBoard.fpga.getClockStandard();
+		if (std != IoStandard.DEFAULT && std != IoStandard.UNKNOWN)
+			result.append(" | IOSTANDARD = " + std);
 		return result.toString();
 	}
 

@@ -30,16 +30,8 @@
 
 package com.bfh.logisim.fpgaboardeditor;
 
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -48,12 +40,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.cburch.logisim.proj.Projects;
-
 public class BoardReader {
-
-	private static final String ERR_ICON = "/resources/logisim/error.png";
-	private static final String WANR_ICON = "/resources/logisim/warning.png";
 
 	public static Board read(String path) {
 		try {
@@ -74,7 +61,7 @@ public class BoardReader {
 			parseComponents(doc, "IOComponents", b); // new format
 			return b;
 		} catch (Exception e) {
-      showError("The selected xml file was invalid: " + e.getMessage());
+      BoardDialog.showError("The selected xml file was invalid: " + e.getMessage());
       return null;
 		}
 	}
@@ -135,50 +122,13 @@ public class BoardReader {
   }
 
 
-  private static void parseComponents(Document doc, String section, Board board) {
+  private static void parseComponents(Document doc, String section, Board board)
+      throws Exception {
     NodeList xml = getSection(doc, section);
     if (xml == null)
       return;
-    for (int i = 0; i < xml.getLength(); i++) {
-      BoardIO c;
-      c = new BoardIO(xml.item(i));
-      if (c.IsKnownComponent())
-        board.addComponent(c);
-    }
-  }
-
-  public static void showError(String msg) { showMessage(ERR_ICON, msg); }
-  public static void showWarning(String msg) { showMessage(WARN_ICON, msg); }
-  private static void showMessage(String icon, String msg) {
-    final JFrame dialog = new JFrame(type);
-    JLabel pic = new JLabel();
-    pic.setIcon(new ImageIcon(getClass().getResource(icon)));
-    GridBagLayout dialogLayout = new GridBagLayout();
-    dialog.setLayout(dialogLayout);
-    GridBagConstraints c = new GridBagConstraints();
-    JLabel message = new JLabel(msg);
-    JButton close = new JButton("close");
-    ActionListener actionListener = new ActionListener() {
-      public void actionPerformed(ActionEvent e) { dialog.dispose(); }
-    };
-    close.addActionListener(actionListener);
-
-    c.gridx = 0;
-    c.gridy = 0;
-    c.ipadx = 20;
-    dialog.add(pic, c);
-
-    c.gridx = 1;
-    c.gridy = 0;
-    dialog.add(message, c);
-
-    c.gridx = 1;
-    c.gridy = 1;
-    dialog.add(close, c);
-    dialog.pack();
-    dialog.setLocation(Projects.getCenteredLoc(dialog.getWidth(), dialog.getHeight()));
-    dialog.setAlwaysOnTop(true);
-    dialog.setVisible(true);
+    for (int i = 0; i < xml.getLength(); i++)
+      board.addComponent(BoardIO.parseXml(board.size()+1, xml.item(i)));
   }
 
 }

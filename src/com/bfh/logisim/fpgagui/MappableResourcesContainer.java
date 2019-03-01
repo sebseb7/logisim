@@ -133,8 +133,7 @@ public class MappableResourcesContainer {
 							nrOfFPGAInputPins += NrOfPins;
 						}
 					}
-					NrOfPins = IOComponentTypes
-							.GetFPGAOutputRequirement(BoardComp.GetType());
+					NrOfPins = IOComponentTypes.GetFPGAOutputRequirement(BoardComp.GetType());
 					if (NrOfPins != 0) {
 						fpgaOutputsList.put(Map, nrOfFPGAOutputPins);
 						nrOfFPGAOutputPins += NrOfPins;
@@ -229,7 +228,7 @@ public class MappableResourcesContainer {
 			BoardRectangle rect = mappedList.get(Map);
       if (rect.isDeviceSignal()) {
         BoardIO Comp = currentUsedBoard.GetComponent(rect);
-        Contents.addAll(Comp.GetPinlocStrings(FPGAVendor, "in", InputId));
+        Contents.addAll(Comp.getPinAssignments(FPGAVendor, "in", InputId));
       } else {
         return null;
       }
@@ -243,7 +242,7 @@ public class MappableResourcesContainer {
 			BoardRectangle rect = mappedList.get(Map);
       if (rect.isDeviceSignal()) {
         BoardIO Comp = currentUsedBoard.GetComponent(rect);
-        Contents.addAll(Comp.GetPinlocStrings(FPGAVendor, "inout", InOutId));
+        Contents.addAll(Comp.getPinAssignments(FPGAVendor, "inout", InOutId));
       } else {
         return null;
       }
@@ -257,7 +256,7 @@ public class MappableResourcesContainer {
 			BoardRectangle rect = mappedList.get(Map);
       if (rect.isDeviceSignal()) {
         BoardIO Comp = currentUsedBoard.GetComponent(rect);
-        Contents.addAll(Comp.GetPinlocStrings(FPGAVendor, "out", OutputId));
+        Contents.addAll(Comp.getPinAssignments(FPGAVendor, "out", OutputId));
       } else {
         return null;
       }

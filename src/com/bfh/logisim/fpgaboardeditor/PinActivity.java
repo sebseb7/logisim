@@ -31,19 +31,22 @@
 package com.bfh.logisim.fpgaboardeditor;
 
 public class PinActivity {
+  public final String desc;
 
-  public static final char ACTIVE_LOW = 0;
-  public static final char ACTIVE_HIGH = 1;
-  public static final char UNKNOWN = 255;
+  public static final PinActivity ACTIVE_LOW = new PinActivity("Active low");
+  public static final PinActivity ACTIVE_HIGH = new PinActivity("Active high");
+  public static final PinActivity UNKNOWN = new PinActivity("Unknown");
+  public static final PinActivity[] OPTIONS = { ACTIVE_LOW, ACTIVE_HIGH };
 
-  public static final String[] DESC = { "Active low", "Active high" };
-	public static final String ATTR = "ActivityLevel";
+  private PinActivity(String d) { desc = d; }
 
-  public char get(String desc) {
-    for (char i = 0; i < DESC.length; i++)
-      if (DESC[i].equals(desc))
-        return i;
+  public PinActivity get(String desc) {
+    for (PinActivity p : OPTIONS)
+      if (p.desc.equals(desc))
+        return p;
     return UNKNOWN;
   }
-
+  
+  @Override
+  public String toString() { return desc; }
 }

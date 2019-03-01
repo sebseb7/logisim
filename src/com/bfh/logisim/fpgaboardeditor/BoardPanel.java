@@ -43,7 +43,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Iterator;
 import java.util.LinkedList;
 
 import javax.imageio.ImageIO;
@@ -51,85 +50,71 @@ import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.filechooser.FileFilter;
 
-@SuppressWarnings("serial")
-public class BoardPanel extends JPanel implements MouseListener,
-		MouseMotionListener {
-	private static class PNGFileFilter extends FileFilter {
+public class BoardPanel extends JPanel implements MouseListener, MouseMotionListener {
+
+	public static final FileFilter PNG_FILTER = new FileFilter {
 		@Override
 		public boolean accept(File f) {
-			return f.isDirectory() || f.getName().endsWith(PNG_EXTENSION);
+			return f.isDirectory() || f.getName().toLowerCase().endsWith(".png");
 		}
-
 		@Override
 		public String getDescription() {
-			return Strings.get("PNG File Filter"); // TODO: language adaptation
+			return Strings.get("PNGFileFilter");
 		}
 	}
 
-	/**
-	 * 
-	 */
-	private int image_width = 740;
-	private int image_height = 400;
 	private BufferedImage image;
+  private Image scaledImage;
 	private int xs, ys, w, h;
-	private Boolean EditMode;
-	public static final String PNG_EXTENSION = ".png";
-	public static final FileFilter PNG_FILTER = new PNGFileFilter();
-
+	private boolean editing;
 	private BoardDialog edit_parent;
 
-	public BoardPanel(BoardDialog parent) {
+  private BoardPanel() {
 		xs = ys = w = h = 0;
-		image = null;
-		EditMode = true;
-		Dimension thedim = new Dimension();
-		thedim.width = this.getWidth();
-		thedim.height = this.getHeight();
+		setPreferredSize(new Dimension(getWidth(), getHeight()));
+		addMouseListener(this);
+		addMouseMotionListener(this);
+  }
+
+	public BoardPanel(BoardDialog parent) {
+    this();
+		editing = true;
 		edit_parent = parent;
-		super.setPreferredSize(thedim);
-		this.addMouseListener(this);
-		this.addMouseMotionListener(this);
 	}
 
 	public BoardPanel(URL filename) {
-		xs = ys = w = h = 0;
+    this();
+		editing = false;
 		try {
 			image = ImageIO.read(filename);
-		} catch (IOException ex) {
-			image = null;
-		}
-		EditMode = false;
-		Dimension thedim = new Dimension();
-		thedim.width = this.getWidth();
-		thedim.height = this.getHeight();
-		super.setPreferredSize(thedim);
-		this.addMouseListener(this);
-		this.addMouseMotionListener(this);
+      scaledImage = image.getScaledInstance(getWidth(), getHeight(), 4);
+		} catch (IOException ex) { }
+	}
+	
+  public void setImage(BufferedImage pic) {
+		image = pic;
+    scaledImage = image.getScaledInstance(getWidth(), getHeight(), 4);
+		this.repaint();
 	}
 
 	public void clear() {
 		image = null;
 	}
 
-	public int getHeight() {
-		return image_height;
+	public Boolean isEmpty() {
+		return image == null;
 	}
 
-	public Image getScaledImage(int width, int height) {
-		return image.getScaledInstance(width, height, 4);
-	}
 
-	public int getWidth() {
-		return image_width;
-	}
+  @Override
+	public int getWidth() { return 740; }
 
-	public Boolean ImageLoaded() {
-		return image != null;
-	}
+  @Override
+	public int getHeight() { return 400; }
 
+  @Override
 	public void mouseClicked(MouseEvent e) {
-		if (EditMode && !this.ImageLoaded()) {
+		if (editing && !this.ImageLoaded()) {
 			JFileChooser fc = new JFileChooser();
 			fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 			fc.setDialogTitle("Choose FPGA board picture to use");
@@ -149,42 +134,52 @@ public class BoardPanel extends JPanel implements MouseListener,
 		}
 	}
 
+  @Override
 	public void mouseDragged(MouseEvent e) {
-		if (EditMode && this.ImageLoaded()) {
-			this.set_drag(e.getX(), e.getY());
+		if (editing && this.ImageLoaded()) {
+			w = e.getX() - xs;
+			h = e.getY() - ys;
 			this.repaint();
 		}
 	}
 
-	public void mouseEntered(MouseEvent e) {
-	}
+  @Override
+	public void mouseEntered(MouseEvent e) { }
 
-	public void mouseExited(MouseEvent e) {
-	}
+  @Override
+	public void mouseExited(MouseEvent e) { }
 
-	public void mouseMoved(MouseEvent e) {
+  @Override
+	public void mouseMoved(MouseEvent e) { }
 
-	}
-
+  @Override
 	public void mousePressed(MouseEvent e) {
-		this.set_start(e.getX(), e.getY());
-	}
-
-	public void mouseReleased(MouseEvent e) {
-		if (EditMode && this.ImageLoaded() && (h != 0) && (w != 0)) {
-			BoardRectangle rect = new BoardRectangle(xs, ys, w, h);
-			edit_parent.SelectDialog(rect);
-			this.set_start(0, 0);
-			this.repaint();
+		if (editing && this.ImageLoaded()) {
+			xs = e.getX();
+			ys = e.getY();
+			w = h = 0;
 		}
 	}
 
+  @Override
+	public void mouseReleased(MouseEvent e) {
+		if (editing && this.ImageLoaded()) {
+      if (h != 0 && w != 0) {
+        BoardRectangle rect = new BoardRectangle(xs, ys, w, h);
+        edit_parent.doRectSelectDialog(rect);
+      }
+      xs = ys = w = h = 0;
+      this.repaint();
+		}
+	}
+
+  @Override
 	public void paint(Graphics g) {
 		super.paint(g);
 		if (image != null) {
-			g.drawImage(getScaledImage(getWidth(), getHeight()), 0, 0, null);
+			g.drawImage(scaledImage);
 			g.setColor(Color.red);
-			if ((w != 0) || (h != 0)) {
+			if (w != 0 || h != 0) {
 				int xr, yr, wr, hr;
 				xr = (w < 0) ? xs + w : xs;
 				yr = (h < 0) ? ys + h : ys;
@@ -192,65 +187,34 @@ public class BoardPanel extends JPanel implements MouseListener,
 				hr = (h < 0) ? -h : h;
 				g.drawRect(xr, yr, wr, hr);
 			}
-			if (EditMode && (edit_parent.defined_components != null)) {
-				LinkedList<BoardRectangle> comps = edit_parent.defined_components;
-				Iterator<BoardRectangle> iter = comps.iterator();
+      LinkedList<BoardRectangle> rects = editing ? edit_parent.defined_components : null;
+			if (rects != null) {
 				g.setColor(Color.red);
-				while (iter.hasNext()) {
-					BoardRectangle thisone = iter.next();
-					g.fillRect(thisone.getXpos(), thisone.getYpos(),
-							thisone.getWidth(), thisone.getHeight());
-				}
+        for (BoardRectangle rect : rects)
+					g.fillRect(rect.x, rect.y, rect.width, rect.height);
 			}
 		} else {
 			g.setColor(Color.gray);
-			g.fillRect(0, 0, this.getWidth(), this.getHeight());
-			if (EditMode) {
-				String message;
-				int xpos;
-				Font curfont = new Font(g.getFont().getFontName(), Font.BOLD,
-						20);
+			g.fillRect(0, 0, getWidth(), getHeight());
+			if (editing) {
+				String[] lines = {
+          "Click to add picture of FPGA board.",
+          "The board picture must be PNG format and should be"
+          " at least" + getWidth() + "x" + getHeight() + " pixels for best display." };
+
 				g.setColor(Color.black);
-				g.setFont(curfont);
+				g.setFont(new Font(g.getFont().getFontName(), Font.BOLD, 20));
+
 				FontMetrics fm = g.getFontMetrics();
-				message = "Click here to add a board picture.";
-				xpos = (this.getWidth() - fm.stringWidth(message)) / 2;
-				g.drawString(message, xpos, 100);
-				message = "The board picture should have at least a resolution of";
-				xpos = (this.getWidth() - fm.stringWidth(message)) / 2;
-				g.drawString(message, xpos, 200);
-				message = this.getWidth() + "x" + this.getHeight()
-						+ " pixels (width x height)";
-				xpos = (this.getWidth() - fm.stringWidth(message)) / 2;
-				g.drawString(message, xpos, 200 + (int) (1.5 * fm.getAscent()));
-				message = "for best graphical display.";
-				xpos = (this.getWidth() - fm.stringWidth(message)) / 2;
-				g.drawString(message, xpos, 200 + (int) (3 * fm.getAscent()));
-				message = "The board picture formate must be PNG";
-				xpos = (this.getWidth() - fm.stringWidth(message)) / 2;
-				g.drawString(message, xpos, 200 + (int) (4.5 * fm.getAscent()));
+        float ascent = fm.getAscent();
+        int ypos = 100, i = 0;
+        for (String msg : lines) {
+          int xpos = (getWidth() - fm.stringWidth(message)) / 2;
+          g.drawString(message, xpos, ypos);
+          ypos = 200 + (int)((i++) * 1.5 * ascent);
+        }
 			}
 		}
 	}
 
-	public void set_drag(int x, int y) {
-		if (EditMode && this.ImageLoaded()) {
-			w = x - xs;
-			h = y - ys;
-		}
-	}
-
-	public void set_start(int x, int y) {
-		if (EditMode && this.ImageLoaded()) {
-			xs = x;
-			ys = y;
-			w = 0;
-			h = 0;
-		}
-	}
-
-	public void SetImage(BufferedImage pic) {
-		image = pic;
-		this.repaint();
-	}
 }

@@ -32,9 +32,9 @@ package com.bfh.logisim.fpgaboardeditor;
 
 public class Chipset {
 
-	public static final char ALTERA = 0;
-	public static final char XILINX = 1;
-	public static final char UNKNOWN = 255;
+	public static final char ALTERA = 'A';
+	public static final char XILINX = 'X';
+	public static final char UNKNOWN = '?';
 
 	private static char getVendor(String desc) {
     for (char i = 0; i < DESC.length; i++)
@@ -43,16 +43,17 @@ public class Chipset {
     return UNKNOWN;
 	}
 
+  public final String Speed;
 	public final long ClockFrequency;
 	public final String ClockPinLocation;
-	public final char ClockPullBehavior;
-	public final char ClockIOStandard;
+	public final PullBehavior ClockPullBehavior;
+	public final IoStandard ClockIOStandard;
 	public final String Technology;
 	public final String Part;
 	public final String Package;
 	public final String SpeedGrade;
 	public final char Vendor;
-	public final char UnusedPinsBehavior;
+	public final PullBehavior UnusedPinsBehavior;
 	public final boolean FPGADefined;
 	public final boolean USBTMCDownload;
 	public final int JTAGPos;
@@ -85,8 +86,8 @@ public class Chipset {
 
     ClockFrequency = Long.parseLong(params.get("ClockInformation/Frequency"));
 		ClockPinLocation = params.get("ClockInformation/FPGApin");
-		ClockPullBehavior = PullBehaviors.get(params.get("ClockInformation/PullBehavior"));
-		ClockIOStandard = IoStandards.get(params.get("ClockInformation/IOStandard"));
+		ClockPullBehavior = PullBehavior.get(params.get("ClockInformation/PullBehavior"));
+		ClockIOStandard = IoStandard.get(params.get("ClockInformation/IOStandard"));
 
 		Technology = params.get("FPGAInformation/Family");
 		Part = params.get("FPGAInformation/Part");
@@ -99,7 +100,7 @@ public class Chipset {
     FlashName = params.get("FPGAInformation/FlashName");
 		FlashDefined = FlashPos != 0 && FlashName != null && !FlashName.isEmpty();
 
-		UnusedPinsBehavior = PullBehaviors.get(params.get("UnusedPins/PullBehavior"));
+		UnusedPinsBehavior = PullBehavior.get(params.get("UnusedPins/PullBehavior"));
 
     if (ClockFrequency <= 0)
       throw new Exception("invalid ClockInformation/Frequency");
@@ -121,33 +122,21 @@ public class Chipset {
       throw new Exception("invalid or missing FPGAInformation/Speedgrade");
     if (Vendor == null)
       throw new Exception("invalid or missing FPGAInformation/Vendor");
+
+    Speed = freqToString(ClockFrequency);
   }
 
 	public boolean FpgaInfoPresent() { return !empty; }
 
-	public void Set(long frequency, String pin, String pull, String standard,
-			String tech, String device, String box, String speed, String vend,
-			String unused, boolean UsbTmc, String JTAGPos, String flashName,
-			String flashPos) {
-		this.JTAGPos = Integer.valueOf(JTAGPos);
-		this.FlashName = flashName;
-		this.FlashPos = Integer.valueOf(flashPos);
-		this.FlashDefined = (flashName != null) && (!flashName.isEmpty()) && (this.FlashPos != 0);
+	private static String freqToString(long clkfreq) {
+		if (clkfreq % 1000000 == 0) {
+			clkfreq /= 1000000;
+			return Long.toString(clkfreq) + " MHz ";
+		} else if (clkfreq % 1000 == 0) {
+			clkfreq /= 1000;
+			return Long.toString(clkfreq) + " kHz ";
+		}
+		return Long.toString(clkfreq);
 	}
 
-	public Boolean USBTMCDownloadRequired() { return USBTMCDownload; } 
-	public String getFlashName() { return FlashName; } 
-	public int getFlashJTAGChainPosition() { return FlashPos; } 
-	public boolean isFlashDefined() { return FlashDefined; } 
-	public long getClockFrequency() { return ClockFrequency; }
-	public String getClockPinLocation() { return ClockPinLocation; }
-	public char getClockPull() { return ClockPullBehavior; }
-	public char getClockStandard() { return ClockIOStandard; }
-	public String getPackage() { return Package; }
-	public String getPart() { return Part; }
-	public String getSpeedGrade() { return SpeedGrade; }
-	public String getTechnology() { return Technology; }
-	public char getUnusedPinsBehavior() { return UnusedPinsBehavior; } 
-	public char getVendor() { return Vendor; } 
-	public int getFpgaJTAGChainPosition() { return JTAGPos; } 
 }

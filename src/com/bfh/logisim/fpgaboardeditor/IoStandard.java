@@ -30,24 +30,28 @@
 
 package com.bfh.logisim.fpgaboardeditor;
 
-public class PullBehaviors {
-  
-  public static final char FLOAT = 0;
-  public static final char PULL_UP = 1;
-  public static final char PULL_DOWN = 2;
-  public static final char UNKNOWN = 255;
-  
-  public static final String[] DESC = { "Float", "Pull Up", "Pull Down" };
-	public static final String ATTR = "FPGAPinPullBehavior";
+public class IoStandard {
+  public final String desc;
 
-  public static final String[] ALTERA_PULL = { "TRI-STATED", "PULLUP", "PULLDOWN", "" };
-  public static final String[] XILINX_PULL = { "float", "pullup", "pulldown", "float" };
+	public static final IoStandard DEFAULT  = new IoStandard("Default");
+	public static final IoStandard LVCMOS12 = new IoStandard("LVCMOS12");
+	public static final IoStandard LVCMOS15 = new IoStandard("LVCMOS15");
+	public static final IoStandard LVCMOS18 = new IoStandard("LVCMOS18");
+	public static final IoStandard LVCMOS25 = new IoStandard("LVCMOS25");
+	public static final IoStandard LVCMOS33 = new IoStandard("LVCMOS33");
+	public static final IoStandard LVTTL    = new IoStandard("LVTTL");
+	public static final IoStandard UNKNOWN =  new IoStandard("Unknown");  
+  public static final IoStandard[] OPTIONS = { DEFAULT,
+    LVCMOS12, LVCMOS15, LVCMOS18, LVCMOS25, LVCMOS33, LVTTL };
 
-  public char get(String desc) {
-    for (char i = 0; i < DESC.length; i++)
-      if (DESC[i].equals(desc))
-        return i;
+  public IoStandard get(String desc) {
+    for (IoStandard p : OPTIONS)
+      if (p.desc.equals(desc))
+        return p;
     return UNKNOWN;
   }
+
+  @Override
+  public String toString() { return desc; }
 
 }
