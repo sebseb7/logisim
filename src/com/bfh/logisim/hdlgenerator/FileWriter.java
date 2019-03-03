@@ -37,7 +37,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.settings.Settings;
 
 public class FileWriter {

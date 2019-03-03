@@ -28,20 +28,23 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgaboardeditor;
+package com.bfh.logisim.fpga;
 
 import java.awt.image.BufferedImage;
 import java.util.AbstractList;
 import java.util.ArrayList;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.gui.FPGAReport;
 
-import com.bfh.logisim.fpgaboardeditor.BoardIO.IOComponentTypes;
+import com.bfh.logisim.fpga.BoardIO.IOComponentTypes;
 
 // Board describes an fpga-based platform (i.e. "demo board") that can be the
 // target of the FPGA synthesis. Each Board has a name, chipset, image, and list
 // of I/O resources.
 public class Board extends AbstractList<BoardIO> {
+  
+  public static final int IMG_WIDTH = 740;
+  public static final int IMG_HEIGHT = 400;
 
 	public final String name;
 	public final Chipset fpga;
@@ -52,7 +55,7 @@ public class Board extends AbstractList<BoardIO> {
 	public Board(String name, Chipset fpga, BufferedImage image) {
     this.name = name;
     this.fpga = fpga;
-    this.image = image;
+    this.image = image.getScaledInstance(IMG_WIDTH, IMG_HEIGHT, Image.SCALE_SMOOTH);
 	}
 
   @Override

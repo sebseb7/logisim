@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgaboardeditor;
+package com.bfh.logisim.fpga;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -52,35 +52,68 @@ import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.std.io.RGBLed;
 import com.cburch.logisim.std.io.SevenSegment;
 import com.cburch.logisim.util.Errors;
+import static com.bfh.logisim.netlist.Netlist.Int3;
 
-// Each BoardIO represents one physical I/O resource, like an LED or button.
+// Each BoardIO represents one physical I/O resource, like an LED, button, or
+// switch. Some I/O resources can only be used as inputs (e.g. a button), some
+// can only be used as outputs (e.g. an LED), some are inherently bidirectional
+// (e.g. the PS2 keyboard connector), and some have no inherent direction at all
+// (e.g. a debug or expansion header directly connected to a configurable pin on
+// the FPGA). As a simplification, we assume all the bits in a multi-bit I/O
+// resource has the same "direction", which can be one of:
+//  in  - for things that can only be used as inputs, e.g. buttons and switches
+//  out - for things that can only be used as outputs, e.g. LEDs
+//  any - for things that can be used as inputs, outputs, or bidirectional inout
+// Note: Things with direction "any", if misused, can cause physical short
+// circuits. A keyboard connector would be classified as a 4-bit I/O resource
+// with direction "any", but if you map an output driver to those bits, it will
+// conflict when the keyboard tries to send scancodes. However, this is always a
+// risk with any bidirectional port anyway. The only place we could do a little
+// better here is allowing a multi-bit connection where the individual bits can
+// have differrent directions (whereas now they'd all have to be promoted to
+// "any", even if we knew some bits are input-only, or the connector would have
+// to be split into separate BoardIO resources).
 public class BoardIO {
 
-  public static final EnumSet<Type> KnownTypes = EnumSet.range(Type.Button, Type.LED);
-  public static final EnumSet<Type> InputTypes = EnumSet.range(Type.Button, Type.Pin);
-  public static final EnumSet<Type> OutputTypes = EnumSet.range(Type.PortIO, Type.LED);
-  public static final EnumSet<Type> InOutTypes = EnumSet.of(Type.PortIO, Type.Pin);
+  public static final EnumSet<Type> PhysicalTypes = EnumSet.range(Type.Button, Type.SevenSegment);
+  public static final EnumSet<Type> InputTypes = EnumSet.range(Type.Button, Type.Ribbon);
+  public static final EnumSet<Type> OutputTypes = EnumSet.range(Type.Pin, Type.LED);
+  public static final EnumSet<Type> InOutTypes = EnumSet.of(Type.Pin, Type.Ribbon);
+  public static final EnumSet<Type> OneBitTypes = EnumSet.of(Type.Button, Type.Pin, Type.LED);
 
 	public static String Type {
-    // Note: The order here matters, because of EnumSet ranges above.
-    Button,        // known in
-    DIPSwitch,     // known in
-    PortIO,        // known in out inout
-    Pin,           // known in out inout
-    SevenSegment,  // known    out
-    RGBLED,        // known    out
-		LED,           // known    out
-    // Note: Bus does not appear in Board descriptions as a type of physical
-    // resource, and no BoardIO will have this type. But logisim components can
-    // request mappings of type Bus to indicate they need n-bits worth of Pin or
-    // something compatable.
-    Bus,
+    // Note: The order here matters, because of the EnumSet ranges above.
+                   // Physical and synthetic I/O resource characteristics:
+    AllZeros,      // synth in  onebit/multibit
+    AllOnes,       // synth in  onebit/multibit
+    Constant,      // synth in  onebit/multibit
+    Button,        // phys  in  onebit
+    DIPSwitch,     // phys  in  multibit (degenerates to Button)
+    Pin,           // phys  any onebit
+    Ribbon,        // phys  any multibit (degenerates to Pin)
+		LED,           // phys  out onebit
+    RGBLED,        // phys  out multibit (degenerates to LED)
+    SevenSegment,  // phys  out multibit (degenerates to LED)
+    Unconnected,   // synth out onebit/multibit
+
     Unknown;
 
+    // Note: The types above are used both to describe physical I/O resources
+    // (with the characteristics as noted above). But Logisim components within
+    // the circuit design under test also use the above types to describe
+    // constraints on the I/O resources they are meant to be connected to. For
+    // Pin and Ribbon types, the component will specific whether the bits are
+    // meant to be treated as in, out, or bidirectional. For example, a PortIO
+    // component (which declares type Ribbon) must connect to a bidirectional
+    // pin, and would not make sense to connect to Buttons or LEDs. That is, all
+    // logisim components have a specific direction: in, out, or inout.
+
 		private static Type get(String str) {
-			for (Type t : KnownTypes)
+			for (Type t : PhysicalTypes)
 				if (t.name().equalsIgnoreCase(str))
 					return t;
+      if (str.equalsIgnoreCase("PortIO")) // old name for backwards compatibility
+        return Ribbon;
 			return Type.Unknown;
 		}
 
@@ -92,7 +125,7 @@ public class BoardIO {
         return 1;
       case DIPSwitch:
         return (DipSwitch.MIN_SWITCH + DipSwitch.MAX_SWITCH)/2;
-      case PortIO:
+      case Ribbon:
         return (PortIO.MIN_IO + PortIO.MAX_IO)/2;
       case SevenSegment:
         return 8;
@@ -111,8 +144,6 @@ public class BoardIO {
         return RGBLed.pinLabels();
       case DIPSwitch:
         return DipSwitch.pinLabels(width);
-      case PortIO:
-        return PortIO.pinLabels(width);
       default:
         return genericPinLabels(width);
       }
@@ -133,14 +164,29 @@ public class BoardIO {
 	public final Type type;
 	public final int width;
   public final String label;
-	public final BoardRectangle rect;
-	public final IoStandard standard;
-	public final PullBehavior pull;
-	public final PinActivity activity;
-	public final DriveStrength strength;
+	public final BoardRectangle rect; // only for physical types
+	public final IoStandard standard; // only for physical types
+	public final PullBehavior pull; // only for physical types
+	public final PinActivity activity; // only for physical types
+	public final DriveStrength strength; // only for physical types
+  public final syntheticValue; // only for synthetic types
 
 	private final String[] pins;
 
+  // constructor for synthetic I/O resources
+  private BoardIO(Type t, int w, int val) {
+    type = t;
+    width = w;
+    syntheticValue = val;
+    label = t == Constant ? String.format("0x%x", val) : t.toString();
+  }
+
+  public static BoardIO makeConstant(int w, int val) { return new BoardIO(Type.Constant, w, val); }
+  public static BoardIO makeAllZeros(int w) { return new BoardIO(Type.AllZeros, w, 0); }
+  public static BoardIO makeAllOnes(int w) { return new BoardIO(Type.AllOnes, w, -1); }
+  public static BoardIO makeUnconnected(int w) { return new BoardIO(Type.Unconnected, w, 0); }
+
+  // constructor for physical I/O resources
   private BoardIO(Type t, int w, String l, BoardRectangle r,
       IoStandard s, PullBehavior p, PinActivity a, DriveStrength g, String[] x) {
     type = t;
@@ -154,7 +200,7 @@ public class BoardIO {
     pins = x;
   }
 
-  static BoardIO parseXml(Node node) throws Exception {
+  public static BoardIO parseXml(Node node) throws Exception {
     Type t = Type.get(node.getNodeName());
     if (t == Type.UNKNOWN)
       throw new Exception("unrecognized I/O resource type: " + node.getNodeName());
@@ -175,7 +221,7 @@ public class BoardIO {
     int h = Integer.parseInt(params.getOrDefault("Height", "-1"));
 		if (x < 0 || y < 0 || w < 1 || h < 1)
       throw new Exception("invalid coordinates or size for I/O resource");
-		BoardRectangle r = new BoardRectangle(x, y, w, h, label);
+		BoardRectangle r = new BoardRectangle(x, y, w, h);
 
     PullBehavior p = (t == Types.Pin) ? PullBehavior.ACTIVE_HIGH
         : PullBehavior.get(params.get("FPGAPinPullBehavior"));
@@ -231,12 +277,12 @@ public class BoardIO {
     return elt;
   }
 
-	public BoardIO makeUserDefined(Type t, BoardRectangle r, BoardDialog parent) {
+	public static BoardIO makeUserDefined(Type t, BoardRectangle r, BoardDialog parent) {
     int w = t.defaultWidth();
     BoardIO template = new BoardIO(t, w, null, r,
         IoStandard.UNKNOWN, PullBehavior.UNKNOWN, PinActivity.UNKNOWN, DriveStrength.UNKOWN,
         null);
-    if (t == Type.DIPSwitch || t == Type.PortIO)
+    if (t == Type.DIPSwitch || t == Type.Ribbon)
       template = doSizeDialog(template, parent);
     if (template == null)
       return null;
@@ -434,21 +480,22 @@ public class BoardIO {
   public String toString() {
     if (desc.equals("DIPSwitch") && size.size() > 0)
       return String.format("%s[%d bits]", desc, size);
-    else if (desc.equals("PortIO") && size.size() > 0)
+    else if (desc.equals("Ribbon") && size.size() > 0)
       return String.format("%s[%d in, %d inout, %d out]", desc, size.in, size.inout, size.out);
     else
       return desc;
   }
 
+  // Postcondition: of the counts returned, at least two will be zero.
   public Int3 getPinCounts() {
     Int3 num = new Int3();
-    switch (comp) {
+    switch (type) {
     case Button:
     case DIPSwitch:
       num.in = width;
       break;
     case Pin:
-    case PortIO:
+    case Ribbon:
       num.inout = width;
       break;
     case LED:
@@ -456,6 +503,36 @@ public class BoardIO {
     case RGBLED:
       num.out = width;
       break;
+    }
+    return num;
+  }
+
+  // Precondition: of the counts in compWidth, at least two are zero.
+  public boolean isCompatible(Type compType, Int3 compWidth) {
+    if (compWidth.size() > 1) {
+      // Component is multi-bit, such as PortIO, DipSwitch, Keyboard, Tty,
+      // RGBLed, SevenSegment, or a multi-bit top-level input or output Ribbon.
+      // Ribbon can connect to anything (so long as the directions are
+      // compatible), but others must connect to the exactly matching type.
+      if (compType != Ribbon && compType != type)
+        return false;
+      // Widths must match exactly, directions must be compatible.
+      Int3 rsrc = getPinCounts();
+      return (compWidth.in > 0 && compWidth.in == (rsrc.in + rsrc.inout))
+          || (compWidth.out > 0 && compWidth.out == (rsrc.out + rsrc.inout))
+          || (compWidth.inout > 0 && compWidth.inout == rsrc.inout);
+    } else {
+      // Component is single-bit, such as Button, LED, or single-bit top-level
+      // input or output Pin. Pin can connect to anything (so long as the
+      // directions are compatible), but others must connect to the exactly
+      // matching type.
+      if (compType != Pin && compType != type)
+        return false;
+      // Widths must be sufficient, directions must be compatible.
+      Int3 rsrc = getPinCounts();
+      return (compWidth.in == 1 && 1 <= (rsrc.in + rsrc.inout))
+          || (compWidth.out == 1 && 1 <= (rsrc.out + rsrc.inout))
+          || (compWidth.inout == 1 && 1 <= rsrc.inout);
     }
   }
 

@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgagui;
+package com.bfh.logisim.gui;
 
 import java.awt.EventQueue;
 import java.awt.Dimension;
@@ -53,9 +53,9 @@ import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.download.AlteraDownload;
 import com.bfh.logisim.download.XilinxDownload;
-import com.bfh.logisim.fpgaboardeditor.Board;
-import com.bfh.logisim.fpgaboardeditor.BoardReader;
-import com.bfh.logisim.fpgaboardeditor.Chipset;
+import com.bfh.logisim.fpga.Board;
+import com.bfh.logisim.fpga.BoardReader;
+import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
@@ -107,7 +107,7 @@ public class FPGACommanderGui implements ActionListener {
 	}
 
 	private JFrame panel;
-	private ComponentMapDialog MapPannel;
+	private BindingsDialog MapPannel;
 	private JLabel textMainCircuit = new JLabel("Choose main circuit ");
 	private JLabel textTargetBoard = new JLabel("Choose target board ");
 	private JLabel textTargetFreq = new JLabel("Choose tick frequency ");
@@ -143,7 +143,7 @@ public class FPGACommanderGui implements ActionListener {
 	private MyProjListener myprojList = new MyProjListener();
 	private MyLibraryListener myliblistener = new MyLibraryListener();
 	private MySimulatorListener mysimlistener = new MySimulatorListener();
-	private MappableResourcesContainer MyMappableResources;
+	private PinBindings MyMappableResources;
 	private String[] HDLPaths = { Settings.VERILOG.toLowerCase(),
 			Settings.VHDL.toLowerCase(), "scripts", "sandbox", "ucf" };
 	@SuppressWarnings("unused")
@@ -391,11 +391,11 @@ public class FPGACommanderGui implements ActionListener {
 		
 		panel.setVisible(false);
 		if (MyProject.getLogisimFile().getLoader().getMainFile() != null) {
-			MapPannel = new ComponentMapDialog(panel, MyProject
+			MapPannel = new BindingsDialog(panel, MyProject
 					.getLogisimFile().getLoader().getMainFile()
 					.getAbsolutePath());
 		} else {
-			MapPannel = new ComponentMapDialog(panel, "");
+			MapPannel = new BindingsDialog(panel, "");
 		}
 		MapPannel.SetBoard(MyBoard);
 
@@ -1081,8 +1081,7 @@ public class FPGACommanderGui implements ActionListener {
 		 * mapped to PCB components. Identification can be done by a hierarchy
 		 * name plus component/sub-circuit name
 		 */
-		MyMappableResources = new MappableResourcesContainer(
-				MyBoard, RootNetlist);
+		MyMappableResources = new PinBindings(MyBoard, RootNetlist.getMappableComponents());
 
 		MapPannel.SetBoard(MyBoard);
 		MapPannel.SetMappebleComponents(MyMappableResources);

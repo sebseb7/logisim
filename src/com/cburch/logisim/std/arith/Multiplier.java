@@ -35,7 +35,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.math.BigInteger;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;

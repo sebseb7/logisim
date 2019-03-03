@@ -37,7 +37,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import com.bfh.logisim.library.DynamicClock;
-import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.Splitter;
 import com.cburch.logisim.circuit.SplitterFactory;
@@ -350,24 +350,30 @@ fixme: set clock params here;
     return false;
   }
 
-  static class Int3 {
-    int in, inout, out;
-    Int3() { }
-    void clear() { in = inout = out = 0; }
-    Int3 copy() {
+  public static class Int3 {
+    // Note: All three counts are meant to be non-negative at all times.
+    public int in, inout, out; // Note: these are deliberately mutable
+    public Int3() { }
+    public void clear() { in = inout = out = 0; }
+    public Int3 copy() {
       Int3 o = new Int3();
       o.in = in;
       o.inout = inout;
       o.out = out;
       return o;
     }
-    void increment(Int3 amt) {
+    public void increment(Int3 amt) {
       in += amt.in;
       inout += amt.inout
       out += amt.out;
     }
-    int size() {
+    public int size() {
       return in + inout + out;
+    }
+    public boolean isMixedDrection() {
+      return (in == 0 && inout == 0)
+          || (in == 0 && out == 0)
+          || (inout == 0 && out == 0);
     }
   }
 

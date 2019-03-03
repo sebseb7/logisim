@@ -51,12 +51,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 
 import com.bfh.logisim.netlist.Netlist;
-import com.bfh.logisim.fpgaboardeditor.Board;
-import com.bfh.logisim.fpgaboardeditor.Chipset;
-import com.bfh.logisim.fpgaboardeditor.IoStandard;
-import com.bfh.logisim.fpgaboardeditor.PullBehavior;
-import com.bfh.logisim.fpgagui.FPGAReport;
-import com.bfh.logisim.fpgagui.MappableResourcesContainer;
+import com.bfh.logisim.fpga.Board;
+import com.bfh.logisim.fpga.Chipset;
+import com.bfh.logisim.fpga.IoStandard;
+import com.bfh.logisim.fpga.PullBehavior;
+import com.bfh.logisim.gui.FPGAReport;
+import com.bfh.logisim.gui.PinBindings;
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.hdlgenerator.TickComponentHDLGeneratorFactory;
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGeneratorFactory;
@@ -495,7 +495,7 @@ public class XilinxDownload {
 
 	public static boolean GenerateISEScripts(FPGAReport MyReporter,
 			String ProjectPath, String ScriptPath, String UcfPath,
-			Netlist RootNetlist, MappableResourcesContainer MapInfo,
+			Netlist RootNetlist, PinBindings MapInfo,
 			Board board, ArrayList<String> Entities,
 			ArrayList<String> Architectures, String HDLType,
 			boolean writeToFlash) {

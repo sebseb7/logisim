@@ -69,7 +69,7 @@ public class KeyboardHDLGenerator extends HDLGenerator {
     labels.add("ps2kb_dat");
     labels.add("ps2ms_clk");
     labels.add("ps2ms_dat");
-    hiddenPort = HiddenPort.makeInOutport(labels, HiddenPort.PortIO /*, HiddenPort.Pin*/);
+    hiddenPort = HiddenPort.makeInOutport(labels, HiddenPort.Ribbon, HiddenPort.Pin);
   }
 
   @Override

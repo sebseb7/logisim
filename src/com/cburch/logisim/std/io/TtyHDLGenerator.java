@@ -68,7 +68,7 @@ public class TtyHDLGenerator extends HDLGenerator {
     labels.add("lcd_en");
     labels.add("lcd_rw");
     labels.add("lcd_rs");
-    hiddenPort = HiddenPort.makeInOutport(labels, HiddenPort.PortIO /*, HiddenPort.Pin*/);
+    hiddenPort = HiddenPort.makeInOutport(labels, HiddenPort.Ribbon, HiddenPort.Pin);
   }
 
   @Override

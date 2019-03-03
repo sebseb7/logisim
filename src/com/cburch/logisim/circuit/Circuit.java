@@ -47,7 +47,7 @@ import java.util.WeakHashMap;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Netlist;
-import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.circuit.appear.CircuitAppearance;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;

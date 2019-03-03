@@ -28,48 +28,21 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgagui;
+package com.bfh.logisim.fpga;
 
-public class FPGAReport {
-	private FPGACommanderGui myCommander;
+import com.cburch.logisim.util.LocaleManager;
+import com.cburch.logisim.util.StringGetter;
 
-  public String getProjectName() {
-    return myCommander.getProjectName();
-  }
-
-	public FPGAReport(FPGACommanderGui parent) {
-		myCommander = parent;
+public class Strings {
+	public static String get(String key) {
+		return source.get(key);
 	}
 
-	public void AddError(String Message) {
-		myCommander.AddErrors(Message);
+	public static StringGetter getter(String key) {
+		return source.getter(key);
 	}
 
-	public void AddFatalError(String Message) {
-		myCommander.AddErrors("***FATAL*** " + Message);
-	}
+	private static LocaleManager source = new LocaleManager(
+			"resources/logisim", "fpga");
 
-	public void AddInfo(String Message) {
-		myCommander.AddInfo(Message);
-	}
-
-	public void AddSevereError(String Message, Object ...args) {
-		myCommander.AddErrors("**SEVERE** " + String.format(Message, args));
-	}
-
-	public void AddSevereWarning(String Message, Object ...args) {
-		myCommander.AddWarning("**SEVERE** " + String.format(Message, args));
-	}
-
-	public void AddWarning(String Message, Object ...args) {
-		myCommander.AddWarning(String.format(Message, String.format(Message, args)));
-	}
-
-	public void NewConsole(String title) {
-		myCommander.NewConsole(title);
-	}
-
-	public void print(String Message, Object ...args) {
-		myCommander.AddConsole(String.format(Message, args));
-	}
 }

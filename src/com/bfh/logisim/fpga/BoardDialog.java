@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgaboardeditor;
+package com.bfh.logisim.fpga;
 
 import java.awt.Component;
 import java.awt.GridBagConstraints;
@@ -424,7 +424,7 @@ public class BoardDialog implements ComponentListener {
 		c.gridx = 0;
 		c.gridy = -1;
 		c.fill = GridBagConstraints.HORIZONTAL;
-		for (BoardIO.Type type : BoardIO.KnownTypes) {
+		for (BoardIO.Type type : BoardIO.PhysicalTypes) {
       JButton button = new JButton("Define " + type + " Component");
 			button.addActionListener(e -> {
         dlg.setVisible(false);

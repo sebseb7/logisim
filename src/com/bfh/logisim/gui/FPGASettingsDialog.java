@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgagui;
+package com.bfh.logisim.gui;
 
 import java.awt.Font;
 import java.awt.Dialog.ModalityType;

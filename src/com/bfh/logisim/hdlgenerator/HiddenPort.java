@@ -32,73 +32,72 @@ package com.bfh.logisim.hdlgenerator;
 
 import java.util.ArrayList;
 
+import com.bfh.logisim.fpga.BoardIO;
 import com.cburch.logisim.comp.Component;
-import static com.bfh.logisim.fpgaboardeditor.BoardIO.IOComponentTypes;
 import static com.bfh.logisim.netlist.Netlist.Int3;
 
 public class HiddenPort {
 
   // These are here simply for convenience in generator classes.
-  public static final IOComponentTypes LED = IOComponentTypes.LED;
-  public static final IOComponentTypes Button = IOComponentTypes.Button;
-  public static final IOComponentTypes Pin = IOComponentTypes.Pin;
-  public static final IOComponentTypes SevenSegment = IOComponentTypes.SevenSegment;
-  public static final IOComponentTypes DIPSwitch = IOComponentTypes.DIPSwitch;
-  public static final IOComponentTypes RGBLED = IOComponentTypes.RGBLED;
-  public static final IOComponentTypes PortIO = IOComponentTypes.PortIO;
-  public static final IOComponentTypes Bus = IOComponentTypes.Bus; // multi-bit version of Pin
+  public static final BoardIO.Type LED = BoardIO.Type.LED;
+  public static final BoardIO.Type Button = BoardIO.Type.Button;
+  public static final BoardIO.Type Pin = BoardIO.Type.Pin;
+  public static final BoardIO.Type SevenSegment = BoardIO.Type.SevenSegment;
+  public static final BoardIO.Type DIPSwitch = BoardIO.Type.DIPSwitch;
+  public static final BoardIO.Type RGBLED = BoardIO.Type.RGBLED;
+  public static final BoardIO.Type Ribbon = BoardIO.Type.Ribbon;
   
   public final List<String> inports, inoutports, outports;
-  public final IOComponentTypes mainType;
-  public final List<IOComponentTypes> altTypes;
-  public final List<IOComponentTypes> types; // main + alternates
+  public final BoardIO.Type mainType;
+  public final List<BoardIO.Type> altTypes;
+  public final List<BoardIO.Type> types; // main + alternates
 
   // So far, all hidden ports are pure input, pure output, or pure inout. There
   // are no mixed-direction hidden ports. So we provide convenience
   // constructors for these cases.
 
-  public static HiddenPort makeInport(List<String> labels, IOComponentTypes mainType, IOComponentTypes ...altTypes)    { return new HiddenPort(labels, null, null, mainType, altTypes); }
-  public static HiddenPort makeInOutport(List<String> labels, IOComponentTypes mainType, IOComponentTypes ...altTypes) { return new HiddenPort(null, labels, null, mainType, altTypes); }
-  public static HiddenPort makeOutport(List<String> labels, IOComponentTypes mainType, IOComponentTypes ...altTypes)   { return new HiddenPort(null, null, labels, mainType, altTypes); }
-  public static HiddenPort makeInport(int width, IOComponentTypes mainType, IOComponentTypes ...altTypes)    { return new HiddenPort(width, 0, 0, mainType, altTypes); }
-  public static HiddenPort makeInOutport(int width, IOComponentTypes mainType, IOComponentTypes ...altTypes) { return new HiddenPort(0, width, 0, mainType, altTypes); }
-  public static HiddenPort makeOutport(int width, IOComponentTypes mainType, IOComponentTypes ...altTypes)   { return new HiddenPort(0, 0, width, mainType, altTypes); }
+  public static HiddenPort makeInport(List<String> labels, BoardIO.Type mainType, BoardIO.Type ...altTypes)    { return new HiddenPort(labels, null, null, mainType, altTypes); }
+  public static HiddenPort makeInOutport(List<String> labels, BoardIO.Type mainType, BoardIO.Type ...altTypes) { return new HiddenPort(null, labels, null, mainType, altTypes); }
+  public static HiddenPort makeOutport(List<String> labels, BoardIO.Type mainType, BoardIO.Type ...altTypes)   { return new HiddenPort(null, null, labels, mainType, altTypes); }
+  public static HiddenPort makeInport(int width, BoardIO.Type mainType, BoardIO.Type ...altTypes)    { return new HiddenPort(width, 0, 0, mainType, altTypes); }
+  public static HiddenPort makeInOutport(int width, BoardIO.Type mainType, BoardIO.Type ...altTypes) { return new HiddenPort(0, width, 0, mainType, altTypes); }
+  public static HiddenPort makeOutport(int width, BoardIO.Type mainType, BoardIO.Type ...altTypes)   { return new HiddenPort(0, 0, width, mainType, altTypes); }
 
   public static HiddenPort forPin(Component pin) {
     int w = pin.getEnd(0).getWidth().getWidth();
-    boolean i = pin.getEnd(0).isInput();
-    boolean o = pin.getEnd(0).isOutput();
+    boolean o = pin.getEnd(0).isInput(); // input from circuit means output to fpga
+    boolean i = pin.getEnd(0).isOutput(); // output to circuit means input from fpga
     if (i && o && w > 1)
-      return makeInOutport(w, Bus, Pin, PortIO);
+      return makeInOutport(w, Ribbon, Pin);
     else if (i && o)
-      return makeInOutport(w, Pin, PortIO);
+      return makeInOutport(w, Pin);
     else if (i && w > 1)
-      return makeInOutport(w, Bus, Pin, LED);
+      return makeInport(w, Ribbon, Pin);
     else if (i)
-      return makeInOutport(w, Pin, LED);
+      return makeInport(w, Pin);
     else if (o && w > 1)
-      return makeInOutport(w, Bus, Pin, Button);
+      return makeOutport(w, Ribbon, Pin);
     else if (o)
-      return makeInOutport(w, Pin, Button);
+      return makeOutport(w, Pin);
     else
       return null;
   }
 
-	private HiddenPort(List<String> inports, List<String> inoutports, List<String> outports, IOComponentTypes mainType, IOComponentTypes ...altTypes) {
+	private HiddenPort(List<String> inports, List<String> inoutports, List<String> outports, BoardIO.Type mainType, BoardIO.Type ...altTypes) {
     this.inports = Collections.unmodifiableList(inports != null ? inports : new ArrayList<String>());
     this.inoutports = Collections.unmodifiableList(inoutports != null ? inoutports : new ArrayList<String>());
     this.outports = Collections.unmodifiableList(outports != null ? outports : new ArrayList<String>());
 		this.mainType = mainType;
-    Arraylist<IOComponentTypes> alt = new ArrayList<>();
+    Arraylist<BoardIO.Type> alt = new ArrayList<>();
     alt.addAll(altTypes);
     altTypes = Collections.unmodifiableList(alt);
-    Arraylist<IOComponentTypes> all = new ArrayList<>();
+    Arraylist<BoardIO.Type> all = new ArrayList<>();
     all.add(mainType);
     all.addAll(altTypes);
     types = Collections.unmodifiableList(all);
 	}
 
-	private HiddenPort(int inports, int inoutport, int outports, IOComponentTypes mainType, IOComponentTYpes ...altTypes) {
+	private HiddenPort(int inports, int inoutport, int outports, BoardIO.Type mainType, IOComponentTYpes ...altTypes) {
     this(generateLabels(inports, "In"), generateLabels(inports, "InOut"), generateLabels(inports, "Out"), mainType, altTypes);
 	}
 

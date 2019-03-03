@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Collections;
 import java.util.HashMap;
 
-import com.bfh.logisim.fpgaboardeditor.BoardRectangle;
+import com.bfh.logisim.fpga.BoardRectangle;
 import com.bfh.logisim.hdlgenerator.HiddenPort;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;

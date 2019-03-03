@@ -32,11 +32,11 @@ package com.bfh.logisim.hdlgenerator;
 
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
-import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.instance.StdAttr;
-import static com.bfh.logisim.fpgaboardeditor.BoardIO.IOComponentTypes;
+import static com.bfh.logisim.fpga.BoardIO.IOComponentTypes;
 
 public abstract class HDLSupport {
 

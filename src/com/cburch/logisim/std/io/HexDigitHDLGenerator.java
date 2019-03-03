@@ -63,7 +63,7 @@ public class HexDigitHDLGenerator extends HDLGenerator {
     wires.add("s_pattern", 7);
 
     hiddenPort = HiddenPort.makeOutport(labels(),
-        HiddenPort.SevenSegment, HiddenPort.LED, HiddenPort.Pin);
+        HiddenPort.SevenSegment, HiddenPort.LED, HiddenPort.Ribbon, HiddenPort.Pin);
   }
 
   @Override

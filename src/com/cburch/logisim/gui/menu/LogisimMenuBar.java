@@ -40,7 +40,7 @@ import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import com.bfh.logisim.fpgamenu.MenuFPGA;
+import com.bfh.logisim.menu.MenuFPGA;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.Simulator;
 import com.cburch.logisim.gui.generic.LFrame;

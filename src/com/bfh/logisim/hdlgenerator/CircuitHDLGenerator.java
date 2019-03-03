@@ -36,17 +36,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import com.bfh.logisim.library.DynamicClock;
-import com.bfh.logisim.netlist.ConnectionPoint;
 import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Net;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
-import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.hdl.Hdl;
-import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.std.wiring.Pin;
 
 public class CircuitHDLGenerator extends HDLGenerator {
 

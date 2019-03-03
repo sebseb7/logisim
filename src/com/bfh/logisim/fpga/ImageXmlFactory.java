@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgaboardeditor;
+package com.bfh.logisim.fpga;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -108,7 +108,7 @@ public class ImageXmlFactory {
 	}
 
 	public void CreateStream(Image BoardPicture) {
-		BufferedImage result = new BufferedImage(740, 400,
+		BufferedImage result = new BufferedImage(Board.IMG_WIDTH, Board.IMG_HEIGHT,
 				BufferedImage.TYPE_3BYTE_BGR);
 		Graphics2D g2 = result.createGraphics();
 		int width = BoardPicture.getWidth(null);

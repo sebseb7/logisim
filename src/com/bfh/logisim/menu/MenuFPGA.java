@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgamenu;
+package com.bfh.logisim.menu;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -37,8 +37,8 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
-import com.bfh.logisim.fpgaboardeditor.BoardDialog;
-import com.bfh.logisim.fpgagui.FPGACommanderGui;
+import com.bfh.logisim.fpga.BoardDialog;
+import com.bfh.logisim.gui.FPGACommanderGui;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.proj.Project;

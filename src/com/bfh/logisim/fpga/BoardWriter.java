@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgaboardeditor;
+package com.bfh.logisim.fpga;
 
 import java.awt.Image;
 import java.io.File;

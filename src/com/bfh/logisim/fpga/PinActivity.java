@@ -27,41 +27,26 @@
  * This version of the project is currently maintained by:
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
-package com.cburch.logisim.std.io;
 
-import com.bfh.logisim.netlist.NetlistComponent;
-import com.bfh.logisim.hdlgenerator.HDLInliner;
-import com.bfh.logisim.hdlgenerator.HiddenPort;
-import com.cburch.logisim.hdl.Hdl;
+package com.bfh.logisim.fpga;
 
-public class ButtonHDLGenerator extends HDLInliner {
+public class PinActivity {
+  public final String desc;
 
-  private ButtonHDLGenerator(HDLCTX ctx, String name) {
-    super(ctx, name);
+  public static final PinActivity ACTIVE_LOW = new PinActivity("Active low");
+  public static final PinActivity ACTIVE_HIGH = new PinActivity("Active high");
+  public static final PinActivity UNKNOWN = new PinActivity("Unknown");
+  public static final PinActivity[] OPTIONS = { ACTIVE_LOW, ACTIVE_HIGH };
+
+  private PinActivity(String d) { desc = d; }
+
+  public PinActivity get(String desc) {
+    for (PinActivity p : OPTIONS)
+      if (p.desc.equals(desc))
+        return p;
+    return UNKNOWN;
   }
   
-  public static ButtonHDLGenerator forButton(HDLCTX ctx) {
-    this(ctx, "Button_${LABEL}");
-    hiddenPort = HiddenPort.makeInport(1, HiddenPort.Button, HiddenPort.Pin);
-  }
-
-  public static ButtonHDLGenerator forDipSwitch(HDLCTX ctx) {
-    this(ctx, "DIPSwitch_${LABEL}");
-    int n = attrs.getValue(ATTR_SIZE).getWidth();
-    ArrayList<String> labels = new ArrayList<>();
-    for (int i = 1; i <= n; i++)
-      LabelNames.add("sw_" + i);
-    hiddenPort = HiddenPort.makeInport(n, HiddenPort.DIPSwitch, HiddenPort.Button, HiddenPort.Ribbon, HiddenPort.Pin);
-  }
-
   @Override
-	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
-    int b = comp.getLocalHiddenPortIndices().in.start;
-    for (int i = 0; i < comp.ports.size(); i++) {
-      Net net = comp.getConnection(i);
-      if (net != null)
-        out.assign(net.name, "LOGISIM_HIDDEN_FPGA_INPUT", b + i);
-    }
-  }
-
+  public String toString() { return desc; }
 }

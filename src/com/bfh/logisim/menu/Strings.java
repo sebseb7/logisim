@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgamenu;
+package com.bfh.logisim.menu;
 
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.StringGetter;

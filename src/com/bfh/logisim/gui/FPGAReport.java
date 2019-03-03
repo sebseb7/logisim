@@ -28,30 +28,48 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgaboardeditor;
+package com.bfh.logisim.gui;
 
-public class IoStandard {
-  public final String desc;
+public class FPGAReport {
+	private FPGACommanderGui myCommander;
 
-	public static final IoStandard DEFAULT  = new IoStandard("Default");
-	public static final IoStandard LVCMOS12 = new IoStandard("LVCMOS12");
-	public static final IoStandard LVCMOS15 = new IoStandard("LVCMOS15");
-	public static final IoStandard LVCMOS18 = new IoStandard("LVCMOS18");
-	public static final IoStandard LVCMOS25 = new IoStandard("LVCMOS25");
-	public static final IoStandard LVCMOS33 = new IoStandard("LVCMOS33");
-	public static final IoStandard LVTTL    = new IoStandard("LVTTL");
-	public static final IoStandard UNKNOWN =  new IoStandard("Unknown");  
-  public static final IoStandard[] OPTIONS = { DEFAULT,
-    LVCMOS12, LVCMOS15, LVCMOS18, LVCMOS25, LVCMOS33, LVTTL };
-
-  public IoStandard get(String desc) {
-    for (IoStandard p : OPTIONS)
-      if (p.desc.equals(desc))
-        return p;
-    return UNKNOWN;
+  public String getProjectName() {
+    return myCommander.getProjectName();
   }
 
-  @Override
-  public String toString() { return desc; }
+	public FPGAReport(FPGACommanderGui parent) {
+		myCommander = parent;
+	}
 
+	public void AddError(String Message) {
+		myCommander.AddErrors(Message);
+	}
+
+	public void AddFatalError(String Message) {
+		myCommander.AddErrors("***FATAL*** " + Message);
+	}
+
+	public void AddInfo(String Message) {
+		myCommander.AddInfo(Message);
+	}
+
+	public void AddSevereError(String Message, Object ...args) {
+		myCommander.AddErrors("**SEVERE** " + String.format(Message, args));
+	}
+
+	public void AddSevereWarning(String Message, Object ...args) {
+		myCommander.AddWarning("**SEVERE** " + String.format(Message, args));
+	}
+
+	public void AddWarning(String Message, Object ...args) {
+		myCommander.AddWarning(String.format(Message, String.format(Message, args)));
+	}
+
+	public void NewConsole(String title) {
+		myCommander.NewConsole(title);
+	}
+
+	public void print(String Message, Object ...args) {
+		myCommander.AddConsole(String.format(Message, args));
+	}
 }

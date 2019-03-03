@@ -28,21 +28,26 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgaboardeditor;
+package com.bfh.logisim.fpga;
 
-import com.cburch.logisim.util.LocaleManager;
-import com.cburch.logisim.util.StringGetter;
+public class PullBehavior {
+  public final String desc, altera, xilinx;
 
-public class Strings {
-	public static String get(String key) {
-		return source.get(key);
-	}
+  public static final FLOAT = new PullBehavior("Float", "TRI-STATED", "float");
+  public static final PULL_UP = new PullBehavior("Pull Up", "PULLUP", "pullup");
+  public static final PULL_DOWN = new PullBehavior("Pull Down", "PULLDOWN", "pulldown");
+  public static final UNKNOWN = new PullBehavior("Unknown", "", "float");
+  public static PullBehavior[] OPTIONS = { FLOAT, PULL_UP, PULL_DOWN }
 
-	public static StringGetter getter(String key) {
-		return source.getter(key);
-	}
+  private PullBehavior(String d, String a, String x) { desc = d; altera = a; xilinx = x; }
 
-	private static LocaleManager source = new LocaleManager(
-			"resources/logisim", "fpga");
+  public PullBehavior get(String desc) {
+    for (PullBehavior p : OPTIONS)
+      if (p.desc.equals(desc))
+        return p;
+    return UNKNOWN;
+  }
 
+  @Override
+  public String toString() { return desc; }
 }

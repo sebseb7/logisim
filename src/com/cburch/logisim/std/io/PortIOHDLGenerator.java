@@ -52,8 +52,7 @@ public class PortIOHDLGenerator extends HDLGenerator {
 
     int n = attrs.getValue(PortIO.ATTR_SIZE);
 
-    hiddenPort = HiddenPort.makeInOutport(n, 
-        HiddenPort.PortIO /*, HiddenPort.Button, HiddenPort.Pin*/);
+    hiddenPort = HiddenPort.makeInOutport(n, HiddenPort.Ribbon, HiddenPort.Pin);
   }
 
   private class InOutMap {

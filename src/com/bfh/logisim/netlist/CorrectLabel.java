@@ -33,7 +33,7 @@ package com.bfh.logisim.netlist;
 import java.util.Arrays;
 import java.util.List;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.settings.Settings;
 
 public class CorrectLabel {

@@ -30,7 +30,7 @@
 
 package com.bfh.logisim.hdlgenerator;
 
-import com.bfh.logisim.fpgagui.MappableResourcesContainer;
+import com.bfh.logisim.gui.PinBindings;
 import com.bfh.logisim.library.DynamicClock;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.cburch.logisim.circuit.Circuit;
@@ -47,7 +47,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 	private long fpgaClockFreq;
 	private int tickerPeriod; // 0:"use fpga clock", -1:"dynamic", >0:"divided clock"
 	private Circuit circUnderTest;
-	private MappableResourcesContainer ioResources;
+	private PinBindings ioResources;
   private Netlist _circNets; // Netlist of the circUnderTest.
 
   private TickHDLGenerator ticker;
@@ -56,13 +56,13 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 
 	public ToplevelHDLGenerator(String lang, FPGAReport err, char vendor,
       long fpgaClockFreq, int tickerPeriod,
-			Circuit circUnderTest, MappableResourcesContainer ioResources) {
+			Circuit circUnderTest, PinBindings ioResources) {
     this(new HDLCTX(lang, err, null /*nets*/, null /*attrs*/, vendor),
       fpgaClockFreq, tickerPeriod, circUnderTest, ioResources);
   }
 
 	public ToplevelHDLGenerator(HDLCTX ctx, long fpgaClockFreq, int tickerPeriod,
-			Circuit circUnderTest, MappableResourcesContainer ioResources) {
+			Circuit circUnderTest, PinBindings ioResources) {
     super(ctx, "toplevel", HDL_NAME, "i_Toplevel");
 
 		this.fpgaClockFreq = fpgaClockFreq;

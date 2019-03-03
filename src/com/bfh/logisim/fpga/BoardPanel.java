@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgaboardeditor;
+package com.bfh.logisim.fpga;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -104,10 +104,9 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 
 
   @Override
-	public int getWidth() { return 740; }
-
+	public int getWidth() { return Board.IMG_WIDTH; }
   @Override
-	public int getHeight() { return 400; }
+	public int getHeight() { return Board.IMG_HEIGHT; }
 
   @Override
 	public void mouseClicked(MouseEvent e) {

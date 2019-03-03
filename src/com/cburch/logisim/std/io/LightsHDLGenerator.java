@@ -55,7 +55,7 @@ public class LightsHDLGenerator extends HDLInliner {
     labels.set(RGBLed.RED, "RED");
     labels.set(RGBLed.GREEN, "GREEN");
     labels.set(RGBLed.BLUE, "BLUE");
-    hiddenPort = HiddenPort.makeOutport(labels, HiddenPort.RGBLED, HiddenPort.LED, HiddenPort.Pin);
+    hiddenPort = HiddenPort.makeOutport(labels, HiddenPort.RGBLED, HiddenPort.LED, HiddenPort.Ribbon, HiddenPort.Pin);
   }
 
   public static LightsHDLGenerator forSevenSegment(HDLCTX ctx) {

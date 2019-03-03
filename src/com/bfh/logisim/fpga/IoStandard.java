@@ -28,25 +28,30 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgaboardeditor;
+package com.bfh.logisim.fpga;
 
-public class PinActivity {
+public class IoStandard {
   public final String desc;
 
-  public static final PinActivity ACTIVE_LOW = new PinActivity("Active low");
-  public static final PinActivity ACTIVE_HIGH = new PinActivity("Active high");
-  public static final PinActivity UNKNOWN = new PinActivity("Unknown");
-  public static final PinActivity[] OPTIONS = { ACTIVE_LOW, ACTIVE_HIGH };
+	public static final IoStandard DEFAULT  = new IoStandard("Default");
+	public static final IoStandard LVCMOS12 = new IoStandard("LVCMOS12");
+	public static final IoStandard LVCMOS15 = new IoStandard("LVCMOS15");
+	public static final IoStandard LVCMOS18 = new IoStandard("LVCMOS18");
+	public static final IoStandard LVCMOS25 = new IoStandard("LVCMOS25");
+	public static final IoStandard LVCMOS33 = new IoStandard("LVCMOS33");
+	public static final IoStandard LVTTL    = new IoStandard("LVTTL");
+	public static final IoStandard UNKNOWN =  new IoStandard("Unknown");  
+  public static final IoStandard[] OPTIONS = { DEFAULT,
+    LVCMOS12, LVCMOS15, LVCMOS18, LVCMOS25, LVCMOS33, LVTTL };
 
-  private PinActivity(String d) { desc = d; }
-
-  public PinActivity get(String desc) {
-    for (PinActivity p : OPTIONS)
+  public IoStandard get(String desc) {
+    for (IoStandard p : OPTIONS)
       if (p.desc.equals(desc))
         return p;
     return UNKNOWN;
   }
-  
+
   @Override
   public String toString() { return desc; }
+
 }

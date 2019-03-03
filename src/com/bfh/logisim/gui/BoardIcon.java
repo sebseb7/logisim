@@ -28,28 +28,43 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgaboardeditor;
+package com.bfh.logisim.gui;
 
-public class DriveStrength {
-  public final String desc, ma;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
 
-	public static final DriveStrength DEFAULT  = new DriveStrength("Default", "");
-	public static final DriveStrength DRIVE_2  = new DriveStrength("2 mA", "2");
-	public static final DriveStrength DRIVE_4  = new DriveStrength("4 mA", "4");
-	public static final DriveStrength DRIVE_8  = new DriveStrength("8 mA", "8");
-	public static final DriveStrength DRIVE_16 = new DriveStrength("16 mA", "16");
-	public static final DriveStrength DRIVE_24 = new DriveStrength("24 mA", "24");
-	public static final DriveStrength UNKNOWN  = new DriveStrength("Unknown", "");
-  public static final String[] OPTIONS = { DEFAULT,
-    DRIVE_2, DRIVE_4, DRIVE_8, DRIVE_16, DRIVE_24 }
+import javax.swing.Icon;
 
-  public DriveStrength get(String desc) {
-    for (PullBehavior p : OPTIONS)
-      if (p.desc.equals(desc))
-        return p;
-    return UNKNOWN;
-  }
+public class BoardIcon implements Icon {
+	private Image image;
+	private int icon_width = 240;
+	private int icon_height = 130;
 
-  @Override
-  public String toString() { return desc; }
+	public BoardIcon(BufferedImage img) {
+    setImage(img);
+	}
+
+	public int getIconHeight() { return icon_height; }
+	public int getIconWidth() { return icon_width; }
+
+	public void paintIcon(Component c, Graphics g, int x, int y) {
+		if (image != null) {
+			g.drawImage(image, x, y, null);
+    } else {
+			g.setColor(Color.gray);
+			g.fillRect(0, 0, getIconWidth(), getIconHeight());
+		}
+	}
+
+	public void setImage(BufferedImage img) {
+		if (img != null)
+			image = img.getScaledInstance(getIconWidth(),
+					getIconHeight(), BufferedImage.SCALE_SMOOTH);
+		else
+			image = null;
+	}
+
 }

@@ -28,26 +28,47 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpgaboardeditor;
+package com.bfh.logisim.fpga;
 
-public class PullBehavior {
-  public final String desc, altera, xilinx;
+public class BoardRectangle {
 
-  public static final FLOAT = new PullBehavior("Float", "TRI-STATED", "float");
-  public static final PULL_UP = new PullBehavior("Pull Up", "PULLUP", "pullup");
-  public static final PULL_DOWN = new PullBehavior("Pull Down", "PULLDOWN", "pulldown");
-  public static final UNKNOWN = new PullBehavior("Unknown", "", "float");
-  public static PullBehavior[] OPTIONS = { FLOAT, PULL_UP, PULL_DOWN }
+	public final int x, y, width, height;
 
-  private PullBehavior(String d, String a, String x) { desc = d; altera = a; xilinx = x; }
+	public BoardRectangle(int x, int y, int w, int h) {
+    this.x = w < 0 ? x+w : x;
+    this.y = h < 0 ? y+h : y;
+    width = w < 0 ? -w : w;
+    height = h < 0 ? -h : h;
+	}
 
-  public PullBehavior get(String desc) {
-    for (PullBehavior p : OPTIONS)
-      if (p.desc.equals(desc))
-        return p;
-    return UNKNOWN;
+	public boolean overlaps(BoardRectangle other) {
+    if (x >= other.x+other.width || other.x >= x+width) // side by side
+      return false;
+    if (y >= other.y+other.height || other.y >= y+height) // above and below
+      return false;
+    return true;
   }
 
+	public boolean contains(int px, int py) {
+		return x <= px && px <= x+width && y <= py && py <= y+height;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof BoardRectangle))
+			return false;
+		BoardRectangle other = (BoardRectangle)o;
+		return x == other.x && y == other.y && width == other.width && height == other.height;
+	}
+
   @Override
-  public String toString() { return desc; }
+  public int hashCode() {
+    // This appears to be a standard 
+     519:     long l = java.lang.Double.doubleToLongBits(getX())
+ 520:       + 37 * java.lang.Double.doubleToLongBits(getY())
+ 521:       + 43 * java.lang.Double.doubleToLongBits(getWidth())
+ 522:       + 47 * java.lang.Double.doubleToLongBits(getHeight());
+ 523:     return (int) ((l >> 32) ^ l);
+  }
+
 }

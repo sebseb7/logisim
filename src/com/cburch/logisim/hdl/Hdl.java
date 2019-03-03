@@ -32,7 +32,7 @@ package com.cburch.logisim.hdl;
 
 import java.util.ArrayList;
 
-import com.bfh.logisim.fpgagui.FPGAReport;
+import com.bfh.logisim.gui.FPGAReport;
 
 // Represents a snippet of VHDL or Verilog Hdl code, and contains
 // some helpers for programmatically generating such code.
