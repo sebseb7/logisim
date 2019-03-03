@@ -258,6 +258,14 @@ public class Bounds {
     }
   }
 
+	public boolean overlaps(Bounds other) {
+    if (x >= other.x+other.width || other.x >= x+width) // side by side
+      return false;
+    if (y >= other.y+other.height || other.y >= y+height) // above and below
+      return false;
+    return true;
+  }
+
   // rotates this around (xc,yc) assuming that this is facing in the
   // from direction and the returned bounds should face in the to direction.
   public Bounds rotate(Direction from, Direction to, int xc, int yc) {

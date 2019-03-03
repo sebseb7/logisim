@@ -35,6 +35,7 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 
 import com.bfh.logisim.gui.FPGAReport;
+import com.cburch.logisim.data.Bounds
 
 import com.bfh.logisim.fpga.BoardIO.IOComponentTypes;
 
@@ -86,15 +87,15 @@ public class Board extends AbstractList<BoardIO> {
 		}
 	}
 
-	public ArrayList<BoardRectangle> compatableRects(IOComponentTypes type, int bits) {
-		ArrayList<BoardRectangle> result = new ArrayList<>();
+	public ArrayList<Bounds> compatableRects(IOComponentTypes type, int bits) {
+		ArrayList<Bounds> result = new ArrayList<>();
 		for (BoardIO comp : components)
       if (comp.GetType().equals(type) && bits <= comp.getNrOfPins())
         result.add(comp.GetRectangle());
 		return result;
 	}
 
-  public BoardIO getComponent(BoardRectangle r) {
+  public BoardIO getComponent(Bounds r) {
 		for (BoardIO comp : components)
       if (comp.GetRectangle().equals(r))
         return comp;

@@ -49,6 +49,7 @@ import javax.swing.JTextField;
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.util.Errors;
+import com.cburch.logisim.data.Bounds;
 
 public class BoardDialog implements ComponentListener {
 
@@ -407,11 +408,11 @@ public class BoardDialog implements ComponentListener {
 		return num * multiplier;
 	}
 
-  // public void doRectClickDialog(BoardRectangle rect) {
+  // public void doRectClickDialog(Bounds rect) {
   // TODO
   // }
 
-	public void doRectSelectDialog(BoardRectangle rect) {
+	public void doRectSelectDialog(Bounds rect) {
     for (BoardIO io : ioComponents) {
       if (io.rect.overlaps(rect)) {
         Errors.title("Error").show("Please ensure rectangles do not overlap.");

@@ -49,6 +49,7 @@ import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 
+import com.cburch.logisim.data.Bounds
 import com.cburch.logisim.gui.main.ExportImage;
 
 public class BoardPanel extends JPanel implements MouseListener, MouseMotionListener {
@@ -161,7 +162,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 	public void mouseReleased(MouseEvent e) {
 		if (editing && this.ImageLoaded()) {
       if (h != 0 && w != 0) {
-        BoardRectangle rect = new BoardRectangle(xs, ys, w, h);
+        Bounds rect = new Bounds(xs, ys, w, h);
         edit_parent.doRectSelectDialog(rect);
       }
       xs = ys = w = h = 0;

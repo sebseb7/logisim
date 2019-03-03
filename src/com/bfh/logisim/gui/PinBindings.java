@@ -37,12 +37,12 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.fpga.Board;
-import com.bfh.logisim.fpga.BoardRectangle;
 import com.bfh.logisim.fpga.BoardIO;
 import com.bfh.logisim.fpga.PinActivity;
 import com.bfh.logisim.hdlgenerator.HiddenPort;
+import com.bfh.logisim.netlist.NetlistComponent;
+import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.std.wiring.Pin;
 import static com.bfh.logisim.netlist.Netlist.Int3;
 
@@ -202,6 +202,7 @@ public class PinBindings {
   }
 
   public ArrayList<Source> bitSourcesFor(Path path) {
+    NetlistComponent comp = components.get(path);
     ArrayList<Source> ret = new ArrayList<>();
     ArrayList<String> pinLabels = pinLabels(path);
     BoardIO.Type bitType;
@@ -226,6 +227,15 @@ public class PinBindings {
     for (int i = 0; i < pinLabels.size(); i++)
       ret.add(new Source(path, i, bitType, compWidth.copy()));
     return ret;
+  }
+
+  public boolean isMapped(Path path) {
+    if (mappings.containsKey(sourceFor(path)))
+      return true;
+    for (Source bitSrc : bitSourcesFor(path))
+      if (!mappings.containsKey(bitSrc))
+        return false;
+    return true;
   }
 
   private BoardIO.Type selectDefaultType(List<BoardIO.Type> types, int width) {
@@ -320,7 +330,7 @@ public class PinBindings {
 		for (Path key : components.keySet()) {
 			NetlistComponent comp = components.get(key);
 			for (String Map : GetMapNamesList(key, comp)) {
-        BoardRectangle r = comp.getMap(Map);
+        Bounds r = comp.getMap(Map);
         if (!r.isDeviceSignal())
           continue;
 				BoardIO BoardComp = board.GetComponent(r);
@@ -399,7 +409,7 @@ public class PinBindings {
 		return components.keySet();
 	}
 
-	public String GetDisplayName(BoardRectangle rect) {
+	public String GetDisplayName(Bounds rect) {
 		for (String Map : mappedList.keySet()) {
 			if (mappedList.get(Map).equals(rect)) {
 				return MapNametoDisplayName(Map);
@@ -438,7 +448,7 @@ public class PinBindings {
 				System.err.printf("No mapping found for %s\n", Map);
 				return Contents;
 			}
-			BoardRectangle rect = mappedList.get(Map);
+			Bounds rect = mappedList.get(Map);
       if (rect.isDeviceSignal()) {
         BoardIO Comp = board.GetComponent(rect);
         Contents.addAll(Comp.getPinAssignments(FPGAVendor, "in", InputId));
@@ -452,7 +462,7 @@ public class PinBindings {
 				System.err.printf("No mapping found for %s\n", Map);
 				return Contents;
 			}
-			BoardRectangle rect = mappedList.get(Map);
+			Bounds rect = mappedList.get(Map);
       if (rect.isDeviceSignal()) {
         BoardIO Comp = board.GetComponent(rect);
         Contents.addAll(Comp.getPinAssignments(FPGAVendor, "inout", InOutId));
@@ -466,7 +476,7 @@ public class PinBindings {
 				System.err.printf("No mapping found for %s\n", Map);
 				return Contents;
 			}
-			BoardRectangle rect = mappedList.get(Map);
+			Bounds rect = mappedList.get(Map);
       if (rect.isDeviceSignal()) {
         BoardIO Comp = board.GetComponent(rect);
         Contents.addAll(Comp.getPinAssignments(FPGAVendor, "out", OutputId));
@@ -489,7 +499,7 @@ public class PinBindings {
 		return result;
 	}
 
-	public BoardRectangle GetMap(String id) {
+	public Bounds GetMap(String id) {
 		Path key = GetHierarchyKey(id);
 		NetlistComponent MapComp = components.get(key);
 		if (MapComp == null) {
@@ -526,7 +536,7 @@ public class PinBindings {
 		return result;
 	}
 
-	public Collection<BoardRectangle> GetMappedRectangles() {
+	public Collection<Bounds> GetMappedRectangles() {
 		return mappedList.values();
 	}
 
@@ -555,7 +565,7 @@ public class PinBindings {
 
 	public int GetNrOfPins(String MapName) {
 		if (mappedList.containsKey(MapName)) {
-      BoardRectangle rect = mappedList.get(MapName);
+      Bounds rect = mappedList.get(MapName);
       if (!rect.isDeviceSignal())
         return -1;
       BoardIO BoardComp = board.GetComponent(rect);
@@ -588,9 +598,9 @@ public class PinBindings {
     return comp.hiddenPort;
   }
 
-	public ArrayList<BoardRectangle> GetSelectableItemsList(String DisplayName,
+	public ArrayList<Bounds> GetSelectableItemsList(String DisplayName,
 			Board BoardInfo) {
-		ArrayList<BoardRectangle> rects;
+		ArrayList<Bounds> rects;
 		Path key = GetHierarchyKey(DisplayName);
 		NetlistComponent comp = components.get(key);
 		int pinNeeded = comp.hiddenPort.numPorts();
@@ -601,16 +611,16 @@ public class PinBindings {
 				return RemoveUsedItems(rects);
 		}
     // If no matching resources, try all alternate types
-		rects = new ArrayList<BoardRectangle>();
+		rects = new ArrayList<Bounds>();
     for (BoardIO.Type mapType: comp.hiddenPort.altTypes)
 			rects.addAll(BoardInfo.GetIoComponentsOfType(mapType, 0));
 		return RemoveUsedItems(rects);
 	}
 
-	private ArrayList<BoardRectangle> RemoveUsedItems(ArrayList<BoardRectangle> rects) {
-		Iterator<BoardRectangle> ListIterator = rects.iterator();
+	private ArrayList<Bounds> RemoveUsedItems(ArrayList<Bounds> rects) {
+		Iterator<Bounds> ListIterator = rects.iterator();
 		while (ListIterator.hasNext()) {
-			BoardRectangle current = ListIterator.next();
+			Bounds current = ListIterator.next();
 			if (mappedList.containsValue(current))
 				ListIterator.remove();
 		}
@@ -622,7 +632,7 @@ public class PinBindings {
 		return !mappedList.isEmpty();
 	}
 
-	public void Map(String comp, BoardRectangle item /*, String Maptype*/) {
+	public void Map(String comp, Bounds item /*, String Maptype*/) {
 		Path key = GetHierarchyKey(comp);
 		NetlistComponent MapComp = components.get(key);
 		if (MapComp == null) {
@@ -665,7 +675,7 @@ public class PinBindings {
 		if (!components.containsKey(ComponentIdentifier)) {
 			return false;
 		}
-    BoardRectangle r = mappedList.get(MapName);
+    Bounds r = mappedList.get(MapName);
     boolean BoardActiveHigh;
     if (r.isDeviceSignal()) {
       BoardIO BoardComp = board.GetComponent(r);
@@ -694,7 +704,7 @@ public class PinBindings {
 		}
 	}
 
-	public void TryMap(String DisplayName, BoardRectangle rect /*, String Maptype*/) {
+	public void TryMap(String DisplayName, Bounds rect /*, String Maptype*/) {
 		Path key = GetHierarchyKey(DisplayName);
 		if (!components.containsKey(key)) {
 			return;
@@ -749,7 +759,7 @@ public class PinBindings {
 
 }
 
-	// private Map<String, BoardRectangle> mappedList;
+	// private Map<String, Bounds> mappedList;
 	// private Map<String, Integer> fpgaInputsList;
 	// private Map<String, Integer> fpgaInOutsList;
 	// private Map<String, Integer> fpgaOutputsList;

@@ -81,9 +81,9 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import com.bfh.logisim.data.Bounds;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.BoardIO;
-import com.bfh.logisim.fpga.BoardRectangle;
 import com.bfh.logisim.hdlgenerator.HiddenPort;
 import com.bfh.logisim.netlist.CorrectLabel;
 
@@ -93,8 +93,8 @@ public class BindingsDialog implements ActionListener {
   private PinBindings pinBindings;
 
   private JDialog panel;
-  private JToggleButton ones, zeros, constants, bitbucket;
-  private ArrayList<JToggleButton> synthetics = new ArrayList<>();
+  private Synthetic zeros, ones, constants, bitbucket;
+  private Synthetic[] synthetics;
 
   private JButton unmap = new JButton();
   private JButton reset = new JButton();
@@ -119,8 +119,6 @@ public class BindingsDialog implements ActionListener {
     for (BoardIO io : board)
       rects.put(io, io.rect);
 
-    int remaining  = pinBindings.components.size(); // fixme: check for existing bindings
-
     xmlDir = new File(projectPath).getParent();
     if (xmlDir == null)
       xmlDir = "";
@@ -144,53 +142,17 @@ public class BindingsDialog implements ActionListener {
     panel.add(picture, c);
 
     // Synthetic BoardIO buttons
-    ones = new JToggleButton("Ones", getIcon("ones.gif"));
-    zeros = new JToggleButton("Zeros", getIcon("zeros.gif"));
-    constants = new JToggleButton("Constant", getIcon("constants.gif"));
-    bitbucket = new JToggleButton("Disconnected", getIcon("disconnected.gif"));
-    ones.setToolTipText("Use constant 1 (or all ones) for selected input signal.");
-    zeros.setToolTipText("Use constant 0 (or all zeros) for selected input signal.");
-    constants.setToolTipText("Define a constant to use for selected input signal.");
-    bitbucket.setToolTipText("Leave the selected output or inout signal disconnected.");
-    synthetics.add(ones);
-    synthetics.add(zeros);
-    synthetics.add(constants);
-    synthetics.add(bitbucket);
-    for (JToggleButton b : synthetics) {
-      b.setEnabled(false);
-      b.addItemListener(new ItemListener() {
-        Color oldBg = b.getBackground();
-        public void itemStateChanged(ItemEvent ev) {
-          if (oldBg == null)
-            oldBg = b.getBackground();
-          if(ev.getStateChange() == ItemEvent.SELECTED)
-            b.setBackground(new Color(200, 0, 0));
-          else if (ev.getStateChange() == ItemEvent.DESELECTED)
-            b.setBackground(oldBg);
-        }
-      });
-      b.addActionListener(this);
-    }
-    sources.addListSelectionListener(e -> {
-      for (JToggleButton b : synthetics) {
-        b.setEnabled(false);
-        b.setSelected(false);
-      }
-      Source source = sources.getSelectedValue();
-      if (source != null) {
-        // ones, zeros, and constants are for source with direction "in" or "inout"
-        ones.setEnabled(source.width.in > 0 || source.width.inout > 0);
-        zeros.setEnabled(source.width.in > 0 || source.width.inout > 0);
-        constants.setEnabled(source.width.in > 0 || source.width.inout > 0);
-        // bitbucket is for source with direction "inout" or "out"
-        bitbucket.setEnabled(source.width.inout > 0 || source.width.out > 0);
-        Dest dest = pinBindings.mappings.get(source);
-        if (dest != null) {
-          if (dest
-        }
-    });
+    zeros = new Synthetic(BoardIO.Type.AllZeros, 0, "Zeros", "zeros.gif",
+        "Use constant 0 (or all zeros) for selected input signal.");
+    ones = new Synthetic(BoardIO.Type.AllOnes, -1, "Ones", "ones.gif",
+        "Use constant 1 (or all ones) for selected input signal.");
+    constants = new Synthetic(BoardIO.Type.Constant, 0, "Constant", "constants.gif",
+        "Define a constant to use for selected input signal.");
+    bitbucket = new Synthetic(BoardIO.Type.Unconnected, 0, "Disconnected", "disconnected.gif",
+        "Leave the selected output or inout signal disconnected.");
+    synthetics = new Synthetic[] { ones, zeros, constants, bitbucket };
     JPanel buttonpanel = new JPanel();
-    for (JToggleButton b : synthetics)
+    for (Synthetic b : synthetics)
       buttonpanel.add(b);
     c.gridy++;
     panel.add(buttonpanel, c);
@@ -261,18 +223,19 @@ public class BindingsDialog implements ActionListener {
       panel.setVisible(false);
       panel.dispose();
     });
-    done.setEnabled(remaining == 0);
     c.gridy++;
     panel.add(done, c);
 
     // Status line
-    status.setForeground(Color.BLUE);
-    status.setText(String.format("%d components remaining to be mapped", remaining));
-    status.setEnabled(true);
     c.gridx = 0;
     c.gridy++;
     c.gridwidth = 3;
     panel.add(status, c);
+
+    if (sources.model.getSize() > 0)
+      sources.setSelectedIndex(0);
+
+    updateStatus();
 
     panel.pack();
     panel.setLocationRelativeTo(parentFrame);
@@ -303,16 +266,15 @@ public class BindingsDialog implements ActionListener {
     Rect(BoardIO io) {
       this.io = io;
       this.setPrefferedSize(new Dimension(io.rect.width, io.rect.height));
-      // todo: background color, etc.
       setOpaque(false);
-      setBackground(Color.RED);
+      setBackground(Color.RED); // todo: semi-transparent
       setVisible(false);
       addMouseListener(this)
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
-      if (!SwingUtilities.isLeftMouseButton()) // || e.getClickCount() != 1
+      if (!SwingUtilities.isLeftMouseButton())
         return;
       if (sources.current == null)
         return;
@@ -324,8 +286,7 @@ public class BindingsDialog implements ActionListener {
         sources.mapCurrent(io, -1);
     }
 
-    // todo: hilight on hover
-    // todo: hilight when the list selection is mapped to this
+    // todo: hilight/tint on hover
     public void mouseEntered(MouseEvent e) { }
     public void mouseExited(MouseEvent e) { }
     public void mousePressed(MouseEvent e) { }
@@ -441,24 +402,9 @@ public class BindingsDialog implements ActionListener {
       addListSelectionListener(e -> selected(getSelectedValuue()));
     }
     void selected(Source src) {
-      if (current != null) {
-        PinBindings.Dest dest = pinBindings.mappings.get(current);
-        if (dest != null) {
-          Rect r = rects.get(dest.io);
-          r.emphasize(false);
-        }
-      }
+      Source old = current;
       current = src;
-      if (current == null) {
-        for (Rect r : rects.values())
-          r.setVisible(false);
-      } else {
-        for (BoardIO io : pinBindings.compatibleResources(current)) {
-          Rect r = rects.get(io);
-          r.setVisible(true);
-          r.emphasize(true);
-        }
-      }
+      selectedChanged(old, current);
     }
     void mapCurrent(BoardIO io, int bit) {
       if (current == null)
@@ -467,46 +413,12 @@ public class BindingsDialog implements ActionListener {
       HashSet<Source> changed = pinBindings.addMapping(current, io, -1);
       for (Source src : changed)
         model.changed(src);
-      Dest cur = pinBindings.mapping.get(current);
-      if (cur != null)
-        rects.get(cur.io).emphasize(true); // be same as io, unless bug on size matching
+      selectedChanged(current, current);
     }
-    void unmapCurrent() {
+    void mapCurrent(BoardIO synthType, int val) {
       if (current == null)
-        return;
-      Dest old = pinBindings.mapping.get(current);
-      if (old == null)
-        return;
-      mappings.remove(current);
-      model.changed(current);
-      rects.get(old.io).emphasize(false);
-    }
-    void resetAll() {
-      pinBindings.mappings.clear();
-      model.sync();
-    }
-  }
-
-  static ImageIcon getIcon(String name) {
-    String path ="resources/logisim/icons/" + name;
-    java.net.URL url = BindingsDialog.class.getClassLoader().getResource(path);
-    return url == null ? null : new ImageIcon(url);
-  }
-
-  public void actionPerformed(ActionEvent e) {
-    if (e.getSource() == ones) {
-      if (ones.isSelected())
-        MapOne(BoardRectangle.ones());
-      else
-        UnMapOne();
-    } else if (e.getSource() == zeros) {
-      if (zeros.isSelected())
-        MapOne(BoardRectangle.zeros());
-      else
-        UnMapOne();
-    } else if (e.getSource() == constants) {
-      if (constants.isSelected()) {
-        int val = 0;
+          return;
+      if (synthType == BoardIO.Type.Constant) {
         while (true) {
           Object sel = JOptionPane.showInputDialog(panel,
               "Enter a constant integer value (signed decimal, hex, or octal):", "Define Constant",
@@ -518,16 +430,127 @@ public class BindingsDialog implements ActionListener {
             break;
           } catch (NumberFormatException ex) { }
         }
-        MapOne(BoardRectangle.constant(val));
-      } else {
-        UnMapOne();
       }
-    } else if (e.getSource() == bitbucket) {
-      if (bitbucket.isSelected())
-        MapOne(BoardRectangle.disconnected());
-      else
-        UnMapOne();
+      BoardIO io = BoardIO.makeSynthetic(synthType, current.width.size(). val);
+      mapCurrent(io, -1);
     }
+    void unmapCurrent() {
+      if (current == null)
+        return;
+      PinBindings.Dest old = pinBindings.mapping.get(current);
+      if (old == null)
+        return;
+      mappings.remove(current);
+      model.changed(current);
+      selectedChanged(current, current);
+    }
+    void resetAll() {
+      Source old = current;
+      pinBindings.mappings.clear();
+      model.sync();
+      if (!model.data.contains(current))
+        current = model.data.size() > 0 ? model.data.get(0) : null;
+      selectedChanged(old, current);
+    }
+  }
+
+  private static class Synthetic extends JToggleButton {
+    BoardIO.Type type;
+    int val;
+    Color oldBg = null;
+    static final Color hilight = new Color(200, 0, 0);
+    Synthetic(BoardIO.Type type, int val, String label, String icon, String tip) {
+      super(label, getIcon(icon));
+      this.type = type;
+      this.val = val;
+      setToolTipText(tip);
+      setEnabled(false);
+      addItemListener(e -> {
+        if (oldBg == null)
+          oldBg = getBackground();
+        if(ev.getStateChange() == ItemEvent.SELECTED)
+          setBackground(hilight);
+        else if (ev.getStateChange() == ItemEvent.DESELECTED)
+          setBackground(oldBg);
+      });
+      addActionListener(e -> {
+        if (isSelected())
+          sources.mapCurrent(type, val);
+        else
+          sources.unmapCurrent();
+      });
+    }
+
+  }
+
+  void selectedChanged(Source oldSource, Source current) {
+    updateStatus();
+    if (oldSource == null && current == null)
+      return;
+    if (oldSource != null) {
+      // De-emphasize rect for old mapping destination, if there was one.
+      // Synthetics will be entirely reset below, so skip them here.
+      PinBindings.Dest old = pinBindings.mappings.get(oldSource);
+      if (old != null) {
+        Rect r = rects.get(old.io);
+        if (r != null)
+          r.emphasize(false);
+      }
+    }
+    if (current == null) {
+      // No current selection, so hide all rects.
+      for (Rect r : rects.values())
+        r.setVisible(false);
+      // No current selection, so disable and deselect all synthetics.
+      for (Synthetic b : synthetics) {
+        b.setSelected(false);
+        b.setEnabled(false);
+      }
+    } else {
+      if (oldSource != current) {
+        // Recalculate visibility of all rects and synthetics
+        for (BoardIO io : pinBindings.compatibleResources(current)) {
+          Rect r = rects.get(io);
+          r.setVisible(true);
+        }
+        // ones, zeros, and constants are for source with direction "in"
+        ones.setEnabled(current.width.in > 0);
+        zeros.setEnabled(current.width.in > 0);
+        constants.setEnabled(current.width.in > 0);
+        // bitbucket is for source with direction "inout" or "out"
+        bitbucket.setEnabled(current.width.inout > 0 || current.width.out > 0);
+      }
+      // Recalculate emphasis
+      PinBindings.Dest dest = pinBindings.mappings.get(current);
+      for (Synthetic b : synthetics)
+        ones.setSelected(dest != null && dest.io.type == b.type);
+      Rect r = rects.get(dest.io);
+      if (r != null)
+        r.emphasize(true);
+    }
+  }
+
+  static ImageIcon getIcon(String name) {
+    String path ="resources/logisim/icons/" + name;
+    java.net.URL url = BindingsDialog.class.getClassLoader().getResource(path);
+    return url == null ? null : new ImageIcon(url);
+  }
+
+  public boolean isDoneAssignment() {
+    return finished;
+  }
+
+  void updateStatus() {
+    int remaining = 0, count = 0;
+    for (Path path : pinBindings.components.keySet()) {
+      count++;
+      if (!pinBindings.isMapped(path))
+        remaining++;
+    }
+    finished = (remaining == 0);
+    status.setForeground(finished ? Color.GREEN.darker() : Color.BLUE);
+    status.setText(String.format("%d of %d components remaining to be mapped", remaining, count));
+    done.setEnabled(finished);
   }
 
   // private String getFileName(String window_name, String suggested_name) {
@@ -554,82 +577,10 @@ public class BindingsDialog implements ActionListener {
   //   }
   // }
 
-  public boolean isDoneAssignment() {
-    return finished;
-  }
-
-  @Override
-  public void valueChanged(ListSelectionEvent e) {
-    if (e.getSource() == sources) {
-      if (sources.getSelectedIndex() >= 0) {
-        sources.clearSelection();
-        unmap.setEnabled(true);
-        MappedHighlightItem = pinBindings.GetMap(sources.getSelectedValue().toString());
-        picture.paintImmediately(0, 0, picture.getWidth(), picture.getHeight());
-        ComponentSelectionMode = true;
-        SelectableItems.clear();
-        String DisplayName = sources.getSelectedValue().toString();
-        SelectableItems = pinBindings.GetSelectableItemsList(DisplayName, board);
-        HiddenPort example = pinBindings.getTypeFor(DisplayName);
-        ones.setEnabled(example.canBeAllOnesInput());
-        zeros.setEnabled(example.canBeAllZerosInput());
-        constants.setEnabled(example.canBeConstantInput());
-        bitbucket.setEnabled(example.canBeDisconnectedOutput());
-        ones.setSelected(MappedHighlightItem.isAllOnesInput());
-        zeros.setSelected(MappedHighlightItem.isAllZerosInput());
-        constants.setSelected(MappedHighlightItem.isConstantInput());
-        bitbucket.setSelected(MappedHighlightItem.isDisconnectedOutput());
-        picture.paintImmediately(picture.getBounds());
-      } else {
-        ComponentSelectionMode = false;
-        SelectableItems.clear();
-        Note = null;
-        MappedHighlightItem = null;
-        HighlightItem = null;
-        for (JToggleButton b : synthetics) {
-          b.setEnabled(false);
-          b.setSelected(false);
-        }
-      }
-    } else if (e.getSource() == sources) {
-      if (sources.getSelectedIndex() < 0) {
-        ComponentSelectionMode = false;
-        SelectableItems.clear();
-        Note = null;
-        MappedHighlightItem = null;
-        HighlightItem = null;
-        for (JToggleButton b : synthetics) {
-          b.setEnabled(false);
-          b.setSelected(false);
-        }
-      } else {
-        sources.clearSelection();
-        ComponentSelectionMode = true;
-        SelectableItems.clear();
-        String DisplayName = sources.getSelectedValue().toString();
-        SelectableItems = pinBindings.GetSelectableItemsList(DisplayName, board);
-        HiddenPort example = pinBindings.getTypeFor(DisplayName);
-        ones.setEnabled(example.canBeAllOnesInput());
-        zeros.setEnabled(example.canBeAllZerosInput());
-        constants.setEnabled(example.canBeConstantInput());
-        bitbucket.setEnabled(example.canBeDisconnectedOutput());
-        for (JToggleButton b : synthetics)
-          b.setSelected(false);
-      }
-      MappedHighlightItem = null;
-      unmap.setEnabled(false);
-      cancel.setEnabled(true);
-      picture.paintImmediately(picture.getBounds());
-      Color test = new Color(255, 0, 0, 100);
-    }
-  }
-
-
   // public void LoadDefaultSaved() {
   //   String suggestedName =
   //       CorrectLabel.getCorrectLabel(pinBindings.GetToplevelName())
   //       + "-" + board.getBoardName() + "-MAP.xml";
-
   // }
 
   // private String[] MapSectionStrings = { "Key", "LocationX", "LocationY", "Width", "Height", "Kind", "Value" };
@@ -709,11 +660,11 @@ public class BindingsDialog implements ActionListener {
   //             if (Attrs.item(j).getNodeName().equals(MapSectionStrings[6]))
   //               constval = Integer.parseInt(Attrs.item(j).getNodeValue());
   //           }
-  //           BoardRectangle rect = null;
+  //           Bounds rect = null;
   //           if (key.isEmpty()) {
   //             rect = null;
   //           } else if ("constant".equals(kind)) {
-  //             rect = BoardRectangle.constant(constval);
+  //             rect = Bounds.constant(constval);
   //           } else if ("device".equals(kind) || "".equals(kind)) {
   //             if ((x > 0) && (y > 0) && (width > 0) && (height > 0)) {
   //               for (BoardIO comp : board.GetAllComponents()) {
@@ -727,11 +678,11 @@ public class BindingsDialog implements ActionListener {
   //               }
   //             }
   //           } else if ("ones".equals(kind)) {
-  //             rect = BoardRectangle.ones();
+  //             rect = Bounds.ones();
   //           } else if ("zeros".equals(kind)) {
-  //             rect = BoardRectangle.zeros();
+  //             rect = Bounds.zeros();
   //           } else if ("disconnected".equals(kind)) {
-  //             rect = BoardRectangle.disconnected();
+  //             rect = Bounds.disconnected();
   //           } 
   //           if (rect != null)
   //             pinBindings.TryMap(key, rect/* , board.GetComponentType(rect) */);
@@ -766,7 +717,6 @@ public class BindingsDialog implements ActionListener {
   //       DocumentBuilder parser = factory.newDocumentBuilder();
   //       // Create blank DOM Document
   //       Document MapInfo = parser.newDocument();
-
   //       Element root = MapInfo
   //           .createElement("LogisimGoesFPGABoardMapInformation");
   //       MapInfo.appendChild(root);
@@ -781,7 +731,7 @@ public class BindingsDialog implements ActionListener {
   //       for (String key : pinBindings.sources()) {
   //         Element Map = MapInfo.createElement("MAPPEDCOMPONENT_"
   //             + Integer.toHexString(count++));
-  //         BoardRectangle rect = pinBindings.GetMap(key);
+  //         Bounds rect = pinBindings.GetMap(key);
   //         Map.setAttribute(MapSectionStrings[0], key);
   //         Attr k = MapInfo.createAttribute(MapSectionStrings[5]);
   //         k.setValue("constant");
@@ -823,6 +773,7 @@ public class BindingsDialog implements ActionListener {
   //   }
   //   panel.setVisible(true);
   // }
+
 
 	/*
 	   The code below for NaturalOrderComparator comes from:
@@ -911,7 +862,7 @@ public class BindingsDialog implements ActionListener {
 		}
 
 		/*
-		public static void main(String[] args) {
+		public static void main(String[] args) { // test program for NaturalOrderComparator
 			String[] strings = new String[] {
 				"1-2", "1-02", "1-20", "10-20",
 					"fred", "jane",

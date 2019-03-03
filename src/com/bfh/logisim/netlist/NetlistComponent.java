@@ -37,12 +37,12 @@ import java.util.List;
 import java.util.Collections;
 import java.util.HashMap;
 
-import com.bfh.logisim.fpga.BoardRectangle;
 import com.bfh.logisim.hdlgenerator.HiddenPort;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Bounds
 import com.cburch.logisim.std.wiring.Pin;
 
 // For each real Component within a Circuit, a shadow NetlistComponent holds
@@ -103,7 +103,7 @@ public class NetlistComponent {
 	private HashMap<Path, Range3> globalIndices = new HashMap<>();
 
   // Board mapping info
-	private HashMap<String, BoardRectangle> boardMaps = new HashMap<>();
+	private HashMap<String, Bounds> boardMaps = new HashMap<>();
 	private HashMap<Path, Boolean> altEnabled = new HashMap<>();
 	private HashMap<Path, Boolean> altLocked = new HashMap<>();
 
@@ -148,8 +148,9 @@ public class NetlistComponent {
     return localIndices.copy();
   }
 
-	public void addMap(String MapName, BoardRectangle map) {
+	public void addMap(String MapName, Bounds map) {
 		boardMaps.put(MapName, map);
+    FIXME
 	}
 
 	public boolean AlternateMappingEnabled(Path key) {

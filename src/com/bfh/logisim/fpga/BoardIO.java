@@ -46,6 +46,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import com.cburch.logisim.data.Bounds
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.std.io.DipSwitch;
 import com.cburch.logisim.std.io.PortIO;
@@ -164,7 +165,7 @@ public class BoardIO {
 	public final Type type;
 	public final int width;
   public final String label;
-	public final BoardRectangle rect; // only for physical types
+	public final Bounds rect; // only for physical types
 	public final IoStandard standard; // only for physical types
 	public final PullBehavior pull; // only for physical types
 	public final PinActivity activity; // only for physical types
@@ -181,14 +182,22 @@ public class BoardIO {
     label = t == Constant ? String.format("0x%x", val) : t.toString();
   }
 
-  public static BoardIO makeConstant(int w, int val) { return new BoardIO(Type.Constant, w, val); }
-  public static BoardIO makeAllZeros(int w) { return new BoardIO(Type.AllZeros, w, 0); }
-  public static BoardIO makeAllOnes(int w) { return new BoardIO(Type.AllOnes, w, -1); }
-  public static BoardIO makeUnconnected(int w) { return new BoardIO(Type.Unconnected, w, 0); }
+  public static BoardIO makeSynthetic(Type t, int w, int val) {
+    if (PhysicalTypes.contains(t))
+      throw new IllegalArgumentException("BoardIO type "+t+" is not meant for synthetic I/O resources");
+    return new BoardIO(t, w, val);
+  }
+
+  // public static BoardIO makeConstant(int w, int val) { return new BoardIO(Type.Constant, w, val); }
+  // public static BoardIO makeAllZeros(int w) { return new BoardIO(Type.AllZeros, w, 0); }
+  // public static BoardIO makeAllOnes(int w) { return new BoardIO(Type.AllOnes, w, -1); }
+  // public static BoardIO makeUnconnected(int w) { return new BoardIO(Type.Unconnected, w, 0); }
 
   // constructor for physical I/O resources
-  private BoardIO(Type t, int w, String l, BoardRectangle r,
+  private BoardIO(Type t, int w, String l, Bounds r,
       IoStandard s, PullBehavior p, PinActivity a, DriveStrength g, String[] x) {
+    if (!PhysicalTypes.contains(t))
+      throw new IllegalArgumentException("BoardIO type "+t+" is not meant for physical I/O resources");
     type = t;
     width = w;
     label = l;
@@ -221,7 +230,7 @@ public class BoardIO {
     int h = Integer.parseInt(params.getOrDefault("Height", "-1"));
 		if (x < 0 || y < 0 || w < 1 || h < 1)
       throw new Exception("invalid coordinates or size for I/O resource");
-		BoardRectangle r = new BoardRectangle(x, y, w, h);
+		Bounds r = new Bounds(x, y, w, h);
 
     PullBehavior p = (t == Types.Pin) ? PullBehavior.ACTIVE_HIGH
         : PullBehavior.get(params.get("FPGAPinPullBehavior"));
@@ -277,7 +286,7 @@ public class BoardIO {
     return elt;
   }
 
-	public static BoardIO makeUserDefined(Type t, BoardRectangle r, BoardDialog parent) {
+	public static BoardIO makeUserDefined(Type t, Bounds r, BoardDialog parent) {
     int w = t.defaultWidth();
     BoardIO template = new BoardIO(t, w, null, r,
         IoStandard.UNKNOWN, PullBehavior.UNKNOWN, PinActivity.UNKNOWN, DriveStrength.UNKOWN,
