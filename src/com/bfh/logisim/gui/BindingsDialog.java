@@ -33,28 +33,21 @@ package com.bfh.logisim.gui;
 import java.awt.Color;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Image;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Set;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -63,29 +56,28 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Result;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+// import javax.xml.parsers.DocumentBuilder;
+// import javax.xml.parsers.DocumentBuilderFactory;
+// import javax.xml.transform.OutputKeys;
+// import javax.xml.transform.Result;
+// import javax.xml.transform.Source;
+// import javax.xml.transform.Transformer;
+// import javax.xml.transform.TransformerFactory;
+// import javax.xml.transform.dom.DOMSource;
+// import javax.xml.transform.stream.StreamResult;
+// import org.w3c.dom.Attr;
+// import org.w3c.dom.Document;
+// import org.w3c.dom.Element;
+// import org.w3c.dom.NamedNodeMap;
+// import org.w3c.dom.Node;
+// import org.w3c.dom.NodeList;
 
-import com.bfh.logisim.data.Bounds;
+// import com.bfh.logisim.data.Bounds;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.BoardIO;
-import com.bfh.logisim.hdlgenerator.HiddenPort;
-import com.bfh.logisim.netlist.CorrectLabel;
+// import com.bfh.logisim.netlist.CorrectLabel;
+import static com.bfh.logisim.gui.PinBindings.Source;
+import static com.bfh.logisim.gui.PinBindings.Dest;
 
 public class BindingsDialog implements ActionListener {
 
@@ -437,7 +429,7 @@ public class BindingsDialog implements ActionListener {
     void unmapCurrent() {
       if (current == null)
         return;
-      PinBindings.Dest old = pinBindings.mapping.get(current);
+      Dest old = pinBindings.mapping.get(current);
       if (old == null)
         return;
       mappings.remove(current);
@@ -490,7 +482,7 @@ public class BindingsDialog implements ActionListener {
     if (oldSource != null) {
       // De-emphasize rect for old mapping destination, if there was one.
       // Synthetics will be entirely reset below, so skip them here.
-      PinBindings.Dest old = pinBindings.mappings.get(oldSource);
+      Dest old = pinBindings.mappings.get(oldSource);
       if (old != null) {
         Rect r = rects.get(old.io);
         if (r != null)
@@ -521,7 +513,7 @@ public class BindingsDialog implements ActionListener {
         bitbucket.setEnabled(current.width.inout > 0 || current.width.out > 0);
       }
       // Recalculate emphasis
-      PinBindings.Dest dest = pinBindings.mappings.get(current);
+      Dest dest = pinBindings.mappings.get(current);
       for (Synthetic b : synthetics)
         ones.setSelected(dest != null && dest.io.type == b.type);
       Rect r = rects.get(dest.io);

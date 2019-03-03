@@ -37,51 +37,48 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
-import com.bfh.logisim.fpga.BoardDialog;
-import com.bfh.logisim.gui.FPGACommanderGui;
+import com.bfh.logisim.fpga.BoardEditor;
+import com.bfh.logisim.gui.Commander;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.proj.Project;
 
-@SuppressWarnings("serial")
 public class MenuFPGA extends JMenu implements ActionListener {
-	private Project ThisCircuit;
-	private JMenuItem BoardEditor = new JMenuItem();
-	private JMenuItem FPGACommander = new JMenuItem();
-	private BoardDialog Editor = null;
-	private FPGACommanderGui Commander = null;
+	private Project proj;
+	private JMenuItem editorMenu = new JMenuItem();
+	private JMenuItem commanderMenu = new JMenuItem();
+	private BoardEditor editor = null;
+	private Commander commander = null;
 
 	public MenuFPGA(JFrame parent, LogisimMenuBar menubar, Project proj) {
-		ThisCircuit = proj;
+		this.proj = proj;
 
-		BoardEditor.addActionListener(this);
-		FPGACommander.addActionListener(this);
+		editorMenu.addActionListener(this);
+		commanderMenu.addActionListener(this);
 
-		add(BoardEditor);
-		add(FPGACommander);
+		add(editorMenu);
+		add(commanderMenu);
 		setEnabled(parent instanceof Frame);
 	}
 
 	public void actionPerformed(ActionEvent e) {
 		Object src = e.getSource();
-		if (src == BoardEditor) {
-			if (Editor == null) {
-				Editor = new BoardDialog();
-			} else {
-				if (!Editor.isActive()) {
-					Editor.setActive();
-				}
-			}
-		} else if (src == FPGACommander) {
-			if (Commander == null)
-				Commander = new FPGACommanderGui(ThisCircuit);
-			Commander.ShowGui();
+		if (src == editorMenu) {
+			if (editor == null)
+				editor = new BoardEditor();
+			else
+        editor.reactivate();
+		} else if (src == commanderMenu) {
+			if (commander == null)
+				commander = new Commander(proj);
+      else
+        commander.reactivate();
 		}
 	}
 
 	public void localeChanged() {
 		this.setText(Strings.get("FPGAMenu"));
-		BoardEditor.setText(Strings.get("FPGABoardEditor"));
-		FPGACommander.setText(Strings.get("FPGACommander"));
+		editorMenu.setText(Strings.get("FPGABoardEditor"));
+		commanderMenu.setText(Strings.get("commanderMenu"));
 	}
 }

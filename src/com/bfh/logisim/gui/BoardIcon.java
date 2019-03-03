@@ -39,32 +39,32 @@ import java.awt.image.BufferedImage;
 import javax.swing.Icon;
 
 public class BoardIcon implements Icon {
-	private Image image;
-	private int icon_width = 240;
-	private int icon_height = 130;
+  private Image image;
+  private int icon_width = 240;
+  private int icon_height = 130;
 
-	public BoardIcon(BufferedImage img) {
+  public BoardIcon(BufferedImage img) {
     setImage(img);
-	}
+  }
 
-	public int getIconHeight() { return icon_height; }
-	public int getIconWidth() { return icon_width; }
+  public int getIconHeight() { return icon_height; }
+  public int getIconWidth() { return icon_width; }
 
-	public void paintIcon(Component c, Graphics g, int x, int y) {
-		if (image != null) {
-			g.drawImage(image, x, y, null);
+  public void paintIcon(Component c, Graphics g, int x, int y) {
+    if (image != null) {
+      g.drawImage(image, x, y, null);
     } else {
-			g.setColor(Color.gray);
-			g.fillRect(0, 0, getIconWidth(), getIconHeight());
-		}
-	}
+      g.setColor(Color.gray);
+      g.fillRect(0, 0, getIconWidth(), getIconHeight());
+    }
+  }
 
-	public void setImage(BufferedImage img) {
-		if (img != null)
-			image = img.getScaledInstance(getIconWidth(),
-					getIconHeight(), BufferedImage.SCALE_SMOOTH);
-		else
-			image = null;
-	}
+  public void setImage(BufferedImage img) {
+    if (img != null)
+      image = img.getScaledInstance(getIconWidth(),
+          getIconHeight(), BufferedImage.SCALE_SMOOTH);
+    else
+      image = null;
+  }
 
 }

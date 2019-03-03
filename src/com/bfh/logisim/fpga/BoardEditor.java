@@ -51,9 +51,8 @@ import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.data.Bounds;
 
-public class BoardDialog implements ComponentListener {
+public class BoardEditor extends JFrame implements ComponentListener {
 
-	public final JFrame panel;
 	private JButton save, load;
 
 	private JTextField name;
@@ -61,18 +60,18 @@ public class BoardDialog implements ComponentListener {
   private Chipset fpga;
 	public LinkedList<BoardIO> ioComponents = new LinkedList<>();
 
-	public BoardDialog() {
+	public BoardEditor() {
+    super(Strings.get("FPGABoardEditor"));
 		final GridBagConstraints c = new GridBagConstraints();
 
-		panel = new JFrame(Strings.get("FPGABoardEditor"));
-		panel.setResizable(false);
-		panel.addComponentListener(this);
-		panel.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		panel.setLayout(new GridBagLayout());
+		setResizable(false);
+		addComponentListener(this);
+		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		setLayout(new GridBagLayout());
 
 		// Set an empty board picture
 		image = new BoardPanel(this);
-		panel.add(image);
+		add(image);
 
 		JPanel buttons = new JPanel() {
       @Override
@@ -104,7 +103,7 @@ public class BoardDialog implements ComponentListener {
 		buttons.add(load);
 
 		JButton cancel = new JButton("Cancel");
-		cancel.addActionListener(e -> { panel.setVisible(false); clear(); });
+		cancel.addActionListener(e -> { setVisible(false); clear(); });
 		cancel.setEnabled(true);
 		buttons.add(cancel);
 
@@ -116,11 +115,11 @@ public class BoardDialog implements ComponentListener {
 
 		c.gridx = 0;
 		c.gridy = 1;
-		panel.add(buttons, c);
+		add(buttons, c);
 
-		panel.pack();
-		panel.setLocationRelativeTo(null);
-		panel.setVisible(true);
+		pack();
+		setLocationRelativeTo(null);
+		setVisible(true);
 	}
 
 	private void doSave() {
@@ -131,7 +130,7 @@ public class BoardDialog implements ComponentListener {
     String filename += dir + board.name + ".xml";
     if (!BoardWriter.write(filename, board))
       return;
-    panel.setVisible(false);
+    setVisible(false);
     clear();
   }
 
@@ -166,8 +165,8 @@ public class BoardDialog implements ComponentListener {
   }
 
 	public void clear() {
-		if (panel.isVisible())
-			panel.setVisible(false);
+		if (isVisible())
+			setVisible(false);
 		image.clear();
 		ioComponents.clear();
 		fpga = null;
@@ -188,14 +187,13 @@ public class BoardDialog implements ComponentListener {
     return dir;
 	}
 
-	public boolean isActive() {
-		return panel.isVisible();
-	}
-
-	public void setActive() {
-		this.clear();
-		panel.setVisible(true);
-	}
+	public boolean reactivate() {
+    if (!isVisible()) {
+      clear();
+      setVisible(true);
+    }
+    toFront();
+  }
 
   private static void add(JComponent dlg, GridBagConstraints c,
       String caption, JComponent input) {
@@ -207,7 +205,7 @@ public class BoardDialog implements ComponentListener {
   }
 
 	private void doChipsetDialog() {
-		final JDialog dlg = new JDialog(panel, "FPGA Chipset Properties");
+		final JDialog dlg = new JDialog(this, "FPGA Chipset Properties");
 		GridBagConstraints c = new GridBagConstraints();
 		dlg.setLayout(new GridBagLayout());
 		c.gridx = 0;
@@ -419,7 +417,7 @@ public class BoardDialog implements ComponentListener {
         return;
       }
     }
-		final JDialog dlg = new JDialog(panel, "Add FPGA Board I/O Resource");
+		final JDialog dlg = new JDialog(this, "Add FPGA Board I/O Resource");
 		dlg.setLayout(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
 		c.gridx = 0;

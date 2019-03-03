@@ -31,45 +31,45 @@
 package com.bfh.logisim.gui;
 
 public class FPGAReport {
-	private FPGACommanderGui myCommander;
+	private Commander dlg;
 
   public String getProjectName() {
-    return myCommander.getProjectName();
+    return dlg.getProjectName();
   }
 
-	public FPGAReport(FPGACommanderGui parent) {
-		myCommander = parent;
+	public FPGAReport(Commander parent) {
+		dlg = parent;
 	}
 
-	public void AddError(String Message) {
-		myCommander.AddErrors(Message);
+	public void AddError(String msg, Object ...args) {
+		dlg.AddErrors(String.format(msg, args));
 	}
 
-	public void AddFatalError(String Message) {
-		myCommander.AddErrors("***FATAL*** " + Message);
+	public void AddFatalError(String msg, Object ...args) {
+		dlg.AddErrors("***FATAL*** " + String.format(msg, args));
 	}
 
-	public void AddInfo(String Message) {
-		myCommander.AddInfo(Message);
+	public void AddInfo(String msg, Object ...args) {
+		dlg.AddInfo(String.format(msg, args));
 	}
 
-	public void AddSevereError(String Message, Object ...args) {
-		myCommander.AddErrors("**SEVERE** " + String.format(Message, args));
+	public void AddSevereError(String msg, Object ...args) {
+		dlg.AddErrors("**SEVERE** " + String.format(msg, args));
 	}
 
-	public void AddSevereWarning(String Message, Object ...args) {
-		myCommander.AddWarning("**SEVERE** " + String.format(Message, args));
+	public void AddSevereWarning(String msg, Object ...args) {
+		dlg.AddWarning("**SEVERE** " + String.format(msg, args));
 	}
 
-	public void AddWarning(String Message, Object ...args) {
-		myCommander.AddWarning(String.format(Message, String.format(Message, args)));
+	public void AddWarning(String msg, Object ...args) {
+		dlg.AddWarning(String.format(msg, args));
 	}
 
 	public void NewConsole(String title) {
-		myCommander.NewConsole(title);
+		dlg.NewConsole(title);
 	}
 
-	public void print(String Message, Object ...args) {
-		myCommander.AddConsole(String.format(Message, args));
+	public void print(String msg, Object ...args) {
+		dlg.AddConsole(String.format(msg, args));
 	}
 }

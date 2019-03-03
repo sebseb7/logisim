@@ -86,7 +86,7 @@ import static com.bfh.logisim.netlist.Netlist.Int3;
 // resources [which ideally we will also allow to have been broken up and
 // treated as separate signals, but again that wasn't previously supported].
 //
-// FPGACommanderGui holds the instance of this, but mostly doesn't use it.
+// Commander holds the instance of this, but mostly doesn't use it.
 //
 // BindingsDialog is the UI for configuring the bindings.
 //
@@ -106,9 +106,6 @@ public class PinBindings {
 
   // The FPGA board describing available physical I/O resources.
 	private final Board board;
-
-  // User-selected type for each path, either the primary or an alternate.
-  // private final HashMap<Path, BoardIO.Type> curType = new HashMap<>();
 
   public static class Source {
     public final Path path;
@@ -144,20 +141,10 @@ public class PinBindings {
   // Mappings defined so far.
   public final HashMap<Source, Dest> mappings = new HashMap<>();
 
-  // A list of displayable names, in nicely presentable order, for all
-  // I/O-related components (or bits derived from them), and a boolean
-  // indicating whether component is mapped.
-  // Names to display on the left side and right side...
-  // ///// ?
-
   public PinBindings(FPGAReport err, Board board, HashMap<Path, NetlistComponent> components) {
     this.err = err;
 		this.components = components;
 		this.board = board;
-    // intitially, each component maps to no I/O resource
-    // for (Path path : components.keySet()) {
-    //   mappings.put(sourceFor(path), null);
-    // }
 	}
 
   public ArrayList<String> pinLabels(Path path) {
@@ -275,7 +262,7 @@ public class PinBindings {
   }
 
   public HashSet<Source> addMapping(Source src, BoardIO io, int bit) {
-    // sanity check - sizes match
+    // sanity check: sizes must match
     int srcWidth = src.bit >= 0 ? 1 : src.width.size();
     int ioWidth = bit >= 0 ? 1 : io.width;
     if (srcWidth != ioWidth) {
@@ -283,13 +270,6 @@ public class PinBindings {
           srcWidth, ioWidth);
       return;
     }
-    // // annul existing mappings to same I/O resource or from same component
-    // for (Source s : mappings.keySet()) {
-    //   if (s.path.equals(src.path) && (src.bit < 0 || s.bit < 0 || src.bit == s.bit))
-    //     mappings.put(s, null);
-    //   else if (mappings.get(s).io == io)
-    //     mappings.put(s, null);
-    // }
     // remove existing mappings to same I/O resource or from same component
     HashSet<Source> modified = new HashSet<>();
     mappings.entrySet().removeIf(e -> {
@@ -306,507 +286,96 @@ public class PinBindings {
     return modified;
   }
 
-  // here ------------------------------------------------------
+// 	public int GetFPGAInOutPinId(String MapName) {
+// 		if (fpgaInOutsList.containsKey(MapName)) {
+// 			return fpgaInOutsList.get(MapName);
+// 		}
+// 		return -1;
+// 	}
+// 
+// 	public int GetFPGAInputPinId(String MapName) {
+// 		if (fpgaInputsList.containsKey(MapName)) {
+// 			return fpgaInputsList.get(MapName);
+// 		}
+// 		return -1;
+// 	}
+// 
+// 	public int GetFPGAOutputPinId(String MapName) {
+// 		if (fpgaOutputsList.containsKey(MapName)) {
+// 			return fpgaOutputsList.get(MapName);
+// 		}
+// 		return -1;
+// 	}
 
-	public void BuildIOMappingInformation() {
-		if (fpgaInputsList == null) {
-			fpgaInputsList = new HashMap<String, Integer>();
-		} else {
-			fpgaInputsList.clear();
-		}
-		if (fpgaInOutsList == null) {
-			fpgaInOutsList = new HashMap<String, Integer>();
-		} else {
-			fpgaInOutsList.clear();
-		}
-		if (fpgaOutputsList == null) {
-			fpgaOutputsList = new HashMap<String, Integer>();
-		} else {
-			fpgaOutputsList.clear();
-		}
-		nrOfFPGAInputPins = 0;
-		nrOfFPGAInOutPins = 0;
-		nrOfFPGAOutputPins = 0;
-		for (Path key : components.keySet()) {
-			NetlistComponent comp = components.get(key);
-			for (String Map : GetMapNamesList(key, comp)) {
-        Bounds r = comp.getMap(Map);
-        if (!r.isDeviceSignal())
-          continue;
-				BoardIO BoardComp = board.GetComponent(r);
-				if (BoardComp.GetType().equals(BoardIO.Type.Pin)) {
-					if (comp.ports.get(0).isOutput) {
-						fpgaInputsList.put(Map, nrOfFPGAInputPins);
-						nrOfFPGAInputPins++;
-					} else {
-						fpgaOutputsList.put(Map, nrOfFPGAOutputPins);
-						nrOfFPGAOutputPins++;
-					}
-				} else {
-					int NrOfPins = BoardIO.Type.GetFPGAInputRequirement(BoardComp.GetType());
-					if (NrOfPins != 0) {
-						fpgaInputsList.put(Map, nrOfFPGAInputPins);
-						if (BoardComp.GetType().equals(
-								BoardIO.Type.DIPSwitch)) {
-							nrOfFPGAInputPins += BoardComp.getNrOfPins();
-						} else if (BoardComp.GetType().equals(BoardIO.Type.Ribbon)) {
-							nrOfFPGAInputPins += BoardComp.getNrOfPins();
-						} else {
-							nrOfFPGAInputPins += NrOfPins;
-						}
-					}
-					NrOfPins = BoardIO.Type.GetFPGAOutputRequirement(BoardComp.GetType());
-					if (NrOfPins != 0) {
-						fpgaOutputsList.put(Map, nrOfFPGAOutputPins);
-						nrOfFPGAOutputPins += NrOfPins;
-					}
-					NrOfPins = BoardIO.Type.GetFPGAInOutRequirement(BoardComp.GetType());
-					if (NrOfPins != 0) {
-						fpgaInOutsList.put(Map, nrOfFPGAInOutPins);
-						if (BoardComp.GetType().equals(BoardIO.Type.Ribbon)) {
-							nrOfFPGAInOutPins += BoardComp.getNrOfPins();
-						} else {
-							nrOfFPGAInOutPins += NrOfPins;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	private String DisplayNametoMapName(String item) {
-		String[] parts = item.split(" ");
-		if (parts.length != 2) {
-			System.err.println("Internal error");
-			return "";
-		}
-		return board.name + ":" + parts[1];
-	}
-
-	private int getBestComponent(ArrayList<Integer> list, int requiredPin) {
-		int delta = 999;
-		int bestMatch = -1;
-		for (Integer comp : list) {
-			if (comp.equals(requiredPin)) {
-				return list.indexOf(comp);
-			}
-			if (requiredPin < comp && ((comp - requiredPin) < delta)) {
-				bestMatch = comp;
-			}
-		}
-		return list.indexOf(bestMatch);
-	}
-
-	public NetlistComponent GetComponent(Path hiername) {
-		if (components.containsKey(hiername)) {
-			return components.get(hiername);
-		} else {
-			return null;
-		}
-	}
-
-	public Set<Path> GetComponents() {
-		return components.keySet();
-	}
-
-	public String GetDisplayName(Bounds rect) {
-		for (String Map : mappedList.keySet()) {
-			if (mappedList.get(Map).equals(rect)) {
-				return MapNametoDisplayName(Map);
-			}
-		}
-		return "";
-	}
-
-	public int GetFPGAInOutPinId(String MapName) {
-		if (fpgaInOutsList.containsKey(MapName)) {
-			return fpgaInOutsList.get(MapName);
-		}
-		return -1;
-	}
-
-	public int GetFPGAInputPinId(String MapName) {
-		if (fpgaInputsList.containsKey(MapName)) {
-			return fpgaInputsList.get(MapName);
-		}
-		return -1;
-	}
-
-	public int GetFPGAOutputPinId(String MapName) {
-		if (fpgaOutputsList.containsKey(MapName)) {
-			return fpgaOutputsList.get(MapName);
-		}
-		return -1;
-	}
-
-  // This is used by download scripts for final HDL synthesis tool configuration.
-	public ArrayList<String> GetFPGAPinLocs(int FPGAVendor) {
-		ArrayList<String> Contents = new ArrayList<>();
-		for (String Map : fpgaInputsList.keySet()) {
-			int InputId = fpgaInputsList.get(Map);
-			if (!mappedList.containsKey(Map)) {
-				System.err.printf("No mapping found for %s\n", Map);
-				return Contents;
-			}
-			Bounds rect = mappedList.get(Map);
-      if (rect.isDeviceSignal()) {
-        BoardIO Comp = board.GetComponent(rect);
-        Contents.addAll(Comp.getPinAssignments(FPGAVendor, "in", InputId));
-      } else {
-        return null;
-      }
-		}
-		for (String Map : fpgaInOutsList.keySet()) {
-			int InOutId = fpgaInOutsList.get(Map);
-			if (!mappedList.containsKey(Map)) {
-				System.err.printf("No mapping found for %s\n", Map);
-				return Contents;
-			}
-			Bounds rect = mappedList.get(Map);
-      if (rect.isDeviceSignal()) {
-        BoardIO Comp = board.GetComponent(rect);
-        Contents.addAll(Comp.getPinAssignments(FPGAVendor, "inout", InOutId));
-      } else {
-        return null;
-      }
-		}
-		for (String Map : fpgaOutputsList.keySet()) {
-			int OutputId = fpgaOutputsList.get(Map);
-			if (!mappedList.containsKey(Map)) {
-				System.err.printf("No mapping found for %s\n", Map);
-				return Contents;
-			}
-			Bounds rect = mappedList.get(Map);
-      if (rect.isDeviceSignal()) {
-        BoardIO Comp = board.GetComponent(rect);
-        Contents.addAll(Comp.getPinAssignments(FPGAVendor, "out", OutputId));
-      } else {
-        return null;
-      }
-		}
-		return Contents;
-	}
-
-	private Path GetHierarchyKey(String str) {
-		Path result = new ArrayList<String>();
-		String[] subtype = str.split("#");
-		String[] iotype = subtype[0].split(" ");
-		String[] parts = iotype[iotype.length - 1].split("/");
-		result.add(board.name);
-		for (int i = 1; i < parts.length; i++) {
-			result.add(parts[i]);
-		}
-		return result;
-	}
-
-	public Bounds GetMap(String id) {
-		Path key = GetHierarchyKey(id);
-		NetlistComponent MapComp = components.get(key);
-		if (MapComp == null) {
-			System.err.println("Internal error!");
-			return null;
-		}
-		return MapComp.getMap(DisplayNametoMapName(id));
-	}
-
-	public ArrayList<String> GetMapNamesList(Path HierName) {
-		if (components.containsKey(HierName)) {
-			NetlistComponent comp = components.get(HierName);
-			return GetMapNamesList(HierName, comp);
-		}
-		return null;
-	}
-
-	private ArrayList<String> GetMapNamesList(Path hiername, NetlistComponent comp) {
-		ArrayList<String> result = new ArrayList<String>();
-		/* we strip off the board path and add the component type */
-		String path = board.name + ":";
-		for (int i = 1; i < hiername.size(); i++)
-			path += "/" + hiername.get(i);
-		if (comp.AlternateMappingEnabled(hiername)) {
-			for (String label: comp.hiddenPort.inports)
-				result.add(path + "#" + label);
-			for (String label: comp.hiddenPort.inoutports)
-				result.add(path + "#" + label);
-			for (String label: comp.hiddenPort.outports)
-				result.add(path + "#" + label);
-		} else {
-			result.add(path);
-		}
-		return result;
-	}
-
-	public Collection<Bounds> GetMappedRectangles() {
-		return mappedList.values();
-	}
-
-  public boolean IsDeviceSignal(String MapName) {
-		// if (mappedList.containsKey(MapName))
-    return mappedList.get(MapName).isDeviceSignal();
-    // return false;
-  }
-
-  public int GetSyntheticInputValue(String MapName) {
-		// if (mappedList.containsKey(MapName))
-    return mappedList.get(MapName).getSyntheticInputValue();
-    // return 0;
-  }
-
-  public int GetNrOfSyntheticBits(String MapName) {
-		// if (mappedList.containsKey(MapName))
-    return mappedList.get(MapName).GetNrOfSyntheticBits();
-    // return 0;
-  }
-
-  public boolean IsDisconnectedOutput(String MapName) {
-		// if (mappedList.containsKey(MapName))
-    return mappedList.get(MapName).isDisconnectedOutput();
-  }
-
-	public int GetNrOfPins(String MapName) {
-		if (mappedList.containsKey(MapName)) {
-      Bounds rect = mappedList.get(MapName);
-      if (!rect.isDeviceSignal())
-        return -1;
-      BoardIO BoardComp = board.GetComponent(rect);
-			if (BoardComp.GetType().equals(BoardIO.Type.DIPSwitch)) {
-				return BoardComp.getNrOfPins();
-			} else if (BoardComp.GetType().equals(BoardIO.Type.Ribbon)) {
-				return BoardComp.getNrOfPins();
-			} else {
-				return BoardIO.Type.GetNrOfFPGAPins(BoardComp.GetType());
-			}
-		}
-		return 0;
-	}
-
-	public int GetNrOfToplevelInOutPins() {
-		return nrOfFPGAInOutPins;
-	}
-
-	public int GetNrOfToplevelInputPins() {
-		return nrOfFPGAInputPins;
-	}
-
-	public int GetNrOfToplevelOutputPins() {
-		return nrOfFPGAOutputPins;
-	}
-
-  public HiddenPort getTypeFor(String DisplayName) {
-		Path key = GetHierarchyKey(DisplayName);
-		NetlistComponent comp = components.get(key);
-    return comp.hiddenPort;
-  }
-
-	public ArrayList<Bounds> GetSelectableItemsList(String DisplayName,
-			Board BoardInfo) {
-		ArrayList<Bounds> rects;
-		Path key = GetHierarchyKey(DisplayName);
-		NetlistComponent comp = components.get(key);
-		int pinNeeded = comp.hiddenPort.numPorts();
-		// First try main map types
-		if (!comp.AlternateMappingEnabled(key)) {
-			rects = BoardInfo.GetIoComponentsOfType(comp.hiddenPort.mainType, pinNeeded);
-			if (!rects.isEmpty())
-				return RemoveUsedItems(rects);
-		}
-    // If no matching resources, try all alternate types
-		rects = new ArrayList<Bounds>();
-    for (BoardIO.Type mapType: comp.hiddenPort.altTypes)
-			rects.addAll(BoardInfo.GetIoComponentsOfType(mapType, 0));
-		return RemoveUsedItems(rects);
-	}
-
-	private ArrayList<Bounds> RemoveUsedItems(ArrayList<Bounds> rects) {
-		Iterator<Bounds> ListIterator = rects.iterator();
-		while (ListIterator.hasNext()) {
-			Bounds current = ListIterator.next();
-			if (mappedList.containsValue(current))
-				ListIterator.remove();
-		}
-		return rects;
-	}
+//  // This is used by download scripts for final HDL synthesis tool configuration.
+//	public ArrayList<String> GetFPGAPinLocs(int FPGAVendor) {
+//		ArrayList<String> Contents = new ArrayList<>();
+//		for (String Map : fpgaInputsList.keySet()) {
+//			int InputId = fpgaInputsList.get(Map);
+//			if (!mappedList.containsKey(Map)) {
+//				System.err.printf("No mapping found for %s\n", Map);
+//				return Contents;
+//			}
+//			Bounds rect = mappedList.get(Map);
+//      if (rect.isDeviceSignal()) {
+//        BoardIO Comp = board.GetComponent(rect);
+//        Contents.addAll(Comp.getPinAssignments(FPGAVendor, "in", InputId));
+//      } else {
+//        return null;
+//      }
+//		}
+//		for (String Map : fpgaInOutsList.keySet()) {
+//			int InOutId = fpgaInOutsList.get(Map);
+//			if (!mappedList.containsKey(Map)) {
+//				System.err.printf("No mapping found for %s\n", Map);
+//				return Contents;
+//			}
+//			Bounds rect = mappedList.get(Map);
+//      if (rect.isDeviceSignal()) {
+//        BoardIO Comp = board.GetComponent(rect);
+//        Contents.addAll(Comp.getPinAssignments(FPGAVendor, "inout", InOutId));
+//      } else {
+//        return null;
+//      }
+//		}
+//		for (String Map : fpgaOutputsList.keySet()) {
+//			int OutputId = fpgaOutputsList.get(Map);
+//			if (!mappedList.containsKey(Map)) {
+//				System.err.printf("No mapping found for %s\n", Map);
+//				return Contents;
+//			}
+//			Bounds rect = mappedList.get(Map);
+//      if (rect.isDeviceSignal()) {
+//        BoardIO Comp = board.GetComponent(rect);
+//        Contents.addAll(Comp.getPinAssignments(FPGAVendor, "out", OutputId));
+//      } else {
+//        return null;
+//      }
+//		}
+//		return Contents;
+//	}
 
 
-	public boolean hasMappedComponents() {
-		return !mappedList.isEmpty();
-	}
-
-	public void Map(String comp, Bounds item /*, String Maptype*/) {
-		Path key = GetHierarchyKey(comp);
-		NetlistComponent MapComp = components.get(key);
-		if (MapComp == null) {
-			System.err.printf("Internal error! comp: %s, key: %s\n", comp, key);
-			return;
-		}
-    if (!item.isDeviceSignal()) {
-      item.SetNrOfSyntheticBits(MapComp.hiddenPort.numPorts());
-    }
-		MapComp.addMap(DisplayNametoMapName(comp), item /*, Maptype */);
-		rebuildMappedLists();
-	}
-
-	private String MapNametoDisplayName(String item) {
-		String[] parts = item.split(":");
-		if (parts.length != 2) {
-			System.err.println("Internal error!");
-			return "";
-		}
-		Path key = GetHierarchyKey(parts[1]);
-		if (key != null) {
-			return components.get(key).hiddenPort.mainType.toString().toUpperCase() + ": " + parts[1];
-		}
-		return "";
-	}
-
-	public Set<String> MappedList() {
-		SortedSet<String> result = new TreeSet<String>(new NaturalOrderComparator());
-		for (String MapName : mappedList.keySet()) {
-			result.add(MapNametoDisplayName(MapName));
-		}
-		return result;
-	}
-
-	public boolean RequiresToplevelInversion(
-			Path ComponentIdentifier, String MapName) {
-		if (!mappedList.containsKey(MapName)) {
-			return false;
-		}
-		if (!components.containsKey(ComponentIdentifier)) {
-			return false;
-		}
-    Bounds r = mappedList.get(MapName);
-    boolean BoardActiveHigh;
-    if (r.isDeviceSignal()) {
-      BoardIO BoardComp = board.GetComponent(r);
-      BoardActiveHigh = (BoardComp.GetActivityLevel() == PinActivity.ACTIVE_HIGH);
-    } else {
-      BoardActiveHigh = true;
-    }
-		NetlistComponent Comp = components.get(ComponentIdentifier);
-		boolean CompActiveHigh = Comp.GetComponent().getFactory().ActiveOnHigh(Comp.GetComponent().getAttributeSet());
-		boolean Invert = BoardActiveHigh ^ CompActiveHigh;
-		return Invert;
-	}
-
-	public void ToggleAlternateMapping(String item) {
-		Path key = GetHierarchyKey(item);
-		NetlistComponent comp = components.get(key);
-		if (comp != null) {
-			if (comp.AlternateMappingEnabled(key)) {
-				for (String MapName : GetMapNamesList(key, comp)) {
-					if (mappedList.containsKey(MapName)) {
-						return;
-					}
-				}
-			}
-			comp.ToggleAlternateMapping(key);
-		}
-	}
-
-	public void TryMap(String DisplayName, Bounds rect /*, String Maptype*/) {
-		Path key = GetHierarchyKey(DisplayName);
-		if (!components.containsKey(key)) {
-			return;
-		}
-		if (UnmappedList().contains(DisplayName)) {
-			Map(DisplayName, rect /*, Maptype*/);
-			return;
-		}
-		components.get(key).ToggleAlternateMapping(key);
-		if (UnmappedList().contains(DisplayName)) {
-			Map(DisplayName, rect /*, Maptype*/);
-			return;
-		}
-		components.get(key).ToggleAlternateMapping(key);
-	}
-
-	public void UnMap(String comp) {
-		Path key = GetHierarchyKey(comp);
-		NetlistComponent MapComp = components.get(key);
-		if (MapComp == null) {
-			System.err.println("Internal error!");
-			return;
-		}
-		MapComp.removeMap(DisplayNametoMapName(comp));
-		rebuildMappedLists();
-	}
-
-	public void UnmapAll() {
-		for (Path key : components.keySet()) {
-			if (key.get(0).equals(board.name)) {
-				NetlistComponent comp = components.get(key);
-				for (String MapName : GetMapNamesList(key, comp)) {
-					comp.removeMap(MapName);
-				}
-			}
-		}
-	}
-
-	public Set<String> UnmappedList() {
-		SortedSet<String> result = new TreeSet<String>(new NaturalOrderComparator());
-
-		for (Path key : components.keySet()) {
-			for (String MapName : GetMapNamesList(key,
-					components.get(key))) {
-				if (!mappedList.containsKey(MapName)) {
-					result.add(MapNametoDisplayName(MapName));
-				}
-			}
-		}
-		return result;
-	}
-
+// 	public boolean RequiresToplevelInversion(
+// 			Path ComponentIdentifier, String MapName) {
+// 		if (!mappedList.containsKey(MapName)) {
+// 			return false;
+// 		}
+// 		if (!components.containsKey(ComponentIdentifier)) {
+// 			return false;
+// 		}
+//     Bounds r = mappedList.get(MapName);
+//     boolean BoardActiveHigh;
+//     if (r.isDeviceSignal()) {
+//       BoardIO BoardComp = board.GetComponent(r);
+//       BoardActiveHigh = (BoardComp.GetActivityLevel() == PinActivity.ACTIVE_HIGH);
+//     } else {
+//       BoardActiveHigh = true;
+//     }
+// 		NetlistComponent Comp = components.get(ComponentIdentifier);
+// 		boolean CompActiveHigh = Comp.GetComponent().getFactory().ActiveOnHigh(Comp.GetComponent().getAttributeSet());
+// 		boolean Invert = BoardActiveHigh ^ CompActiveHigh;
+// 		return Invert;
+// 	}
+// 
 }
-
-	// private Map<String, Bounds> mappedList;
-	// private Map<String, Integer> fpgaInputsList;
-	// private Map<String, Integer> fpgaInOutsList;
-	// private Map<String, Integer> fpgaOutputsList;
-	// private Integer nrOfFPGAInputPins = 0;
-	// private Integer nrOfFPGAInOutPins = 0;
-	// private Integer nrOfFPGAOutputPins = 0;
-	// There are two different notations for each component:
-  // (1) The display name. Example: "LED: /Some/Circ/LED1" 
-  //     This name can be augmented with alternates. For example,
-  //     a 7-segment display could be shown with variations:
-  //       "SEVENSEGMENT: /Some/Circ/DS1"
-  //       "SEVENSEGMENT: /Some/Circ/DS1#Segment_A"
-  //       "SEVENSEGMENT: /Some/Circ/DS1#Segment_B"
-	// (2) The map name. Examples:
-  //     "FPGA4U:/Some/Circ/LED1"
-  //     "FPGA4U:/Some/Circ/DS1#Segment_A", etc.
-	// The mappedList keeps track of the display names.
-	public void rebuildMappedLists() {
-		mappedList.clear();
-		for (Path key : components.keySet()) {
-			if (key.get(0).equals(board.name)) {
-				NetlistComponent comp = components.get(key);
-				/*
-				 * we can have two different situations:
-         *   1) A multipin component is mapped to a multipin resource.
-         *   2) A multipin component is mapped to multiple singlepin resources.
-				 */
-				/* first we handle the single pin version */
-				boolean hasmap = false;
-				for (String MapName : GetMapNamesList(key, comp)) {
-					if (comp.getMap(MapName) != null) {
-						hasmap = true;
-						mappedList.put(MapName, comp.getMap(MapName));
-					}
-				}
-				if (!hasmap) {
-					comp.ToggleAlternateMapping(key);
-					for (String MapName : GetMapNamesList(key, comp)) {
-						if (comp.getMap(MapName) != null) {
-							hasmap = true;
-							mappedList.put(MapName, comp.getMap(MapName));
-						}
-					}
-					if (!hasmap) {
-						comp.ToggleAlternateMapping(key);
-					}
-				}
-			}
-		}
-	}

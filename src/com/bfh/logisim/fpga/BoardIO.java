@@ -286,7 +286,7 @@ public class BoardIO {
     return elt;
   }
 
-	public static BoardIO makeUserDefined(Type t, Bounds r, BoardDialog parent) {
+	public static BoardIO makeUserDefined(Type t, Bounds r, BoardEditor parent) {
     int w = t.defaultWidth();
     BoardIO template = new BoardIO(t, w, null, r,
         IoStandard.UNKNOWN, PullBehavior.UNKNOWN, PinActivity.UNKNOWN, DriveStrength.UNKOWN,
@@ -299,7 +299,7 @@ public class BoardIO {
     return template;
   }
 
-  private static BoardIO doSizeDialog(BoardIO t, BoardDialog parent) {
+  private static BoardIO doSizeDialog(BoardIO t, BoardEditor parent) {
     int min = t.type == DIPSwitch ? DipSwitch.MIN_SWITCH : PortIO.MIN_IO;
     int max = t.type == DIPSwitch ? DipSwitch.MAX_SWITCH : PortIO.MAX_IO;
     final int[] width = new int[] { t.width };
@@ -359,7 +359,7 @@ public class BoardIO {
       c.gridy++;
   }
 
-  private static BoardIO doInfoDialog(BoardIO t, BoardDialog parent) {
+  private static BoardIO doInfoDialog(BoardIO t, BoardEditor parent) {
     final JDialog dlg = new JDialog(parent.panel, t.type + " Properties");
     dlg.setLayout(new GridBagLayout());
     GridBagConstraints c = new GridBagConstraints();

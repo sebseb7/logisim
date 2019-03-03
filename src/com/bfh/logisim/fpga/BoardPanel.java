@@ -58,7 +58,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
   private Image scaledImage;
 	private int xs, ys, w, h;
 	private boolean editing;
-	private BoardDialog edit_parent;
+	private BoardEditor edit_parent;
 
   private BoardPanel() {
 		xs = ys = w = h = 0;
@@ -67,7 +67,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 		addMouseMotionListener(this);
   }
 
-	public BoardPanel(BoardDialog parent) {
+	public BoardPanel(BoardEditor parent) {
     this();
 		editing = true;
 		edit_parent = parent;

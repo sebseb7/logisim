@@ -102,11 +102,6 @@ public class NetlistComponent {
   //   (Bar)/Foo0/RGBLed    [2:0]
 	private HashMap<Path, Range3> globalIndices = new HashMap<>();
 
-  // Board mapping info
-	private HashMap<String, Bounds> boardMaps = new HashMap<>();
-	private HashMap<Path, Boolean> altEnabled = new HashMap<>();
-	private HashMap<Path, Boolean> altLocked = new HashMap<>();
-
 	public NetlistComponent(Component comp, HDLCTX ctx) {
     ComponentFactory factory = comp.getFactory();
     AttributeSet attrs = comp.getAttributeSet();
@@ -148,64 +143,12 @@ public class NetlistComponent {
     return localIndices.copy();
   }
 
-	public void addMap(String MapName, Bounds map) {
-		boardMaps.put(MapName, map);
-    FIXME
-	}
-
-	public boolean AlternateMappingEnabled(Path key) {
-		if (!altEnabled.containsKey(key)) {
-			altEnabled.put(key, hiddenPort.mainType == HiddenPort.Bus);
-			altLocked.put(key, hiddenPort.mainType == HiddenPort.Bus);
-		}
-		return altEnabled.get(key);
-	}
-
-	public boolean AlternateMappingIsLocked(Path key) {
-		if (!altLocked.containsKey(key)) {
-			altEnabled.put(key, hiddenPort.mainType == HiddenPort.Bus);
-			altLocked.put(key, hiddenPort.mainType == HiddenPort.Bus);
-    }
-		return altLocked.get(key);
-	}
-
-	public void ToggleAlternateMapping(Path key) {
-		boolean newIsLocked = hiddenPort.mainType == HiddenPort.Bus;
-		if (altLocked.containsKey(key)) {
-			if (altLocked.get(key))
-				return;
-		} else {
-			altLocked.put(key, newIsLocked);
-			if (newIsLocked)
-				return;
-		}
-		if (!altEnabled.containsKey(key))
-			altEnabled.put(key, true);
-		if (altEnabled.get(key))
-			altEnabled.put(key, false);
-		else if (!hiddenPort.altTypes.isEmpty())
-      altEnabled.put(key, true);
-	}
-
-	public void UnlockAlternateMapping(Path key) {
-    if (hiddenPort.mainType != HiddenPort.Bus)
-      altLocked.put(key, false);
-	}
-
 	public boolean endIsConnected(int index) {
     return index >= 0 && index < portConnections.size() && portConnections.get(index) != null;
 	}
 
 	public Net getConnection(int index) {
     return index >= 0 && index < portConnections.size() ? portConnections.get(index) : null;
-	}
-
-	public void LockAlternateMapping(Path key) {
-		altLocked.put(key, true);
-	}
-
-	public void removeMap(String MapName) {
-		boardMaps.remove(MapName);
 	}
 
   public String label() {
