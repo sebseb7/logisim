@@ -66,13 +66,11 @@ public class LightsHDLGenerator extends HDLInliner {
 
   @Override
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
-    int b = comp.GetLocalBubbleOutputStartId();
+    int b = comp.getLocalHiddenPortIndices().out.start;
     for (int i = 0; i < comp.ports.size(); i++) {
-      if (comp.ports.get(i).isConnected()) {
-        // fixme: does not handle mixed or partial connections
-        String name = _nets.signalEndForEnd1(comp, i, false, out);
-        out.assign("LOGISIM_HIDDEN_FPGA_OUTPUT", b + i, name);
-      }
+      Net net = comp.getConnection(i);
+      if (net != null)
+        out.assign("LOGISIM_HIDDEN_FPGA_OUTPUT", b + i, net.name);
     }
   }
 

@@ -79,7 +79,7 @@ public class Netlist {
   private NetlistComponent dynClock; // DynamicClock
 
   // Reference to the single global clock bus used by all Netlists in the design.
-	public final ClockBus clockbus = null;
+	private ClockBus clockbus = null;
 
   // Info about hidden networks, needed by certain I/O-related components.
 	private Int3 numHiddenBits;
@@ -132,12 +132,12 @@ public class Netlist {
 
   // Primary entry point for performing design-rule-check (DRC) validation on
   // the Netlist for the top-level circuit.
-  public boolean validate(FPGAReport err, String lang, char vendor) {
+  public boolean validate(FPGAReport err, String lang, char vendor, 
+      long oscFreq, int clkPeriod) {
     recursiveClear();
-fixme: set clock params here;
 
     // Create global hidden clock bus at the top level.
-    clockbus = new ClockBus();
+    clockbus = new ClockBus(oscFreq, clkPeriod);
 
     // Recursively validate this Netlist and those of all subcircuits.
     if (!recursiveValidate(err, lang, vendor, new ArrayList<>(), true)) {

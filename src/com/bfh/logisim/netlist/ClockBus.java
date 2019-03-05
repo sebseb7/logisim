@@ -96,16 +96,19 @@ public class ClockBus {
     public int hashCode() { return path.hashCode() + 31*net.hashCode() + 31*31*bit; }
   }
 
-	public boolean RawFPGAClock = false;
-  public long RawFPGAClockFreq = 0;
+	public final boolean RawFPGAClock;
+  public final long RawFPGAClockFreq;
+  public final int TickerPeriod; // 0:"use fpga clock", -1:"dynamic", >0:"divided clock"
 	private ArrayList<Shape> shapes = new ArrayList<>();
   private HashMap<Point, Integer> points = new HashMap();
 
-	public ClockBus() { }
+	public ClockBus(long oscFreq, int clkPeriod) {
+    RawFPGAClockFreq = oscFreq;
+    TickerPeriod = clkPeriod;
+    RawFPGAClock = (clkPeriod == 0);
+  }
 
 	public void clear() {
-		RawFPGAClock = false;
-    RawFPGAClockFreq = 0;
 		shapes.clear();
     points.clear();
 	}

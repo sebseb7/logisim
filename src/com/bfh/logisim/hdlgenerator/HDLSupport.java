@@ -146,7 +146,6 @@ public abstract class HDLSupport {
       AttributeSet attrs, String circuitName) {
     String s = hdlComponentName;
     int w = stdWidth();
-    // fixme: this will happen for temp-instances with no netlist
     if (s.contains("${CIRCUIT}") && circuitName == null)
       throw new IllegalArgumentException("%s can't appear in top-level circuit");
     if (s.contains("${CIRCUIT}"))

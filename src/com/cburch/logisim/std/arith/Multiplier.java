@@ -35,10 +35,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.math.BigInteger;
 
-import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -96,7 +94,7 @@ public class Multiplier extends InstanceFactory {
       int known = Math.min(Math.min(aOk, bOk), cOk);
       int error = Math.min(Math.min(aErr, bErr), cErr);
 
-      // fixme: this is probably wrong, but the inputs were bad anyway
+      // note: this is probably wrong, but the inputs were bad anyway
       BigInteger aa = BigInteger.valueOf(extend(w, ax, unsigned));
       BigInteger bb = BigInteger.valueOf(extend(w, bx, unsigned));
       BigInteger cc = BigInteger.valueOf(extend(w, cx, unsigned));

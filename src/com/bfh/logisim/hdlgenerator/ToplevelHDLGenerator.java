@@ -45,8 +45,6 @@ public class ToplevelHDLGenerator extends HDLGenerator {
   // Name of the top-level HDL module.
   public static final String HDL_NAME = "LogisimToplevelShell";
 
-	private long fpgaClockFreq;
-	private int tickerPeriod; // 0:"use fpga clock", -1:"dynamic", >0:"divided clock"
 	private Circuit circUnderTest;
 	private PinBindings goResources;
   private Netlist _circNets; // Netlist of the circUnderTest.
@@ -63,24 +61,22 @@ public class ToplevelHDLGenerator extends HDLGenerator {
   // and empty attributes.
 	
   public ToplevelHDLGenerator(String lang, FPGAReport err, char vendor,
-      long fpgaClockFreq, int tickerPeriod,
 			Circuit circUnderTest, PinBindings ioResources) {
     this(new HDLCTX(lang, err, null /*nets*/, null /*attrs*/, vendor),
-      fpgaClockFreq, tickerPeriod, circUnderTest, ioResources);
+      circUnderTest, ioResources);
   }
 
-	private ToplevelHDLGenerator(HDLCTX ctx, long fpgaClockFreq, int tickerPeriod,
-			Circuit circUnderTest, PinBindings ioResources) {
+	private ToplevelHDLGenerator(HDLCTX ctx, Circuit circUnderTest, PinBindings ioResources) {
     super(ctx, "toplevel", HDL_NAME, "i_Toplevel");
 
-		this.fpgaClockFreq = fpgaClockFreq;
-		this.tickerPeriod = tickerPeriod;
 		this.circUnderTest = circUnderTest;
 		this.ioResources = ioResources;
     this.ctx = ctx;
 
     _circNets = circUnderTest.getNetlist();
     int numclk = _circNets.clockbus.shapes().size();
+		long fpgaClockFreq = _circNets.clockbus.RawFPGAClockFreq;
+		int tickerPeriod = _circNets.clockbus.TickerPeriod;
 
     // raw oscillator input
     ioResources.requiresOscilator = numclk > 0;
@@ -173,7 +169,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 
 			long id = 0;
 			for (NetlistComponent clk : _circNets.clocks)
-        clk.hdlSupport.generateComponentInstance(out, id++, clk); // FIXME
+        clk.hdlSupport.generateComponentInstance(out, id++, clk); // FIXME - uniquify clocks
       out.stmt();
 		}
 

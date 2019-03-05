@@ -575,11 +575,11 @@ public class HDLGenerator extends HDLSupport {
   protected void getHiddenPortMappings(Hdl.Map map, NetlistComponent comp) {
     NetlistComponent.Range3 r = comp.getLocalHiddenPortIndices();
     for (String name : hiddenPort.GetInportLabels())
-      map.add(name, "LOGISIM_HIDDEN_FPGA_INPUT" + (r.in++);
+      map.add(name, "LOGISIM_HIDDEN_FPGA_INPUT" + (r.in++));
     for (String name : hiddenPort.GetInOutLabels())
-      map.add(name, "LOGISIM_HIDDEN_FPGA_INOUT" + (r.inout++); // fixme: at top level, these *must* go directly to pins
+      map.add(name, "LOGISIM_HIDDEN_FPGA_INOUT" + (r.inout++)); // FIXME: at top level, these go directly to pins
     for (String name : hiddenPort.GetOutputLabels())
-      map.add(name, "LOGISIM_HIDDEN_FPGA_OUTPUT" + (r.out++);
+      map.add(name, "LOGISIM_HIDDEN_FPGA_OUTPUT" + (r.out++));
   }
 
   protected void getUnconnectedPortMappings(Hdl.Map map, PortInfo p) {

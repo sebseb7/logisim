@@ -952,7 +952,8 @@ public class Commander extends JFrame {
   private boolean performDRC() {
     clearAllMessages();
     Circuit root = circuitsList.getSelectedItem();
-    return root.getNetList().validate(err, lang, board.fpga.Vendor);
+    return root.getNetList().validate(err, lang, board.fpga.Vendor,
+        board.fpga.ClockFrequency, getClkPeriod());
   }
 
   private void doToolSettings() {
@@ -1052,7 +1053,7 @@ public class Commander extends JFrame {
     if (clockOption.getSelectedItem().equals(MAX_SPEED))
       return 0;
     else if (clockOption.getSelectedItem().equals(DYN_SPEED))
-      return 1;
+      return -1;
     Object item = clockDivCount.getSelectedItem();
     if (item == null)
       return 1;
@@ -1073,7 +1074,7 @@ public class Commander extends JFrame {
     // the root circuit (and all its subcircuits and components), the top-level
     // ticker (if needed), any clocks lifted to the top-level, etc.
     ToplevelHDLGenerator g = new ToplevelHDLGenerator(lang, err,
-        board.fpga.Vendor, oscFreq, clkPeriod, root, pinBindings);
+        board.fpga.Vendor, root, pinBindings);
 
     return g.writeAllHDLFiles(basedir);
   }
