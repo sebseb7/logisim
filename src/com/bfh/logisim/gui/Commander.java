@@ -35,11 +35,10 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -56,359 +55,277 @@ import com.bfh.logisim.download.XilinxDownload;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.BoardReader;
 import com.bfh.logisim.fpga.Chipset;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.hdlgenerator.FileWriter;
-import com.bfh.logisim.hdlgenerator.HDLGeneratorFactory;
-import com.bfh.logisim.hdlgenerator.TickComponentHDLGeneratorFactory;
-import com.bfh.logisim.hdlgenerator.ToplevelHDLGeneratorFactory;
-import com.bfh.logisim.hdlgenerator.CircuitHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.TopLevelHDLGenerator;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.Simulator;
 import com.cburch.logisim.file.LibraryEvent;
-import com.cburch.logisim.file.LibraryListener;
-import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.menu.MenuSimulate;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.proj.ProjectEvent;
-import com.cburch.logisim.proj.ProjectListener;
 
-public class Commander extends JFrame implements ActionListener {
+public class Commander extends JFrame {
 
-	private class MyLibraryListener implements LibraryListener {
+  private static final String SLASH = File.separator;
+  private static final String SANDBOX_DIR = "sandbox" + SLASH;
+  private static final String SCRIPT_DIR = "scripts" + SLASH;
+  private static final String UCF_DIR = "ucf" + SLASH;
+  private static final String[] HDL_PATHS = { "verilog", "vhdl", "scripts", "sandbox", "ucf" };
+  private static final String OTHER_BOARD = "Other";
 
-		@Override
-		public void libraryChanged(LibraryEvent event) {
-			if (event.getAction() == LibraryEvent.ADD_TOOL
-					|| event.getAction() == LibraryEvent.REMOVE_TOOL) {
-				RebuildCircuitSelection();
-			}
-		}
-	}
+  private final Project proj;
+  private Board board;
+  private String lang;
+  private int boardsListSelectedIndex;
+  private PinBindings pinBindings;
+  private final FPGAReport err = new FPGAReport(this);
+  private final Settings settings = new Settings();
 
-	private class MyProjListener implements ProjectListener {
+  private static final String MAX_SPEED = "Maximum Speed";
+  private static final String DIV_SPEED = "Reduced Speed";
+  private static final String DYN_SPEED = "Dynamic Speed";
 
-		@Override
-		public void projectChanged(ProjectEvent event) {
-			if (event.getAction() == ProjectEvent.ACTION_SET_CURRENT) {
-                                if (event.getCircuit() != null)
-                                    SetCurrentSheet(event.getCircuit().getName());
-			} else if (event.getAction() == ProjectEvent.ACTION_SET_FILE) {
-				RebuildCircuitSelection();
-			}
-		}
-	}
+  // Three steps: (1) Generate, (2) Synthesize, (3 Downlaod.
+  // User can do choose to do just first step, just last step, or all three steps.
+  private static final String HDL_GEN_ONLY = "Generate HDL only";
+  private static final String HDL_GEN_AND_DOWNLOAD = "Synthesize and Download";
+  private static final String HDL_DOWNLOAD_ONLY = "Download only";
 
-	private class MySimulatorListener implements Simulator.Listener {
-    public void simulatorReset(Simulator.Event e) { }
-    public void propagationCompleted(Simulator.Event e) { }
-    public void simulatorStateChanged(Simulator.Event e) { ChangeTickFrequency(); }
-	}
+  private final JLabel textMainCircuit = new JLabel("Choose main circuit ");
+  private final JLabel textTargetBoard = new JLabel("Choose target board ");
+  private final JLabel textTargetFreq = new JLabel("Choose tick frequency ");
+  private final JLabel textTargetDiv = new JLabel("Divide clock by...");
+  private final JLabel textAnnotation = new JLabel("Annotation method");
+  private final BoardIcon boardIcon = new BoardIcon();
+  private final JButton annotateButton = new JButton("Annotate");
+  private final JButton validateButton = new JButton("Download");
+  private final JCheckBox writeToFlash = new JCheckBox("Write to flash?");
+  private final JComboBox<String> boardsList = new JComboBox<>();
+  private final JComboBox<Circuit> circuitsList = new JComboBox<>();
+  private final JComboBox<String> clockOption = new JComboBox<>();
+  private final JComboBox<Object> clockDivRate = new JComboBox<>();
+  private final JComboBox<Object> clockDivCount = new JComboBox<>();
+  private final JComboBox<String> annotationList = new JComboBox<>();
+  private final JComboBox<String> HDLType = new JComboBox<>();
+  private final JComboBox<String> HDLAction = new JComboBox<>();
+  private final JButton toolSettings = new JButton("Settings");
+  private final Console messages = new Console("Messages");
+  private final ArrayList<Console> consoles = new ArrayList<>();
+  private final JTabbedPane tabbedPane = new JTabbedPane();
 
-	private BindingsDialog MapPannel;
-	private JLabel textMainCircuit = new JLabel("Choose main circuit ");
-	private JLabel textTargetBoard = new JLabel("Choose target board ");
-	private JLabel textTargetFreq = new JLabel("Choose tick frequency ");
-	private JLabel textTargetDiv = new JLabel("Divide clock by...");
-	private JLabel textAnnotation = new JLabel("Annotation method");
-	private JLabel boardPic = new JLabel();
-	private BoardIcon boardIcon = null;
-	private JButton annotateButton = new JButton();
-	private JButton validateButton = new JButton();
-	private JCheckBox writeToFlash = new JCheckBox("Write to flash?");
-	private JComboBox<String> boardsList = new JComboBox<>();
-	private JComboBox<String> circuitsList = new JComboBox<>();
-	private JComboBox<String> clockOption = new JComboBox<>();
-	private static final String clockMax = "Maximum Speed";
-	private static final String clockDiv = "Reduced Speed";
-	private static final String clockDyn = "Dynamic Speed";
-	private JComboBox<Object> clockDivRate = new JComboBox<>();
-	private JComboBox<Object> clockDivCount = new JComboBox<>();
-	private JComboBox<String> annotationList = new JComboBox<>();
-	private JComboBox<String> HDLType = new JComboBox<>();
-	private JComboBox<String> HDLOnly = new JComboBox<>();
-	private JButton ToolSettings = new JButton();
-	private Console messages = new Console("Messages");
-	private ArrayList<Console> consoles = new ArrayList<>();
-	private static final String OnlyHDLMessage = "Generate HDL only";
-	private static final String HDLandDownloadMessage = "Synthesize and Download";
-	private static final String OnlyDownloadMessage = "Download only";
-	private JTabbedPane tabbedPane = new JTabbedPane();
-	private Project MyProject;
-  public String getProjectName() { return MyProject.getLogisimFile().getName(); }
-	private Settings MySettings = new Settings();
-	private Board MyBoard = null;
-	private MyProjListener myprojList = new MyProjListener();
-	private MyLibraryListener myliblistener = new MyLibraryListener();
-	private MySimulatorListener mysimlistener = new MySimulatorListener();
-	private PinBindings MyMappableResources;
-	private String[] HDLPaths = { Settings.VERILOG.toLowerCase(),
-			Settings.VHDL.toLowerCase(), "scripts", "sandbox", "ucf" };
-	@SuppressWarnings("unused")
-	private static final Integer VerilogSourcePath = 0;
-	@SuppressWarnings("unused")
-	private static final Integer VHDLSourcePath = 1;
-	private static final Integer ScriptPath = 2;
-	private static final Integer SandboxPath = 3;
-	private static final Integer UCFPath = 4;
-	private FPGAReport MyReporter = new FPGAReport(this);
+  public Commander(Project p) {
+    super("FPGA Commander : " + p.getLogisimFile().getName());
+    proj = p;
+    lang = settings.GetHDLType();
 
-  void HDLOnlyUpdate() {
-    if ((MyBoard.fpga.Vendor == Chipset.ALTERA
-          && MySettings.GetAlteraToolPath().equals(Settings.Unknown))
-        || (MyBoard.fpga.Vendor == Chipset.XILINX
-          && MySettings.GetXilinxToolPath().equals(Settings.Unknown))) {
-      // Synthesis/download not possible.
-      if (!MySettings.GetHDLOnly()) {
-        MySettings.SetHdlOnly(true);
-        MySettings.UpdateSettingsFile();
+    board = BoardReader.read(settings.GetSelectedBoardFileName());
+    boardIcon.setImage(board == null ? null : board.image);
+
+    setResizable(true);
+    setAlwaysOnTop(false);
+    setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+
+    setLayout(new GridBagLayout());
+    GridBagConstraints c = new GridBagConstraints();
+    c.fill = GridBagConstraints.HORIZONTAL;
+
+    // listen for project changes
+    proj.addProjectListener(e -> {
+      if (e.getAction() == ProjectEvent.ACTION_SET_CURRENT && e.getCircuit() != null)
+        circuitList.setSelectedValue(e.getCircuit());
+      else if (e.getAction() == ProjectEvent.ACTION_SET_FILE)
+        updateCircuitList();
+    });
+    proj.getLogisimFile().addLibraryListener(e -> {
+      if (e.getAction() == LibraryEvent.ADD_TOOL || e.getAction() == LibraryEvent.REMOVE_TOOL)
+        updateCircuitList();
+    });
+
+    // listen for simulator changes
+    proj.getSimulator().addSimulatorListener(new Simulator.Listener {
+      public void simulatorReset(Simulator.Event e) { }
+      public void propagationCompleted(Simulator.Event e) { }
+      public void simulatorStateChanged(Simulator.Event e) { useTickSpeedFromSimulator(); }
+    });
+
+    // configure circuit list
+    circuitsList.setListCellRenderer(new DefaultListCellRenderer {
+      public Component getListCellRendererComponent(JList list, Object v, int i, boolean s, boolean f) {
+        return super.getListCellRendererComponent(((Circuit)v).getName(), i, s, f);
       }
-      HDLOnly.setSelectedItem(OnlyHDLMessage);
-      HDLOnly.setEnabled(false);
-      AddInfo("Tool path is not set correctly. " +
-          "Synthesis and download will not be available.");
-      AddInfo("Please set the path to Altera or Xilinx tools using the \"Settings\" button");
-    } else if (MySettings.GetHDLOnly()) {
-      // Synthesis/download possible, but user selected to only generate HDL.
-      HDLOnly.setSelectedItem(OnlyHDLMessage);
-      HDLOnly.setEnabled(true);
-    } else {
-      // Synthesis/download possible, user elects to do so.
-      HDLOnly.setSelectedItem(HDLandDownloadMessage);
-      HDLOnly.setEnabled(true);
-    }
-  }
+    });
+    updateCircuitList();
 
-	public Commander(Project Main) {
-		super("FPGA Commander : " + Main.getLogisimFile().getName());
-		MyProject = Main;
-		setResizable(true);
-		setAlwaysOnTop(false);
-		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+    // configure board list
+    for (String boardname : settings.GetBoardNames())
+      boardsList.addItem(boardname);
+    boardsList.addItem(OTHER_BOARD);
+    boardsList.setSelectedValue(settings.GetSelectedBoard());
+    boardsListSelectedIndex = boardsList.getSelectedIndex();
+    boardsList.addActionListener(e -> setBoard());
 
-		GridBagLayout thisLayout = new GridBagLayout();
-		GridBagConstraints c = new GridBagConstraints();
-		setLayout(thisLayout);
-
-		// change main circuit
-		circuitsList.setEnabled(true);
-		c.fill = GridBagConstraints.HORIZONTAL;
-		c.gridx = 0;
-		c.gridy = 2;
-		textMainCircuit.setEnabled(true);
-		add(textMainCircuit, c);
-		c.gridx = 1;
-		c.gridwidth = 2;
-		// circuitsList.addActionListener(this);
-		circuitsList.setActionCommand("mainCircuit");
-		int i = 0;
-		for (Circuit thisCircuit : MyProject.getLogisimFile().getCircuits()) {
-			circuitsList.addItem(thisCircuit.getName());
-			if (MyProject.getCurrentCircuit() != null &&
-                                thisCircuit.getName().equals(
-					MyProject.getCurrentCircuit().getName())) {
-				circuitsList.setSelectedIndex(i);
-			}
-			i++;
-		}
-		MyProject.addProjectListener(myprojList);
-		MyProject.getLogisimFile().addLibraryListener(myliblistener);
-		circuitsList.setActionCommand("Circuit");
-		circuitsList.addActionListener(this);
-		add(circuitsList, c);
-
-		// Big TODO: add in all classes (Settings and this one) support for
-		// board xmls stored on disc (rather than in the resources directory)
-		// change target board
-		c.gridwidth = 1;
-		c.gridx = 0;
-		c.gridy = 3;
-		textTargetBoard.setEnabled(true);
-		add(textTargetBoard, c);
-		c.gridx = 1;
-		c.gridwidth = 2;
-		boardsList.addItem("Other");
-		i = 1;
-		for (String boardname : MySettings.GetBoardNames()) {
-			boardsList.addItem(boardname);
-			if (boardname.equals(MySettings.GetSelectedBoard())) {
-				boardsList.setSelectedIndex(i);
-			}
-			i++;
-		}
-		boardsList.setEnabled(true);
-		boardsList.addActionListener(this);
-		boardsList.setActionCommand("targetBoard");
-		add(boardsList, c);
-
-		// select clock frequency
-		c.gridwidth = 1;
-		c.gridx = 0;
-		c.gridy = 4;
-		textTargetFreq.setEnabled(true);
-		add(textTargetFreq, c);
-		clockOption.setEnabled(true);
-                clockOption.addItem(clockMax);
-                clockOption.addItem(clockDiv);
-                clockOption.addItem(clockDyn);
-                clockOption.setSelectedItem(clockDiv);
-                clockDivRate.setEnabled(true);
-                clockDivCount.setEnabled(true);
-                clockDivRate.setEditable(true);
-                clockDivCount.setEditable(true);
-		clockOption.setActionCommand("ClockOption");
-		clockDivRate.setActionCommand("ClockDivRate");
-		clockDivCount.setActionCommand("ClockDivCount");
-		clockOption.addActionListener(this);
-		clockDivRate.addActionListener(this);
-		clockDivCount.addActionListener(this);
-		c.gridy = 4;
-		c.gridx = 1;
-		add(clockOption, c);
-		c.gridx = 2;
-		add(clockDivRate, c);
-		c.gridy = 5;
-		c.gridx = 1;
-		textTargetDiv.setEnabled(true);
-		add(textTargetDiv, c);
-		c.gridx = 2;
-		add(clockDivCount, c);
-
-
-		// select annotation level
-		c.gridx = 0;
-		c.gridy = 6;
-		textAnnotation.setEnabled(true);
-		add(textAnnotation, c);
-		annotationList.addItem("Relabel all components");
-		annotationList.addItem("Add missing labels");
-		annotationList.setSelectedIndex(1);
-		c.gridwidth = 2;
-		c.gridx = 1;
-		add(annotationList, c);
-
-		/* Read the selected board information to retrieve board picture */
-		MyBoard = BoardReader.read(MySettings.GetSelectedBoardFileName());
-		MyBoard.setBoardName(boardsList.getSelectedItem().toString());
-		boardIcon = new BoardIcon(MyBoard.GetImage());
-		// set board image on panel creation
-		boardPic.setIcon(boardIcon);
-		c.gridx = 3;
-		c.gridy = 2;
-		c.gridheight = 6;
-		// c.gridwidth = 2;
-		add(boardPic, c);
-
-		c.gridheight = 1;
-		// c.gridwidth = 1;
-
+    // configure clock speed options
+    clockOption.addItem(MAX_SPEED);
+    clockOption.addItem(DIV_SPEED);
+    clockOption.addItem(DYN_SPEED);
+    clockOption.setSelectedItem(DIV_SPEED);
+    clockDivRate.setEditable(true);
+    clockDivCount.setEditable(true);
+    clockOptions.addActionListener(e -> setClockOption());
+    clockDivRate.addActionListener(e -> setClockDivRate());
+    clockDivCount.addActionListener(e -> setClockDivCount());
     populateClockDivOptions();
     updateClockOptions();
-		MyProject.getSimulator().addSimulatorListener(mysimlistener);
 
-		// validate button
-		validateButton.setActionCommand("Download");
-		validateButton.setText("Download");
-		validateButton.addActionListener(this);
-		c.gridwidth = 1;
-		c.gridx = 1;
-		c.gridy = 7;
-		add(validateButton, c);
+    // configure annotation options
+    annotationList.addItem("Relabel all components");
+    annotationList.addItem("Add missing labels");
+    annotationList.setSelectedIndex(1);
 
-		// write to flash
-		writeToFlash.setVisible(MyBoard.fpga.FlashDefined);
-		writeToFlash.setSelected(false);
-		c.gridx = 2;
-		c.gridy = 7;
-		add(writeToFlash, c);
+    // circuit selection
+    c.gridwidth = 1;
+    c.gridx = 0;
+    c.gridy = 2;
+    add(textMainCircuit, c);
+    c.gridx = 1;
+    c.gridwidth = 2;
+    add(circuitsList, c);
 
-		// annotate button
-		annotateButton.setActionCommand("annotate");
-		annotateButton.setText("Annotate");
-		annotateButton.addActionListener(this);
-		c.gridwidth = 1;
-		c.gridx = 0;
-		c.gridy = 7;
-		add(annotateButton, c);
+    // target board selection
+    c.gridwidth = 1;
+    c.gridx = 0;
+    c.gridy = 3;
+    add(textTargetBoard, c);
+    c.gridx = 1;
+    c.gridwidth = 2;
+    add(boardsList, c);
 
-		// HDL Type Button
-		HDLType.addItem(Settings.VHDL);
-		HDLType.addItem(Settings.VERILOG);
-    HDLType.setSelectedItem(MySettings.GetHDLType());
-		HDLType.setEnabled(true);
-		HDLType.addActionListener(this);
-		HDLType.setActionCommand("HDLType");
-		c.gridx = 0;
-		c.gridy = 0;
-		add(HDLType, c);
+    // clock speed options
+    c.gridwidth = 1;
+    c.gridx = 0;
+    c.gridy = 4;
+    add(textTargetFreq, c);
+    c.gridy = 4;
+    c.gridx = 1;
+    add(clockOption, c);
+    c.gridx = 2;
+    add(clockDivRate, c);
+    c.gridy = 5;
+    c.gridx = 1;
+    add(textTargetDiv, c);
+    c.gridx = 2;
+    add(clockDivCount, c);
 
-		// HDL Only Radio
-                HDLOnly.addItem(OnlyHDLMessage);
-                HDLOnly.addItem(HDLandDownloadMessage);
-                HDLOnly.addItem(OnlyDownloadMessage);
-                HDLOnlyUpdate();
-		HDLOnly.setActionCommand("HDLOnly");
-		HDLOnly.addActionListener(this);
-		c.gridwidth = 2;
-		c.gridx = 1;
-		c.gridy = 0;
-		add(HDLOnly, c);
+    // annotation options
+    c.gridx = 0;
+    c.gridy = 6;
+    add(textAnnotation, c);
+    c.gridwidth = 2;
+    c.gridx = 1;
+    add(annotationList, c);
 
-		// Tool Settings
-		ToolSettings.setText("Settings");
-		ToolSettings.setActionCommand("ToolSettings");
-		ToolSettings.addActionListener(this);
-		c.gridwidth = 2;
-		c.gridx = 3;
-		c.gridy = 0;
-		add(ToolSettings, c);
+    // board picture
+    c.gridx = 3;
+    c.gridy = 2;
+    c.gridheight = 6;
+    add(boardIcon.label, c);
+    c.gridheight = 1;
 
-		tabbedPane.add(messages); // index 0
+    // validate button
+    validateButton.addActionListener(e -> doDownloadPrep());
+    c.gridwidth = 1;
+    c.gridx = 1;
+    c.gridy = 7;
+    add(validateButton, c);
 
-		c.fill = GridBagConstraints.BOTH;
-		c.gridx = 0;
-		c.gridy = 8;
-		c.gridwidth = 5;
-                c.weightx = 1;
-                c.weighty = 1;
+    // write to flash
+    writeToFlash.setVisible(board != null && board.fpga.FlashDefined);
+    writeToFlash.setSelected(false);
+    c.gridx = 2;
+    c.gridy = 7;
+    add(writeToFlash, c);
 
-		tabbedPane.setPreferredSize(new Dimension(700, 20 * Console.FONT_SIZE));
-		add(tabbedPane, c);
+    // annotate button
+    annotateButton.addActionListener(e -> annotate(annotationList.getSelectedIndex() == 0));
+    c.gridwidth = 1;
+    c.gridx = 0;
+    c.gridy = 7;
+    add(annotateButton, c);
 
-		pack();
-		Dimension size = getSize();
-		size.height -= 10 * Console.FONT_SIZE;
-		setMinimumSize(size);
+    // HDL type button
+    HDLType.addItem(Settings.VHDL);
+    HDLType.addItem(Settings.VERILOG);
+    HDLType.setSelectedItem(lang);
+    HDLType.addActionListener(e -> setHDLType());
+    c.gridx = 0;
+    c.gridy = 0;
+    add(HDLType, c);
 
-		setLocation(Projects.getCenteredLoc(getWidth(), getHeight()));
-		// setLocationRelativeTo(null);
-		
-		setVisible(false);
-		if (MyProject.getLogisimFile().getLoader().getMainFile() != null) {
-			MapPannel = new BindingsDialog(this, MyProject
-					.getLogisimFile().getLoader().getMainFile()
-					.getAbsolutePath());
-		} else {
-			MapPannel = new BindingsDialog(this, "");
-		}
-		MapPannel.SetBoard(MyBoard);
+    // HDL action selection
+    HDLAction.addItem(HDL_GEN_ONLY);
+    HDLAction.addItem(HDL_GEN_AND_DOWNLOAD);
+    HDLAction.addItem(HDL_DOWNLOAD_ONLY);
+    HDLAction.addActionListener(e -> setHDLAction());
+    populateHDLAction();
+    c.gridwidth = 2;
+    c.gridx = 1;
+    c.gridy = 0;
+    add(HDLAction, c);
 
-                HDLOnlyUpdate();
-		validateButton.requestFocus();
+    // settings button
+    toolSettings.setText("Settings");
+    toolSettings.addActionListener(e -> doToolSettings());
+    c.gridwidth = 2;
+    c.gridx = 3;
+    c.gridy = 0;
+    add(toolSettings, c);
+
+    // console panels
+    tabbedPane.add(messages); // tab index 0 is for console messages
+    tabbedPane.setPreferredSize(new Dimension(700, 20 * Console.FONT_SIZE));
+    c.fill = GridBagConstraints.BOTH;
+    c.gridx = 0;
+    c.gridy = 8;
+    c.gridwidth = 5;
+    c.weightx = 1;
+    c.weighty = 1;
+    add(tabbedPane, c);
+
+    // setup
+    pack();
+    Dimension size = getSize();
+    size.height -= 10 * Console.FONT_SIZE;
+    setMinimumSize(size);
+    setLocation(Projects.getCenteredLoc(getWidth(), getHeight()));
+
+    // show window
+    validateButton.requestFocus();
     setVisible(true);
   }
 
+  public String getProjectName() {
+    return proj.getLogisimFile().getName();
+  }
+
+  private void updateCircuitList() {
+    circuitsList.clear();
+    for (Circuit circ : proj.getLogisimFile().getCircuits())
+      circuitsList.addItem(circ);
+    Circuit circ = proj.getCurrentCircuit();
+    if (circ == null)
+      circ = proj.getLogisimFile().getMainCircuit();
+    circuitsList.setSelectedValue(circ);
+  }
+
   private void updateClockOptions() {
-    /*
-       LogisimFile myfile = MyProject.getLogisimFile();
-       String CircuitName = circuitsList.getSelectedItem().toString();
-       Circuit RootSheet = myfile.getCircuit(CircuitName);
-       int nClocks = RootSheet.getNetList().NumberOfClockTrees();
-       clockOption.setEnabled(nClocks > 0);
-       clockDivRate.setEnabled(nClocks > 0);
-       clockDivCount.setEnabled(nClocks > 0);
-       */
+    // Circuit root = circuitsList.getSelectedItem();
+    // int nClocks = root.getNetList().NumberOfClockTrees();
+    // clockOption.setEnabled(nClocks > 0);
+    // clockDivRate.setEnabled(nClocks > 0);
+    // clockDivCount.setEnabled(nClocks > 0);
   }
 
   boolean updatingClockMenus = false;
@@ -416,7 +333,7 @@ public class Commander extends JFrame implements ActionListener {
     updatingClockMenus = true;
     clockDivCount.removeAllItems();
     clockDivRate.removeAllItems();
-    long base = MyBoard.fpga.ClockFrequency;
+    long base = board == null ? 50000000 : board.fpga.ClockFrequency;
     ArrayList<Integer> counts = new ArrayList<>();
     ArrayList<Double> freqs = new ArrayList<>();
     double ff = (double)base;
@@ -424,9 +341,8 @@ public class Commander extends JFrame implements ActionListener {
       freqs.add(ff);
       ff /= 2;
     }
-    for (double f : MenuSimulate.SupportedTickFrequencies) {
+    for (double f : MenuSimulate.SupportedTickFrequencies)
       freqs.add(f);
-    }
     for (double f : freqs) {
       int count = countForFreq(base, f);
       if (counts.contains(count))
@@ -435,14 +351,13 @@ public class Commander extends JFrame implements ActionListener {
       String rate = rateForCount(base, count);
       clockDivCount.addItem(count);
       clockDivRate.addItem(new ExactRate(base, count));
-      if (Math.abs((MyProject.getSimulator().getTickFrequency() - f)/f) < 0.0001) {
+      if (Math.abs((proj.getSimulator().getTickFrequency() - f)/f) < 0.0001) {
         clockDivCount.setSelectedItem(count);
         clockDivRate.setSelectedItem(new ExactRate(base, count));
       }
     }
-    if (clockDivCount.getSelectedItem() == null && clockDivCount.getItemCount() > 0) {
+    if (clockDivCount.getSelectedItem() == null && clockDivCount.getItemCount() > 0)
       clockDivCount.setSelectedIndex(0);
-    }
     if (clockDivRate.getSelectedItem() == null && clockDivRate.getItemCount() > 0)
       clockDivRate.setSelectedIndex(0);
     updatingClockMenus = false;
@@ -451,12 +366,11 @@ public class Commander extends JFrame implements ActionListener {
   }
 
   private void setClockOption() {
-    boolean div = clockOption.getSelectedItem().equals(clockDiv);
-    boolean max = clockOption.getSelectedItem().equals(clockMax);
+    boolean div = clockOption.getSelectedItem().equals(DIV_SPEED);
+    boolean max = clockOption.getSelectedItem().equals(MAX_SPEED);
     clockDivRate.setEnabled(div);
     clockDivCount.setEnabled(div);
-    // textTargetDiv.setEnabled(div);
-    long base = MyBoard.fpga.ClockFrequency;
+    long base = board == null ? 50000000 : board.fpga.ClockFrequency;
     if (max) {
       clockDivRate.setSelectedItem(new ExactRate(base, 0));
       clockDivCount.setSelectedItem("undivided");
@@ -465,7 +379,7 @@ public class Commander extends JFrame implements ActionListener {
         clockDivCount.setSelectedItem(prevSelectedDivCount);
         clockDivRate.setSelectedItem(prevSelectedDivRate);
       } else {
-        ChangeTickFrequency();
+        useTickSpeedFromSimulator();
       }
     } else {
       clockDivRate.setSelectedItem(new ExactRate(base, -1));
@@ -490,6 +404,7 @@ public class Commander extends JFrame implements ActionListener {
       else
         rate = rateForCount(base, count);
     }
+    @Override
     public String toString() {
       return rate;
     }
@@ -501,18 +416,18 @@ public class Commander extends JFrame implements ActionListener {
       }
       return false;
     }
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
       return (int)(39 * (base + 27) + count);
     }
   }
 
   private void setClockDivRate() {
-    if (updatingClockMenus) {
+    if (updatingClockMenus)
       return;
-    }
-    if (!clockOption.getSelectedItem().equals(clockDiv))
+    if (!clockOption.getSelectedItem().equals(DIV_SPEED))
       return;
-    long base = MyBoard.fpga.ClockFrequency;
+    long base = board == null ? 50000000 : tools board.fpga.ClockFrequency;
     Object o = clockDivRate.getSelectedItem();
     Integer i;
     if (o instanceof ExactRate) {
@@ -525,28 +440,25 @@ public class Commander extends JFrame implements ActionListener {
           clockDivCount.setSelectedItem(prevSelectedDivCount);
           clockDivRate.setSelectedItem(prevSelectedDivRate);
         } else {
-          ChangeTickFrequency();
+          useTickSpeedFromSimulator();
         }
         return;
       }
       String rate = rateForCount(base, i);
       clockDivRate.setSelectedItem(rate); // rounds to nearest acceptable value
     }
-    if (clockDivCount.getSelectedItem() == null || !clockDivCount.getSelectedItem().equals(i)) {
+    if (clockDivCount.getSelectedItem() == null || !clockDivCount.getSelectedItem().equals(i))
       clockDivCount.setSelectedItem(i);
-    }
     prevSelectedDivRate = clockDivRate.getSelectedItem();
     prevSelectedDivCount = (Integer)clockDivCount.getSelectedItem();
   }
 
   private void setClockDivCount() {
-    if (updatingClockMenus) {
+    if (updatingClockMenus)
       return;
-    }
-
-    if (!clockOption.getSelectedItem().equals(clockDiv))
+    if (!clockOption.getSelectedItem().equals(DIV_SPEED))
       return;
-    long base = MyBoard.fpga.ClockFrequency;
+    long base = board == null ? 50000000 : board.fpga.ClockFrequency;
     Object item = clockDivCount.getSelectedItem();
     String s = item == null ? "-1" : item.toString();
     int count = -1;
@@ -557,13 +469,24 @@ public class Commander extends JFrame implements ActionListener {
         clockDivCount.setSelectedItem(prevSelectedDivCount);
         clockDivRate.setSelectedItem(prevSelectedDivRate);
       } else {
-        ChangeTickFrequency();
+        useTickSpeedFromSimulator();
       }
-      return;
+    } else {
+      clockDivRate.setSelectedItem(new ExactRate(base, count));
+      prevSelectedDivRate = clockDivRate.getSelectedItem();
+      prevSelectedDivCount = count;
     }
-    clockDivRate.setSelectedItem(new ExactRate(base, count));
-    prevSelectedDivRate = clockDivRate.getSelectedItem();
-    prevSelectedDivCount = count;
+  }
+
+  private void useTickSpeedFromSimulator() {
+    long base = board.fpga.ClockFrequency;
+    for (double f : MenuSimulate.SupportedTickFrequencies) {
+      int count = countForFreq(base, f);
+      if (Math.abs((proj.getSimulator().getTickFrequency() - f)/f) < 0.0001) {
+        clockDivCount.setSelectedItem(count);
+        clockDivRate.setSelectedItem(new ExactRate(base, count));
+      }
+    }
   }
 
   private static Integer countForRate(long base, String rate) {
@@ -655,84 +578,59 @@ public class Commander extends JFrame implements ActionListener {
     }
   }
 
-  @Override
-  public void actionPerformed(ActionEvent e) {
-    if (e.getActionCommand().equals("annotate")) {
-      Annotate(annotationList.getSelectedIndex() == 0);
-    } else if (e.getActionCommand().equals("ClockOption")) {
-      setClockOption();
-    } else if (e.getActionCommand().equals("ClockDivRate")) {
-      setClockDivRate();
-    } else if (e.getActionCommand().equals("ClockDivCount")) {
-      setClockDivCount();
-    } else if (e.getActionCommand().equals("HDLType")) {
-      handleHDLType();
-    } else if (e.getActionCommand().equals("ToolSettings")) {
-      selectToolSettings();
-    } else if (e.getActionCommand().equals("HDLOnly")) {
-      handleHDLOnly();
-    } else if (e.getActionCommand().equals("Download")) {
-      DownLoad();
-    } else if (e.getActionCommand().equals("mainCircuit")) {
-      updateClockOptions();
-    } else if (e.getActionCommand().equals("targetBoard")) {
-      populateClockDivOptions();
-      if (!boardsList.getSelectedItem().equals("Other")) {
-        MySettings.SetSelectedBoard(boardsList.getSelectedItem()
-            .toString());
-        MySettings.UpdateSettingsFile();
-        MyBoard = BoardReader.read(MySettings.GetSelectedBoardFileName());
-        MyBoard.setBoardName(boardsList.getSelectedItem()
-            .toString());
-        MapPannel.SetBoard(MyBoard);
-        boardIcon = new BoardIcon(MyBoard.GetImage());
-        boardPic.setIcon(boardIcon);
-        boardPic.repaint();
-        HDLOnlyUpdate();
-        writeToFlash.setSelected(false);
-        writeToFlash.setVisible(MyBoard.fpga.FlashDefined);
-      } else {
-        String NewBoardFileName = GetBoardFile();
-        MyBoard = BoardReader.read(NewBoardFileName);
-        if (MyBoard == null) {
-          for (int index = 0 ; index < boardsList.getItemCount() ; index ++)
-            if (boardsList.getItemAt(index).equals(MySettings.GetSelectedBoard()))
-              boardsList.setSelectedIndex(index);
-          this.AddErrors("\""+NewBoardFileName+"\" does not has the proper format for a board file!\n");
-        } else {
-          String[] Parts = NewBoardFileName.split(File.separator);
-          String BoardInfo = Parts[Parts.length-1].replace(".xml", "");
-          Boolean CanAdd = true;
-          for (int index = 0 ; index < boardsList.getItemCount() ; index ++)
-            if (boardsList.getItemAt(index).equals(BoardInfo)) {
-              this.AddErrors("A board with the name \""+BoardInfo+"\" already exisits, cannot add new board descriptor\n");
-              CanAdd = false;
-            }
-          if (CanAdd) {
-            MySettings.AddExternalBoard(NewBoardFileName);
-            MySettings.SetSelectedBoard(BoardInfo);
-            MySettings.UpdateSettingsFile();
-            boardsList.addItem(BoardInfo);
-            for (int index = 0 ; index < boardsList.getItemCount() ; index ++)
-              if (boardsList.getItemAt(index).equals(BoardInfo))
-                boardsList.setSelectedIndex(index);
-            MyBoard.setBoardName(BoardInfo);
-            MapPannel.SetBoard(MyBoard);
-            boardIcon = new BoardIcon(MyBoard.GetImage());
-            boardPic.setIcon(boardIcon);
-            boardPic.repaint();
-            HDLOnlyUpdate();
-            writeToFlash.setSelected(false);
-            writeToFlash.setVisible(MyBoard.fpga.FlashDefined);
-          } else {
-            for (int index = 0 ; index < boardsList.getItemCount() ; index ++)
-              if (boardsList.getItemAt(index).equals(MySettings.GetSelectedBoard()))
-                boardsList.setSelectedIndex(index);
-          }
-        }
-
-      }
+  private boolean settingBoard = fasle;
+  private void setBoard() {
+    if (settingBoard)
+      return;
+    settingBoard = true;
+    Board old = board;
+    String boardName = boardsList.getSelectedItem();
+    if (boardName == OTHER_BOARD) {
+      doLoadOtherBoard();
+    } else {
+      settings.SetSelectedBoard(boardName);
+      settings.UpdateSettingsFile();
+      board = BoardReader.read(settings.GetSelectedBoardFileName());
     }
+    if (board == null || board == old) {
+      // load failed, cancelled, or pointless... go back to previous selection
+      board = old;
+      boardsList.setSelectedIndex(boardsListSelectedIndex);
+      settingBoard = false;
+      annotateButton.setEnabled(board != null);
+      validateButton.setEnabled(board != null);
+      return;
+    }
+    cachedPinBindings = null;
+    annotateButton.setEnabled(true);
+    validateButton.setEnabled(true);
+    boardsListSelectedIndex = boardsList.getSelectedIndex();
+    settingBoard = false;
+    boardIcon.setImage(board == null ? null : board.image);
+    writeToFlash.setSelected(false);
+    writeToFlash.setVisible(board != null && board.fpga.FlashDefined);
+    populateClockDivOptions();
+  }
+
+  private void doLoadOtherBoard() {
+    String filename = doBoardFileSelect();
+    if (filename == null || filename.isEmpty())
+      return; // cancelled
+    board = BoardReader.read(NewBoardFileName);
+    if (board == null)
+      return; // failed to load
+    if (settings.GetBoardNames().contains(board.name)) {
+      AddErrors("A board with the name \""+board.name+"\" already exists. "
+          + "Either rename your board file, or edit Logisim's XML settings file by "
+          + "hand to remove the existing board.");
+      board = null;
+      return;
+    }
+    settings.AddExternalBoard(filename);
+    settings.SetSelectedBoard(board.name);
+    settings.UpdateSettingsFile();
+    boardsList.addItem(board.name);
+    boardsList.setSelectedItem(board.name);
   }
 
   public void AddConsole(String Message) {
@@ -765,58 +663,48 @@ public class Commander extends JFrame implements ActionListener {
     RepaintConsoles();
   }
 
-  private void Annotate(boolean ClearExistingLabels) {
+  private void annotate(boolean clearExistingLabels) {
     clearAllMessages();
-    String CircuitName = circuitsList.getSelectedItem().toString();
-    Circuit root = MyProject.getLogisimFile().getCircuit(CircuitName);
-    if (root != null) {
-      if (ClearExistingLabels) {
-        root.ClearAnnotationLevel();
-      }
-      root.Annotate(ClearExistingLabels, MyReporter,
-          MySettings.GetHDLType(), MyBoard.fpga.Vendor);
-      MyReporter.AddInfo("Annotation done");
-      /* TODO: Dirty hack, see Circuit.java function Annotate for details */
-      MyProject.repaintCanvas();
-      MyProject.getLogisimFile().setDirty(true);
+    if (board == null) {
+      err.AddError("Please select a valid FPGA board before annotation.");
+      return;
     }
+    Circuit root = circuitsList.getSelectedItem();
+    if (root == null)
+      return; // huh?
+    if (clearExistingLabels)
+      root.ClearAnnotationLevel();
+    root.Annotate(clearExistingLabels, err, lang, board.fpga.Vendor);
+    err.AddInfo("Annotation done");
+    // TODO: Fix this dirty hack, see Circuit.Annotate() for details.
+    proj.repaintCanvas();
+    proj.getLogisimFile().setDirty(true);
   }
 
-  private void ChangeTickFrequency() {
-    long base = MyBoard.fpga.ClockFrequency;
-    for (double f : MenuSimulate.SupportedTickFrequencies) {
-      int count = countForFreq(base, f);
-      if (Math.abs((MyProject.getSimulator().getTickFrequency() - f)/f) < 0.0001) {
-        clockDivCount.setSelectedItem(count);
-        clockDivRate.setSelectedItem(new ExactRate(base, count));
-      }
-    }
-  }
-
-  private boolean CleanDirectory(String dir) {
+  private boolean cleanDirectory(String dirname) {
     try {
-      File thisDir = new File(dir);
-      if (!thisDir.exists()) {
+      File dir = new File(dirname);
+      if (!dir.exists())
         return true;
-      }
-      for (File theFiles : thisDir.listFiles()) {
-        if (theFiles.isDirectory()) {
-          if (!CleanDirectory(theFiles.getPath())) {
+      for (File f : dir.listFiles()) {
+        if (f.isDirectory()) {
+          if (!cleanDirectory(f.getPath()))
             return false;
-          }
         } else {
-          if (!theFiles.delete()) {
+          if (!f.delete()) {
+            err.AddFatalError("Unable to remove old project file: %s", f.getPath());
             return false;
           }
         }
       }
-      if (!thisDir.delete()) {
+      if (!dir.delete()) {
+        err.AddFatalError("Unable to remove old project directory: %s", f.getPath());
         return false;
-      } else {
-        return true;
       }
+      return true;
     } catch (Exception e) {
-      MyReporter.AddFatalError("Could not remove directory tree :" + dir);
+      err.AddFatalError("Error removing directory tree: %s\n   detail: %s", dirname,
+          e.getMessage());
       return false;
     }
   }
@@ -840,300 +728,292 @@ public class Commander extends JFrame implements ActionListener {
     RepaintConsoles();
   }
 
-  private boolean skipHdl() {
-    return HDLOnly.getSelectedItem().toString().equals(OnlyDownloadMessage);
+  private boolean justDownload() {
+    return HDLAction.getSelectedItem().equals(HDL_DOWNLOAD_ONLY);
   }
 
-  private void DownLoad() {
+  private void doDownloadPrep() {
     ClearConsoles();
-    String Name = MyProject.getLogisimFile().getName();
-    if (Name.indexOf(" ") != -1) {
-      AddErrors("The file '" + Name + "' contains a space.");
-      AddErrors("Spaces are not permitted by the HDL synthesis engine. Please");
-      AddErrors("rename your file and directory to not have any spaces.");
+    if (board == null) {
+      AddErrors("No FPGA board is selected. Please select an FPGA board.");
       return;
     }
-    String Dir = MyProject.getLogisimFile().getLoader().getMainFile().toString();
-    if (Dir.indexOf(" ") != -1) {
-      AddErrors("The directory '" + Dir + "' contains a space.");
-      AddErrors("Spaces are not permitted by the HDL synthesis engine. Please");
-      AddErrors("rename your file and directory to not have any spaces.");
+    Circuit root = circuitsList.getSelectedItem();
+    if (root == null) {
+      AddErrors("INTERNAL ERROR: no circuit selected.");
       return;
     }
-    if (MySettings.GetHDLOnly() || !skipHdl()) {
-      AddInfo("Performing DRC");
-      if (!performDRC()) {
-        AddErrors("DRC Failed");
-        return;
-      }
-      AddInfo("Mapping Pins");
-      if (!MapDesign()) {
-        AddErrors("Design could not be mapped");
-        return;
-      }
-      AddInfo("Generating HDL");
-      if (!writeHDL()) {
-        AddErrors("Could not create HDL files");
-        return;
-      }
-      AddInfo("Successfully created HDL files");
-    } else if (!MySettings.GetHDLOnly()) {
-      AddInfo("*** NOTE *** Skipping HDL file generation and synthesis.");
+    String path = proj.getLogisimFile().getName();
+    if (path.indexOf(" ") != -1) {
+      AddErrors("The file '" + path + "' contains a space.");
+      AddErrors("Spaces are not permitted by the HDL synthesis engine. Please");
+      AddErrors("rename your files and directories to not have any spaces.");
+      return;
+    }
+    path = proj.getLogisimFile().getLoader().getMainFile().toString();
+    if (path.indexOf(" ") != -1) {
+      AddErrors("The directory '" + path + "' contains a space.");
+      AddErrors("Spaces are not permitted by the HDL synthesis engine. Please");
+      AddErrors("rename your files and directories to not have any spaces.");
+      return;
+    }
+    boolean badTools = settings.GetToolsAreDisabled();
+    if (justDownload() && !badTools) {
+      AddInfo("*** NOTE *** Skipping both HDL generation and synthesis.");
       AddInfo("*** NOTE *** Recent changes to circuits will not take effect.");
+      doSynthesisAndDownload(null);
+    } else if (!justDownload()) {
+      AddInfo("Performing design rule checks (DRC)");
+      if (!performDRC()) {
+        AddErrors("DRC failed, synthesis can't continue.");
+        return;
+      }
+      AddInfo("Performing pin assignment");
+      PinBindings pinBindings = performPinAssignments();
+      if (pinBindings == null) {
+        AddErrors("Pin assignment failed or is incomplete, synthesis can't continue.");
+        return;
+      }
+      AddInfo("Generating HDL files");
+      if (!writeHDL(pinBindings)) {
+        AddErrors("HDL file generation failed, synthesis can't continue.");
+        return;
+      }
+      AddInfo("HDL files are ready for synthesis.");
+      doSynthesisAndDownload(pinBindings);
     }
-    DownLoadDesign(MySettings.GetHDLOnly());
   }
 
-  private String GetWorkspacePath() {
-    File projFile = MyProject.getLogisimFile().getLoader().getMainFile();
-    return MySettings.GetWorkspacePath(projFile);
+  private String workspacePath() {
+    File projFile = proj.getLogisimFile().getLoader().getMainFile();
+    return settings.GetWorkspacePath(projFile);
+  }
+
+  private String projectWorkspace() {
+    return workspacePath() + SLASH
+        + proj.getLogisimFile().getName() + SLASH;
+  }
+
+  private String circuitWorkspace() {
+    String rootname = circuitsList.getSelectedItem().getName();
+    return projectWorkspace() +
+        CorrectLabel.getCorrectLabel(rootname) + SLASH;
   }
 
   private boolean readyForDownload() {
-    String CircuitName = circuitsList.getSelectedItem().toString();
-    String ProjectDir = GetWorkspacePath() + File.separator
-        + MyProject.getLogisimFile().getName();
-    if (!ProjectDir.endsWith(File.separator)) {
-      ProjectDir += File.separator;
-    }
-    LogisimFile myfile = MyProject.getLogisimFile();
-    Circuit RootSheet = myfile.getCircuit(CircuitName);
-    ProjectDir += CorrectLabel.getCorrectLabel(RootSheet.getName())
-        + File.separator;
-    String SourcePath = ProjectDir + MySettings.GetHDLType().toLowerCase()
-        + File.separator;
-    if (MyBoard.fpga.Vendor == Chipset.ALTERA) {
-      return AlteraDownload.readyForDownload(ProjectDir + HDLPaths[SandboxPath] + File.separator);
-    } else {
-      // todo: xilinx readyForDownload()
-      return MapPannel.isDoneAssignment();
-    }
-  }
-
-  private void DownLoadDesign(boolean generateOnly) {
-    String CircuitName = circuitsList.getSelectedItem().toString();
-    String ProjectDir = GetWorkspacePath() + File.separator
-        + MyProject.getLogisimFile().getName();
-    if (!ProjectDir.endsWith(File.separator)) {
-      ProjectDir += File.separator;
-    }
-    LogisimFile myfile = MyProject.getLogisimFile();
-    Circuit RootSheet = myfile.getCircuit(CircuitName);
-    ProjectDir += CorrectLabel.getCorrectLabel(RootSheet.getName())
-        + File.separator;
-    String SourcePath = ProjectDir + MySettings.GetHDLType().toLowerCase()
-        + File.separator;
-    if (HDLOnly.getSelectedItem().toString().equals(OnlyDownloadMessage)) {
-      if (!readyForDownload()) {
-        MyReporter.AddError("HDL files are not ready for download. Use \"Synthesize and download\" instead.");
-        return;
-      }
-    } else {
-      if (!MapPannel.isDoneAssignment()) {
-        MyReporter.AddError("Not all pins have been assigned. Download to board canceled.");
-        return;
-      }
-      ArrayList<String> Entities = new ArrayList<String>();
-      ArrayList<String> Behaviors = new ArrayList<String>();
-      GetVHDLFiles(ProjectDir, SourcePath, Entities, Behaviors,
-          MySettings.GetHDLType());
-      if (MyBoard.fpga.Vendor == Chipset.ALTERA) {
-        if (!AlteraDownload.GenerateQuartusScript(MyReporter, ProjectDir
-              + HDLPaths[ScriptPath] + File.separator,
-              RootSheet.getNetList(), MyMappableResources,
-              MyBoard, Entities, Behaviors,
-              MySettings.GetHDLType())) {
-          MyReporter.AddError("Can't generate quartus script");
-          return;
-        }
-      } else {
-        if (!XilinxDownload.GenerateISEScripts(MyReporter, ProjectDir,
-              ProjectDir + HDLPaths[ScriptPath] + File.separator,
-              ProjectDir + HDLPaths[UCFPath] + File.separator,
-              RootSheet.getNetList(), MyMappableResources,
-              MyBoard, Entities, Behaviors,
-              MySettings.GetHDLType(),
-              writeToFlash.isSelected())
-            && !generateOnly) {
-          MyReporter.AddError("Can't generate xilinx script");
-          return;
-        }
-      }
-    }
-    if (MyBoard.fpga.Vendor == Chipset.ALTERA) {
-      AlteraDownload.Download(MySettings, ProjectDir
-          + HDLPaths[ScriptPath] + File.separator, SourcePath,
-          ProjectDir + HDLPaths[SandboxPath] + File.separator,
-          MyReporter);
-    } else {
-      XilinxDownload.Download(MySettings, MyBoard,
-          ProjectDir + HDLPaths[ScriptPath] + File.separator,
-          ProjectDir + HDLPaths[UCFPath] + File.separator,
-          ProjectDir, ProjectDir + HDLPaths[SandboxPath]
-          + File.separator, MyReporter);
-    }
-  }
-
-  private boolean GenDirectory(String dir) {
-    try {
-      File Dir = new File(dir);
-      if (Dir.exists()) {
-        return true;
-      }
-      return Dir.mkdirs();
-    } catch (Exception e) {
-      MyReporter
-          .AddFatalError("Could not check/create directory :" + dir);
+    if (board == null)
       return false;
-    }
-  }
-
-  private void GetVHDLFiles(String SourcePath, String Path,
-      ArrayList<String> Entities, ArrayList<String> Behaviors,
-      String HDLType) {
-    File Dir = new File(Path);
-    File[] Files = Dir.listFiles();
-    for (File thisFile : Files) {
-      if (thisFile.isDirectory()) {
-        if (Path.endsWith(File.separator)) {
-          GetVHDLFiles(SourcePath, Path + thisFile.getName(),
-              Entities, Behaviors, HDLType);
-        } else {
-          GetVHDLFiles(SourcePath,
-              Path + File.separator + thisFile.getName(),
-              Entities, Behaviors, HDLType);
-        }
-      } else {
-        String EntityMask = (HDLType.equals(Settings.VHDL)) ? FileWriter.EntityExtension
-            + ".vhd"
-            : ".v";
-        String ArchitecturMask = (HDLType.equals(Settings.VHDL)) ? FileWriter.ArchitectureExtension
-            + ".vhd"
-            : "#not_searched#";
-        if (thisFile.getName().endsWith(EntityMask)) {
-          Entities.add((Path + File.separator + thisFile.getName())
-              .replace("\\", "/"));
-          // Entities.add((Path+File.separator+thisFile.getName()).replace(SourcePath,
-          // "../"));
-        } else if (thisFile.getName().endsWith(ArchitecturMask)) {
-          Behaviors.add((Path + File.separator + thisFile.getName())
-              .replace("\\", "/"));
-          // Behaviors.add((Path+File.separator+thisFile.getName()).replace(SourcePath,
-          // "../"));
-        }
-      }
-    }
-  }
-
-  private void handleHDLOnly() {
-    /*
-       boolean hdlonly = HDLOnly.getSelectedItem().toString().equals(OnlyHDLMessage);
-       MySettings.SetHdlOnly(hdlonly);
-       skipHDL.setSelected(false);
-       skipHDL.setEnabled(!hdlonly && readyForDownload());
-       */
-    if (HDLOnly.getSelectedItem().toString().equals(OnlyHDLMessage)) {
-      MySettings.SetHdlOnly(true);
-    } else {
-      MySettings.SetHdlOnly(false);
-    }
-  }
-
-  private void handleHDLType() {
-    if (HDLType.getSelectedIndex() == 0)
-      MySettings.SetHDLType(Settings.VHDL);
+    String dir = circuitWorkspace();
+    if (board.fpga.Vendor == Chipset.ALTERA)
+      return AlteraDownload.readyForDownload(dir + SANDBOX_DIR);
     else
-      MySettings.SetHDLType(Settings.VERILOG);
-    if (!MySettings.UpdateSettingsFile()) {
-      AddErrors("***SEVERE*** Could not update the FPGACommander settings file");
+      return true; // todo: xilinx readyForDownload()
+  }
+
+  private void doSynthesisAndDownload(PinBindings pinBindings) {
+    String basedir = projectWorkspace();
+    String circdir = circuitWorkspace() + lang.toLowerCase() + SLASH;
+    if (!justDownload()) {
+      if (pinBindings == null || !pinBindings.allPinsAssigned()) {
+        err.AddError("Not all pins have been assigned, synthesis can't continue.");
+        return;
+      }
+      ArrayList<String> entityFiles = new ArrayList<>();
+      ArrayList<String> behaviorFiles = new ArrayList<>();
+      enumerateHDLFiles(circdir, entityFiles, behaviorFiles, lang);
+      Circuit root = circuitsList.getSelectedItem();
+      boolean badTools = settings.GetToolsAreDisabled();
+      // generate scripts and synthesize
+      if (board.fpga.Vendor == Chipset.ALTERA) {
+        if (!AlteraDownload.GenerateQuartusScript(err,
+              basedir + SCRIPT_DIR,
+              root.getNetList(), pinBindings,
+              board, entityFiles, behaviorFiles, lang);
+            && !badTools) {
+          err.AddError("Can't generate quartus script");
+          return;
+        }
+      } else {
+        if (!XilinxDownload.GenerateISEScripts(err,
+              basedir,
+              basedir + SCRIPT_DIR,
+              basedir + UCF_DIR,
+              root.getNetList(), pinBindings,
+              board, entityFiles, behaviorFiles, lang,
+              writeToFlash.isSelected())
+            && !badTools) {
+          err.AddError("Can't generate xilinx script");
+          return;
+        }
+      }
     } else {
-      AddInfo("Updated the FPGACommander settings file");
+      if (!readyForDownload()) {
+        err.AddError("HDL files are not ready for download. "
+            + "Try selecting \"Synthesize and Download\" instead.");
+        return;
+      }
     }
-    String CircuitName = circuitsList.getSelectedItem().toString();
-    Circuit root = MyProject.getLogisimFile().getCircuit(CircuitName);
-    if (root != null) {
-      root.ClearAnnotationLevel();
+    // download
+    if (board.fpga.Vendor == Chipset.ALTERA) {
+      AlteraDownload.Download(settings,
+          basedir + SCRIPT_DIR,
+          circdir,
+          basedir + SANDBOX_DIR,
+          err);
+    } else {
+      XilinxDownload.Download(settings, board,
+          basedir + SCRIPT_DIR,
+          basedir + UCF_DIR,
+          basedir,
+          basedir + SANDBOX_DIR, err);
     }
   }
 
-  private boolean MapDesign() {
-    String CircuitName = circuitsList.getSelectedItem().toString();
-    LogisimFile myfile = MyProject.getLogisimFile();
-    Circuit RootSheet = myfile.getCircuit(CircuitName);
-    Netlist RootNetlist = RootSheet.getNetList();
-    if (MyBoard == null) {
-      MyReporter
-          .AddError("INTERNAL ERROR: No board information available ?!?");
+  private boolean mkdirs(String dirname) {
+    try {
+      File dir = new File(dirname);
+      if (dir.exists())
+        return true;
+      if (!dir.mkdirs()) {
+        err.AddFatalError("Unable to create directory: %s", dirname);
+        return false;
+      }
+      return true;
+    } catch (Exception e) {
+      err.AddFatalError("Error creating directory: %s\n  detail: %s", dirname, e.getMessage());
       return false;
     }
+  }
 
-    MyBoard.printStats(MyReporter);
+  private void enumerateHDLFiles(String path,
+      ArrayList<String> entityFiles, ArrayList<String> behaviorFiles) {
+    if (lang == Settings.VHDL)
+      enumerateHDLFiles(path, entityFiles, behaviorFiles, 
+          FileWriter.EntityExtension + ".vhd",
+          FileWriter.ArchitectureExtension + ".vhd");
+    else
+      enumerateHDLFiles(path, entityFiles, behaviorFiles, ".v", null
+  }
 
-    /*
-     * At this point I require 2 sorts of information: 1) A hierarchical
-     * netlist of all the wires that needs to be bubbled up to the toplevel
-     * in order to connect the LEDs, Buttons, etc. (hence for the HDL
-     * generation). 2) A list with all components that are required to be
-     * mapped to PCB components. Identification can be done by a hierarchy
-     * name plus component/sub-circuit name
-     */
-    MyMappableResources = new PinBindings(MyBoard, RootNetlist.getMappableComponents());
+  private void enumerateHDLFiles(String path,
+    ArrayList<String> entityFiles, ArrayList<String> behaviorFiles,
+    String entityEnding, String behaviorEnding) {
+    File dir = new File(path);
+    if (!path.endsWith(SLASH))
+      path += SLASH;
+    for (File f : dir.listFiles()) {
+      String subpath = path + f.getName();
+      if (f.isDirectory())
+        enumerateHDLFiles(subpath, entityFiles, behaviorFiles,
+            entityEnding, behaviorEnding);
+      else if (f.getName().endsWith(entityEnding))
+        entityFiles.add(subpath.replace("\\", "/"));
+      else if (f.getName().endsWith(behaviorEnding))
+        behaviorFiles.add(subpath.replace("\\", "/"));
+    }
+  }
 
-    MapPannel.SetBoard(MyBoard);
-    MapPannel.SetMappebleComponents(MyMappableResources);
-    setVisible(false);
-    MapPannel.SetVisible(true);
-    setVisible(true);
-    if (MyMappableResources.UnmappedList().isEmpty()) {
-      MyMappableResources.BuildIOMappingInformation();
-      return true;
+  void populateHDLAction() {
+    if (board == null) {
+      AddInfo("Please select an FPGA board.");
+      HDLAction.setEnabled(false);
+    }
+    if ((board.fpga.Vendor == Chipset.ALTERA
+          && settings.GetAlteraToolPath().equals(Settings.Unknown))
+        || (board.fpga.Vendor == Chipset.XILINX
+          && settings.GetXilinxToolPath().equals(Settings.Unknown))) {
+      // Synthesis/download not possible.
+      if (!settings.GetToolsAreDisabled()) {
+        settings.SetToolsAreDisabled(true);
+        settings.UpdateSettingsFile();
+      }
+      HDLAction.setSelectedItem(HDL_GEN_ONLY);
+      HDLAction.setEnabled(false);
+      AddInfo("Tool path is not set correctly. " +
+          "Synthesis and download will not be available.");
+      AddInfo("Please set the path to " + board.fpga.Vendor
+          + "tools using the \"Settings\" button");
+    } else if (settings.GetToolsAreDisabled()) {
+      // Synthesis/download possible, but user selected to only generate HDL.
+      HDLAction.setSelectedItem(HDL_GEN_ONLY);
+      HDLAction.setEnabled(true);
+    } else {
+      // Synthesis/download possible, user elects to do so.
+      HDLAction.setSelectedItem(HDL_GEN_AND_DOWNLOAD);
+      HDLAction.setEnabled(true);
+    }
+  }
+
+  private void setHDLAction() {
+    if (HDLAction.getSelectedItem().equals(HDL_GEN_ONLY)) {
+      settings.SetToolsAreDisabled(true);
+    } else {
+      settings.SetToolsAreDisabled(false);
+    }
+  }
+
+  private void setHDLType() {
+    if (HDLType.getSelectedIndex() == 0)
+      lang = Settings.VHDL;
+    else
+      lang = Settings.VERILOG;
+    if (lang.equals(settings.GetHDLType()))
+      return;
+    settings.SetHDLType(lang);
+    if (!settings.UpdateSettingsFile())
+      AddErrors("***SEVERE*** Could not update XML settings file");
+    Circuit root = circuitsList.getSelectedItem();
+    if (root != null)
+      root.ClearAnnotationLevel();
+  }
+
+  private PinBindings cachedPinBindings;
+  private Circuit cachedPinBindingsCircuit;
+  private PinBindings performPinAssignments() {
+    board.printStats(err);
+
+    Circuit root = circuitsList.getSelectedItem();
+    Netlist netlist = root.getNetList();
+   
+    if (cachedPinBindings == null || cachedPinBindingsCircuit != root) {
+      cachedPinBindings = new PinBindings(board, netlist.getMappableComponents());
+      cachedPinBindingsCircuit = root;
+    } else {
+      cachedPinBindings.setComponents(netlist.getMappableComponents());
     }
 
-    MyReporter
-        .AddError("Not all IO components have been mapped to the board "
-            + MyBoard.getBoardName()
-            + " please map all components to continue!");
-    return false;
+    File f = proj.getLogisimFile().getLoader().getMainFile();
+    String path = f == null ? "" : f.getAbsolutePath();
+    BindingsDialog dlg = new BindingsDialog(board, cachedPinBindings, this, path);
+    setVisible(false);
+    dlg.setVisible();
+    setVisible(true);
+    if (cachedPinBindings.allPinsAssigned()) {
+      cachedPinBindings.finalizeMappings();
+      return cachedPinBindings;
+    }
+    err.AddError("Some I/O-related components have not been assigned to I/O "
+        + "resources on the FPGA board. All components must be assigned.");
+    return null;
   }
 
   private boolean performDRC() {
     clearAllMessages();
-    String CircuitName = circuitsList.getSelectedItem().toString();
-    Circuit root = MyProject.getLogisimFile().getCircuit(CircuitName);
-    if (root == null)
-      return false; // huh? no circuit found
-    return root.getNetList().validate(MyReporter,
-        HDLType.getSelectedItem().toString(), 
-        MyBoard.fpga.Vendor);
+    Circuit root = circuitsList.getSelectedItem();
+    return root.getNetList().validate(err, lang, board.fpga.Vendor);
   }
 
-  private void RebuildCircuitSelection() {
-    circuitsList.removeAllItems();
-    setTitle("FPGA Commander : " + MyProject.getLogisimFile().getName());
-    int i = 0;
-    for (Circuit thisone : MyProject.getLogisimFile().getCircuits()) {
-      circuitsList.addItem(thisone.getName());
-      if (MyProject.getCurrentCircuit() != null &&
-          thisone.getName().equals(
-            MyProject.getCurrentCircuit().getName())) {
-        circuitsList.setSelectedIndex(i);
-      }
-      i++;
-    }
-  }
+  private void doToolSettings() {
+    FPGASettingsDialog dlg = new FPGASettingsDialog(this, settings);
+    dlg.SetVisible(true);
+    dlg.dispose();
 
-  FPGASettingsDialog settings;
-  private void selectToolSettings() {
-    if (settings == null) 
-      settings = new FPGASettingsDialog(this, MySettings);
-    settings.SetVisible(true);
-
-    if (MyBoard.fpga.Vendor == Chipset.ALTERA) {
-      if (!MySettings.GetAlteraToolPath().equals(Settings.Unknown)) {
-        HDLOnly.setEnabled(true);
-        MySettings.SetHdlOnly(false);
-        HDLOnly.setSelectedItem(HDLandDownloadMessage);
-        if (!MySettings.UpdateSettingsFile()) {
+    if (board.fpga.Vendor == Chipset.ALTERA) {
+      if (!settings.GetAlteraToolPath().equals(Settings.Unknown)) {
+        HDLAction.setEnabled(true);
+        settings.SetToolsAreDisabled(false);
+        HDLAction.setSelectedItem(HDL_GEN_AND_DOWNLOAD);
+        if (!settings.UpdateSettingsFile()) {
           AddErrors("***SEVERE*** Could not update the FPGACommander settings file");
         } else {
           AddInfo("Updated the FPGACommander settings file");
@@ -1146,12 +1026,12 @@ public class Commander extends JFrame implements ActionListener {
         }
         AddErrors("***INFO*** Please select a directory containing these Altera programs:" + prgs);
       }
-    } else if (MyBoard.fpga.Vendor == Chipset.XILINX) {
-      if (!MySettings.GetXilinxToolPath().equals(Settings.Unknown)) {
-        HDLOnly.setEnabled(true);
-        MySettings.SetHdlOnly(false);
-        HDLOnly.setSelectedItem(HDLandDownloadMessage);
-        if (!MySettings.UpdateSettingsFile()) {
+    } else if (board.fpga.Vendor == Chipset.XILINX) {
+      if (!settings.GetXilinxToolPath().equals(Settings.Unknown)) {
+        HDLAction.setEnabled(true);
+        settings.SetToolsAreDisabled(false);
+        HDLAction.setSelectedItem(HDL_GEN_AND_DOWNLOAD);
+        if (!settings.UpdateSettingsFile()) {
           AddErrors("***SEVERE*** Could not update the FPGACommander settings file");
         } else {
           AddInfo("Updated the FPGACommander settings file");
@@ -1167,27 +1047,27 @@ public class Commander extends JFrame implements ActionListener {
     }
   }
 
-  private String GetBoardFile() {
-    JFileChooser fc = new JFileChooser(GetWorkspacePath());
+  private String doBoardFileSelect() {
+    JFileChooser fc = new JFileChooser(workspacePath());
     FileNameExtensionFilter filter = new FileNameExtensionFilter("Board files", "xml", "xml");
     fc.setFileFilter(filter);
     fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-    File test = new File(GetWorkspacePath());
+    File test = new File(workspacePath());
     if (test.exists()) {
       fc.setSelectedFile(test);
     }
     fc.setDialogTitle("Board description selection");
     int retval = fc.showOpenDialog(null);
-    if (retval == JFileChooser.APPROVE_OPTION) {
-      File file = fc.getSelectedFile();
-      return file.getPath();
-    } else return "";
+    if (retval != JFileChooser.APPROVE_OPTION)
+      return null;
+    File file = fc.getSelectedFile();
+    return file.getPath();
   }
 
   private void selectWorkSpace() {
-    JFileChooser fc = new JFileChooser(GetWorkspacePath());
+    JFileChooser fc = new JFileChooser(workspacePath());
     fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-    File test = new File(GetWorkspacePath());
+    File test = new File(workspacePath());
     if (test.exists()) {
       fc.setSelectedFile(test);
     }
@@ -1195,25 +1075,15 @@ public class Commander extends JFrame implements ActionListener {
     int retval = fc.showOpenDialog(null);
     if (retval == JFileChooser.APPROVE_OPTION) {
       File file = fc.getSelectedFile();
-      if (file.getPath().endsWith(File.separator)) {
-        MySettings.SetStaticWorkspacePath(file.getPath());
+      if (file.getPath().endsWith(SLASH)) {
+        settings.SetStaticWorkspacePath(file.getPath());
       } else {
-        MySettings.SetStaticWorkspacePath(file.getPath() + File.separator);
+        settings.SetStaticWorkspacePath(file.getPath() + SLASH);
       }
-      if (!MySettings.UpdateSettingsFile()) {
+      if (!settings.UpdateSettingsFile()) {
         AddErrors("***SEVERE*** Could not update the FPGACommander settings file");
       } else {
         AddInfo("Updated the FPGACommander settings file");
-      }
-    }
-  }
-
-  private void SetCurrentSheet(String Name) {
-    for (int i = 0; i < circuitsList.getItemCount(); i++) {
-      if (((String) circuitsList.getItemAt(i)).equals(Name)) {
-        circuitsList.setSelectedIndex(i);
-        circuitsList.repaint();
-        return;
       }
     }
   }
@@ -1226,145 +1096,34 @@ public class Commander extends JFrame implements ActionListener {
     toFront();
   }
 
-  private boolean writeHDL() {
-    String CircuitName = circuitsList.getSelectedItem().toString();
-    if (!GenDirectory(GetWorkspacePath() + File.separator
-          + MyProject.getLogisimFile().getName())) {
-      MyReporter.AddFatalError("Unable to create directory: \""
-          + GetWorkspacePath() + File.separator
-          + MyProject.getLogisimFile().getName() + "\"");
-      return false;
-    }
-    String ProjectDir = GetWorkspacePath() + File.separator
-        + MyProject.getLogisimFile().getName();
-    if (!ProjectDir.endsWith(File.separator)) {
-      ProjectDir += File.separator;
-    }
-    LogisimFile myfile = MyProject.getLogisimFile();
-    Circuit RootSheet = myfile.getCircuit(CircuitName);
-    ProjectDir += CorrectLabel.getCorrectLabel(RootSheet.getName())
-        + File.separator;
-    if (!CleanDirectory(ProjectDir)) {
-      MyReporter
-          .AddFatalError("Unable to cleanup old project files in directory: \""
-              + ProjectDir + "\"");
-      return false;
-    }
-    if (!GenDirectory(ProjectDir)) {
-      MyReporter.AddFatalError("Unable to create directory: \""
-          + ProjectDir + "\"");
-      return false;
-    }
-    for (int i = 0; i < HDLPaths.length; i++) {
-      if (!GenDirectory(ProjectDir + HDLPaths[i])) {
-        MyReporter.AddFatalError("Unable to create directory: \""
-            + ProjectDir + HDLPaths[i] + "\"");
-        return false;
-      }
-    }
-    CircuitHDLGeneratorFactory cWorker = (CircuitHDLGeneratorFactory)
-        RootSheet.getSubcircuitFactory().getHDLGenerator(MySettings.GetHDLType(), MyReporter,
-            null, /* no nets yet ... - fixme ? top level maybe */
-            RootSheet.getStaticAttributes(),
-            MyBoard.fpga.Vendor);
-    // if (!(cWorker instanceof CircuitHDLGeneratorFactory))
-    //   throw new IllegalStateException();
-    // ((CircuitHDLGeneratorFactory)cWorker).initHDLGen(); /* stateful hdl gen */
-    // this worker is not yet given a netlist, but we only use it for
-    // GenerateAllHDLDescriptions(), which doesn't need one (it has an internal
-    // one).
-    if (cWorker == null) {
-      MyReporter
-          .AddFatalError("Internal error on HDL generation, null pointer exception");
-      return false;
-    }
-    if (!cWorker.GenerateAllHDLDescriptions(ProjectDir)) {
-      return false;
-    }
-    /* Here we generate the top-level shell */
-    int TickPeriod;
-    if (clockOption.getSelectedItem().equals(clockMax))
-      TickPeriod = 0;
-    else if (clockOption.getSelectedItem().equals(clockDyn))
-      TickPeriod = -1;
-    else {
-      Object item = clockDivCount.getSelectedItem();
-      String s = item == null ? "1" : item.toString();
-      TickPeriod = Integer.parseInt(s);
-    }
-
-    if (RootSheet.getNetList().NumberOfClockTrees() > 0) {
-      TickComponentHDLGeneratorFactory Ticker = new TickComponentHDLGeneratorFactory(
-          MySettings.GetHDLType(), MyReporter,
-          MyBoard.fpga.ClockFrequency,
-          TickPeriod,
-          RootSheet.getNetList(), MyBoard.fpga.Vendor); /* stateful hdl gen */
-      if (!AbstractHDLGeneratorFactory.WriteEntity(
-            ProjectDir + Ticker.GetRelativeDirectory(/*MySettings.GetHDLType()*/),
-            Ticker.GetEntity(
-              /* RootSheet.getNetList(),*/ /*null,*/
-              Ticker.getComponentStringIdentifier() /*, MyReporter,
-                                                      MySettings.GetHDLType()*/),
-            Ticker.getComponentStringIdentifier(), MyReporter,
-            MySettings.GetHDLType())) {
-        return false;
-      }
-      if (!AbstractHDLGeneratorFactory.WriteArchitecture(ProjectDir
-            + Ticker.GetRelativeDirectory(/*MySettings.GetHDLType()*/),
-            Ticker.GetArchitecture(/*RootSheet.getNetList(),*/ /*null,*/ null,
-              Ticker.getComponentStringIdentifier() /*, MyReporter, MySettings.GetHDLType()*/),
-            Ticker.getComponentStringIdentifier(), MyReporter, MySettings.GetHDLType())) {
-        return false;
-      }
-      HDLGeneratorFactory ClockGen = RootSheet
-          .getNetList()
-          .GetAllClockSources().get(0)
-          .getFactory()
-          .getHDLGenerator( /* stateful hdl gen */
-              MySettings.GetHDLType(), MyReporter,
-              RootSheet.getNetList(),
-              RootSheet.getNetList().GetAllClockSources().get(0).getAttributeSet(),
-              MyBoard.fpga.Vendor);
-      String CompName = ClockGen.getHDLNameWithinCircuit(""); // toplevel
-      if (!AbstractHDLGeneratorFactory.WriteEntity(
-            ProjectDir + ClockGen.GetRelativeDirectory(/*MySettings.GetHDLType()*/),
-            ClockGen.GetEntity(
-              /*RootSheet.getNetList(),*/ /*null,*/ CompName /*, MyReporter,
-                                                               MySettings.GetHDLType()*/), CompName, MyReporter,
-            MySettings.GetHDLType())) {
-        return false;
-      }
-      if (!AbstractHDLGeneratorFactory.WriteArchitecture(
-            ProjectDir + ClockGen.GetRelativeDirectory(/*MySettings.GetHDLType()*/),
-            ClockGen.GetArchitecture(/*RootSheet.getNetList(),*/ /*null,*/ null,
-              CompName /*, MyReporter, MySettings.GetHDLType()*/),
-            CompName, MyReporter, MySettings.GetHDLType())) {
-        return false;
-      }
-    }
-    ToplevelHDLGeneratorFactory Worker = new ToplevelHDLGeneratorFactory(
-        MySettings.GetHDLType(), MyReporter,
-        MyBoard.fpga.ClockFrequency,
-        TickPeriod, RootSheet, MyMappableResources,
-        skipHdl(), RootSheet.getNetList(), MyBoard.fpga.Vendor); /* stateful hdl gen */
-    if (!AbstractHDLGeneratorFactory.WriteEntity(
-          ProjectDir + Worker.GetRelativeDirectory(/*MySettings.GetHDLType()*/),
-          Worker.GetEntity(/* RootSheet.getNetList(),*/ /*null,*/
-            ToplevelHDLGeneratorFactory.FPGAToplevelName /*,
-                                                           MyReporter, MySettings.GetHDLType()*/), Worker
-          .getComponentStringIdentifier(), MyReporter, MySettings
-          .GetHDLType())) {
-      return false;
-    }
-    if (!AbstractHDLGeneratorFactory.WriteArchitecture(
-          ProjectDir
-          + Worker.GetRelativeDirectory(/*MySettings.GetHDLType()*/),
-          Worker.GetArchitecture(/*RootSheet.getNetList(),*/ /*null,*/ null,
-            ToplevelHDLGeneratorFactory.FPGAToplevelName/*, MyReporter, MySettings.GetHDLType()*/),
-          Worker.getComponentStringIdentifier(), MyReporter, MySettings.GetHDLType())) {
-      return false;
-    }
-
-    return true;
+  private int getClkPeriod() {
+    if (clockOption.getSelectedItem().equals(MAX_SPEED))
+      return 0;
+    else if (clockOption.getSelectedItem().equals(DYN_SPEED))
+      return 1;
+    Object item = clockDivCount.getSelectedItem();
+    if (item == null)
+      return 1;
+    return Integer.parseInt(item.toString());
   }
+
+  private boolean writeHDL(PinBindings pinBindings) {
+    Circuit root = circuitsList.getSelectedItem();
+    String basedir = projectWorkspace();
+    basedir += CorrectLabel.getCorrectLabel(root.getName()) + SLASH;
+    if (!cleanDirectory(basedir))
+      return false;
+    for (String subdir : HDL_PATHS)
+      if (!mkdirs(basedir + subdir))
+        return false;
+
+    // Generate HDL for top-level module and everything it contains, including
+    // the root circuit (and all its subcircuits and components), the top-level
+    // ticker (if needed), any clocks lifted to the top-level, etc.
+    TopLevelHDLGenerator g = new TopLevelHDLGenerator(lang, err,
+        board.fpga.Vendor, oscFreq, clkPeriod, root, pinBindings);
+
+    return g.writeAllHDLFiles(basedir);
+  }
+
 }

@@ -36,7 +36,6 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -76,15 +75,15 @@ import javax.swing.ListSelectionModel;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.BoardIO;
 // import com.bfh.logisim.netlist.CorrectLabel;
-import static com.bfh.logisim.gui.PinBindings.Source;
-import static com.bfh.logisim.gui.PinBindings.Dest;
+import com.bfh.logisim.fpga.PinBindings;
+import static com.bfh.logisim.fpga.PinBindings.Source;
+import static com.bfh.logisim.fpga.PinBindings.Dest;
 
-public class BindingsDialog implements ActionListener {
+public class BindingsDialog extends JDialog {
 
   private Board board;
   private PinBindings pinBindings;
 
-  private JDialog panel;
   private Synthetic zeros, ones, constants, bitbucket;
   private Synthetic[] synthetics;
 
@@ -92,7 +91,6 @@ public class BindingsDialog implements ActionListener {
   private JButton reset = new JButton();
   // private JButton save = new JButton();
   // private JButton load = new JButton();
-  private JButton cancel = new JButton();
   private JButton done = new JButton();
   private JLabel status = new JLabel();
 
@@ -102,9 +100,8 @@ public class BindingsDialog implements ActionListener {
 
   private String xmlDir;
 
-  private boolean finished;
-
   public BindingsDialog(Board board, PinBindings pinBindings, JFrame parentFrame, String projectPath) {
+    super(parentFrame, ModalityType.APPLICATION_MODAL);
     this.board = board;
     this.pinBindings = pinBindings;
 
@@ -117,13 +114,12 @@ public class BindingsDialog implements ActionListener {
     else if (xmlDir.length() > 0 && !xmlDir.endsWith(File.separator))
       xmldir += File.separator;
 
-    panel = new JDialog(parentFrame, ModalityType.APPLICATION_MODAL);
-    panel.setTitle("Configure FPGA Pin Bindings");
-    panel.setResizable(false);
-    panel.setAlwaysOnTop(false);
-    panel.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
+    setTitle("Configure FPGA Pin Bindings");
+    setResizable(false);
+    setAlwaysOnTop(false);
+    setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
 
-    panel.setLayout(new GridBagLayout());
+    setLayout(new GridBagLayout());
     GridBagConstraints c = new GridBagConstraints();
     c.fill = GridBagConstraints.HORIZONTAL;
 
@@ -131,7 +127,7 @@ public class BindingsDialog implements ActionListener {
     c.gridx = 0;
     c.gridy = 0;
     c.gridwidth = 3;
-    panel.add(picture, c);
+    add(picture, c);
 
     // Synthetic BoardIO buttons
     zeros = new Synthetic(BoardIO.Type.AllZeros, 0, "Zeros", "zeros.gif",
@@ -147,7 +143,7 @@ public class BindingsDialog implements ActionListener {
     for (Synthetic b : synthetics)
       buttonpanel.add(b);
     c.gridy++;
-    panel.add(buttonpanel, c);
+    add(buttonpanel, c);
 
     // Labels and instructions
     JLabel header = new JLabel();
@@ -159,14 +155,14 @@ public class BindingsDialog implements ActionListener {
     c.gridy++;
     c.gridx = 0;
     c.gridwidth = 1;
-    panel.add(header, c);
+    add(header, c);
 
     // Component selection list
     JScrollPane scroll = new JScrollPane(sources);
     scroll.setPreferredSize(new Dimension(picture.getWidth(), 150));
     c.gridx = 1;
     c.gridheight = 9;
-    panel.add(scroll, c);
+    add(scroll, c);
 
     c.gridheight = 1;
 
@@ -174,64 +170,48 @@ public class BindingsDialog implements ActionListener {
     unmap.setText("Unset Component");
     unmap.addActionListener(e -> sources.unmapCurrent());
     c.gridy++;
-    panel.add(unmap, c);
+    add(unmap, c);
 
     // Reset button
     reset.setText("Reset All");
     reset.addActionListener(e -> sources.resetAll());
     c.gridy++;
-    panel.add(reset, c);
+    add(reset, c);
 
     // load.setText("Load Map");
-    // load.setActionCommand("Load");
     // load.addActionListener(this);
     // load.setEnabled(true);
     // c.gridy++;
-    // panel.add(load, c);
+    // add(load, c);
 
     // save.setText("Save Map");
-    // save.setActionCommand("Save");
     // save.addActionListener(this);
     // save.setEnabled(false);
     // c.gridy++;
-    // panel.add(save, c);
-
-    // Cancel button
-    cancel.setText("Cancel");
-    cancel.addActionListener(e -> {
-      finished = false;
-      panel.setVisible(false);
-      panel.dispose();
-    });
-    cancel.setEnabled(true);
-    c.gridy++;
-    panel.add(cancel, c);
-
-    // Done button
-    done.setText("Done");
-    done.setActionCommand("Done");
+    // add(save, c);
+    
+    // Close/Done button
+    done.setText("Close/Done");
     done.addActionListener(e -> {
-      // finished = true;
-      panel.setVisible(false);
-      panel.dispose();
+      setVisible(false);
+      dispose();
     });
     c.gridy++;
-    panel.add(done, c);
+    add(done, c);
 
     // Status line
     c.gridx = 0;
     c.gridy++;
     c.gridwidth = 3;
-    panel.add(status, c);
+    add(status, c);
 
     if (sources.model.getSize() > 0)
       sources.setSelectedIndex(0);
 
     updateStatus();
 
-    panel.pack();
-    panel.setLocationRelativeTo(parentFrame);
-    panel.setVisible(true);
+    pack();
+    setLocationRelativeTo(parentFrame);
   }
 
   private static class SelectionPanel extends JPanel {
@@ -412,7 +392,7 @@ public class BindingsDialog implements ActionListener {
           return;
       if (synthType == BoardIO.Type.Constant) {
         while (true) {
-          Object sel = JOptionPane.showInputDialog(panel,
+          Object sel = JOptionPane.showInputDialog(this,
               "Enter a constant integer value (signed decimal, hex, or octal):", "Define Constant",
               JOptionPane.QUESTION_MESSAGE, null, null, "0x00000000");
           if (sel == null || sel.equals(""))
@@ -528,21 +508,11 @@ public class BindingsDialog implements ActionListener {
     return url == null ? null : new ImageIcon(url);
   }
 
-  public boolean isDoneAssignment() {
-    return finished;
-  }
-
   void updateStatus() {
-    int remaining = 0, count = 0;
-    for (Path path : pinBindings.components.keySet()) {
-      count++;
-      if (!pinBindings.isMapped(path))
-        remaining++;
-    }
-    finished = (remaining == 0);
-    status.setForeground(finished ? Color.GREEN.darker() : Color.BLUE);
-    status.setText(String.format("%d of %d components remaining to be mapped", remaining, count));
-    done.setEnabled(finished);
+    String txt = pinBindings.getStatus();
+    status.setText(txt);
+    boolean finished = txt.startsWith("All");
+    done.setText(finished ? "Done" : "Close");
   }
 
   // private String getFileName(String window_name, String suggested_name) {
@@ -582,7 +552,7 @@ public class BindingsDialog implements ActionListener {
   //   fc.setDialogTitle("Choose XML board description file to use");
   //   fc.setFileFilter(Loader.XML_FILTER);
   //   fc.setAcceptAllFileFilterUsed(false);
-  //   panel.setVisible(false);
+  //   setVisible(false);
   //   int retval = fc.showOpenDialog(null);
   //   if (retval == JFileChooser.APPROVE_OPTION) {
   //     File file = fc.getSelectedFile();
@@ -613,7 +583,7 @@ public class BindingsDialog implements ActionListener {
   //                 status.setForeground(Color.RED);
   //                 status
   //                     .setText("LOAD ERROR: The selected Map file is not for the selected target board!");
-  //                 panel.setVisible(true);
+  //                 setVisible(true);
   //                 return;
   //               }
   //             } else if (Attrs.item(j).getNodeName().equals("ToplevelCircuitName")) {
@@ -621,7 +591,7 @@ public class BindingsDialog implements ActionListener {
   //                 status.setForeground(Color.RED);
   //                 status
   //                     .setText("LOAD ERROR: The selected Map file is not for the selected toplevel circuit!");
-  //                 panel.setVisible(true);
+  //                 setVisible(true);
   //                 return;
   //               }
   //             }
@@ -691,11 +661,11 @@ public class BindingsDialog implements ActionListener {
   //           e.getMessage());
   //     }
   //   }
-  //   panel.setVisible(true);
+  //   setVisible(true);
   // }
 
   // private void Save() {
-  //   panel.setVisible(false);
+  //   setVisible(false);
   //   String suggestedName =
   //       CorrectLabel.getCorrectLabel(pinBindings.GetToplevelName())
   //       + "-" + board.getBoardName() + "-MAP.xml";
@@ -763,7 +733,7 @@ public class BindingsDialog implements ActionListener {
   //           e.getMessage());
   //     }
   //   }
-  //   panel.setVisible(true);
+  //   setVisible(true);
   // }
 
 

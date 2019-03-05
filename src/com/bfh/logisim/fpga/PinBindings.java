@@ -28,19 +28,12 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.gui;
+package com.bfh.logisim.fpga;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
-import com.bfh.logisim.fpga.Board;
-import com.bfh.logisim.fpga.BoardIO;
-import com.bfh.logisim.fpga.PinActivity;
-import com.bfh.logisim.hdlgenerator.HiddenPort;
+import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.std.wiring.Pin;
@@ -107,12 +100,16 @@ public class PinBindings {
   // The FPGA board describing available physical I/O resources.
 	private final Board board;
 
+  // Mappings defined so far.
+  public final HashMap<Source, Dest> mappings = new HashMap<>();
+
   public static class Source {
     public final Path path;
     public final NetlistComponent comp;
     public final int bit; // -1 means entire NetlistComponent is mapped
     public final BoardIO.Type type;
     public final Int3 width;
+    Int3 seqno;
     public Source(Path p, NetlistComponent c, int b, BOardIO.Type t, Int3 w) {
       path = p;
       comp = c;
@@ -130,22 +127,52 @@ public class PinBindings {
     public int hashCode() {
       return path.toString().hashCode() + 31*bit;
     }
+    public Int3 seqno() {
+      return seqno.copy();
+    }
   }
 
   public static class Dest {
-    public final BoardIO io;
+    public final BoardIO io; // may be synthetic
     public final int bit; // -1 means something maps to this entire BoardIO
     public Dest(BoardIO i, int b) { io = i; bit = b; }
   }
-
-  // Mappings defined so far.
-  public final HashMap<Source, Dest> mappings = new HashMap<>();
 
   public PinBindings(FPGAReport err, Board board, HashMap<Path, NetlistComponent> components) {
     this.err = err;
 		this.components = components;
 		this.board = board;
 	}
+
+  public setComponents(HashMap<Path, NetlistComponent> newComponents) {
+    // todo: preserve existing mappings wherever possible.
+    // For now, we just clear all mappings and reset components.
+    mappings.clear();
+    components.clear();
+    components.addAll(newComponents);
+  }
+  
+  // ToplevelHDLGenerator has a port for each bit of each physical I/O pin that
+  // it uses (for hidden nets and/or top-level circuit pins). Commander calls
+  // this to lock in the mappings, giving each physical BoardIO input, inout,
+  // and output bit a sequence number, and counting how many bits there are in
+  // total.
+  private Int3 finalizedCounts;
+  public void finalizeMappings() {
+    Int3 counts = new Int3();
+    mappings.forEach((s, d) -> {
+      if (!BoardIO.PhysicalTypes.contains(d.type))
+        continue;
+      s.seqno = counts.copy();
+      counts.increment(s.width);
+    }
+    finalizedCounts = counts;
+  }
+
+  // Counts of all I/O-related physical FPGA pins used in the design.
+  public Int3 countFPGAPhysicalIOPins() {
+    return finalizedCounts.copy();
+  }
 
   public ArrayList<String> pinLabels(Path path) {
     NetlistComponent comp = components.get(path);
@@ -286,6 +313,29 @@ public class PinBindings {
     return modified;
   }
 
+  public String getStatus() { // result begins with "All" if and only if everything mapped
+    int remaining = 0, count = 0;
+    for (Path path : pinBindings.components.keySet()) {
+      count++;
+      if (!pinBindings.isMapped(path))
+        remaining++;
+    }
+    finished = (remaining == 0);
+    status.setForeground(finished ? Color.GREEN.darker() : Color.BLUE);
+    if (remaining == 0)
+      return String.format("All %d components are mapped to I/O resources", count);
+    else
+      return String.format("%d of %d components remaining to be mapped to I/O resources",
+          remaining, count);
+  }
+
+  public boolean allPinsAssigned() {
+    for (Path path : pinBindings.components.keySet())
+      if (!isMapped(path))
+        return false;
+    return true;
+  }
+
 // 	public int GetFPGAInOutPinId(String MapName) {
 // 		if (fpgaInOutsList.containsKey(MapName)) {
 // 			return fpgaInOutsList.get(MapName);
@@ -355,27 +405,4 @@ public class PinBindings {
 //		return Contents;
 //	}
 
-
-// 	public boolean RequiresToplevelInversion(
-// 			Path ComponentIdentifier, String MapName) {
-// 		if (!mappedList.containsKey(MapName)) {
-// 			return false;
-// 		}
-// 		if (!components.containsKey(ComponentIdentifier)) {
-// 			return false;
-// 		}
-//     Bounds r = mappedList.get(MapName);
-//     boolean BoardActiveHigh;
-//     if (r.isDeviceSignal()) {
-//       BoardIO BoardComp = board.GetComponent(r);
-//       BoardActiveHigh = (BoardComp.GetActivityLevel() == PinActivity.ACTIVE_HIGH);
-//     } else {
-//       BoardActiveHigh = true;
-//     }
-// 		NetlistComponent Comp = components.get(ComponentIdentifier);
-// 		boolean CompActiveHigh = Comp.GetComponent().getFactory().ActiveOnHigh(Comp.GetComponent().getAttributeSet());
-// 		boolean Invert = BoardActiveHigh ^ CompActiveHigh;
-// 		return Invert;
-// 	}
-// 
 }

@@ -30,7 +30,8 @@
 
 package com.bfh.logisim.hdlgenerator;
 
-import com.bfh.logisim.gui.PinBindings;
+import com.bfh.logisim.fpga.BoardIO;
+import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.library.DynamicClock;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.cburch.logisim.circuit.Circuit;
@@ -47,21 +48,28 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 	private long fpgaClockFreq;
 	private int tickerPeriod; // 0:"use fpga clock", -1:"dynamic", >0:"divided clock"
 	private Circuit circUnderTest;
-	private PinBindings ioResources;
+	private PinBindings goResources;
   private Netlist _circNets; // Netlist of the circUnderTest.
 
   private TickHDLGenerator ticker;
   private CircuitHDLGenerator circgen;
   private HDLCTX ctx;
 
-	public ToplevelHDLGenerator(String lang, FPGAReport err, char vendor,
+  // There is no parent netlist for TopLevel, because it is not embedded inside
+  // anything. There are no attributes either.
+  // There is no parent netlist for circgen or ticker, because TopLevel doesn't
+  // create a netlist for itself. Neither of those components uses attributes,
+  // so we can leave them empty. So both can use a single context with null nets
+  // and empty attributes.
+	
+  public ToplevelHDLGenerator(String lang, FPGAReport err, char vendor,
       long fpgaClockFreq, int tickerPeriod,
 			Circuit circUnderTest, PinBindings ioResources) {
     this(new HDLCTX(lang, err, null /*nets*/, null /*attrs*/, vendor),
       fpgaClockFreq, tickerPeriod, circUnderTest, ioResources);
   }
 
-	public ToplevelHDLGenerator(HDLCTX ctx, long fpgaClockFreq, int tickerPeriod,
+	private ToplevelHDLGenerator(HDLCTX ctx, long fpgaClockFreq, int tickerPeriod,
 			Circuit circUnderTest, PinBindings ioResources) {
     super(ctx, "toplevel", HDL_NAME, "i_Toplevel");
 
@@ -79,11 +87,12 @@ public class ToplevelHDLGenerator extends HDLGenerator {
       inPorts.add(new PortInfo(TickHDLGenerator.FPGA_CLK_NET, 1, -1, null));
 
     // io resources
-		for (int i = 0; i < ioResources.GetNrOfToplevelInputPins(); i++)
+    Int3 ioPinCount = ioResources.countFPGAPhysicalIOPins();
+		for (int i = 0; i < ioPinCount.in; i++)
       inPorts.add(new PortInfo("FPGA_INPUT_PIN_"+i, 1, -1, null));
-		for (int i = 0; i < ioResources.GetNrOfToplevelInOutPins(); i++)
+		for (int i = 0; i < ioPinCount.inout; i++)
       inOutPorts.add(new PortInfo("FPGA_INOUT_PIN_"+i, 1, -1, null));
-		for (int i = 0; i < ioResources.GetNrOfToplevelOutputPins(); i++)
+		for (int i = 0; i < ioPinCount.out; i++)
       outPorts.add(new PortInfo("FPGA_OUTPUT_PIN_"+i, 1, -1, null));
 
     // internal clock networks
@@ -131,6 +140,13 @@ public class ToplevelHDLGenerator extends HDLGenerator {
       wires.add(new WireInfo(busname, w == 1 ? "(1)" : ""+w));
   }
 
+  // Top-level entry point: write all HDL files for the project.
+  public boolean writeAllHDLFiles(String rootDir) {
+    return circgen.writeAllHDLFiles(rootDir)
+        && (ticker == null || ticker.writeHDLFiles(rootDir))
+        && writeHDLFiles(rootDir);
+  }
+
 	@Override
 	protected void generateComponentDeclaration(Hdl out) {
 		if (ticker != null) {
@@ -144,20 +160,10 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 	@Override
   protected void generateBehavior(Hdl out) {
 
-    out.comment("signal adaptions for pin components");
-		for (Path path : ioResources.GetComponents()) {
-      Component pin = ioResources.GetComponent(path).original;
-      if (pin.getFactory() instanceof Pin)
-        generateInlinedCodeForPinSignals(out, path, pin);
-		}
-    out.stmt();
-
-    out.comment("signal adaptions for hidden signals");
-		for (Path path : ioResources.GetComponents()) {
-      // Component comp = ioResources.GetComponent(path).original;
-      // if (!(comp.getFactory() instanceof Pin))
-      generateInlinedCodeForHiddenSignals(out, path);
-    }
+    out.comment("signal adaptions for I/O related components and top-level pins");
+    ioResources.components.forEach((path, shadow) -> {
+      generateInlinedCodeSignal(out, path, shadow)
+		});
     out.stmt();
 
 		if (nets.NumberOfClockTrees() > 0) {
@@ -174,99 +180,116 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     circgen.generateComponentInstance(out, 0L /*id*/, null /*comp*/);
 	}
 
-  private static void generateInlinedCodeForPinSignals(Hdl out, Path path, Component pin) {
-    String pinName = "s_" + NetlistComponent.labelOf(pin);
-    int signalIdx = 0;
-    for (String signal : ioResources.GetMapNamesList(path)) {
-      String signal = signalNames.get(MapOffset);
+  private void pinVectorAssign(Hdl out, String pinName, String portName, int seqno, int n) {
+    if (n == 1)
+      out.assign(pinName, portName, seqno);
+    else if (n > 1)
+      out.assign(pinName, portName, seqno+n-1, seqno);
+  }
 
-      // Handle disconnected output pin mappings
-      if (ioResources.IsDisconnectedOutput(signal))
-        continue; // do nothing, vhdl will warn but will optimize away the signal
+  private boolean needTopLevelInversion(Component comp, BoardIO io) {
+    boolean boardIsActiveHigh = io.activity == PinActivity.ACTIVE_HIGH;
+    boolean compIsActiveHigh = comp.getFactory()ActiveOnHigh(comp.getAttributeSet());
+    return boardIsActiveHigh ^ compIsActiveHigh;
+  }
 
-      boolean invert = ioResources.RequiresToplevelInversion(path, signal);
-      String maybeNot = invert ? out.not+" " : "";
-      boolean multibit = pin.getEnd(0).getWidth().getWidth() > 1;
-
-      // Handle synthetic constant-value input pin mappings
-      if (!ioResources.IsDeviceSignal(signal)) {
-        int constinput = ioResources.GetSyntheticInputValue(signal);
-        int w = 1; // fixme ?
-        for (int i = 0; i < w; i++) {
-          // Example VHDL for constant-value input pin:
-          //   s_SomeInputLabel(3) <= '1'
-          String constbit = out.bit((constinput>>i)&1);
-          if (multibit)
-            out.assign(pinName, signalIdx++, maybeNot + constbit);
-          else
-            out.assign(pinName, maybeNot + constbit);
-        }
-        continue;
+  private void generateInlinedCodeSignal(Hdl out, Path path, NetlistComponent shadow) {
+    // Note: Any logisim component that is not active-high will get an inversion
+    // here. Also, any FPGA I/O device that is not active-high will get an
+    // inversion. In cases where there would be two inversions, we leave them
+    // both off.
+    String signal;
+    String bit;
+    int offset;
+    if (shadow.original.getFactory() instanceOf Pin) {
+      signal = "s_" + NetlistComponent.labelOf(pin);
+      bit = signal+hdl.idx;
+      offset = 0;
+    } else {
+      NetlistComponent.PortIndices3 indices = comp.getGlobalHiddenPortIndices(path);
+      if (indices == null) {
+        out.err.AddFatalError("INTERNAL ERROR: Missing index data for I/O component %s", path);
+        return;
       }
+      if (indices.in.end == indices.in.start) {
+        // signal[5] is the only bit
+        offset = indices.in.start;
+        bit = "s_LOGISIM_HIDDEN_FPGA_INPUT"+hdl.idx;
+        signal = String.format(bit, offset);
+      } else if (indices.in.end > indices.in.start) {
+        // signal[5] versus signal[8:3]
+        offset = indices.in.start;
+        signal = "s_LOGISIM_HIDDEN_FPGA_INPUT";
+        bit = signal+hdl.idx;
+      } else if (indices.out.end == indices.out.start) {
+        // signal[5] is the only bit
+        offset = indices.out.start;
+        bit = "s_LOGISIM_HIDDEN_FPGA_OUTPUT"+hdl.idx;
+        signal = String.format(bit, offset);
+      } else if (indices.out.end > indices.out.start) {
+        // signal[5] versus signal[8:3]
+        offset = indices.out.start;
+        signal = "s_LOGISIM_HIDDEN_FPGA_OUTPUT";
+        bit = signal+hdl.idx;
+      } else {
+        out.err.AddFatalError("INTERNAL ERROR: Hidden net without input or output bits for path %s", path);
+        return;
+      }
+    }
 
-      // Handle normal pin mappings
-      int inputId = ioResources.GetFPGAInputPinId(signal);
-      int outputId = ioResources.GetFPGAOutputPinId(signal);
-      int w = ioResources.GetNrOfPins(signal);
-      System.out.println("w = " + w); // fixme: suspect this is always 1
-      for (int i = 0; i < w; i++) {
-        // Example VHDL for normal input pin:
-        //   s_SomeCircuitInputLabel(3) <= FPGA_INPUT_PIN_27
-        if (inputId >= 0 && multibit)
-          out.assign(pinName, signalIdx++, maybeNot + "FPGA_INPUT_PIN_" + (inputId+i));
-        else if (inputId >= 0)
-          out.assign(pinName, maybeNot + "FPGA_INPUT_PIN_" + (inputId+i));
-        // Example VHDL for normal input pin:
-        //   FPGA_OUTPUT_PIN_27 <= s_SomeCircuitOutputLabel(3)
-        if (outputId >= 0 && multibit)
-          out.assign("FPGA_OUTPUT_PIN_" + (outputId+i), pinName, signalIdx++);
-        else if (outputId >= 0)
-          out.assign("FPGA_OUTPUT_PIN_" + (outputId+i), pinName);
+    PinBindings.Dest dest = ioResources.mappings(ioResources.sourceFor(path));
+    if (dest != null) { // Entire pin is mapped to one BoardIO resource.
+      boolean invert = needTopLevelInversion(pin, dest.io);
+      String maybeNot = (invert ? hdl.not + " " : "");
+      if (dest.io.type == BoardIO.Type.Unconnected) {
+        // If user assigned type "unconnected", do nothing. Synthesis will warn,
+        // but optimize away the signal.
+        continue;
+      } else if (!BoardIO.PhysicalTypes.contains(dest.io.type)) {
+        // Handle synthetic input types.
+        int constval = dest.io.syntheticValue;
+        out.assign(signal, maybeNot+out.literal(constval, dest.io.width.size()));
+      } else {
+        // Handle physical I/O device types.
+        Int3 seqno = dest.seqno();
+        // Input pins
+        if (dest.io.width.in == 1)
+          out.assign(signal, maybeNot+"FPGA_INPUT_PIN_"+seqno.in);
+        else for (int i = 0; i < dest.io.width.in)
+          out.assign(signal, i, maybeNot+"FPGA_INPUT_PIN_"+(seqno.in+i));
+        // Output pins
+        if (dest.io.width.out == 1)
+          out.assign("FPGA_OUTPUT_PIN_"+seqno.out, maybeNot+signal);
+        else for (int i = 0; i < dest.io.width.out)
+          out.assign("FPGA_OUTPUT_PIN_"+(seqno.out+i), maybeNot+signal, i);
+        // Note: no such thing as inout pins
+      }
+    } else { // Each bit of pin is assigned to a different BoardIO resource.
+      ArrayList<PinBinding.Source> srcs = ioResources.bitSourcesFor(path);
+      for (int i = 0; i < srcs.size(); i++)  {
+        dest = ioResources.mappings(srcs.get(i));
+        boolean invert = needTopLevelInversion(pin, dest.io);
+        String maybeNot = (invert ? hdl.not + " " : "");
+        if (dest.io.type == BoardIO.Type.Unconnected) {
+          // If user assigned type "unconnected", do nothing. Synthesis will warn,
+          // but optimize away the signal.
+          continue;
+        } else if (!BoardIO.PhysicalTypes.contains(dest.io.type)) {
+          // Handle synthetic input types.
+          int constval = dest.io.syntheticValue;
+          out.assign(bit, offset+i, maybeNot+out.literal(constval, 1));
+        } else {
+          // Handle physical I/O device types.
+          Int3 seqno = dest.seqno();
+          if (dest.io.width.in == 1)
+            out.assign(bit, offset+i, maybeNot+"FPGA_INPUT_PIN_"+seqno.in);
+          // Output pins
+          if (dest.io.width.out == 1)
+            out.assign("FPGA_OUTPUT_PIN_"+seqno.out, maybeNot+bit, offset+i);
+          // Note: no such thing as inout pins
+        }
       }
     }
   }
-
-	private static void generateInlinedCodeForHiddenSignals(Hdl out, Path path) {
-    // Note: This only happens for input and output ports, as only they can get
-    // inversions. InOut ports do not get inversions, so don't get touched here.
-
-    System.out.printf("Generating inline code for I/O type %s path %s\n", factory, path);
-
-		NetlistComponent comp = ioResources.GetComponent(path);
-		if (comp == null) {
-			out.err.AddFatalError("INTERNAL ERROR: Shadow I/O component missing for %s", path);
-			return;
-		}
-
-    NetlistComponent.PortIndices3 indices = comp.getGlobalHiddenPortIndices(path);
-		if (indices == null) {
-			out.err.AddFatalError("INTERNAL ERROR: Missing index data for I/O component %s", path);
-			return;
-		}
-
-    int inputIdx = indices.in.start;
-    int outputIdx = indices.out.start;
-
-		for (String signal : ioResources.GetMapNamesList(path);
-			boolean invert = ioResources.RequiresToplevelInversion(path, signal);
-      String maybeNot = (invert ? hdl.not + " " : "");
-			int inputId = ioResources.GetFPGAInputPinId(signal);
-			int outputId = ioResources.GetFPGAOutputPinId(signal);
-			int n = ioResources.GetNrOfPins(signal);
-      // Note: inout ports are included here (see note above).
-			for (int pin = 0; pin < n; pin++) {
-        // Example VHDL for input pin:
-        //   s_LOGISIM_HIDDEN_FPGA_INPUT(3) <= FPGA_INPUT_PIN_28;
-				if (inputId >= 0 && inputIdx <= indices.in.end)
-					out.assign("s_LOGISIM_HIDDEN_FPGA_INPUT", inputIdx++,
-              maybeNot + "FPGA_INPUT_PIN_"+ (inputId + pin));
-        // Example VHDL for output pin:
-        //   FPGA_OUTPUT_PIN_35 <= s_LOGISIM_HIDEN_FPGA_OUTPUT(4);
-				if (outputId >= 0 && outputIdx <= indices.out.end)
-          out.assign("FPGA_OUTPUT_PIN_" + (outputId + pin),
-              maybeNot + "s_LOGISIM_HIDEN_FPGA_OUTPUT", outputIdx++);
-			}
-		}
-	}
 
 }

@@ -42,9 +42,9 @@ public class BoardIcon implements Icon {
   private Image image;
   private int icon_width = 240;
   private int icon_height = 130;
+  public final JLabel label = new JLabel();
 
-  public BoardIcon(BufferedImage img) {
-    setImage(img);
+  public BoardIcon() {
   }
 
   public int getIconHeight() { return icon_height; }
@@ -65,6 +65,9 @@ public class BoardIcon implements Icon {
           getIconHeight(), BufferedImage.SCALE_SMOOTH);
     else
       image = null;
+		label.setIcon(this);
+    repaint();
+    label.repaint();
   }
 
 }

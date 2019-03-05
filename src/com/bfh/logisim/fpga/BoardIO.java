@@ -168,7 +168,7 @@ public class BoardIO {
 	public final Bounds rect; // only for physical types
 	public final IoStandard standard; // only for physical types
 	public final PullBehavior pull; // only for physical types
-	public final PinActivity activity; // only for physical types
+	public final PinActivity activity; // only for physical types; set to ACTIVE_HIGH for synthetic
 	public final DriveStrength strength; // only for physical types
   public final syntheticValue; // only for synthetic types
 
@@ -180,6 +180,12 @@ public class BoardIO {
     width = w;
     syntheticValue = val;
     label = t == Constant ? String.format("0x%x", val) : t.toString();
+    activity = PinActivity.ACTIVE_HIGH;
+    // rest are defaults/empty
+    rect = null;
+    standard = IoStandard.UNKNOWN;
+    pull = PullBehavior.UNKNOWN;
+    strength = DriveStrength.UNKNOWN;
   }
 
   public static BoardIO makeSynthetic(Type t, int w, int val) {
@@ -591,5 +597,7 @@ public class BoardIO {
       locs.add("NET \"" + net + "\" " + spec);
     }
   }
+
+  public boolean requiresTopLevelInversion(Component
 }
 

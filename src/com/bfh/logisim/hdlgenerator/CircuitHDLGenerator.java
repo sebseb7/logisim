@@ -52,8 +52,8 @@ public class CircuitHDLGenerator extends HDLGenerator {
 	private Circuit circ;
   private Netlist _circNets; // netlist for this circ; _nets is for our parent
 
-	public CircuitHDLGenerator(String lang, FPGAReport err, Netlist nets, char vendor, Circuit circ) {
-    super(new HDLCTX(lang, err, nets, AttributeSets.EMPTY, vendor), "circuit", "Circuit_${LABEL}", "i_Circ");
+	public CircuitHDLGenerator(HDLCTX ctx, Circuit circ) {
+    super(ctx, "circuit", "Circuit_${LABEL}", "i_Circ");
 		this.circ = circ;
 		this._circNets = circ.getNetList();
     
@@ -215,7 +215,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
     return map;
 	}
 
-  // Top-level entry point: recursively write all HDL files for the project.
+  // Second-level entry point: recursively write all HDL files for the project.
   public boolean writeAllHDLFiles(String rootDir) {
 		if (!rootDir.endsWith(File.separator))
 			rootDir += File.separator;

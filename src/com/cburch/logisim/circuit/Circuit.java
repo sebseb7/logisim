@@ -309,7 +309,6 @@ public class Circuit implements AttributeDefaultProvider {
     Annotated = true;
   }
 
-  //
   // Annotation module for all components that require a non-zero-length label
   public void ClearAnnotationLevel() {
     Annotated = false;

@@ -169,9 +169,6 @@ public class FileWriter {
 		}
 	}
 
-	public static final String RemarkLine = "--------------------------------------------------------------------------------";
-
 	public static final String EntityExtension = "_entity";
-
 	public static final String ArchitectureExtension = "_behavior";
 }
