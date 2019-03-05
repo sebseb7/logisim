@@ -33,10 +33,10 @@ package com.bfh.logisim.fpga;
 public class PullBehavior {
   public final String desc, altera, xilinx;
 
-  public static final FLOAT = new PullBehavior("Float", "TRI-STATED", "float");
-  public static final PULL_UP = new PullBehavior("Pull Up", "PULLUP", "pullup");
-  public static final PULL_DOWN = new PullBehavior("Pull Down", "PULLDOWN", "pulldown");
-  public static final UNKNOWN = new PullBehavior("Unknown", "", "float");
+  public static final FLOAT = new PullBehavior("Float", "TRI-STATED", "FLOAT");
+  public static final PULL_UP = new PullBehavior("Pull Up", "PULLUP", "PULLUP");
+  public static final PULL_DOWN = new PullBehavior("Pull Down", "PULLDOWN", "PULLDOWN");
+  public static final UNKNOWN = new PullBehavior("Unknown", "", "FLOAT");
   public static PullBehavior[] OPTIONS = { FLOAT, PULL_UP, PULL_DOWN }
 
   private PullBehavior(String d, String a, String x) { desc = d; altera = a; xilinx = x; }

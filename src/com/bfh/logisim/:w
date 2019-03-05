@@ -50,6 +50,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 
+import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.fpga.IoStandard;
 import com.bfh.logisim.fpga.PinBindings;
@@ -72,7 +73,6 @@ public class XilinxDownload extends FPGADownload {
 
   @Override
 	public boolean initiateDownload() {
-    // FIXME: cleaup this method, combine with code in AlteraDownload
 		boolean isCPLD = isCPLD(board.fpga);
 		String bitFileExt = isCPLD ? ".jed" : ".bit";
 		boolean BitFileExists = new File(sandboxPath + TOP_HDL + bitFileExt).exists();
@@ -526,21 +526,19 @@ public class XilinxDownload extends FPGADownload {
   private boolean generateUcfFile() {
     Hdl out = new Hdl(lang, err);
 		if (ioResources.requiresOscillator) {
-			out.stmt("NET \"%s\" %s ;", CLK_PORT, xilinxCLockSpec(board));
+			out.stmt("NET \"%s\" %s ;", CLK_PORT, GetXilinxClockPin(board));
 			out.stmt("NET \"%s\" TNM_NET = \"%s\" ;", CLK_PORT, CLK_PORT);
 			out.stmt("TIMESPEC \"TS_%s\" = PERIOD \"%s\" %s HIGH 50 % ;",
           CLK_PORT, CLK_PORT, board.fpga.Speed);
 			out.stmt();
 		}
-    ioResources.forEachPhysicalPin((pin, net, io, label) -> {
+    ioResources.forEachPhysicalInput((pin, seqno, io, label) -> {
+      String net = "FPGA_INPUT_PIN_" + seqno;
       String spec = String.format("LOC = \"%s\"", pin);
-      if (io.pull == PullBehavior.PULL_UP || io.pull == PullBehavior.PULL_DOWN)
-        spec += " | " + io.pull.xilinx;
-      if (io.strength != DriveStrength.UNKNOWN && io.strength != DriveStrength.DEFAULT)
-        spec += " | DRIVE = " + io.strength.ma;
-      if (io.standard != IoStandard.Unknown && io.standard != IoStandard.DEFAULT)
-        spec += " | IOSTANDARD = " + io.standard;
       out.stmt("NET \"%s\" %s ; # %s", net, spec, label);
+      out.stmt("    set_location_assignment %s -to %s # %s", pin, net, label);
+      if (d.io.pull == PullBehavior.PULL_UP)
+        locs.add("    set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to %s", net);
     });
 		File f = FileWriter.GetFilePointer(ucfPath, ucf_file, err);
 		return FileWriter.WriteContents(f, out, err);
@@ -548,21 +546,27 @@ public class XilinxDownload extends FPGADownload {
 
   @Override
   public boolean generateScripts(PinBindings ioResources, ArrayList<String> hdlFiles) {
-    return generateVhdlListFile(hdlFiles)
-        && generateRunScript()
-        && generateDownloadScript()
-        && generateUcfFile();
+
+    if (!generateVhdlListFile(hdlFiles))
+      return false;
+    if (!generateRunScript())
+      return false;
+    if (!generateDownloadScript())
+      return false;
+
 	}
 
-	private static String xilinxCLockSpec(Chipset chip) {
-    String spec = String.format("LOC = \"%s\"", chip.ClockPinLocation);
-    PullBehavior pull = chip.ClockPullBehavior;
-		if (pull == PullBehavior.PULL_UP || pull == PullBehavior.PULL_DOWN)
-			spec += " | " + pull.xilinx;
-    IoStandard std = chip.ClockStandard;
+
+	private static String GetXilinxClockPin(Board CurrentBoard) {
+		StringBuffer result = new StringBuffer();
+		result.append("LOC = \"" + CurrentBoard.fpga.ClockPinLocation + "\"");
+    PullBehavior dir = CurrentBoard.fpga.ClockPullBehavior;
+		if (dir == PullBehavior.PULL_UP || dir == PullBehavior.PULL_DOWN)
+			result.append(" | " + dir.xilinx.toUpperCase());
+    IoStandard std = CurrentBoard.fpga.ClockStandard;
 		if (std != IoStandard.DEFAULT && std != IoStandard.UNKNOWN)
-			spec += " | IOSTANDARD = " + std;
-		return spec;
+			result.append(" | IOSTANDARD = " + std);
+		return result.toString();
 	}
 
   private static isCPLD(Chipset chip) {

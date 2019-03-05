@@ -137,7 +137,7 @@ public class BoardIO {
       }
     }
 
-    public ArrayList<String> pinLabels(int width) {
+    public String[] pinLabels(int width) {
       switch (this) {
       case SevenSegment:
         return SevenSegment.pinLabels();
@@ -150,14 +150,14 @@ public class BoardIO {
       }
     }
 
-    private ArrayList<String> genericPinLabels(int width) {
-      ArrayList<String> a = new ArrayList<>();
+    private String[] genericPinLabels(int width) {
+      String[] labels = new String[width];
       if (width == 1)
-        a.add("Pin");
+        labels[0] = "Pin";
       else
         for (int i = 0; i < width; i++)
-          a.add("Pin " + i);
-      return a;
+          labels[0] = "Pin " + i;
+      return labels;
     }
 
 	}
@@ -172,7 +172,7 @@ public class BoardIO {
 	public final DriveStrength strength; // only for physical types
   public final syntheticValue; // only for synthetic types
 
-	private final String[] pins;
+	public final String[] pins;
 
   // constructor for synthetic I/O resources
   private BoardIO(Type t, int w, int val) {
@@ -392,16 +392,16 @@ public class BoardIO {
     if (t.label != null && t.label.length() > 0)
       label.setText(t.label);
 
-    ArrayList<String> pinLabels = t.type.pinLabels(t.width);
-    ArrayList<JTextField> pinLocs = new ArrayList<JTextField>();
+    String[] pinLabels = t.type.pinLabels(t.width);
+    JTextField[] pinLocs = new JTextField[width];
     for (int i = 0; i < t.width; i++)
-      pinLocs.add(new JTextField(6));
+      pinLocs[i] = new JTextField(6);
 
     c.gridx = 0;
     c.gridy = 0;
 
     for (int i = 0; i < t.width; i++) {
-      add(dlg, c, pinLabels.get(i) + " location:", pinLocs.get(i));
+      add(dlg, c, pinLabels[i] + " location:", pinLocs[i]);
       if (c.gridy == 32) {
         c.gridx += 2;
         c.gridy = 0;
@@ -449,7 +449,7 @@ public class BoardIO {
       // ensure all locations are specified
       boolean missing = false;
       for (int i = 0; i < t.width && !missing; i++) {
-        pins[i] = pinLocs.get(i).getText();
+        pins[i] = pinLocs[i].getText();
         missing = pins[i] == null || pins[i].isEmpty();
       }
       if (!missing)
@@ -551,53 +551,9 @@ public class BoardIO {
     }
   }
 
-  public ArrayList<String> getPinAssignments(char vendor, String direction, int startId) {
-    ArrayList<String>() locs = new ArrayList<>();
-    if (vendor == Chipset.ALTERA)
-      getAlteraPinAssignments(locs, direction, startId);
-    if (vendor == Chipset.XILINX)
-      getXilinxUCFAssignments(locs, direction, startId);
-    return locs;
+  public ArrayList<String> pinLabels() {
+    return type.pinLabels(width.size());
   }
 
-  private static String net(int i, String direction) {
-    if (direction.equals("in"))
-      return "FPGA_INPUT_PIN_" + i;
-    else if (direction.equals("inout"))
-      return "FPGA_INOUT_PIN_" + i;
-    else
-      return "FPGA_OUTPUT_PIN_" + i;
-  }
-
-	private void getAlteraPinAssignments(ArrayList<String> locs, String direction, int startId) {
-    // Note: Only works for components that aren't very complex. (FIXME: why?)
-		for (int i = 0; i < width; i++) {
-			String net = net(startId + i, direction);
-			locs.add("    set_location_assignment " + pins[i] + " -to " + net);
-			if (pull == PullBehavior.PULL_UP)
-				locs.add("    set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to " + net);
-		}
-	}
-
-  private void getXilinxUCFAssignments(ArrayList<String> locs, String direction, int startId) {
-    // Note: Only works for components that aren't very complex. (FIXME: why?)
-    ArrayList<String> pinLabels = type.pinLabels(width);
-    for (int i = 0; i < width; i++) {
-      String net = net(startId + i, direction);
-      String spec = "LOC = \"" + pads.get(i) + "\"";
-      if (pull == PullBehavior.PULL_UP || pull == PullBehavior.PULL_DOWN)
-        spec += " | " + pull;
-      if (strength != DriveStrength.UNKNOWN && strength != DriveStrength.DEFAULT)
-        spec += " | DRIVE = " + strength.ma;
-      if (standard != IoStandard.Unknown && standard != IoStandard.DEFAULT)
-        spec += " | IOSTANDARD = " + standard;
-      spec += " ;"
-      if (pinLabels != null)
-        spec += " # " + pinLabels.get(i);
-      locs.add("NET \"" + net + "\" " + spec);
-    }
-  }
-
-  public boolean requiresTopLevelInversion(Component
 }
 

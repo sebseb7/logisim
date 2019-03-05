@@ -32,6 +32,7 @@ package com.bfh.logisim.fpga;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.function.Function;
 
 import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.netlist.NetlistComponent;
@@ -85,14 +86,14 @@ import static com.bfh.logisim.netlist.Netlist.Int3;
 //
 // The Xilinx and Altera FPGA download scripts use this to get the list of pin
 // locations that need to be given to the HDL synthesis tools.
-//   see: GetFPGAPinLocs(int FPGAVendor)
+//   see: GetFPGAPinLocs(int vendor)
 //
 // TopLevelHDLGenerator uses this:
 //  - to connect hidden nets (with inversions, if needed) to the
 //    user-selected BoardIO FPGA pins and/or synthetic values.
 public class PinBindings {
 
-  FPGAReport err;
+  private FPGAReport final err;
 
   // List of I/O-related components in the design, organized by path.
 	private final HashMap<Path, NetlistComponent> components;
@@ -102,6 +103,10 @@ public class PinBindings {
 
   // Mappings defined so far.
   public final HashMap<Source, Dest> mappings = new HashMap<>();
+
+  // Indicates whether the circuit contains any clock generators.
+  // Set by ToplevelHDLGenerator, used by FPGA downloaders.
+  public boolean requiresOscillator;
 
   public static class Source {
     public final Path path;
@@ -161,10 +166,10 @@ public class PinBindings {
   public void finalizeMappings() {
     Int3 counts = new Int3();
     mappings.forEach((s, d) -> {
-      if (!BoardIO.PhysicalTypes.contains(d.type))
-        continue;
-      s.seqno = counts.copy();
-      counts.increment(s.width);
+      if (BoardIO.PhysicalTypes.contains(d.type)) {
+        s.seqno = counts.copy();
+        counts.increment(s.width);
+      }
     }
     finalizedCounts = counts;
   }
@@ -172,6 +177,30 @@ public class PinBindings {
   // Counts of all I/O-related physical FPGA pins used in the design.
   public Int3 countFPGAPhysicalIOPins() {
     return finalizedCounts.copy();
+  }
+
+  public static interface PhysicalPinConsumer {
+    public void process(String pin, String net, BoardIO io, String label);
+  }
+
+  public void forEachPhysicalPin(PhysicalPinConsumer f) {
+    forEachPhysicalPin(f, w -> w.in, "FPGA_INPUT_PIN_");
+    forEachPhysicalPin(f, w -> w.inout, "FPGA_INOUT_PIN_");
+    forEachPhysicalPin(f, w -> w.out, "FPGA_OUTPUT_PIN_");
+  }
+
+  private void forEachPhysicalPin(PhysicalPinConsumer f,
+      Function<Int3, Integer> selector, String signalPrefix) {
+    mappings.forEach((s, d) -> {
+      int w = selector(s.width);
+      if (w >= 0 && BoardIO.PhysicalTypes.contains(d.io)) {
+        String[] labels = d.io.pinLabels();
+        String[] pins = d.io.pins;
+        int seqno = selector(s.seqno);
+        for (int i = 0; i < w i++)
+          f(pins[i], signalPrefix + (seqno + i), d.io, labels[i]);
+      }
+    });
   }
 
   public ArrayList<String> pinLabels(Path path) {
@@ -335,74 +364,5 @@ public class PinBindings {
         return false;
     return true;
   }
-
-// 	public int GetFPGAInOutPinId(String MapName) {
-// 		if (fpgaInOutsList.containsKey(MapName)) {
-// 			return fpgaInOutsList.get(MapName);
-// 		}
-// 		return -1;
-// 	}
-// 
-// 	public int GetFPGAInputPinId(String MapName) {
-// 		if (fpgaInputsList.containsKey(MapName)) {
-// 			return fpgaInputsList.get(MapName);
-// 		}
-// 		return -1;
-// 	}
-// 
-// 	public int GetFPGAOutputPinId(String MapName) {
-// 		if (fpgaOutputsList.containsKey(MapName)) {
-// 			return fpgaOutputsList.get(MapName);
-// 		}
-// 		return -1;
-// 	}
-
-//  // This is used by download scripts for final HDL synthesis tool configuration.
-//	public ArrayList<String> GetFPGAPinLocs(int FPGAVendor) {
-//		ArrayList<String> Contents = new ArrayList<>();
-//		for (String Map : fpgaInputsList.keySet()) {
-//			int InputId = fpgaInputsList.get(Map);
-//			if (!mappedList.containsKey(Map)) {
-//				System.err.printf("No mapping found for %s\n", Map);
-//				return Contents;
-//			}
-//			Bounds rect = mappedList.get(Map);
-//      if (rect.isDeviceSignal()) {
-//        BoardIO Comp = board.GetComponent(rect);
-//        Contents.addAll(Comp.getPinAssignments(FPGAVendor, "in", InputId));
-//      } else {
-//        return null;
-//      }
-//		}
-//		for (String Map : fpgaInOutsList.keySet()) {
-//			int InOutId = fpgaInOutsList.get(Map);
-//			if (!mappedList.containsKey(Map)) {
-//				System.err.printf("No mapping found for %s\n", Map);
-//				return Contents;
-//			}
-//			Bounds rect = mappedList.get(Map);
-//      if (rect.isDeviceSignal()) {
-//        BoardIO Comp = board.GetComponent(rect);
-//        Contents.addAll(Comp.getPinAssignments(FPGAVendor, "inout", InOutId));
-//      } else {
-//        return null;
-//      }
-//		}
-//		for (String Map : fpgaOutputsList.keySet()) {
-//			int OutputId = fpgaOutputsList.get(Map);
-//			if (!mappedList.containsKey(Map)) {
-//				System.err.printf("No mapping found for %s\n", Map);
-//				return Contents;
-//			}
-//			Bounds rect = mappedList.get(Map);
-//      if (rect.isDeviceSignal()) {
-//        BoardIO Comp = board.GetComponent(rect);
-//        Contents.addAll(Comp.getPinAssignments(FPGAVendor, "out", OutputId));
-//      } else {
-//        return null;
-//      }
-//		}
-//		return Contents;
-//	}
 
 }

@@ -83,6 +83,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     int numclk = _circNets.clockbus.shapes().size();
 
     // raw oscillator input
+    ioResources.requiresOscilator = numclk > 0;
     if (numclk > 0)
       inPorts.add(new PortInfo(TickHDLGenerator.FPGA_CLK_NET, 1, -1, null));
 

@@ -50,14 +50,13 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Netlist;
-import com.bfh.logisim.download.AlteraDownload;
-import com.bfh.logisim.download.XilinxDownload;
+import com.bfh.logisim.download.FPGADownload;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.BoardReader;
 import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.hdlgenerator.FileWriter;
-import com.bfh.logisim.hdlgenerator.TopLevelHDLGenerator;
+import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.Simulator;
@@ -813,60 +812,41 @@ public class Commander extends JFrame {
   private void doSynthesisAndDownload(PinBindings pinBindings) {
     String basedir = projectWorkspace();
     String circdir = circuitWorkspace() + lang.toLowerCase() + SLASH;
+
+    FPGADownload downloader = FPGADownload.forVendor(board.fpga.Vendor);
+    downloader.err = err;
+    downloader.lang = lang;
+    downloader.board = board;
+    downloader.settings = settings;
+    downloader.projectPath = basedir;
+    downloader.circuitPath = circdir;
+    downloader.scriptPath = basedir + SCRIPT_DIR;
+    downloader.sandboxPath = basedir + SANDBOX_DIR;
+    downloader.ucfPath = basedir + UCF_DIR;
+    downloader.writeToFlash = writeToFlash.isSelected();
+
     if (!justDownload()) {
+      // sanity check pin bindings
       if (pinBindings == null || !pinBindings.allPinsAssigned()) {
         err.AddError("Not all pins have been assigned, synthesis can't continue.");
         return;
       }
-      ArrayList<String> entityFiles = new ArrayList<>();
-      ArrayList<String> behaviorFiles = new ArrayList<>();
-      enumerateHDLFiles(circdir, entityFiles, behaviorFiles, lang);
-      Circuit root = circuitsList.getSelectedItem();
       boolean badTools = settings.GetToolsAreDisabled();
       // generate scripts and synthesize
-      if (board.fpga.Vendor == Chipset.ALTERA) {
-        if (!AlteraDownload.GenerateQuartusScript(err,
-              basedir + SCRIPT_DIR,
-              root.getNetList(), pinBindings,
-              board, entityFiles, behaviorFiles, lang);
-            && !badTools) {
-          err.AddError("Can't generate quartus script");
-          return;
-        }
-      } else {
-        if (!XilinxDownload.GenerateISEScripts(err,
-              basedir,
-              basedir + SCRIPT_DIR,
-              basedir + UCF_DIR,
-              root.getNetList(), pinBindings,
-              board, entityFiles, behaviorFiles, lang,
-              writeToFlash.isSelected())
-            && !badTools) {
-          err.AddError("Can't generate xilinx script");
-          return;
-        }
+      if (downloader.generateScripts(pinBindings) && !badTools) {
+        err.AddError("Can't generate Tool-specific download scripts");
+        return;
       }
     } else {
-      if (!readyForDownload()) {
+      // don't generate or synthesize, just sanity-check that project is ready
+      if (!downloader.readyForDownload()) {
         err.AddError("HDL files are not ready for download. "
             + "Try selecting \"Synthesize and Download\" instead.");
         return;
       }
     }
     // download
-    if (board.fpga.Vendor == Chipset.ALTERA) {
-      AlteraDownload.Download(settings,
-          basedir + SCRIPT_DIR,
-          circdir,
-          basedir + SANDBOX_DIR,
-          err);
-    } else {
-      XilinxDownload.Download(settings, board,
-          basedir + SCRIPT_DIR,
-          basedir + UCF_DIR,
-          basedir,
-          basedir + SANDBOX_DIR, err);
-    }
+    downloader.initiateDownload();
   }
 
   private boolean mkdirs(String dirname) {
@@ -882,34 +862,6 @@ public class Commander extends JFrame {
     } catch (Exception e) {
       err.AddFatalError("Error creating directory: %s\n  detail: %s", dirname, e.getMessage());
       return false;
-    }
-  }
-
-  private void enumerateHDLFiles(String path,
-      ArrayList<String> entityFiles, ArrayList<String> behaviorFiles) {
-    if (lang == Settings.VHDL)
-      enumerateHDLFiles(path, entityFiles, behaviorFiles, 
-          FileWriter.EntityExtension + ".vhd",
-          FileWriter.ArchitectureExtension + ".vhd");
-    else
-      enumerateHDLFiles(path, entityFiles, behaviorFiles, ".v", null
-  }
-
-  private void enumerateHDLFiles(String path,
-    ArrayList<String> entityFiles, ArrayList<String> behaviorFiles,
-    String entityEnding, String behaviorEnding) {
-    File dir = new File(path);
-    if (!path.endsWith(SLASH))
-      path += SLASH;
-    for (File f : dir.listFiles()) {
-      String subpath = path + f.getName();
-      if (f.isDirectory())
-        enumerateHDLFiles(subpath, entityFiles, behaviorFiles,
-            entityEnding, behaviorEnding);
-      else if (f.getName().endsWith(entityEnding))
-        entityFiles.add(subpath.replace("\\", "/"));
-      else if (f.getName().endsWith(behaviorEnding))
-        behaviorFiles.add(subpath.replace("\\", "/"));
     }
   }
 
@@ -1120,7 +1072,7 @@ public class Commander extends JFrame {
     // Generate HDL for top-level module and everything it contains, including
     // the root circuit (and all its subcircuits and components), the top-level
     // ticker (if needed), any clocks lifted to the top-level, etc.
-    TopLevelHDLGenerator g = new TopLevelHDLGenerator(lang, err,
+    ToplevelHDLGenerator g = new ToplevelHDLGenerator(lang, err,
         board.fpga.Vendor, oscFreq, clkPeriod, root, pinBindings);
 
     return g.writeAllHDLFiles(basedir);
