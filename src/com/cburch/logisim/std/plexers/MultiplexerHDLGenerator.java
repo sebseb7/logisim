@@ -41,7 +41,7 @@ public class MultiplexerHDLGenerator extends HDLGenerator {
     int ws = selWidth();
     int n = (1 << ws);
     String bitWidth = (w > 1 ? "BitWidth" : "1");
-    if (w > 1) {
+    if (w > 1)
       parameters.add("BitWidth", w);
     for (int i = 0; i < n; i++)
       outPorts.add("In_"+i, bitWidth, i, false);
@@ -54,9 +54,8 @@ public class MultiplexerHDLGenerator extends HDLGenerator {
       inPorts.add("Out", bitWidth, n+1, null);
     }
 
-    if (_lang.equals("Verilog")) {
-      registers.add(new WireInfo("s_vec", bitWidth));
-    }
+    if (_lang.equals("Verilog"))
+      registers.add("s_vec", bitWidth);
   }
 
   private static String deriveHDLName(AttributeSet attrs) {
@@ -65,7 +64,7 @@ public class MultiplexerHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out) {
+  public void generateBehavior(Hdl out, String rootDir) {
     int w = width(attrs);
     int ws = selWidth(attrs);
     int n = (1 << ws);

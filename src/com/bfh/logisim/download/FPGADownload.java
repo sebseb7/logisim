@@ -30,6 +30,7 @@
 
 package com.bfh.logisim.download;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import com.bfh.logisim.fpga.Board;
@@ -48,9 +49,9 @@ public abstract class FPGADownload {
 
   public static FPGADownload forVendor(char vendor) {
     if (vendor == Chipset.ALTERA)
-      return AlteraDownload();
+      return new AlteraDownload();
     else
-      return XilinxDownload();
+      return new XilinxDownload();
   }
 
   // Parameters set by Commander
@@ -67,11 +68,11 @@ public abstract class FPGADownload {
 
   public boolean generateScripts(PinBindings ioResources) {
     ArrayList<String> hdlFiles = new ArrayList<>();
-    enumerateHdlFiles(circuitPath, hdlFiles);
+    enumerateHDLFiles(circuitPath, hdlFiles);
     generateScripts(ioResources, hdlFiles);
   }
 
-  public abstract boolean generateScripts(PinBindings ioResources, ArrayList<String> hdlFiles) {
+  public abstract boolean generateScripts(PinBindings ioResources, ArrayList<String> hdlFiles);
   
   public abstract boolean readyForDownload();
 
@@ -89,8 +90,8 @@ public abstract class FPGADownload {
   private void enumerateHDLFiles(String path, ArrayList<String> files,
     String entityEnding, String behaviorEnding) {
     File dir = new File(path);
-    if (!path.endsWith(SLASH))
-      path += SLASH;
+    if (!path.endsWith(File.separator))
+      path += File.separator;
     for (File f : dir.listFiles()) {
       String subpath = path + f.getName();
       if (f.isDirectory())

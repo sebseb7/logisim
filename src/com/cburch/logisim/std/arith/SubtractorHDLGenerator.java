@@ -68,7 +68,7 @@ public class SubtractorHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out) {
+  public void generateBehavior(Hdl out, String rootDir) {
     if (out.isVhdl) {
       out.stmt("s_A <= \"0\" & DataA;");
       out.stmt("s_B <= \"0\" & not(DataB);");

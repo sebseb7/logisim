@@ -31,6 +31,8 @@
 package com.bfh.logisim.library;
 
 import com.bfh.logisim.hdlgenerator.HDLInliner;
+import com.bfh.logisim.netlist.NetlistComponent;
+import com.cburch.logisim.hdl.Hdl;
 
 public class DynamicClockHDLGenerator extends HDLInliner {
 
@@ -41,7 +43,7 @@ public class DynamicClockHDLGenerator extends HDLInliner {
   @Override
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
     Net net = comp.getConnection(0);
-    if (net == null)
+    if (net == null) {
       out.err.AddWarning("Dynamic Clock Control component input is not connected.");
       out.err.AddWarning("Clock speed will be set to the maximum possible.");
       int w = _attrs.getValue(DynamicClock.WIDTH_ATTR).getWidth();

@@ -49,7 +49,7 @@ import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 
-import com.cburch.logisim.data.Bounds
+import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.gui.main.ExportImage;
 
 public class BoardPanel extends JPanel implements MouseListener, MouseMotionListener {
@@ -196,7 +196,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 			if (editing) {
 				String[] lines = {
           "Click to add picture of FPGA board.",
-          "The board picture must be PNG format and should be"
+          "The board picture must be PNG format and should be",
           " at least" + getWidth() + "x" + getHeight() + " pixels for best display." };
 
 				g.setColor(Color.black);

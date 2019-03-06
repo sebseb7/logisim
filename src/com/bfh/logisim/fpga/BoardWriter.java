@@ -30,7 +30,6 @@
 
 package com.bfh.logisim.fpga;
 
-import java.awt.Image;
 import java.io.File;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -116,7 +115,7 @@ class BoardWriter {
     return rue;
 	}
 
-  private static Element put(Doc doc, Element root,
+  private static Element put(Document doc, Element root,
       String section, String comment, Element ...elts) {
     Element sec = doc.createElement(section);
     root.appendChild(sec);
@@ -126,7 +125,7 @@ class BoardWriter {
     return sec;
   }
 
-  private static Element make(Doc doc, String name, String ...keyval) {
+  private static Element make(Document doc, String name, String ...keyval) {
     Element e = doc.createElement(name);
     // Note: no idea why setAttribute would be used only for the first one...
     // e.setAttribute(keyval[0], keyval[1]);

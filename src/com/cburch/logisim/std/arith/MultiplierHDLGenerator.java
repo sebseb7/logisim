@@ -55,7 +55,7 @@ public class MultiplierHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out) {
+  public void generateBehavior(Hdl out, String rootDir) {
     if (uMode()) {
       out.stmt("s_cin(2*BitWidth-1 downto BitWidth) <= (others => '0');");
       out.stmt("s_cin(BitWidth-1 downto 0)          <= CarryIn;");

@@ -37,8 +37,7 @@ import java.awt.Graphics;
 import java.util.Arrays;
 import java.util.List;
 
-import com.bfh.logisim.gui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.circuit.ExpressionComputer;
 import com.cburch.logisim.data.AbstractAttributeSet;

@@ -66,7 +66,7 @@ public class GateVhdlGenerator extends HDLGenerator {
       parameters.add("BitWidth", w);
       outPorts.add("Result", "BitWidth", 0, null);
       for (int i = 1; i <= n; i++)
-        inPorts.add("Input_"+i, "BitWidth", i, invertedInput(i) ^ identity;
+        inPorts.add("Input_"+i, "BitWidth", i, invertedInput(i) ^ identity);
     } else {
       // 1-bit version
       outPorts.add("Result", 1, 0, null);
@@ -177,7 +177,7 @@ public class GateVhdlGenerator extends HDLGenerator {
   }
 
   @Override
-  protected void generateBehavior(Hdl out) {
+  protected void generateBehavior(Hdl out, String rootDir) {
     int n = attrs.getValueOrElse(GateAttributes.ATTR_INPUTS, 1);
     if (n > 1)
       generateInputInversions(out, n);

@@ -52,7 +52,7 @@ public class PLAVhdlGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out) {
+  public void generateBehavior(Hdl out, String rootDir) {
     PLATable tt = attrs.getValue(PLA.ATTR_TABLE);
     int w = attrs.getValue(PLA.ATTR_OUT_WIDTH).getWidth();
     if (tt.rows().isEmpty()) {

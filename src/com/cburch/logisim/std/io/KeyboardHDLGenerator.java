@@ -30,10 +30,13 @@
 package com.cburch.logisim.std.io;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.io.File;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.bfh.logisim.hdlgenerator.HiddenPort;
+import com.bfh.logisim.netlist.NetlistComponent;
+import com.cburch.logisim.hdl.Hdl;
 
 public class KeyboardHDLGenerator extends HDLGenerator {
 
@@ -47,7 +50,7 @@ public class KeyboardHDLGenerator extends HDLGenerator {
     long freq = _nets.RawFPGAClockFreq();
     int counter_size = (int)Math.ceil(Math.log(5.0*freq/1e6) / Math.log(2));
     parameters.add("clk_freq", (int)freq);
-    parameters.add(new ParameterInfo("counter_size", counter_size);
+    parameters.add("counter_size", counter_size);
     // vhdlLibraries.add(IEEE_UNSIGNED);
 
     // Note: We expect the slow clock to actually be FPGAClock (or its inverse),
@@ -143,13 +146,13 @@ public class KeyboardHDLGenerator extends HDLGenerator {
       out.add("  -- so if the ps clock has remained high for approx 55us, then it has gone idle.");
       out.add("  -- We also debounce signals for about 5us.");
       out.add("  -- Note: The code below uses an idle counter limit of 50mHz/18000Hz = 2750, which");
-      out.add("  -- works out to 2750/50mHz = 50mHz/18000Hz/50mHz = 1/18000Hz = 55us.
+      out.add("  -- works out to 2750/50mHz = 50mHz/18000Hz/50mHz = 1/18000Hz = 55us.");
       out.add("");
-      out.add("  -- constant clk_freq     : integer := 50_000_000;        -- frequency of clk (e.g. 50 MHz)"); // TERASIC_DE0 is 50MHz, but not others
+      out.add("  -- constant clk_freq     : integer := 50_000_000;        -- frequency of clk (e.g. 50 MHz)");
       out.add("  -- constant counter_size : integer := 8;                 -- width (minus 1) for ps2 debounce counters, sized so 2**size/freq = 5us");
-      out.add("  constant idle_max     : integer := clk_freq/18_000;   -- max value for idle counter, sized so max/freq >= 55us
+      out.add("  constant idle_max     : integer := clk_freq/18_000;   -- max value for idle counter, sized so max/freq >= 55us");
       out.add("");
-      out.add("  signal ps2bus         : std_logic_vector(3 downto 0);  -- all four ps2 connector signals
+      out.add("  signal ps2bus         : std_logic_vector(3 downto 0);  -- all four ps2 connector signals");
       out.add("  signal sync_ffs       : std_logic_vector(3 downto 0);  -- synchronizer flip-flops for PS/2 signals");
       out.add("");
       out.add("  signal d_ps2clk_ffs   : std_logic_vector(1 downto 0);  -- ps2clk debounce input flip flops");

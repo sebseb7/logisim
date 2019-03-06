@@ -35,9 +35,7 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 
 import com.bfh.logisim.gui.FPGAReport;
-import com.cburch.logisim.data.Bounds
-
-import com.bfh.logisim.fpga.BoardIO.IOComponentTypes;
+import com.cburch.logisim.data.Bounds;
 
 // Board describes an fpga-based platform (i.e. "demo board") that can be the
 // target of the FPGA synthesis. Each Board has a name, chipset, image, and list
@@ -75,19 +73,19 @@ public class Board extends AbstractList<BoardIO> {
 
   public void printStats(FPGAReport out) {
 		out.AddInfo("Board '%s' contains the following I/O resources:", name);
-		for (IOComponentTypes type : IOComponentTypes.KnownComponentSet) {
+		for (BoardIO.Type type : BoardIO.PhysicalTypes) {
       int count = 0, bits = 0;
 			for (BoardIO comp : components) {
-				if (comp.GetType().equals(type)) {
+				if (comp.type == type) {
 					count++;
-					bits += comp.getNrOfPins();
+					bits += comp.width.size();
         }
       }
       out.AddInfo("   %s: %d components (%d bits)", type, count, bits);
 		}
 	}
 
-	public ArrayList<Bounds> compatableRects(IOComponentTypes type, int bits) {
+	public ArrayList<Bounds> compatableRects(BoardIO.Type type, int bits) {
 		ArrayList<Bounds> result = new ArrayList<>();
 		for (BoardIO comp : components)
       if (comp.GetType().equals(type) && bits <= comp.getNrOfPins())

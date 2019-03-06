@@ -55,10 +55,10 @@ import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.BoardReader;
 import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.fpga.PinBindings;
-import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.Simulator;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.gui.menu.MenuSimulate;
@@ -144,14 +144,14 @@ public class Commander extends JFrame {
     });
 
     // listen for simulator changes
-    proj.getSimulator().addSimulatorListener(new Simulator.Listener {
+    proj.getSimulator().addSimulatorListener(new Simulator.Listener() {
       public void simulatorReset(Simulator.Event e) { }
       public void propagationCompleted(Simulator.Event e) { }
       public void simulatorStateChanged(Simulator.Event e) { useTickSpeedFromSimulator(); }
     });
 
     // configure circuit list
-    circuitsList.setListCellRenderer(new DefaultListCellRenderer {
+    circuitsList.setListCellRenderer(new DefaultListCellRenderer() {
       public Component getListCellRendererComponent(JList list, Object v, int i, boolean s, boolean f) {
         return super.getListCellRendererComponent(((Circuit)v).getName(), i, s, f);
       }
@@ -426,7 +426,7 @@ public class Commander extends JFrame {
       return;
     if (!clockOption.getSelectedItem().equals(DIV_SPEED))
       return;
-    long base = board == null ? 50000000 : tools board.fpga.ClockFrequency;
+    long base = board == null ? 50000000 : board.fpga.ClockFrequency;
     Object o = clockDivRate.getSelectedItem();
     Integer i;
     if (o instanceof ExactRate) {
@@ -1076,7 +1076,33 @@ public class Commander extends JFrame {
     ToplevelHDLGenerator g = new ToplevelHDLGenerator(lang, err,
         board.fpga.Vendor, root, pinBindings);
 
+    if (g.hdlDependsOnCircuitState()) { // for NVRAM
+      CircuitState cs = getCircuitState(root);
+      if (!g.writeAllHDLThatDependsOn(cs, null, basedir))
+        return false;
+    }
     return g.writeAllHDLFiles(basedir);
+  }
+
+  private CirciutState getCircuitState(Circuit circ) {
+    ArrayList<CircuitState> list = new ArrayList<>();
+    for (CircuitState cs : proj.getRootCircuitStates())
+      if (cs.getCircuit.getCircuit() == circ)
+        list.add(cs);
+    if (list.isEmpty()) {
+      err.AddSevereWarning("Circuit %s contains non-volatile RAM or other components that depend "
+          + "on the current simulator state, but there are no running simulations with this "
+          + "circuit as the root. These components will be initialized using default values.",
+          circ.getName());
+      return null;
+    }
+    if (list.size() > 0) {
+      err.AddSevereWarning("Circuit %s contains non-volatile RAM or other components that depend "
+          + "on the current simulator state, but there are multiple running simulations with this "
+          + "circuit as the root. The first maching simulator state will be used for HDL synthesis.",
+          circ.getName());
+    }
+    return list.get(0);
   }
 
 }

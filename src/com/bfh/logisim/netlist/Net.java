@@ -33,8 +33,10 @@ package com.bfh.logisim.netlist;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import com.cburch.logisim.circuit.Splitter;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.hdl.Hdl;
 
 // Net holds info about a single contiguous network (1-bit signal or w-bit bus)
 // within a single circuit.
@@ -52,7 +54,7 @@ import com.cburch.logisim.data.Location;
 //   not part of any Net.
 public class Net {
 
-  static class Source {
+  public static class Source {
     final Component comp;
     final int end;
     final int bit;
@@ -66,13 +68,13 @@ public class Net {
     }
   }
 
-  static class DirectSource {
+  public static class DirectSource {
     final Component comp;
     final int end;
     DirectSource(Component c, int e) { comp = c; end = e; }
   }
 
-  static class IndirectSource {
+  public static class IndirectSource {
     final Net net;
     final int bit;
     IndirectSource(Net n, int b) { net = n; bit = b; }

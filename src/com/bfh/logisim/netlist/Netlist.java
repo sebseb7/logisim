@@ -34,20 +34,21 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.LinkedList;
 
-import com.bfh.logisim.library.DynamicClock;
 import com.bfh.logisim.gui.FPGAReport;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.bfh.logisim.library.DynamicClock;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.Splitter;
 import com.cburch.logisim.circuit.SplitterFactory;
 import com.cburch.logisim.circuit.SubcircuitFactory;
-import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.std.wiring.Tunnel;
@@ -101,7 +102,7 @@ public class Netlist {
 	}
 
 	public void clear() {
-    if (status = DRC_REQUIRED)
+    if (status == DRC_REQUIRED)
       return;
 		nets.clear();
 		netAt.clear();
@@ -125,7 +126,7 @@ public class Netlist {
 		for (Component comp : circ.getNonWires()) {
 			if (comp.getFactory() instanceof SubcircuitFactory) {
 				SubcircuitFactory fac = (SubcircuitFactory) comp.getFactory();
-				fac.getSubcircuit().getNetList().recursiveClear();
+				fac.getSubcircuit().getNetlist().recursiveClear();
 			}
 		}
 	}
@@ -215,15 +216,15 @@ public class Netlist {
         continue;
 			if (comp.getFactory().HasThreeStateDrivers(comp.getAttributeSet()))
         return drcFail(err, comp, "component has tri-state output drivers or is configured "
-            "to allow floating outputs, features typically not supported for FPGA synthesis.");
+            + "to allow floating outputs, features typically not supported for FPGA synthesis.");
       for (EndData end : comp.getEnds())
-        if (end.getWidth() > 0 && (end.isInput() && end.isOutput()))
+        if (end.getWidth().getWidth() > 0 && (end.isInput() && end.isOutput()))
           return drcFail(err, comp, "component has a bidirectional port, a feature not yet supported.");
     }
 
     // DRC Step 2: Validate names and labels for a few basic component types.
-    if (!CorrectLabel.IsCorrectLabel(circName, lang, "Circuit has illegal name."))
-      return DRC_ERROR;
+    if (!CorrectLabel.IsCorrectLabel(circName, lang, "Circuit has illegal name.", err))
+      return false;
     HashSet<String> pinNames = new HashSet<>();
 		for (Component comp : circ.getNonWires()) {
       if (comp.getFactory().HDLIgnore())
@@ -232,7 +233,7 @@ public class Netlist {
 				String label = NetlistComponent.labelOf(comp);
 				if (!CorrectLabel.IsCorrectLabel(label,
 						lang, "Bad label for pin '"+nameOf(comp)+"' in circuit '"+circName+"'", err))
-					return DRC_ERROR;
+					return false;
         if (pinNames.contains(label))
           return drcFail(err, comp, "pin has the same label as another pin in same circuit.");
         pinNames.add(label);
@@ -241,19 +242,19 @@ public class Netlist {
         String compName = comp.getFactory().getName();
 				if (!CorrectLabel.IsCorrectLabel(compName,
 						lang, "Bad name for component '"+compName+"' in circuit '"+circName+"'", err))
-					return DRC_ERROR;
+					return false;
 			}
     }
 
     // DRC Step 3: Check connectivity (e.g. splitters, tunnels, wires) and build nets.
 		err.AddInfo("Checking wire, tunnel, and splitter connectivity in circuit '%s'.", circName);
 		if (!buildNets(err, lang, vendor))
-			return DRC_ERROR;
+			return false;
     printNetlistStats(err);
 
     // DRC Step 4: Create NetlistComponent shadow objects for each Component,
     // and perform sanity checks.
-    HDLCTX ctx = new HDLCTX(lang, err, this, null /* attrs */, vendor);
+    HDLSupport.HDLCTX ctx = new HDLSupport.HDLCTX(lang, err, this, null /* attrs */, vendor);
 		for (Component comp : circ.getNonWires()) {
       if (comp.getFactory() instanceof SplitterFactory)
         continue;
@@ -288,7 +289,7 @@ public class Netlist {
     // gui, or because the HDL they generate is specific to each instance.
     HashMap<String, Component> namedComponents = new HashMap<>();
     for (NetlistComponent shadow : components) {
-      Component comp = shadow.getComponent();
+      Component comp = shadow.original;
       if (comp.getFactory() instanceof Pin)
         continue; // handled above
       if (!shadow.hdlSupport.requiresUniqueLabel())
@@ -299,8 +300,8 @@ public class Netlist {
             + "Run annotate, or manually add labels.");
       if (!CorrectLabel.IsCorrectLabel(label,
             lang, "Bad label for component '"+nameOf(comp)+"' in circuit '"+circName+"'", err))
-        return DRC_ERROR;
-      String name = g.getHDLNameWithinCircuit(circName);
+        return false;
+      String name = g.deriveHDLNameWithinCircuit(circName);
       Component clash = namedComponents.get(name);
       if (clash != null)
         return drcFail(err, comp, "component '%s' has same the same name, "
@@ -310,13 +311,13 @@ public class Netlist {
 
     // DRC Step 6: Recurse to validate subcircuits.
     for (NetlistComponent shadow : subcircuits) {
-      Component comp = shadow.getComponent();
+      Component comp = shadow.original;
       SubcircuitFactory sub = (SubcircuitFactory)comp.getFactory();
       Circuit subcirc = sub.getSubcircuit();
-      Netlist subnets = subcirc.getNetList();
+      Netlist subnets = subcirc.getNetlist();
       subnets.clockbus = clockbus;
       if (!subnets.recursiveValidate(err, lang, vendor, sheets, false))
-        return DRC_ERROR;
+        return false;
     }
 
 		err.AddInfo("Circuit '%s' passed all design rule checks.", circName);
@@ -364,7 +365,7 @@ public class Netlist {
     }
     public void increment(Int3 amt) {
       in += amt.in;
-      inout += amt.inout
+      inout += amt.inout;
       out += amt.out;
     }
     public int size() {
@@ -384,10 +385,10 @@ public class Netlist {
 		for (NetlistComponent shadow : subcircuits) {
 			SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
       Circuit subcirc = sub.getSubcircuit();
-      Netlist subnets = subcirc.getNetList();
+      Netlist subnets = subcirc.getNetlist();
 
       if (!visited.contains(subnets))
-        subnets.recursiveBuildHiddenNets(visited);
+        subnets.recursiveAssignLocalHiddenNets(visited);
 
       Int3 count = subnets.numHiddenBits;
 			shadow.setLocalHiddenPortIndices(start.copy(), count);
@@ -407,7 +408,7 @@ public class Netlist {
 		for (NetlistComponent shadow : subcircuits) {
 			SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
       Circuit subcirc = sub.getSubcircuit();
-      Netlist subnets = subcirc.getNetList();
+      Netlist subnets = subcirc.getNetlist();
       Path subpath = path.extend(shadow);
 
       Int3 count = subnets.numHiddenBits;
@@ -700,7 +701,7 @@ public class Netlist {
         continue; // no direct sinks, ignore
       if (net.getSourceComponent() != null)
         continue; // net has a direct source, done
-      for (int b = 0; b < net.bitWidth()) {
+      for (int b = 0; b < net.bitWidth(); b++) {
         if (net.getSourceForBit(b) == null) {
           Net.DirectSink sink = net.getSinks().get(0);
           return drcFail(err, sink.comp,
@@ -721,7 +722,7 @@ public class Netlist {
 		for (NetlistComponent shadow : subcircuits) {
       SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
       Circuit subcirc = sub.getSubcircuit();
-      Netlist subnets = subcirc.getNetList();
+      Netlist subnets = subcirc.getNetlist();
       Path subpath = path.extend(shadow);
       subnets.recursiveEnumerateNetlists(subpath, netlists);
     }
@@ -732,7 +733,7 @@ public class Netlist {
 		for (NetlistComponent shadow : subcircuits) {
       SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
       Circuit subcirc = sub.getSubcircuit();
-      Netlist subnets = subcirc.getNetList();
+      Netlist subnets = subcirc.getNetlist();
       Path subpath = path.extend(shadow);
       subnets.recursiveTraceClockNets(subpath, netlists);
     }
@@ -741,7 +742,7 @@ public class Netlist {
   // Associate id for each clock source with all downstream signals.
 	private void traceClockNets(Path path, HashMap<Path, Netlist> netlists) {
     for (NetlistComponent shadow : clocks) {
-      Component clk = shadow.getComponent();
+      Component clk = shadow.original;
       int clkid = clockbus.id(clk);
       Net clknet = netAt.get(clk.getEnd(0).getLocation());
       traceClockNet(clkid, path, clknet, 0, netlists);
@@ -766,7 +767,7 @@ public class Netlist {
         continue;
       SubcircuitFactory sub = (SubcircuitFactory)sink.comp.getFactory();
       Circuit subcirc = sub.getSubcircuit();
-      Netlist subnets = subcirc.getNetList();
+      Netlist subnets = subcirc.getNetlist();
       Path subpath = path.extend(shadow);
       NetlistComponent shadow = shadowForSubcirc(subpath);
       // within child, find the Pin that corresponds to this end
@@ -817,7 +818,7 @@ public class Netlist {
           if (dest[bit2] == sp.end && bit1 == bit) {
             traceClockNet(clkid, net2, bit2, path, netlists);
             break;
-          } else if (dest[bit2) == sp.end) {
+          } else if (dest[bit2] == sp.end) {
             bit1++;
           }
         }
@@ -848,7 +849,7 @@ public class Netlist {
     for (NetlistComponent shadow : subcircuits) {
       SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
       Circuit subcirc = sub.getSubcircuit();
-      Netlist subnets = subcirc.getNetList();
+      Netlist subnets = subcirc.getNetlist();
       Path subpath = path.extend(shadow);
       subnets.getMappableComponents(result, subpath);
     }
@@ -880,7 +881,7 @@ public class Netlist {
     return numHiddenBits.copy();
   }
 
-  private uid(int i) {
+  private String uid(int i) {
     String s = "";
     do {
       s = ('A' + (i % 26)) + s;

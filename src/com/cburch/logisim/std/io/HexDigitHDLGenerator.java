@@ -67,7 +67,7 @@ public class HexDigitHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  protected void generateBehavior(Hdl out) {
+  protected void generateBehavior(Hdl out, String rootDir) {
     out.stmt("Segment_A <= s_pattern(0);");
     out.stmt("Segment_B <= s_pattern(1);");
     out.stmt("Segment_C <= s_pattern(2);");

@@ -67,7 +67,7 @@ public class DemultiplexerHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out) {
+  public void generateBehavior(Hdl out, String rootDir) {
     int w = width(attrs);
     int ws = selWidth(attrs);
     int n = (1 << ws);

@@ -50,15 +50,16 @@ import com.cburch.logisim.std.Builtin;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.JFileChoosers;
+import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.ZipClassLoader;
 
 public class Loader implements LibraryLoader {
 
-  public static class makeFileFilter(StringGetter desc, String ...extensions) {
-    return new FileFilter {
+  public static FileFilter makeFileFilter(StringGetter desc, String ...extensions) {
+    return new FileFilter() {
       @Override
       public boolean accept(File f) {
-        for (ext : extensions)
+        for (String ext : extensions)
           if (f.getName().toLowerCase().endsWith(ext.toLowerCase()))
             return true;
         return f.isDirectory();

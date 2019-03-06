@@ -44,13 +44,13 @@ public class NegatorHDLGenerator extends HDLGenerator {
       outPorts.add("Result", "BitWidth", Negator.OUT, null);
     } else {
       // 1-bit version
-      inPorts.add("DataX", 1, Negator.IN false);
+      inPorts.add("DataX", 1, Negator.IN, false);
       outPorts.add("Result", 1, Negator.OUT, null);
     }
   }
 
   @Override
-  public void generateBehavior(Hdl out) {
+  public void generateBehavior(Hdl out, String rootDir) {
     if (out.isVhdl && isBus())
       out.stmt("Result <= std_logic_vector(unsigned(not(DataX))) + 1;");
     else if (out.isVhdl)

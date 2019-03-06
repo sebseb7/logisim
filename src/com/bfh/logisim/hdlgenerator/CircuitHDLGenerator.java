@@ -40,9 +40,11 @@ import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Net;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
+import com.bfh.logisim.netlist.Path;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.circuit.SubcircuitFactory;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.std.wiring.Pin;
@@ -82,9 +84,9 @@ public class CircuitHDLGenerator extends HDLGenerator {
 
     // hidden ports
     Netlist.Int3 hidden = _circNets.numHiddenBits();
-    addVectorPort(inPorts, "LOGISIM_HIDDEN_FPGA_INPUT", hidden.in);
-    addVectorPort(inOutPorts, "LOGISIM_HIDDEN_FPGA_INOUT", hidden.inout);
-    addVectorPort(outPorts, "LOGISIM_HIDDEN_FPGA_OUTPUT", hidden.out);
+    inPorts.addVector("LOGISIM_HIDDEN_FPGA_INPUT", hidden.in);
+    inOutPorts.addVector("LOGISIM_HIDDEN_FPGA_INOUT", hidden.inout);
+    outPorts.addVector("LOGISIM_HIDDEN_FPGA_OUTPUT", hidden.out);
 
     // global clock buses
     for (int i = 0; i < _circNets.clockbus.shapes().size(); i++)
@@ -99,13 +101,6 @@ public class CircuitHDLGenerator extends HDLGenerator {
     // Nets
     for (Net net: _circNets.nets)
       wires.add(net.name, net.width);
-  }
-
-  private void addVectorPort(Arraylist<PortInfo> ports, String busname, int w) {
-    // Note: the parens around "(1)" are a hack to force vector creation.
-    // See: HDLGenerator and Hdl.typeForWidth().
-    if (w > 0)
-      ports.add(busname, w == 1 ? "(1)" : ""+w, -1, null);
   }
 
   // For a given external end corresponding to some internal Pin, return the
@@ -285,7 +280,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
     generateDeclarations(out, _circNets.components);
   }
 
-  private generateDeclarations(ArrayList<NetlistComponent> components) {
+  private void generateDeclarations(Hdl out, ArrayList<NetlistComponent> components) {
 		HashSet<String> done = new HashSet<>();
 		for (NetlistComponent comp: components) {
       HDLSupport g = comp.hdlSupport;
@@ -300,14 +295,14 @@ public class CircuitHDLGenerator extends HDLGenerator {
 	}
     
   private void generatePortAssignments(Hdl out, NetlistComponent pin, boolean isOutput) {
-    Net net = getPortMappingForPin(Component pin);
+    Net net = getPortMappingForPin(pin);
     if (net == null && isOutput)
       _err.AddSevereWarning("INTERNAL ERROR: Output pin '%s' of circuit '%s' has "
           + " no driving signal.", pin.label(), circ.getName());
     else if (net == null)
       return; // input pin not driving anything, no error
     else if (isOutput)
-      out.assign(net.name, pin.label())
+      out.assign(net.name, pin.label());
     else
       out.assign(pin.label(), net.name);
   }
@@ -372,4 +367,38 @@ public class CircuitHDLGenerator extends HDLGenerator {
     }
   }
 
+  @Override
+  protected boolean hdlDependsOnCircuitState() { // for NVRAM
+    for (NetlistComponent comp : _circNets.components) {
+      HDLSupport g = comp.hdlSupport;
+      if (g != null && g.hdlDependsOnCircuitState())
+        return true;
+    }
+    return false;
+  }
+
+  @Override
+  public boolean writeAllHDLThatDependsOn(CircuitState cs, NetlistComponent shadow,
+      String rootDir) { // for NVRAM
+    Path path;
+    if (shadow == null) {
+      path = new Path(circ);
+    } else {
+      path = shadow.currentPath;
+      cs = cs.getData(shadow.original);
+    }
+    for (NetlistComponent comp : _circNets.components) {
+      HDLSupport g = comp.hdlSupport;
+      if (g == null)
+        continue;
+      try {
+        comp.currentPath = path.extend(comp);
+        CircuitState substate = cs.getData(comp.original);
+        if (!g.writeAllHDLThatDependsOn(cs, comp, rootDir))
+          return true;
+      } finally {
+        comp.currentPath = null;
+      }
+    }
+  }
 }

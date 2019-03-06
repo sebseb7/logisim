@@ -38,6 +38,7 @@ import java.util.HashMap;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
@@ -46,7 +47,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
-import com.cburch.logisim.data.Bounds
+import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.std.io.DipSwitch;
 import com.cburch.logisim.std.io.PortIO;
@@ -82,7 +83,7 @@ public class BoardIO {
   public static final EnumSet<Type> InOutTypes = EnumSet.of(Type.Pin, Type.Ribbon);
   public static final EnumSet<Type> OneBitTypes = EnumSet.of(Type.Button, Type.Pin, Type.LED);
 
-	public static String Type {
+	public static enum Type {
     // Note: The order here matters, because of the EnumSet ranges above.
                    // Physical and synthetic I/O resource characteristics:
     AllZeros,      // synth in  onebit/multibit
@@ -118,7 +119,7 @@ public class BoardIO {
 			return Type.Unknown;
 		}
 
-    public defaultWidth() {
+    public int defaultWidth() {
       switch (this) {
       case LED:
       case Button:
@@ -170,7 +171,7 @@ public class BoardIO {
 	public final PullBehavior pull; // only for physical types
 	public final PinActivity activity; // only for physical types; set to ACTIVE_HIGH for synthetic
 	public final DriveStrength strength; // only for physical types
-  public final syntheticValue; // only for synthetic types
+  public final int syntheticValue; // only for synthetic types
 
 	public final String[] pins;
 
@@ -248,7 +249,7 @@ public class BoardIO {
 		int width;
     if (params.containsKey("FPGAPinName")) {
       width = 1;
-      pins = new String[] { params.get("FPGAPinName"); }
+      pins = new String[] { params.get("FPGAPinName") };
       if (pins[0] == null)
         throw new Exception("missing pin label for " + t + " " + label);
     } else {
@@ -348,7 +349,7 @@ public class BoardIO {
     dlg.setVisible(true);
 
     return new BoardIO(t.type, width[0], t.label,
-        t.rect, t.standard, t.pull, t.activity, t.strength  t.pins);
+        t.rect, t.standard, t.pull, t.activity, t.strength, t.pins);
   }
 
   private static DriveStrength defaultStrength = DriveStrength.DEFAULT;
@@ -420,7 +421,7 @@ public class BoardIO {
     if (activity != null)
       add(dlg, c, "Signal activity:", activity);
 
-    final boolean[] good = new boolean{ true };
+    final boolean[] good = new boolean[] { true };
     JButton ok = new JButton("Save");
     ok.addActionListener(e -> dlg.setVisible(false));
     dlg.add(ok, c);

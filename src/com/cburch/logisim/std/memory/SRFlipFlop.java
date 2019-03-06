@@ -31,6 +31,7 @@
 package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.Value;
 
 public class SRFlipFlop extends AbstractFlipFlop {
@@ -63,10 +64,8 @@ public class SRFlipFlop extends AbstractFlipFlop {
   }
 
   @Override
-  protected AbstractFlipFlopHDLGeneratorFactory getHdlGenerator(
-      AbstractFlipFlopHDLGeneratorFactory.HDLCTX ctx) {
-    return new AbstractFlipFlopHDLGeneratorFactory(ctx,
-        "SRFF", "S-R Flip-Flip",
+  protected FlipFlopHDLGenerator getHdlGenerator(HDLSupport.HDLCTX ctx) {
+    return new FlipFlopHDLGenerator(ctx, "SRFF", "S-R Flip-Flip",
         new String[]{ "S", "R" },
         "s_next_state <= (s_current_state_reg OR S) AND NOT(R);",
         "assign s_next_state = (s_current_state_reg|S)&~(R);");

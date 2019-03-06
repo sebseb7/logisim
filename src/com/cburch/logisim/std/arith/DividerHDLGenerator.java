@@ -29,12 +29,12 @@
  */
 package com.cburch.logisim.std.arith;
 
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.hdl.Hdl;
 
-public class DividerHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
+public class DividerHDLGenerator extends HDLGenerator {
 
-  public DividerHDLGeneratorFactory(HDLCTX ctx) {
+  public DividerHDLGenerator(HDLCTX ctx) {
     super(ctx, "arithmetic", uMode() ? "UnsignedDivider" : "SignedDivider", "i_Div");
     // todo: 1-bit version?
     // todo: Verilog version
@@ -55,7 +55,7 @@ public class DividerHDLGeneratorFactory extends AbstractHDLGeneratorFactory {
   }
 
   @Override
-  public void generateBehavior(Hdl out) {
+  public void generateBehavior(Hdl out, String rootDir) {
     if (uMode()) {
       out.stmt("s_num(2*BitWidth-1 DOWNTO BitWidth) <= Upper;");
       out.stmt("s_num(BitWidth-1 DOWNTO 0)          <= DataA;");

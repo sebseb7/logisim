@@ -29,8 +29,12 @@
  */
 package com.cburch.logisim.std.io;
 
+import java.util.ArrayList;
+
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.bfh.logisim.hdlgenerator.HiddenPort;
+import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 
 public class PortIOHDLGenerator extends HDLGenerator {
 
@@ -135,7 +139,7 @@ public class PortIOHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  protected void generateBehavior(Hdl out) {
+  protected void generateBehavior(Hdl out, String rootDir) {
     if (out.isVhdl) {
       for (InOutMap io : getPorts(_attrs)) {
         String fpgaBus = inOutBusName + io.busNr;

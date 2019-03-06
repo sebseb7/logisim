@@ -30,15 +30,16 @@
 
 package com.bfh.logisim.fpga;
 
-import java.awt.Component;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -51,7 +52,7 @@ import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.data.Bounds;
 
-public class BoardEditor extends JFrame implements ComponentListener {
+public class BoardEditor extends JFrame {
 
 	private JButton save, load;
 
@@ -79,7 +80,7 @@ public class BoardEditor extends JFrame implements ComponentListener {
         super.add(comp, c);
         c.gridx++;
       }
-    }
+    };
 		buttons.setLayout(new GridBagLayout());
 
 		c.gridx = 0;
@@ -127,7 +128,7 @@ public class BoardEditor extends JFrame implements ComponentListener {
     String dir = getSaveDirectory();
     if (dir == null)
       return;
-    String filename += dir + board.name + ".xml";
+    String filename = dir + board.name + ".xml";
     if (!BoardWriter.write(filename, board))
       return;
     setVisible(false);
@@ -212,18 +213,17 @@ public class BoardEditor extends JFrame implements ComponentListener {
 		c.gridy = 0;
 		c.fill = GridBagConstraints.HORIZONTAL;
 
-    final boolean save[] = new boolean[] { false; }
+    final boolean save[] = new boolean[] { false };
 		JButton cancel = new JButton("Cancel");
-		cancel.addActionListener(e -> {
+		cancel.addActionListener((e) -> {
       save[0] = false;
-      dlg.setVisible(false)
-    };
+      dlg.setVisible(false);
+    });
 		JButton save = new JButton("Done and Store");
-		save.addActionListener(e -> {
+		save.addActionListener((e) -> {
       save[0] = true;
       dlg.setVisible(false); 
     });
-
 
 		JTextField rate = new JTextField(10);
 		JComboBox<String> hz = new JComboBox<>(new String[] { "Hz", "kHz", "MHz" });
@@ -333,7 +333,7 @@ public class BoardEditor extends JFrame implements ComponentListener {
       dlg.setVisible(true);
       if (!save[0])
         break;
-      long freq = getFrequency(rate.getText(), hz.getSelectedItem();
+      long freq = getFrequency(rate.getText(), hz.getSelectedItem());
       if (freq == 0) {
         Errors.title("Error").show("Please specify a clock frequency.");
       } else if (freq == -1) {

@@ -111,15 +111,15 @@ public class ClockHDLGenerator extends HDLGenerator {
     inPorts.add("FPGATick", 1, -1, null); // see getPortMappings below
     outPorts.add("ClockBus", 5, -1, null); // see getPortMappings below
 
-    registers.add(new WireInfo("s_output_regs", 4));
-    registers.add(new WireInfo("s_counter_reg", "CtrWidth"));
-    registers.add(new WireInfo("s_derived_clock_reg", 1));
+    registers.add("s_output_regs", 4);
+    registers.add("s_counter_reg", "CtrWidth");
+    registers.add("s_derived_clock_reg", 1);
     wires.add("s_counter_next", "CtrWidth");
     wires.add("s_counter_is_zero", 1);
   }
 
   @Override
-  public void generateBehavior(Hdl out) {
+  public void generateBehavior(Hdl out, String rootDir) {
     if (out.isVhdl) {
       out.stmt("ClockBus <= IF (Raw = '1') THEN");
       out.stmt("            FPGACLock & '1' & '1' & NOT(FPGACLock) & FPGACLock;");

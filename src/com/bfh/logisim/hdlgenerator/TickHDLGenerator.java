@@ -30,6 +30,8 @@
 
 package com.bfh.logisim.hdlgenerator;
 
+import java.util.ArrayList;
+
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.library.DynamicClock;
 import com.cburch.logisim.hdl.Hdl;
@@ -168,18 +170,18 @@ public class TickHDLGenerator extends HDLGenerator {
     } else if (period < 0) {
       // dynamic adjustable period
       int w = getDynamicCounterWidth();
-      parameters.add(new ParameterInfo("CtrWidth", w));
+      parameters.add("CtrWidth", w);
       inPorts.add(new PortInfo("ReloadValueLessOne", "CtrWidth", -1, null)); // see getPortMappings below
-      registers.add(new WireInfo("s_tick_reg", 1));
-      registers.add(new WireInfo("s_count_reg", "CtrWidth"));
+      registers.add("s_tick_reg", 1);
+      registers.add("s_count_reg", "CtrWidth");
     } else {
       // static fixed period
       int w = getStaticCounterWidth();
-      parameters.add(new ParameterInfo("CtrWidth", w));
-      parameters.add(new ParameterInfo("ReloadValue", period));
-      registers.add(new WireInfo("s_tick_reg", 1));
-      registers.add(new WireInfo("s_count_reg", "CtrWidth"));
-      wires.add(new WireInfo("ReloadValueLessOne", "CtrWidth");
+      parameters.add("CtrWidth", w);
+      parameters.add("ReloadValue", period);
+      registers.add("s_tick_reg", 1);
+      registers.add("s_count_reg", "CtrWidth");
+      wires.add("ReloadValueLessOne", "CtrWidth");
     }
 
     outPorts.add(new PortInfo("FPGATick", 1, -1, null)); // see getPortMappings below
@@ -215,7 +217,7 @@ public class TickHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out) {
+  public void generateBehavior(Hdl out, String rootDir) {
     if (period == 0) {
       out.assign("FPGATick", out.one);
       return;

@@ -44,7 +44,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.WeakHashMap;
 
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.gui.FPGAReport;
@@ -198,7 +198,7 @@ public class Circuit implements AttributeDefaultProvider {
   }
 
   private static String labelSuggestionFor(Component comp,
-      HashMap<Component, AbstractHDLGeneratorFactory> generators, String circuitName) {
+      HashMap<Component, HDLSupport> generators, String circuitName) {
     if (comp.getFactory() instanceof Pin) { /* Pins are treated specially */
       int w = comp.getEnd(0).getWidth().getWidth();
       if (comp.getEnd(0).isOutput())

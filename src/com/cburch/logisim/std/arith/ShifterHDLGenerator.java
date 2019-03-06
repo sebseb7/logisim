@@ -92,7 +92,7 @@ public class ShifterHDLGenerator extends HDLGenerator {
   }
   
   @Override
-  public void generateBehavior(Hdl out) {
+  public void generateBehavior(Hdl out, String rootDir) {
     int w = stdWidth();
     int n = stages();
     out.comment("-- Accepted Mode Values:");

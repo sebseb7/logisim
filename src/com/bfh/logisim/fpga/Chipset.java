@@ -30,6 +30,8 @@
 
 package com.bfh.logisim.fpga;
 
+import java.util.HashMap;
+
 public class Chipset {
 
 	public static final char ALTERA = 'A';

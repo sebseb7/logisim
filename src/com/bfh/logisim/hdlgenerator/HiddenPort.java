@@ -31,6 +31,8 @@
 package com.bfh.logisim.hdlgenerator;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import com.bfh.logisim.fpga.BoardIO;
 import com.cburch.logisim.comp.Component;
@@ -97,7 +99,7 @@ public class HiddenPort {
     types = Collections.unmodifiableList(all);
 	}
 
-	private HiddenPort(int inports, int inoutport, int outports, BoardIO.Type mainType, IOComponentTYpes ...altTypes) {
+	private HiddenPort(int inports, int inoutport, int outports, BoardIO.Type mainType, BoardIO.Type ...altTypes) {
     this(generateLabels(inports, "In"), generateLabels(inports, "InOut"), generateLabels(inports, "Out"), mainType, altTypes);
 	}
 

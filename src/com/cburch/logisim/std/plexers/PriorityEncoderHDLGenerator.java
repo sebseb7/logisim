@@ -59,7 +59,7 @@ public class PriorityEncoderHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out) {
+  public void generateBehavior(Hdl out, String rootDir) {
     int ws = selWidth();
     int n = (1 << ws);
     if (out.isVhdl) {

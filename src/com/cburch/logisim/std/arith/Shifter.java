@@ -35,11 +35,9 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.util.Arrays;
 
-import com.bfh.logisim.gui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -113,8 +111,8 @@ public class Shifter extends InstanceFactory {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
-    return new ShifterHDLGeneratorFactory(ctx);
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+    return new ShifterHDLGenerator(ctx);
   }
 
   @Override

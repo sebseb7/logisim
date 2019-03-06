@@ -45,14 +45,14 @@ import javax.swing.filechooser.FileFilter;
 
 public class TestVector {
 
-  public static final FileFilter FILE_FILTER = new FileFilter {
+  public static final FileFilter FILE_FILTER = new FileFilter() {
     public boolean accept(File f) {
       return (!f.isFile() || f.getName().toLowerCase().endsWith(".txt"));
     }
     public String getDescription() {
       return "Logisim-evolution Test Vector (*.txt)";
     }
-  }
+  };
 
   private class TestVectorReader {
 
@@ -147,10 +147,10 @@ public class TestVector {
     }
 
   }
+
   public String[] columnName;
   public BitWidth[] columnWidth;
   public int[] columnRadix;
-
   public ArrayList<Value[]> data;
 
   public TestVector(File src) throws IOException {

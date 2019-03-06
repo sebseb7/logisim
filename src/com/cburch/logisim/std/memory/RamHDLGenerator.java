@@ -29,6 +29,8 @@
  */
 package com.cburch.logisim.std.memory;
 
+import java.io.File;
+
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
@@ -41,7 +43,8 @@ public class RamHDLGenerator extends HDLGenerator {
     boolean separate = dbus == RamAttributes.BUS_SEP;
     Object trigger = attrs.getValue(StdAttr.TRIGGER);
     boolean synch = trigger == StdAttr.TRIG_RISING || trigger == StdAttr.TRIG_FALLING;
-    return lang.equals("VHDL") && separate && synch;
+    boolean nvram = attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE;
+    return lang.equals("VHDL") && separate && synch && (!nvram || vendor == 'A');
   }
 
   public RamHDLGenerator(HDLCTX ctx) {
@@ -52,73 +55,55 @@ public class RamHDLGenerator extends HDLGenerator {
     int n = Mem.lineSize(attrs);
     int portnr = Mem.MEM_INPUTS;
     for (int i = 1; i < n; i++)
-      outPorts.add("DataOut"+i, dataWidth(), portnr++ null);
+      outPorts.add("DataOut"+i, dataWidth(), portnr++, null);
     for (int i = 0; i < n; i++)
       inPorts.add("DataIn"+i, dataWidth(), portnr++, false);
     clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", portnr++);
     inPorts.add("WE", 1, portnr++, false);
     for (int i = 0; i < n && n > 1; i++)
       inPorts.add("LE"+i, 1, portnr++, true);
+    if (attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE)
+      for (int i = 0; i < n; i++)
+        parameters.add(new ParameterInfo("nvram_contents_"+i, "string",
+              null, "\"(path to init file for offset " + i + ")\""));
   }
 
   private static String deriveHDLName(AttributeSet attrs) {
-    if (attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.VOLATILE)
-      return "NVRAM_${CIRCUIT}_${LABEL}";
+    if (attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE)
+      return "NVRAM_${PATH}";
     int wd = dataWidth(attrs);
     int wa = addrWidth(attrs);
     int n = Mem.lineSize(attrs);
     return String.format("RAM_%dx%dx%d", wd, n, 1<<wa); // could probably be generic
   }
 
-  // Generate and write all "memory init" files for this non-volatile Ram component.
-  protected File[] writeMemInitFiles(String rootDir) {
+  @Override
+	protected void generateComponentInstance(Hdl out, long id, NetlistComponent comp) {
+    // For NVRAM, the values of the generic parameters define the mem init data,
+    // which depend on the specific component instance (the full path to the
+    // instance within the overalld esign, not just a unique name within a
+    // single circuit or subcircuit. The parameter is devined above with null
+    // value, and we fill it in here temporarily. NVRAM seems to be the only
+    // case where a parameter depends on the full path like this (because it is
+    // the only component where dynamic simulation state -- the memory content
+    // values -- affects on the HDL).
+    if (_attrs.getValue(RamAttributes.ATTR_TYPE) != RamAttributes.NONVOLATILE) {
+      super.generateComponentInstance(out, id, comp);
+      return;
+    }
+
     int n = Mem.lineSize(_attrs);
-    File[] files = new File[n];
     for (int i = 0; i < n; i++) {
-      Hdl data = getMemInitData(i);
-      File f = openFile(rootDir, hdlComponentName+"_"+i+"_contents", true, false);
-      if (f == null)
-        continue;
-      if (!FileWriter.WriteContents(f, data, _err))
-        continue;
-      files[i] = f;
+      String filename = memInitFilenameFor(comp.currentPath, i);
+      parameters.get(i).value = "\"" + filename + "\"";
     }
-    return files;
-  }
-
-  private Hdl getMemInitData(int offset) {
-    int skip = Mem.lineSize(_attrs);
-    int width = dataWidth(_attrs);
-    MemContents c = null; // _attrs.getValue(Ram.CONTENTS_ATTR); FIXME, if possible ?!?!
-    Hdl out = new Hdl(_lang, _err);
-    out.add("-- Memory initialization data line " + offset);
-    int depth = (int)((c.getLastOffset() - c.getFirstOffset() + 1) / skip);
-    out.add("DEPTH = " + depth + ";");
-    out.add("WIDTH = " + width + ";");
-    out.add("ADDRESS_RADIX = HEX;");
-    out.add("DATA_RADIX = HEX;");
-    out.add("CONTENT");
-    out.add("BEGIN");
-    for (int a = 0; a < depth; a++) {
-      int d = c.get(a*skip+offset);
-      if (width != 32)
-        d &= ((1 << width) - 1);
-      out.stmt("%8x : %8x;", a, d);
-    }
-    out.add("END;");
-    return out;
-  }
-
-  File[] nvFiles = null;
-  protected boolean writeArchitecture(String rootDir) {
-    nvFiles = null;
-    if (_attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE)
-      nvFiles = writeMemInitFiles(rootDir);
-    super.writeArchitecture(rootDir);
+    super.generateComponentInstance(out, id, comp);
+    for (int i = 0; i < n; i++)
+      parameters.get(i).value = null;
   }
 
   @Override
-	protected Hdl getArchitecture(HashMap<String) {
+	protected Hdl getArchitecture() {
     Hdl out = new Hdl(_lang, _err);
     generateFileHeader(out);
 
@@ -141,9 +126,9 @@ public class RamHDLGenerator extends HDLGenerator {
       out.stmt();
 
       if (nvFiles != null) {
-        out.stmt("attribute nvram_init_file : string;");
+        out.stmt("attribute ram_init_file : string;");
         for (int i = 0; i < n; i++)
-          out.stmt("attribute nvram_init_file of s_mem_%d_contents : signal is \"%s\";",
+          out.stmt("attribute ram_init_file of s_mem_%d_contents : signal is \"%s\";",
               i, nvFiles[i].getPath());
 			}
       out.stmt();
@@ -194,4 +179,71 @@ public class RamHDLGenerator extends HDLGenerator {
   protected static int dataWidth() {
     return attrs.getValue(Mem.DATA_ATTR).getWidth();
   }
+
+  @Override
+  protected boolean hdlDependsOnCircuitState() { // for NVRAM
+    return (_attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE);
+  }
+      
+  err.AddWarning("Non-volatile RAM %s initializion data not found in current "
+          + "simulator state. The FPGA NVRAM will be initialized to zero instead.");
+      mif.put(i+":"+comp.currentPath, null);
+
+  @Override
+  public boolean writeAllHDLThatDependsOn(CircuitState cs, NetlistComponent comp,
+      String rootDir) { // for NVRAM
+    if (!hdlDependsOnCircuitState())
+      return true;
+    RamState state = cs = null ? null : (RamState)cs.getData(comp.original);
+    return writeMemInitFiles(state, comp.currentPath, rootDir);
+  }
+
+  private memInitFilenameFor(Path path, int i) {
+      return String.format("memory/%s-nvram-%d.mif",
+          path.toString().replace("-", "--").replace("/", "-"), i);
+  }
+
+  // Generate and write a "memory init file" for this non-volatile Ram component.
+  private String writeMemInitFiles(RamState state, Path path, String rootDir) {
+    int n = Mem.lineSize(_attrs);
+    for (int i = 0; i < n; i++) {
+      Hdl data = getMemInitData(state, i);
+      String filename = memInitFilenameFor(path, i);
+      File f = openFile(rootDir, filename, true, false);
+      if (f == null || !FileWriter.WriteContents(f, data, _err))
+        return false;
+    }
+    return true;
+  }
+
+  private Hdl getMemInitData(MemState state, int offset) {
+    int skip = Mem.lineSize(_attrs);
+    int width = dataWidth(_attrs);
+    int depth = (1 << addrWidth(_attrs)) / skip;
+    Hdl out = new Hdl(_lang, _err);
+    out.add("-- Memory initialization data for alignment offset " + offset);
+    // int depth = (int)((c.getLastOffset() - c.getFirstOffset() + 1) / skip);
+    out.add("DEPTH = " + depth + ";");
+    out.add("WIDTH = " + width + ";");
+    out.add("ADDRESS_RADIX = HEX;");
+    out.add("DATA_RADIX = HEX;");
+    out.add("CONTENT");
+    out.add("BEGIN");
+    if (state != null) {
+      // TODO: we could compress this a bit using ranges
+      MemContents c = state.getContents();
+      for (int a = 0; a < depth; a++) {
+        int d = c.get(a*skip+offset);
+        if (width != 32)
+          d &= ((1 << width) - 1);
+        out.stmt("%8x : %8x;", a, d);
+      }
+    } else {
+      out.stmt("[0..%x] : %8x; % default init values due to missing simulator state",
+          depth-1, 0);
+    }
+    out.add("END;");
+    return out;
+  }
+
 }

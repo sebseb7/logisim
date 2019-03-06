@@ -31,10 +31,13 @@
 package com.bfh.logisim.fpga;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.function.Function;
 
 import com.bfh.logisim.gui.FPGAReport;
+import com.bfh.logisim.netlist.Path;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.std.wiring.Pin;
@@ -93,7 +96,7 @@ import static com.bfh.logisim.netlist.Netlist.Int3;
 //    user-selected BoardIO FPGA pins and/or synthetic values.
 public class PinBindings {
 
-  private FPGAReport final err;
+  private final FPGAReport err;
 
   // List of I/O-related components in the design, organized by path.
 	private final HashMap<Path, NetlistComponent> components;
@@ -115,7 +118,7 @@ public class PinBindings {
     public final BoardIO.Type type;
     public final Int3 width;
     Int3 seqno;
-    public Source(Path p, NetlistComponent c, int b, BOardIO.Type t, Int3 w) {
+    public Source(Path p, NetlistComponent c, int b, BoardIO.Type t, Int3 w) {
       path = p;
       comp = c;
       bit = b;
@@ -149,7 +152,7 @@ public class PinBindings {
 		this.board = board;
 	}
 
-  public setComponents(HashMap<Path, NetlistComponent> newComponents) {
+  public void setComponents(HashMap<Path, NetlistComponent> newComponents) {
     // todo: preserve existing mappings wherever possible.
     // For now, we just clear all mappings and reset components.
     mappings.clear();
@@ -170,7 +173,7 @@ public class PinBindings {
         s.seqno = counts.copy();
         counts.increment(s.width);
       }
-    }
+    });
     finalizedCounts = counts;
   }
 
@@ -197,7 +200,7 @@ public class PinBindings {
         String[] labels = d.io.pinLabels();
         String[] pins = d.io.pins;
         int seqno = selector(s.seqno);
-        for (int i = 0; i < w i++)
+        for (int i = 0; i < w; i++)
           f(pins[i], signalPrefix + (seqno + i), d.io, labels[i]);
       }
     });

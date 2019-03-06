@@ -1,4 +1,4 @@
-/**
+/**;
  * This file is part of Logisim-evolution.
  *
  * Logisim-evolution is free software: you can redistribute it and/or modify
@@ -38,11 +38,11 @@ import java.util.Collections;
 import java.util.HashMap;
 
 import com.bfh.logisim.hdlgenerator.HiddenPort;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.AttributeSet;
-import com.cburch.logisim.data.Bounds
 import com.cburch.logisim.std.wiring.Pin;
 
 // For each real Component within a Circuit, a shadow NetlistComponent holds
@@ -102,7 +102,7 @@ public class NetlistComponent {
   //   (Bar)/Foo0/RGBLed    [2:0]
 	private HashMap<Path, Range3> globalIndices = new HashMap<>();
 
-	public NetlistComponent(Component comp, HDLCTX ctx) {
+	public NetlistComponent(Component comp, HDLSupport.HDLCTX ctx) {
     ComponentFactory factory = comp.getFactory();
     AttributeSet attrs = comp.getAttributeSet();
 

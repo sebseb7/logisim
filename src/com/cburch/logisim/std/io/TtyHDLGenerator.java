@@ -30,6 +30,7 @@
 package com.cburch.logisim.std.io;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.io.File;
 
 import com.bfh.logisim.hdlgenerator.FileWriter;
@@ -102,7 +103,7 @@ public class TtyHDLGenerator extends HDLGenerator {
       out.add("");
       out.add("architecture RTL of " + ComponentName.toString() + " is ");
       out.add("");
-      out.add("  -- constant CLK_PERIOD_NS : positive := 20; -- 50MHz"); // TERASIC_DE0 is 50MHz, but not others
+      out.add("  -- constant CLK_PERIOD_NS : positive := 20; -- 50MHz");
       out.add("  constant DELAY_15_MS   : positive := 15 * 10**6 / CLK_PERIOD_NS + 1;");
       out.add("  constant DELAY_1640_US : positive := 1640 * 10**3 / CLK_PERIOD_NS + 1;");
       out.add("  constant DELAY_4100_US : positive := 4100 * 10**3 / CLK_PERIOD_NS + 1;");

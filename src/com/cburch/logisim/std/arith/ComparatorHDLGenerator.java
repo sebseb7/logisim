@@ -64,7 +64,7 @@ public class ComparatorHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out) {
+  public void generateBehavior(Hdl out, String rootDir) {
     if (out.isVhdl && !isBus()) {
       out.stmt("A_EQ_B <= DataA XNOR DataB;");
       out.stmt("A_LT_B <= DataA AND NOT(DataB) WHEN TwosComplement = 1 ELSE");

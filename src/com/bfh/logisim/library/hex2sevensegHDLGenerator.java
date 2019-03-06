@@ -30,6 +30,7 @@
 package com.bfh.logisim.library;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
+import com.cburch.logisim.hdl.Hdl;
 
 public class hex2sevensegHDLGenerator extends HDLGenerator {
 
@@ -43,11 +44,11 @@ public class hex2sevensegHDLGenerator extends HDLGenerator {
     outPorts.add(new PortInfo("Segment_E", 1, hex2sevenseg.Segment_E, null));
     outPorts.add(new PortInfo("Segment_F", 1, hex2sevenseg.Segment_F, null));
     outPorts.add(new PortInfo("Segment_G", 1, hex2sevenseg.Segment_G, null));
-    wires.add(new WireInfo("s_output_value", 7));
+    wires.add("s_output_value", 7);
   }
 	
 	@Override
-  public void generateBehavior(Hdl out) {
+  public void generateBehavior(Hdl out, String rootDir) {
   // todo: verilog support
 		out.stmt("Segment_A <= s_output_value(0);");
 		out.stmt("Segment_B <= s_output_value(1);");

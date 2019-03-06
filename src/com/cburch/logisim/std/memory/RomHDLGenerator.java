@@ -49,7 +49,7 @@ public class RomHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  protected void generateBehavior(Hdl out) {
+  protected void generateBehavior(Hdl out, String rootDir) {
     MemContents rom = attrs.getValue(Rom.CONTENTS_ATTR);
     int n = Mem.lineSize(attrs);
     int wd = dataWidth(attrs);

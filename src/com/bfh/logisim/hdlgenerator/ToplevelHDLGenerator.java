@@ -32,8 +32,11 @@ package com.bfh.logisim.hdlgenerator;
 
 import com.bfh.logisim.fpga.BoardIO;
 import com.bfh.logisim.fpga.PinBindings;
+import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.library.DynamicClock;
+import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
+import com.bfh.logisim.netlist.Path;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.hdl.Hdl;
@@ -94,34 +97,34 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 
     // internal clock networks
 		if (numclk > 0) {
-      wires.add(new WireInfo(TickHDLGenerator.FPGA_TICK_NET, 1));
+      wires.add(TickHDLGenerator.FPGA_TICK_NET, 1);
 			for (int i = 0; i < numclk; i++)
-				wires.add(new WireInfo("s_"+ClockHDLGenerator.CLK_TREE_NET+i,
-              ClockHDLGenerator.CLK_TREE_WIDTH));
+				wires.add("s_"+ClockHDLGenerator.CLK_TREE_NET+i,
+              ClockHDLGenerator.CLK_TREE_WIDTH);
 		}
 
     // wires for hidden ports for circuit design under test
     // note: inout ports never get inversions, so no wire for those
     Netlist.Int3 hidden = _circNets.numHiddenBits();
-    addWireVector("s_LOGISIM_HIDDEN_FPGA_INPUT", hidden.in);
-		// skip: addWireVector("s_LOGISIM_HIDDEN_FPGA_INOUT", hidden.inout);
-    addWireVector("s_LOGISIM_HIDDEN_FPGA_OUTPUT", hidden.out);
+    wires.addVector("s_LOGISIM_HIDDEN_FPGA_INPUT", hidden.in);
+		// skip: wires.AddVector("s_LOGISIM_HIDDEN_FPGA_INOUT", hidden.inout);
+    wires.addVector("s_LOGISIM_HIDDEN_FPGA_OUTPUT", hidden.out);
 
     // wires for normal ports for circuit design under test
     for (NetlistComponent shadow : _circNets.inpins) {
       int w = shadow.original.getEnd(0).getWidth().getWidth();
-      wires.add(new WireInfo("s_"+shadow.label(), w));
+      wires.add("s_"+shadow.label(), w);
     }
     for (NetlistComponent shadow : _circNets.outpins) {
       int w = shadow.original.getEnd(0).getWidth().getWidth();
-      wires.add(new WireInfo("s_"+shadow.label(), w));
+      wires.add("s_"+shadow.label(), w);
     }
 
     // wires for dynamic clock
     NetlistComponent dynClock = _circNets.dynamicClock();
     if (dynClock != null) {
       int w = dynClock.original.getAttributeSet().getValue(DynamicClock.WIDTH_ATTR).getWidth();
-      wires.add(new WireInfo("s_LOGISIM_DYNAMIC_CLOCK", w));
+      wires.add("s_LOGISIM_DYNAMIC_CLOCK", w);
     }
 
 		if (numclk > 0)
@@ -130,18 +133,22 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 		circgen = new CircuitHDLGenerator(ctx, circUnderTest);
 	}
 
-  private void addWireVector(String busname, int w) {
-    // Note: the parens around "(1)" are a hack to force vector creation.
-    // See: HDLGenerator and Hdl.typeForWidth().
-    if (w > 0)
-      wires.add(new WireInfo(busname, w == 1 ? "(1)" : ""+w));
-  }
-
   // Top-level entry point: write all HDL files for the project.
   public boolean writeAllHDLFiles(String rootDir) {
     return circgen.writeAllHDLFiles(rootDir)
         && (ticker == null || ticker.writeHDLFiles(rootDir))
         && writeHDLFiles(rootDir);
+  }
+
+  @Override
+  public boolean hdlDependsOnCircuitState() { // for NVRAM
+    return circgen.hdlDependsOnCircuitState();
+  }
+
+  @Override
+  public boolean writeAllHDLThatDependsOn(CircuitState cs,
+      NetlistComponent ignored, String rootDir) { // for NVRAM
+    return circgen.writeAllHDLThatDependsOn(cs, null, rootDir);
   }
 
 	@Override
@@ -159,7 +166,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 
     out.comment("signal adaptions for I/O related components and top-level pins");
     ioResources.components.forEach((path, shadow) -> {
-      generateInlinedCodeSignal(out, path, shadow)
+      generateInlinedCodeSignal(out, path, shadow);
 		});
     out.stmt();
 
@@ -186,7 +193,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 
   private boolean needTopLevelInversion(Component comp, BoardIO io) {
     boolean boardIsActiveHigh = io.activity == PinActivity.ACTIVE_HIGH;
-    boolean compIsActiveHigh = comp.getFactory()ActiveOnHigh(comp.getAttributeSet());
+    boolean compIsActiveHigh = comp.getFactory().ActiveOnHigh(comp.getAttributeSet());
     return boardIsActiveHigh ^ compIsActiveHigh;
   }
 
@@ -198,7 +205,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     String signal;
     String bit;
     int offset;
-    if (shadow.original.getFactory() instanceOf Pin) {
+    if (shadow.original.getFactory() instanceof Pin) {
       signal = "s_" + NetlistComponent.labelOf(pin);
       bit = signal+hdl.idx;
       offset = 0;
@@ -252,12 +259,12 @@ public class ToplevelHDLGenerator extends HDLGenerator {
         // Input pins
         if (dest.io.width.in == 1)
           out.assign(signal, maybeNot+"FPGA_INPUT_PIN_"+seqno.in);
-        else for (int i = 0; i < dest.io.width.in)
+        else for (int i = 0; i < dest.io.width.in; i++)
           out.assign(signal, i, maybeNot+"FPGA_INPUT_PIN_"+(seqno.in+i));
         // Output pins
         if (dest.io.width.out == 1)
           out.assign("FPGA_OUTPUT_PIN_"+seqno.out, maybeNot+signal);
-        else for (int i = 0; i < dest.io.width.out)
+        else for (int i = 0; i < dest.io.width.out; i++)
           out.assign("FPGA_OUTPUT_PIN_"+(seqno.out+i), maybeNot+signal, i);
         // Note: no such thing as inout pins
       }

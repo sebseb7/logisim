@@ -32,7 +32,7 @@ package com.cburch.logisim.std.memory;
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.hdl.Hdl;
 
-public class CounterHDLGeneratorextends HDLGenerator {
+public class CounterHDLGenerator extends HDLGenerator {
 
   public CounterHDLGenerator(HDLCTX ctx) {
     super(ctx, "memory", "Counter", "i_Ctr");
@@ -49,16 +49,16 @@ public class CounterHDLGeneratorextends HDLGenerator {
     outPorts.add("CompareOut", 1, Counter.CARRY, null);
 
     wires.add("s_real_enable", 1);
-    registers.add(new WireInfo("s_counter_value", "BitWidth"));
-    registers.add(new WireInfo("s_next_counter_value", "BitWidth"));
-    registers.add(new WireInfo("s_carry", 1));
+    registers.add("s_counter_value", "BitWidth");
+    registers.add("s_next_counter_value", "BitWidth");
+    registers.add("s_carry", 1);
   }
 
   @Override
 	protected void generateFileHeader(Hdl out) {
     out.comment("Counter behavior after max value (or 0, if counting down) is reached:");
     out.comment("   Mode = 0 : Wrap around to 0 (or max, if counting down).");
-    out.comment("   Mode = 1 : Stay at max value (or 0, if counting down).")
+    out.comment("   Mode = 1 : Stay at max value (or 0, if counting down).");
     out.comment("   Mode = 2 : Continue counting anyway.");
     out.comment("   Mode = 3 : Load new value from input.");
     out.stmt();
@@ -73,7 +73,7 @@ public class CounterHDLGeneratorextends HDLGenerator {
   }
 
   @Override
-  protected void generateBehavior(Hdl out) {
+  protected void generateBehavior(Hdl out, String rootDir) {
     if (out.isVhdl) {
       out.stmt();
       out.stmt("CompareOut   <= s_carry;");

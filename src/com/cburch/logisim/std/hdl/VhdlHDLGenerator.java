@@ -31,9 +31,11 @@
 package com.cburch.logisim.std.hdl;
 
 import java.io.File;
+import java.util.HashMap;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.Port;
 
 public class VhdlHDLGenerator extends HDLGenerator {

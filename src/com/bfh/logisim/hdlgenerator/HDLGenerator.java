@@ -83,38 +83,38 @@ public class HDLGenerator extends HDLSupport {
       // Note: the parens around "(1)" here are a hack to force vector creation.
       // See: Hdl.typeForWidth() and its use below.
       if (width > 0)
-        add(new WireInfo(name, "("+width+")");
+        add(new WireInfo(name, "("+width+")"));
     }
   }
 
   // Details of generic parameters
   protected static class ParameterInfo {
     final String name; // param name
-    final String type; // integer, natural, or positive (only used for VhdlHDLGenerator)
-    final int value; // constant integer for a given instance
-    final int defaultValue; // default value that appears in declarations (only used for VhdlHDLGenerator)
+    final String type; // "integer", "natural", "positive", or "string" (only used for VHDL)
+    final Object value; // Integer or String value for a given instance
+    final Object defaultValue; // default Integer or String value that appears in declarations 
     ParameterInfo(String n, String t, int v, int d) {
       name = n;
       type = t;
       value = v;
       defaultValue = d;
     }
-    ParameterInfo(String n, int v) {
-      this(n, "integer", v, 0);
-    }
   }
-  protected static class Generics extends ArrayList<ParameterInfo> {
+  public static class Generics extends ArrayList<ParameterInfo> {
     public ParameterInfo get(String name) {
       for (ParameterInfo p : this)
         if (p.name.equals(name))
           return p;
       return null;
     }
-    public Integer getValue(String name) {
-      for (ParameterInfo p : this)
-        if (p.name.equals(name))
-          return p.value;
-      return null;
+    // public Integer getValue(String name) {
+    //   for (ParameterInfo p : this)
+    //     if (p.name.equals(name))
+    //       return p.value;
+    //   return null;
+    // }
+    public void add(String name, int val) {
+      add(new ParameterInfo(name, "integer", val, 0));
     }
   }
 
@@ -199,8 +199,9 @@ public class HDLGenerator extends HDLSupport {
 
   // Generate and write an "architecture" file for this component, using the
   // given root directory.
+  protected String rootDirForNVRamCode = null; // hack: see RamHDLGenerator
   protected boolean writeArchitecture(String rootDir) {
-    Hdl hdl = getArchitecture();
+    Hdl hdl = getArchitecture(rootDir);
 		if (hdl == null || hdl.isEmpty()) {
 			_err.AddFatalError("INTERNAL ERROR: Generated empty architecture for HDL `%s'.", hdlComponentName);
 			return false;
@@ -212,7 +213,7 @@ public class HDLGenerator extends HDLSupport {
 	}
 
   // Generate the full HDL code for the "architecture" file.
-	protected Hdl getArchitecture() {
+	protected Hdl getArchitecture(String rootDir) {
     Hdl out = new Hdl(_lang, _err);
     generateFileHeader(out);
 
@@ -237,7 +238,7 @@ public class HDLGenerator extends HDLSupport {
 
       out.indent();
 			out.stmt();
-      generateBehavior(out);
+      generateBehavior(out, rootDir);
 			out.stmt();
       out.dedent();
 
@@ -266,7 +267,7 @@ public class HDLGenerator extends HDLSupport {
 
       out.indent();
       for (ParameterInfo p : parameters)
-        out.stmt("parameter %s = %d;", p.name, p.defaultValue); // todo: verilog parameter types?
+        out.stmt("parameter %s = %s;", p.name, p.defaultValue); // note: verilog does not include type
 			for (PortInfo p : inPorts)
 				out.stmt("input %s%s;", out.typeForWidth(p.width), p.name);
 			for (PortInfo p : inOutPorts)
@@ -300,7 +301,7 @@ public class HDLGenerator extends HDLSupport {
         out.stmt();
 
 			out.stmt();
-      generateBehavior(out);
+      generateBehavior(out, rootDir);
 			out.stmt();
 
       out.dedent();
@@ -309,9 +310,6 @@ public class HDLGenerator extends HDLSupport {
 		}
 		return out;
 	}
-
-
-
 
   // Generate and write an "entity" file (for VHDL) for this component, using
   // the given root directory.
@@ -402,7 +400,7 @@ public class HDLGenerator extends HDLSupport {
   //             .A(foo),
   //             .B(bar),
   //             .C(baz) );
-	protected void generateComponentInstance(Hdl out, long id, NetlistComponent comp) {
+	protected void generateComponentInstance(Hdl out, long id, NetlistComponent comp, String rootDir) {
 
 		String instName = getInstanceName(id);
     Hdl.Map values = getPortMappings(comp);
@@ -423,7 +421,7 @@ public class HDLGenerator extends HDLSupport {
 		} else {
 
       for (ParameterInfo s : parameters)
-        generics.add(".%s(%d)", s.name, s.value);
+        generics.add(".%s(%s)", s.name, s.value);
       String g = String.join(",\n\t ", generics);
       String v = String.join(",\n\t ", values);
 
@@ -456,7 +454,7 @@ public class HDLGenerator extends HDLSupport {
 	protected void generateVhdlTypes(Hdl out) { }
 
   // Generate HDL code for the component, i.e. the actual behavioral RTL code.
-  protected void generateBehavior(Hdl out) { }
+  protected void generateBehavior(Hdl out, String rootDir) { }
 
   static final String IEEE_LOGIC = "std_logic_1164"; // standard + extended + extended2
   static final String IEEE_UNSIGNED = "std_logic_unsigned"; //                extended2
@@ -520,8 +518,8 @@ public class HDLGenerator extends HDLSupport {
     }
     Net net = comp.getConnection(clockPort.index);
     if (net == null) {
-      _err.AddSevereWarning("ERROR: Clock port of '%s' in circuit '%s' is not connected."
-          hdlComponentName, _nets.circName()
+      _err.AddSevereWarning("ERROR: Clock port of '%s' in circuit '%s' is not connected.",
+          hdlComponentName, _nets.circName());
       _err.AddSevereWarning("  The component will likely malfunction without a clock.");
       map.add(clockPort.ckPortName, _hdl.zero);
       map.add(clockPort.enPortName, _hdl.zero);

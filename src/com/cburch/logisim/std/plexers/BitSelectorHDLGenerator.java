@@ -60,7 +60,7 @@ public class BitSelectorHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out) {
+  public void generateBehavior(Hdl out, String rootDir) {
     out.indent();
     int wo = outWidth(attrs);
     if (out.isVhdl) {

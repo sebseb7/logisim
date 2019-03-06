@@ -30,13 +30,13 @@
 
 package com.bfh.logisim.hdlgenerator;
 
+import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
-import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
-import static com.bfh.logisim.fpga.BoardIO.IOComponentTypes;
 
 public abstract class HDLSupport {
 
@@ -98,6 +98,9 @@ public abstract class HDLSupport {
 	protected void generateComponentDeclaration(Hdl out) { }
 	protected void generateComponentInstance(Hdl out, long id, NetlistComponent comp) { }
 	protected String getInstanceNamePrefix() { }
+  protected boolean hdlDependsOnCircuitState() { return false; } // for NVRAM
+  public boolean writeAllHDLThatDependsOn(CircuitState cs, NetlistComponent comp,
+      String rootDir) { return true; } // for NVRAM
 
   // For HDLInliner classes.
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) { }
@@ -134,14 +137,13 @@ public abstract class HDLSupport {
   //   ${TRIGGER} - replaced with "LevelSensitive", "EdgeTriggered", or "Asynchronous"
   //                depending on StdAttr.TRIGGER and/or StdAttr.EDGE_TRIGGER.
   //
-  // Note: For ROM and non-volatile RAM components, the generated HDL code
-  // depends on the contents of the memory, which is too large of an attribute
-  // for getComponentName() to simply include in the name as is done for other
-  // attributes. We could include a concise unique hash, perhaps. But instead,
-  // we require each ROM and non-volatile RAM to have a non-zero label unique
-  // within the circuit, and also have getComponentName() in this case produce a
-  // name that is a function of both the circuit name (which is globally unique)
-  // and the label.
+  // Note: For ROM components, the generated HDL code depends on the contents of
+  // the memory, which is too large of an attribute for getComponentName() to
+  // simply include in the name, as is done for other HDL-relevant attributes.
+  // We could include a concise unique hash, perhaps. But instead, we require
+  // each ROM to have a non-zero label unique within the circuit, and also have
+  // getComponentName() in this case produce a name that is a function of both
+  // the circuit name (which is globally unique) and the label.
   private static String deriveHDLNameWithinCircuit(String nameTemplate,
       AttributeSet attrs, String circuitName) {
     String s = hdlComponentName;

@@ -41,7 +41,7 @@ public class DriveStrength {
 	public static final DriveStrength DRIVE_24 = new DriveStrength("24 mA", "24");
 	public static final DriveStrength UNKNOWN  = new DriveStrength("Unknown", "");
   public static final String[] OPTIONS = { DEFAULT,
-    DRIVE_2, DRIVE_4, DRIVE_8, DRIVE_16, DRIVE_24 }
+    DRIVE_2, DRIVE_4, DRIVE_8, DRIVE_16, DRIVE_24 };
 
   public DriveStrength get(String desc) {
     for (PullBehavior p : OPTIONS)

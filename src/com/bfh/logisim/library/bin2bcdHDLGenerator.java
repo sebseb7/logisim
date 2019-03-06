@@ -33,6 +33,7 @@ package com.bfh.logisim.library;
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
+import com.cburch.logisim.hdl.Hdl;
 
 public class bin2bcdHDLGenerator extends HDLGenerator {
 
@@ -40,22 +41,22 @@ public class bin2bcdHDLGenerator extends HDLGenerator {
     super(ctx, "bfh", deriveHDLName(ctx.attrs), "i_BinToBcd");
     int w = bitWidth(attrs);
     int n = numPorts(attrs);
-    parameters.add(new ParameterInfo("BitWidth", w));
+    parameters.add("BitWidth", w);
     inPorts.add(new PortInfo("BinValue", "BitWidth", 0, false));
 		for (int i = 0 ; i < n; i++)
 			outPorts.add(new PortInfo("BCD"+(int)Math.pow(10, i), 4, 1+i, null));
     switch (numPorts) {
     case 2: 
       for (int i = 0; i <= 3; i++)
-        wires.add(new WireInfo("s_level_"+i, 7));
+        wires.add("s_level_"+i, 7);
       break;
     case 3:
       for (int i = 0; i <= 6; i++)
-        wires.add(new WireInfo("s_level_"+i, 11));
+        wires.add("s_level_"+i, 11);
       break;
     case 4:
       for (int i = 0; i <= 10; i++)
-        wires.add(new WireInfo("s_level_"+i, 16));
+        wires.add("s_level_"+i, 16);
       break;
     }
   }
@@ -65,7 +66,7 @@ public class bin2bcdHDLGenerator extends HDLGenerator {
 	}
 	
 	@Override
-  public void generateBehavior(Hdl out) {
+  public void generateBehavior(Hdl out, String rootDir) {
     if (out.isVhdl) {
       switch (numPorts(attrs)) {
       case 2 : out.stmt("s_level_0(6 DOWNTO BitWidth) <= (OTHERS => '0');");

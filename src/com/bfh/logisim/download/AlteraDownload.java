@@ -34,6 +34,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Rectangle;
 import java.awt.Dimension;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -76,7 +78,9 @@ public class AlteraDownload extends FPGADownload implements Runnable {
     panel.setLayout(new GridBagLayout());
     panel.setResizable(false);
     panel.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-    panel.addWindowListener(e -> cancel());
+    panel.addWindowListener(new WindowAdapter() {
+      public void windowClosed(WindowEvent e) { cancel(); }
+    });
 
     text = new JLabel("Altera Downloader");
     text.setMinimumSize(new Dimension(600, 30));
@@ -219,7 +223,7 @@ public class AlteraDownload extends FPGADownload implements Runnable {
     setProgress(3);
     if (stopRequested)
       return null;
-    if (!SofFileExists) {
+    if (!sofFileExists) {
       setStatus("Synthesizing and creating configuration file (this may take a while)");
       if (!alteraCommand("synthesize", null, 0, "--flow", "compile", TOP_HDL))
         return "Failed to synthesize design and to create the configuration files, cannot download";
@@ -324,7 +328,7 @@ public class AlteraDownload extends FPGADownload implements Runnable {
 
     Chipset chip = board.fpga;
     String[] pkg = board.fpga.Package.split(" ");
-    String hdltype = out.isVHDL ? "VHDL_FILE" : "VERILOG_FILE";
+    String hdltype = out.isVhdl ? "VHDL_FILE" : "VERILOG_FILE";
 
     out.stmt("# Quartus II Tcl Project package loading script for Logisim");
     out.stmt("package require ::quartus::project");
@@ -371,7 +375,7 @@ public class AlteraDownload extends FPGADownload implements Runnable {
     ioResources.forEachPhysicalPin((pin, net, io, label) -> {
       out.stmt("    set_location_assignment %s -to %s # %s", pin, net, label);
       if (io.pull == PullBehavior.PULL_UP)
-        locs.add("    set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to %s", net);
+        out.stmt("    set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to %s", net);
     });
     out.stmt("    # Commit assignments");
     out.stmt("    export_assignments");

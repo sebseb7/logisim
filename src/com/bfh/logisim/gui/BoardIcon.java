@@ -35,8 +35,8 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-
 import javax.swing.Icon;
+import javax.swing.JLabel;
 
 public class BoardIcon implements Icon {
   private Image image;

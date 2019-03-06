@@ -43,11 +43,11 @@ public class RegisterHDLGenerator extends HDLGenerator {
     outPorts.add("Q", "BitWidth", Register.OUT, false);
     clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", Register.CK);
 
-    registers.add(new WireInfo("s_state_reg", "BitWidth"));
+    registers.add("s_state_reg", "BitWidth");
   }
 
   @Override
-  protected void generateBehavior(Hdl out) {
+  protected void generateBehavior(Hdl out, String rootDir) {
     if (out.isVhdl) {
       out.stmt("   Q <= s_state_reg;");
       out.stmt("");

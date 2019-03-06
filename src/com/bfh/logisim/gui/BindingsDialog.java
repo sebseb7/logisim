@@ -43,18 +43,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.function.Function;
 
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JToggleButton;
-import javax.swing.ListSelectionModel;
 // import javax.xml.parsers.DocumentBuilder;
 // import javax.xml.parsers.DocumentBuilderFactory;
 // import javax.xml.transform.OutputKeys;
@@ -70,14 +61,29 @@ import javax.swing.ListSelectionModel;
 // import org.w3c.dom.NamedNodeMap;
 // import org.w3c.dom.Node;
 // import org.w3c.dom.NodeList;
+import javax.swing.AbstractListModel;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JToggleButton;
+import javax.swing.ListSelectionModel;
 
 // import com.bfh.logisim.data.Bounds;
+// import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.BoardIO;
-// import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.fpga.PinBindings;
-import static com.bfh.logisim.fpga.PinBindings.Source;
+import com.bfh.logisim.netlist.NetlistComponent;
+import com.bfh.logisim.netlist.Path;
 import static com.bfh.logisim.fpga.PinBindings.Dest;
+import static com.bfh.logisim.fpga.PinBindings.Source;
 
 public class BindingsDialog extends JDialog {
 
@@ -150,7 +156,7 @@ public class BindingsDialog extends JDialog {
     header.setText("I/O Components in Design Under Test");
     header.setHorizontalTextPosition(JLabel.CENTER);
     header.setPreferredSize(new Dimension(picture.getWidth(), 25));
-    header.setToolTipText("<html>Select a component and connect it to a board I/O resource.<br>
+    header.setToolTipText("<html>Select a component and connect it to a board I/O resource.<br>"
         + "Use drop-down menu to expand or change component type.</html>");
     c.gridy++;
     c.gridx = 0;
@@ -241,7 +247,7 @@ public class BindingsDialog extends JDialog {
       setOpaque(false);
       setBackground(Color.RED); // todo: semi-transparent
       setVisible(false);
-      addMouseListener(this)
+      addMouseListener(this);
     }
 
     @Override
@@ -323,7 +329,7 @@ public class BindingsDialog extends JDialog {
     }
     int startIndex(Path path) {
       for (int i = 0; i < data.size(); i++)
-        if (data.get(i).equals(path)
+        if (data.get(i).equals(path))
           return i;
       return -1; // should never happen
     }
@@ -387,7 +393,7 @@ public class BindingsDialog extends JDialog {
         model.changed(src);
       selectedChanged(current, current);
     }
-    void mapCurrent(BoardIO synthType, int val) {
+    void mapCurrent(BoardIO.Type synthType, int val) {
       if (current == null)
           return;
       if (synthType == BoardIO.Type.Constant) {
@@ -767,7 +773,7 @@ public class BindingsDialog extends JDialog {
 
 	private static class NaturalOrderComparator<T> implements Comparator<T> {
     Function<T, String> stringify;
-    public Natural(Function<T, String> f) {
+    public NaturalOrderComparator(Function<T, String> f) {
       stringify = f;
     }
     @Override

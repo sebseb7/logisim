@@ -31,6 +31,7 @@
 package com.bfh.logisim.netlist;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.std.wiring.Clock;

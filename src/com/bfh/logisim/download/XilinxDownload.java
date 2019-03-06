@@ -565,7 +565,7 @@ public class XilinxDownload extends FPGADownload {
 		return spec;
 	}
 
-  private static isCPLD(Chipset chip) {
+  private static boolean isCPLD(Chipset chip) {
     String part = chip.Part.toUpperCase();
     return part.startsWith("XC2C")
         || part.startsWith("XA2C")

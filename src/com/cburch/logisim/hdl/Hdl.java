@@ -33,6 +33,7 @@ package com.cburch.logisim.hdl;
 import java.util.ArrayList;
 
 import com.bfh.logisim.gui.FPGAReport;
+import com.bfh.logisim.hdlgenerator.HDLGenerator;
 
 // Represents a snippet of VHDL or Verilog Hdl code, and contains
 // some helpers for programmatically generating such code.
@@ -81,7 +82,7 @@ public class Hdl extends ArrayList<String> {
       assnRange = "%s \t<= %s(%d downto %d);";
       bitAssnBit = "%s(%d) \t<= %s(%d);";
       idx = "(%d)";
-      range = "(%d downto %d)"
+      range = "(%d downto %d)";
       zero = "'0'";
       one = "'1'";
       unconnected = "open";
@@ -315,7 +316,7 @@ public class Hdl extends ArrayList<String> {
   //   w = "1"    VHDL: "std_logic"                         Verilog: ""
   //   w = "8"    VHDL: "std_logic_vector(7 downto 0)"      Verilog: "[7:0] "
   //   w = "N"    VHDL: "std_logic_vector(N-1 downto 0)"    Verilog: "[N-1:0] "
-  public String typeForWidth(String w, HDLGenerator.Generics params) {
+  public String typeForWidth(String w) {
     // Special case: when w has parens, like "(1)", we deliberately treat it as
     // a vector. See ToplevelHDLGenerator.addWireVector().
     try {

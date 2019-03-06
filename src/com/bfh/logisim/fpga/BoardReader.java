@@ -30,8 +30,9 @@
 
 package com.bfh.logisim.fpga;
 
-import java.awt.image.BufferedImage;
+import java.util.HashMap;
 
+import java.awt.image.BufferedImage;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
@@ -51,7 +52,7 @@ public class BoardReader {
       String name;
 			if (path.startsWith("url:")) {
         name = path.substring(4);
-				doc = parser.parse(getClass().getResourceAsStream("/" + name);
+				doc = parser.parse(getClass().getResourceAsStream("/" + name));
       } else if (path.startsWith("file:")) {
         name = path.substring(5);
 				doc = parser.parse(new File(name));

@@ -43,7 +43,7 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
 
     parameters.add("BitWidth", w);
     if (!parallel)
-      parameters.add(new ParameterInfo("Stages", n);
+      parameters.add("Stages", n);
 
     clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", ShiftRegister.CK);
 
@@ -55,8 +55,8 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
       int portnr = ShiftRegister.LD;
       inPorts.add("ParLoad", 1, portnr++, false);
       for (int i = 0; i < n; i++) {
-        inPorts.add("D"+i, "BitWidth", portnr++ false);
-        outPorts.add("Q"+i, "BitWidth", portnr++ null);
+        inPorts.add("D"+i, "BitWidth", portnr++, false);
+        outPorts.add("Q"+i, "BitWidth", portnr++, null);
       }
     }
   }
@@ -184,7 +184,7 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  protected void generateBehavior(Hdl out) {
+  protected void generateBehavior(Hdl out, String rootDir) {
     boolean parallel = attrs.getValue(ShiftRegister.ATTR_LOAD);
     if (out.isVhdl) {
       out.stmt("GenBits : FOR n IN (BitWidth-1) DOWNTO 0 GENERATE");

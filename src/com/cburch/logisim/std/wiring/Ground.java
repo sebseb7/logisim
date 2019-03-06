@@ -37,8 +37,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Graphics2D;
 
-import com.bfh.logisim.gui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;

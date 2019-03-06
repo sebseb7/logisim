@@ -35,7 +35,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.math.BigInteger;
 
-import com.bfh.logisim.hdlgenerator.AbstractHDLGeneratorFactory;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.BitWidth;
@@ -175,9 +175,9 @@ public class Multiplier extends InstanceFactory {
   }
 
   @Override
-  public AbstractHDLGeneratorFactory getHDLGenerator(AbstractHDLGeneratorFactory.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
     if (ctx.lang.equals("VHDL"))
-      return new MultiplierHDLGeneratorFactory(ctx);
+      return new MultiplierHDLGenerator(ctx);
     else
       return null;
   }

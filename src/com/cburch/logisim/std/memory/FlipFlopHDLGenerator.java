@@ -38,7 +38,7 @@ public class FlipFlopHDLGenerator extends HDLGenerator {
   private String[] inPorts;
   private String vhdlUpdate, verilogUpdate;
 
-  FlipFLopHDLGenerator(HDLCTX ctx, String name, String displayName,
+  FlipFlopHDLGenerator(HDLCTX ctx, String name, String displayName,
       String[] inPorts, String vhdlUpdate, String verilogUpdate) {
     super(ctx, "memory", "${TRIGGER}"+name, "i_"+name);
     this.displayName = displayName;
@@ -56,11 +56,11 @@ public class FlipFlopHDLGenerator extends HDLGenerator {
     inPorts.add("Preset", 1, portnum++, false);
 
     wires.add("s_next_state", 1);
-    registers.add(new WireInfo("s_current_state_reg", 1));
+    registers.add("s_current_state_reg", 1);
   }
 
   @Override
-  protected void generateBehavior(Hdl out) {
+  protected void generateBehavior(Hdl out, String rootDir) {
     if (out.isVhdl) {
       out.stmt("Q     <= s_current_state_reg;");
       out.stmt("Q_bar <= NOT(s_current_state_reg);");
