@@ -29,10 +29,11 @@
  */
 package com.cburch.logisim.std.wiring;
 
-import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.bfh.logisim.hdlgenerator.TickHDLGenerator;
+import com.bfh.logisim.netlist.NetlistComponent;
 import com.cburch.logisim.hdl.Hdl;
+import com.cburch.logisim.instance.StdAttr;
 
 public class ClockHDLGenerator extends HDLGenerator {
 
@@ -50,24 +51,24 @@ public class ClockHDLGenerator extends HDLGenerator {
   public static String[] clkSignalFor(HDLGenerator downstream, int clkid) {
     String clkNet = "LOGISIM_CLOCK_TREE_"+ clkid + downstream._hdl.idx;
     String one = downstream._hdl.one;
-    if (downstream.nets.RawFPGAClock()) {
+    if (downstream._nets.getClockBus().RawFPGAClock) {
       // Raw mode: use ck=CLK_RAW en=1 or ck=~CLK_RAW en=1
-      if (downstream.attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING 
-          || downstream.attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
-          || downstream.attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW)
+      if (downstream._attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING 
+          || downstream._attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
+          || downstream._attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW)
         return new String[] { String.format(clkNet, CLK_RAW), one };
       else
         return new String[] { String.format(clkNet, CLK_INV), one }; // == ~CLK_RAW
-    } else if (downstream.attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING 
-        || downstream.attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING) {
+    } else if (downstream._attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING 
+        || downstream._attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING) {
       // Slow mode falling: use ck=CLK_RAW en=NEG_EDGE
       return new String[] {
         String.format(clkNet, CLK_RAW),
         String.format(clkNet, NEG_EDGE) };
-    } else if (downstream.attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_HIGH) {
+    } else if (downstream._attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_HIGH) {
       // Slow mode active high: use ck=CL_SLOW en=1
       return new String[] { String.format(clkNet, CLK_SLOW), one };
-    } else if (downstream.attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW) {
+    } else if (downstream._attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW) {
       // Slow mode active high: use ck=~CLK_SLOW en=1
       return new String[] { String.format(clkNet, CLK_INV), one }; // == ~CLK_SLOW
     } else { // default: TRIG_RISING
@@ -84,14 +85,14 @@ public class ClockHDLGenerator extends HDLGenerator {
     // here. If we wanted multiple versions here, ToplevelHDLGenerator would
     // maybe need multiple declarations too.
     super(ctx, "base", "LogisimClock", "i_ClockGen");
-    int hi = attrs.getValueOrElse(Clock.ATTR_HIGH, 1);
-    int lo = attrs.getValueOrElse(Clock.ATTR_LOW, 1);
-    int raw = _nets.RawFPGAClock() ? 1 : 0;
-    if (raw && hi != lo)
+    int hi = _attrs.getValueOrElse(Clock.ATTR_HIGH, 1);
+    int lo = _attrs.getValueOrElse(Clock.ATTR_LOW, 1);
+    int raw = _nets.getClockBus().RawFPGAClock ? 1 : 0;
+    if (raw == 1 && hi != lo)
       _err.AddFatalError("Clock component detected with " +hi+":"+lo+ " hi:lo duty cycle,"
           + " but maximum clock speed was selected. Only 1:1 duty cycle is supported with "
           + " maximum clock speed.");
-    int ph = attrs.getValueOrElse(Clock.ATTR_PHASE, 0);
+    int ph = _attrs.getValueOrElse(Clock.ATTR_PHASE, 0);
     ph = ph % (hi + lo);
     if (ph != 0) // todo: support phase offset
       _err.AddFatalError("Clock component detected with "+ph+" tick phase offset,"
@@ -119,7 +120,7 @@ public class ClockHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     if (out.isVhdl) {
       out.stmt("ClockBus <= IF (Raw = '1') THEN");
       out.stmt("            FPGACLock & '1' & '1' & NOT(FPGACLock) & FPGACLock;");
@@ -217,10 +218,10 @@ public class ClockHDLGenerator extends HDLGenerator {
     } else if (p.name.equals("FPGATick")) {
       map.add(p.name, TickHDLGenerator.FPGA_TICK_NET);
     } else if (p.name.equals("ClockBus")) {
-      int id = _nets.GetClockSourceId(comp.original);
+      int id = _nets.getClockBus().id(comp.original);
       if (id < 0)
-        err.AddFatalError("INTERNAL ERROR: missing clock net for pin '%s' of '%s' in circuit '%s'.",
-            p.name, hdlComponentName, _nets.getCircuitName());
+        _err.AddFatalError("INTERNAL ERROR: missing clock net for pin '%s' of '%s' in circuit '%s'.",
+            p.name, hdlComponentName, _nets.circ.getName());
       map.add(p.name, CLK_TREE_NET + id);
     }
   }

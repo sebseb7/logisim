@@ -46,7 +46,7 @@ public class MultiplexerHDLGenerator extends HDLGenerator {
     for (int i = 0; i < n; i++)
       outPorts.add("In_"+i, bitWidth, i, false);
     inPorts.add("Sel", ws, n, true);
-    if (attrs.getValue(Plexers.ATTR_ENABLE)) {
+    if (_attrs.getValue(Plexers.ATTR_ENABLE)) {
       inPorts.add("Enable", 1, n+1, true); // may not be present
       inPorts.add("Out", bitWidth, n+2, null);
     } else {
@@ -64,9 +64,9 @@ public class MultiplexerHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out, String rootDir) {
-    int w = width(attrs);
-    int ws = selWidth(attrs);
+  protected void generateBehavior(Hdl out) {
+    int w = stdWidth();
+    int ws = selWidth();
     int n = (1 << ws);
     if (out.isVhdl) {
       out.stmt("make_mux : PROCESS(\tEnable,");
@@ -103,6 +103,6 @@ public class MultiplexerHDLGenerator extends HDLGenerator {
   }
 
   protected int selWidth() {
-    return attrs.getValue(Plexers.ATTR_SELECT).getWidth();
+    return _attrs.getValue(Plexers.ATTR_SELECT).getWidth();
   }
 }

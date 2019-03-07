@@ -29,8 +29,7 @@
  */
 package com.cburch.logisim.std.io;
 
-import java.util.ArrayList;
-
+import com.bfh.logisim.netlist.Net;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.hdlgenerator.HDLInliner;
 import com.bfh.logisim.hdlgenerator.HiddenPort;
@@ -43,31 +42,28 @@ public class LightsHDLGenerator extends HDLInliner {
   }
 
   public static LightsHDLGenerator forLed(HDLCTX ctx) {
-    this(ctx, "LED_${LABEL}");
-    hiddenPort = HiddenPort.makeOutport(1, HiddenPort.LED, HiddenPort.Pin);
+    LightsHDLGenerator g = new LightsHDLGenerator(ctx, "LED_${LABEL}");
+    g.hiddenPort = HiddenPort.makeOutport(1, HiddenPort.LED, HiddenPort.Pin);
+    return g;
   }
 
   public static LightsHDLGenerator forRGBLed(HDLCTX ctx) {
-    this(ctx, "RGBLED_${LABEL}");
-    ArrayList<String> labels = new ArrayList<>();
-    for (int i = 0; i < 3; i++)
-      LabelNames.add("");
-    labels.set(RGBLed.RED, "RED");
-    labels.set(RGBLed.GREEN, "GREEN");
-    labels.set(RGBLed.BLUE, "BLUE");
-    hiddenPort = HiddenPort.makeOutport(labels, HiddenPort.RGBLED, HiddenPort.LED, HiddenPort.Ribbon, HiddenPort.Pin);
+    LightsHDLGenerator g = new LightsHDLGenerator(ctx, "RGBLED_${LABEL}");
+    g.hiddenPort = HiddenPort.makeOutport(RGBLed.pinLabels(), HiddenPort.RGBLED, HiddenPort.LED, HiddenPort.Ribbon, HiddenPort.Pin);
+    return g;
   }
 
   public static LightsHDLGenerator forSevenSegment(HDLCTX ctx) {
-    this(ctx, "SevenSegment_${LABEL}");
-    hiddenPort = HiddenPort.makeOutport(HexDigitHDLGenerator.labels(),
+    LightsHDLGenerator g = new LightsHDLGenerator(ctx, "SevenSegment_${LABEL}");
+    g.hiddenPort = HiddenPort.makeOutport(SevenSegment.pinLabels(),
         HiddenPort.SevenSegment, HiddenPort.LED, HiddenPort.Pin);
+    return g;
   }
 
   @Override
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
-    int b = comp.getLocalHiddenPortIndices().out.start;
-    for (int i = 0; i < comp.ports.size(); i++) {
+    int b = comp.getLocalHiddenPortIndices().start.out;
+    for (int i = 0; i < comp.portConnections.size(); i++) {
       Net net = comp.getConnection(i);
       if (net != null)
         out.assign("LOGISIM_HIDDEN_FPGA_OUTPUT", b + i, net.name);

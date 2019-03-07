@@ -60,9 +60,9 @@ public class BitSelectorHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     out.indent();
-    int wo = outWidth(attrs);
+    int wo = outWidth();
     if (out.isVhdl) {
       out.stmt("s_vec((ExtendedBits-1) DOWNTO WidthIn) <= (others => '0');");
       out.stmt("s_vec((WidthIn-1) DOWNTO 0) <= DataIn;");
@@ -97,13 +97,13 @@ public class BitSelectorHDLGenerator extends HDLGenerator {
   }
 
   protected int outWidth() {
-    return attrs.getValue(BitSelector.GROUP_ATTR).getWidth();
+    return _attrs.getValue(BitSelector.GROUP_ATTR).getWidth();
   }
 
   protected int selWidth() {
     int wd = stdWidth();
     int wo = outWidth();
-    int groups = (wd + wg - 1) / wo - 1;
+    int groups = (wd + wo - 1) / wo - 1;
     int ws = 1;
     if (groups > 0) {
       while (groups != 1) {

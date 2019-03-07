@@ -29,8 +29,6 @@
  */
 package com.cburch.logisim.std.io;
 
-import java.util.ArrayList;
-
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.bfh.logisim.hdlgenerator.HiddenPort;
 import com.cburch.logisim.hdl.Hdl;
@@ -39,22 +37,6 @@ public class HexDigitHDLGenerator extends HDLGenerator {
 
   // todo: Verilog support
   
-  static ArrayList<String> labels() {
-    ArrayList<String> labels = new ArrayList<>();
-    for (int i = 0; i < 8; i++)
-      labels.add("");
-    labels.set(Segment_A, "Segment_A");
-    labels.set(Segment_B, "Segment_B");
-    labels.set(Segment_C, "Segment_C");
-    labels.set(Segment_D, "Segment_D");
-    labels.set(Segment_E, "Segment_E");
-    labels.set(Segment_F, "Segment_F");
-    labels.set(Segment_G, "Segment_G");
-    labels.set(DP, "Segment_DP");
-    return labels;
-  }
-
-
   public HexDigitHDLGenerator(HDLCTX ctx) {
     super(ctx, "io", "HexDigit_${LABEL}", "i_Hex");
 
@@ -62,12 +44,12 @@ public class HexDigitHDLGenerator extends HDLGenerator {
     inPorts.add("DecimalPoint", 1, HexDigit.DP, false);
     wires.add("s_pattern", 7);
 
-    hiddenPort = HiddenPort.makeOutport(labels(),
+    hiddenPort = HiddenPort.makeOutport(SevenSegment.pinLabels(),
         HiddenPort.SevenSegment, HiddenPort.LED, HiddenPort.Ribbon, HiddenPort.Pin);
   }
 
   @Override
-  protected void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     out.stmt("Segment_A <= s_pattern(0);");
     out.stmt("Segment_B <= s_pattern(1);");
     out.stmt("Segment_C <= s_pattern(2);");

@@ -30,7 +30,10 @@
 
 package com.bfh.logisim.hdlgenerator;
 
+import java.util.ArrayList;
+
 import com.bfh.logisim.fpga.BoardIO;
+import com.bfh.logisim.fpga.PinActivity;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.library.DynamicClock;
@@ -38,6 +41,7 @@ import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.netlist.Path;
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.std.wiring.ClockHDLGenerator;
@@ -49,7 +53,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
   public static final String HDL_NAME = "LogisimToplevelShell";
 
 	private Circuit circUnderTest;
-	private PinBindings goResources;
+	private PinBindings ioResources;
   private Netlist _circNets; // Netlist of the circUnderTest.
 
   private TickHDLGenerator ticker;
@@ -77,23 +81,23 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     this.ctx = ctx;
 
     _circNets = circUnderTest.getNetlist();
-    int numclk = _circNets.clockbus.shapes().size();
-		long fpgaClockFreq = _circNets.clockbus.RawFPGAClockFreq;
-		int tickerPeriod = _circNets.clockbus.TickerPeriod;
+    int numclk = _circNets.getClockBus().shapes().size();
+		long fpgaClockFreq = _circNets.getClockBus().RawFPGAClockFreq;
+		int tickerPeriod = _circNets.getClockBus().TickerPeriod;
 
     // raw oscillator input
-    ioResources.requiresOscilator = numclk > 0;
+    ioResources.requiresOscillator = numclk > 0;
     if (numclk > 0)
-      inPorts.add(new PortInfo(TickHDLGenerator.FPGA_CLK_NET, 1, -1, null));
+      inPorts.add(TickHDLGenerator.FPGA_CLK_NET, 1, -1, null);
 
     // io resources
-    Int3 ioPinCount = ioResources.countFPGAPhysicalIOPins();
+    Netlist.Int3 ioPinCount = ioResources.countFPGAPhysicalIOPins();
 		for (int i = 0; i < ioPinCount.in; i++)
-      inPorts.add(new PortInfo("FPGA_INPUT_PIN_"+i, 1, -1, null));
+      inPorts.add("FPGA_INPUT_PIN_"+i, 1, -1, null);
 		for (int i = 0; i < ioPinCount.inout; i++)
-      inOutPorts.add(new PortInfo("FPGA_INOUT_PIN_"+i, 1, -1, null));
+      inOutPorts.add("FPGA_INOUT_PIN_"+i, 1, -1, null);
 		for (int i = 0; i < ioPinCount.out; i++)
-      outPorts.add(new PortInfo("FPGA_OUTPUT_PIN_"+i, 1, -1, null));
+      outPorts.add("FPGA_OUTPUT_PIN_"+i, 1, -1, null);
 
     // internal clock networks
 		if (numclk > 0) {
@@ -140,16 +144,17 @@ public class ToplevelHDLGenerator extends HDLGenerator {
         && writeHDLFiles(rootDir);
   }
 
-  @Override
-  public boolean hdlDependsOnCircuitState() { // for NVRAM
-    return circgen.hdlDependsOnCircuitState();
-  }
+  // @Override
+  // public boolean hdlDependsOnCircuitState() { // for NVRAM
+  //   return circgen.hdlDependsOnCircuitState();
+  // }
 
-  @Override
-  public boolean writeAllHDLThatDependsOn(CircuitState cs,
-      NetlistComponent ignored, String rootDir) { // for NVRAM
-    return circgen.writeAllHDLThatDependsOn(cs, null, rootDir);
-  }
+  // @Override
+  // public boolean writeAllHDLThatDependsOn(CircuitState cs,
+  //     NetlistComponent ignored1, Path ignored2, String rootDir) { // for NVRAM
+  //   return circgen.writeAllHDLThatDependsOn(cs, null,
+  //       new Path(circUnderTest), rootDir);
+  // }
 
 	@Override
 	protected void generateComponentDeclaration(Hdl out) {
@@ -170,18 +175,18 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 		});
     out.stmt();
 
-		if (nets.NumberOfClockTrees() > 0) {
+		if (_circNets.clocks.size() > 0) {
       out.comment("clock signal distribution");
-      ticker.generateComponentInstance(out, 0L /*id*/, null /*comp*/);
+      ticker.generateComponentInstance(out, 0L /*id*/, null /*comp*/ /*, null path*/);
 
 			long id = 0;
 			for (NetlistComponent clk : _circNets.clocks)
-        clk.hdlSupport.generateComponentInstance(out, id++, clk); // FIXME - uniquify clocks
+        clk.hdlSupport.generateComponentInstance(out, id++, clk /*, null path*/); // FIXME - uniquify clocks
       out.stmt();
 		}
 
     out.comment("connections for circuit design under test");
-    circgen.generateComponentInstance(out, 0L /*id*/, null /*comp*/);
+    circgen.generateComponentInstance(out, 0L /*id*/, null /*comp*/ /*, null path*/);
 	}
 
   private void pinVectorAssign(Hdl out, String pinName, String portName, int seqno, int n) {
@@ -206,74 +211,77 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     String bit;
     int offset;
     if (shadow.original.getFactory() instanceof Pin) {
-      signal = "s_" + NetlistComponent.labelOf(pin);
-      bit = signal+hdl.idx;
+      signal = "s_" + shadow.label();
+      bit = signal+out.idx;
       offset = 0;
     } else {
-      NetlistComponent.PortIndices3 indices = comp.getGlobalHiddenPortIndices(path);
+      NetlistComponent.Range3 indices = shadow.getGlobalHiddenPortIndices(path);
       if (indices == null) {
         out.err.AddFatalError("INTERNAL ERROR: Missing index data for I/O component %s", path);
         return;
       }
-      if (indices.in.end == indices.in.start) {
+      if (indices.end.in == indices.start.in) {
         // signal[5] is the only bit
-        offset = indices.in.start;
-        bit = "s_LOGISIM_HIDDEN_FPGA_INPUT"+hdl.idx;
+        offset = indices.start.in;
+        bit = "s_LOGISIM_HIDDEN_FPGA_INPUT"+out.idx;
         signal = String.format(bit, offset);
-      } else if (indices.in.end > indices.in.start) {
+      } else if (indices.end.in > indices.start.in) {
         // signal[5] versus signal[8:3]
-        offset = indices.in.start;
+        offset = indices.start.in;
         signal = "s_LOGISIM_HIDDEN_FPGA_INPUT";
-        bit = signal+hdl.idx;
-      } else if (indices.out.end == indices.out.start) {
+        bit = signal+out.idx;
+      } else if (indices.end.out == indices.start.out) {
         // signal[5] is the only bit
-        offset = indices.out.start;
-        bit = "s_LOGISIM_HIDDEN_FPGA_OUTPUT"+hdl.idx;
+        offset = indices.start.out;
+        bit = "s_LOGISIM_HIDDEN_FPGA_OUTPUT"+out.idx;
         signal = String.format(bit, offset);
-      } else if (indices.out.end > indices.out.start) {
+      } else if (indices.end.out > indices.start.out) {
         // signal[5] versus signal[8:3]
-        offset = indices.out.start;
+        offset = indices.start.out;
         signal = "s_LOGISIM_HIDDEN_FPGA_OUTPUT";
-        bit = signal+hdl.idx;
+        bit = signal+out.idx;
       } else {
         out.err.AddFatalError("INTERNAL ERROR: Hidden net without input or output bits for path %s", path);
         return;
       }
     }
 
-    PinBindings.Dest dest = ioResources.mappings(ioResources.sourceFor(path));
+    PinBindings.Source src = ioResources.sourceFor(path);
+    PinBindings.Dest dest = ioResources.mappings.get(src);
     if (dest != null) { // Entire pin is mapped to one BoardIO resource.
-      boolean invert = needTopLevelInversion(pin, dest.io);
-      String maybeNot = (invert ? hdl.not + " " : "");
+      boolean invert = needTopLevelInversion(shadow.original, dest.io);
+      String maybeNot = (invert ? out.not + " " : "");
+      Netlist.Int3 destwidth = dest.io.getPinCounts();
       if (dest.io.type == BoardIO.Type.Unconnected) {
         // If user assigned type "unconnected", do nothing. Synthesis will warn,
         // but optimize away the signal.
-        continue;
       } else if (!BoardIO.PhysicalTypes.contains(dest.io.type)) {
         // Handle synthetic input types.
         int constval = dest.io.syntheticValue;
-        out.assign(signal, maybeNot+out.literal(constval, dest.io.width.size()));
+        out.assign(signal, maybeNot+out.literal(constval, destwidth.in));
       } else {
         // Handle physical I/O device types.
-        Int3 seqno = dest.seqno();
+        Netlist.Int3 seqno = src.seqno();
         // Input pins
-        if (dest.io.width.in == 1)
+        if (destwidth.in == 1)
           out.assign(signal, maybeNot+"FPGA_INPUT_PIN_"+seqno.in);
-        else for (int i = 0; i < dest.io.width.in; i++)
+        else for (int i = 0; i < destwidth.in; i++)
           out.assign(signal, i, maybeNot+"FPGA_INPUT_PIN_"+(seqno.in+i));
         // Output pins
-        if (dest.io.width.out == 1)
+        if (destwidth.out == 1)
           out.assign("FPGA_OUTPUT_PIN_"+seqno.out, maybeNot+signal);
-        else for (int i = 0; i < dest.io.width.out; i++)
+        else for (int i = 0; i < destwidth.out; i++)
           out.assign("FPGA_OUTPUT_PIN_"+(seqno.out+i), maybeNot+signal, i);
         // Note: no such thing as inout pins
       }
     } else { // Each bit of pin is assigned to a different BoardIO resource.
-      ArrayList<PinBinding.Source> srcs = ioResources.bitSourcesFor(path);
+      ArrayList<PinBindings.Source> srcs = ioResources.bitSourcesFor(path);
       for (int i = 0; i < srcs.size(); i++)  {
-        dest = ioResources.mappings(srcs.get(i));
-        boolean invert = needTopLevelInversion(pin, dest.io);
-        String maybeNot = (invert ? hdl.not + " " : "");
+        src = srcs.get(i);
+        dest = ioResources.mappings.get(src);
+        Netlist.Int3 destwidth = dest.io.getPinCounts();
+        boolean invert = needTopLevelInversion(shadow.original, dest.io);
+        String maybeNot = (invert ? out.not + " " : "");
         if (dest.io.type == BoardIO.Type.Unconnected) {
           // If user assigned type "unconnected", do nothing. Synthesis will warn,
           // but optimize away the signal.
@@ -284,11 +292,11 @@ public class ToplevelHDLGenerator extends HDLGenerator {
           out.assign(bit, offset+i, maybeNot+out.literal(constval, 1));
         } else {
           // Handle physical I/O device types.
-          Int3 seqno = dest.seqno();
-          if (dest.io.width.in == 1)
+          Netlist.Int3 seqno = src.seqno();
+          if (destwidth.in == 1)
             out.assign(bit, offset+i, maybeNot+"FPGA_INPUT_PIN_"+seqno.in);
           // Output pins
-          if (dest.io.width.out == 1)
+          if (destwidth.out == 1)
             out.assign("FPGA_OUTPUT_PIN_"+seqno.out, maybeNot+bit, offset+i);
           // Note: no such thing as inout pins
         }

@@ -33,7 +33,6 @@ package com.cburch.logisim.hdl;
 import java.util.ArrayList;
 
 import com.bfh.logisim.gui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLGenerator;
 
 // Represents a snippet of VHDL or Verilog Hdl code, and contains
 // some helpers for programmatically generating such code.
@@ -320,16 +319,18 @@ public class Hdl extends ArrayList<String> {
     // Special case: when w has parens, like "(1)", we deliberately treat it as
     // a vector. See ToplevelHDLGenerator.addWireVector().
     try {
-      int n = Integer.parseInt(w);
-      if (n == 1)
-        return isVhdl ? "std_logic" : "";
-      // else if (w == 0) // Q: can this happen?
-      //   return isVhdl ? "std_logic_vector(0 downto 0)" : "[0:0]";
-      else
-        return isVhdl ? "std_logic_vector("+(n-1)+" downto 0)" : "["+(n-1)+":0] ";
+      return typeForWidth(Integer.parseInt(w));
     } catch (NumberFormatException ex) {
       return isVhdl ? "std_logic_vector("+w+"-1 downto 0)" : "["+w+"-1:0] ";
     }
+  }
+  public String typeForWidth(int n) {
+    if (n == 1)
+      return isVhdl ? "std_logic" : "";
+    // else if (w == 0) // Q: can this happen?
+    //   return isVhdl ? "std_logic_vector(0 downto 0)" : "[0:0]";
+    else
+      return isVhdl ? "std_logic_vector("+(n-1)+" downto 0)" : "["+(n-1)+":0] ";
   }
 
   // Map is used for port mappings and generic parameter mapping.
@@ -337,33 +338,21 @@ public class Hdl extends ArrayList<String> {
     // HDL-specific formats              VHDL                        Verilog
     public final String map;          // %s => %s                    .%s(%s)
     public final String map0;         // %s(0) => %s                 .%s(%s)
-    public final String map1;         // %s(%d) => %s                (null)
-    public final String mapN;         // %s(%d downto %d) => %s      (null)
-    public final String mapBit;       // %s => %s(%d)                .%s(%s(%d))
-    public final String map0Bit;      // %s(0) => %s(%d)             .%s(%s(%d))
-    public final String map1Bit;      // %s(%d) => %s(%d)            (null)
-    public final String mapNBus;      // %s(%d downto %d) => %s(%d)  (null)
+    // public final String mapBit;       // %s => %s(%d)                .%s(%s(%d))
+    // public final String map0Bit;      // %s(0) => %s(%d)             .%s(%s(%d))
 
     public Map(String lang, FPGAReport err) {
       super(lang, err);
       if (isVhdl) {
         map = "%s => %s";
         map0 = "%s(0) => %s";
-        map1 = "%s(%d) => %s";
-        mapN = "%s(%d downto %d) => %s";
-        mapBit = "%s => %s(%d)";
-        map0Bit = "%s(0) => %s(%d)";
-        map1Bit = "%s(%d) => %s(%d)";
-        mapNBit = "%s(%d downto %d) => %s(%d)";
+//        mapBit = "%s => %s(%d)";
+//        map0Bit = "%s(0) => %s(%d)";
       } else {
         map = ".%s(%s)";
         map0 = ".%s(%s)";
-        map1 = null;
-        mapN = null;
-        mapBit = ".%s(%s(%d))";
-        map0Bit = ".%s(%s(%d))";
-        map1Bit = null;
-        mapNBit = null;
+//        mapBit = ".%s(%s(%d))";
+//        map0Bit = ".%s(%s(%d))";
       }
     }
 
@@ -372,51 +361,32 @@ public class Hdl extends ArrayList<String> {
     public void assign(String name, String val, int valIdx) { throw new IllegalArgumentException(); }
     public void assign(String name, int nameIdx, String val, int valIdx) { throw new IllegalArgumentException(); }
 
+    // same vhdl types: vector => vector
+    // same vhdl types: signal => signal
     public void add(String name, String val) {
       stmt(map, name, val);
     }
 
+    // same vhdl types: vector => vector(7 downto 0)
+    public void add(String name, String val, int end, int start) {
+      stmt(map, name, String.format(val+range, end, start));
+    }
+
+    // mismatched vhdl types: vector(0) => signal
     public void add0(String name, String val) {
       stmt(map0, name, val);
     }
 
-    public void vhdlAdd(String name, int nameIdx, String val) {
-      if (isVerilog)
-        throw new IllegalArgumentException();
-      stmt(map1, name, nameIdx, val);
-    }
+    // // signal => vector(i)
+    // public void add(String name, String val, int valIdx) {
+    //   stmt(mapBit, name, val, valIdx);
+    // }
 
-    public void vhdlAdd(String name, int nameIdxHi, int nameIdxLo, String val) {
-      if (isVerilog)
-        throw new IllegalArgumentException();
-      if (nameIdxHi == nameIdxLo)
-        stmt(map1, name, nameIdxLo, val);
-      else
-        stmt(mapN, name, nameIdxHi, nameIdxLo, val);
-    }
+    // // vector(i) => vector(i)
+    // public void add0(String name, String val, int valIdx) {
+    //   stmt(map0Bit, name, val, valIdx);
+    // }
 
-    public void add(String name, String val, int valIdx) {
-      stmt(mapBit, name, val, valIdx);
-    }
-
-    public void add0(String name, String val, int valIdx) {
-      stmt(map0Bit, name, val, valIdx);
-    }
-
-    public void vhdlAdd(String name, int nameIdx, String val, int valIdx) {
-      if (isVerilog)
-        throw new IllegalArgumentException();
-      stmt(map1Bit, name, nameIdx, val, valIdx);
-    }
-
-    public void vhdlAdd(String name, int nameIdxHi, int nameIdxLo, String val, int valIdx) {
-      if (isVerilog)
-        throw new IllegalArgumentException();
-      if (nameIdxHi == nameIdxLo)
-        stmt(map1Bit, name, nameIdxLo, val, valIdx);
-      else
-        stmt(mapNBit, name, nameIdxHi, nameIdxLo, val, valIdx);
-    }
   }
 
 }

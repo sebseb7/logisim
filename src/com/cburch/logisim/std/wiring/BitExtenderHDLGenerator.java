@@ -29,6 +29,7 @@
  */
 package com.cburch.logisim.std.wiring;
 
+import com.bfh.logisim.netlist.Net;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.hdlgenerator.HDLInliner;
 import com.cburch.logisim.hdl.Hdl;
@@ -47,25 +48,25 @@ public class BitExtenderHDLGenerator extends HDLInliner {
     
     Net src = comp.getConnection(1);
     if (src == null) {
-      _err.AddError("BitExtender has floating input in circuit '%s'", nets.circName());
+      _err.AddError("BitExtender has floating input in circuit '%s'", _nets.circ.getName());
       return;
     }
 
-    int wo = dest.width;
-    int wi = src.width;
+    int wo = dest.bitWidth();
+    int wi = src.bitWidth();
 
     if (wo <= wi) {
-      out.assign(dst, src.slice(wo-1, 0));
+      out.assign(dest.name, src.slice(out, wo-1, 0));
       return;
     }
 
-    String type = attrs.getValue(BitExtender.ATTR_TYPE);
+    String type = _attrs.getValue(BitExtender.ATTR_TYPE).toString();
 
     Net inp = null;
     if (type.equals("input")) {
       inp = comp.getConnection(2);
       if (inp == null) {
-        err.AddSevereWarning("Bit Extender has floating input in circuit '%s'", nets.circName());
+        _err.AddSevereWarning("Bit Extender has floating input in circuit '%s'", _nets.circ.getName());
         type = "zero";
       }
     }
@@ -76,17 +77,17 @@ public class BitExtenderHDLGenerator extends HDLInliner {
     else if (type.equals("one"))
       e = out.one;
     else if (type.equals("sign"))
-      e = src.bit(wi-1);
+      e = src.bit(out, wi-1);
     else if (type.equals("input"))
       e = inp.name;
 
     if (out.isVhdl && wo == wi+1)
-      out.assign(dst, String.format("%s & %s", e, src.name));
+      out.assign(dest.name, String.format("%s & %s", e, src.name));
     else if (out.isVhdl)
-      out.assign(dst, String.format("(%d downto %d => %s) & %s", wo-1, wi, e, src.name));
+      out.assign(dest.name, String.format("(%d downto %d => %s) & %s", wo-1, wi, e, src.name));
     else if (wo == wi+1)
-      out.assign(dst, String.format("{%s, %s}", e, src.name));
+      out.assign(dest.name, String.format("{%s, %s}", e, src.name));
     else
-      out.assign(dst, String.format("{{%d{%s}}, %s}", wo-wi, e, src.name));
+      out.assign(dest.name, String.format("{{%d{%s}}, %s}", wo-wi, e, src.name));
   }
 }

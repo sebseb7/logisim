@@ -48,6 +48,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.bfh.logisim.hdlgenerator.CircuitHDLGenerator;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;

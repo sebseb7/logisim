@@ -37,8 +37,8 @@ public class PLAVhdlGenerator extends HDLGenerator {
   public PLAVhdlGenerator(HDLCTX ctx) {
     super(ctx, "gates", "PLA_${CIRCUIT}_${LABEL}", "i_PLA");
 
-    inPorts.add("Index", attrs.getValue(PLA.ATTR_IN_WIDTH).getWidth(), PLA.IN_PORT, false);
-    outPorts.add("Result", attrs.getValue(PLA.ATTR_OUT_WIDTH).getWidth(), PLA.OUT_PORT, null);
+    inPorts.add("Index", _attrs.getValue(PLA.ATTR_IN_WIDTH).getWidth(), PLA.IN_PORT, false);
+    outPorts.add("Result", _attrs.getValue(PLA.ATTR_OUT_WIDTH).getWidth(), PLA.OUT_PORT, null);
   }
 
   private static String bits(char b[]) {
@@ -52,9 +52,9 @@ public class PLAVhdlGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out, String rootDir) {
-    PLATable tt = attrs.getValue(PLA.ATTR_TABLE);
-    int w = attrs.getValue(PLA.ATTR_OUT_WIDTH).getWidth();
+  protected void generateBehavior(Hdl out) {
+    PLATable tt = _attrs.getValue(PLA.ATTR_TABLE);
+    int w = _attrs.getValue(PLA.ATTR_OUT_WIDTH).getWidth();
     if (tt.rows().isEmpty()) {
       out.stmt("Result <= %s;", out.zeros(w));
     } else {

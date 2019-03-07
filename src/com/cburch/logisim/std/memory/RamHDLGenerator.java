@@ -32,6 +32,9 @@ package com.cburch.logisim.std.memory;
 import java.io.File;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
+import com.bfh.logisim.netlist.NetlistComponent;
+import com.bfh.logisim.netlist.Path;
+// import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
@@ -44,6 +47,8 @@ public class RamHDLGenerator extends HDLGenerator {
     Object trigger = attrs.getValue(StdAttr.TRIGGER);
     boolean synch = trigger == StdAttr.TRIG_RISING || trigger == StdAttr.TRIG_FALLING;
     boolean nvram = attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE;
+    if (nvram)
+      return false; // FIXME: nvram support is still in progress
     return lang.equals("VHDL") && separate && synch && (!nvram || vendor == 'A');
   }
 
@@ -52,7 +57,7 @@ public class RamHDLGenerator extends HDLGenerator {
     // Address, DataOut0, then... DataOutX, DataInX, CLK, WE, LEX
     inPorts.add("Address", addrWidth(), Mem.ADDR, false);
     outPorts.add("DataOut0", dataWidth(), Mem.DATA, null);
-    int n = Mem.lineSize(attrs);
+    int n = Mem.lineSize(_attrs);
     int portnr = Mem.MEM_INPUTS;
     for (int i = 1; i < n; i++)
       outPorts.add("DataOut"+i, dataWidth(), portnr++, null);
@@ -62,57 +67,54 @@ public class RamHDLGenerator extends HDLGenerator {
     inPorts.add("WE", 1, portnr++, false);
     for (int i = 0; i < n && n > 1; i++)
       inPorts.add("LE"+i, 1, portnr++, true);
-    if (attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE)
-      for (int i = 0; i < n; i++)
-        parameters.add(new ParameterInfo("nvram_contents_"+i, "string",
-              null, "\"(path to init file for offset " + i + ")\""));
+    // if (_attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE)
+    //   for (int i = 0; i < n; i++)
+    //     parameters.add(new ParameterInfo("nvram_contents_"+i, "string",
+    //           null, "\"(path to init file for offset " + i + ")\""));
   }
 
   private static String deriveHDLName(AttributeSet attrs) {
-    if (attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE)
-      return "NVRAM_${PATH}";
-    int wd = dataWidth(attrs);
-    int wa = addrWidth(attrs);
+    // if (attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE)
+    //   return "NVRAM_${PATH}";
+    int wd = attrs.getValue(Mem.DATA_ATTR).getWidth();
+    int wa = attrs.getValue(Mem.ADDR_ATTR).getWidth();
     int n = Mem.lineSize(attrs);
     return String.format("RAM_%dx%dx%d", wd, n, 1<<wa); // could probably be generic
   }
 
-  @Override
-	protected void generateComponentInstance(Hdl out, long id, NetlistComponent comp) {
-    // For NVRAM, the values of the generic parameters define the mem init data,
-    // which depend on the specific component instance (the full path to the
-    // instance within the overalld esign, not just a unique name within a
-    // single circuit or subcircuit. The parameter is devined above with null
-    // value, and we fill it in here temporarily. NVRAM seems to be the only
-    // case where a parameter depends on the full path like this (because it is
-    // the only component where dynamic simulation state -- the memory content
-    // values -- affects on the HDL).
-    if (_attrs.getValue(RamAttributes.ATTR_TYPE) != RamAttributes.NONVOLATILE) {
-      super.generateComponentInstance(out, id, comp);
-      return;
-    }
+  // @Override
+	// protected void generateComponentInstance(Hdl out, long id, NetlistComponent comp, Path path) {
+  //   // For NVRAM, the values of the generic parameters define the mem init data,
+  //   // which depend on the specific component instance (the full path to the
+  //   // instance within the overalld esign, not just a unique name within a
+  //   // single circuit or subcircuit. The parameter is devined above with null
+  //   // value, and we fill it in here temporarily. NVRAM seems to be the only
+  //   // case where a parameter depends on the full path like this (because it is
+  //   // the only component where dynamic simulation state -- the memory content
+  //   // values -- affects on the HDL).
+  //   if (_attrs.getValue(RamAttributes.ATTR_TYPE) != RamAttributes.NONVOLATILE) {
+  //     super.generateComponentInstance(out, id, comp, path);
+  //     return;
+  //   }
 
-    int n = Mem.lineSize(_attrs);
-    for (int i = 0; i < n; i++) {
-      String filename = memInitFilenameFor(comp.currentPath, i);
-      parameters.get(i).value = "\"" + filename + "\"";
-    }
-    super.generateComponentInstance(out, id, comp);
-    for (int i = 0; i < n; i++)
-      parameters.get(i).value = null;
-  }
+  //   int n = Mem.lineSize(_attrs);
+  //   for (int i = 0; i < n; i++) {
+  //     String filename = memInitFilenameFor(path, i);
+  //     parameters.get(i).value = "\"" + filename + "\"";
+  //   }
+  //   super.generateComponentInstance(out, id, comp, path);
+  //   for (int i = 0; i < n; i++)
+  //     parameters.get(i).value = null;
+  // }
 
   @Override
 	protected Hdl getArchitecture() {
     Hdl out = new Hdl(_lang, _err);
     generateFileHeader(out);
 
-    SignalList inPorts = getInPorts();
-    SignalList outPorts = getOutPorts();
-
     int wd = dataWidth();
     int rows = (1 << addrWidth());
-    int n = Mem.lineSize(attrs);
+    int n = Mem.lineSize(_attrs);
 
 		if (out.isVhdl) {
 
@@ -125,12 +127,12 @@ public class RamHDLGenerator extends HDLGenerator {
         out.stmt("signal s_mem_%d__contents : MEMORY_ARRAY;", i);
       out.stmt();
 
-      if (nvFiles != null) {
-        out.stmt("attribute ram_init_file : string;");
-        for (int i = 0; i < n; i++)
-          out.stmt("attribute ram_init_file of s_mem_%d_contents : signal is \"%s\";",
-              i, nvFiles[i].getPath());
-			}
+      // if (_attrs.getValue(RamAttributes.ATTR_TYPE) != RamAttributes.NONVOLATILE) {
+      //   out.stmt("attribute ram_init_file : string;");
+      //   for (int i = 0; i < n; i++)
+      //     out.stmt("attribute ram_init_file of s_mem_%d_contents : signal is nvram_contents_%d;",
+      //         i, i);
+			// }
       out.stmt();
       out.dedent();
 
@@ -172,78 +174,79 @@ public class RamHDLGenerator extends HDLGenerator {
 		return out;
 	}
 
-  protected static int addrWidth() {
-    return attrs.getValue(Mem.ADDR_ATTR).getWidth();
+  protected int addrWidth() {
+    return _attrs.getValue(Mem.ADDR_ATTR).getWidth();
   }
 
-  protected static int dataWidth() {
-    return attrs.getValue(Mem.DATA_ATTR).getWidth();
+  protected int dataWidth() {
+    return _attrs.getValue(Mem.DATA_ATTR).getWidth();
   }
 
-  @Override
-  protected boolean hdlDependsOnCircuitState() { // for NVRAM
-    return (_attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE);
-  }
+  // @Override
+  // protected boolean hdlDependsOnCircuitState() { // for NVRAM
+  //   return _attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE;
+  // }
       
-  err.AddWarning("Non-volatile RAM %s initializion data not found in current "
-          + "simulator state. The FPGA NVRAM will be initialized to zero instead.");
-      mif.put(i+":"+comp.currentPath, null);
+  // @Override
+  // public boolean writeAllHDLThatDependsOn(CircuitState cs, NetlistComponent comp,
+  //     Path path, String rootDir) { // for NVRAM
+  //   if (!hdlDependsOnCircuitState())
+  //     return true;
+  //   RamState state = cs == null ? null : (RamState)cs.getData(comp.original);
+  //   if (state == null)
+  //     _err.AddWarning("Non-volatile RAM %s initializion data not found in current "
+  //         + "simulator state. The FPGA NVRAM will be initialized to zero instead.",
+  //         path);
+  //   return writeMemInitFiles(state, path, rootDir);
+  // }
 
-  @Override
-  public boolean writeAllHDLThatDependsOn(CircuitState cs, NetlistComponent comp,
-      String rootDir) { // for NVRAM
-    if (!hdlDependsOnCircuitState())
-      return true;
-    RamState state = cs = null ? null : (RamState)cs.getData(comp.original);
-    return writeMemInitFiles(state, comp.currentPath, rootDir);
-  }
+  // private String memInitFilenameFor(Path path, int i) {
+  //     return String.format("memory/%s-nvram-%d.mif",
+  //         path.toString().replace("-", "--").replace("/", "-"), i);
+  // }
 
-  private memInitFilenameFor(Path path, int i) {
-      return String.format("memory/%s-nvram-%d.mif",
-          path.toString().replace("-", "--").replace("/", "-"), i);
-  }
+  // // Generate and write a "memory init file" for this non-volatile Ram component.
+  // private String writeMemInitFiles(RamState state, Path path, String rootDir) {
+  //   int n = Mem.lineSize(_attrs);
+  //   for (int i = 0; i < n; i++) {
+  //     Hdl data = getMemInitData(state, i);
+  //     String filename = memInitFilenameFor(path, i);
+  //     File f = openFile(rootDir, filename, true, false);
+  //     if (f == null || !FileWriter.WriteContents(f, data, _err))
+  //       return false;
+  //   }
+  //   return true;
+  // }
 
-  // Generate and write a "memory init file" for this non-volatile Ram component.
-  private String writeMemInitFiles(RamState state, Path path, String rootDir) {
-    int n = Mem.lineSize(_attrs);
-    for (int i = 0; i < n; i++) {
-      Hdl data = getMemInitData(state, i);
-      String filename = memInitFilenameFor(path, i);
-      File f = openFile(rootDir, filename, true, false);
-      if (f == null || !FileWriter.WriteContents(f, data, _err))
-        return false;
-    }
-    return true;
-  }
+  // private Hdl getMemInitData(MemState state, int offset) {
+  //   int skip = Mem.lineSize(_attrs);
+  //   int width = dataWidth(_attrs);
+  //   int depth = (1 << addrWidth(_attrs)) / skip;
+  //   Hdl out = new Hdl(_lang, _err);
+  //   out.add("-- Memory initialization data for alignment offset " + offset);
+  //   // int depth = (int)((c.getLastOffset() - c.getFirstOffset() + 1) / skip);
+  //   out.add("DEPTH = " + depth + ";");
+  //   out.add("WIDTH = " + width + ";");
+  //   out.add("ADDRESS_RADIX = HEX;");
+  //   out.add("DATA_RADIX = HEX;");
+  //   out.add("CONTENT");
+  //   out.add("BEGIN");
+  //   if (state != null) {
+  //     // TODO: we could compress this a bit using ranges
+  //     MemContents c = state.getContents();
+  //     for (int a = 0; a < depth; a++) {
+  //       int d = c.get(a*skip+offset);
+  //       if (width != 32)
+  //         d &= ((1 << width) - 1);
+  //       out.stmt("%8x : %8x;", a, d);
+  //     }
+  //   } else {
 
-  private Hdl getMemInitData(MemState state, int offset) {
-    int skip = Mem.lineSize(_attrs);
-    int width = dataWidth(_attrs);
-    int depth = (1 << addrWidth(_attrs)) / skip;
-    Hdl out = new Hdl(_lang, _err);
-    out.add("-- Memory initialization data for alignment offset " + offset);
-    // int depth = (int)((c.getLastOffset() - c.getFirstOffset() + 1) / skip);
-    out.add("DEPTH = " + depth + ";");
-    out.add("WIDTH = " + width + ";");
-    out.add("ADDRESS_RADIX = HEX;");
-    out.add("DATA_RADIX = HEX;");
-    out.add("CONTENT");
-    out.add("BEGIN");
-    if (state != null) {
-      // TODO: we could compress this a bit using ranges
-      MemContents c = state.getContents();
-      for (int a = 0; a < depth; a++) {
-        int d = c.get(a*skip+offset);
-        if (width != 32)
-          d &= ((1 << width) - 1);
-        out.stmt("%8x : %8x;", a, d);
-      }
-    } else {
-      out.stmt("[0..%x] : %8x; % default init values due to missing simulator state",
-          depth-1, 0);
-    }
-    out.add("END;");
-    return out;
-  }
+  //     out.stmt("[0..%x] : %8x; % default init values due to missing simulator state",
+  //         depth-1, 0);
+  //   }
+  //   out.add("END;");
+  //   return out;
+  // }
 
 }

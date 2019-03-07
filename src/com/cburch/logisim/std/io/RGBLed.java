@@ -83,6 +83,10 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
   public static final int GREEN = 1;
   public static final int BLUE = 2;
 
+  public static String[] pinLabels() {
+    return new String[] { "RED", "GREEN", "BLUE" };
+  }
+
   public RGBLed() {
     super("RGBLED", S.getter("RGBledComponent"));
     setAttributes(new Attribute[] { StdAttr.FACING, Io.ATTR_ACTIVE, StdAttr.LABEL,

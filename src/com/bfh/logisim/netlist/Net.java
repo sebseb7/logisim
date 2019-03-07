@@ -55,10 +55,10 @@ import com.cburch.logisim.hdl.Hdl;
 public class Net {
 
   public static class Source {
-    final Component comp;
-    final int end;
-    final int bit;
-    Source(Component c, int e, int b) { comp = c; end = e; bit = b; }
+    public final Component comp;
+    public final int end;
+    public final int bit;
+    public Source(Component c, int e, int b) { comp = c; end = e; bit = b; }
     @Override
     public boolean equals(Object o) {
       if (!(o instanceof Source))
@@ -69,27 +69,27 @@ public class Net {
   }
 
   public static class DirectSource {
-    final Component comp;
-    final int end;
-    DirectSource(Component c, int e) { comp = c; end = e; }
+    public final Component comp;
+    public final int end;
+    public DirectSource(Component c, int e) { comp = c; end = e; }
   }
 
   public static class IndirectSource {
-    final Net net;
-    final int bit;
-    IndirectSource(Net n, int b) { net = n; bit = b; }
+    public final Net net;
+    public final int bit;
+    public IndirectSource(Net n, int b) { net = n; bit = b; }
   }
 
   static class DirectSink {
-    final Component comp;
-    final int end;
-    DirectSink(Component c, int e) { comp = c; end = e; }
+    public final Component comp;
+    public final int end;
+    public DirectSink(Component c, int e) { comp = c; end = e; }
   }
 
   static class IndirectSink {
-    final Net net;
-    final int bit;
-    IndirectSink(Net n, int b) { net = n; bit = b; }
+    public final Net net;
+    public final int bit;
+    public IndirectSink(Net n, int b) { net = n; bit = b; }
   }
 
   public String name = null;
@@ -185,7 +185,11 @@ public class Net {
     indirectSource[i] = new IndirectSource(net, bit);
   }
 
-  public ArrayList<DirectSink> getSinkComponents() {
+  public IndirectSource getIndirectSourceForBit(int i) {
+    return indirectSource[i];
+  }
+
+  public ArrayList<DirectSink> getSinks() {
     return directSinks;
   }
 

@@ -38,7 +38,10 @@ import java.util.LinkedList;
 
 import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.bfh.logisim.hdlgenerator.CircuitHDLGenerator;
 import com.bfh.logisim.library.DynamicClock;
+import com.bfh.logisim.netlist.NetlistComponent;
+import com.bfh.logisim.netlist.Path;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.Splitter;
 import com.cburch.logisim.circuit.SplitterFactory;
@@ -65,7 +68,7 @@ import com.cburch.logisim.std.wiring.Tunnel;
 public class Netlist {
 
   // Circuit for which we store connectivity info.
-	private final Circuit circ;
+	public final Circuit circ;
 
   // Signal nets, each defining a collection of connected points.
 	public final ArrayList<Net> nets = new ArrayList<>();
@@ -88,7 +91,7 @@ public class Netlist {
   // Path to one of the instantiations of this circuit. For a circuit that gets
   // instantiated several times, there is one Netlist for the circuit, and the
   // currentPath will rotate between the different instances.
-	private Path currentPath;
+	public Path currentPath; // set by CircuitHDLGenerator
 
   // Info about design rule checks.
 	private int status;
@@ -263,7 +266,7 @@ public class Netlist {
       if (comp.getFactory().HDLIgnore())
         continue;
       NetlistComponent shadow = new NetlistComponent(comp, ctx);
-      if (shadow.hdlSupport == null)
+      if (shadow.hdlSupport == null && !(comp.getFactory() instanceof Pin))
         return drcFail(err, comp, "component does not support HDL generation.");
       components.add(shadow);
       if (comp.getFactory() instanceof SubcircuitFactory) 
@@ -301,7 +304,7 @@ public class Netlist {
       if (!CorrectLabel.IsCorrectLabel(label,
             lang, "Bad label for component '"+nameOf(comp)+"' in circuit '"+circName+"'", err))
         return false;
-      String name = g.deriveHDLNameWithinCircuit(circName);
+      String name = shadow.hdlSupport.hdlComponentName;
       Component clash = namedComponents.get(name);
       if (clash != null)
         return drcFail(err, comp, "component '%s' has same the same name, "
@@ -344,7 +347,7 @@ public class Netlist {
       return String.format("'%s' with label '%s'", name, label);
   }
  
-  private boolean drcFail(FPGAReport err, Component comp, String msg, String ...args) {
+  private boolean drcFail(FPGAReport err, Component comp, String msg, Object ...args) {
     String prefix = String.format("Component %s in circuit '%s': ",
         nameOf(comp), circ.getName());
     err.AddSevereError(prefix + String.format(msg, args));
@@ -371,10 +374,17 @@ public class Netlist {
     public int size() {
       return in + inout + out;
     }
-    public boolean isMixedDrection() {
+    public boolean isMixedDirection() {
       return (in == 0 && inout == 0)
           || (in == 0 && out == 0)
           || (inout == 0 && out == 0);
+    }
+    public Int3 forSingleBit() {
+      Int3 bit = new Int3();
+      bit.in = in > 0 ? 1 : 0;
+      bit.inout = inout > 0 ? 1 : 0;
+      bit.out = out > 0 ? 1 : 0;
+      return bit;
     }
   }
 
@@ -398,7 +408,7 @@ public class Netlist {
 		for (NetlistComponent shadow : components) {
 			if (shadow.hiddenPort == null)
         continue;
-      Int3 count = shadow.hiddenPort.size();
+      Int3 count = shadow.hiddenPort.width();
       shadow.setLocalHiddenPortIndices(start.copy(), count);
       start.increment(count);
     }
@@ -420,7 +430,7 @@ public class Netlist {
 			if (shadow.hiddenPort == null)
         continue;
       Path subpath = path.extend(shadow);
-      Int3 count = shadow.hiddenPort.size();
+      Int3 count = shadow.hiddenPort.width();
       shadow.setGlobalHiddenPortIndices(subpath, start.copy(), count);
     }
   }
@@ -428,6 +438,13 @@ public class Netlist {
   private static class CopperTrace extends HashSet<Location> {
     CopperTrace(Location pt) { add(pt); }
     CopperTrace(Wire w) { add(w.getEndLocation(0)); add(w.getEndLocation(1)); }
+    boolean touches(CopperTrace other) {
+      for (Location pt1 : this)
+        for (Location pt2 : other)
+          if (pt1.equals(pt2))
+            return true;
+      return false;
+    }
   }
 
 	private boolean buildNets(FPGAReport err, String lang, char vendor) {
@@ -523,7 +540,7 @@ public class Netlist {
       Net net = netAt.get(end.getLocation());
       if (net == null || net.name != null)
         continue;
-      net.name = "p_" + comp.label();
+      net.name = "p_" + NetlistComponent.labelOf(comp);
     }
 		for (Component comp : circ.getNonWires()) {
       // A Net connected to output pin "Bar" is named "p_Bar"
@@ -535,14 +552,14 @@ public class Netlist {
       Net net = netAt.get(end.getLocation());
       if (net == null || net.name != null)
         continue;
-      net.name = "p_" + comp.label();
+      net.name = "p_" + NetlistComponent.labelOf(comp);
     }
     // Other nets are named s_NET_A, s_BUS_B, ... s_NET_AAAA, etc.
     int id = 0; 
     for (Net net : nets) {
       if (net.name != null)
         continue;
-      if (net.width == 1)
+      if (net.bitWidth() == 1)
         net.name = "s_NET_"+uid(id++);
       else
         net.name = "s_BUS_"+uid(id++);
@@ -562,7 +579,7 @@ public class Netlist {
       int idx = -1;
       for (EndData end : comp.getEnds()) {
         idx++;
-        if (end.getWidth() == 0)
+        if (end.getWidth().getWidth() == 0)
           continue;
         Location pt = end.getLocation();
         Net net = netAt.get(pt);
@@ -571,15 +588,15 @@ public class Netlist {
         } else {
           Component c = net.getSourceComponent();
           if (c == null) {
-            net.setSourceComponent(comp, end);
+            net.setSource(comp, idx);
           } else {
             if (c != comp)
               return drcFail(err, comp, "component is driving a bus that is also "
                   + "driven by component %s.", nameOf(c));
-            int end = net.getSourceEnd();
-            if (end != idx)
+            int endidx = net.getSourceEnd();
+            if (endidx != idx)
               return drcFail(err, comp, "port %d and port %d are both "
-                  + "driving the same bus.", idx, end);
+                  + "driving the same bus.", idx, endidx);
           }
         }
       }
@@ -636,7 +653,7 @@ public class Netlist {
           // small split ends (except those small split ends with width = 0,
           // but that gets ignored in the loop here, and except for bits in
           // net that aren't actually driven).
-          for (int split = 1; split < n; i++) {
+          for (int split = 1; split < n; split++) {
             Net small = netAt.get(sp.splitter.getEnd(split).getLocation());
             int s = -1;
             for (int b = 0; b < dest.length; b++) {
@@ -745,7 +762,7 @@ public class Netlist {
       Component clk = shadow.original;
       int clkid = clockbus.id(clk);
       Net clknet = netAt.get(clk.getEnd(0).getLocation());
-      traceClockNet(clkid, path, clknet, 0, netlists);
+      traceClockNet(clkid, clknet, 0, path, netlists);
     }
   }
 
@@ -768,16 +785,16 @@ public class Netlist {
       SubcircuitFactory sub = (SubcircuitFactory)sink.comp.getFactory();
       Circuit subcirc = sub.getSubcircuit();
       Netlist subnets = subcirc.getNetlist();
-      Path subpath = path.extend(shadow);
+      Path subpath = path.extend(sink.comp);
       NetlistComponent shadow = shadowForSubcirc(subpath);
       // within child, find the Pin that corresponds to this end
       CircuitHDLGenerator g = (CircuitHDLGenerator)shadow.hdlSupport;
-      Net childNet = g.getInternalNetForEnd(shadow, sink.end);
+      Net childNet = g.getInternalNetFor(shadow, sink.end);
       subnets.traceClockNet(clkid, childNet, bit, subpath, netlists);
     }
 
     // If in a subcircuit, look for output pins and follow them up to parent circuit.
-    if (!path.equals(Path.ROOT)) {
+    if (!path.isRoot()) {
       for (Net.DirectSink sink : net.getSinks()) {
         if (!(sink.comp.getFactory() instanceof Pin))
           continue;
@@ -828,7 +845,7 @@ public class Netlist {
 	}
 
   private NetlistComponent shadowForSubcirc(Path childPath) {
-    String label = child.tail();
+    String label = childPath.tail();
 		for (NetlistComponent shadow : subcircuits) {
       if (shadow.label().equals(label))
         return shadow;
@@ -888,6 +905,10 @@ public class Netlist {
       i /= 26;
     } while (i > 0);
     return s;
+  }
+
+  public ClockBus getClockBus() {
+    return clockbus;
   }
 
   public int getClockId(Net net) {

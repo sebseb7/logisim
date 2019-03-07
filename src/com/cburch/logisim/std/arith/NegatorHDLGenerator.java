@@ -50,7 +50,7 @@ public class NegatorHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     if (out.isVhdl && isBus())
       out.stmt("Result <= std_logic_vector(unsigned(not(DataX))) + 1;");
     else if (out.isVhdl)

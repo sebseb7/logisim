@@ -396,9 +396,10 @@ public class AlteraDownload extends FPGADownload implements Runnable {
   }
 
   @Override
-  public void initiateDownload() {
+  public boolean initiateDownload() {
     showProgress();
     new Thread(this).start();
+    return true;
   }
 
 }

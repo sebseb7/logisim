@@ -332,7 +332,7 @@ public class TtyInterface {
 
   static int doPng(String names[], LogisimFile file) {
     double scale = 1.0;
-    int format = ExportImage.FORMAT_PNG;
+    String format = ExportImage.FORMAT_PNG;
     Project proj = new Project(file);
     Canvas canvas = new Canvas(proj);
     int err = 0;

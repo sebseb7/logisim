@@ -125,7 +125,7 @@ public abstract class PrintHandler implements Printable {
       if (confirm != JOptionPane.YES_OPTION)
         return;
     }
-    int fmt = (ff == filters[0] ? ExportImage.FORMAT_PNG
+    String fmt = (ff == filters[0] ? ExportImage.FORMAT_PNG
         : ff == filters[1] ? ExportImage.FORMAT_GIF
         : ExportImage.FORMAT_JPG);
     exportImage(dest, fmt);
@@ -152,7 +152,7 @@ public abstract class PrintHandler implements Printable {
     JOptionPane.showMessageDialog(parent, msg);
   }
 
-  public void exportImage(File dest, int fmt) {
+  public void exportImage(File dest, String fmt) {
 
     Dimension d = getExportImageSize();
     if (d == null) {

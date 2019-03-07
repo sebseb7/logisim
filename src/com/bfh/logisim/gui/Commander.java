@@ -31,6 +31,7 @@
 package com.bfh.logisim.gui;
 
 import java.awt.EventQueue;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -41,10 +42,10 @@ import java.util.ArrayList;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JTabbedPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -62,6 +63,7 @@ import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.Simulator;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.gui.menu.MenuSimulate;
+import com.cburch.logisim.gui.generic.ComboBox;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.proj.ProjectEvent;
@@ -102,14 +104,14 @@ public class Commander extends JFrame {
   private final JButton annotateButton = new JButton("Annotate");
   private final JButton validateButton = new JButton("Download");
   private final JCheckBox writeToFlash = new JCheckBox("Write to flash?");
-  private final JComboBox<String> boardsList = new JComboBox<>();
-  private final JComboBox<Circuit> circuitsList = new JComboBox<>();
-  private final JComboBox<String> clockOption = new JComboBox<>();
-  private final JComboBox<Object> clockDivRate = new JComboBox<>();
-  private final JComboBox<Object> clockDivCount = new JComboBox<>();
-  private final JComboBox<String> annotationList = new JComboBox<>();
-  private final JComboBox<String> HDLType = new JComboBox<>();
-  private final JComboBox<String> HDLAction = new JComboBox<>();
+  private final ComboBox<String> boardsList = new ComboBox<>();
+  private final ComboBox<Circuit> circuitsList = new ComboBox<>();
+  private final ComboBox<String> clockOption = new ComboBox<>();
+  private final ComboBox<Object> clockDivRate = new ComboBox<>();
+  private final ComboBox<Object> clockDivCount = new ComboBox<>();
+  private final ComboBox<String> annotationList = new ComboBox<>();
+  private final ComboBox<String> HDLType = new ComboBox<>();
+  private final ComboBox<String> HDLAction = new ComboBox<>();
   private final JButton toolSettings = new JButton("Settings");
   private final Console messages = new Console("Messages");
   private final ArrayList<Console> consoles = new ArrayList<>();
@@ -134,7 +136,7 @@ public class Commander extends JFrame {
     // listen for project changes
     proj.addProjectListener(e -> {
       if (e.getAction() == ProjectEvent.ACTION_SET_CURRENT && e.getCircuit() != null)
-        circuitList.setSelectedValue(e.getCircuit());
+        circuitsList.setSelectedItem(e.getCircuit());
       else if (e.getAction() == ProjectEvent.ACTION_SET_FILE)
         updateCircuitList();
     });
@@ -151,9 +153,9 @@ public class Commander extends JFrame {
     });
 
     // configure circuit list
-    circuitsList.setListCellRenderer(new DefaultListCellRenderer() {
+    circuitsList.setRenderer(new DefaultListCellRenderer() {
       public Component getListCellRendererComponent(JList list, Object v, int i, boolean s, boolean f) {
-        return super.getListCellRendererComponent(((Circuit)v).getName(), i, s, f);
+        return super.getListCellRendererComponent(list, ((Circuit)v).getName(), i, s, f);
       }
     });
     updateCircuitList();
@@ -162,7 +164,7 @@ public class Commander extends JFrame {
     for (String boardname : settings.GetBoardNames())
       boardsList.addItem(boardname);
     boardsList.addItem(OTHER_BOARD);
-    boardsList.setSelectedValue(settings.GetSelectedBoard());
+    boardsList.setSelectedItem(settings.GetSelectedBoard());
     boardsListSelectedIndex = boardsList.getSelectedIndex();
     boardsList.addActionListener(e -> setBoard());
 
@@ -173,7 +175,7 @@ public class Commander extends JFrame {
     clockOption.setSelectedItem(DIV_SPEED);
     clockDivRate.setEditable(true);
     clockDivCount.setEditable(true);
-    clockOptions.addActionListener(e -> setClockOption());
+    clockOption.addActionListener(e -> setClockOption());
     clockDivRate.addActionListener(e -> setClockDivRate());
     clockDivCount.addActionListener(e -> setClockDivCount());
     populateClockDivOptions();
@@ -310,18 +312,18 @@ public class Commander extends JFrame {
   }
 
   private void updateCircuitList() {
-    circuitsList.clear();
+    circuitsList.removeAllItems();
     for (Circuit circ : proj.getLogisimFile().getCircuits())
       circuitsList.addItem(circ);
     Circuit circ = proj.getCurrentCircuit();
     if (circ == null)
       circ = proj.getLogisimFile().getMainCircuit();
-    circuitsList.setSelectedValue(circ);
+    circuitsList.setSelectedItem(circ);
   }
 
   private void updateClockOptions() {
-    // Circuit root = circuitsList.getSelectedItem();
-    // int nClocks = root.getNetList().NumberOfClockTrees();
+    // Circuit root = circuitsList.getSelectedValue();
+    // int nClocks = root.getNetlist().NumberOfClockTrees();
     // clockOption.setEnabled(nClocks > 0);
     // clockDivRate.setEnabled(nClocks > 0);
     // clockDivCount.setEnabled(nClocks > 0);
@@ -355,9 +357,9 @@ public class Commander extends JFrame {
         clockDivRate.setSelectedItem(new ExactRate(base, count));
       }
     }
-    if (clockDivCount.getSelectedItem() == null && clockDivCount.getItemCount() > 0)
+    if (clockDivCount.getSelectedValue() == null && clockDivCount.getItemCount() > 0)
       clockDivCount.setSelectedIndex(0);
-    if (clockDivRate.getSelectedItem() == null && clockDivRate.getItemCount() > 0)
+    if (clockDivRate.getSelectedValue() == null && clockDivRate.getItemCount() > 0)
       clockDivRate.setSelectedIndex(0);
     updatingClockMenus = false;
     setClockDivCount();
@@ -365,8 +367,8 @@ public class Commander extends JFrame {
   }
 
   private void setClockOption() {
-    boolean div = clockOption.getSelectedItem().equals(DIV_SPEED);
-    boolean max = clockOption.getSelectedItem().equals(MAX_SPEED);
+    boolean div = clockOption.getSelectedValue().equals(DIV_SPEED);
+    boolean max = clockOption.getSelectedValue().equals(MAX_SPEED);
     clockDivRate.setEnabled(div);
     clockDivCount.setEnabled(div);
     long base = board == null ? 50000000 : board.fpga.ClockFrequency;
@@ -424,10 +426,10 @@ public class Commander extends JFrame {
   private void setClockDivRate() {
     if (updatingClockMenus)
       return;
-    if (!clockOption.getSelectedItem().equals(DIV_SPEED))
+    if (!clockOption.getSelectedValue().equals(DIV_SPEED))
       return;
     long base = board == null ? 50000000 : board.fpga.ClockFrequency;
-    Object o = clockDivRate.getSelectedItem();
+    Object o = clockDivRate.getSelectedValue();
     Integer i;
     if (o instanceof ExactRate) {
       i = ((ExactRate)o).count;
@@ -446,19 +448,19 @@ public class Commander extends JFrame {
       String rate = rateForCount(base, i);
       clockDivRate.setSelectedItem(rate); // rounds to nearest acceptable value
     }
-    if (clockDivCount.getSelectedItem() == null || !clockDivCount.getSelectedItem().equals(i))
+    if (clockDivCount.getSelectedValue() == null || !clockDivCount.getSelectedValue().equals(i))
       clockDivCount.setSelectedItem(i);
-    prevSelectedDivRate = clockDivRate.getSelectedItem();
-    prevSelectedDivCount = (Integer)clockDivCount.getSelectedItem();
+    prevSelectedDivRate = clockDivRate.getSelectedValue();
+    prevSelectedDivCount = (Integer)clockDivCount.getSelectedValue();
   }
 
   private void setClockDivCount() {
     if (updatingClockMenus)
       return;
-    if (!clockOption.getSelectedItem().equals(DIV_SPEED))
+    if (!clockOption.getSelectedValue().equals(DIV_SPEED))
       return;
     long base = board == null ? 50000000 : board.fpga.ClockFrequency;
-    Object item = clockDivCount.getSelectedItem();
+    Object item = clockDivCount.getSelectedValue();
     String s = item == null ? "-1" : item.toString();
     int count = -1;
     try { count = Integer.parseInt(s); }
@@ -472,7 +474,7 @@ public class Commander extends JFrame {
       }
     } else {
       clockDivRate.setSelectedItem(new ExactRate(base, count));
-      prevSelectedDivRate = clockDivRate.getSelectedItem();
+      prevSelectedDivRate = clockDivRate.getSelectedValue();
       prevSelectedDivCount = count;
     }
   }
@@ -577,13 +579,13 @@ public class Commander extends JFrame {
     }
   }
 
-  private boolean settingBoard = fasle;
+  private boolean settingBoard = false;
   private void setBoard() {
     if (settingBoard)
       return;
     settingBoard = true;
     Board old = board;
-    String boardName = boardsList.getSelectedItem();
+    String boardName = boardsList.getSelectedValue();
     if (boardName == OTHER_BOARD) {
       doLoadOtherBoard();
     } else {
@@ -615,7 +617,7 @@ public class Commander extends JFrame {
     String filename = doBoardFileSelect();
     if (filename == null || filename.isEmpty())
       return; // cancelled
-    board = BoardReader.read(NewBoardFileName);
+    board = BoardReader.read(filename);
     if (board == null)
       return; // failed to load
     if (settings.GetBoardNames().contains(board.name)) {
@@ -668,12 +670,12 @@ public class Commander extends JFrame {
       err.AddError("Please select a valid FPGA board before annotation.");
       return;
     }
-    Circuit root = circuitsList.getSelectedItem();
+    Circuit root = circuitsList.getSelectedValue();
     if (root == null)
       return; // huh?
     if (clearExistingLabels)
-      root.ClearAnnotationLevel();
-    root.Annotate(clearExistingLabels, err, lang, board.fpga.Vendor);
+      root.recursiveResetNetlists();
+    root.autoHdlAnnotate(clearExistingLabels, err, lang, board.fpga.Vendor);
     err.AddInfo("Annotation done");
     // TODO: Fix this dirty hack, see Circuit.Annotate() for details.
     proj.repaintCanvas();
@@ -697,7 +699,7 @@ public class Commander extends JFrame {
         }
       }
       if (!dir.delete()) {
-        err.AddFatalError("Unable to remove old project directory: %s", f.getPath());
+        err.AddFatalError("Unable to remove old project directory: %s", dirname);
         return false;
       }
       return true;
@@ -728,7 +730,7 @@ public class Commander extends JFrame {
   }
 
   private boolean justDownload() {
-    return HDLAction.getSelectedItem().equals(HDL_DOWNLOAD_ONLY);
+    return HDLAction.getSelectedValue().equals(HDL_DOWNLOAD_ONLY);
   }
 
   private void doDownloadPrep() {
@@ -737,7 +739,7 @@ public class Commander extends JFrame {
       AddErrors("No FPGA board is selected. Please select an FPGA board.");
       return;
     }
-    Circuit root = circuitsList.getSelectedItem();
+    Circuit root = circuitsList.getSelectedValue();
     if (root == null) {
       AddErrors("INTERNAL ERROR: no circuit selected.");
       return;
@@ -794,22 +796,14 @@ public class Commander extends JFrame {
   }
 
   private String circuitWorkspace() {
-    String rootname = circuitsList.getSelectedItem().getName();
+    String rootname = circuitsList.getSelectedValue().getName();
     return projectWorkspace() +
         CorrectLabel.getCorrectLabel(rootname) + SLASH;
   }
 
-  private boolean readyForDownload() {
-    if (board == null)
-      return false;
-    String dir = circuitWorkspace();
-    if (board.fpga.Vendor == Chipset.ALTERA)
-      return AlteraDownload.readyForDownload(dir + SANDBOX_DIR);
-    else
-      return true; // todo: xilinx readyForDownload()
-  }
-
   private void doSynthesisAndDownload(PinBindings pinBindings) {
+    if (board == null)
+      return;
     String basedir = projectWorkspace();
     String circdir = circuitWorkspace() + lang.toLowerCase() + SLASH;
 
@@ -897,7 +891,7 @@ public class Commander extends JFrame {
   }
 
   private void setHDLAction() {
-    if (HDLAction.getSelectedItem().equals(HDL_GEN_ONLY)) {
+    if (HDLAction.getSelectedValue().equals(HDL_GEN_ONLY)) {
       settings.SetToolsAreDisabled(true);
     } else {
       settings.SetToolsAreDisabled(false);
@@ -914,9 +908,9 @@ public class Commander extends JFrame {
     settings.SetHDLType(lang);
     if (!settings.UpdateSettingsFile())
       AddErrors("***SEVERE*** Could not update XML settings file");
-    Circuit root = circuitsList.getSelectedItem();
+    Circuit root = circuitsList.getSelectedValue();
     if (root != null)
-      root.ClearAnnotationLevel();
+      root.recursiveResetNetlists();
   }
 
   private PinBindings cachedPinBindings;
@@ -924,11 +918,11 @@ public class Commander extends JFrame {
   private PinBindings performPinAssignments() {
     board.printStats(err);
 
-    Circuit root = circuitsList.getSelectedItem();
-    Netlist netlist = root.getNetList();
+    Circuit root = circuitsList.getSelectedValue();
+    Netlist netlist = root.getNetlist();
    
     if (cachedPinBindings == null || cachedPinBindingsCircuit != root) {
-      cachedPinBindings = new PinBindings(board, netlist.getMappableComponents());
+      cachedPinBindings = new PinBindings(err, board, netlist.getMappableComponents());
       cachedPinBindingsCircuit = root;
     } else {
       cachedPinBindings.setComponents(netlist.getMappableComponents());
@@ -938,7 +932,7 @@ public class Commander extends JFrame {
     String path = f == null ? "" : f.getAbsolutePath();
     BindingsDialog dlg = new BindingsDialog(board, cachedPinBindings, this, path);
     setVisible(false);
-    dlg.setVisible();
+    dlg.setVisible(true);
     setVisible(true);
     if (cachedPinBindings.allPinsAssigned()) {
       cachedPinBindings.finalizeMappings();
@@ -951,15 +945,14 @@ public class Commander extends JFrame {
 
   private boolean performDRC() {
     clearAllMessages();
-    Circuit root = circuitsList.getSelectedItem();
-    return root.getNetList().validate(err, lang, board.fpga.Vendor,
+    Circuit root = circuitsList.getSelectedValue();
+    return root.getNetlist().validate(err, lang, board.fpga.Vendor,
         board.fpga.ClockFrequency, getClkPeriod());
   }
 
   private void doToolSettings() {
     FPGASettingsDialog dlg = new FPGASettingsDialog(this, settings);
     dlg.SetVisible(true);
-    dlg.dispose();
 
     if (board.fpga.Vendor == Chipset.ALTERA) {
       if (!settings.GetAlteraToolPath().equals(Settings.Unknown)) {
@@ -1041,27 +1034,27 @@ public class Commander extends JFrame {
     }
   }
 
-  public boolean reactivate() {
+  public void reactivate() {
     if (!isVisible()) {
-      clear();
+      // clear();
       setVisible(true);
     }
     toFront();
   }
 
   private int getClkPeriod() {
-    if (clockOption.getSelectedItem().equals(MAX_SPEED))
+    if (clockOption.getSelectedValue().equals(MAX_SPEED))
       return 0;
-    else if (clockOption.getSelectedItem().equals(DYN_SPEED))
+    else if (clockOption.getSelectedValue().equals(DYN_SPEED))
       return -1;
-    Object item = clockDivCount.getSelectedItem();
+    Object item = clockDivCount.getSelectedValue();
     if (item == null)
       return 1;
     return Integer.parseInt(item.toString());
   }
 
   private boolean writeHDL(PinBindings pinBindings) {
-    Circuit root = circuitsList.getSelectedItem();
+    Circuit root = circuitsList.getSelectedValue();
     String basedir = projectWorkspace();
     basedir += CorrectLabel.getCorrectLabel(root.getName()) + SLASH;
     if (!cleanDirectory(basedir))
@@ -1076,18 +1069,18 @@ public class Commander extends JFrame {
     ToplevelHDLGenerator g = new ToplevelHDLGenerator(lang, err,
         board.fpga.Vendor, root, pinBindings);
 
-    if (g.hdlDependsOnCircuitState()) { // for NVRAM
-      CircuitState cs = getCircuitState(root);
-      if (!g.writeAllHDLThatDependsOn(cs, null, basedir))
-        return false;
-    }
+    // if (g.hdlDependsOnCircuitState()) { // for NVRAM
+    //   CircuitState cs = getCircuitState(root);
+    //   if (!g.writeAllHDLThatDependsOn(cs, null, null, basedir))
+    //     return false;
+    // }
     return g.writeAllHDLFiles(basedir);
   }
 
-  private CirciutState getCircuitState(Circuit circ) {
+  private CircuitState getCircuitState(Circuit circ) {
     ArrayList<CircuitState> list = new ArrayList<>();
     for (CircuitState cs : proj.getRootCircuitStates())
-      if (cs.getCircuit.getCircuit() == circ)
+      if (cs.getCircuit() == circ)
         list.add(cs);
     if (list.isEmpty()) {
       err.AddSevereWarning("Circuit %s contains non-volatile RAM or other components that depend "

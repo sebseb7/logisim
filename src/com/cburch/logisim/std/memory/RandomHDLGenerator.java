@@ -36,7 +36,7 @@ public class RandomHDLGenerator  extends HDLGenerator {
 
   public RandomHDLGenerator(HDLCTX ctx) {
     super(ctx, "memory", "RNG", "i_Rng");
-    int seed = attrs.getValue(Random.ATTR_SEED);
+    int seed = _attrs.getValue(Random.ATTR_SEED);
     if (seed == 0)
       seed = (int) System.currentTimeMillis();
     parameters.add("BitWidth", stdWidth());
@@ -77,7 +77,7 @@ public class RandomHDLGenerator  extends HDLGenerator {
   }
   
   @Override
-  protected void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     if (out.isVhdl) {
       out.stmt("Q            <= s_output_reg;");
       out.stmt("s_InitSeed   <= X\"0005DEECE66D\" WHEN Seed = 0 ELSE");

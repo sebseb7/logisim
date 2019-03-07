@@ -76,7 +76,7 @@ public class ClockBus {
     @Override
     public String toString() { return desc; }
     @Override
-    public boolean equals(Object o) { return (o instanceof Shape) && desc.equals(o.desc); }
+    public boolean equals(Object o) { return (o instanceof Shape) && desc.equals(((Shape)o).desc); }
     @Override
     public int hashCode() { return desc.hashCode(); }
   }
@@ -88,7 +88,7 @@ public class ClockBus {
     Point(Path p, Net n, int b) { path = p; net = n; bit = b; }
     @Override
     public boolean equals(Object o) {
-      if (!o instanceof Point)
+      if (!(o instanceof Point))
         return false;
       Point other = (Point)o;
       return path.equals(other.path) && net == other.net && bit == other.bit;
@@ -136,12 +136,12 @@ public class ClockBus {
     // Sanity check
     Integer old = points.put(p, id);
     if (old != null && old != id)
-      System.err.println("INTERNAL ERROR: Conflicting clocks for a net in '%s': %d vs %d.",
+      System.err.printf("INTERNAL ERROR: Conflicting clocks for a net in '%s': %d vs %d.",
           path, old, id);
     return old == null;
   }
 
-	public ArrayList<Component> shapes() {
+	public ArrayList<Shape> shapes() {
 		return shapes;
 	}
 

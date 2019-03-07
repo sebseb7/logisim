@@ -30,6 +30,7 @@
 
 package com.bfh.logisim.fpga;
 
+import java.io.File;
 import java.util.HashMap;
 
 import java.awt.image.BufferedImage;
@@ -44,6 +45,7 @@ import com.cburch.logisim.util.Errors;
 
 public class BoardReader {
 
+  private BoardReader() { }
 	public static Board read(String path) {
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -52,7 +54,7 @@ public class BoardReader {
       String name;
 			if (path.startsWith("url:")) {
         name = path.substring(4);
-				doc = parser.parse(getClass().getResourceAsStream("/" + name));
+				doc = parser.parse(new BoardReader().getClass().getResourceAsStream("/" + name));
       } else if (path.startsWith("file:")) {
         name = path.substring(5);
 				doc = parser.parse(new File(name));
@@ -61,8 +63,8 @@ public class BoardReader {
 				doc = parser.parse(new File(name));
       }
 
-      int i = name.indexofLast('/');
-      String name = i < 0 ? name : name.substring(i+1);
+      int i = name.lastIndexOf('/');
+      name = i < 0 ? name : name.substring(i+1);
       if (name.toLowerCase().endsWith(".xml"))
         name = name.substring(0, name.length()-4);
 
@@ -82,7 +84,7 @@ public class BoardReader {
 		NodeList sections = doc.getElementsByTagName(name);
 		if (sections.getLength() != 1)
 			return null;
-		return section.item(0).getChildNodes();
+		return sections.item(0).getChildNodes();
   }
 
   private static BufferedImage parsePicture(Document doc) throws Exception {
@@ -140,7 +142,7 @@ public class BoardReader {
     if (xml == null)
       return;
     for (int i = 0; i < xml.getLength(); i++)
-      board.addComponent(BoardIO.parseXml(board.size()+1, xml.item(i)));
+      board.addComponent(BoardIO.parseXml(xml.item(i)));
   }
 
 }

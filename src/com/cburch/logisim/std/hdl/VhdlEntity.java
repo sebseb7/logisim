@@ -141,7 +141,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
     String label = "";
     if (attrs.getValue(StdAttr.LABEL) != null && attrs.getValue(StdAttr.LABEL).length() != 0)
       label = "_" + attrs.getValue(StdAttr.LABEL).toLowerCase();
-    return CorrectLabel.getCorrectLabel(VhdlHDLGeneratorFactory.deriveHDLName(attrs) + label);
+    return CorrectLabel.getCorrectLabel(VhdlHDLGenerator.deriveHDLName(attrs) + label);
   }
 
   @Override
@@ -160,7 +160,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
   @Override
   public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
     if (ctx.lang.equals("VHDL"))
-      return new VhdlHDLGeneratorFactory(ctx);
+      return new VhdlHDLGenerator(ctx);
     else
       return null;
   }
@@ -327,7 +327,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
       String content = this.content.getContent();
 
-      content = content.replaceAll("(?i)" + VhdlHDLGeneratorFactory.deriveHDLName(attrs),
+      content = content.replaceAll("(?i)" + VhdlHDLGenerator.deriveHDLName(attrs),
           getHDLNameForInstanceSimulation(attrs));
 
       writer.print(content);

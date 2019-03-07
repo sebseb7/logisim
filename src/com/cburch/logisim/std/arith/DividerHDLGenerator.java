@@ -30,12 +30,13 @@
 package com.cburch.logisim.std.arith;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
+import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 
 public class DividerHDLGenerator extends HDLGenerator {
 
   public DividerHDLGenerator(HDLCTX ctx) {
-    super(ctx, "arithmetic", uMode() ? "UnsignedDivider" : "SignedDivider", "i_Div");
+    super(ctx, "arithmetic", uMode(ctx.attrs) ? "UnsignedDivider" : "SignedDivider", "i_Div");
     // todo: 1-bit version?
     // todo: Verilog version
     int w = stdWidth();
@@ -45,7 +46,7 @@ public class DividerHDLGenerator extends HDLGenerator {
     inPorts.add("Upper", "BitWidth", Divider.UPPER, false);
     outPorts.add("Quotient", "BitWidth", Divider.OUT, null);
     outPorts.add("Remainder", "BitWidth", Divider.REM, null);
-    if (ctx.isVhdl) {
+    if (_hdl.isVhdl) {
       wires.add("s_div", "2*BitWidth");
       wires.add("s_mod", "BitWidth");
       wires.add("s_num", "2*BitWidth");
@@ -55,8 +56,8 @@ public class DividerHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out, String rootDir) {
-    if (uMode()) {
+  protected void generateBehavior(Hdl out) {
+    if (uMode(_attrs)) {
       out.stmt("s_num(2*BitWidth-1 DOWNTO BitWidth) <= Upper;");
       out.stmt("s_num(BitWidth-1 DOWNTO 0)          <= DataA;");
       out.stmt("s_div <= std_logic_vector(unsigned(s_num) / unsigned(DataB));");
@@ -73,7 +74,7 @@ public class DividerHDLGenerator extends HDLGenerator {
     }
   }
 
-  protected boolean uMode() {
+  protected static boolean uMode(AttributeSet attrs) {
     return attrs.getValue(Divider.MODE_ATTR) == Divider.UNSIGNED_OPTION;
   }
 

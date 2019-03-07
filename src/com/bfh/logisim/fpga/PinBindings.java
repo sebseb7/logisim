@@ -39,7 +39,6 @@ import java.util.function.Function;
 import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.netlist.Path;
 import com.bfh.logisim.netlist.NetlistComponent;
-import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.std.wiring.Pin;
 import static com.bfh.logisim.netlist.Netlist.Int3;
 
@@ -99,10 +98,10 @@ public class PinBindings {
   private final FPGAReport err;
 
   // List of I/O-related components in the design, organized by path.
-	private final HashMap<Path, NetlistComponent> components;
+	public final HashMap<Path, NetlistComponent> components;
 
   // The FPGA board describing available physical I/O resources.
-	private final Board board;
+	public final Board board;
 
   // Mappings defined so far.
   public final HashMap<Source, Dest> mappings = new HashMap<>();
@@ -157,7 +156,7 @@ public class PinBindings {
     // For now, we just clear all mappings and reset components.
     mappings.clear();
     components.clear();
-    components.addAll(newComponents);
+    components.putAll(newComponents);
   }
   
   // ToplevelHDLGenerator has a port for each bit of each physical I/O pin that
@@ -169,7 +168,7 @@ public class PinBindings {
   public void finalizeMappings() {
     Int3 counts = new Int3();
     mappings.forEach((s, d) -> {
-      if (BoardIO.PhysicalTypes.contains(d.type)) {
+      if (BoardIO.PhysicalTypes.contains(d.io.type)) {
         s.seqno = counts.copy();
         counts.increment(s.width);
       }
@@ -195,30 +194,26 @@ public class PinBindings {
   private void forEachPhysicalPin(PhysicalPinConsumer f,
       Function<Int3, Integer> selector, String signalPrefix) {
     mappings.forEach((s, d) -> {
-      int w = selector(s.width);
+      int w = selector.apply(s.width);
       if (w >= 0 && BoardIO.PhysicalTypes.contains(d.io)) {
         String[] labels = d.io.pinLabels();
         String[] pins = d.io.pins;
-        int seqno = selector(s.seqno);
+        int seqno = selector.apply(s.seqno);
         for (int i = 0; i < w; i++)
-          f(pins[i], signalPrefix + (seqno + i), d.io, labels[i]);
+          f.process(pins[i], signalPrefix + (seqno + i), d.io, labels[i]);
       }
     });
   }
 
-  public ArrayList<String> pinLabels(Path path) {
+  public String[] pinLabels(Path path) {
     NetlistComponent comp = components.get(path);
     if (comp.hiddenPort == null) {
       // Top-level input or output port.
       int w = comp.original.getEnd(0).getWidth().getWidth();
-      return BoardIO.Ribbon.pinLabels(w);
+      return BoardIO.Type.Ribbon.pinLabels(w);
     } else {
-      // Button, LED, PortIO, and other I/O-related types.
-      ArrayList<String> labels = new ArrayList<>(); 
-      labels.addAll(comp.hiddenPort.inports);
-      labels.addAll(comp.hiddenPort.inoutports);
-      labels.addAll(comp.hiddenPort.outports);
-      return labels;
+      // Button, LED, PortIO, and other I/O-related components.
+      return comp.hiddenPort.labels.toArray(new String[comp.hiddenPort.labels.size()]);
     }
   }
 
@@ -238,40 +233,37 @@ public class PinBindings {
         compWidth.in = w;
       else
         compWidth.out = w;
-      type = w > 1 ? BoardIO.Ribbon : BoardIO.Pin;
+      type = w > 1 ? BoardIO.Type.Ribbon : BoardIO.Type.Pin;
     } else {
       // Button, LED, PortIO, and other I/O-related types.
-      compWidth = comp.hiddenPort.size();
+      compWidth = comp.hiddenPort.width();
       type = selectDefaultType(comp.hiddenPort.types, compWidth.size());
     }
-    return new Source(path, -1, type, compWidth);
+    return new Source(path, comp, -1, type, compWidth);
   }
 
   public ArrayList<Source> bitSourcesFor(Path path) {
     NetlistComponent comp = components.get(path);
     ArrayList<Source> ret = new ArrayList<>();
-    ArrayList<String> pinLabels = pinLabels(path);
+    String[] pinLabels = pinLabels(path);
     BoardIO.Type bitType;
-    Int3 compWidth = new Int3();
+    Int3 bitWidth = new Int3();
     if (comp.hiddenPort == null) {
-      bitType = BoardIO.Type.PIN;
+      bitType = BoardIO.Type.Pin;
       boolean i = comp.original.getEnd(0).isOutput(); // output to circuit, input from board
       boolean o = comp.original.getEnd(0).isInput(); // input to circuit, output from board
       if (i && o)
-        compWidth.inout = 1;
+        bitWidth.inout = 1;
       else if (i)
-        compWidth.in = 1;
+        bitWidth.in = 1;
       else
-        compWidth.out = 1;
+        bitWidth.out = 1;
     } else {
       bitType = selectDefaultType(comp.hiddenPort.types, 1);
-      Int3 w = comp.hiddenPort.size();
-      compWidth.in = (w.in > 0 ? 1 : 0);
-      compWidth.inout = (w.inout > 0 ? 1 : 0);
-      compWidth.out = (w.out > 0 ? 1 : 0);
+      bitWidth = comp.hiddenPort.width().forSingleBit();
     }
-    for (int i = 0; i < pinLabels.size(); i++)
-      ret.add(new Source(path, i, bitType, compWidth.copy()));
+    for (int i = 0; i < pinLabels.length; i++)
+      ret.add(new Source(path, comp, i, bitType, bitWidth.copy()));
     return ret;
   }
 
@@ -305,12 +297,12 @@ public class PinBindings {
     if (src.bit < 0)
       return compatibleResources(src.width, src.type);
     else
-      return compatibleResources(1, src.type);
+      return compatibleResources(src.width.forSingleBit(), src.type);
   }
 
   private ArrayList<BoardIO> compatibleResources(Int3 compWidth, BoardIO.Type compType) {
-    ArrayList<Dest> res = new ArrayList<>();
-    if (compWidth.isMised()) {
+    ArrayList<BoardIO> res = new ArrayList<>();
+    if (compWidth.isMixedDirection()) {
       err.AddError("INTERNAL ERROR: Detected I/O component with mixed direction bits.");
       return res;
     }
@@ -321,22 +313,22 @@ public class PinBindings {
   }
 
   public HashSet<Source> addMapping(Source src, BoardIO io, int bit) {
+    HashSet<Source> modified = new HashSet<>();
     // sanity check: sizes must match
     int srcWidth = src.bit >= 0 ? 1 : src.width.size();
     int ioWidth = bit >= 0 ? 1 : io.width;
     if (srcWidth != ioWidth) {
       err.AddError("INTERNAL ERROR: Component is %d bits, but I/O resource is %d bits.",
           srcWidth, ioWidth);
-      return;
+      return modified;
     }
     // remove existing mappings to same I/O resource or from same component
-    HashSet<Source> modified = new HashSet<>();
     mappings.entrySet().removeIf(e -> {
       Source s = e.getKey();
       Dest d = e.getValue();
       boolean conflict = (mappings.get(s).io == io)
           || (s.path.equals(src.path) && (src.bit < 0 || s.bit < 0 || src.bit == s.bit));
-      if (confict)
+      if (conflict)
         modified.add(s);
       return conflict;
     });
@@ -347,13 +339,11 @@ public class PinBindings {
 
   public String getStatus() { // result begins with "All" if and only if everything mapped
     int remaining = 0, count = 0;
-    for (Path path : pinBindings.components.keySet()) {
+    for (Path path : components.keySet()) {
       count++;
-      if (!pinBindings.isMapped(path))
+      if (!isMapped(path))
         remaining++;
     }
-    finished = (remaining == 0);
-    status.setForeground(finished ? Color.GREEN.darker() : Color.BLUE);
     if (remaining == 0)
       return String.format("All %d components are mapped to I/O resources", count);
     else
@@ -362,7 +352,7 @@ public class PinBindings {
   }
 
   public boolean allPinsAssigned() {
-    for (Path path : pinBindings.components.keySet())
+    for (Path path : components.keySet())
       if (!isMapped(path))
         return false;
     return true;

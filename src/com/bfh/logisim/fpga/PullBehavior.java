@@ -37,11 +37,11 @@ public class PullBehavior {
   public static final PullBehavior PULL_UP = new PullBehavior("Pull Up", "PULLUP", "PULLUP");
   public static final PullBehavior PULL_DOWN = new PullBehavior("Pull Down", "PULLDOWN", "PULLDOWN");
   public static final PullBehavior UNKNOWN = new PullBehavior("Unknown", "", "FLOAT");
-  public static PullBehavior[] OPTIONS = { FLOAT, PULL_UP, PULL_DOWN };
+  public static final PullBehavior[] OPTIONS = { FLOAT, PULL_UP, PULL_DOWN };
 
   private PullBehavior(String d, String a, String x) { desc = d; altera = a; xilinx = x; }
 
-  public PullBehavior get(String desc) {
+  public static PullBehavior get(String desc) {
     for (PullBehavior p : OPTIONS)
       if (p.desc.equals(desc))
         return p;

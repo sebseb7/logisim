@@ -360,7 +360,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider {
 
   @Override
   public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
-    return new CounterHDLGeneratorFactory(ctx);
+    return new CounterHDLGenerator(ctx);
   }
 
   @Override

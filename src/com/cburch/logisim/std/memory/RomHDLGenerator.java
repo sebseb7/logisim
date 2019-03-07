@@ -43,17 +43,17 @@ public class RomHDLGenerator extends HDLGenerator {
     super(ctx, "memory", "ROM_${CIRCUIT}_${LABEL}", "i_ROM");
     inPorts.add("Address", addrWidth(), Mem.ADDR, false);
     outPorts.add("Data", dataWidth(), Mem.DATA, null);
-    int n = Mem.lineSize(attrs);
+    int n = Mem.lineSize(_attrs);
     for (int i = 1; i < n; i++)
       outPorts.add("Data"+i, dataWidth(), Mem.MEM_INPUTS+i-1, null);
   }
 
   @Override
-  protected void generateBehavior(Hdl out, String rootDir) {
-    MemContents rom = attrs.getValue(Rom.CONTENTS_ATTR);
-    int n = Mem.lineSize(attrs);
-    int wd = dataWidth(attrs);
-    int wa = addrWidth(attrs);
+  protected void generateBehavior(Hdl out) {
+    MemContents rom = _attrs.getValue(Rom.CONTENTS_ATTR);
+    int n = Mem.lineSize(_attrs);
+    int wd = dataWidth();
+    int wa = addrWidth();
     // int shift = (n == 4 ? 2 : n == 2 ? 1 : 0);
     if (out.isVhdl) {
       out.stmt("MakeRom : PROCESS( Address )");

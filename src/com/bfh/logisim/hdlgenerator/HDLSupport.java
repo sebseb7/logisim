@@ -31,9 +31,13 @@
 package com.bfh.logisim.hdlgenerator;
 
 import com.bfh.logisim.gui.FPGAReport;
+import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
+import com.bfh.logisim.netlist.Path;
+import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
@@ -51,12 +55,12 @@ public abstract class HDLSupport {
       this.lang = lang;
       this.err = err;
       this.nets = nets;
-      this.attrs = attrs != null ? attrs : AttriibuteSets.EMPTY;
+      this.attrs = attrs != null ? attrs : AttributeSets.EMPTY;
       this.vendor = vendor;
     }
   }
 
-  protected final String _projectName; // context - fixme
+  public final String _projectName; // context - fixme
   // Name for HDL module (i.e. base name of HDL file for generated components,
   // and the GUI display name for both generated and inlined components). Must
   // be unique and distinct for each variation of generated HDL, e.g. "BitAdder"
@@ -65,17 +69,17 @@ public abstract class HDLSupport {
   // even globally unique (distinct per-circuit and per-instance), when the VHDL
   // essentially can't be shared between instances like for PLA, Rom, and
   // Non-Volatile Ram components.
-  protected final String hdlComponentName; // context - fixme
-  protected final String _lang; // context - fixme
-  protected final FPGAReport _err; // context - fixme
-  protected final Netlist _nets; // context - fixme // signals of the circuit in
+  public final String hdlComponentName; // context - fixme
+  public final String _lang; // context - fixme
+  public final FPGAReport _err; // context - fixme
+  public final Netlist _nets; // context - fixme // signals of the circuit in
   // which this component is embeded. For CircuitHDLGeneratorComponent, this is
   // the signals for the *parent* circuit (or null, if it is the top-level
   // circuit), not the signals within this subcircuit.
-  protected final AttributeSet _attrs; // context - fixme
-  protected final char _vendor; // context - fixme
+  public final AttributeSet _attrs; // context - fixme
+  public final char _vendor; // context - fixme
   public final boolean inlined;
-  protected final Hdl _hdl;
+  public final Hdl _hdl;
 
   protected HDLSupport(HDLCTX ctx, String hdlComponentNameTemplate, boolean inlined) {
     this._projectName = ctx.err.getProjectName();
@@ -86,7 +90,7 @@ public abstract class HDLSupport {
     this._vendor = ctx.vendor;
     this.inlined = inlined;
     this.hdlComponentName = deriveHDLNameWithinCircuit(hdlComponentNameTemplate,
-        _attrs, _nets == null ? null : _nets.getCircuitName());
+        _nets == null ? null : _nets.circ.getName());
     this._hdl = new Hdl(_lang, _err);
   }
 
@@ -94,13 +98,13 @@ public abstract class HDLSupport {
   public final String getComponentName() { return hdlComponentName; }
 
   // For non-inlined HDLGenerator classes.
-  public boolean writeHDLFiles(String rootDir) { }
+  public boolean writeHDLFiles(String rootDir) { return true; }
 	protected void generateComponentDeclaration(Hdl out) { }
-	protected void generateComponentInstance(Hdl out, long id, NetlistComponent comp) { }
-	protected String getInstanceNamePrefix() { }
-  protected boolean hdlDependsOnCircuitState() { return false; } // for NVRAM
-  public boolean writeAllHDLThatDependsOn(CircuitState cs, NetlistComponent comp,
-      String rootDir) { return true; } // for NVRAM
+	protected void generateComponentInstance(Hdl out, long id, NetlistComponent comp/*, Path path*/) { }
+	protected String getInstanceNamePrefix() { return null; }
+  // protected boolean hdlDependsOnCircuitState() { return false; } // for NVRAM
+  // public boolean writeAllHDLThatDependsOn(CircuitState cs, NetlistComponent comp,
+  //     Path path, String rootDir) { return true; } // for NVRAM
 
   // For HDLInliner classes.
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) { }
@@ -144,9 +148,8 @@ public abstract class HDLSupport {
   // each ROM to have a non-zero label unique within the circuit, and also have
   // getComponentName() in this case produce a name that is a function of both
   // the circuit name (which is globally unique) and the label.
-  private static String deriveHDLNameWithinCircuit(String nameTemplate,
-      AttributeSet attrs, String circuitName) {
-    String s = hdlComponentName;
+  private String deriveHDLNameWithinCircuit(String nameTemplate, String circuitName) {
+    String s = nameTemplate;
     int w = stdWidth();
     if (s.contains("${CIRCUIT}") && circuitName == null)
       throw new IllegalArgumentException("%s can't appear in top-level circuit");
@@ -159,17 +162,17 @@ public abstract class HDLSupport {
     if (s.contains("${TRIGGER}")) {
       if (edgeTriggered())
         s = s.replace("${TRIGGER}", "EdgeTriggered");
-      else if (attrs.containsAttribute(StdAttr.TRIGGER))
+      else if (_attrs.containsAttribute(StdAttr.TRIGGER))
         s = s.replace("${TRIGGER}", "LevelSensitive");
       else
         s = s.replace("${TRIGGER}", "Asynchronous");
     }
     if (s.contains("${LABEL}")) {
-      String label = attrs.getValueOrElse(StdAttr.LABEL, "");
+      String label = _attrs.getValueOrElse(StdAttr.LABEL, "");
       if (label.isEmpty()) {
         if (_err != null)
-          _err.AddSevereWarning("Missing label for %s within circuit \"%s\".",
-              hdlComponentName, circuitName);
+          _err.AddSevereWarning("Missing a required label for component within circuit \"%s\". "
+              + " Name template is: %s.", circuitName, s);
         label = "ANONYMOUS";
       }
       s = s.replace("${LABEL}", label);
@@ -188,5 +191,18 @@ public abstract class HDLSupport {
   public boolean requiresUniqueLabel() {
     return hdlComponentName.contains("${LABEL}");
   }
+  
+  // Some components can have hidden connections to FPGA board resource, e.g. an
+  // LED component has a regular logisim input, but it also has a hidden FPGA
+  // output that needs to routed up to the top-level HDL circuit and eventually
+  // be connected to an FPGA "LED" or "Pin" resource. Similarly, a Button
+  // component has a regular logisim output, but also a separate hidden FPGA
+  // input that gets routed up to the top level and can be connected to an FPGA
+  // "Button", "DipSwitch", "Pin", or other compatable FPGA resource. The
+  // hiddenPorts object, if not null, holds info about what type of FPGA
+  // resource is most suitable, alternate resource types, how many in/out/inout
+  // pins are involved, names for the signals, etc.
+  protected HiddenPort hiddenPort = null;
+  public HiddenPort hiddenPort() { return hiddenPort; }
 
 }

@@ -30,12 +30,13 @@
 package com.cburch.logisim.std.arith;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
+import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 
 public class MultiplierHDLGenerator extends HDLGenerator {
 
   public MultiplierHDLGenerator(HDLCTX ctx) {
-    super(ctx, "arithmetic", uMode() ? "UnsignedMultiplier" : "SignedMultiplier", "i_Mult");
+    super(ctx, "arithmetic", uMode(ctx.attrs) ? "UnsignedMultiplier" : "SignedMultiplier", "i_Mult");
     // todo: 1-bit version?
     // todo: Verilog version
     int w = stdWidth();
@@ -45,7 +46,7 @@ public class MultiplierHDLGenerator extends HDLGenerator {
     inPorts.add("CarryIn", "BitWidth", Multiplier.C_IN, false);
     outPorts.add("ProductLo", "BitWidth", Multiplier.OUT, null);
     outPorts.add("ProductHi", "BitWidth", Multiplier.C_OUT, null);
-    if (ctx.isVhdl) {
+    if (_hdl.isVhdl) {
       wires.add("s_mul", "2*BitWidth");
       wires.add("s_cin", "2*BitWidth");
       wires.add("s_res", "2*BitWidth");
@@ -55,8 +56,8 @@ public class MultiplierHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out, String rootDir) {
-    if (uMode()) {
+  protected void generateBehavior(Hdl out) {
+    if (uMode(_attrs)) {
       out.stmt("s_cin(2*BitWidth-1 downto BitWidth) <= (others => '0');");
       out.stmt("s_cin(BitWidth-1 downto 0)          <= CarryIn;");
       out.stmt("s_mul <= std_logic_vector(unsigned(DataA) * unsigned(DataB));");
@@ -75,7 +76,7 @@ public class MultiplierHDLGenerator extends HDLGenerator {
     }
   }
 
-  protected boolean uMode() {
+  protected static boolean uMode(AttributeSet attrs) {
     return attrs.getValue(Multiplier.MODE_ATTR) == Multiplier.UNSIGNED_OPTION;
   }
 

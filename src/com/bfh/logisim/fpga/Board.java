@@ -30,7 +30,7 @@
 
 package com.bfh.logisim.fpga;
 
-import java.awt.image.BufferedImage;
+import java.awt.Image;
 import java.util.AbstractList;
 import java.util.ArrayList;
 
@@ -47,11 +47,11 @@ public class Board extends AbstractList<BoardIO> {
 
 	public final String name;
 	public final Chipset fpga;
-	public final BufferedImage image;
+	public final Image image;
 
-	private final ArrayList<BoardIO> components = new ArrayList<>();
+	private final ArrayList<BoardIO> ios = new ArrayList<>();
 
-	public Board(String name, Chipset fpga, BufferedImage image) {
+	public Board(String name, Chipset fpga, Image image) {
     this.name = name;
     this.fpga = fpga;
     this.image = image.getScaledInstance(IMG_WIDTH, IMG_HEIGHT, Image.SCALE_SMOOTH);
@@ -59,26 +59,26 @@ public class Board extends AbstractList<BoardIO> {
 
   @Override
   public BoardIO get(int i) {
-    return components.get(i);
+    return ios.get(i);
   }
 
   @Override
   public int size() {
-    return components.size();
+    return ios.size();
   }
 
-	public void addComponent(BoardIO comp) {
-		components.add(comp);
+	public void addComponent(BoardIO io) {
+		ios.add(io);
 	}
 
   public void printStats(FPGAReport out) {
 		out.AddInfo("Board '%s' contains the following I/O resources:", name);
 		for (BoardIO.Type type : BoardIO.PhysicalTypes) {
       int count = 0, bits = 0;
-			for (BoardIO comp : components) {
-				if (comp.type == type) {
+			for (BoardIO io : ios) {
+				if (io.type == type) {
 					count++;
-					bits += comp.width.size();
+					bits += io.width;
         }
       }
       out.AddInfo("   %s: %d components (%d bits)", type, count, bits);
@@ -87,16 +87,16 @@ public class Board extends AbstractList<BoardIO> {
 
 	public ArrayList<Bounds> compatableRects(BoardIO.Type type, int bits) {
 		ArrayList<Bounds> result = new ArrayList<>();
-		for (BoardIO comp : components)
-      if (comp.GetType().equals(type) && bits <= comp.getNrOfPins())
-        result.add(comp.GetRectangle());
+		for (BoardIO io : ios)
+      if (io.type.equals(type) && bits <= io.width)
+        result.add(io.rect);
 		return result;
 	}
 
   public BoardIO getComponent(Bounds r) {
-		for (BoardIO comp : components)
-      if (comp.GetRectangle().equals(r))
-        return comp;
+		for (BoardIO io : ios)
+      if (io.rect.equals(r))
+        return io;
     return null;
   }
 

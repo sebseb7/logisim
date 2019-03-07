@@ -31,6 +31,7 @@
 package com.bfh.logisim.library;
 
 import com.bfh.logisim.hdlgenerator.HDLInliner;
+import com.bfh.logisim.netlist.Net;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.cburch.logisim.hdl.Hdl;
 

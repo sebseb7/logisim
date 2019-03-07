@@ -60,7 +60,6 @@ public class Chipset {
 	public final char Vendor;
 	public final String VendorName;
 	public final PullBehavior UnusedPinsBehavior;
-	public final boolean FPGADefined;
 	public final boolean USBTMCDownload;
 	public final int JTAGPos;
 	public final String FlashName;
@@ -106,13 +105,11 @@ public class Chipset {
       throw new Exception("invalid or missing FPGAInformation/Package");
     if (SpeedGrade == null)
       throw new Exception("invalid or missing FPGAInformation/Speedgrade");
-    if (Vendor == null)
+    if (Vendor == UNKNOWN)
       throw new Exception("invalid or missing FPGAInformation/Vendor");
 
     Speed = freqToString(ClockFrequency);
   }
-
-	public boolean FpgaInfoPresent() { return !empty; }
 
 	private static String freqToString(long clkfreq) {
 		if (clkfreq % 1000000 == 0) {

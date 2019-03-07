@@ -32,6 +32,7 @@ package com.bfh.logisim.fpga;
 
 public class DriveStrength {
   public final String desc, ma;
+  private DriveStrength(String d, String m) { desc = d; ma = m; };
 
 	public static final DriveStrength DEFAULT  = new DriveStrength("Default", "");
 	public static final DriveStrength DRIVE_2  = new DriveStrength("2 mA", "2");
@@ -40,11 +41,11 @@ public class DriveStrength {
 	public static final DriveStrength DRIVE_16 = new DriveStrength("16 mA", "16");
 	public static final DriveStrength DRIVE_24 = new DriveStrength("24 mA", "24");
 	public static final DriveStrength UNKNOWN  = new DriveStrength("Unknown", "");
-  public static final String[] OPTIONS = { DEFAULT,
+  public static final DriveStrength[] OPTIONS = { DEFAULT,
     DRIVE_2, DRIVE_4, DRIVE_8, DRIVE_16, DRIVE_24 };
 
-  public DriveStrength get(String desc) {
-    for (PullBehavior p : OPTIONS)
+  public static DriveStrength get(String desc) {
+    for (DriveStrength p : OPTIONS)
       if (p.desc.equals(desc))
         return p;
     return UNKNOWN;

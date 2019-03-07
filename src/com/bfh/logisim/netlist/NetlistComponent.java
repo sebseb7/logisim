@@ -37,12 +37,13 @@ import java.util.List;
 import java.util.Collections;
 import java.util.HashMap;
 
-import com.bfh.logisim.hdlgenerator.HiddenPort;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.bfh.logisim.hdlgenerator.HiddenPort;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.Pin;
 
 // For each real Component within a Circuit, a shadow NetlistComponent holds
@@ -63,6 +64,12 @@ public class NetlistComponent {
       end.in = start.in + count.in - 1;
       end.inout = start.inout + count.inout - 1;
       end.out = start.out + count.out - 1;
+    }
+    public Range3 copy() {
+      Range3 r = new Range3();
+      r.end = end.copy();
+      r.start = start.copy();
+      return r;
     }
   }
 
@@ -110,15 +117,17 @@ public class NetlistComponent {
 
     ArrayList<Net> nets = new ArrayList<>();
     for (EndData end : comp.getEnds())
-      nets.add(ctx.nets.getNetFor(end));
+      nets.add(ctx.nets.netAt.get(end.getLocation()));
     this.portConnections = Collections.unmodifiableList(nets);
 
     if (factory instanceof Pin) {
       this.hdlSupport = null;
-      this.hiddenPort = HiddenPort.forPin(comp);
+      // // Note: Only top-level circuit Pin components have HiddenPort.
+      // this.hiddenPort = isTop ? HiddenPort.forPin(comp) : null;
+      this.hiddenPort = null;
     } else {
-      this.hdlSupport = factory.getHDLSupport(ctx.lang, ctx.err, ctx.nets, attrs, _vendor);
-      this.hiddenPort = hdlSupport != null ? hdlSupport.hiddenPort : null;
+      this.hdlSupport = factory.getHDLSupport(ctx.lang, ctx.err, ctx.nets, attrs, ctx.vendor);
+      this.hiddenPort = hdlSupport != null ? hdlSupport.hiddenPort() : null;
     }
 	}
 
@@ -152,7 +161,7 @@ public class NetlistComponent {
 	}
 
   public String label() {
-    return labelOf(this);
+    return labelOf(original);
   }
 
   public static String labelOf(Component comp) {

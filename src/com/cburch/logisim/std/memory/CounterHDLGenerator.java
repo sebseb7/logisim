@@ -37,7 +37,7 @@ public class CounterHDLGenerator extends HDLGenerator {
   public CounterHDLGenerator(HDLCTX ctx) {
     super(ctx, "memory", "Counter", "i_Ctr");
     parameters.add("BitWidth", stdWidth());
-    parameters.add("MaxVal", attrs.getValue(Counter.ATTR_MAX));
+    parameters.add("MaxVal", _attrs.getValue(Counter.ATTR_MAX));
     parameters.add("Mode", mode());
 
     inPorts.add("LoadData", "BitWidth", Counter.IN, false);
@@ -73,7 +73,7 @@ public class CounterHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  protected void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     if (out.isVhdl) {
       out.stmt();
       out.stmt("CompareOut   <= s_carry;");
@@ -180,7 +180,7 @@ public class CounterHDLGenerator extends HDLGenerator {
   }
 
   protected int mode() {
-    Object m = attrs.getValue(Counter.ATTR_ON_GOAL);
+    Object m = _attrs.getValue(Counter.ATTR_ON_GOAL);
     if (m == Counter.ON_GOAL_LOAD)
       return 3;
     else if (m == Counter.ON_GOAL_CONT)

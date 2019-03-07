@@ -41,7 +41,7 @@ public class PortIOHDLGenerator extends HDLGenerator {
   // todo: verilog support
 
   public PortIOHDLGenerator(HDLCTX ctx) {
-    super(ctx, "PORTIO_${CIRCUIT}_${LABEL}", "PORTIO");
+    super(ctx, "io", "PORTIO_${CIRCUIT}_${LABEL}", "PORTIO");
     
     for (InOutMap io : getPorts(_attrs)) {
       if (io.type == ALWAYSINPUT || io.type == ENABLE)
@@ -54,12 +54,11 @@ public class PortIOHDLGenerator extends HDLGenerator {
       //  inOutPorts.add(io.name, io.size, io.endNr, null);
     }
 
-    int n = attrs.getValue(PortIO.ATTR_SIZE);
-
+    int n = _attrs.getValue(PortIO.ATTR_SIZE);
     hiddenPort = HiddenPort.makeInOutport(n, HiddenPort.Ribbon, HiddenPort.Pin);
   }
 
-  private class InOutMap {
+  private static class InOutMap {
     private int end, start, size, busNr, endNr;
     private int type;
     private String name;
@@ -139,7 +138,7 @@ public class PortIOHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  protected void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     if (out.isVhdl) {
       for (InOutMap io : getPorts(_attrs)) {
         String fpgaBus = inOutBusName + io.busNr;

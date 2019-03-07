@@ -31,6 +31,7 @@
 package com.bfh.logisim.netlist;
 
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.comp.Component;
 
 // A heirarchical path to a component within the tree of circuits and
 // subcircuits. Path is immutable. Examples:
@@ -52,6 +53,11 @@ public class Path {
   // Construct a non-root path for component or subcircuit in some circuit.
   public Path extend(NetlistComponent shadow) {
     return new Path(path + "/" + shadow.label());
+  }
+
+  // Construct a non-root path for component or subcircuit in some circuit.
+  public Path extend(Component comp) {
+    return new Path(path + "/" + NetlistComponent.labelOf(comp));
   }
 
   // Return the parent's path for this non-root path. Fails for root path.

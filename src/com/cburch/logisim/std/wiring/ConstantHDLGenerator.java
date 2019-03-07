@@ -29,6 +29,7 @@
  */
 package com.cburch.logisim.std.wiring;
 
+import com.bfh.logisim.netlist.Net;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.hdlgenerator.HDLInliner;
 import com.cburch.logisim.hdl.Hdl;
@@ -47,7 +48,7 @@ public class ConstantHDLGenerator extends HDLInliner {
     Net net = comp.getConnection(0);
     if (net == null)
       return;
-    out.assign(net.name, out.literal(val, net.width));
+    out.assign(net.name, out.literal(val, net.bitWidth()));
     out.stmt("");
   }
 

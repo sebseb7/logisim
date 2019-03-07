@@ -33,19 +33,25 @@ package com.bfh.logisim.hdlgenerator;
 import java.io.File;
 import java.util.ArrayList;
 
+import com.bfh.logisim.netlist.CorrectLabel;
+import com.bfh.logisim.netlist.Net;
+import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
+import com.bfh.logisim.netlist.Path;
 import com.cburch.logisim.hdl.Hdl;
+import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.std.wiring.ClockHDLGenerator;
 
 public class HDLGenerator extends HDLSupport {
 
   // Details of input, output, and inout ports.
   protected static class PortInfo {
-    final String name; // signal name
-    final String width; // generic param (but not an expression) or constant integer
-    final int index; // port/end number within logisim Component and HDL NetlistComponent
-    final static int UNCONNECTED = -1; // When used as index, we just use default value.
-    final Boolean defaultValue; // only for inputs; null means port is required
-    PortInfo(String n, String w, int i, Boolean v) {
+    public final String name; // signal name
+    public final String width; // generic param (but not an expression) or constant integer
+    public final int index; // port/end number within logisim Component and HDL NetlistComponent
+    public final static int UNCONNECTED = -1; // When used as index, we just use default value.
+    public final Boolean defaultValue; // only for inputs; null means port is required
+    public PortInfo(String n, String w, int i, Boolean v) {
       name = n;
       width = w;
       index = i;
@@ -56,6 +62,9 @@ public class HDLGenerator extends HDLSupport {
   public static class PortList extends ArrayList<PortInfo> {
     public void add(String name, String width, int index, Boolean defaultValue) {
       add(new PortInfo(name, width, index, defaultValue));
+    }
+    public void add(String name, int width, int index, Boolean defaultValue) {
+      add(new PortInfo(name, ""+width, index, defaultValue));
     }
     public void addVector(String name, int width, int index, Boolean defaultValue) {
       // Note: the parens around "(1)" here are a hack to force vector creation.
@@ -79,6 +88,9 @@ public class HDLGenerator extends HDLSupport {
     public void add(String name, String width) {
       add(new WireInfo(name, width));
     }
+    public void add(String name, int width) {
+      add(new WireInfo(name, ""+width));
+    }
     public void addVector(String name, int width) {
       // Note: the parens around "(1)" here are a hack to force vector creation.
       // See: Hdl.typeForWidth() and its use below.
@@ -91,9 +103,15 @@ public class HDLGenerator extends HDLSupport {
   protected static class ParameterInfo {
     final String name; // param name
     final String type; // "integer", "natural", "positive", or "string" (only used for VHDL)
-    final Object value; // Integer or String value for a given instance
+    /*final*/ Object value; // Integer or String value for a given instance
     final Object defaultValue; // default Integer or String value that appears in declarations 
-    ParameterInfo(String n, String t, int v, int d) {
+    public ParameterInfo(String n, String t, int v, int d) {
+      name = n;
+      type = t;
+      value = v;
+      defaultValue = d;
+    }
+    public ParameterInfo(String n, String t, String v, String d) {
       name = n;
       type = t;
       value = v;
@@ -152,7 +170,7 @@ public class HDLGenerator extends HDLSupport {
   // edges (for edge-triggered components) or high level (for level-senstive
   // components). Below, we do the adaptions to handle falling edge or
   // active-low clocks for components so configured.
-  ClockPortInfo clockPort = null;
+  protected ClockPortInfo clockPort = null;
 
   // Some components need direct access to the raw FPGA clock signal and the
   // ClockTick signal coming from the TickHDLGenerator (which gets added
@@ -161,18 +179,6 @@ public class HDLGenerator extends HDLSupport {
   // port names into tickerPort, which get mapped to the clock signal and clock
   // enable from the top-level Ticker.
   // ClockPortInfo tickerPort = null;
-
-  // Some components can have hidden connections to FPGA board resource, e.g. an
-  // LED component has a regular logisim input, but it also has a hidden FPGA
-  // output that needs to routed up to the top-level HDL circuit and eventually
-  // be connected to an FPGA "LED" or "Pin" resource. Similarly, a Button
-  // component has a regular logisim output, but also a separate hidden FPGA
-  // input that gets routed up to the top level and can be connected to an FPGA
-  // "Button", "DipSwitch", "Pin", or other compatable FPGA resource. The
-  // hiddenPorts object, if not null, holds info about what type of FPGA
-  // resource is most suitable, alternate resource types, how many in/out/inout
-  // pins are involved, names for the signals, etc.
-  protected HiddenPort hiddenPort = null;
 
   // A suitable subdirectory for storing HDL files.
   protected final String subdir;
@@ -199,9 +205,8 @@ public class HDLGenerator extends HDLSupport {
 
   // Generate and write an "architecture" file for this component, using the
   // given root directory.
-  protected String rootDirForNVRamCode = null; // hack: see RamHDLGenerator
   protected boolean writeArchitecture(String rootDir) {
-    Hdl hdl = getArchitecture(rootDir);
+    Hdl hdl = getArchitecture();
 		if (hdl == null || hdl.isEmpty()) {
 			_err.AddFatalError("INTERNAL ERROR: Generated empty architecture for HDL `%s'.", hdlComponentName);
 			return false;
@@ -213,7 +218,7 @@ public class HDLGenerator extends HDLSupport {
 	}
 
   // Generate the full HDL code for the "architecture" file.
-	protected Hdl getArchitecture(String rootDir) {
+	protected Hdl getArchitecture() {
     Hdl out = new Hdl(_lang, _err);
     generateFileHeader(out);
 
@@ -238,7 +243,7 @@ public class HDLGenerator extends HDLSupport {
 
       out.indent();
 			out.stmt();
-      generateBehavior(out, rootDir);
+      generateBehavior(out);
 			out.stmt();
       out.dedent();
 
@@ -258,11 +263,8 @@ public class HDLGenerator extends HDLSupport {
       //   portNames.add(tickerPort.ckPortName);
       //   portNames.add(tickerPort.enPortName);
       // }
-      if (hiddenPort != null) {
-        portNames.addAll(hiddenPort.GetInportLabels());
-        portNames.addAll(hiddenPort.GetInOutLabels());
-        portNames.addAll(hiddenPort.GetOutportLabels());
-      }
+      if (hiddenPort != null)
+        portNames.addAll(hiddenPort.labels);
       out.stmt("module %s(\t %s );", hdlComponentName, String.join(",\n\t ", portNames));
 
       out.indent();
@@ -281,11 +283,11 @@ public class HDLGenerator extends HDLSupport {
       // if (tickerPort != null) {
 			// 	out.stmt("input %s%s; // special clock signal", clockPort.ckPortName);
       if (hiddenPort != null) {
-        for (String name : hiddenPort.GetInportLabels())
+        for (String name : hiddenPort.inports)
           out.stmt("input %s; // special hidden port", name);
-        for (String name : hiddenPort.GetInOutLabels())
+        for (String name : hiddenPort.inoutports)
           out.stmt("inout %s; // special hidden port", name);
-        for (String name : hiddenPort.GetOutportLabels())
+        for (String name : hiddenPort.outports)
           out.stmt("output %s; // special hidden port", name);
       }
       out.stmt();
@@ -295,13 +297,13 @@ public class HDLGenerator extends HDLSupport {
       if (!wires.isEmpty())
         out.stmt();
 
-      for (String s : registers)
+      for (WireInfo s : registers)
         out.stmt("reg %s%s;", out.typeForWidth(s.width), s.name);
       if (!registers.isEmpty())
         out.stmt();
 
 			out.stmt();
-      generateBehavior(out, rootDir);
+      generateBehavior(out);
 			out.stmt();
 
       out.dedent();
@@ -340,7 +342,7 @@ public class HDLGenerator extends HDLSupport {
       generateVhdlBlackBox(out, false);
 	}
 
-	private void generateVhdlBlackBox(Hdl out, boolean isEntity) {
+	protected void generateVhdlBlackBox(Hdl out, boolean isEntity) {
     if (isEntity)
       out.stmt("entity %s is", hdlComponentName);
     else
@@ -355,7 +357,7 @@ public class HDLGenerator extends HDLSupport {
 
 		if (!inPorts.isEmpty() || !outPorts.isEmpty() || !inOutPorts.isEmpty()
         || clockPort != null
-        || (hiddenPort != null && hiddenPort.GetNrOfPorts() > 0)) {
+        || (hiddenPort != null && hiddenPort.numPorts() > 0)) {
       ArrayList<String> ports = new ArrayList<>();
       for (PortInfo s: inPorts)
         ports.add(s + " : in " + out.typeForWidth(s.width));
@@ -364,18 +366,18 @@ public class HDLGenerator extends HDLSupport {
       for (PortInfo s: outPorts)
         ports.add(s + " : out " + out.typeForWidth(s.width));
       if (clockPort != null) {
-				ports.add(clockPort.ckPortName, " : in " + out.typeForWidth(1));
-				ports.add(clockPort.enPortName, " : in " + out.typeForWidth(1));
+				ports.add(clockPort.ckPortName + " : in " + out.typeForWidth(1));
+				ports.add(clockPort.enPortName + " : in " + out.typeForWidth(1));
       }
       if (hiddenPort != null) {
-        for (String name : hiddenPort.GetInportLabels())
+        for (String name : hiddenPort.inports)
           ports.add(name + " : in " + out.typeForWidth(1));
-        for (String name : hiddenPort.GetInOutLabels())
+        for (String name : hiddenPort.inoutports)
           ports.add(name + " : inout " + out.typeForWidth(1));
-        for (String name : hiddenPort.GetOutportLabels())
+        for (String name : hiddenPort.outports)
           ports.add(name + " : out " + out.typeForWidth(1));
       }
-      out.stmt("port(\t %s );", String.join(";\n\t ", generics));
+      out.stmt("port(\t %s );", String.join(";\n\t ", ports));
 		}
 
     if (isEntity)
@@ -400,7 +402,7 @@ public class HDLGenerator extends HDLSupport {
   //             .A(foo),
   //             .B(bar),
   //             .C(baz) );
-	protected void generateComponentInstance(Hdl out, long id, NetlistComponent comp, String rootDir) {
+	protected void generateComponentInstance(Hdl out, long id, NetlistComponent comp /*, Path path*/) {
 
 		String instName = getInstanceName(id);
     Hdl.Map values = getPortMappings(comp);
@@ -421,7 +423,7 @@ public class HDLGenerator extends HDLSupport {
 		} else {
 
       for (ParameterInfo s : parameters)
-        generics.add(".%s(%s)", s.name, s.value);
+        generics.add(String.format(".%s(%s)", s.name, s.value));
       String g = String.join(",\n\t ", generics);
       String v = String.join(",\n\t ", values);
 
@@ -454,14 +456,14 @@ public class HDLGenerator extends HDLSupport {
 	protected void generateVhdlTypes(Hdl out) { }
 
   // Generate HDL code for the component, i.e. the actual behavioral RTL code.
-  protected void generateBehavior(Hdl out, String rootDir) { }
+  protected void generateBehavior(Hdl out) { }
 
   static final String IEEE_LOGIC = "std_logic_1164"; // standard + extended + extended2
   static final String IEEE_UNSIGNED = "std_logic_unsigned"; //                extended2
   static final String IEEE_NUMERIC = "numeric_std"; //             extended + extended2
   protected ArrayList<String> vhdlLibraries = new ArrayList<>();
-	protected static void generateVhdlLibraries(Hdl out) {
-    if (vhdlLibraries.length == 0)
+	protected void generateVhdlLibraries(Hdl out) {
+    if (vhdlLibraries.size() == 0)
       return;
     out.stmt("library ieee;");
     for (String lib : vhdlLibraries)
@@ -472,10 +474,8 @@ public class HDLGenerator extends HDLSupport {
   // Returns a file opened for writing.
 	protected File openFile(String rootDir, boolean isMif, boolean isEntity) {
     if (!rootDir.endsWith(File.separator))
-      rootDir += File.separatorChar;
-    if (!subdir.endsWith(File.separator) && !subdir.isEmpty())
-      subdir += File.separatorChar;
-    String path = rootDir + _lang.toLowerCase() + File.separatorChar + subdir;
+      rootDir += File.separator;
+    String path = rootDir + _lang.toLowerCase() + File.separator + subdir + File.separator;
     return FileWriter.GetFilePointer(path, hdlComponentName, isMif, isEntity, _err, _lang);
 	}
 
@@ -509,7 +509,7 @@ public class HDLGenerator extends HDLSupport {
   }
 
   protected void getClockPortMappings(Hdl.Map map, NetlistComponent comp) {
-    if (clockPort.index < 0 || clockPort.index >= comp.ports.size()) {
+    if (clockPort.index < 0 || clockPort.index >= comp.portConnections.size()) {
       _err.AddFatalError("INTERNAL ERROR: Clock port %d of '%s' is missing.",
           clockPort.index, hdlComponentName);
       map.add(clockPort.ckPortName, _hdl.zero);
@@ -525,8 +525,7 @@ public class HDLGenerator extends HDLSupport {
       map.add(clockPort.enPortName, _hdl.zero);
       return;
     }
-    NetlistComponent.PortConnection end = comp.ports.get(clockPort.index);
-    if (net.width != 1) {
+    if (net.bitWidth() != 1) {
       _err.AddFatalError("INTERNAL ERROR: Clock port of '%s' in '%s' is connected to a bus.",
           hdlComponentName, _nets.circName());
       map.add(clockPort.ckPortName, _hdl.zero);
@@ -554,7 +553,7 @@ public class HDLGenerator extends HDLSupport {
             + "the need for signals to traverse multiple clock domains.");
       }
       String clkSignal = net.name;
-      if (attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING 
+      if (_attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING 
           || _attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
           || _attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_LOW) {
         clkSignal = _hdl.not + " " + clkSignal;
@@ -571,13 +570,13 @@ public class HDLGenerator extends HDLSupport {
   }
 
   protected void getHiddenPortMappings(Hdl.Map map, NetlistComponent comp) {
-    NetlistComponent.Range3 r = comp.getLocalHiddenPortIndices();
-    for (String name : hiddenPort.GetInportLabels())
-      map.add(name, "LOGISIM_HIDDEN_FPGA_INPUT" + (r.in++));
-    for (String name : hiddenPort.GetInOutLabels())
-      map.add(name, "LOGISIM_HIDDEN_FPGA_INOUT" + (r.inout++)); // FIXME: at top level, these go directly to pins
-    for (String name : hiddenPort.GetOutputLabels())
-      map.add(name, "LOGISIM_HIDDEN_FPGA_OUTPUT" + (r.out++));
+    Netlist.Int3 id = comp.getLocalHiddenPortIndices().start;
+    for (String name : hiddenPort.inports)
+      map.add(name, "LOGISIM_HIDDEN_FPGA_INPUT" + (id.in++));
+    for (String name : hiddenPort.inoutports)
+      map.add(name, "LOGISIM_HIDDEN_FPGA_INOUT" + (id.inout++));
+    for (String name : hiddenPort.outports)
+      map.add(name, "LOGISIM_HIDDEN_FPGA_OUTPUT" + (id.out++));
   }
 
   protected void getUnconnectedPortMappings(Hdl.Map map, PortInfo p) {
@@ -590,26 +589,29 @@ public class HDLGenerator extends HDLSupport {
   }
 
   protected void getPortMappings(Hdl.Map map, NetlistComponent comp, PortInfo p) {
-    Net net = comp.getPortConnection(p.index);
+    Net net = comp.getConnection(p.index);
     if (net == null) {
       // For output and inout ports, default value *should* be null, making
       // those ones be open. We do a sanity check unless p.index is out of
       // bounds (e.g. UNCONNECTED).
       if (p.index >= 0 && p.index < comp.original.getEnds().size()
           && comp.original.getEnd(p.index).isOutput() && p.defaultValue != null) {
-        err.AddSevereWarning("INTERNAL ERROR: ignoring default value for "
+        _err.AddSevereWarning("INTERNAL ERROR: ignoring default value for "
             + "output pin '%s' of '%s' in circuit '%s'.",
             p.name, hdlComponentName, _nets.circName());
-        p.defaultValue = null;
       }
       getUnconnectedPortMappings(map, p);
-    } else if (net.width == 1 && !p.width.equals("1")) {
-      // Special VHDL case: When port is anything other than width "1", it
-      // will be a std_logic_vector. And if the end is 1 bit, then the port
-      // vector must be of type std_logic_vector(0 downto 0), but the signal
-      // being assigned is of type std_logic. These can't be directly assigned
-      // using "portname => signal" because of the mismatched types. We need
-      // to do "portname(0) => signal" instead.
+    } else if (net.bitWidth() == 1 && !p.width.equals("1")) {
+      // Special VHDL case: When port is anything other than width "1", it will
+      // be a std_logic_vector. And if the end is 1 bit, then the port vector
+      // must be of type std_logic_vector(0 downto 0), but the signal being
+      // assigned is of type std_logic by necessity (since it is a single bit).
+      // These can't be directly assigned using the normal
+      //   "portname => signal"
+      // mapping because of the mismatched types. We need to do
+      //   "portname(0) => signal"
+      // instead.
+      // For verilog, there is no such mismatching issue.
       map.add0(p.name, net.name);
     } else {
       map.add(p.name, net.name);

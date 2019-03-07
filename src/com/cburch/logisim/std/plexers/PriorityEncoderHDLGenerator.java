@@ -29,6 +29,8 @@
  */
 package com.cburch.logisim.std.plexers;
 
+import java.util.ArrayList;
+
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
@@ -59,7 +61,7 @@ public class PriorityEncoderHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     int ws = selWidth();
     int n = (1 << ws);
     if (out.isVhdl) {
@@ -128,7 +130,7 @@ public class PriorityEncoderHDLGenerator extends HDLGenerator {
     }
   }
 
-  protected int selWidth(AttributeSet attrs) {
-    return attrs.getValue(Plexers.ATTR_SELECT).getWidth();
+  protected int selWidth() {
+    return _attrs.getValue(Plexers.ATTR_SELECT).getWidth();
   }
 }

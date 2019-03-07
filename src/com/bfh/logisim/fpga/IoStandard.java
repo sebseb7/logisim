@@ -32,6 +32,7 @@ package com.bfh.logisim.fpga;
 
 public class IoStandard {
   public final String desc;
+  private IoStandard(String d) { desc = d; }
 
 	public static final IoStandard DEFAULT  = new IoStandard("Default");
 	public static final IoStandard LVCMOS12 = new IoStandard("LVCMOS12");
@@ -44,7 +45,7 @@ public class IoStandard {
   public static final IoStandard[] OPTIONS = { DEFAULT,
     LVCMOS12, LVCMOS15, LVCMOS18, LVCMOS25, LVCMOS33, LVTTL };
 
-  public IoStandard get(String desc) {
+  public static IoStandard get(String desc) {
     for (IoStandard p : OPTIONS)
       if (p.desc.equals(desc))
         return p;

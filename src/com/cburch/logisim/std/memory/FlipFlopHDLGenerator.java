@@ -35,19 +35,18 @@ import com.cburch.logisim.hdl.Hdl;
 public class FlipFlopHDLGenerator extends HDLGenerator {
 
   private String displayName;
-  private String[] inPorts;
   private String vhdlUpdate, verilogUpdate;
 
   FlipFlopHDLGenerator(HDLCTX ctx, String name, String displayName,
-      String[] inPorts, String vhdlUpdate, String verilogUpdate) {
+      String[] inportNames, String vhdlUpdate, String verilogUpdate) {
     super(ctx, "memory", "${TRIGGER}"+name, "i_"+name);
     this.displayName = displayName;
     this.vhdlUpdate = vhdlUpdate;
     this.verilogUpdate = verilogUpdate;
 
     int portnum = 0;
-    for (String name : inPorts)
-      inPorts.add(name, 1, portnum++, false);
+    for (String port : inportNames)
+      inPorts.add(port, 1, portnum++, false);
 
     clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", portnum++);
     outPorts.add("Q", 1, portnum++, null);
@@ -60,7 +59,7 @@ public class FlipFlopHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  protected void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     if (out.isVhdl) {
       out.stmt("Q     <= s_current_state_reg;");
       out.stmt("Q_bar <= NOT(s_current_state_reg);");
@@ -71,7 +70,7 @@ public class FlipFlopHDLGenerator extends HDLGenerator {
       out.stmt("BEGIN");
       out.stmt("   IF (Reset = '1') THEN s_current_state_reg <= '0';");
       out.stmt("   ELSIF (Preset = '1') THEN s_current_state_reg <= '1';");
-      if (edgeTriggered(attrs))
+      if (edgeTriggered())
         out.stmt("   ELSIF (GlobalClock'event AND (GlobalClock = '1')) THEN");
       else
         out.stmt("   ELSIF (GlobalClock = '1') THEN");
@@ -93,7 +92,7 @@ public class FlipFlopHDLGenerator extends HDLGenerator {
       out.stmt("   s_current_state_reg = 1'b0;");
       out.stmt("end");
       out.stmt();
-      if (edgeTriggered(attrs)) {
+      if (edgeTriggered()) {
         out.stmt("always @(posedge Reset or posedge Preset or posedge GlobalClock)");
         out.stmt("begin");
         out.stmt("   if (Reset) s_current_state_reg <= 1'b0;");

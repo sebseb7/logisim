@@ -112,6 +112,14 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
 
   public static final int DP = 7;
 
+  public static String[] pinLabels() {
+    return new String[] {
+    "Segment_A", "Segment_B",
+    "Segment_C", "Segment_D",
+    "Segment_E", "Segment_F",
+    "Segment_G", "Segment_DP" };
+  }
+
   static Bounds[] SEGMENTS = null;
 
   static Color DEFAULT_OFF = new Color(220, 220, 220);

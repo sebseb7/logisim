@@ -39,7 +39,6 @@ import java.awt.Image;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -54,7 +53,7 @@ import com.cburch.logisim.gui.main.ExportImage;
 
 public class BoardPanel extends JPanel implements MouseListener, MouseMotionListener {
 
-	private BufferedImage image;
+	private Image image;
   private Image scaledImage;
 	private int xs, ys, w, h;
 	private boolean editing;
@@ -81,7 +80,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 		} catch (IOException ex) { }
 	}
 	
-  public void setImage(BufferedImage pic) {
+  public void setImage(Image pic) {
 		image = pic;
     if (image != null)
       scaledImage = image.getScaledInstance(getWidth(), getHeight(), 4);
@@ -96,7 +95,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 
 	public void clear() {
 		image = null;
-    scaledImage = false;
+    scaledImage = null;
 	}
 
 	public Boolean isEmpty() {
@@ -111,7 +110,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 
   @Override
 	public void mouseClicked(MouseEvent e) {
-		if (editing && !this.ImageLoaded()) {
+		if (editing && image != null) {
 			JFileChooser fc = new JFileChooser();
 			fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 			fc.setDialogTitle("Choose FPGA board picture to use");
@@ -131,7 +130,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 
   @Override
 	public void mouseDragged(MouseEvent e) {
-		if (editing && this.ImageLoaded()) {
+		if (editing && image != null) {
 			w = e.getX() - xs;
 			h = e.getY() - ys;
 			this.repaint();
@@ -149,7 +148,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 
   @Override
 	public void mousePressed(MouseEvent e) {
-		if (editing && this.ImageLoaded()) {
+		if (editing && image != null) {
 			xs = e.getX();
 			ys = e.getY();
 			w = h = 0;
@@ -160,9 +159,9 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 
   @Override
 	public void mouseReleased(MouseEvent e) {
-		if (editing && this.ImageLoaded()) {
+		if (editing && image != null) {
       if (h != 0 && w != 0) {
-        Bounds rect = new Bounds(xs, ys, w, h);
+        Bounds rect = Bounds.create(xs, ys, w, h);
         edit_parent.doRectSelectDialog(rect);
       }
       xs = ys = w = h = 0;
@@ -174,7 +173,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 	public void paint(Graphics g) {
 		super.paint(g);
 		if (image != null) {
-			g.drawImage(scaledImage);
+			g.drawImage(scaledImage, 0, 0, null);
 			g.setColor(Color.red);
 			if (w != 0 || h != 0) {
 				int xr, yr, wr, hr;
@@ -206,8 +205,8 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
         float ascent = fm.getAscent();
         int ypos = 100, i = 0;
         for (String msg : lines) {
-          int xpos = (getWidth() - fm.stringWidth(message)) / 2;
-          g.drawString(message, xpos, ypos);
+          int xpos = (getWidth() - fm.stringWidth(msg)) / 2;
+          g.drawString(msg, xpos, ypos);
           ypos = 200 + (int)((i++) * 1.5 * ascent);
         }
 			}

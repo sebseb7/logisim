@@ -43,19 +43,16 @@ public class ComparatorHDLGenerator extends HDLGenerator {
       parameters.add("BitWidth", w);
       inPorts.add("DataA", "BitWidth", Comparator.IN0, false);
       inPorts.add("DataB", "BitWidth", Comparator.IN1, false);
-      outPorts.add("A_GT_B", 1, Comparator.GT, null);
-      outPorts.add("A_EQ_B", 1, Comparator.EQ, null);
-      outPorts.add("A_LT_B", 1, Comparator.LT, null);
     } else {
       // 1-bit version
       parameters.add("TwosComplement", uMode() ? 0 : 1);
       inPorts.add("DataA", 1, Comparator.IN0, false);
       inPorts.add("DataB", 1, Comparator.IN1, false);
-      outPorts.add("Result", 1, Comparator.OUT, null);
-      inPorts.add("CarryIn", 1, Comparator.C_OUT, false);
-      outPorts.add("CarryOut", 1, Comparator.C_OUT, null);
     }
-    if (ctx.isVhdl) {
+    outPorts.add("A_GT_B", 1, Comparator.GT, null);
+    outPorts.add("A_EQ_B", 1, Comparator.EQ, null);
+    outPorts.add("A_LT_B", 1, Comparator.LT, null);
+    if (_hdl.isVhdl && isBus()) {
       wires.add("s_slt", 1);
       wires.add("s_ult", 1);
       wires.add("s_sgt", 1);
@@ -64,7 +61,7 @@ public class ComparatorHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     if (out.isVhdl && !isBus()) {
       out.stmt("A_EQ_B <= DataA XNOR DataB;");
       out.stmt("A_LT_B <= DataA AND NOT(DataB) WHEN TwosComplement = 1 ELSE");
@@ -97,7 +94,7 @@ public class ComparatorHDLGenerator extends HDLGenerator {
   }
 
   protected boolean uMode() {
-    return attrs.getValue(Comparator.MODE_ATTRIBUTE) == Comparator.UNSIGNED_OPTION;
+    return _attrs.getValue(Comparator.MODE_ATTRIBUTE) == Comparator.UNSIGNED_OPTION;
   }
 
 }

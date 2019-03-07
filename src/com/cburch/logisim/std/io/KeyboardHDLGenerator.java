@@ -29,8 +29,6 @@
  */
 package com.cburch.logisim.std.io;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.io.File;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
@@ -42,12 +40,12 @@ public class KeyboardHDLGenerator extends HDLGenerator {
 
   public KeyboardHDLGenerator(HDLCTX ctx) {
     super(ctx, "io", "Keyboard_${CIRCUIT}_${LABEL}", "i_Kbd");
-    int w = attrs.getValue(Keyboard.ATTR_WIDTH);
-    int d = attrs.getValue(Keyboard.ATTR_BUFFER);
+    int w = _attrs.getValue(Keyboard.ATTR_WIDTH);
+    int d = _attrs.getValue(Keyboard.ATTR_BUFFER);
     parameters.add("AsciiWidth", w);
     parameters.add("FIFO_DEPTH", d);
     // See HDL code below for explanation of these parameters.
-    long freq = _nets.RawFPGAClockFreq();
+    long freq = _nets.getClockBus().RawFPGAClockFreq;
     int counter_size = (int)Math.ceil(Math.log(5.0*freq/1e6) / Math.log(2));
     parameters.add("clk_freq", (int)freq);
     parameters.add("counter_size", counter_size);
@@ -67,16 +65,12 @@ public class KeyboardHDLGenerator extends HDLGenerator {
     outPorts.add("Data", "AsciiWidth", Keyboard.OUT, null);
     outPorts.add("Available", 1, Keyboard.AVL, null);
  
-    ArrayList<String> labels = new ArrayList<>();
-    labels.add("ps2kb_clk");
-    labels.add("ps2kb_dat");
-    labels.add("ps2ms_clk");
-    labels.add("ps2ms_dat");
+    String[] labels = new String[] { "ps2kb_clk", "ps2kb_dat", "ps2ms_clk", "ps2ms_dat" };
     hiddenPort = HiddenPort.makeInOutport(labels, HiddenPort.Ribbon, HiddenPort.Pin);
   }
 
   @Override
-	protected Hdl getArchitecture(HashMap<String, File> memInitFiles) {
+	protected Hdl getArchitecture() {
     Hdl out = new Hdl(_lang, _err);
     generateFileHeader(out);
 

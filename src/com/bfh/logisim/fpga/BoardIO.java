@@ -32,7 +32,6 @@ package com.bfh.logisim.fpga;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 
@@ -52,7 +51,7 @@ import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.std.io.DipSwitch;
 import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.std.io.RGBLed;
-import com.cburch.logisim.std.io.SevenSegment;
+// import com.cburch.logisim.std.io.SevenSegment;
 import com.cburch.logisim.util.Errors;
 import static com.bfh.logisim.netlist.Netlist.Int3;
 
@@ -141,11 +140,9 @@ public class BoardIO {
     public String[] pinLabels(int width) {
       switch (this) {
       case SevenSegment:
-        return SevenSegment.pinLabels();
+        return com.cburch.logisim.std.io.SevenSegment.pinLabels();
       case RGBLED:
         return RGBLed.pinLabels();
-      case DIPSwitch:
-        return DipSwitch.pinLabels(width);
       default:
         return genericPinLabels(width);
       }
@@ -157,7 +154,7 @@ public class BoardIO {
         labels[0] = "Pin";
       else
         for (int i = 0; i < width; i++)
-          labels[0] = "Pin " + i;
+          labels[0] = "Pin_" + i;
       return labels;
     }
 
@@ -180,13 +177,14 @@ public class BoardIO {
     type = t;
     width = w;
     syntheticValue = val;
-    label = t == Constant ? String.format("0x%x", val) : t.toString();
+    label = t == Type.Constant ? String.format("0x%x", val) : t.toString();
     activity = PinActivity.ACTIVE_HIGH;
     // rest are defaults/empty
     rect = null;
     standard = IoStandard.UNKNOWN;
     pull = PullBehavior.UNKNOWN;
     strength = DriveStrength.UNKNOWN;
+    pins = null;
   }
 
   public static BoardIO makeSynthetic(Type t, int w, int val) {
@@ -214,14 +212,16 @@ public class BoardIO {
     activity = a;
     strength = g;
     pins = x;
+    // rest are defaults/empty
+    syntheticValue = 0;
   }
 
   public static BoardIO parseXml(Node node) throws Exception {
     Type t = Type.get(node.getNodeName());
-    if (t == Type.UNKNOWN)
+    if (t == Type.Unknown)
       throw new Exception("unrecognized I/O resource type: " + node.getNodeName());
 
-    HashMap<String, String> xml = new HashMap<>();
+    HashMap<String, String> params = new HashMap<>();
     NamedNodeMap attrs = node.getAttributes();
     for (int i = 0; i < attrs.getLength(); i++) {
       Node attr = attrs.item(i);
@@ -237,11 +237,11 @@ public class BoardIO {
     int h = Integer.parseInt(params.getOrDefault("Height", "-1"));
 		if (x < 0 || y < 0 || w < 1 || h < 1)
       throw new Exception("invalid coordinates or size for I/O resource");
-		Bounds r = new Bounds(x, y, w, h);
+		Bounds r = Bounds.create(x, y, w, h);
 
-    PullBehavior p = (t == Types.Pin) ? PullBehavior.ACTIVE_HIGH
-        : PullBehavior.get(params.get("FPGAPinPullBehavior"));
-    PinActivity a = PinActivity.get(params.get("ActivityLevel"));
+    PullBehavior p = PullBehavior.get(params.get("FPGAPinPullBehavior"));
+    PinActivity a = (t == Type.Pin) ? PinActivity.ACTIVE_HIGH :
+        PinActivity.get(params.get("ActivityLevel"));
     IoStandard s = IoStandard.get(params.get("FPGAPinIOStandard"));
     DriveStrength g = DriveStrength.get(params.get("FPGAPinDriveStrength"));
 
@@ -257,7 +257,7 @@ public class BoardIO {
       if (width < 0)
         throw new Exception("invalid pin count for " + t + " " + label);
       pins = new String[width];
-      for (int i = 0; width; i++) {
+      for (int i = 0; i < width; i++) {
         pins[i] = params.get("FPGAPin_" + i);
         if (pins[i] == null)
           throw new Exception("missing pin label " + i + " for " + t + " " + label);
@@ -269,34 +269,34 @@ public class BoardIO {
 
 	public Element encodeXml(Document doc) throws Exception {
     Element elt = doc.createElement(type.toString());
-    elt.setAttribute("LocationX", rect.x);
-    elt.setAttribute("LocationY", rect.y);
-    elt.setAttribute("Width", rect.width);
-    elt.setAttribute("Height", rect.height);
+    elt.setAttribute("LocationX", ""+rect.x);
+    elt.setAttribute("LocationY", ""+rect.y);
+    elt.setAttribute("Width", ""+rect.width);
+    elt.setAttribute("Height", ""+rect.height);
     if (label != null)
       elt.setAttribute("Label", label);
     if (width == 1) {
       elt.setAttribute("FPGAPinName", pins[0]);
     } else {
-      elt.setAttribute("NrOfPins", width);
+      elt.setAttribute("NrOfPins", ""+width);
       for (int i = 0; i < width; i++)
         elt.setAttribute("FPGAPin_"+i, pins[i]);
     }
     if (strength != DriveStrength.UNKNOWN)
-      elt.setAttribute("FPGAPinDriveStrength", strength);
-    if (activity != PinActivity.UNKNOWN)
-      elt.setAttribute("ActivityLevel", activity);
-    if (pull != PullBehavior.UNKNOWN && type != Type.PIN) // skip Pin
-      elt.setAttribute("FPGAPinPullBehavior", pull);
+      elt.setAttribute("FPGAPinDriveStrength", ""+strength);
+    if (activity != PinActivity.UNKNOWN && type != Type.Pin) // skip Pin
+      elt.setAttribute("ActivityLevel", ""+activity);
+    if (pull != PullBehavior.UNKNOWN)
+      elt.setAttribute("FPGAPinPullBehavior", ""+pull);
     if (standard != IoStandard.UNKNOWN)
-      elt.setAttribute("FPGAPinIOStandard", standard);
+      elt.setAttribute("FPGAPinIOStandard", ""+standard);
     return elt;
   }
 
 	public static BoardIO makeUserDefined(Type t, Bounds r, BoardEditor parent) {
     int w = t.defaultWidth();
     BoardIO template = new BoardIO(t, w, null, r,
-        IoStandard.UNKNOWN, PullBehavior.UNKNOWN, PinActivity.UNKNOWN, DriveStrength.UNKOWN,
+        IoStandard.UNKNOWN, PullBehavior.UNKNOWN, PinActivity.UNKNOWN, DriveStrength.UNKNOWN,
         null);
     if (t == Type.DIPSwitch || t == Type.Ribbon)
       template = doSizeDialog(template, parent);
@@ -307,16 +307,16 @@ public class BoardIO {
   }
 
   private static BoardIO doSizeDialog(BoardIO t, BoardEditor parent) {
-    int min = t.type == DIPSwitch ? DipSwitch.MIN_SWITCH : PortIO.MIN_IO;
-    int max = t.type == DIPSwitch ? DipSwitch.MAX_SWITCH : PortIO.MAX_IO;
+    int min = t.type == Type.DIPSwitch ? DipSwitch.MIN_SWITCH : PortIO.MIN_IO;
+    int max = t.type == Type.DIPSwitch ? DipSwitch.MAX_SWITCH : PortIO.MAX_IO;
     final int[] width = new int[] { t.width };
 
-    final JDialog dlg = new JDialog(parent.panel, t.type + " Size");
+    final JDialog dlg = new JDialog(parent, t.type + " Size");
     dlg.setLayout(new GridBagLayout());
     GridBagConstraints c = new GridBagConstraints();
     c.fill = GridBagConstraints.HORIZONTAL;
 
-    String things = t.type == DIPSwitch ? "switches" : "pins";
+    String things = t.type == Type.DIPSwitch ? "switches" : "pins";
     JLabel question = new JLabel("Specify number of " + things + " in " + t.type + ":");
 
     JComboBox<Integer> size = new JComboBox<>();
@@ -367,7 +367,7 @@ public class BoardIO {
   }
 
   private static BoardIO doInfoDialog(BoardIO t, BoardEditor parent) {
-    final JDialog dlg = new JDialog(parent.panel, t.type + " Properties");
+    final JDialog dlg = new JDialog(parent, t.type + " Properties");
     dlg.setLayout(new GridBagLayout());
     GridBagConstraints c = new GridBagConstraints();
     c.fill = GridBagConstraints.HORIZONTAL;
@@ -394,7 +394,7 @@ public class BoardIO {
       label.setText(t.label);
 
     String[] pinLabels = t.type.pinLabels(t.width);
-    JTextField[] pinLocs = new JTextField[width];
+    JTextField[] pinLocs = new JTextField[t.width];
     for (int i = 0; i < t.width; i++)
       pinLocs[i] = new JTextField(6);
 
@@ -470,12 +470,13 @@ public class BoardIO {
     if (strength != null)
       defaultStrength = (DriveStrength)strength.getSelectedItem();
 
-    PullBehavior p = pull != null ? defaultPull : PullBehavior.UNKNOWN;
+    PinActivity a = activity != null ? defaultActivity : PinActivity.UNKNOWN;
     if (t.type == Type.Pin)
-      p = PullBehavior.ACTIVE_HIGH; // special case: Pin is always active high
+      a = PinActivity.ACTIVE_HIGH; // special case: Pin is always active high
 
-    return new BoardIO(t.type, t.width, txt, t.rect, defaultStandard, p,
-        activity != null ? defaultActivity : PinActivity.UNKNOWN,
+    return new BoardIO(t.type, t.width, txt, t.rect, defaultStandard,
+        pull != null ? defaultPull : PullBehavior.UNKNOWN,
+        a,
         strength != null ? defaultStrength : DriveStrength.UNKNOWN,
         pins);
   }
@@ -494,12 +495,10 @@ public class BoardIO {
   
   @Override
   public String toString() {
-    if (desc.equals("DIPSwitch") && size.size() > 0)
-      return String.format("%s[%d bits]", desc, size);
-    else if (desc.equals("Ribbon") && size.size() > 0)
-      return String.format("%s[%d in, %d inout, %d out]", desc, size.in, size.inout, size.out);
+    if (type == Type.DIPSwitch || type == Type.Ribbon) // types with variable size
+      return String.format("%s[%d bits]", type, width);
     else
-      return desc;
+      return type.toString(); // single-bit and other fixed-width types
   }
 
   // Postcondition: of the counts returned, at least two will be zero.
@@ -524,13 +523,13 @@ public class BoardIO {
   }
 
   // Precondition: of the counts in compWidth, at least two are zero.
-  public boolean isCompatible(Type compType, Int3 compWidth) {
+  public boolean isCompatible(Int3 compWidth, Type compType) {
     if (compWidth.size() > 1) {
       // Component is multi-bit, such as PortIO, DipSwitch, Keyboard, Tty,
       // RGBLed, SevenSegment, or a multi-bit top-level input or output Ribbon.
       // Ribbon can connect to anything (so long as the directions are
       // compatible), but others must connect to the exactly matching type.
-      if (compType != Ribbon && compType != type)
+      if (compType != Type.Ribbon && compType != type)
         return false;
       // Widths must match exactly, directions must be compatible.
       Int3 rsrc = getPinCounts();
@@ -542,7 +541,7 @@ public class BoardIO {
       // input or output Pin. Pin can connect to anything (so long as the
       // directions are compatible), but others must connect to the exactly
       // matching type.
-      if (compType != Pin && compType != type)
+      if (compType != Type.Pin && compType != type)
         return false;
       // Widths must be sufficient, directions must be compatible.
       Int3 rsrc = getPinCounts();
@@ -552,8 +551,8 @@ public class BoardIO {
     }
   }
 
-  public ArrayList<String> pinLabels() {
-    return type.pinLabels(width.size());
+  public String[] pinLabels() {
+    return type.pinLabels(width);
   }
 
 }

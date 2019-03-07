@@ -29,6 +29,8 @@
  */
 package com.cburch.logisim.std.memory;
 
+import java.util.ArrayList;
+
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
@@ -38,8 +40,8 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
   public ShiftRegisterHDLGenerator(HDLCTX ctx) {
     super(ctx, "memory", deriveHDLName(ctx.attrs), "i_Shft");
     int w = stdWidth();
-    int n = stages(attrs);
-    boolean parallel = attrs.getValue(ShiftRegister.ATTR_LOAD);
+    int n = stages();
+    boolean parallel = _attrs.getValue(ShiftRegister.ATTR_LOAD);
 
     parameters.add("BitWidth", w);
     if (!parallel)
@@ -62,10 +64,11 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
   }
 
   private static String deriveHDLName(AttributeSet attrs) {
+    int n =  attrs.getValue(ShiftRegister.ATTR_LENGTH);
     if (!attrs.getValue(ShiftRegister.ATTR_LOAD))
       return "ShiftRegister"; // variation with 5 ports, no D/Q ports
     else
-      return "ShiftRegister_"+stages(attrs)+"_stages"; // variation with 5 ports + 2*N D/Q ports
+      return "ShiftRegister_"+n+"_stages"; // variation with 5 ports + 2*N D/Q ports
   }
 
 
@@ -162,9 +165,9 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
 
   @Override
 	protected void generateVhdlTypes(Hdl out) { // slight abuse, but this puts the VHDL constant in the right place
-    boolean parallel = attrs.getValue(ShiftRegister.ATTR_LOAD);
+    boolean parallel = _attrs.getValue(ShiftRegister.ATTR_LOAD);
     if (parallel && out.isVhdl)
-      out.stmt("constant Stages : integer := %d;", stages(attrs));
+      out.stmt("constant Stages : integer := %d;", stages());
   }
 
   @Override
@@ -184,8 +187,8 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  protected void generateBehavior(Hdl out, String rootDir) {
-    boolean parallel = attrs.getValue(ShiftRegister.ATTR_LOAD);
+  protected void generateBehavior(Hdl out) {
+    boolean parallel = _attrs.getValue(ShiftRegister.ATTR_LOAD);
     if (out.isVhdl) {
       out.stmt("GenBits : FOR n IN (BitWidth-1) DOWNTO 0 GENERATE");
       out.stmt("   OneBit : SingleBitShiftRegStage");
@@ -198,7 +201,7 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
       out.stmt("              ShiftIn     => ShiftIn(n),");
       out.stmt("              ShiftOut    => ShiftOut(n),");
       if (parallel) {
-        for (int i = stages(attrs)-1; i >= 0; i--) {
+        for (int i = stages()-1; i >= 0; i--) {
           out.stmt("              D(%d)       => D%d(n),", i);
           out.stmt("              Q(%d)       => Q%d(n),", i);
         }
@@ -209,7 +212,7 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
       out.stmt("END GENERATE genbits;");
     } else {
       if (parallel)
-        out.stmt("   localparam Stages = %d;", stages(attrs));
+        out.stmt("   localparam Stages = %d;", stages());
       out.stmt("genvar n;");
       out.stmt("generate");
       out.stmt("   for (n = 0 ; n < BitWidth-1 ; n =n+1)");
@@ -223,9 +226,9 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
       out.stmt("                 .ShiftIn(ShiftIn[n]),");
       out.stmt("                 .ShiftOut(ShiftOut[n]),");
       if (parallel) {
-        ArrayList<String> d = new Arraylist<>();
-        ArrayList<String> q = new Arraylist<>();
-        for (int i = stages(attrs)-1; i >= 0; i--) {
+        ArrayList<String> d = new ArrayList<>();
+        ArrayList<String> q = new ArrayList<>();
+        for (int i = stages()-1; i >= 0; i--) {
           d.add("D"+i+"(n)");
           d.add("Q"+i+"(n)");
         }
@@ -240,8 +243,8 @@ public class ShiftRegisterHDLGenerator extends HDLGenerator {
     }
   }
 
-  protected int stages(AttributeSet attrs) {
-    return attrs.getValue(ShiftRegister.ATTR_LENGTH);
+  protected int stages() {
+    return _attrs.getValue(ShiftRegister.ATTR_LENGTH);
   }
 
 }

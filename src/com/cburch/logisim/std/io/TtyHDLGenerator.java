@@ -30,20 +30,19 @@
 package com.cburch.logisim.std.io;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.io.File;
 
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.bfh.logisim.hdlgenerator.HiddenPort;
+import com.cburch.logisim.hdl.Hdl;
 
 public class TtyHDLGenerator extends HDLGenerator {
 
   public TtyHDLGenerator(HDLCTX ctx) {
     super(ctx, "io", "Tty_${LABEL}", "i_Tty");
-    int w = Tty.getWidth(attrs.getValue(Tty.ATTR_WIDTH));
+    int w = Tty.getWidth(_attrs.getValue(Tty.ATTR_WIDTH));
     parameters.add("AsciiWidth", w);
-    long freq = _nets.RawFPGAClockFreq();
+    long freq = _nets.getClockBus().RawFPGAClockFreq;
     long period_ns = 1000000000 / freq;
     parameters.add("CLK_PERIOD_NS", (int)period_ns);
 
@@ -62,23 +61,22 @@ public class TtyHDLGenerator extends HDLGenerator {
     inPorts.add("Clear", 1, Tty.CLR, false);
     inPorts.add("Data", "AsciiWidth", Tty.IN, false);
 
-    ArrayList<String> labels = new ArrayList<>();
-    labels.add("lcd_bl");
-    for (int i = 0; i < 8; i++)
-      labels.add("lcd_db"+i);
-    labels.add("lcd_en");
-    labels.add("lcd_rw");
-    labels.add("lcd_rs");
+    String[] labels = new String[] {
+      "lcd_bl",
+      "lcd_db0", "lcd_db1", "lcd_db2", "lcd_db3",
+      "lcd_db4", "lcd_db5", "lcd_db6", "lcd_db7",
+      "lcd_en",
+      "lcd_rw",
+      "lcd_rs" };
     hiddenPort = HiddenPort.makeInOutport(labels, HiddenPort.Ribbon, HiddenPort.Pin);
   }
 
   @Override
-	protected Hdl getArchitecture(HashMap<String, File> memInitFiles) {
+	protected Hdl getArchitecture() {
     Hdl out = new Hdl(_lang, _err);
     generateFileHeader(out);
 
     if (out.isVhdl) {
-      out.addAll(FileWriter.getGenerateRemark(ComponentName, _lang, _nets.projName()));
       out.add("");
       out.add("-------------------------------------------------------------------------------");
       out.add("-- Title      : TTY-like emulator and 16x2 LCD controller");
@@ -101,7 +99,7 @@ public class TtyHDLGenerator extends HDLGenerator {
       out.add("-- 2016-08-19  1.2      kwalsh      Added TTY style interface");
       out.add("-------------------------------------------------------------------------------");
       out.add("");
-      out.add("architecture RTL of " + ComponentName.toString() + " is ");
+      out.add("architecture RTL of " + hdlComponentName + " is ");
       out.add("");
       out.add("  -- constant CLK_PERIOD_NS : positive := 20; -- 50MHz");
       out.add("  constant DELAY_15_MS   : positive := 15 * 10**6 / CLK_PERIOD_NS + 1;");

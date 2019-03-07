@@ -34,7 +34,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Image;
-import java.awt.image.BufferedImage;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 
@@ -59,14 +58,13 @@ public class BoardIcon implements Icon {
     }
   }
 
-  public void setImage(BufferedImage img) {
+  public void setImage(Image img) {
     if (img != null)
       image = img.getScaledInstance(getIconWidth(),
-          getIconHeight(), BufferedImage.SCALE_SMOOTH);
+          getIconHeight(), Image.SCALE_SMOOTH);
     else
       image = null;
 		label.setIcon(this);
-    repaint();
     label.repaint();
   }
 

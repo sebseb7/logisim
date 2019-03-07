@@ -92,7 +92,7 @@ public class ShifterHDLGenerator extends HDLGenerator {
   }
   
   @Override
-  public void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     int w = stdWidth();
     int n = stages();
     out.comment("-- Accepted Mode Values:");
@@ -124,17 +124,17 @@ public class ShifterHDLGenerator extends HDLGenerator {
   }
 
   private int mode() {
-    Object mode = attrs.getValue(Shifter.ATTR_SHIFT);
+    Object mode = _attrs.getValue(Shifter.ATTR_SHIFT);
     if (mode == Shifter.SHIFT_LOGICAL_LEFT)
-      list.put("Mode", 0);
+      return 0;
     else if (mode == Shifter.SHIFT_ROLL_LEFT)
-      list.put("Mode", 1);
+      return 1;
     else if (mode == Shifter.SHIFT_LOGICAL_RIGHT)
-      list.put("Mode", 2);
+      return 2;
     else if (mode == Shifter.SHIFT_ARITHMETIC_RIGHT)
-      list.put("Mode", 3);
-    else if (mode == Shifter.SHIFT_ROLL_RIGHT)
-      list.put("Mode", 4);
+      return 3;
+    else // if (mode == Shifter.SHIFT_ROLL_RIGHT)
+      return 4;
   }
 
   private int stages() {

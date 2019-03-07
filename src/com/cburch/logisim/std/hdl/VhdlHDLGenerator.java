@@ -30,9 +30,6 @@
 
 package com.cburch.logisim.std.hdl;
 
-import java.io.File;
-import java.util.HashMap;
-
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
@@ -44,8 +41,8 @@ public class VhdlHDLGenerator extends HDLGenerator {
     super(ctx, "circuit", deriveHDLName(ctx.attrs), "i_Vhdl");
     VhdlContent content = content();
     for (VhdlContent.Generic g : content.getGenerics()) {
-      int v = attrs.getValue(VhdlEntityAttributes.forGeneric(g));
-      parameters.add(g.getName(), g.getType(), v, g.getDefaultValue());
+      int v = _attrs.getValue(VhdlEntityAttributes.forGeneric(g));
+      parameters.add(new ParameterInfo(g.getName(), g.getType(), v, g.getDefaultValue()));
     }
     int i = 0;
     for (VhdlParser.PortDescription p : content.getPorts()) {
@@ -71,7 +68,7 @@ public class VhdlHDLGenerator extends HDLGenerator {
 	}
 
   @Override
-	protected Hdl getArchitecture(HashMap<String, File> memInitFiles) {
+	protected Hdl getArchitecture() {
     Hdl out = new Hdl(_lang, _err);
     VhdlContent content = content();
     out.add(content.getContent()); // take entire user VHDL content as-is
@@ -79,7 +76,7 @@ public class VhdlHDLGenerator extends HDLGenerator {
   }
 
   private VhdlContent content() {
-    return ((VhdlEntityAttributes) attrs).getContent();
+    return ((VhdlEntityAttributes)_attrs).getContent();
   }
 
   // @Override

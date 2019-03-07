@@ -33,6 +33,7 @@ package com.bfh.logisim.gui;
 import java.awt.Color;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -44,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.function.Function;
 
 // import javax.xml.parsers.DocumentBuilder;
@@ -65,15 +67,20 @@ import javax.swing.AbstractListModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 
 // import com.bfh.logisim.data.Bounds;
 // import com.bfh.logisim.netlist.CorrectLabel;
@@ -112,13 +119,13 @@ public class BindingsDialog extends JDialog {
     this.pinBindings = pinBindings;
 
     for (BoardIO io : board)
-      rects.put(io, io.rect);
+      rects.put(io, new Rect(io));
 
     xmlDir = new File(projectPath).getParent();
     if (xmlDir == null)
       xmlDir = "";
     else if (xmlDir.length() > 0 && !xmlDir.endsWith(File.separator))
-      xmldir += File.separator;
+      xmlDir += File.separator;
 
     setTitle("Configure FPGA Pin Bindings");
     setResizable(false);
@@ -220,7 +227,7 @@ public class BindingsDialog extends JDialog {
     setLocationRelativeTo(parentFrame);
   }
 
-  private static class SelectionPanel extends JPanel {
+  private class SelectionPanel extends JPanel {
     SelectionPanel() {
       setPreferredSize(new Dimension(Board.IMG_WIDTH, Board.IMG_HEIGHT));
       setBackground(Color.BLACK);
@@ -243,7 +250,7 @@ public class BindingsDialog extends JDialog {
 
     Rect(BoardIO io) {
       this.io = io;
-      this.setPrefferedSize(new Dimension(io.rect.width, io.rect.height));
+      this.setPreferredSize(new Dimension(io.rect.width, io.rect.height));
       setOpaque(false);
       setBackground(Color.RED); // todo: semi-transparent
       setVisible(false);
@@ -252,13 +259,13 @@ public class BindingsDialog extends JDialog {
 
     @Override
     public void mouseClicked(MouseEvent e) {
-      if (!SwingUtilities.isLeftMouseButton())
+      if (!SwingUtilities.isLeftMouseButton(e))
         return;
       if (sources.current == null)
         return;
       if (sources.current.width.size() == 1 && io.width > 1)
-        doBitSelectPopup();
-      else if (pinBindings.mappings.get(sources.current))
+        doBitSelectPopup(e);
+      else if (pinBindings.mappings.get(sources.current) != null)
         sources.unmapCurrent();
       else
         sources.mapCurrent(io, -1);
@@ -272,17 +279,18 @@ public class BindingsDialog extends JDialog {
 
     void doBitSelectPopup(MouseEvent e) {
       JPopupMenu popup = new JPopupMenu("Select Bit");
-      ArrayList<String> pinLabels = io.type.getPinLabels(io.width);
+      String[] pinLabels = io.type.pinLabels(io.width);
       Dest dest = pinBindings.mappings.get(sources.current);
       for (int i = 0; i < io.width; i++) {
-        JCheckBoxMenuItem menu = new JCheckBoxMenuItem(pinLabels.get(i));
-        menu.setSelected(dest != null && dest.io == io && dest.bit == i);
-        menu.addActionListener(e -> sources.mapCurrent(io, i));
+        final int bit = i;
+        JCheckBoxMenuItem menu = new JCheckBoxMenuItem(pinLabels[i]);
+        menu.setSelected(dest != null && dest.io == io && dest.bit == bit);
+        menu.addActionListener((ev) -> sources.mapCurrent(io, bit));
         popup.add(menu);
       }
       if (dest != null && dest.io == io) {
         JMenuItem menu = new JMenuItem("Remove Mapping");
-        menu.addActionListener(e -> sources.unmapCurrent());
+        menu.addActionListener((ev) -> sources.unmapCurrent());
         popup.add(menu);
       }
       popup.show(this, e.getX(), e.getY());
@@ -293,7 +301,7 @@ public class BindingsDialog extends JDialog {
     }
   }
 
-  private static class SourcesModel extends AbstractListModel {
+  private class SourcesModel extends AbstractListModel {
     ArrayList<Source> data = new ArrayList<>();
     SourcesModel() {
       sync();
@@ -302,14 +310,14 @@ public class BindingsDialog extends JDialog {
       int n = data.size();
       if (n > 0) {
         data.clear();
-        fireIntervalRemoved(0, n-1);
+        fireIntervalRemoved(this, 0, n-1);
       }
-      for (Path path : pinBindings.components)
-        data.add(new PinBindings.sourceFor(path));
+      for (Path path : pinBindings.components.keySet())
+        data.add(pinBindings.sourceFor(path));
       Collections.sort(data, new NaturalOrderComparator<>(src -> src.path.toString()));
       n = data.size();
-      fireIntervalAdded(0, n-1);
-      for (Source src : pinBindings.mappings)
+      fireIntervalAdded(this, 0, n-1);
+      for (Source src : pinBindings.mappings.keySet())
         if (src.bit >= 0)
           expand(src.path, src.comp);
     }
@@ -317,7 +325,7 @@ public class BindingsDialog extends JDialog {
       int i = data.indexOf(src);
       if (i < 0)
         return;
-      fireIntervalChanged(i, i);
+      fireContentsChanged(this, i, i);
     }
     void expand(Path path, NetlistComponent comp) {
       int i = startIndex(path);
@@ -347,8 +355,8 @@ public class BindingsDialog extends JDialog {
       if (value instanceof Source) {
         Source src = (Source)value;
         done = pinBindings.mappings.containsKey(src);
-        int w = in.width.size();
-        String dir = in.width.in > 0 ? "in" : in.width.out > 0 ? "out" : "inout";
+        int w = src.width.size();
+        String dir = src.width.in > 0 ? "in" : src.width.out > 0 ? "out" : "inout";
         if (w == 1)
           value = String.format("%s [type %s, %s, 1 bit]", src.path, src.type, dir);
         else if (src.bit < 0)
@@ -377,7 +385,7 @@ public class BindingsDialog extends JDialog {
       // setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
       setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
       current = null;
-      addListSelectionListener(e -> selected(getSelectedValuue()));
+      addListSelectionListener(e -> selected(getSelectedValue()));
     }
     void selected(Source src) {
       Source old = current;
@@ -409,16 +417,16 @@ public class BindingsDialog extends JDialog {
           } catch (NumberFormatException ex) { }
         }
       }
-      BoardIO io = BoardIO.makeSynthetic(synthType, current.width.size(). val);
+      BoardIO io = BoardIO.makeSynthetic(synthType, current.width.size(), val);
       mapCurrent(io, -1);
     }
     void unmapCurrent() {
       if (current == null)
         return;
-      Dest old = pinBindings.mapping.get(current);
+      Dest old = pinBindings.mappings.get(current);
       if (old == null)
         return;
-      mappings.remove(current);
+      pinBindings.mappings.remove(current);
       model.changed(current);
       selectedChanged(current, current);
     }
@@ -432,13 +440,13 @@ public class BindingsDialog extends JDialog {
     }
   }
 
-  private static class Synthetic extends JToggleButton {
+  static final Color hilight = new Color(200, 0, 0);
+  private class Synthetic extends JToggleButton {
     BoardIO.Type type;
     int val;
     Color oldBg = null;
-    static final Color hilight = new Color(200, 0, 0);
     Synthetic(BoardIO.Type type, int val, String label, String icon, String tip) {
-      super(label, getIcon(icon));
+      super(label, BindingsDialog.getIcon(icon));
       this.type = type;
       this.val = val;
       setToolTipText(tip);
@@ -446,9 +454,9 @@ public class BindingsDialog extends JDialog {
       addItemListener(e -> {
         if (oldBg == null)
           oldBg = getBackground();
-        if(ev.getStateChange() == ItemEvent.SELECTED)
+        if(e.getStateChange() == ItemEvent.SELECTED)
           setBackground(hilight);
-        else if (ev.getStateChange() == ItemEvent.DESELECTED)
+        else if (e.getStateChange() == ItemEvent.DESELECTED)
           setBackground(oldBg);
       });
       addActionListener(e -> {
@@ -778,8 +786,8 @@ public class BindingsDialog extends JDialog {
     }
     @Override
 		public int compare(T objA, T objB) {
-      String a = stringify(objA);
-      String b = stringify(objB);
+      String a = stringify.apply(objA);
+      String b = stringify.apply(objB);
 			int na = a.length(), nb = b.length();
 			int ia = 0, ib = 0;
 			for (;; ia++, ib++) {

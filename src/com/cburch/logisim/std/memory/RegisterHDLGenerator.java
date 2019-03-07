@@ -47,7 +47,7 @@ public class RegisterHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  protected void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     if (out.isVhdl) {
       out.stmt("   Q <= s_state_reg;");
       out.stmt("");

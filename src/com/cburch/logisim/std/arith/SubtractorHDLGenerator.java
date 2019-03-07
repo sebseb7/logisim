@@ -45,7 +45,7 @@ public class SubtractorHDLGenerator extends HDLGenerator {
       outPorts.add("Result", "BitWidth", Subtractor.OUT, null);
       inPorts.add("BorrowIn", 1, Subtractor.B_IN, false);
       outPorts.add("BorrowOut", 1, Subtractor.B_OUT, null);
-      if (ctx.isVhdl) {
+      if (_hdl.isVhdl) {
         wires.add("s_A", "BitWidth+1");
         wires.add("s_B", "BitWidth+1");
         wires.add("s_C", 1);
@@ -58,7 +58,7 @@ public class SubtractorHDLGenerator extends HDLGenerator {
       outPorts.add("Result", 1, Subtractor.OUT, null);
       inPorts.add("BorrowIn", 1, Subtractor.B_IN, false);
       outPorts.add("BorrowOut", 1, Subtractor.B_OUT, null);
-      if (ctx.isVhdl) {
+      if (_hdl.isVhdl) {
         wires.add("s_A", 2);
         wires.add("s_B", 2);
         wires.add("s_C", 1);
@@ -68,7 +68,7 @@ public class SubtractorHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     if (out.isVhdl) {
       out.stmt("s_A <= \"0\" & DataA;");
       out.stmt("s_B <= \"0\" & not(DataB);");

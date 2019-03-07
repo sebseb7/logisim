@@ -51,8 +51,8 @@ public class DecoderHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out, String rootDir) {
-    int ws = selWidth(attrs);
+  protected void generateBehavior(Hdl out) {
+    int ws = selWidth();
     int n = (1 << ws);
     for (int i = 0; i < n; i++) {
       String s = out.literal(i, ws);
@@ -64,6 +64,6 @@ public class DecoderHDLGenerator extends HDLGenerator {
   }
 
   protected int selWidth() {
-    return attrs.getValue(Plexers.ATTR_SELECT).getWidth();
+    return _attrs.getValue(Plexers.ATTR_SELECT).getWidth();
   }
 }

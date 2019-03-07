@@ -66,7 +66,7 @@ public class BoardEditor extends JFrame {
 		final GridBagConstraints c = new GridBagConstraints();
 
 		setResizable(false);
-		addComponentListener(this);
+		// addComponentListener(this);
 		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 		setLayout(new GridBagLayout());
 
@@ -76,9 +76,10 @@ public class BoardEditor extends JFrame {
 
 		JPanel buttons = new JPanel() {
       @Override
-      public void add(Component comp) {
+      public Component add(Component comp) {
         super.add(comp, c);
         c.gridx++;
+        return comp;
       }
     };
 		buttons.setLayout(new GridBagLayout());
@@ -94,18 +95,15 @@ public class BoardEditor extends JFrame {
 		buttons.add(name);
 
 		JButton chipset = new JButton("Configure FPGA Chipset");
-		cancel.addActionListener(e -> doChipsetDialog());
-		cancel.setEnabled(true);
-		buttons.add(cancel);
+		chipset.addActionListener(e -> doChipsetDialog());
+		buttons.add(chipset);
 
 		load = new JButton("Load");
-		loadButton.addActionListener(e -> doLoad());
-		loadButton.setEnabled(true);
+		load.addActionListener(e -> doLoad());
 		buttons.add(load);
 
 		JButton cancel = new JButton("Cancel");
 		cancel.addActionListener(e -> { setVisible(false); clear(); });
-		cancel.setEnabled(true);
 		buttons.add(cancel);
 
 		save = new JButton("Done");
@@ -176,7 +174,7 @@ public class BoardEditor extends JFrame {
 	}
 
 	private String getSaveDirectory() {
-		JFileChooser fc = new JFileChooser(old);
+		JFileChooser fc = new JFileChooser();
 		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		fc.setDialogTitle("Choose directory to save XML board description:");
 		int retval = fc.showOpenDialog(null);
@@ -188,7 +186,7 @@ public class BoardEditor extends JFrame {
     return dir;
 	}
 
-	public boolean reactivate() {
+	public void reactivate() {
     if (!isVisible()) {
       clear();
       setVisible(true);
@@ -213,15 +211,15 @@ public class BoardEditor extends JFrame {
 		c.gridy = 0;
 		c.fill = GridBagConstraints.HORIZONTAL;
 
-    final boolean save[] = new boolean[] { false };
+    final boolean ok[] = new boolean[] { false };
 		JButton cancel = new JButton("Cancel");
 		cancel.addActionListener((e) -> {
-      save[0] = false;
+      ok[0] = false;
       dlg.setVisible(false);
     });
 		JButton save = new JButton("Done and Store");
 		save.addActionListener((e) -> {
-      save[0] = true;
+      ok[0] = true;
       dlg.setVisible(false); 
     });
 
@@ -230,7 +228,7 @@ public class BoardEditor extends JFrame {
 		JTextField clkLoc = new JTextField();
 		JComboBox<PullBehavior> clkPull = new JComboBox<>(PullBehavior.OPTIONS);
 		JComboBox<IoStandard> clkStandard = new JComboBox<>(IoStandard.OPTIONS);
-		JComboBox<IoStandard> unusedPull = new JComboBox<>(PullBehavior.OPTIONS);
+		JComboBox<PullBehavior> unusedPull = new JComboBox<>(PullBehavior.OPTIONS);
 		JTextField jtagPos = new JTextField("1");
 		JComboBox<String> vendor = new JComboBox<>(Chipset.VENDORS);
 		JTextField family = new JTextField();
@@ -251,21 +249,21 @@ public class BoardEditor extends JFrame {
       vendor.setSelectedIndex(0);
       usbTmc.setSelected(false);
     } else {
-      rate.setText(fpga.speed.split(" ")[0]);
-      hz.setSelectedItem(fpga.speed.split(" ")[1]);
+      rate.setText(fpga.Speed.split(" ")[0]);
+      hz.setSelectedItem(fpga.Speed.split(" ")[1]);
       clkLoc.setText(fpga.ClockPinLocation);
       clkPull.setSelectedItem(fpga.ClockPullBehavior);
       clkStandard.setSelectedItem(fpga.ClockIOStandard);
       unusedPull.setSelectedItem(fpga.UnusedPinsBehavior);
-      jtagPos.setText(fpga.JTAGPos);
+      jtagPos.setText(""+fpga.JTAGPos);
       vendor.setSelectedItem(fpga.VendorName);
       family.setText(fpga.Technology);
       part.setText(fpga.Part);
       pkg.setText(fpga.Package);
       speed.setText(fpga.SpeedGrade);
       flashName.setText(fpga.FlashName);
-      flashPos.setText(fpga.FlashPos);
-      usbTmc.setselected(fpga.USBTMCDownload);
+      flashPos.setText(""+fpga.FlashPos);
+      usbTmc.setSelected(fpga.USBTMCDownload);
     }
 
 		JPanel freqPanel = new JPanel();
@@ -331,9 +329,9 @@ public class BoardEditor extends JFrame {
 
     for (;;) {
       dlg.setVisible(true);
-      if (!save[0])
+      if (!ok[0])
         break;
-      long freq = getFrequency(rate.getText(), hz.getSelectedItem());
+      long freq = getFrequency(rate.getText(), hz.getSelectedItem().toString());
       if (freq == 0) {
         Errors.title("Error").show("Please specify a clock frequency.");
       } else if (freq == -1) {
@@ -351,21 +349,21 @@ public class BoardEditor extends JFrame {
       } else if (speed.getText().isEmpty()) {
         Errors.title("Error").show("Please specify FPGA speed grade.");
       } else {
-        HashMap<String, String> params;
-        params.put("ClockInformation/Frequency", freq);
+        HashMap<String, String> params = new HashMap<>();
+        params.put("ClockInformation/Frequency", ""+freq);
         params.put("ClockInformation/FPGApin", clkLoc.getText());
-        params.put("ClockInformation/PullBehavior", clkPull.getSelectedItem());
-        params.put("ClockInformation/IOStandard", clkStandard.getSelectedItem());
+        params.put("ClockInformation/PullBehavior", ""+clkPull.getSelectedItem());
+        params.put("ClockInformation/IOStandard", ""+clkStandard.getSelectedItem());
         params.put("FPGAInformation/Family", family.getText() );
         params.put("FPGAInformation/Part", part.getText());
         params.put("FPGAInformation/Package", pkg.getText());
         params.put("FPGAInformation/Speedgrade", speed.getText());
-        params.put("FPGAInformation/Vendor", vendor.getText());
-        params.put("FPGAInformation/USBTMC", usbTmc.isSelected());
+        params.put("FPGAInformation/Vendor", ""+vendor.getSelectedItem());
+        params.put("FPGAInformation/USBTMC", ""+usbTmc.isSelected());
         params.put("FPGAInformation/JTAGPos", jtagPos.getText());
         params.put("FPGAInformation/FlashPos", flashPos.getText());
         params.put("FPGAInformation/FlashName", flashName.getText());
-        params.put("UnusedPins/PullBehavior", unusedPull.getSelectedItem());
+        params.put("UnusedPins/PullBehavior", ""+unusedPull.getSelectedItem());
         try {
           fpga = new Chipset(params);
           break;

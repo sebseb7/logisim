@@ -36,19 +36,19 @@ public class hex2sevensegHDLGenerator extends HDLGenerator {
 
   public hex2sevensegHDLGenerator(HDLCTX ctx) {
     super(ctx,"bfh", "Hex_to_7_Segment_Decoder", "i_HexTo7");
-    inPorts.add(new PortInfo("Hexin", 4, hex2sevenseg.Hexin, false));
-    outPorts.add(new PortInfo("Segment_A", 1, hex2sevenseg.Segment_A, null));
-    outPorts.add(new PortInfo("Segment_B", 1, hex2sevenseg.Segment_B, null));
-    outPorts.add(new PortInfo("Segment_C", 1, hex2sevenseg.Segment_C, null));
-    outPorts.add(new PortInfo("Segment_D", 1, hex2sevenseg.Segment_D, null));
-    outPorts.add(new PortInfo("Segment_E", 1, hex2sevenseg.Segment_E, null));
-    outPorts.add(new PortInfo("Segment_F", 1, hex2sevenseg.Segment_F, null));
-    outPorts.add(new PortInfo("Segment_G", 1, hex2sevenseg.Segment_G, null));
+    inPorts.add("Hexin", 4, hex2sevenseg.Hexin, false);
+    outPorts.add("Segment_A", 1, hex2sevenseg.Segment_A, null);
+    outPorts.add("Segment_B", 1, hex2sevenseg.Segment_B, null);
+    outPorts.add("Segment_C", 1, hex2sevenseg.Segment_C, null);
+    outPorts.add("Segment_D", 1, hex2sevenseg.Segment_D, null);
+    outPorts.add("Segment_E", 1, hex2sevenseg.Segment_E, null);
+    outPorts.add("Segment_F", 1, hex2sevenseg.Segment_F, null);
+    outPorts.add("Segment_G", 1, hex2sevenseg.Segment_G, null);
     wires.add("s_output_value", 7);
   }
 	
 	@Override
-  public void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
   // todo: verilog support
 		out.stmt("Segment_A <= s_output_value(0);");
 		out.stmt("Segment_B <= s_output_value(1);");

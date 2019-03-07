@@ -29,6 +29,7 @@
  */
 package com.cburch.logisim.std.io;
 
+import com.bfh.logisim.netlist.Net;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.hdlgenerator.HDLInliner;
 import com.bfh.logisim.hdlgenerator.HiddenPort;
@@ -41,23 +42,22 @@ public class ButtonHDLGenerator extends HDLInliner {
   }
   
   public static ButtonHDLGenerator forButton(HDLCTX ctx) {
-    this(ctx, "Button_${LABEL}");
-    hiddenPort = HiddenPort.makeInport(1, HiddenPort.Button, HiddenPort.Pin);
+    ButtonHDLGenerator g = new ButtonHDLGenerator(ctx, "Button_${LABEL}");
+    g.hiddenPort = HiddenPort.makeInport(1, HiddenPort.Button, HiddenPort.Pin);
+    return g;
   }
 
   public static ButtonHDLGenerator forDipSwitch(HDLCTX ctx) {
-    this(ctx, "DIPSwitch_${LABEL}");
-    int n = attrs.getValue(ATTR_SIZE).getWidth();
-    ArrayList<String> labels = new ArrayList<>();
-    for (int i = 1; i <= n; i++)
-      LabelNames.add("sw_" + i);
-    hiddenPort = HiddenPort.makeInport(n, HiddenPort.DIPSwitch, HiddenPort.Button, HiddenPort.Ribbon, HiddenPort.Pin);
+    ButtonHDLGenerator g = new ButtonHDLGenerator(ctx, "DIPSwitch_${LABEL}");
+    int n = ctx.attrs.getValue(DipSwitch.ATTR_SIZE).getWidth();
+    g.hiddenPort = HiddenPort.makeInport(n, HiddenPort.DIPSwitch, HiddenPort.Button, HiddenPort.Ribbon, HiddenPort.Pin);
+    return g;
   }
 
   @Override
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
-    int b = comp.getLocalHiddenPortIndices().in.start;
-    for (int i = 0; i < comp.ports.size(); i++) {
+    int b = comp.getLocalHiddenPortIndices().start.in;
+    for (int i = 0; i < comp.portConnections.size(); i++) {
       Net net = comp.getConnection(i);
       if (net != null)
         out.assign(net.name, "LOGISIM_HIDDEN_FPGA_INPUT", b + i);

@@ -39,13 +39,13 @@ public class bin2bcdHDLGenerator extends HDLGenerator {
 
   public bin2bcdHDLGenerator(HDLCTX ctx) {
     super(ctx, "bfh", deriveHDLName(ctx.attrs), "i_BinToBcd");
-    int w = bitWidth(attrs);
-    int n = numPorts(attrs);
+    int w = bitWidth(_attrs);
+    int n = numPorts(_attrs);
     parameters.add("BitWidth", w);
-    inPorts.add(new PortInfo("BinValue", "BitWidth", 0, false));
+    inPorts.add("BinValue", "BitWidth", 0, false);
 		for (int i = 0 ; i < n; i++)
-			outPorts.add(new PortInfo("BCD"+(int)Math.pow(10, i), 4, 1+i, null));
-    switch (numPorts) {
+			outPorts.add("BCD"+(int)Math.pow(10, i), 4, 1+i, null);
+    switch (n) {
     case 2: 
       for (int i = 0; i <= 3; i++)
         wires.add("s_level_"+i, 7);
@@ -66,9 +66,9 @@ public class bin2bcdHDLGenerator extends HDLGenerator {
 	}
 	
 	@Override
-  public void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     if (out.isVhdl) {
-      switch (numPorts(attrs)) {
+      switch (numPorts(_attrs)) {
       case 2 : out.stmt("s_level_0(6 DOWNTO BitWidth) <= (OTHERS => '0');");
                out.stmt("s_level_0(BitWidth-1 DOWNTO 0) <= BinValue;");
                out.stmt("s_level_1(2 DOWNTO 0) <= s_level_0(2 DOWNTO 0);");
@@ -186,11 +186,11 @@ public class bin2bcdHDLGenerator extends HDLGenerator {
 		out.stmt("END PROCESS ADD3_%s;", processName);
 	}
 
-  private static int bitWidth(AttributeSet attrs); {
+  private static int bitWidth(AttributeSet attrs) {
 		return attrs.getValue(bin2bcd.ATTR_BinBits).getWidth();
   }
 
-  private static int numPorts(AttributeSet attrs); {
+  private static int numPorts(AttributeSet attrs) {
     return (int)(Math.log10(1 << bitWidth(attrs)) + 1.0);
   }
 }

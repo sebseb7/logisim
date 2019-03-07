@@ -48,7 +48,7 @@ import com.cburch.logisim.util.Errors;
 
 class BoardWriter {
 
-	public boolean write(String filename, Board board) {
+	public static boolean write(String filename, Board board) {
     Document doc;
 		try {
       Chipset chip = board.fpga;
@@ -63,22 +63,22 @@ class BoardWriter {
 
       put(doc, root, "BoardInformation", "Description of FPGA and its clock",
           make(doc, "FPGAInformation",
-            "Vendor", Chipset.DESC[chip.Vendor].toUperCase(),
+            "Vendor", chip.VendorName,
             "Part", chip.Part,
             "Family", chip.Technology,
             "Package", chip.Package,
             "Speedgrade", chip.SpeedGrade,
             "USBTMC", chip.USBTMCDownload,
             "JTAGPos", chip.JTAGPos,
-            "FlashName", ""+chip.FlashName,
+            "FlashName", chip.FlashName,
             "FlashPos", chip.FlashPos),
           make(doc, "ClockInformation",
             "Frequency", chip.ClockFrequency,
             "FPGApin", chip.ClockPinLocation.toUpperCase(),
-            "PullBehavior", PullBehaviors.DESC[chip.ClockPullBehavior],
-            "IOStandard", IOStandards.DESC[chip.ClockIOStandard]),
+            "PullBehavior", chip.ClockPullBehavior,
+            "IOStandard", chip.ClockIOStandard),
           make(doc, "UnusedPins",
-            "PullBehavior", PullBehaviors.DESC[chip.UnusedPinsBehavior]));
+            "PullBehavior", chip.UnusedPinsBehavior));
 
       Element io = put(doc, root, "IOComponents", "Description of all board I/O components");
 			for (BoardIO comp : board)
@@ -88,12 +88,12 @@ class BoardWriter {
 			writer.CreateStream(board.image);
 
       Element pic = put(doc, root, "BoardPicture", "Compressed image of board",
-          make("PictureDimension",
+          make(doc, "PictureDimension",
             "Width", board.image.getWidth(null),
             "Height", board.image.getHeight(null)),
-          make("CompressionCodeTable",
+          make(doc, "CompressionCodeTable",
             "TableData", writer.GetCodeTable()),
-          make("PixelData",
+          make(doc, "PixelData",
             "PixelRGB", writer.GetCompressedString()));
 		} catch (Exception e) {
       Errors.title("Error").show("Error encoding XML data: " + e.getMessage(), e);
@@ -112,7 +112,7 @@ class BoardWriter {
       Errors.title("Error").show("Error writing XML data to "+filename+": " + e.getMessage(), e);
       return false;
 		}
-    return rue;
+    return true;
 	}
 
   private static Element put(Document doc, Element root,
@@ -125,7 +125,7 @@ class BoardWriter {
     return sec;
   }
 
-  private static Element make(Document doc, String name, String ...keyval) {
+  private static Element make(Document doc, String name, Object ...keyval) {
     Element e = doc.createElement(name);
     // Note: no idea why setAttribute would be used only for the first one...
     // e.setAttribute(keyval[0], keyval[1]);
@@ -135,7 +135,8 @@ class BoardWriter {
     //   e.setAttributeNode(a);
     // }
     for (int i = 0; i < keyval.length; i += 2)
-      e.setAttribute(keyval[i], keyval[i+1]);
+      if (keyval[i+1] != null)
+        e.setAttribute(keyval[i].toString(), keyval[i+1].toString());
     return e;
   }
 

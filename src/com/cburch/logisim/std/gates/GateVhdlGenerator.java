@@ -177,15 +177,15 @@ public class GateVhdlGenerator extends HDLGenerator {
   }
 
   @Override
-  protected void generateBehavior(Hdl out, String rootDir) {
-    int n = attrs.getValueOrElse(GateAttributes.ATTR_INPUTS, 1);
+  protected void generateBehavior(Hdl out) {
+    int n = _attrs.getValueOrElse(GateAttributes.ATTR_INPUTS, 1);
     if (n > 1)
       generateInputInversions(out, n);
     if (n == 1)
       unaryOp(out);
     else if (n == 2)
       binaryOp(out);
-    else if (attrs.getValue(GateAttributes.ATTR_XOR) == GateAttributes.XOR_ODD)
+    else if (_attrs.getValue(GateAttributes.ATTR_XOR) == GateAttributes.XOR_ODD)
       oneHot(out, n);
     else 
       naryOp(out, n);
@@ -196,6 +196,6 @@ public class GateVhdlGenerator extends HDLGenerator {
   }
 
   protected int numInputs() {
-    return attrs.getValueOrElse(GateAttributes.ATTR_INPUTS, 1);
+    return _attrs.getValueOrElse(GateAttributes.ATTR_INPUTS, 1);
   }
 }

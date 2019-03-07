@@ -45,7 +45,7 @@ public class AdderHDLGenerator extends HDLGenerator {
       outPorts.add("Result", "BitWidth", Adder.OUT, null);
       inPorts.add("CarryIn", 1, Adder.C_IN, false);
       outPorts.add("CarryOut", 1, Adder.C_OUT, null);
-      if (ctx.isVhdl) {
+      if (_hdl.isVhdl) {
         wires.add("s_A", "BitWidth+1");
         wires.add("s_B", "BitWidth+1");
         wires.add("s_R", "BitWidth+1");
@@ -57,7 +57,7 @@ public class AdderHDLGenerator extends HDLGenerator {
       outPorts.add("Result", 1, Adder.OUT, null);
       inPorts.add("CarryIn", 1, Adder.C_OUT, false);
       outPorts.add("CarryOut", 1, Adder.C_OUT, null);
-      if (ctx.isVhdl) {
+      if (_hdl.isVhdl) {
         wires.add("s_A", 2);
         wires.add("s_B", 2);
         wires.add("s_R", 2);
@@ -66,7 +66,7 @@ public class AdderHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     if (out.isVhdl) {
       out.stmt("s_A <= \"0\" & DataA;");
       out.stmt("s_B <= \"0\" & DataB;");

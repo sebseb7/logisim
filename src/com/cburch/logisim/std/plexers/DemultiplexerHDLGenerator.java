@@ -49,7 +49,7 @@ public class DemultiplexerHDLGenerator extends HDLGenerator {
         outPorts.add("Out_"+i, 1, i, null);
     }
     inPorts.add("Sel", ws, n, true);
-    if (attrs.getValue(Plexers.ATTR_ENABLE)) {
+    if (_attrs.getValue(Plexers.ATTR_ENABLE)) {
       inPorts.add("Enable", 1, n+1, true); // may not be present
     } else {
       inPorts.add("Enable", 1, -1, true); // no port, use default instead
@@ -67,9 +67,9 @@ public class DemultiplexerHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out, String rootDir) {
-    int w = width(attrs);
-    int ws = selWidth(attrs);
+  protected void generateBehavior(Hdl out) {
+    int w = stdWidth();
+    int ws = selWidth();
     int n = (1 << ws);
     for (int i = 0; i < n; i++) {
       String s = out.literal(i, ws);
@@ -86,6 +86,6 @@ public class DemultiplexerHDLGenerator extends HDLGenerator {
   }
 
   protected int selWidth() {
-    return attrs.getValue(Plexers.ATTR_SELECT).getWidth();
+    return _attrs.getValue(Plexers.ATTR_SELECT).getWidth();
   }
 }

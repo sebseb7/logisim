@@ -51,11 +51,13 @@ import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 
 import com.bfh.logisim.fpga.Chipset;
+import com.bfh.logisim.fpga.DriveStrength;
 import com.bfh.logisim.fpga.IoStandard;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.fpga.PullBehavior;
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.settings.Settings;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.proj.Projects;
 
 public class XilinxDownload extends FPGADownload {
@@ -67,7 +69,7 @@ public class XilinxDownload extends FPGADownload {
     return new File(scriptPath + script_file).exists()
         && new File(scriptPath + vhdl_list_file).exists()
         && new File(ucfPath + ucf_file).exists()
-        && new File(scriptPath + download_ile).exists();
+        && new File(scriptPath + download_file).exists();
   }
 
   @Override
@@ -132,19 +134,16 @@ public class XilinxDownload extends FPGADownload {
 				}
 				CreateProject.waitFor();
 				if (CreateProject.exitValue() != 0) {
-					err
-							.AddFatalError("Failed to Synthesize Xilinx project; cannot download");
+					err.AddFatalError("Failed to Synthesize Xilinx project; cannot download");
 					panel.dispose();
 					return false;
 				}
 			} catch (IOException e) {
-				err
-						.AddFatalError("Internal Error during Xilinx download");
+				err.AddFatalError("Internal Error during Xilinx download");
 				panel.dispose();
 				return false;
 			} catch (InterruptedException e) {
-				err
-						.AddFatalError("Internal Error during Xilinx download");
+				err.AddFatalError("Internal Error during Xilinx download");
 				panel.dispose();
 				return false;
 			}
@@ -182,19 +181,16 @@ public class XilinxDownload extends FPGADownload {
 				}
 				CreateProject.waitFor();
 				if (CreateProject.exitValue() != 0) {
-					err
-							.AddFatalError("Failed to add Xilinx constraints; cannot download");
+					err.AddFatalError("Failed to add Xilinx constraints; cannot download");
 					panel.dispose();
 					return false;
 				}
 			} catch (IOException e) {
-				err
-						.AddFatalError("Internal Error during Xilinx download");
+				err.AddFatalError("Internal Error during Xilinx download");
 				panel.dispose();
 				return false;
 			} catch (InterruptedException e) {
-				err
-						.AddFatalError("Internal Error during Xilinx download");
+				err.AddFatalError("Internal Error during Xilinx download");
 				panel.dispose();
 				return false;
 			}
@@ -231,19 +227,16 @@ public class XilinxDownload extends FPGADownload {
 				}
 				CreateProject.waitFor();
 				if (CreateProject.exitValue() != 0) {
-					err
-							.AddFatalError("Failed to map Xilinx design; cannot download");
+					err.AddFatalError("Failed to map Xilinx design; cannot download");
 					panel.dispose();
 					return false;
 				}
 			} catch (IOException e) {
-				err
-						.AddFatalError("Internal Error during Xilinx download");
+				err.AddFatalError("Internal Error during Xilinx download");
 				panel.dispose();
 				return false;
 			} catch (InterruptedException e) {
-				err
-						.AddFatalError("Internal Error during Xilinx download");
+				err.AddFatalError("Internal Error during Xilinx download");
 				panel.dispose();
 				return false;
 			}
@@ -301,19 +294,16 @@ public class XilinxDownload extends FPGADownload {
 				}
 				CreateProject.waitFor();
 				if (CreateProject.exitValue() != 0) {
-					err
-							.AddFatalError("Failed to P&R Xilinx design; cannot download");
+					err.AddFatalError("Failed to P&R Xilinx design; cannot download");
 					panel.dispose();
 					return false;
 				}
 			} catch (IOException e) {
-				err
-						.AddFatalError("Internal Error during Xilinx download");
+				err.AddFatalError("Internal Error during Xilinx download");
 				panel.dispose();
 				return false;
 			} catch (InterruptedException e) {
-				err
-						.AddFatalError("Internal Error during Xilinx download");
+				err.AddFatalError("Internal Error during Xilinx download");
 				panel.dispose();
 				return false;
 			}
@@ -361,19 +351,16 @@ public class XilinxDownload extends FPGADownload {
 				}
 				CreateProject.waitFor();
 				if (CreateProject.exitValue() != 0) {
-					err
-							.AddFatalError("Failed generate bitfile; cannot download");
+					err.AddFatalError("Failed generate bitfile; cannot download");
 					panel.dispose();
 					return false;
 				}
 			} catch (IOException e) {
-				err
-						.AddFatalError("Internal Error during Xilinx download");
+				err.AddFatalError("Internal Error during Xilinx download");
 				panel.dispose();
 				return false;
 			} catch (InterruptedException e) {
-				err
-						.AddFatalError("Internal Error during Xilinx download");
+				err.AddFatalError("Internal Error during Xilinx download");
 				panel.dispose();
 				return false;
 			}
@@ -490,7 +477,7 @@ public class XilinxDownload extends FPGADownload {
   private boolean generateDownloadScript() {
 		boolean isCPLD = isCPLD(board.fpga);
 		String bitFileExt = isCPLD ? ".jed" : ".bit";
-    String jtagPos = board.fpga.JTAGPos;
+    int jtagPos = board.fpga.JTAGPos;
     Hdl out = new Hdl(lang, err);
 		out.stmt("setmode -bscan");
 		if (writeToFlash && board.fpga.FlashDefined) {
@@ -523,10 +510,10 @@ public class XilinxDownload extends FPGADownload {
 		return f != null && FileWriter.WriteContents(f, out, err);
   }
 
-  private boolean generateUcfFile() {
+  private boolean generateUcfFile(PinBindings ioResources) {
     Hdl out = new Hdl(lang, err);
 		if (ioResources.requiresOscillator) {
-			out.stmt("NET \"%s\" %s ;", CLK_PORT, xilinxCLockSpec(board));
+			out.stmt("NET \"%s\" %s ;", CLK_PORT, xilinxClockSpec(board.fpga));
 			out.stmt("NET \"%s\" TNM_NET = \"%s\" ;", CLK_PORT, CLK_PORT);
 			out.stmt("TIMESPEC \"TS_%s\" = PERIOD \"%s\" %s HIGH 50 % ;",
           CLK_PORT, CLK_PORT, board.fpga.Speed);
@@ -538,7 +525,7 @@ public class XilinxDownload extends FPGADownload {
         spec += " | " + io.pull.xilinx;
       if (io.strength != DriveStrength.UNKNOWN && io.strength != DriveStrength.DEFAULT)
         spec += " | DRIVE = " + io.strength.ma;
-      if (io.standard != IoStandard.Unknown && io.standard != IoStandard.DEFAULT)
+      if (io.standard != IoStandard.UNKNOWN && io.standard != IoStandard.DEFAULT)
         spec += " | IOSTANDARD = " + io.standard;
       out.stmt("NET \"%s\" %s ; # %s", net, spec, label);
     });
@@ -551,15 +538,15 @@ public class XilinxDownload extends FPGADownload {
     return generateVhdlListFile(hdlFiles)
         && generateRunScript()
         && generateDownloadScript()
-        && generateUcfFile();
+        && generateUcfFile(ioResources);
 	}
 
-	private static String xilinxCLockSpec(Chipset chip) {
+	private static String xilinxClockSpec(Chipset chip) {
     String spec = String.format("LOC = \"%s\"", chip.ClockPinLocation);
     PullBehavior pull = chip.ClockPullBehavior;
 		if (pull == PullBehavior.PULL_UP || pull == PullBehavior.PULL_DOWN)
 			spec += " | " + pull.xilinx;
-    IoStandard std = chip.ClockStandard;
+    IoStandard std = chip.ClockIOStandard;
 		if (std != IoStandard.DEFAULT && std != IoStandard.UNKNOWN)
 			spec += " | IOSTANDARD = " + std;
 		return spec;

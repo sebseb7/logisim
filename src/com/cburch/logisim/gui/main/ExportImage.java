@@ -78,7 +78,7 @@ public class ExportImage {
     Canvas canvas;
     File dest;
     FileFilter filter;
-    String fmt;
+    String ext;
     List<Circuit> circuits;
     double scale;
     boolean printerView;
@@ -102,11 +102,11 @@ public class ExportImage {
     private void export(Circuit circuit) {
       File filename;
       if (dest.isDirectory()) {
-        filename = new File(dest, circuit.getName() + fmt);
+        filename = new File(dest, circuit.getName() + ext);
       } else if (filter.accept(dest)) {
         filename = dest;
       } else {
-        String newName = dest.getName() + fmt;
+        String newName = dest.getName() + ext;
         filename = new File(dest.getParentFile(), newName);
       }
       String msg = exportImage(canvas, circuit,
@@ -253,7 +253,7 @@ public class ExportImage {
       add(comp);
     }
 
-    int getImageFormat() {
+    String getImageFormat() {
       if (formatGif.isSelected())
         return FORMAT_GIF;
       if (formatJpg.isSelected())

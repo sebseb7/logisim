@@ -69,14 +69,14 @@ public abstract class FPGADownload {
   public boolean generateScripts(PinBindings ioResources) {
     ArrayList<String> hdlFiles = new ArrayList<>();
     enumerateHDLFiles(circuitPath, hdlFiles);
-    generateScripts(ioResources, hdlFiles);
+    return generateScripts(ioResources, hdlFiles);
   }
 
   public abstract boolean generateScripts(PinBindings ioResources, ArrayList<String> hdlFiles);
   
   public abstract boolean readyForDownload();
 
-  public abstract void initiateDownload();
+  public abstract boolean initiateDownload();
   
   private void enumerateHDLFiles(String path, ArrayList<String> files) {
     if (lang == Settings.VHDL)

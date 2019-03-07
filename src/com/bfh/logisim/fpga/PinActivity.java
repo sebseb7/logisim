@@ -40,7 +40,7 @@ public class PinActivity {
 
   private PinActivity(String d) { desc = d; }
 
-  public PinActivity get(String desc) {
+  public static PinActivity get(String desc) {
     for (PinActivity p : OPTIONS)
       if (p.desc.equals(desc))
         return p;

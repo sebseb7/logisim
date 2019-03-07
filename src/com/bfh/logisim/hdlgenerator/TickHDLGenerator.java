@@ -163,7 +163,7 @@ public class TickHDLGenerator extends HDLGenerator {
     freq = clock_frequency;
     period = tick_period; // negative means dynamically adjustable period
 
-    inPorts.add(new PortInfo("FPGAClock", 1, -1, null)); // see getPortMappings below
+    inPorts.add("FPGAClock", 1, -1, null); // see getPortMappings below
 
     if (period == 0) {
       // full speed, no params
@@ -171,7 +171,7 @@ public class TickHDLGenerator extends HDLGenerator {
       // dynamic adjustable period
       int w = getDynamicCounterWidth();
       parameters.add("CtrWidth", w);
-      inPorts.add(new PortInfo("ReloadValueLessOne", "CtrWidth", -1, null)); // see getPortMappings below
+      inPorts.add("ReloadValueLessOne", "CtrWidth", -1, null); // see getPortMappings below
       registers.add("s_tick_reg", 1);
       registers.add("s_count_reg", "CtrWidth");
     } else {
@@ -184,7 +184,7 @@ public class TickHDLGenerator extends HDLGenerator {
       wires.add("ReloadValueLessOne", "CtrWidth");
     }
 
-    outPorts.add(new PortInfo("FPGATick", 1, -1, null)); // see getPortMappings below
+    outPorts.add("FPGATick", 1, -1, null); // see getPortMappings below
   }
 
   private static String deriveHdlName(int period) {
@@ -197,14 +197,14 @@ public class TickHDLGenerator extends HDLGenerator {
   }
 
   private int getDynamicCounterWidth() {
-    NetlistComponent dynClock = Nets.GetDynamicClock();
+    NetlistComponent dynClock = _nets.dynamicClock();
     if (dynClock == null) {
       _err.AddFatalError("Dynamic clock speed selected, but no dynamic clock control "
           + "component found. To use the dynamic clock speed feature, you must place a "
           + "\"dynamic clock control\" component in your main top-level circuit.");
       return 0;
     }
-    return dynClock.GetComponent().getAttributeSet().getValue(DynamicClock.WIDTH_ATTR).getWidth();
+    return dynClock.original.getAttributeSet().getValue(DynamicClock.WIDTH_ATTR).getWidth();
   }
 
   private int getStaticCounterWidth() {
@@ -217,7 +217,7 @@ public class TickHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  public void generateBehavior(Hdl out, String rootDir) {
+  protected void generateBehavior(Hdl out) {
     if (period == 0) {
       out.assign("FPGATick", out.one);
       return;
@@ -270,14 +270,12 @@ public class TickHDLGenerator extends HDLGenerator {
   }
 
   @Override
-  protected void getPortMappings(ArrayList<String> assn, NetlistComponent compUnused, PortInfo p) {
-    if (p.name.equals("FPGAClock")) {
-      assn.add(_hdl.map, p.name, FPGA_CLK_NET);
-    } else if (p.name.equals("ReloadValueLessOne")) {
-      assn.add(_hdl.map, p.name, FPGA_DYNCLK_PERIOD_NET);
-    } else if (p.name.equals("FPGATick")) {
-      assn.add(_hdl.map, p.name, FPGA_TICK_NET);
-    }
+  protected void getPortMappings(Hdl.Map map, NetlistComponent compUnused, PortInfo p) {
+    if (p.name.equals("FPGAClock"))
+      map.add(p.name, FPGA_CLK_NET);
+    else if (p.name.equals("ReloadValueLessOne"))
+      map.add(p.name, FPGA_DYNCLK_PERIOD_NET);
+    else if (p.name.equals("FPGATick"))
+      map.add(p.name, FPGA_TICK_NET);
   }
-
 }

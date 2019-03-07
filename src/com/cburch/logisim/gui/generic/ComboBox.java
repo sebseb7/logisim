@@ -39,6 +39,11 @@ public class ComboBox<T> extends JComboBox<T> {
     setKeySelectionManager(new MultiCharSelectionManager());
   }
 
+  public ComboBox() {
+    super();
+    setKeySelectionManager(new MultiCharSelectionManager());
+  }
+
   public static class MultiCharSelectionManager implements JComboBox.KeySelectionManager {
     String prefix = "";
     long last;
@@ -72,5 +77,9 @@ public class ComboBox<T> extends JComboBox<T> {
 
       return -1;
     }
+  }
+
+  public T getSelectedValue() {
+    return (T)getSelectedItem();
   }
 }

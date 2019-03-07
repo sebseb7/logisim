@@ -51,7 +51,7 @@ public class DFlipFlop extends AbstractFlipFlop {
   }
 
   @Override
-  protected FlipFlopHDLGenerator getHdlGenerator(HDLSupport.HDLCTX ctx) {
+  protected FlipFlopHDLGenerator getHDLGenerator(HDLSupport.HDLCTX ctx) {
     return new FlipFlopHDLGenerator(ctx, "DFF", "D Flip-Flip",
           new String[]{ "D" },
           "s_next_state <= D;",
