@@ -274,11 +274,17 @@ class TableTabCaret {
         model.setVisibleOutputEntry(cursor.row, cursor.col - inputs, newEntry);
       }
 
-      if (!markA.isValid() || !markB.isValid())
-        return;
-      Rectangle s = getSelection();
+      if (marked() && !markA.equals(markB))
+        moveCursor(dx, dy, getSelection());
+      else
+        moveCursor(dx, dy, null);
+    }
+
+    private void moveCursor(int dx, int dy, Rectangle s) {
       int row = cursor.row;
       int col = cursor.col;
+      if (s == null)
+        s = getRegion(col);
       if (dy > 0) { // advance down
         col = s.x;
         if (++row >= s.y + s.height)
@@ -301,6 +307,16 @@ class TableTabCaret {
       cursor = new Pt(row, col);
       repaint(oldCursor, cursor, markA, markB);
       scrollTo(cursor);
+    }
+
+    private Rectangle getRegion(int col) {
+      int inputs = table.getInputColumnCount();
+      int outputs = table.getOutputColumnCount();
+      int rows = table.getRowCount();
+      if (col < inputs)
+        return new Rectangle(0, 0, inputs, rows);
+      else
+        return new Rectangle(inputs, 0, outputs, rows);
     }
 
     public void mouseClicked(MouseEvent e) { }
