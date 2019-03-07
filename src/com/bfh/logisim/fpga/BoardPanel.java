@@ -42,14 +42,11 @@ import java.awt.event.MouseMotionListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.LinkedList;
 
 import javax.imageio.ImageIO;
-import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 
 import com.cburch.logisim.data.Bounds;
-import com.cburch.logisim.gui.main.ExportImage;
 
 public class BoardPanel extends JPanel implements MouseListener, MouseMotionListener {
 
@@ -57,7 +54,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
   private Image scaledImage;
 	private int xs, ys, w, h;
 	private boolean editing;
-	private BoardEditor edit_parent;
+	private BoardEditor editor;
 
   private BoardPanel() {
 		xs = ys = w = h = 0;
@@ -69,7 +66,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 	public BoardPanel(BoardEditor parent) {
     this();
 		editing = true;
-		edit_parent = parent;
+		editor = parent;
 	}
 
 	public BoardPanel(URL filename) {
@@ -79,6 +76,10 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 			setImage(ImageIO.read(filename));
 		} catch (IOException ex) { }
 	}
+
+  public void setImage(File file) throws IOException {
+    setImage(ImageIO.read(file));
+  }
 	
   public void setImage(Image pic) {
 		image = pic;
@@ -110,32 +111,9 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 
   @Override
 	public void mouseClicked(MouseEvent e) {
-		if (editing && image != null) {
-			JFileChooser fc = new JFileChooser();
-			fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-			fc.setDialogTitle("Choose FPGA board picture to use");
-			fc.setFileFilter(ExportImage.PNG_FILTER);
-			fc.setAcceptAllFileFilterUsed(false);
-			int retval = fc.showOpenDialog(null);
-			if (retval == JFileChooser.APPROVE_OPTION) {
-				File file = fc.getSelectedFile();
-				try {
-					setImage(ImageIO.read(file));
-				} catch (IOException ex) {
-					setImage(null);
-				}
-			}
-		}
-	}
-
-  @Override
-	public void mouseDragged(MouseEvent e) {
-		if (editing && image != null) {
-			w = e.getX() - xs;
-			h = e.getY() - ys;
-			this.repaint();
-		}
-	}
+		if (editing)
+      editor.doClickDialog(e.getX(), e.getY());
+  }
 
   @Override
 	public void mouseEntered(MouseEvent e) { }
@@ -155,14 +133,21 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 		}
 	}
 
-  // todo: support click-to-edit
+  @Override
+	public void mouseDragged(MouseEvent e) {
+		if (editing && image != null) {
+			w = e.getX() - xs;
+			h = e.getY() - ys;
+			this.repaint();
+		}
+	}
 
   @Override
 	public void mouseReleased(MouseEvent e) {
 		if (editing && image != null) {
       if (h != 0 && w != 0) {
         Bounds rect = Bounds.create(xs, ys, w, h);
-        edit_parent.doRectSelectDialog(rect);
+        editor.doRectSelectDialog(rect);
       }
       xs = ys = w = h = 0;
       this.repaint();
@@ -174,7 +159,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 		super.paint(g);
 		if (image != null) {
 			g.drawImage(scaledImage, 0, 0, null);
-			g.setColor(Color.red);
+			g.setColor(Color.RED);
 			if (w != 0 || h != 0) {
 				int xr, yr, wr, hr;
 				xr = (w < 0) ? xs + w : xs;
@@ -183,31 +168,30 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 				hr = (h < 0) ? -h : h;
 				g.drawRect(xr, yr, wr, hr);
 			}
-      LinkedList<BoardIO> ioComponents = editing ? edit_parent.ioComponents : null;
-			if (ioComponents != null) {
-				g.setColor(Color.red);
-        for (BoardIO io : ioComponents)
-					g.fillRect(io.rect.x, io.rect.y, io.rect.width, io.rect.height);
-			}
 		} else {
 			g.setColor(Color.gray);
 			g.fillRect(0, 0, getWidth(), getHeight());
 			if (editing) {
 				String[] lines = {
-          "Click to add picture of FPGA board.",
+          "Click to add picture of FPGA board,",
+          "or select a Built-in FPGA board below.",
+          "",
           "The board picture must be PNG format and should be",
           " at least" + getWidth() + "x" + getHeight() + " pixels for best display." };
 
 				g.setColor(Color.black);
-				g.setFont(new Font(g.getFont().getFontName(), Font.BOLD, 20));
+				g.setFont(new Font(g.getFont().getFontName(), Font.BOLD, 18));
 
-				FontMetrics fm = g.getFontMetrics();
-        float ascent = fm.getAscent();
         int ypos = 100, i = 0;
         for (String msg : lines) {
+          FontMetrics fm = g.getFontMetrics();
+          float ascent = fm.getAscent();
           int xpos = (getWidth() - fm.stringWidth(msg)) / 2;
-          g.drawString(msg, xpos, ypos);
-          ypos = 200 + (int)((i++) * 1.5 * ascent);
+          ypos += ascent*3/2;
+          if (msg.equals(""))
+            g.setFont(new Font(g.getFont().getFontName(), Font.BOLD, 16));
+          else
+            g.drawString(msg, xpos, ypos);
         }
 			}
 		}

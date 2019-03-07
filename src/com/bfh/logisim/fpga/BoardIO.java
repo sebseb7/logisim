@@ -288,7 +288,7 @@ public class BoardIO {
       elt.setAttribute("ActivityLevel", ""+activity);
     if (pull != PullBehavior.UNKNOWN)
       elt.setAttribute("FPGAPinPullBehavior", ""+pull);
-    if (standard != IoStandard.UNKNOWN)
+    if (standard != IoStandard.UNKNOWN && standard != IoStandard.DEFAULT)
       elt.setAttribute("FPGAPinIOStandard", ""+standard);
     return elt;
   }
@@ -296,14 +296,21 @@ public class BoardIO {
 	public static BoardIO makeUserDefined(Type t, Bounds r, BoardEditor parent) {
     int w = t.defaultWidth();
     BoardIO template = new BoardIO(t, w, null, r,
-        IoStandard.UNKNOWN, PullBehavior.UNKNOWN, PinActivity.UNKNOWN, DriveStrength.UNKNOWN,
-        null);
+        defaultStandard, defaultPull, defaultActivity, defaultStrength, null);
     if (t == Type.DIPSwitch || t == Type.Ribbon)
       template = doSizeDialog(template, parent);
     if (template == null)
       return null;
-    template = doInfoDialog(template, parent);
-    return template;
+    return doInfoDialog(template, parent, false);
+  }
+
+  public static BoardIO redoUserDefined(BoardIO io, BoardEditor parent) {
+    BoardIO template = io;
+    if (template.type == Type.DIPSwitch || template.type == Type.Ribbon)
+      template = doSizeDialog(template, parent);
+    if (template == null)
+      return io; // user cancelled before getting to config dialog
+    return doInfoDialog(template, parent, true);
   }
 
   private static BoardIO doSizeDialog(BoardIO t, BoardEditor parent) {
@@ -348,6 +355,8 @@ public class BoardIO {
     dlg.setAlwaysOnTop(true);
     dlg.setVisible(true);
 
+    if (t.width == width[0])
+      return t; // no change
     return new BoardIO(t.type, width[0], t.label,
         t.rect, t.standard, t.pull, t.activity, t.strength, t.pins);
   }
@@ -366,7 +375,7 @@ public class BoardIO {
       c.gridy++;
   }
 
-  private static BoardIO doInfoDialog(BoardIO t, BoardEditor parent) {
+  private static BoardIO doInfoDialog(BoardIO t, BoardEditor parent, boolean removable) {
     final JDialog dlg = new JDialog(parent, t.type + " Properties");
     dlg.setLayout(new GridBagLayout());
     GridBagConstraints c = new GridBagConstraints();
@@ -377,10 +386,19 @@ public class BoardIO {
     JComboBox<PinActivity> activity = new JComboBox<>(PinActivity.OPTIONS);
     JComboBox<PullBehavior> pull = new JComboBox<>(PullBehavior.OPTIONS);
 
-    standard.setSelectedItem(defaultStandard);
-    strength.setSelectedItem(defaultStrength);
-    activity.setSelectedItem(defaultActivity);
-    pull.setSelectedItem(defaultPull);
+    standard.setSelectedItem(t.standard);
+    strength.setSelectedItem(t.strength);
+    activity.setSelectedItem(t.activity);
+    pull.setSelectedItem(t.pull);
+
+    JTextField x = new JTextField(6);
+    JTextField y = new JTextField(6);
+    JTextField w = new JTextField(6);
+    JTextField h = new JTextField(6);
+    x.setText(""+t.rect.x);
+    y.setText(""+t.rect.y);
+    w.setText(""+t.rect.width);
+    h.setText(""+t.rect.height);
 
     if (!OutputTypes.contains(t.type))
       strength = null;
@@ -395,8 +413,11 @@ public class BoardIO {
 
     String[] pinLabels = t.type.pinLabels(t.width);
     JTextField[] pinLocs = new JTextField[t.width];
-    for (int i = 0; i < t.width; i++)
+    for (int i = 0; i < t.width; i++) {
       pinLocs[i] = new JTextField(6);
+      if (t.pins[i] != null && t.pins[i].length() > 0)
+        pinLocs[i].setText(t.pins[i]);
+    }
 
     c.gridx = 0;
     c.gridy = 0;
@@ -413,6 +434,10 @@ public class BoardIO {
     c.gridy = Math.max(t.width, 32);
 
     add(dlg, c, "Label (optional):", label);
+    add(dlg, c, "Geometry x coordinate:", x);
+    add(dlg, c, "Geometry y coordinate:", y);
+    add(dlg, c, "Geometry width:", w);
+    add(dlg, c, "Geometry height:", h);
     add(dlg, c, "I/O standard:", standard);
     if (strength != null)
       add(dlg, c, "Drive strength:", strength);
@@ -421,18 +446,30 @@ public class BoardIO {
     if (activity != null)
       add(dlg, c, "Signal activity:", activity);
 
-    final boolean[] good = new boolean[] { true };
+    final char[] result = new char[] { 'S' };
+
+    if (removable) {
+      JButton remove = new JButton("Delete Resource");
+      remove.addActionListener(e -> {
+        result[0] = 'R';
+        dlg.setVisible(false);
+      });
+      dlg.add(remove, c);
+      c.gridx++;
+    }
+
+    JButton cancel = new JButton("Cancel");
+    cancel.addActionListener(e -> {
+      result[0] = 'C';
+      dlg.setVisible(false);
+    });
+    dlg.add(cancel, c);
+    c.gridx++;
+
     JButton ok = new JButton("Save");
     ok.addActionListener(e -> dlg.setVisible(false));
     dlg.add(ok, c);
     c.gridx++;
-
-    JButton cancel = new JButton("Cancel");
-    cancel.addActionListener(e -> {
-      good[0] = false;
-      dlg.setVisible(false);
-    });
-    dlg.add(cancel, c);
 
     dlg.pack();
     dlg.setLocation(Projects.getCenteredLoc(dlg.getWidth(), dlg.getHeight()));
@@ -443,19 +480,40 @@ public class BoardIO {
 
     String[] pins = new String[t.width];
 
+    int xx, yy, ww, hh;
     for (;;) {
       dlg.setVisible(true);
-      if (!good[0])
-        return null; // user cancelled
+      if (result[0] == 'R')
+        return null; // user removed resource
+      if (result[0] == 'C' && removable)
+        return t; // cancelled, but explicitly not removed, keep same one
+      if (result[0] == 'C')
+        return null; // user cancelled, we were adding a new one, so don't add it
       // ensure all locations are specified
       boolean missing = false;
       for (int i = 0; i < t.width && !missing; i++) {
         pins[i] = pinLocs[i].getText();
         missing = pins[i] == null || pins[i].isEmpty();
       }
-      if (!missing)
-        break;
-      Errors.title("Error").show("Please specify a location for all pins.");
+      if (missing) {
+        Errors.title("Error").show("Please specify a location for all pins.");
+        continue;
+      }
+      try {
+        xx = Integer.parseInt(x.getText());
+        yy = Integer.parseInt(y.getText());
+        ww = Integer.parseInt(w.getText());
+        hh = Integer.parseInt(h.getText());
+      } catch (NumberFormatException ex) {
+        Errors.title("Error").show("Error parsing geometry.", ex);
+        continue;
+      }
+      if (xx < 0 || yy < 0 || ww <= 0 || hh <= 0
+          || xx+ww >= Board.IMG_WIDTH || yy+hh >= Board.IMG_HEIGHT) {
+        Errors.title("Error").show("Invalid geometry.");
+        continue;
+      }
+      break;
     }
 
     String txt = label.getText();
@@ -474,7 +532,9 @@ public class BoardIO {
     if (t.type == Type.Pin)
       a = PinActivity.ACTIVE_HIGH; // special case: Pin is always active high
 
-    return new BoardIO(t.type, t.width, txt, t.rect, defaultStandard,
+    Bounds rect = Bounds.create(xx, yy, ww, hh);
+
+    return new BoardIO(t.type, t.width, txt, rect, defaultStandard,
         pull != null ? defaultPull : PullBehavior.UNKNOWN,
         a,
         strength != null ? defaultStrength : DriveStrength.UNKNOWN,

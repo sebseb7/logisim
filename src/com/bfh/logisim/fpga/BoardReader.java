@@ -114,15 +114,20 @@ public class BoardReader {
 
   private static HashMap<String, String> xmlToMap(NodeList xml) {
     HashMap<String, String> params = new HashMap<>();
+    // System.out.println("xml :" + xml);
     for (int i = 0; i < xml.getLength(); i++) {
       Node node = xml.item(i);
       String name = node.getNodeName();
+      // System.out.printf("node(%d, %s): %s\n", i, name, node);
+      if (name == null || name.equals("#text") || name.equals("#comment"))
+        continue;
       NamedNodeMap attrs = node.getAttributes();
-      for (int j = 0; j < attrs.getLength(); j++) {
+      for (int j = 0; attrs != null && j < attrs.getLength(); j++) {
         Node attr = attrs.item(j);
         String tag = attr.getNodeName();
         String val = attr.getNodeValue();
         params.put(name+"/"+tag, val);
+        // System.out.printf("  attr(%d, %s): %s\n", j, tag, val);
       }
     }
     return params;
@@ -141,8 +146,13 @@ public class BoardReader {
     NodeList xml = getSection(doc, section);
     if (xml == null)
       return;
-    for (int i = 0; i < xml.getLength(); i++)
-      board.addComponent(BoardIO.parseXml(xml.item(i)));
+    for (int i = 0; i < xml.getLength(); i++) {
+      Node node = xml.item(i);
+      String name = node.getNodeName();
+      if (name == null || name.equals("#text") || name.equals("#comment"))
+        continue;
+      board.addComponent(BoardIO.parseXml(node));
+    }
   }
 
 }
