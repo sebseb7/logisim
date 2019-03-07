@@ -84,6 +84,7 @@ class TableTab extends AnalyzerTab {
       computePreferredSize();
       expand.setEnabled(getRowCount() < table.getRowCount());
       count.setText(String.format("%d of %d rows shown", getRowCount(), table.getRowCount()));
+      body.setSize(new Dimension(body.getWidth(),table.getRowCount()*cellHeight));
       repaint();
     }
   }
