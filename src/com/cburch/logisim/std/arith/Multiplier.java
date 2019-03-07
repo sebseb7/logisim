@@ -153,7 +153,6 @@ public class Multiplier extends InstanceFactory {
 
   public Multiplier() {
     super("Multiplier", S.getter("multiplierComponent"));
-    System.out.println("confirm that multiply works for 1-bit inputs");
     setAttributes(new Attribute[] { StdAttr.WIDTH, MODE_ATTR },
         new Object[] { BitWidth.create(8), SIGNED_OPTION });
     setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
