@@ -159,8 +159,7 @@ class CanvasListener implements MouseListener, MouseMotionListener,
 				value.toolSelected(canvas);
 				canvas.setCursor(value.getCursor(canvas));
 			} else {
-				canvas.setCursor(Cursor
-						.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+				canvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 			}
 		}
 	}

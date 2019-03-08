@@ -32,19 +32,15 @@ package com.bfh.logisim.fpga;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
+import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -55,7 +51,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
 
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.Bounds;
@@ -69,86 +64,95 @@ import com.cburch.logisim.util.JDialogOk;
 public class BoardEditor extends JFrame {
 
 	private JButton save, load, builtin;
-
 	private JTextField name;
 	private BoardPanel image;
   private Chipset fpga;
-	private LinkedList<BoardIO> ioComponents = new LinkedList<>();
-  public HashMap<BoardIO, Rect> rects = new HashMap<>();
+	public LinkedList<BoardIO> ioComponents = new LinkedList<>();
 
 	public BoardEditor() {
     super(Strings.get("FPGABoardEditor"));
-		final GridBagConstraints c = new GridBagConstraints();
 
 		setResizable(false);
-		// addComponentListener(this);
 		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 		setLayout(new BorderLayout());
 
 		// Set an empty board picture
 		image = new BoardPanel(this);
-    image.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-		add(image, BorderLayout.CENTER);
+    add(image, BorderLayout.CENTER);
 
-		JPanel buttons = new JPanel() {
-      @Override
-      public Component add(Component comp) {
-        super.add(comp, c);
-        c.gridx++;
-        return comp;
-      }
-    };
-		// buttons.setLayout(new GridBagLayout());
+		JPanel buttons = new JPanel();
+    buttons.setLayout(new BoxLayout(buttons, BoxLayout.PAGE_AXIS));
+		JPanel buttonsA = new JPanel();
+		JPanel buttonsB = new JPanel();
 
-		// c.gridx = 0;
-		// c.gridy = 0;
-		// c.fill = GridBagConstraints.HORIZONTAL;
-
-		buttons.add(new JLabel("Board Name:"));
+		buttonsA.add(new JLabel("Board Name:"));
 
 		name = new JTextField(20);
 		name.setEnabled(true);
-		buttons.add(name);
+		buttonsA.add(name);
 
 		JButton chipset = new JButton("Configure FPGA Chipset");
 		chipset.addActionListener(e -> doChipsetDialog());
-		buttons.add(chipset);
+		buttonsA.add(chipset);
 
 		builtin = new JButton("Built-in FPGA Boards");
 		builtin.addActionListener(e -> doBuiltin());
-		buttons.add(builtin);
+		buttonsB.add(builtin);
 
-		load = new JButton("Load");
+		load = new JButton("Load Board");
 		load.addActionListener(e -> doLoad());
-		buttons.add(load);
+		buttonsB.add(load);
 
 		JButton cancel = new JButton("Cancel");
 		cancel.addActionListener(e -> { setVisible(false); clear(); });
-		buttons.add(cancel);
+		buttonsB.add(cancel);
 
-		save = new JButton("Done");
-		save.setActionCommand("save");
+		save = new JButton("Save Board");
 		save.addActionListener(e -> doSave());
 		save.setEnabled(false);
-		buttons.add(save);
+		buttonsB.add(save);
 
+    buttons.add(buttonsA);
+    buttons.add(buttonsB);
 		add(buttons, BorderLayout.SOUTH);
 
 		pack();
 		setLocationRelativeTo(null);
+
 		setVisible(true);
 	}
 
+  public void doModal(JDialog dlg, int x, int y) {
+    dlg.pack();
+    Point p = getLocationOnScreen();
+		dlg.setLocation(p.x+x-dlg.getWidth()/2, p.y+y-10);
+    dlg.setModal(true);
+    dlg.setResizable(false);
+    dlg.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
+    dlg.setAlwaysOnTop(true);
+    dlg.setVisible(true);
+  }
+
 	private void doSave() {
+    if (name.getText().isEmpty()) {
+      Errors.title("Error").show("Please specify a name for the board before saving.");
+      return;
+    }
+    if (ioComponents.isEmpty()) {
+      Errors.title("Warning").warn("No I/O resources have been specified.\n"
+          + "Before saving, you may want to draw rectangles on the image\n"
+          + "to specify I/O resources for this FPGA board.");
+    }
     Board board = new Board(name.getText(), fpga, image.getImage());
+    board.addComponents(ioComponents);
     String dir = getSaveDirectory();
     if (dir == null)
       return;
     String filename = dir + board.name + ".xml";
     if (!BoardWriter.write(filename, board))
       return;
-    setVisible(false);
-    clear();
+    // setVisible(false);
+    // clear();
   }
 
   private void doBuiltin() {
@@ -192,26 +196,19 @@ public class BoardEditor extends JFrame {
 
     name.setText(board.name);
     fpga = board.fpga;
-    image.setImage(board.image);
     ioComponents.clear();
-    rects.forEach((io, rect) -> remove(rect));
-    rects.clear();
-
     ioComponents.addAll(board);
-    for (BoardIO io : ioComponents) {
-      Rect r = new Rect(io);
-      rects.put(io, r);
-      add(r);
-    }
+    image.setImage(board.image);
 
     setEnables();
 	}
 
   private void setEnables() {
-    save.setEnabled(!name.getText().isEmpty()
-        && fpga != null
-        && image.getImage() != null
-        && !ioComponents.isEmpty());
+    save.setEnabled(image.getImage() != null && fpga != null);
+    // save.setEnabled(!name.getText().isEmpty()
+    //     && fpga != null
+    //     && image.getImage() != null
+    //     && !ioComponents.isEmpty());
   }
 
 	public void clear() {
@@ -219,11 +216,9 @@ public class BoardEditor extends JFrame {
 			setVisible(false);
 		image.clear();
 		ioComponents.clear();
-    rects.forEach((io, rect) -> remove(rect));
-    rects.clear();
 		fpga = null;
 		name.setText("");
-		save.setEnabled(false);
+    setEnables();
 	}
 
 	private String getSaveDirectory() {
@@ -270,8 +265,8 @@ public class BoardEditor extends JFrame {
       ok[0] = false;
       dlg.setVisible(false);
     });
-		JButton save = new JButton("Done and Store");
-		save.addActionListener((e) -> {
+		JButton done = new JButton("OK");
+		done.addActionListener((e) -> {
       ok[0] = true;
       dlg.setVisible(false); 
     });
@@ -330,7 +325,7 @@ public class BoardEditor extends JFrame {
     c.gridx = 0;
     c.gridy = 0;
     add(clockPanel, c, "Clock frequency:", freqPanel);
-    add(clockPanel, c, "Clock pin location:", clkLoc);
+    add(clockPanel, c, "Clock pin FPGA location:", clkLoc);
     add(clockPanel, c, "Clock pin pull behavior:", clkPull);
     add(clockPanel, c, "Clock pin I/O standard:", clkStandard);
     add(clockPanel, c, "Unused FPGA pin behavior:", unusedPull);
@@ -371,13 +366,13 @@ public class BoardEditor extends JFrame {
 		c.gridx = 1;
 		c.gridy = 2;
 		c.fill = GridBagConstraints.HORIZONTAL;
-		dlg.add(save, c);
+		dlg.add(done, c);
 
 		dlg.pack();
 		dlg.setLocation(Projects.getCenteredLoc(dlg.getWidth(), dlg.getHeight()));
 		dlg.setModal(true);
 		dlg.setResizable(false);
-		dlg.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+		dlg.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
 		dlg.setAlwaysOnTop(false);
 
     for (;;) {
@@ -392,7 +387,7 @@ public class BoardEditor extends JFrame {
       } else if (freq < 0) {
         Errors.title("Error").show("Invalid clock frequency.");
       } else if (clkLoc.getText().isEmpty()) {
-        Errors.title("Error").show("Please specify clock pin location.");
+        Errors.title("Error").show("Please specify clock pin FPGA location.");
       } else if (family.getText().isEmpty()) {
         Errors.title("Error").show("Please specify FPGA family.");
       } else if (part.getText().isEmpty()) {
@@ -426,7 +421,7 @@ public class BoardEditor extends JFrame {
       }
     }
 		dlg.dispose();
-    save.setEnabled(true);
+    setEnables();
 	}
 
 	private long getFrequency(String str, String speed) {
@@ -457,7 +452,7 @@ public class BoardEditor extends JFrame {
 		return num * multiplier;
 	}
 
-  private void doChangeImage() {
+  public void doChangeImage() {
     JFileChooser fc = new JFileChooser();
     fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
     fc.setDialogTitle("Choose FPGA board picture to use");
@@ -472,108 +467,54 @@ public class BoardEditor extends JFrame {
         Errors.title("Error").show("Error loading image", ex);
       }
     }
+    setEnables();
   }
 
-  public void doClickDialog(int x, int y) {
-    if (image.getImage() == null) {
-      doChangeImage();
-    } else {
-      for (BoardIO io : ioComponents) {
-        if (io.rect.contains(x, y)) {
-          doBoardIODialog(io, rects.get(io));
-          break;
-        }
-      }
-    }
+  public BoardIO findBoardIO(int x, int y) {
+    for (BoardIO io : ioComponents)
+      if (io.rect.contains(x, y))
+        return io;
+    return null;
   }
-	
-  public void doRectSelectDialog(Bounds rect) {
+
+  public void doRectSelectDialog(Bounds rect, int x, int y) {
     for (BoardIO io : ioComponents) {
       if (io.rect.overlaps(rect)) {
         Errors.title("Error").show("Please ensure rectangles do not overlap.");
         return;
       }
     }
-		final JDialog dlg = new JDialog(this, "Add FPGA Board I/O Resource");
-		dlg.setLayout(new GridBagLayout());
-		GridBagConstraints c = new GridBagConstraints();
-		c.gridx = 0;
-		c.gridy = -1;
-		c.fill = GridBagConstraints.HORIZONTAL;
+		final JDialog dlg = new JDialog(this, "Add I/O Resource");
+    dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.PAGE_AXIS));
+    JLabel label = new JLabel("Select a type of FPGA I/O resource to add:");
+    label.setAlignmentX(0.5f);
+    dlg.getContentPane().add(label);
 		for (BoardIO.Type type : BoardIO.PhysicalTypes) {
-      JButton button = new JButton("Define " + type + " Component");
+      JButton button = new JButton(type.getDescription());
+      button.setAlignmentX(0.5f);
 			button.addActionListener(e -> {
         dlg.setVisible(false);
         BoardIO io = BoardIO.makeUserDefined(type, rect, this);
         if (io != null) {
           ioComponents.add(io);
-          Rect r = new Rect(io);
-          rects.put(io, r);
-          add(r);
-          setEnables();
+          image.repaint();
         }
       });
-			c.gridy++;
-			dlg.add(button, c);
+			dlg.getContentPane().add(button);
 		}
-		JButton cancel = new JButton("Cancel");
-		cancel.addActionListener(e -> dlg.setVisible(false));
-		c.gridy++;
-		dlg.add(cancel, c);
-		dlg.pack();
-		dlg.setLocation(Projects.getCenteredLoc(dlg.getWidth(), dlg.getHeight()));
-		dlg.setModal(true);
-		dlg.setResizable(false);
-		dlg.setAlwaysOnTop(false);
-		dlg.setVisible(true);
-		dlg.dispose();
+    doModal(dlg, rect.x + rect.width/2, rect.y);
 	}
 
-  private void doBoardIODialog(BoardIO io, Rect r) {
+  public void doBoardIODialog(BoardIO io) {
     BoardIO redo = BoardIO.redoUserDefined(io, this);
-    if (io == null) {
-      remove(r);
-      rects.remove(io);
-    } else {
-      r.set(redo);
-      rects.remove(io);
-      rects.put(redo, r);
+    if (redo == null) {
+      ioComponents.remove(io);
+      image.repaint();
+    } else if (redo != io) {
+      ioComponents.remove(io);
+      ioComponents.add(redo);
+      image.repaint();
     }
   }
 
-  private static final Color REGULAR = new Color(1f, 0f, 0f, 0.4f);
-  private static final Color HILIGHT = new Color(1f, 0f, 0f, 0.6f);
-
-  private class Rect extends JPanel implements MouseListener, MouseMotionListener {
-    BoardIO io;
-
-    Rect(BoardIO io) {
-      set(io);
-      setOpaque(false);
-      setBorder(BorderFactory.createMatteBorder(2, 2, 2, 2, Color.RED));
-      setBackground(REGULAR);
-      addMouseListener(this);
-      addMouseMotionListener(this);
-    }
-
-    void set(BoardIO io) {
-      this.io = io;
-      this.setLocation(io.rect.x, io.rect.y);
-      this.setSize(new Dimension(io.rect.width, io.rect.height));
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent e) {
-      if (!SwingUtilities.isLeftMouseButton(e))
-        return;
-      doBoardIODialog(io, this);
-    }
-
-    public void mouseEntered(MouseEvent e) { setBackground(HILIGHT); }
-    public void mouseExited(MouseEvent e) { setBackground(REGULAR); }
-    public void mousePressed(MouseEvent e) { }
-    public void mouseReleased(MouseEvent e) { }
-    public void mouseMoved(MouseEvent e) { }
-    public void mouseDragged(MouseEvent e) { }
-  }
 }

@@ -1,6 +1,29 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <LogisimFPGASettings>
-                                       
+                                                                                                            
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
    
    
    
@@ -14,7 +37,30 @@
    
    
    <WorkSpace Altera64Bit="true" AlteraToolsPath="/opt/altera/13.0sp1/quartus/bin" GenerateHDLOnly="false" HDLTypeToGenerate="VHDL" WorkPath="" XilinxToolsPath="Unknown"/>
-                                       
+                                                                                                            
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
    
    
    
@@ -28,7 +74,30 @@
    
    
    <FPGABoards SelectedBoard="TERASIC_DE0"/>
-                                       
+                                                                                                            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

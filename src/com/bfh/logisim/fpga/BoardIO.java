@@ -35,11 +35,13 @@ import java.awt.GridBagLayout;
 import java.util.EnumSet;
 import java.util.HashMap;
 
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JTextField;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -47,11 +49,9 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import com.cburch.logisim.data.Bounds;
-import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.std.io.DipSwitch;
 import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.std.io.RGBLed;
-// import com.cburch.logisim.std.io.SevenSegment;
 import com.cburch.logisim.util.Errors;
 import static com.bfh.logisim.netlist.Netlist.Int3;
 
@@ -137,6 +137,23 @@ public class BoardIO {
       }
     }
 
+    public String getDescription() {
+      switch (this) {
+      case AllZeros: return "Always-zero Input";
+      case AllOnes: return "Always-one Input";
+      case Constant: return "User-defined Constant Input";
+      case Button: return "Button or Switch";
+      case DIPSwitch: return "DIP Switch";
+      case Pin: return "Bi-directional Pin";
+      case Ribbon: return "Bi-directional Bus";
+      case LED: return "LED";
+      case RGBLED: return "3-wire RGB LED";
+      case SevenSegment: return "Seven Segment Display";
+      case Unconnected: return "Unconnected";
+      default: return "Unrecognized Board I/O Resource";
+      }
+    }
+
     public String[] pinLabels(int width) {
       switch (this) {
       case SevenSegment:
@@ -154,7 +171,7 @@ public class BoardIO {
         labels[0] = "Pin";
       else
         for (int i = 0; i < width; i++)
-          labels[0] = "Pin_" + i;
+          labels[i] = "Pin_" + i;
       return labels;
     }
 
@@ -295,8 +312,8 @@ public class BoardIO {
 
 	public static BoardIO makeUserDefined(Type t, Bounds r, BoardEditor parent) {
     int w = t.defaultWidth();
-    BoardIO template = new BoardIO(t, w, null, r,
-        defaultStandard, defaultPull, defaultActivity, defaultStrength, null);
+    BoardIO template = new BoardIO(t, w, null/*no label*/, r,
+        defaultStandard, defaultPull, defaultActivity, defaultStrength, null /*no pins*/);
     if (t == Type.DIPSwitch || t == Type.Ribbon)
       template = doSizeDialog(template, parent);
     if (template == null)
@@ -316,45 +333,36 @@ public class BoardIO {
   private static BoardIO doSizeDialog(BoardIO t, BoardEditor parent) {
     int min = t.type == Type.DIPSwitch ? DipSwitch.MIN_SWITCH : PortIO.MIN_IO;
     int max = t.type == Type.DIPSwitch ? DipSwitch.MAX_SWITCH : PortIO.MAX_IO;
-    final int[] width = new int[] { t.width };
 
     final JDialog dlg = new JDialog(parent, t.type + " Size");
-    dlg.setLayout(new GridBagLayout());
-    GridBagConstraints c = new GridBagConstraints();
-    c.fill = GridBagConstraints.HORIZONTAL;
+    dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.PAGE_AXIS));
 
-    String things = t.type == Type.DIPSwitch ? "switches" : "pins";
-    JLabel question = new JLabel("Specify number of " + things + " in " + t.type + ":");
+    String things = t.type == Type.DIPSwitch ? "Switches" : "Pins";
+    JLabel question = new JLabel("Number of " + things + " for " + t.type + ":");
 
     JComboBox<Integer> size = new JComboBox<>();
     for (int i = min; i <= max; i++)
       size.addItem(i);
-    size.setSelectedItem(width[0]);
+    size.setSelectedItem(t.width);
 
+    final int[] width = new int[] { -1 };
     JButton next = new JButton("Next");
     next.addActionListener(e -> {
       width[0] = (Integer)size.getSelectedItem();
       dlg.setVisible(false);
     });
 
-    c.gridx = 0;
-    c.gridy = 0;
-    dlg.add(question, c);
+    JPanel options = new JPanel();
+    options.setLayout(new BoxLayout(options, BoxLayout.LINE_AXIS));
+    options.add(question);
+    options.add(size);
+    dlg.add(options);
+    dlg.add(next);
 
-    c.gridx = 1;
-    dlg.add(size, c);
+    parent.doModal(dlg, t.rect.x + t.rect.width/2, t.rect.y);
 
-    c.gridy++;
-    dlg.add(next, c);
-
-    dlg.pack();
-    dlg.setLocation(Projects.getCenteredLoc(dlg.getWidth(), dlg.getHeight()));
-    dlg.setModal(true);
-    dlg.setResizable(false);
-    dlg.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-    dlg.setAlwaysOnTop(true);
-    dlg.setVisible(true);
-
+    if (width[0] < 0)
+      return null;
     if (t.width == width[0])
       return t; // no change
     return new BoardIO(t.type, width[0], t.label,
@@ -368,11 +376,13 @@ public class BoardIO {
 
   private static void add(JDialog dlg, GridBagConstraints c,
       String caption, JComponent input) {
-      dlg.add(new JLabel(caption + " "), c);
-      c.gridx++;
-      dlg.add(input, c);
-      c.gridx--;
-      c.gridy++;
+    JLabel label = new JLabel(caption + " ");
+    label.setAlignmentX(1f);
+    dlg.add(label, c);
+    c.gridx++;
+    dlg.add(input, c);
+    c.gridx--;
+    c.gridy++;
   }
 
   private static BoardIO doInfoDialog(BoardIO t, BoardEditor parent, boolean removable) {
@@ -415,7 +425,7 @@ public class BoardIO {
     JTextField[] pinLocs = new JTextField[t.width];
     for (int i = 0; i < t.width; i++) {
       pinLocs[i] = new JTextField(6);
-      if (t.pins[i] != null && t.pins[i].length() > 0)
+      if (t.pins != null && t.pins[i] != null && t.pins[i].length() > 0)
         pinLocs[i].setText(t.pins[i]);
     }
 
@@ -423,7 +433,7 @@ public class BoardIO {
     c.gridy = 0;
 
     for (int i = 0; i < t.width; i++) {
-      add(dlg, c, pinLabels[i] + " location:", pinLocs[i]);
+      add(dlg, c, "FPGA location for " + pinLabels[i] + " :", pinLocs[i]);
       if (c.gridy == 32) {
         c.gridx += 2;
         c.gridy = 0;
@@ -471,18 +481,10 @@ public class BoardIO {
     dlg.add(ok, c);
     c.gridx++;
 
-    dlg.pack();
-    dlg.setLocation(Projects.getCenteredLoc(dlg.getWidth(), dlg.getHeight()));
-    dlg.setModal(true);
-    dlg.setResizable(false);
-    dlg.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-    dlg.setAlwaysOnTop(true);
-
     String[] pins = new String[t.width];
-
     int xx, yy, ww, hh;
+    parent.doModal(dlg, t.rect.x+t.rect.width/2, t.rect.y);
     for (;;) {
-      dlg.setVisible(true);
       if (result[0] == 'R')
         return null; // user removed resource
       if (result[0] == 'C' && removable)
@@ -496,7 +498,8 @@ public class BoardIO {
         missing = pins[i] == null || pins[i].isEmpty();
       }
       if (missing) {
-        Errors.title("Error").show("Please specify a location for all pins.");
+        Errors.title("Error").show("Please specify an FPGA location for all pins.");
+        dlg.setVisible(true);
         continue;
       }
       try {
@@ -506,11 +509,13 @@ public class BoardIO {
         hh = Integer.parseInt(h.getText());
       } catch (NumberFormatException ex) {
         Errors.title("Error").show("Error parsing geometry.", ex);
+        dlg.setVisible(true);
         continue;
       }
       if (xx < 0 || yy < 0 || ww <= 0 || hh <= 0
           || xx+ww >= Board.IMG_WIDTH || yy+hh >= Board.IMG_HEIGHT) {
         Errors.title("Error").show("Invalid geometry.");
+        dlg.setVisible(true);
         continue;
       }
       break;

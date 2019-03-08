@@ -33,6 +33,7 @@ package com.bfh.logisim.fpga;
 import java.awt.Image;
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.List;
 
 import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.data.Bounds;
@@ -69,6 +70,10 @@ public class Board extends AbstractList<BoardIO> {
 
 	public void addComponent(BoardIO io) {
 		ios.add(io);
+	}
+
+	public void addComponents(List<BoardIO> io) {
+		ios.addAll(io);
 	}
 
   public void printStats(FPGAReport out) {
