@@ -54,7 +54,10 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import com.cburch.logisim.util.Errors;
+
 public class Settings {
+
   private static String[] loadAltera() {
     String[] alteraProgs = { "quartus_sh", "quartus_pgm", "quartus_map" };
     String osname = System.getProperty("os.name");
@@ -82,19 +85,19 @@ public class Settings {
     return xilinxProgs;
   }
 
-  public static final String Unknown = "Unknown";
   public static final String VHDL = "VHDL";
   public static final String VERILOG = "Verilog";
+
   private static final String WorkSpace = "WorkSpace";
   private static final String WorkPath = "WorkPath";
   private static final String WorkPathName = "logisim_fpga_workspace" + File.separator;
-  private static final String XilinxName = "XilinxToolsPath";
-  private static final String AlteraName = "AlteraToolsPath";
+  private static final String XilinxToolsPath = "XilinxToolsPath";
+  private static final String AlteraToolsPath = "AlteraToolsPath";
   private static final String Altera64Bit = "Altera64Bit";
-  private static final String HdlTypeName = "HDLTypeToGenerate";
-  private static final String Boards = "FPGABoards";
+  private static final String HDLTypeToGenerate = "HDLTypeToGenerate";
+  private static final String FPGABoards = "FPGABoards";
   private static final String SelectedBoard = "SelectedBoard";
-  private static final String ExternalBoard = "ExternalBoardFile";
+  private static final String ExternalBoard = "ExternalBoardFile_";
 
   private String HomePath;
   private String SharedPath;
@@ -103,14 +106,13 @@ public class Settings {
   private String SharedSettingsFileName = "LogisimFPGASettings.xml";
   private String LoadedSettingsFileName = "";
   private Document SettingsDocument;
-  boolean modified = false;
+  private boolean modified = false;
   private BoardList KnownBoards = new BoardList();
 
   public static final String[] AlteraPrograms = loadAltera();
 
   public static final String[] XilinxPrograms = loadXilinx();
 
-  /* big TODO: add language support */
   public Settings() {
     HomePath = System.getProperty("user.home");
     SharedPath = "";
@@ -121,98 +123,99 @@ public class Settings {
     } catch (UnsupportedEncodingException e) {
     }
 
-    if (!readFrom(HomePath, UserSettingsFileName)) {
+    if (!readFrom(HomePath, UserSettingsFileName))
       readFrom(SharedPath, SharedSettingsFileName);
-    }
 
-    if (!SettingsComplete()) {
-      if (!WriteXml()) {
-        JOptionPane.showMessageDialog(null, "Fatal Error: Cannot write FPGA settings file");
-      }
-    }
+    if (!settingsComplete())
+      writeXml();
   }
 
   private boolean readFrom(String dir, String name) {
-    File SettingsFile = new File(Join(dir, name));
+    File SettingsFile = new File(join(dir, name));
     if (!SettingsFile.exists())
       return false;
     LoadedSettingsFileName = SettingsFile.getPath();
     try {
       // Create instance of DocumentBuilderFactory
-      DocumentBuilderFactory factory = DocumentBuilderFactory
-          .newInstance();
+      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
       // Get the DocumentBuilder
       DocumentBuilder parser = factory.newDocumentBuilder();
       // Create blank DOM Document
       SettingsDocument = parser.parse(SettingsFile);
     } catch (Exception e) {
-      JOptionPane.showMessageDialog(null,
-          "Fatal Error: Cannot read FPGA settings file: "
-          + SettingsFile.getPath());
+      Errors.title("FPGA Settings").show("Can't open FPGA settings file: "
+          + SettingsFile.getPath(), e);
       return false;
-    }
-    NodeList SettingsList = SettingsDocument
-        .getElementsByTagName(Boards);
-    if (SettingsList.getLength() != 1) {
-      JOptionPane.showMessageDialog(null,
-          "Fatal Error: Cannot parse FPGA settings file: "
-          + SettingsFile.getPath());
-      return false;
-    }
-    Node ThisWorkspace = SettingsList.item(0);
-    NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-    for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-      if (WorkspaceParameters.item(i).getNodeName().contains(ExternalBoard)) {
-        File TestFile = new File(WorkspaceParameters.item(i).getNodeValue());
-        if (TestFile.exists())
-          KnownBoards.AddExternalBoard(WorkspaceParameters.item(i).getNodeValue());
-      }
     }
     return true;
   }
 
-  private boolean AlteraToolsFound(String path) {
-    for (int i = 0; i < AlteraPrograms.length; i++) {
-      File test = new File(Join(path, AlteraPrograms[i]));
-      if (!test.exists())
-        return false;
-    }
-    return true;
-  }
-
-  private String Join(String path, String name) {
+  private String join(String path, String name) {
     if (path.endsWith(File.separator))
       return path + name;
     else
       return path + File.separator + name;
   }
 
-  public String GetAlteraToolPath() {
-    NodeList SettingsList = SettingsDocument
-        .getElementsByTagName(WorkSpace);
-    if (SettingsList.getLength() != 1) {
-      return Unknown;
-    }
-    Node ThisWorkspace = SettingsList.item(0);
-    NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-    for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-      if (WorkspaceParameters.item(i).getNodeName().equals(AlteraName)) {
-        if (AlteraToolsFound(WorkspaceParameters.item(i).getNodeValue()))
-          return WorkspaceParameters.item(i).getNodeValue();
-        else {
-          WorkspaceParameters.item(i).setNodeValue("Unknown");
-          modified = true;
-          return Unknown;
-        }
-      }
-    }
-    /* The attribute does not exists so add it */
-    Attr altera = SettingsDocument.createAttribute(AlteraName);
-    altera.setNodeValue(Unknown);
-    Element workspace = (Element) SettingsList.item(0);
-    workspace.setAttributeNode(altera);
+  private String getAttribute(String nodeName, String attrName, String defValue) {
+    Element e = (Element)SettingsDocument.getElementsByTagName(nodeName).item(0);
+    Attr a = e.getAttributeNode(attrName);
+    if (a != null)
+      return a.getNodeValue();
+    a = SettingsDocument.createAttribute(attrName);
+    a.setNodeValue(defValue);
+    e.setAttributeNode(a);
     modified = true;
-    return Unknown;
+    return defValue;
+  }
+
+  private void setAttribute(String nodeName, String attrName, String value) {
+    if (value == null)
+      value = "";
+    Element e = (Element)SettingsDocument.getElementsByTagName(nodeName).item(0);
+    Attr a = e.getAttributeNode(attrName);
+    if (a != null && a.getNodeValue().equals(value))
+      return;
+    if (a == null) {
+      a = SettingsDocument.createAttribute(attrName);
+      e.setAttributeNode(a);
+    }
+    a.setNodeValue(value);
+    modified = true;
+  }
+
+  private String normalizePath(String path) {
+    if (path == null || path.isEmpty())
+      return null;
+    if (path.length() > 1 && path.endsWith(File.separator))
+      path = path.substring(0, path.length() - 1);
+    return path;
+  }
+
+  public String GetAlteraToolPath() {
+    String s = getAttribute(WorkSpace, AlteraToolsPath, "");
+    return normalizePath(s);
+  }
+
+  public String GetXilinxToolPath() {
+    String s = getAttribute(WorkSpace, XilinxToolsPath, "");
+    return normalizePath(s);
+  }
+
+  public boolean SetAlteraToolPath(String path) {
+    path = normalizePath(path);
+    if (path != null && !allToolsPresent(path, AlteraPrograms))
+      return false;
+    setAttribute(WorkSpace, AlteraToolsPath, path);
+    return true;
+  }
+
+  public boolean SetXilinxToolPath(String path) {
+    path = normalizePath(path);
+    if (path != null && !allToolsPresent(path, XilinxPrograms))
+      return false;
+    setAttribute(WorkSpace, XilinxToolsPath, path);
+    return true;
   }
 
   public Collection<String> GetBoardNames() {
@@ -220,84 +223,45 @@ public class Settings {
   }
 
   public boolean GetAltera64Bit() {
-    return GetBoolean(Altera64Bit, true);
+    String s = getAttribute(WorkSpace, Altera64Bit, "true");
+    return "true".equalsIgnoreCase(s);
   }
 
-  private boolean GetBoolean(String name, boolean defVal) {
-    NodeList SettingsList = SettingsDocument
-        .getElementsByTagName(WorkSpace);
-    if (SettingsList.getLength() != 1) {
-      return defVal;
-    }
-    Node ThisWorkspace = SettingsList.item(0);
-    NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-    for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-      if (WorkspaceParameters.item(i).getNodeName().equals(name))
-        return WorkspaceParameters.item(i).getNodeValue()
-            .equals(Boolean.TRUE.toString());
-    }
-    /* The attribute does not exists so add it */
-    Attr hdl = SettingsDocument.createAttribute(name);
-    hdl.setNodeValue((defVal ? Boolean.TRUE : Boolean.FALSE).toString());
-    Element workspace = (Element) SettingsList.item(0);
-    workspace.setAttributeNode(hdl);
-    modified = true;
-    return defVal;
+  public void SetAltera64Bit(boolean enable) {
+    setAttribute(WorkSpace, Altera64Bit, ""+enable);
   }
 
   public String GetHDLType() {
-    NodeList SettingsList = SettingsDocument
-        .getElementsByTagName(WorkSpace);
-    if (SettingsList.getLength() != 1) {
+    String s = getAttribute(WorkSpace, HDLTypeToGenerate, VHDL);
+    if (VHDL.equalsIgnoreCase(s))
       return VHDL;
-    }
-    Node ThisWorkspace = SettingsList.item(0);
-    NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-    for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-      if (WorkspaceParameters.item(i).getNodeName().equals(HdlTypeName)) {
-        if (!WorkspaceParameters.item(i).getNodeValue().equals(VHDL)
-            && !WorkspaceParameters.item(i).getNodeValue()
-            .equals(VERILOG)) {
-          WorkspaceParameters.item(i).setNodeValue(VHDL);
-          modified = true;
-        }
-        return WorkspaceParameters.item(i).getNodeValue();
-      }
-    }
-    /* The attribute does not exists so add it */
-    Attr hdl = SettingsDocument.createAttribute(HdlTypeName);
-    hdl.setNodeValue(VHDL);
-    Element workspace = (Element) SettingsList.item(0);
-    workspace.setAttributeNode(hdl);
-    modified = true;
+    if (VERILOG.equalsIgnoreCase(s))
+      return VERILOG;
+    setAttribute(WorkSpace, HDLTypeToGenerate, VHDL); // correct broken XML value
     return VHDL;
   }
 
+  public void SetHDLType(String lang) {
+    if (VHDL.equalsIgnoreCase(lang))
+      setAttribute(WorkSpace, HDLTypeToGenerate, VHDL);
+    else if (VERILOG.equalsIgnoreCase(lang))
+      setAttribute(WorkSpace, HDLTypeToGenerate, VERILOG);
+  }
+
   public String GetSelectedBoard() {
-    NodeList SettingsList = SettingsDocument.getElementsByTagName(Boards);
-    if (SettingsList.getLength() != 1) {
-      return null;
-    }
-    Node ThisWorkspace = SettingsList.item(0);
-    NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-    for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-      if (WorkspaceParameters.item(i).getNodeName().equals(SelectedBoard)) {
-        if (!KnownBoards.BoardInCollection(WorkspaceParameters.item(i)
-              .getNodeValue())) {
-          WorkspaceParameters.item(i)
-              .setNodeValue(KnownBoards.GetBoardNames().toArray()[0].toString());
-          modified = true;
-        }
-        return WorkspaceParameters.item(i).getNodeValue();
-      }
-    }
-    /* The attribute does not exists so add it */
-    Attr selboard = SettingsDocument.createAttribute(SelectedBoard);
-    selboard.setNodeValue(KnownBoards.GetBoardNames().toArray()[0].toString());
-    Element workspace = (Element) SettingsList.item(0);
-    workspace.setAttributeNode(selboard);
-    modified = true;
-    return KnownBoards.GetBoardNames().toArray()[0].toString();
+    String defBoard = KnownBoards.GetBoardNames().get(0);
+    String s = getAttribute(FPGABoards, SelectedBoard, defBoard);
+    if (KnownBoards.BoardInCollection(s))
+      return s;
+    setAttribute(FPGABoards, SelectedBoard, defBoard); // correct broken XML value
+    return defBoard;
+  }
+
+  public boolean SetSelectedBoard(String boardName) {
+    if (!KnownBoards.BoardInCollection(boardName))
+      return false;
+    setAttribute(FPGABoards, SelectedBoard, boardName);
+    return true;
   }
 
   public String GetSelectedBoardFileName() {
@@ -306,20 +270,13 @@ public class Settings {
   }
 
   public String GetStaticWorkspacePath() {
-    NodeList SettingsList = SettingsDocument.getElementsByTagName(WorkSpace);
-    if (SettingsList.getLength() == 1) {
-      Node ThisWorkspace = SettingsList.item(0);
-      NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-      for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-        if (WorkspaceParameters.item(i).getNodeName().equals(WorkPath)) {
-          String p = WorkspaceParameters.item(i).getNodeValue();
-          if (p !=  null && p.length() > 0) {
-            return p;
-          }
-        }
-      }
-    }
-    return null;
+    String s = getAttribute(WorkSpace, WorkPath, "");
+    return normalizePath(s);
+  }
+
+  public void SetStaticWorkspacePath(String path) {
+    path = normalizePath(path);
+    setAttribute(WorkSpace, WorkPath, path);
   }
 
   public String GetWorkspacePath(File projectFile) {
@@ -330,129 +287,34 @@ public class Settings {
       String dir = projectFile.getAbsoluteFile().getParentFile().getAbsolutePath();
       String name = projectFile.getName();
       name = name.replaceAll(".circ.xml$", "").replaceAll(".circ$", "") + "_fpga_workspace";
-      return Join(dir, name);
+      return join(dir, name);
     }
-    return Join(HomePath, WorkPathName);
+    return join(HomePath, WorkPathName);
   }
 
-  public String GetXilinxToolPath() {
-    NodeList SettingsList = SettingsDocument
-        .getElementsByTagName(WorkSpace);
-    if (SettingsList.getLength() != 1) {
-      return Unknown;
-    }
-    Node ThisWorkspace = SettingsList.item(0);
-    NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-    for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-      if (WorkspaceParameters.item(i).getNodeName().equals(XilinxName)) {
-        if (XilinxToolsFound(WorkspaceParameters.item(i).getNodeValue()))
-          return WorkspaceParameters.item(i).getNodeValue();
-        else {
-          WorkspaceParameters.item(i).setNodeValue("Unknown");
-          modified = true;
-          return Unknown;
-        }
+  private void ensureExactlyOneNode(String nodeName) {
+    NodeList nodes = SettingsDocument.getElementsByTagName(nodeName);
+    int n = nodes.getLength();
+    if (n == 0) {
+      Element e = SettingsDocument.createElement(nodeName);
+      SettingsDocument.getDocumentElement().appendChild(e);
+      modified = true;
+    } else if (n > 1) {
+      JOptionPane.showMessageDialog(null,
+          "FPGA settings file is corrupted, some settings may be lost: " 
+          + LoadedSettingsFileName);
+      while (n > 1) {
+        nodes.item(1).getParentNode().removeChild(nodes.item(1));
+        nodes = SettingsDocument.getElementsByTagName(nodeName);
+        n = nodes.getLength();
       }
+      modified = true;
     }
-    /* The attribute does not exists so add it */
-    Attr xilinx = SettingsDocument.createAttribute(XilinxName);
-    xilinx.setNodeValue(Unknown);
-    Element workspace = (Element) SettingsList.item(0);
-    workspace.setAttributeNode(xilinx);
-    modified = true;
-    return Unknown;
   }
 
-  public boolean SetAlteraToolPath(String path) {
-    if (path.length() > 1 && path.endsWith(File.separator))
-      path = path.substring(0, path.length() - 1);
-    if (!AlteraToolsFound(path))
-      return false;
-    NodeList SettingsList = SettingsDocument
-        .getElementsByTagName(WorkSpace);
-    if (SettingsList.getLength() != 1) {
-      return false;
-    }
-    Node ThisWorkspace = SettingsList.item(0);
-    NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-    for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-      if (WorkspaceParameters.item(i).getNodeName().equals(AlteraName)) {
-        WorkspaceParameters.item(i).setNodeValue(path);
-        modified = true;
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public boolean SetAltera64Bit(boolean enable) {
-    return SetBoolean(Altera64Bit, enable);
-  }
-
-  private boolean SetBoolean(String name, boolean enable) {
-    NodeList SettingsList = SettingsDocument
-        .getElementsByTagName(WorkSpace);
-    if (SettingsList.getLength() != 1) {
-      return false;
-    }
-    Node ThisWorkspace = SettingsList.item(0);
-    NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-    for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-      if (WorkspaceParameters.item(i).getNodeName().equals(name)) {
-        WorkspaceParameters.item(i)
-            .setNodeValue(Boolean.toString(enable));
-        modified = true;
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public boolean SetHDLType(String hdl) {
-    NodeList SettingsList = SettingsDocument
-        .getElementsByTagName(WorkSpace);
-    if (SettingsList.getLength() != 1) {
-      return false;
-    }
-    if (!hdl.equals(VHDL) && !hdl.equals(VERILOG))
-      return false;
-    Node ThisWorkspace = SettingsList.item(0);
-    NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-    for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-      if (WorkspaceParameters.item(i).getNodeName().equals(HdlTypeName)) {
-        WorkspaceParameters.item(i).setNodeValue(hdl);
-        modified = true;
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public boolean SetSelectedBoard(String BoardName) {
-    NodeList SettingsList = SettingsDocument.getElementsByTagName(Boards);
-    if (SettingsList.getLength() != 1) {
-      return false;
-    }
-    if (!KnownBoards.BoardInCollection(BoardName))
-      return false;
-    if (GetSelectedBoard().equals(BoardName))
-      return true;
-    Node ThisWorkspace = SettingsList.item(0);
-    NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-    for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-      if (WorkspaceParameters.item(i).getNodeName().equals(SelectedBoard)) {
-        WorkspaceParameters.item(i).setNodeValue(BoardName);
-        modified = true;
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private boolean SettingsComplete() {
-    boolean result = true;
-    if (SettingsDocument == null) {
-      result = false;
+  private boolean settingsComplete() {
+    boolean missingXML = (SettingsDocument == null);
+    if (missingXML) { 
       try {
         // Create instance of DocumentBuilderFactory
         DocumentBuilderFactory factory = DocumentBuilderFactory
@@ -464,143 +326,52 @@ public class Settings {
         SettingsDocument = parser.newDocument();
       } catch (ParserConfigurationException e) {
         JOptionPane.showMessageDialog(null,
-            "Fatal Error: Cannot create settings Document!");
+            "Fatal Error: Cannot create settings XML Document");
         System.exit(-4);
       }
       Element root = SettingsDocument.createElement(SettingsElement);
       SettingsDocument.appendChild(root);
     }
 
-    NodeList RootList = SettingsDocument.getChildNodes();
+    ensureExactlyOneNode(WorkSpace);
+    ensureExactlyOneNode(FPGABoards);
 
-    if (RootList.getLength() != 1) {
-      JOptionPane.showMessageDialog(null,
-          "Fatal Error: Settings file corrupted; please delete the file:"
-          + LoadedSettingsFileName);
-      System.exit(-5);
+    Element e = (Element)SettingsDocument.getElementsByTagName(FPGABoards).item(0);
+    NamedNodeMap attrs = e.getAttributes();
+    for (int i = 0; i < attrs.getLength(); i++) {
+      String k = attrs.item(i).getNodeName();
+      String v = attrs.item(i).getNodeValue();
+      if (k.startsWith(ExternalBoard) && new File(v).exists())
+        KnownBoards.AddExternalBoard(v);
     }
 
-    NodeList SettingsList = SettingsDocument
-        .getElementsByTagName(WorkSpace);
-    if (SettingsList.getLength() > 1) {
-      JOptionPane.showMessageDialog(null,
-          "Fatal Error: Settings file corrupted; please delete the file:"
-          + LoadedSettingsFileName + ".xml");
-      System.exit(-5);
-    }
-    if (SettingsList.getLength() == 0) {
-      Element workspace = SettingsDocument.createElement(WorkSpace);
-      // workspace.setAttribute(WorkPath, Join(HomePath, WorkPathName));
-      workspace.setAttribute(WorkPath, "");
-      RootList.item(0).appendChild(workspace);
-      SettingsList = SettingsDocument.getElementsByTagName(WorkSpace);
-      result = false;
-    }
+    GetStaticWorkspacePath();
     GetXilinxToolPath();
     GetAlteraToolPath();
     GetHDLType();
     GetAltera64Bit();
 
-    SettingsList = SettingsDocument.getElementsByTagName(Boards);
-    if (SettingsList.getLength() > 1) {
-      JOptionPane.showMessageDialog(null,
-          "Fatal Error: Settings file corrupted; please delete the file:"
-          + LoadedSettingsFileName + ".xml");
-      System.exit(-5);
-    }
-    if (SettingsList.getLength() == 0) {
-      Element workspace = SettingsDocument.createElement(Boards);
-      workspace.setAttribute(SelectedBoard, KnownBoards.GetBoardNames()
-          .toArray()[0].toString());
-      RootList.item(0).appendChild(workspace);
-      SettingsList = SettingsDocument.getElementsByTagName(Boards);
-      result = false;
-    }
     GetSelectedBoard();
 
-    result &= !modified;
-    return result;
+    return !missingXML && !modified;
   }
 
-  public boolean AddExternalBoard(String CompleteFileName) {
-    NodeList SettingsList = SettingsDocument.getElementsByTagName(Boards);
-    if (SettingsList.getLength() != 1) {
-      return false;
-    }
-    Node ThisWorkspace = SettingsList.item(0);
-    int NrOfBoards = 0;
-    NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-    for (int j = 0; j < WorkspaceParameters.getLength();j++) {
-      if (WorkspaceParameters.item(j).getNodeName().contains(ExternalBoard)) {
-        String[] Items = WorkspaceParameters.item(j).getNodeName().split("_");
-        if (Items.length == 2) {
-          if (Integer.parseInt(Items[1])>NrOfBoards)
-            NrOfBoards = Integer.parseInt(Items[1]);
-        }
-      }
-    }
-    NrOfBoards += 1;
-    /* The attribute does not exists so add it */
-    Attr extBoard = SettingsDocument.createAttribute(ExternalBoard+"_"+Integer.toString(NrOfBoards));
-    extBoard.setNodeValue(CompleteFileName);
-    Element workspace = (Element) SettingsList.item(0);
-    workspace.setAttributeNode(extBoard);
-    KnownBoards.AddExternalBoard(CompleteFileName);
-    modified = true;
-    return true;
-  }
-
-  public boolean SetStaticWorkspacePath(String path) {
-    if (path.length() > 1 && path.endsWith(File.separator))
-      path = path.substring(0, path.length() - 1);
-    NodeList SettingsList = SettingsDocument
-        .getElementsByTagName(WorkSpace);
-    if (SettingsList.getLength() != 1) {
-      return false;
-    }
-    Node ThisWorkspace = SettingsList.item(0);
-    NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-    for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-      if (WorkspaceParameters.item(i).getNodeName().equals(WorkPath)) {
-        WorkspaceParameters.item(i).setNodeValue(path);
-        modified = true;
-        return true;
-      }
-    }
-    ((Element)ThisWorkspace).setAttribute(WorkPath, path);
-    modified = true;
-    return true;
-  }
-
-  public boolean SetXilinxToolPath(String path) {
-    if (path.length() > 1 && path.endsWith(File.separator))
-      path = path.substring(0, path.length() - 1);
-    if (!XilinxToolsFound(path))
-      return false;
-    NodeList SettingsList = SettingsDocument
-        .getElementsByTagName(WorkSpace);
-    if (SettingsList.getLength() != 1) {
-      return false;
-    }
-    Node ThisWorkspace = SettingsList.item(0);
-    NamedNodeMap WorkspaceParameters = ThisWorkspace.getAttributes();
-    for (int i = 0; i < WorkspaceParameters.getLength(); i++) {
-      if (WorkspaceParameters.item(i).getNodeName().equals(XilinxName)) {
-        WorkspaceParameters.item(i).setNodeValue(path);
-        modified = true;
-        return true;
-      }
-    }
-    return false;
+  public void AddExternalBoard(String filename) {
+    Element e = (Element)SettingsDocument.getElementsByTagName(FPGABoards).item(0);
+    int id = 1;
+    while (e.getAttributeNode(ExternalBoard+id) != null)
+      id++;
+    setAttribute(FPGABoards, ExternalBoard+id, filename);
+    KnownBoards.AddExternalBoard(filename);
   }
 
   public boolean UpdateSettingsFile() {
     if (!modified)
       return true;
-    return WriteXml();
+    return writeXml();
   }
 
-  private boolean WriteXml() {
+  private boolean writeXml() {
     try {
       writeTo(SharedPath, SharedSettingsFileName);
       return true;
@@ -609,13 +380,26 @@ public class Settings {
       writeTo(HomePath, UserSettingsFileName);
       return true;
     } catch (Exception e) {
-      JOptionPane.showMessageDialog(null, e.getMessage());
+      Errors.title("FPGA Settings").show("Can't write FPGA settings file: "
+          + UserSettingsFileName, e);
       return false;
+    }
+  }
+  
+  private void removeWhitespace(Element e) {
+    NodeList nodes = e.getChildNodes();
+    for (int i = 0; i < nodes.getLength(); i++) {
+      Node n = nodes.item(i);
+      if (n.getNodeName().equalsIgnoreCase("#text"))
+          e.removeChild(n);
+      else if (n instanceof Element)
+        removeWhitespace((Element)n);
     }
   }
 
   private void writeTo(String dir, String name) throws Exception {
-    File SettingsFile = new File(Join(dir, name));
+    removeWhitespace(SettingsDocument.getDocumentElement());
+    File SettingsFile = new File(join(dir, name));
     TransformerFactory tranFactory = TransformerFactory.newInstance();
     tranFactory.setAttribute("indent-number", 3);
     Transformer aTransformer = tranFactory.newTransformer();
@@ -626,9 +410,9 @@ public class Settings {
     modified = false;
   }
 
-  private boolean XilinxToolsFound(String path) {
-    for (int i = 0; i < XilinxPrograms.length; i++) {
-      File test = new File(Join(path, XilinxPrograms[i]));
+  private boolean allToolsPresent(String path, String[] progNames) {
+    for (String prog: progNames) {
+      File test = new File(join(path, prog));
       if (!test.exists())
         return false;
     }

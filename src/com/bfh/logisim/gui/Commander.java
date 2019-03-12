@@ -924,10 +924,8 @@ public class Commander extends JFrame
     clearAllMessages();
     actionButton.setEnabled(board != null);
     if (board == null
-        || (board.fpga.Vendor == Chipset.ALTERA
-         && settings.GetAlteraToolPath().equals(Settings.Unknown))
-        || (board.fpga.Vendor == Chipset.XILINX
-          && settings.GetXilinxToolPath().equals(Settings.Unknown))) {
+        || (board.fpga.Vendor == Chipset.ALTERA && settings.GetAlteraToolPath() == null)
+        || (board.fpga.Vendor == Chipset.XILINX && settings.GetXilinxToolPath() == null)) {
       if (board == null) {
         AddErrors("Please select an FPGA board.");
       } else {
@@ -984,8 +982,7 @@ public class Commander extends JFrame
     if (lang.equals(settings.GetHDLType()))
       return;
     settings.SetHDLType(lang);
-    if (!settings.UpdateSettingsFile())
-      AddErrors("***SEVERE*** Could not update XML settings file");
+    settings.UpdateSettingsFile();
     Circuit root = circuitsList.getSelectedValue();
     if (root != null)
       root.recursiveResetNetlists();
@@ -1048,30 +1045,6 @@ public class Commander extends JFrame
       return null;
     File file = fc.getSelectedFile();
     return file.getPath();
-  }
-
-  private void selectWorkSpace() {
-    JFileChooser fc = new JFileChooser(workspacePath());
-    fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-    File test = new File(workspacePath());
-    if (test.exists()) {
-      fc.setSelectedFile(test);
-    }
-    fc.setDialogTitle("Workspace Directory Selection");
-    int retval = fc.showOpenDialog(null);
-    if (retval == JFileChooser.APPROVE_OPTION) {
-      File file = fc.getSelectedFile();
-      if (file.getPath().endsWith(SLASH)) {
-        settings.SetStaticWorkspacePath(file.getPath());
-      } else {
-        settings.SetStaticWorkspacePath(file.getPath() + SLASH);
-      }
-      if (!settings.UpdateSettingsFile()) {
-        AddErrors("***SEVERE*** Could not update the FPGACommander settings file");
-      } else {
-        AddInfo("Updated the FPGACommander settings file");
-      }
-    }
   }
 
   public void reactivate() {

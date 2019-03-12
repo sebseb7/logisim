@@ -72,9 +72,9 @@ public class FPGASettingsDialog implements ActionListener {
 		GridBagConstraints c = new GridBagConstraints();
 
 		String apath = settings.GetAlteraToolPath();
-		if ("Unknown".equals(apath)) apath = "";
+    if (apath == null) apath = "";
 		String xpath = settings.GetXilinxToolPath();
-		if ("Unknown".equals(xpath)) xpath = "";
+    if (xpath == null) xpath = "";
 		String wpath = settings.GetStaticWorkspacePath();
 		if (wpath == null) wpath = "";
 
@@ -95,7 +95,8 @@ public class FPGASettingsDialog implements ActionListener {
 		workPicker.setActionCommand("workPicker");
 		workPicker.addActionListener(this);
 
-		JLabel alteraLabel = new JLabel("Altera tools path (directory containing " + settings.AlteraPrograms[0]+"):");
+		JLabel alteraLabel = new JLabel("Altera tools path (directory containing "
+        + settings.AlteraPrograms[0]+"):");
 		alteraPath = new JTextField(apath);
 		alteraPath.setPreferredSize(new Dimension(400, 10));
 		JButton alteraPicker = new JButton("Choose");
@@ -112,7 +113,8 @@ public class FPGASettingsDialog implements ActionListener {
 		else
 			altera32Choice.setSelected(true);
 
-		JLabel xilinxLabel = new JLabel("Xilinx tools path (directory containing " + settings.XilinxPrograms[0]+"):");
+		JLabel xilinxLabel = new JLabel("Xilinx tools path (directory containing "
+        + settings.XilinxPrograms[0]+"):");
 		xilinxPath = new JTextField(xpath);
 		xilinxPath.setPreferredSize(new Dimension(400, 10));
 		JButton xilinxPicker = new JButton("Choose");
@@ -202,37 +204,33 @@ public class FPGASettingsDialog implements ActionListener {
 		}
 	}
 
+  private static String pretty(String[] names) {
+    String s = names[0];
+    for (int i = 1; i < names.length; i++) {
+      s += (i == names.length - 1 ? ", and " :", "); 
+      s += names[i];
+    }
+    return s;
+  }
+
 	private void save() {
 		String apath = alteraPath.getText();
-		if (!"".equals(apath) && !settings.SetAlteraToolPath(apath)) {
-			String names = settings.AlteraPrograms[0];
-			for (int i = 1; i < settings.AlteraPrograms.length; i++) {
-				names += ", " + (i == settings.AlteraPrograms.length - 1 ? "and " :""); 
-				names += settings.AlteraPrograms[i];
-			}
+		if (!settings.SetAlteraToolPath(apath)) {
+			String names = pretty(settings.AlteraPrograms);
 			JOptionPane.showMessageDialog(null,
 					"Error setting Altera tool path.\n" +
 					"Please select a directory containing " + names + ".");
 		}
 		settings.SetAltera64Bit(altera64Choice.isSelected());
 		String xpath = xilinxPath.getText();
-		if (!"".equals(xpath) && !settings.SetXilinxToolPath(xpath)) {
-			String names = settings.XilinxPrograms[0];
-			for (int i = 1; i < settings.XilinxPrograms.length; i++) {
-				names += ", " + (i == settings.XilinxPrograms.length - 1 ? "and " :""); 
-				names += settings.XilinxPrograms[i];
-			}
+		if (!settings.SetXilinxToolPath(xpath)) {
+			String names = pretty(settings.XilinxPrograms);
 			JOptionPane.showMessageDialog(null,
 					"Error setting Xilinx tool path.\n" +
 					"Please select a directory containing " + names + ".");
 		}
-		if (!settings.SetStaticWorkspacePath(workPath.getText())) {
-			JOptionPane.showMessageDialog(null,
-					"Error setting temporary compilation path.");
-		}
-		if (!settings.UpdateSettingsFile()) {
-			JOptionPane.showMessageDialog(null, "Error saving settings file.\n");
-		}
+		settings.SetStaticWorkspacePath(workPath.getText());
+		settings.UpdateSettingsFile();
 	}
 
 	private void pick(String vendor, String path) {
