@@ -41,7 +41,7 @@ import com.cburch.logisim.data.Bounds;
 
 public interface CanvasModel {
 	// listener methods
-	public void addCanvasModelListener(CanvasModelListener l);
+	public void addCanvasModelWeakListener(Object owner, CanvasModelListener l);
 
 	// methods that alter the model
 	public void addObjects(int index, Collection<? extends CanvasObject> shapes);
@@ -65,7 +65,7 @@ public interface CanvasModel {
 	// methods that don't change any data in the model
 	public void paint(Graphics g, Selection selection);
 
-	public void removeCanvasModelListener(CanvasModelListener l);
+	public void removeCanvasModelWeakListener(Object owner, CanvasModelListener l);
 
 	public void removeObjects(Collection<? extends CanvasObject> shapes);
 

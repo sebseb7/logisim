@@ -200,7 +200,7 @@ public class CircuitState implements InstanceData {
     this.proj = proj;
     this.circuit = circuit;
     this.base = prop != null ? prop : new Propagator(this);
-    circuit.addCircuitListener(myCircuitListener);
+    circuit.addCircuitWeakListener(null, myCircuitListener);
     markAllComponentsDirty();
   }
 

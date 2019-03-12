@@ -243,13 +243,9 @@ public class LogisimFile extends Library implements LibraryEventSource {
   }
 
 
-  public void addLibraryListener(LibraryListener what) {
-    listeners.add(what);
-  }
+  public void addLibraryWeakListener(Object owner, LibraryListener l) { listeners.add(owner, l); }
+  public void removeLibraryWeakListener(Object owner, LibraryListener l) { listeners.remove(owner, l); }
 
-  //
-  // modification actions
-  //
   public void addMessage(String msg) {
     messages.addLast(msg);
   }
@@ -566,10 +562,6 @@ public class LogisimFile extends Library implements LibraryEventSource {
       fireEvent(LibraryEvent.REMOVE_LIBRARY, lib);
     }
     return index;
-  }
-
-  public void removeLibraryListener(LibraryListener what) {
-    listeners.remove(what);
   }
 
   public void setDirty(boolean value) {

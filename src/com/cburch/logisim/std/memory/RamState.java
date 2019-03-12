@@ -52,9 +52,9 @@ public class RamState extends MemState
     this.listener = listener;
     this.clockState = new ClockState();
     if (parent != null) {
-      parent.getAttributeSet().addAttributeListener(this);
+      parent.getAttributeSet().addAttributeWeakListener(null, this);
     }
-    contents.addHexModelListener(listener);
+    contents.addHexModelWeakListener(null, listener);
   }
 
   @Override
@@ -73,7 +73,7 @@ public class RamState extends MemState
     RamState ret = (RamState) super.clone();
     ret.parent = null;
     ret.clockState = this.clockState.clone();
-    ret.getContents().addHexModelListener(listener);
+    ret.getContents().addHexModelWeakListener(null, listener);
     return ret;
   }
 
@@ -94,11 +94,11 @@ public class RamState extends MemState
       return;
     }
     if (parent != null) {
-      parent.getAttributeSet().removeAttributeListener(this);
+      parent.getAttributeSet().removeAttributeWeakListener(null, this);
     }
     parent = value;
     if (value != null) {
-      value.getAttributeSet().addAttributeListener(this);
+      value.getAttributeSet().addAttributeWeakListener(null, this);
     }
   }
 

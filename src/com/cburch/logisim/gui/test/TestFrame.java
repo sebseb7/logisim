@@ -192,7 +192,7 @@ public class TestFrame extends LFrame.SubWindowWithSimulation {
 
     WindowMenuManager() {
       super(S.get("logFrameMenuItem"), false);
-      project.addProjectListener(this);
+      project.addProjectWeakListener(null, this);
     }
 
     public JFrame getJFrame(boolean create, java.awt.Component parent) {
@@ -241,7 +241,7 @@ public class TestFrame extends LFrame.SubWindowWithSimulation {
   public TestFrame(Project project) {
     super(project);
     this.windowManager = new WindowMenuManager();
-    project.addProjectListener(myListener);
+    project.addProjectWeakListener(null, myListener);
     setSimulator(project.getSimulator(), project.getCircuitState().getCircuit());
 
     chooser.addChoosableFileFilter(chooser.getAcceptAllFileFilter());
@@ -299,7 +299,7 @@ public class TestFrame extends LFrame.SubWindowWithSimulation {
     if (curModel != null)
       curModel.setSelected(false);
     if (curModel != null)
-      curModel.removeModelListener(myListener);
+      curModel.removeModelWeakListener(null, myListener);
 
     Model oldModel = curModel;
     Model data = null;
@@ -318,7 +318,7 @@ public class TestFrame extends LFrame.SubWindowWithSimulation {
     if (curModel != null)
       curModel.setSelected(true);
     if (curModel != null)
-      curModel.addModelListener(myListener);
+      curModel.addModelWeakListener(null, myListener);
     setTitle(computeTitle(curModel, project));
     if (panel != null)
       panel.modelChanged(oldModel, curModel);

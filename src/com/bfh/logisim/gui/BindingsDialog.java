@@ -37,6 +37,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ItemEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -64,6 +65,7 @@ import java.util.function.Function;
 // import org.w3c.dom.Node;
 // import org.w3c.dom.NodeList;
 import javax.swing.AbstractListModel;
+import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -72,6 +74,7 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JLayeredPane;
 import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -100,26 +103,39 @@ public class BindingsDialog extends JDialog {
   private Synthetic zeros, ones, constants, bitbucket;
   private Synthetic[] synthetics;
 
-  private JButton unmap = new JButton();
-  private JButton reset = new JButton();
-  // private JButton save = new JButton();
-  // private JButton load = new JButton();
-  private JButton done = new JButton();
+  private JButton unmap = new JButton("Unset");
+  private JButton reset = new JButton("Reset All");
+  // private JButton save = new JButton("Load Map from XML");
+  // private JButton load = new JButton("Save Map to XML");
+  private JButton done = new JButton("Close/Done");
   private JLabel status = new JLabel();
 
   private HashMap<BoardIO, Rect> rects = new HashMap<>();
   private SelectionPanel picture = new SelectionPanel();
-  private SourceList sources = new SourceList();
+  private SourceList sources;
+  JLayeredPane overlay;
 
   private String xmlDir;
+
+  // Caution: these *must* be Integer. See javadoc for JLayeredPane.
+  private static final Integer LAYER_BOTTOM = 0;
+  private static final Integer LAYER_TOP = 1;
 
   public BindingsDialog(Board board, PinBindings pinBindings, JFrame parentFrame, String projectPath) {
     super(parentFrame, ModalityType.APPLICATION_MODAL);
     this.board = board;
     this.pinBindings = pinBindings;
+    sources = new SourceList();
 
-    for (BoardIO io : board)
-      rects.put(io, new Rect(io));
+    overlay = new JLayeredPane();
+
+    for (BoardIO io : board) {
+      Rect r = new Rect(io);
+      rects.put(io, r);
+      overlay.add(r, LAYER_TOP);
+      r.setBounds(io.rect.x, io.rect.y, io.rect.width, io.rect.height);
+      r.setVisible(false);
+    }
 
     xmlDir = new File(projectPath).getParent();
     if (xmlDir == null)
@@ -132,16 +148,6 @@ public class BindingsDialog extends JDialog {
     setAlwaysOnTop(false);
     setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
 
-    setLayout(new GridBagLayout());
-    GridBagConstraints c = new GridBagConstraints();
-    c.fill = GridBagConstraints.HORIZONTAL;
-
-    // Board picture
-    c.gridx = 0;
-    c.gridy = 0;
-    c.gridwidth = 3;
-    add(picture, c);
-
     // Synthetic BoardIO buttons
     zeros = new Synthetic(BoardIO.Type.AllZeros, 0, "Zeros", "zeros.gif",
         "Use constant 0 (or all zeros) for selected input signal.");
@@ -152,71 +158,73 @@ public class BindingsDialog extends JDialog {
     bitbucket = new Synthetic(BoardIO.Type.Unconnected, 0, "Disconnected", "disconnected.gif",
         "Leave the selected output or inout signal disconnected.");
     synthetics = new Synthetic[] { ones, zeros, constants, bitbucket };
-    JPanel buttonpanel = new JPanel();
+    JPanel buttonpanel = new JPanel(); // default FlowLayout
+    buttonpanel.setBackground(Color.BLACK);
     for (Synthetic b : synthetics)
       buttonpanel.add(b);
-    c.gridy++;
-    add(buttonpanel, c);
-
-    // Labels and instructions
-    JLabel header = new JLabel();
-    header.setText("I/O Components in Design Under Test");
-    header.setHorizontalTextPosition(JLabel.CENTER);
-    header.setPreferredSize(new Dimension(picture.getWidth(), 25));
-    header.setToolTipText("<html>Select a component and connect it to a board I/O resource.<br>"
-        + "Use drop-down menu to expand or change component type.</html>");
-    c.gridy++;
-    c.gridx = 0;
-    c.gridwidth = 1;
-    add(header, c);
 
     // Component selection list
     JScrollPane scroll = new JScrollPane(sources);
-    scroll.setPreferredSize(new Dimension(picture.getWidth(), 150));
-    c.gridx = 1;
-    c.gridheight = 9;
-    add(scroll, c);
-
-    c.gridheight = 1;
-
-    // Unmap button
-    unmap.setText("Unset Component");
+    scroll.setToolTipText("<html>Select a component and connect it to a board I/O resource.<br>"
+        + "Use drop-down menu to expand or change component type.</html>");
+   
+    // Action buttons along right side
     unmap.addActionListener(e -> sources.unmapCurrent());
-    c.gridy++;
-    add(unmap, c);
-
-    // Reset button
-    reset.setText("Reset All");
     reset.addActionListener(e -> sources.resetAll());
-    c.gridy++;
+    done.addActionListener(e -> { setVisible(false); dispose(); });
+
+    // Scroll panel and status along left side
+    status.setBorder(
+        BorderFactory.createCompoundBorder(
+          BorderFactory.createMatteBorder(1, 0, 0, 0, Color.GRAY),
+          BorderFactory.createEmptyBorder(2, 2, 2, 2)));
+
+    overlay.add(picture, LAYER_BOTTOM);
+    picture.setBounds(0, 0, picture.getWidth(), picture.getHeight());
+    overlay.setPreferredSize(picture.getPreferredSize());
+    JPanel top = new JPanel();
+    top.add(overlay);
+    top.setBackground(Color.BLACK);
+    top.setBorder(BorderFactory.createMatteBorder(5, 5, 5, 5, Color.BLACK));
+
+    setLayout(new GridBagLayout());
+    GridBagConstraints c = new GridBagConstraints();
+    c.fill = GridBagConstraints.HORIZONTAL;
+    c.gridx = 0;
+    c.gridy = GridBagConstraints.RELATIVE;
+    c.gridwidth = 2;
+    add(top, c);
+    add(buttonpanel, c);
+
+    c.gridwidth = 1;
+    c.gridx = 1;
+    c.insets.left = c.insets.right = c.insets.bottom = 5;
+    c.weightx = 0.0;
+    c.fill = GridBagConstraints.BOTH;
+    c.weighty = 1.0;
+    add(new JPanel(), c); // filler
+    c.weighty = 0.0;
+    c.fill = GridBagConstraints.HORIZONTAL;
+    add(unmap, c);
     add(reset, c);
-
-    // load.setText("Load Map");
-    // load.addActionListener(this);
-    // load.setEnabled(true);
-    // c.gridy++;
-    // add(load, c);
-
-    // save.setText("Save Map");
-    // save.addActionListener(this);
-    // save.setEnabled(false);
-    // c.gridy++;
-    // add(save, c);
-    
-    // Close/Done button
-    done.setText("Close/Done");
-    done.addActionListener(e -> {
-      setVisible(false);
-      dispose();
-    });
-    c.gridy++;
     add(done, c);
 
-    // Status line
     c.gridx = 0;
-    c.gridy++;
-    c.gridwidth = 3;
+    c.gridwidth = 2;
+    c.insets.left = c.insets.right = 0;
+    c.insets.top = c.insets.bottom = 0;
     add(status, c);
+
+    c.fill = GridBagConstraints.BOTH;
+    c.gridwidth = 1;
+    c.gridheight = 4;
+    c.gridx = 0;
+    c.gridy = 2;
+    c.weightx = 1.0;
+    c.insets.left = 5;
+    c.insets.right = 0;
+    c.insets.top = c.insets.bottom = 5;
+    add(scroll, c);
 
     if (sources.model.getSize() > 0)
       sources.setSelectedIndex(0);
@@ -245,16 +253,32 @@ public class BindingsDialog extends JDialog {
     }
   }
 
+  private static final Color MAPPED = new Color(0, 0x60, 0);
+  private static final Color MISTY = new Color(1f, 0f, 0f, 0.4f);
+  private static final Color MISTYB = new Color(1f, 0f, 0f);
+  private static final Color HILIGHT = new Color(0f, 1f, 0f, 0.4f);
+  private static final Color HILIGHTB = new Color(0f, 1f, 0f);
+  private static final Color HOVER = new Color(1f, 1f, 0f, 0.4f);
+  private static final Color HOVERB = new Color(1f, 1f, 0f);
+
   private class Rect extends JPanel implements MouseListener {
     BoardIO io;
+    boolean select, hover;
 
     Rect(BoardIO io) {
       this.io = io;
-      this.setPreferredSize(new Dimension(io.rect.width, io.rect.height));
       setOpaque(false);
-      setBackground(Color.RED); // todo: semi-transparent
       setVisible(false);
       addMouseListener(this);
+      setToolTipText("Map component to " + io);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+      g.setColor(hover ? HOVERB : select ? HILIGHTB : MISTYB);
+      g.drawRect(0, 0, io.rect.width, io.rect.height);
+      g.setColor(hover ? HOVER : select ? HILIGHT : MISTY);
+      g.fillRect(0, 0, io.rect.width, io.rect.height);
     }
 
     @Override
@@ -265,15 +289,18 @@ public class BindingsDialog extends JDialog {
         return;
       if (sources.current.width.size() == 1 && io.width > 1)
         doBitSelectPopup(e);
-      else if (pinBindings.mappings.get(sources.current) != null)
-        sources.unmapCurrent();
-      else
-        sources.mapCurrent(io, -1);
+      else {
+        Dest dest = pinBindings.mappings.get(sources.current);
+        if (dest != null && dest.io == io)
+          sources.unmapCurrent();
+        else
+          sources.mapCurrent(io, -1);
+      }
     }
 
     // todo: hilight/tint on hover
-    public void mouseEntered(MouseEvent e) { }
-    public void mouseExited(MouseEvent e) { }
+    public void mouseEntered(MouseEvent e) { hover = true; repaint(); }
+    public void mouseExited(MouseEvent e) { hover = false; repaint(); }
     public void mousePressed(MouseEvent e) { }
     public void mouseReleased(MouseEvent e) { }
 
@@ -281,11 +308,18 @@ public class BindingsDialog extends JDialog {
       JPopupMenu popup = new JPopupMenu("Select Bit");
       String[] pinLabels = io.type.pinLabels(io.width);
       Dest dest = pinBindings.mappings.get(sources.current);
+      // System.out.printf("source is %s\n", sources.current);
+      // System.out.printf("this is %s\n", io);
+      // System.out.printf("dest is %s currently\n", dest);
       for (int i = 0; i < io.width; i++) {
         final int bit = i;
+        // System.out.printf("   selected bit %d? %s\n", i, 
+        //     dest != null && dest.io == io && dest.bit == bit);
         JCheckBoxMenuItem menu = new JCheckBoxMenuItem(pinLabels[i]);
         menu.setSelected(dest != null && dest.io == io && dest.bit == bit);
-        menu.addActionListener((ev) -> sources.mapCurrent(io, bit));
+        if (pinBindings.containsMappingFor(io, bit))
+          menu.setForeground(MAPPED);
+        menu.addActionListener(ev -> sources.mapCurrent(io, bit));
         popup.add(menu);
       }
       if (dest != null && dest.io == io) {
@@ -297,7 +331,10 @@ public class BindingsDialog extends JDialog {
     }
 
     void emphasize(boolean b) {
-      setBackground(b ? Color.YELLOW : Color.RED);
+      if (select == b)
+        return;
+      select = b;
+      repaint();
     }
   }
 
@@ -354,7 +391,8 @@ public class BindingsDialog extends JDialog {
       boolean done = false;
       if (value instanceof Source) {
         Source src = (Source)value;
-        done = pinBindings.mappings.containsKey(src);
+        Dest dst = pinBindings.mappings.get(src);
+        done = dst != null;
         int w = src.width.size();
         String dir = src.width.in > 0 ? "in" : src.width.out > 0 ? "out" : "inout";
         if (w == 1)
@@ -363,13 +401,15 @@ public class BindingsDialog extends JDialog {
           value = String.format("%s [type %s, %s, %d bits]", src.path, src.type, dir, w);
         else
           value = String.format("    %s [type %s, %s, bit %d]", src.path, src.type, dir, src.bit);
+        if (dst != null)
+          value = value + " mapped to " + dst;
         // todo: display header part of expanded source as grayed out, or
         // different, etc.
       }
       java.awt.Component c
           = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
       if (c instanceof JComponent)
-        ((JComponent)c).setForeground(done ? Color.BLUE : Color.BLACK);
+        ((JComponent)c).setForeground(done ? MAPPED : Color.BLACK);
         // ((JComponent)c).setBorder(matteBorder);
       return c;
     }
@@ -382,7 +422,6 @@ public class BindingsDialog extends JDialog {
       setModel(model);
       setCellRenderer(new SourceRenderer());
       setFont(getFont().deriveFont(Font.PLAIN));
-      // setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
       setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
       current = null;
       addListSelectionListener(e -> selected(getSelectedValue()));
@@ -393,10 +432,12 @@ public class BindingsDialog extends JDialog {
       selectedChanged(old, current);
     }
     void mapCurrent(BoardIO io, int bit) {
+      System.out.printf("Mapping %s of %s to %s\n", 
+          (bit < 0 ? "all bits" : "bit "+bit), current, io);
       if (current == null)
           return;
       unmapCurrent();
-      HashSet<Source> changed = pinBindings.addMapping(current, io, -1);
+      HashSet<Source> changed = pinBindings.addMapping(current, io, bit);
       for (Source src : changed)
         model.changed(src);
       selectedChanged(current, current);
@@ -446,7 +487,7 @@ public class BindingsDialog extends JDialog {
     int val;
     Color oldBg = null;
     Synthetic(BoardIO.Type type, int val, String label, String icon, String tip) {
-      super(label, BindingsDialog.getIcon(icon));
+      super(label, Commander.getIcon(icon));
       this.type = type;
       this.val = val;
       setToolTipText(tip);
@@ -465,6 +506,34 @@ public class BindingsDialog extends JDialog {
         else
           sources.unmapCurrent();
       });
+    }
+      
+    // At least on Linux with openjdk 11.0.2, JToggleButton width is
+    // underestimated consistently by about 6 pixels, resulting in a truncated
+    // label. Correct the estimate here.
+    @Override
+    public Dimension getPreferredSize() {
+      Dimension d = super.getPreferredSize();
+      if (d == null)
+        return null;
+      d.width += 10;
+      return d;
+    }
+    @Override
+    public Dimension getMaximumSize() {
+      Dimension d = super.getMaximumSize();
+      if (d == null)
+        return null;
+      d.width += 10;
+      return d;
+    }
+    @Override
+    public Dimension getMinimumSize() {
+      Dimension d = super.getMinimumSize();
+      if (d == null)
+        return null;
+      d.width += 10;
+      return d;
     }
 
   }
@@ -494,6 +563,8 @@ public class BindingsDialog extends JDialog {
       }
     } else {
       if (oldSource != current) {
+        for (Rect r : rects.values())
+          r.setVisible(false);
         // Recalculate visibility of all rects and synthetics
         for (BoardIO io : pinBindings.compatibleResources(current)) {
           Rect r = rects.get(io);
@@ -509,17 +580,11 @@ public class BindingsDialog extends JDialog {
       // Recalculate emphasis
       Dest dest = pinBindings.mappings.get(current);
       for (Synthetic b : synthetics)
-        ones.setSelected(dest != null && dest.io.type == b.type);
-      Rect r = rects.get(dest.io);
-      if (r != null)
-        r.emphasize(true);
+        b.setSelected(dest != null && dest.io.type == b.type);
+      for (Rect r : rects.values())
+        r.emphasize(dest != null && r.io == dest.io);
     }
-  }
-
-  static ImageIcon getIcon(String name) {
-    String path ="resources/logisim/icons/" + name;
-    java.net.URL url = BindingsDialog.class.getClassLoader().getResource(path);
-    return url == null ? null : new ImageIcon(url);
+    overlay.repaint();
   }
 
   void updateStatus() {

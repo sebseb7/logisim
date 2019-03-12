@@ -32,7 +32,7 @@ package com.cburch.hex;
 
 public interface HexModel {
 	/** Registers a listener for changes to the values. */
-	public void addHexModelListener(HexModelListener l);
+	public void addHexModelWeakListener(Object owner, HexModelListener l);
 
 	/** Fills a series of values with the same value. */
 	public void fill(long start, long length, int value);
@@ -50,7 +50,7 @@ public interface HexModel {
 	public int getValueWidth();
 
 	/** Unregisters a listener for changes to the values. */
-	public void removeHexModelListener(HexModelListener l);
+	public void removeHexModelWeakListener(Object owner, HexModelListener l);
 
 	/** Changes the value at the given address. */
 	public void set(long address, int value);

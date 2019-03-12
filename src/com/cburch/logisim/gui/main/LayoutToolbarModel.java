@@ -93,14 +93,14 @@ class LayoutToolbarModel extends AbstractToolbarModel {
         LogisimFile old = (LogisimFile) e.getOldData();
         if (old != null) {
           ToolbarData data = old.getOptions().getToolbarData();
-          data.removeToolbarListener(this);
-          data.removeToolAttributeListener(this);
+          data.removeToolbarWeakListener(null, this);
+          data.removeToolAttributeWeakListener(/*null,*/ this);
         }
         LogisimFile file = (LogisimFile) e.getData();
         if (file != null) {
           ToolbarData data = file.getOptions().getToolbarData();
-          data.addToolbarListener(this);
-          data.addToolAttributeListener(this);
+          data.addToolbarWeakListener(null, this);
+          data.addToolAttributeWeakListener(/*null,*/ this);
         }
         buildContents();
       }
@@ -137,11 +137,11 @@ class LayoutToolbarModel extends AbstractToolbarModel {
       if (addTool.getFactory() instanceof SubcircuitFactory) {
         label = tool.getName();
         ((SubcircuitFactory)addTool.getFactory()).getSubcircuit()
-            .getStaticAttributes().addAttributeListener(this);
+            .getStaticAttributes().addAttributeWeakListener(null, this);
       } else if (addTool.getFactory() instanceof VhdlEntity) {
         label = tool.getName();
         ((VhdlEntity)addTool.getFactory()).getContent()
-            .getStaticAttributes().addAttributeListener(this);
+            .getStaticAttributes().addAttributeWeakListener(null, this);
       }
       if (label != null)
         labelBounds = StringUtil.estimateBounds(label, FONT);
@@ -253,10 +253,10 @@ class LayoutToolbarModel extends AbstractToolbarModel {
 
     // set up listeners
     ToolbarData data = proj.getOptions().getToolbarData();
-    data.addToolbarListener(myListener);
-    data.addToolAttributeListener(myListener);
+    data.addToolbarWeakListener(null, myListener);
+    data.addToolAttributeWeakListener(/*null,*/ myListener);
     AppPreferences.GATE_SHAPE.addPropertyChangeListener(myListener);
-    proj.addProjectListener(myListener);
+    proj.addProjectWeakListener(null, myListener);
   }
 
   private void buildContents() {

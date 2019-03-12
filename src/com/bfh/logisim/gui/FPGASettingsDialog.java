@@ -182,15 +182,8 @@ public class FPGASettingsDialog implements ActionListener {
 		panel.setVisible(false);
 	}
 
-	public void SetVisible(boolean show) {
-		if (!show) {
-			panel.setVisible(false);
-		} else if (!panel.isVisible()) {
-			panel.setVisible(true);
-		} else {
-			panel.setVisible(false);
-			panel.setVisible(true);
-		}
+	public void doDialog() {
+    panel.setVisible(true);
 	}
 
 	@Override

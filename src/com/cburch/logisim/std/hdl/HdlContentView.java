@@ -279,8 +279,8 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
       return;
     if (!editor.getText().equals(model.getContent()))
       model.setContent(editor.getText());
-    model.removeHdlModelListener(toolbar);
-    model.removeHdlModelListener(this);
+    model.removeHdlModelWeakListener(null, toolbar);
+    model.removeHdlModelWeakListener(null, this);
     model = null;
     setText("");
     dirty = false;
@@ -316,8 +316,8 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
     clearHdlModel();
     this.model = model;
     if (this.model != null) {
-      this.model.addHdlModelListener(toolbar);
-      this.model.addHdlModelListener(this);
+      this.model.addHdlModelWeakListener(null, toolbar);
+      this.model.addHdlModelWeakListener(null, this);
       setText(model.getContent());
       toolbar.setDirty(!model.isValid());
     }

@@ -184,9 +184,9 @@ class TestPanel extends JPanel implements ValueTable.Model {
 
   public void modelChanged(Model oldModel, Model newModel) {
     if (oldModel != null)
-      oldModel.removeModelListener(myListener);
+      oldModel.removeModelWeakListener(null, myListener);
     if (newModel != null)
-      newModel.addModelListener(myListener);
+      newModel.addModelWeakListener(null, myListener);
     table.setModel(newModel == null ? null : this);
   }
 

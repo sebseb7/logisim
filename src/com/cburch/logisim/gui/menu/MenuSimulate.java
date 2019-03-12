@@ -63,7 +63,7 @@ public class MenuSimulate extends Menu {
       this.circuitState = circuitState;
 
       Circuit circuit = circuitState.getCircuit();
-      circuit.addCircuitListener(this);
+      circuit.addCircuitWeakListener(null, this);
       this.setText(circuit.getName());
       addActionListener(this);
     }
@@ -82,7 +82,7 @@ public class MenuSimulate extends Menu {
 
     void unregister() {
       Circuit circuit = circuitState.getCircuit();
-      circuit.removeCircuitListener(this);
+      circuit.removeCircuitWeakListener(null, this);
     }
   }
 

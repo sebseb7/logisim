@@ -64,12 +64,11 @@ class SimulationTreeCircuitNode extends SimulationTreeNode
     super(model, parent);
     this.circuitState = circuitState;
     this.subcircComp = subcircComp;
-    circuitState.getCircuit().addCircuitListener(this);
+    circuitState.getCircuit().addCircuitWeakListener(null, this);
     if (subcircComp != null) {
-      subcircComp.getAttributeSet().addAttributeListener(this);
+      subcircComp.getAttributeSet().addAttributeWeakListener(null, this);
     } else {
-      circuitState.getCircuit().getStaticAttributes()
-          .addAttributeListener(this);
+      circuitState.getCircuit().getStaticAttributes().addAttributeWeakListener(null, this);
     }
     computeChildren();
   }

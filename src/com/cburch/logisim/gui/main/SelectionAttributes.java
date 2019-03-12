@@ -322,10 +322,10 @@ class SelectionAttributes extends AbstractAttributeSet {
     } else {
       for (Component o : oldSel)
         if (!newSel.contains(o))
-          o.getAttributeSet().removeAttributeListener(listener);
+          o.getAttributeSet().removeAttributeWeakListener(null, listener);
       for (Component o : newSel)
         if (!oldSel.contains(o))
-          o.getAttributeSet().addAttributeListener(listener);
+          o.getAttributeSet().addAttributeWeakListener(null, listener);
     }
 
     LinkedHashMap<Attribute<Object>, Object> attrMap = computeAttributes(newSel);

@@ -106,4 +106,27 @@ public class ProjectEvent {
     return proj.getTool();
   }
 
+  @Override
+  public String toString() {
+    switch(action) {
+    case ACTION_SET_FILE: return "ACTION_SET_FILE";
+    case ACTION_SET_CURRENT: return "ACTION_SET_CURRENT";
+    case ACTION_SET_TOOL: return "ACTION_SET_TOOL";
+    case ACTION_SELECTION: return "ACTION_SELECTION";
+    case ACTION_SET_STATE: return "ACTION_SET_STATE";
+    case ACTION_START: return "ACTION_START";
+    case ACTION_COMPLETE: return "ACTION_COMPLETE";
+    case ACTION_MERGE: return "ACTION_MERGE";
+    case UNDO_START: return "UNDO_START";
+    case UNDO_COMPLETE: return "UNDO_COMPLETE";
+    case REPAINT_REQUEST: return "REPAINT_REQUEST";
+    case REDO_START: return "REDO_START";
+    case REDO_COMPLETE: return "REDO_COMPLETE";
+    case ACTION_ADD_STATE: return "ACTION_ADD_STATE";
+    case ACTION_DELETE_STATE: return "ACTION_DELETE_STATE";
+    case ACTION_CLEAR_STATES: return "ACTION_CLEAR_STATES";
+    default: return "ProjectAction<?>";
+    }
+  }
+
 }

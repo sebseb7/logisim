@@ -299,7 +299,7 @@ public final class PokeTool extends Tool {
         caret.stopEditing();
       else
         caret.cancelEditing();
-      circ.removeCircuitListener(listener);
+      circ.removeCircuitWeakListener(null, listener);
       pokedCircuit = null;
       pokedComponent = null;
       pokeCaret = null;
@@ -312,7 +312,7 @@ public final class PokeTool extends Tool {
     pokedComponent = comp;
     pokeCaret = caret;
     if (caret != null) {
-      circ.addCircuitListener(listener);
+      circ.addCircuitWeakListener(null, listener);
     }
   }
 

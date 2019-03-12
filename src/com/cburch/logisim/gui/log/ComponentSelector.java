@@ -217,7 +217,7 @@ public class ComponentSelector extends JTable {
       super(p);
       circ = t;
       comp = c;
-      circ.addCircuitListener(this);
+      circ.addCircuitWeakListener(null, this);
       computeChildren();
     }
 

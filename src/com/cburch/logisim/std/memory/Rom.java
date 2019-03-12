@@ -154,14 +154,9 @@ public class Rom extends Mem {
 
   public static Attribute<MemContents> CONTENTS_ATTR = new ContentsAttribute();
 
-  // The following is so that instance's MemListeners aren't freed by the
-  // garbage collector until the instance itself is ready to be freed.
-  private WeakHashMap<Instance, MemListener> memListeners;
-
   public Rom() {
     super("ROM", S.getter("romComponent"), 0);
     setIconName("rom.gif");
-    memListeners = new WeakHashMap<Instance, MemListener>();
   }
 
   @Override
@@ -169,8 +164,7 @@ public class Rom extends Mem {
     super.configureNewInstance(instance);
     MemContents newContents = getMemContents(instance);
     MemListener listener = new MemListener(instance);
-    memListeners.put(instance, listener);
-    newContents.addHexModelListener(listener);
+    newContents.addHexModelWeakListener(instance, listener);
     instance.addAttributeListener();
   }
 

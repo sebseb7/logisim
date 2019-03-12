@@ -34,10 +34,9 @@ import java.awt.Image;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -49,45 +48,56 @@ import com.cburch.logisim.util.WindowClosable;
 
 public class LFrame extends JFrame implements WindowClosable {
   public static void attachIcon(Window frame) {
-    if (ICONS == null) {
-      List<Image> loadedIcons = new ArrayList<Image>();
+    attachIcon(frame, PATH);
+  }
+  public static void attachIcon(Window frame, String pathfmt) {
+    ArrayList<Image> icons;
+    Image defaultIcon = null;
+    synchronized(ICONS) {
+      icons = ICONS.get(pathfmt);
+      defaultIcon = DEFAULT_ICON.get(pathfmt);
+    }
+    if (icons == null) {
+      icons = new ArrayList<Image>();
       ClassLoader loader = LFrame.class.getClassLoader();
       for (int size : SIZES) {
-        URL url = loader.getResource(PATH + size + ".png");
+        URL url = loader.getResource(pathfmt.replaceAll("%d", ""+size));
         if (url != null) {
           ImageIcon icon = new ImageIcon(url);
-          loadedIcons.add(icon.getImage());
-          if (size == DEFAULT_SIZE) {
-            DEFAULT_ICON = icon.getImage();
-          }
+          icons.add(icon.getImage());
+          if (size == DEFAULT_SIZE)
+            defaultIcon = icon.getImage();
         }
       }
-      ICONS = loadedIcons;
+      synchronized(ICONS) {
+        ICONS.put(pathfmt, icons);
+        DEFAULT_ICON.put(pathfmt, defaultIcon);
+      }
     }
 
     boolean success = false;
     try {
-      if (ICONS != null && !ICONS.isEmpty()) {
-        Method set = frame.getClass().getMethod("setIconImages",
-            List.class);
-        set.invoke(frame, ICONS);
+      if (icons != null && !icons.isEmpty()) {
+        // Method set = frame.getClass().getMethod("setIconImages", List.class);
+        // set.invoke(frame, ICONS);
+        frame.setIconImages(icons);
         success = true;
       }
     } catch (Exception e) {
     }
 
-    if (!success && frame instanceof JFrame && DEFAULT_ICON != null) {
-      ((JFrame) frame).setIconImage(DEFAULT_ICON);
-    }
+    if (!success && frame instanceof JFrame && defaultIcon != null)
+      ((JFrame) frame).setIconImage(defaultIcon);
   }
 
   private static final long serialVersionUID = 1L;
-  private static final String PATH = "resources/logisim/img/logisim-icon-";
+  private static final String PATH = "resources/logisim/img/logisim-icon-%d.png";
   private static final int[] SIZES = { 16, 20, 24, 48, 64, 128 };
-  private static List<Image> ICONS = null;
   private static final int DEFAULT_SIZE = 48;
 
-  private static Image DEFAULT_ICON = null;
+  private static final HashMap<String, ArrayList<Image>> ICONS = new HashMap<>();
+  private static final HashMap<String, Image> DEFAULT_ICON = new HashMap<>();
+
 
   // A main window holds a circuit, always has menubar with Close, Save, etc.
   public static final int MAIN_WINDOW = 1;

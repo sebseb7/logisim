@@ -118,7 +118,7 @@ public class TextTool extends AbstractTool {
 		Text cur = curText;
 		if (cur != null) {
 			curText = null;
-			cur.removeAttributeListener(fieldListener);
+			cur.removeAttributeWeakListener(null, fieldListener);
 			canvas.remove(field);
 			canvas.getSelection().clearSelected();
 			canvas.repaint();
@@ -211,7 +211,7 @@ public class TextTool extends AbstractTool {
 
 		canvas.getSelection().setSelected(clicked, true);
 		canvas.getSelection().setHidden(Collections.singleton(clicked), true);
-		clicked.addAttributeListener(fieldListener);
+		clicked.addAttributeWeakListener(null, fieldListener);
 		canvas.repaint();
 	}
 

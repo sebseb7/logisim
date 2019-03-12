@@ -231,9 +231,9 @@ class FilePanel extends LogPanel {
   @Override
   public void modelChanged(Model oldModel, Model newModel) {
     if (oldModel != null)
-      oldModel.removeModelListener(listener);
+      oldModel.removeModelWeakListener(null, listener);
     if (newModel != null) {
-      newModel.addModelListener(listener);
+      newModel.addModelWeakListener(null, listener);
       listener.filePropertyChanged(null);
     }
   }

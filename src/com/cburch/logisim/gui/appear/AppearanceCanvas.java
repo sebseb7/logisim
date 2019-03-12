@@ -118,7 +118,7 @@ public class AppearanceCanvas extends Canvas
 
     CanvasModel model = super.getModel();
     if (model != null)
-      model.addCanvasModelListener(listener);
+      model.addCanvasModelWeakListener(null, listener);
     grid.addPropertyChangeListener(GridPainter.ZOOM_PROPERTY, listener);
   }
 
@@ -335,11 +335,11 @@ public class AppearanceCanvas extends Canvas
   public void setModel(CanvasModel value, ActionDispatcher dispatcher) {
     CanvasModel oldModel = super.getModel();
     if (oldModel != null) {
-      oldModel.removeCanvasModelListener(listener);
+      oldModel.removeCanvasModelWeakListener(null, listener);
     }
     super.setModel(value, dispatcher);
     if (value != null) {
-      value.addCanvasModelListener(listener);
+      value.addCanvasModelWeakListener(null, listener);
     }
   }
 

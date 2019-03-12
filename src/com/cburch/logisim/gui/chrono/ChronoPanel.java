@@ -322,11 +322,11 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
 
   public void setModel(Model newModel) {
     if (model != null)
-      model.removeModelListener(this);
+      model.removeModelWeakListener(null, this);
     model = newModel;
     if (model == null)
       return;
-		model.addModelListener(this);
+		model.addModelWeakListener(null, this);
 	}
 
 	private static final Color PLAIN_BG = new Color(0xbb, 0xbb, 0xbb);

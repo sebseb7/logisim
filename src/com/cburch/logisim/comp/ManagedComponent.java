@@ -56,13 +56,9 @@ public abstract class ManagedComponent extends AbstractComponent {
     this.endsView = Collections.unmodifiableList(ends);
   }
 
-  public void addComponentListener(ComponentListener l) {
-    listeners.add(l);
-  }
+  public void addComponentWeakListener(Object owner, ComponentListener l) { listeners.add(owner, l); }
+  public void removeComponentWeakListener(Object owner, ComponentListener l) { listeners.remove(owner, l); }
 
-  //
-  // methods for altering data
-  //
   public void clearManager() {
     for (EndData end : ends) {
       fireEndChanged(new ComponentEvent(this, end, null));
@@ -71,9 +67,6 @@ public abstract class ManagedComponent extends AbstractComponent {
     bounds = null;
   }
 
-  //
-  // user interface methods
-  //
   public void expose(ComponentDrawContext context) {
     Bounds bounds = getBounds();
     java.awt.Component dest = context.getDestination();
@@ -162,10 +155,6 @@ public abstract class ManagedComponent extends AbstractComponent {
 
   protected void recomputeBounds() {
     bounds = null;
-  }
-
-  public void removeComponentListener(ComponentListener l) {
-    listeners.remove(l);
   }
 
   public void removeEnd(int index) {

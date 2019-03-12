@@ -140,7 +140,7 @@ class MenuEdit extends Menu {
 
     Project proj = menubar.getSaveProject();
     if (proj != null) {
-      proj.addProjectListener(myListener);
+      proj.addProjectWeakListener(null, myListener);
       undo.addActionListener(myListener);
       redo.addActionListener(myListener);
     }

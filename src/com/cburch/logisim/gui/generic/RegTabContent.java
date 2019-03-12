@@ -125,7 +125,7 @@ public class RegTabContent extends JScrollPane
       public void componentHidden ( ComponentEvent e ) { showing = false; }
     });
 
-    proj.addProjectListener(this);
+    proj.addProjectWeakListener(null, this);
 
     clear();
     circuitState = proj.getCircuitState();
@@ -153,7 +153,7 @@ public class RegTabContent extends JScrollPane
     if (circuits.isEmpty())
       return;
     for (Circuit circ : circuits)
-      circ.removeCircuitListener(this);
+      circ.removeCircuitWeakListener(null, this);
     circuits.clear();
     watchers.clear();
     panel.removeAll();
@@ -192,7 +192,7 @@ public class RegTabContent extends JScrollPane
   private void enumerate(String prefix, Circuit circ, CircuitState cs) {
     if (!circuits.contains(circ)) {
       circuits.add(circ);
-      circ.addCircuitListener(this);
+      circ.addCircuitWeakListener(null, this);
     }
     enumerateLoggables(prefix, circ, cs);
     enumerateSubcircuits(prefix, circ, cs);

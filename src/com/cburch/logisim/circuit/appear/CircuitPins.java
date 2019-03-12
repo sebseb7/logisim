@@ -94,9 +94,8 @@ public class CircuitPins {
         Instance in = Instance.getInstanceFor(comp);
         boolean added = pins.add(in);
         if (added) {
-          comp.addComponentListener(myComponentListener);
-          in.getAttributeSet().addAttributeListener(
-              myComponentListener);
+          comp.addComponentWeakListener(null, myComponentListener);
+          in.getAttributeSet().addAttributeWeakListener(null, myComponentListener);
           adds.add(in);
         }
       }
@@ -106,9 +105,8 @@ public class CircuitPins {
         Instance in = Instance.getInstanceFor(comp);
         boolean removed = pins.remove(in);
         if (removed) {
-          comp.removeComponentListener(myComponentListener);
-          in.getAttributeSet().removeAttributeListener(
-              myComponentListener);
+          comp.removeComponentWeakListener(null, myComponentListener);
+          in.getAttributeSet().removeAttributeWeakListener(null, myComponentListener);
           Collection<Component> rs = repl.getReplacementsFor(comp);
           if (rs.isEmpty()) {
             removes.add(in);

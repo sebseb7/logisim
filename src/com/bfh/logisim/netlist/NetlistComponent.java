@@ -71,6 +71,13 @@ public class NetlistComponent {
       r.start = start.copy();
       return r;
     }
+    @Override
+    public String toString() {
+      return String.format("{in:%s, inout:%s, out:%s}",
+          end.in >= start.in ? end.in +".."+start.in : "-",
+          end.inout >= start.inout ? end.inout +".."+start.inout : "-",
+          end.out >= start.out ? end.out +".."+start.out : "-");
+    }
   }
 
   // The real, original logisim component we are shadowing

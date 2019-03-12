@@ -107,7 +107,7 @@ public class CircuitAttributes extends AbstractAttributeSet {
     AttributeSet ret = AttributeSets.fixedSet(STATIC_ATTRS, STATIC_DEFAULTS);
     ret.setToSave(NAME_ATTR, false); // name already appears as an attribute of circuit's outer xml node
     ret.setAttr(NAME_ATTR, name);
-    ret.addAttributeListener(new StaticListener(source));
+    ret.addAttributeWeakListener(source, new StaticListener(source));
     return ret;
   }
 
@@ -227,8 +227,8 @@ public class CircuitAttributes extends AbstractAttributeSet {
     subcircInstance = value;
     if (subcircInstance != null && listener == null) {
       listener = new MyListener(source);
-      source.getStaticAttributes().addAttributeListener(listener);
-      source.getAppearance().addCircuitAppearanceListener(listener);
+      source.getStaticAttributes().addAttributeWeakListener(null, listener);
+      source.getAppearance().addCircuitAppearanceWeakListener(null, listener);
     }
   }
 

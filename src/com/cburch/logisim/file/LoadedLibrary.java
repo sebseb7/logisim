@@ -149,13 +149,12 @@ public class LoadedLibrary extends Library implements LibraryEventSource {
       base = ((LoadedLibrary) base).base;
     this.base = base;
     if (base instanceof LibraryEventSource) {
-      ((LibraryEventSource) base).addLibraryListener(myListener);
+      ((LibraryEventSource) base).addLibraryWeakListener(null, myListener);
     }
   }
 
-  public void addLibraryListener(LibraryListener l) {
-    listeners.add(l);
-  }
+  public void addLibraryWeakListener(Object owner, LibraryListener l) { listeners.add(owner, l); }
+  public void removeLibraryWeakListener(Object owner, LibraryListener l) { listeners.remove(owner, l); }
 
   private void fireLibraryEvent(int action, Object data) {
     fireLibraryEvent(new LibraryEvent(this, action, data));
@@ -197,10 +196,6 @@ public class LoadedLibrary extends Library implements LibraryEventSource {
   @Override
   public boolean isDirty() {
     return dirty || base.isDirty();
-  }
-
-  public void removeLibraryListener(LibraryListener l) {
-    listeners.remove(l);
   }
 
   private void resolveChanges(Library old) {
@@ -259,13 +254,13 @@ public class LoadedLibrary extends Library implements LibraryEventSource {
 
   void setBase(Library value) {
     if (base instanceof LibraryEventSource) {
-      ((LibraryEventSource) base).removeLibraryListener(myListener);
+      ((LibraryEventSource) base).removeLibraryWeakListener(null, myListener);
     }
     Library old = base;
     base = value;
     resolveChanges(old);
     if (base instanceof LibraryEventSource) {
-      ((LibraryEventSource) base).addLibraryListener(myListener);
+      ((LibraryEventSource) base).addLibraryWeakListener(null, myListener);
     }
   }
 

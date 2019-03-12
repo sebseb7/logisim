@@ -106,13 +106,12 @@ public class Dependencies {
         break;
       case LibraryEvent.REMOVE_TOOL:
         if (e.getData() instanceof AddTool) {
-          ComponentFactory factory = ((AddTool) e.getData())
-              .getFactory();
+          ComponentFactory factory = ((AddTool) e.getData()).getFactory();
           if (factory instanceof SubcircuitFactory) {
             SubcircuitFactory circFact = (SubcircuitFactory) factory;
             Circuit circ = circFact.getSubcircuit();
             dag.removeNode(circ);
-            circ.removeCircuitListener(this);
+            circ.removeCircuitWeakListener(null, this);
           } else if (factory instanceof VhdlEntity) {
             VhdlEntity circFact = (VhdlEntity)factory;
             dag.removeNode(circFact.getContent());
@@ -131,7 +130,7 @@ public class Dependencies {
   }
 
   private void addDependencies(LogisimFile file) {
-    file.addLibraryListener(myListener);
+    file.addLibraryWeakListener(null, myListener);
     for (Circuit circuit : file.getCircuits()) {
       processCircuit(circuit);
     }
@@ -150,7 +149,7 @@ public class Dependencies {
   }
 
   private void processCircuit(Circuit circ) {
-    circ.addCircuitListener(myListener);
+    circ.addCircuitWeakListener(null, myListener);
     for (Component comp : circ.getNonWires()) {
       if (comp.getFactory() instanceof SubcircuitFactory) {
         SubcircuitFactory factory = (SubcircuitFactory) comp

@@ -152,7 +152,7 @@ public final class EditTool extends Tool {
     current = select;
     canvas.getSelection().setSuppressHandles(null);
     cache.clear();
-    canvas.getCircuit().removeCircuitListener(listener);
+    canvas.getCircuit().removeCircuitWeakListener(null, listener);
     canvas.getSelection().removeListener(listener);
   }
 
@@ -416,7 +416,7 @@ public final class EditTool extends Tool {
     current = select;
     lastCanvas = canvas;
     cache.clear();
-    canvas.getCircuit().addCircuitListener(listener);
+    canvas.getCircuit().addCircuitWeakListener(null, listener);
     canvas.getSelection().addListener(listener);
     select.select(canvas);
   }

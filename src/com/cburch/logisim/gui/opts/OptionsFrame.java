@@ -111,8 +111,8 @@ public class OptionsFrame extends LFrame.Dialog {
   public OptionsFrame(Project project) {
     super(project);
     // this.file = project.getLogisimFile();
-    project.addLibraryListener(myListener);
-    project.addProjectListener(new ProjectListener() {
+    project.addLibraryWeakListener(/*null,*/ myListener);
+    project.addProjectWeakListener(this, new ProjectListener() {
       @Override
       public void projectChanged(ProjectEvent event) {
         int action = event.getAction();

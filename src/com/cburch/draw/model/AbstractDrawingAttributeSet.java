@@ -44,8 +44,8 @@ public abstract class AbstractDrawingAttributeSet implements Cloneable, Attribut
 
 	public AbstractDrawingAttributeSet() { }
 
-	public void addAttributeListener(AttributeListener l) { listeners.add(l); }
-	public void removeAttributeListener(AttributeListener l) { listeners.remove(l); }
+	public void addAttributeWeakListener(Object owner, AttributeListener l) { listeners.add(owner, l); }
+	public void removeAttributeWeakListener(Object owner, AttributeListener l) { listeners.remove(owner, l); }
 
 	@Override
 	public Object clone() {

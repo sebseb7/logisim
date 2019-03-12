@@ -194,7 +194,16 @@ public class BoardIO {
     type = t;
     width = w;
     syntheticValue = val;
-    label = t == Type.Constant ? String.format("0x%x", val) : t.toString();
+    if (t == Type.Constant)
+      label = String.format("Constant 0x%x", val);
+    else if (t == Type.AllOnes)
+      label = "all ones";
+    else if (t == Type.AllZeros)
+      label = "all zeros";
+    else if (t == Type.Unconnected)
+      label = "unconnected (floating) signal";
+    else
+      label = "unknown signal";
     activity = PinActivity.ACTIVE_HIGH;
     // rest are defaults/empty
     rect = null;
@@ -268,16 +277,16 @@ public class BoardIO {
       width = 1;
       pins = new String[] { params.get("FPGAPinName") };
       if (pins[0] == null)
-        throw new Exception("missing pin label for " + t + " " + label);
+        throw new Exception("missing pin FPGA location for " + t + (label != null ? " " + label : ""));
     } else {
       width = Integer.parseInt(params.get("NrOfPins"));
       if (width < 0)
-        throw new Exception("invalid pin count for " + t + " " + label);
+        throw new Exception("invalid pin count for " + t + (label != null ? " " + label : ""));
       pins = new String[width];
       for (int i = 0; i < width; i++) {
         pins[i] = params.get("FPGAPin_" + i);
         if (pins[i] == null)
-          throw new Exception("missing pin label " + i + " for " + t + " " + label);
+          throw new Exception("missing pin label " + i + " for " + t + (label != null ? " " + label : ""));
       }
     }
 
@@ -560,10 +569,13 @@ public class BoardIO {
   
   @Override
   public String toString() {
+    if (!PhysicalTypes.contains(type))
+      return label;
+    String suffix = label != null ? label : String.format("@(%d, %d)", rect.x, rect.y);
     if (type == Type.DIPSwitch || type == Type.Ribbon) // types with variable size
-      return String.format("%s[%d bits]", type, width);
+      return String.format("%d-bit %s %s", width, type, suffix);
     else
-      return type.toString(); // single-bit and other fixed-width types
+      return type + " " + suffix; // single-bit and other fixed-width types
   }
 
   // Postcondition: of the counts returned, at least two will be zero.
@@ -618,6 +630,10 @@ public class BoardIO {
 
   public String[] pinLabels() {
     return type.pinLabels(width);
+  }
+
+  public String pinLabel(int bit) {
+    return type.pinLabels(width)[bit];
   }
 
 }

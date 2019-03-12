@@ -30,7 +30,6 @@
 
 package com.cburch.logisim.circuit;
 
-import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.PriorityQueue;
@@ -70,22 +69,18 @@ public class Propagator {
   }
 
   private static class Listener implements AttributeListener {
-    WeakReference<Propagator> prop;
+    Propagator prop;
 
     public Listener(Propagator propagator) {
-      prop = new WeakReference<Propagator>(propagator);
+      prop = propagator;
     }
 
     public void attributeListChanged(AttributeEvent e) {
     }
 
     public void attributeValueChanged(AttributeEvent e) {
-      Propagator p = prop.get();
-      if (p == null) {
-        e.getSource().removeAttributeListener(this);
-      } else if (e.getAttribute().equals(Options.ATTR_SIM_RAND)) {
-        p.updateRandomness();
-      }
+      if (e.getAttribute().equals(Options.ATTR_SIM_RAND))
+        prop.updateRandomness();
     }
   }
 
@@ -179,7 +174,7 @@ public class Propagator {
   public Propagator(CircuitState root) {
     this.root = root;
     Listener l = new Listener(this);
-    root.getProject().getOptions().getAttributeSet().addAttributeListener(l);
+    root.getProject().getOptions().getAttributeSet().addAttributeWeakListener(this, l);
     updateRandomness();
   }
 

@@ -367,9 +367,9 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
     addWindowListener(new MyWindowListener());
 
-    project.addProjectListener(myProjectListener);
-    project.addLibraryListener(myProjectListener);
-    project.addCircuitListener(myProjectListener);
+    project.addProjectWeakListener(null, myProjectListener);
+    project.addLibraryWeakListener(/*null,*/ myProjectListener);
+    project.addCircuitWeakListener(/*null,*/ myProjectListener);
     computeTitle();
 
     // set up elements for the Layout view

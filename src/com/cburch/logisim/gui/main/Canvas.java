@@ -424,13 +424,12 @@ public class Canvas extends JPanel
       } else if (act == ProjectEvent.ACTION_SET_FILE) {
         LogisimFile old = (LogisimFile) event.getOldData();
         if (old != null) {
-          old.getOptions().getAttributeSet()
-              .removeAttributeListener(this);
+          old.getOptions().getAttributeSet().removeAttributeWeakListener(null, this);
         }
         LogisimFile file = (LogisimFile) event.getData();
         if (file != null) {
           AttributeSet attrs = file.getOptions().getAttributeSet();
-          attrs.addAttributeListener(this);
+          attrs.addAttributeWeakListener(null, this);
           loadOptions(attrs);
           mappings = file.getOptions().getMouseMappings();
         }
@@ -740,15 +739,15 @@ public class Canvas extends JPanel
     addKeyListener(myListener);
     addMouseWheelListener(myListener);
 
-    proj.addProjectListener(myProjectListener);
-    proj.addLibraryListener(myProjectListener);
-    proj.addCircuitListener(myProjectListener);
+    proj.addProjectWeakListener(null, myProjectListener);
+    proj.addLibraryWeakListener(/*null,*/ myProjectListener);
+    proj.addCircuitWeakListener(/*null,*/ myProjectListener);
     proj.getSimulator().addSimulatorListener(tickCounter);
     selection.addListener(myProjectListener);
     LocaleManager.addLocaleListener(this);
 
     AttributeSet options = proj.getOptions().getAttributeSet();
-    options.addAttributeListener(myProjectListener);
+    options.addAttributeWeakListener(null, myProjectListener);
     AppPreferences.COMPONENT_TIPS.addPropertyChangeListener(myListener);
     AppPreferences.GATE_SHAPE.addPropertyChangeListener(myListener);
     AppPreferences.SHOW_TICK_RATE.addPropertyChangeListener(myListener);

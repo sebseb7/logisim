@@ -94,7 +94,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
   public VhdlEntity(VhdlContent content) {
     super("", null);
     this.content = content;
-    this.content.addHdlModelListener(this);
+    this.content.addHdlModelWeakListener(null, this);
     if (content.isValid())
       this.setIconName("vhdl.gif");
     else

@@ -54,7 +54,7 @@ public class ProjectExplorerLibraryNode
     super(model, lib, parent);
     if (lib instanceof LogisimFile) {
       file = (LogisimFile)lib;
-      file.addLibraryListener(this);
+      file.addLibraryWeakListener(null, this);
     }
     for (Tool item : lib.getTools()) {
       children.add(new ProjectExplorerToolNode(model, item, this));
@@ -231,7 +231,7 @@ public class ProjectExplorerLibraryNode
   protected void decommission() {
     super.decommission();
     if (file != null)
-      file.removeLibraryListener(this);
+      file.removeLibraryWeakListener(null, this);
   }
 
   @Override

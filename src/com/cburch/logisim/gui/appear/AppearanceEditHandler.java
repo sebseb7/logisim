@@ -70,7 +70,7 @@ public class AppearanceEditHandler extends EditHandler
     canvas.getSelection().addSelectionListener(this);
     CanvasModel model = canvas.getModel();
     if (model != null)
-      model.addCanvasModelListener(this);
+      model.addCanvasModelWeakListener(null, this);
     canvas.addPropertyChangeListener(Canvas.MODEL_PROPERTY, this);
   }
 
@@ -290,11 +290,11 @@ public class AppearanceEditHandler extends EditHandler
     if (prop.equals(Canvas.MODEL_PROPERTY)) {
       CanvasModel oldModel = (CanvasModel) e.getOldValue();
       if (oldModel != null) {
-        oldModel.removeCanvasModelListener(this);
+        oldModel.removeCanvasModelWeakListener(null, this);
       }
       CanvasModel newModel = (CanvasModel) e.getNewValue();
       if (newModel != null) {
-        newModel.addCanvasModelListener(this);
+        newModel.addCanvasModelWeakListener(null, this);
       }
     }
   }

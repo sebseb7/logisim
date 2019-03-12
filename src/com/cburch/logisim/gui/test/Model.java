@@ -77,8 +77,12 @@ class Model {
     this.project = proj;
   }
 
-  public void addModelListener(ModelListener l) {
-    listeners.add(l);
+  public void addModelWeakListener(Object owner, ModelListener l) {
+    listeners.add(owner, l);
+  }
+
+  public void removeModelWeakListener(Object owner, ModelListener l) {
+    listeners.remove(owner, l);
   }
 
   public void clearResults() {
@@ -145,9 +149,6 @@ class Model {
 
   public boolean isSelected() {
     return selected;
-  }
-  public void removeModelListener(ModelListener l) {
-    listeners.remove(l);
   }
 
   public void setPaused(boolean paused) {

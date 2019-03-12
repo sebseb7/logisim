@@ -31,7 +31,6 @@
 package com.bfh.logisim.fpga;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Point;
@@ -60,6 +59,7 @@ import com.cburch.logisim.gui.main.ExportImage;
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.JDialogOk;
+import com.cburch.logisim.gui.generic.LFrame;
 
 public class BoardEditor extends JFrame {
 
@@ -71,6 +71,7 @@ public class BoardEditor extends JFrame {
 
 	public BoardEditor() {
     super(Strings.get("FPGABoardEditor"));
+    LFrame.attachIcon(this, "resources/logisim/img/fpga-icon-%d.png");
 
 		setResizable(false);
 		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);

@@ -73,7 +73,7 @@ public class HexEditor extends JComponent implements Scrollable {
 		setOpaque(true);
 		setBackground(Color.WHITE);
 		if (model != null)
-			model.addHexModelListener(listener);
+			model.addHexModelWeakListener(null, listener);
 
 		measures.recompute();
 	}
@@ -262,12 +262,12 @@ public class HexEditor extends JComponent implements Scrollable {
 		if (model == value)
 			return;
 		if (model != null)
-			model.removeHexModelListener(listener);
+			model.removeHexModelWeakListener(null, listener);
 		model = value;
 		highlighter.clear();
 		caret.setDot(-1, false);
 		if (model != null)
-			model.addHexModelListener(listener);
+			model.addHexModelWeakListener(null, listener);
 		measures.recompute();
 	}
 

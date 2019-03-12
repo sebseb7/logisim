@@ -30,19 +30,21 @@
 
 package com.cburch.hex;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 
+import com.cburch.logisim.util.EventSourceWeakSupport;
+
 public class Test {
 	private static class Model implements HexModel {
-		private ArrayList<HexModelListener> listeners = new ArrayList<HexModelListener>();
+		private EventSourceWeakSupport<HexModelListener> listeners
+        = new EventSourceWeakSupport<>();
 		private int[] data = new int[924];
 
-		public void addHexModelListener(HexModelListener l) {
-			listeners.add(l);
+		public void addHexModelWeakListener(Object owner, HexModelListener l) {
+			listeners.add(owner, l);
 		}
 
 		public void fill(long start, long len, int value) {
@@ -71,8 +73,8 @@ public class Test {
 			return 9;
 		}
 
-		public void removeHexModelListener(HexModelListener l) {
-			listeners.remove(l);
+		public void removeHexModelWeakListener(Object owner, HexModelListener l) {
+			listeners.remove(owner, l);
 		}
 
 		public void set(long address, int value) {

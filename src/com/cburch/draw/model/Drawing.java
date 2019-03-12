@@ -57,9 +57,8 @@ public class Drawing implements CanvasModel {
 		overlaps = new DrawingOverlaps();
 	}
 
-	public void addCanvasModelListener(CanvasModelListener l) {
-		listeners.add(l);
-	}
+	public void addCanvasModelWeakListener(Object owner, CanvasModelListener l) { listeners.add(owner, l); }
+	public void removeCanvasModelWeakListener(Object owner, CanvasModelListener l) { listeners.remove(owner, l); }
 
 	public void addObjects(int index, Collection<? extends CanvasObject> shapes) {
 		Map<CanvasObject, Integer> indexes;
@@ -184,10 +183,6 @@ public class Drawing implements CanvasModel {
 			}
 			dup.dispose();
 		}
-	}
-
-	public void removeCanvasModelListener(CanvasModelListener l) {
-		listeners.remove(l);
 	}
 
 	public void removeObjects(Collection<? extends CanvasObject> shapes) {

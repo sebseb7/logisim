@@ -71,7 +71,7 @@ class RomAttributes extends AbstractAttributeSet {
       return;
     }
     RomContentsListener l = new RomContentsListener(proj);
-    value.addHexModelListener(l);
+    value.addHexModelWeakListener(value, l);
     listenerRegistry.put(value, l);
   }
 
@@ -80,6 +80,8 @@ class RomAttributes extends AbstractAttributeSet {
         Rom.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,
         StdAttr.APPEARANCE});
 
+  // fixme: this isn't necessary since EventSourceWeakSupport now has an owner
+  // for each listener?
   private static WeakHashMap<MemContents, RomContentsListener> listenerRegistry = new WeakHashMap<MemContents, RomContentsListener>();
 
   private static WeakHashMap<MemContents, HexFrame> windowRegistry = new WeakHashMap<MemContents, HexFrame>();

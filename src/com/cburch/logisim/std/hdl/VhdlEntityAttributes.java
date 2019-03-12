@@ -171,7 +171,7 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
     vhdlInstance = value;
     if (vhdlInstance != null && listener != null) {
       listener = new VhdlEntityListener(this);
-      content.addHdlModelListener(listener);
+      content.addHdlModelWeakListener(null, listener);
     }
   }
 

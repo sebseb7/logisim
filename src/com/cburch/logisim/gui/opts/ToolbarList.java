@@ -143,8 +143,8 @@ class ToolbarList extends JList {
     setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
     AppPreferences.GATE_SHAPE.addPropertyChangeListener(model);
-    base.addToolbarListener(model);
-    base.addToolAttributeListener(model);
+    base.addToolbarWeakListener(null, model);
+    base.addToolAttributeWeakListener(/*null,*/ model);
   }
 
   public void localeChanged() {

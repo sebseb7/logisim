@@ -137,12 +137,26 @@ public class PinBindings {
     public Int3 seqno() {
       return seqno.copy();
     }
+    @Override
+    public String toString() {
+      if (bit < 0)
+        return path + " " + type;
+      else
+        return path + " " + type + " [bit " + bit + "]";
+    }
   }
 
   public static class Dest {
     public final BoardIO io; // may be synthetic
     public final int bit; // -1 means something maps to this entire BoardIO
     public Dest(BoardIO i, int b) { io = i; bit = b; }
+    @Override
+    public String toString() {
+      if (bit < 0)
+        return io.toString();
+      else
+        return io.pinLabel(bit) + " of " + io;
+    }
   }
 
   public PinBindings(FPGAReport err, Board board, HashMap<Path, NetlistComponent> components) {
@@ -276,6 +290,14 @@ public class PinBindings {
     return true;
   }
 
+  public boolean containsMappingFor(BoardIO io, int bit) {
+    for (Dest d : mappings.values()) {
+      if (d.io == io && (d.bit < 0 || d.bit == bit))
+        return true;
+    }
+    return false;
+  }
+
   private BoardIO.Type selectDefaultType(List<BoardIO.Type> types, int width) {
     if (width == 1) {
       // Pick first type meant for single-bit inputs.
@@ -306,9 +328,10 @@ public class PinBindings {
       err.AddError("INTERNAL ERROR: Detected I/O component with mixed direction bits.");
       return res;
     }
-    for (BoardIO io : board)
+    for (BoardIO io : board) {
       if (io.isCompatible(compWidth, compType))
-          res.add(io);
+        res.add(io);
+    }
     return res;
   }
 
@@ -322,15 +345,17 @@ public class PinBindings {
           srcWidth, ioWidth);
       return modified;
     }
-    // remove existing mappings to same I/O resource or from same component
+    // remove existing mappings from same source and mappings to same dest
     mappings.entrySet().removeIf(e -> {
       Source s = e.getKey();
       Dest d = e.getValue();
-      boolean conflict = (mappings.get(s).io == io)
-          || (s.path.equals(src.path) && (src.bit < 0 || s.bit < 0 || src.bit == s.bit));
-      if (conflict)
+      boolean samesource =
+          s.path.equals(src.path) && (src.bit < 0 || s.bit < 0 || src.bit == s.bit);
+      boolean samedest = 
+          d.io == io && (bit < 0 || d.bit < 0 || bit == d.bit);
+      if (samesource || samedest)
         modified.add(s);
-      return conflict;
+      return samesource || samedest;
     });
     modified.add(src);
     mappings.put(src, new Dest(io, bit));

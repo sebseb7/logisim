@@ -232,7 +232,7 @@ public class HdlContentEditor extends JDialog implements JInputDialog {
   private void configure(Project proj, HdlModel model) {
     this.project = proj;
     this.model = model;
-    this.model.addHdlModelListener(modelListener);
+    this.model.addHdlModelWeakListener(null, modelListener);
     this.addWindowListener(frameListener);
 
     JPanel buttonsPanel = new JPanel();

@@ -210,10 +210,10 @@ class CircuitWires {
       Object factory = comp.getFactory();
       if (factory instanceof Tunnel) {
         tunnels.add(comp);
-        comp.getAttributeSet().addAttributeListener(tunnelListener);
+        comp.getAttributeSet().addAttributeWeakListener(null, tunnelListener);
       } else if (factory instanceof PullResistor) {
         pulls.add(comp);
-        comp.getAttributeSet().addAttributeListener(tunnelListener);
+        comp.getAttributeSet().addAttributeWeakListener(null, tunnelListener);
       }
     }
     if (added) {
@@ -868,10 +868,10 @@ class CircuitWires {
       Object factory = comp.getFactory();
       if (factory instanceof Tunnel) {
         tunnels.remove(comp);
-        comp.getAttributeSet().removeAttributeListener(tunnelListener);
+        comp.getAttributeSet().removeAttributeWeakListener(null, tunnelListener);
       } else if (factory instanceof PullResistor) {
         pulls.remove(comp);
-        comp.getAttributeSet().removeAttributeListener(tunnelListener);
+        comp.getAttributeSet().removeAttributeWeakListener(null, tunnelListener);
       }
     }
     points.remove(comp);

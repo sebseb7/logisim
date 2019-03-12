@@ -39,10 +39,8 @@ import com.cburch.draw.model.CanvasModelEvent;
 import com.cburch.draw.model.CanvasModelListener;
 import com.cburch.hdl.HdlModel;
 import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.Simulator;
-import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
 import com.cburch.logisim.file.LogisimFile;
@@ -55,10 +53,6 @@ import com.cburch.logisim.gui.menu.SimulateListener;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
-import com.cburch.logisim.std.hdl.VhdlContent;
-import com.cburch.logisim.std.hdl.VhdlEntity;
-import com.cburch.logisim.tools.AddTool;
-import com.cburch.logisim.tools.Tool;
 
 public class MainMenuListener extends MenuListener {
 
@@ -219,11 +213,11 @@ public class MainMenuListener extends MenuListener {
       if (action == ProjectEvent.ACTION_SET_CURRENT) {
         if (event.getOldData() instanceof Circuit) {
           Circuit old = (Circuit) event.getOldData();
-          old.getAppearance().removeCanvasModelListener(this);
+          old.getAppearance().removeCanvasModelWeakListener(null, this);
         }
         if (event.getData() instanceof Circuit) {
           Circuit circ = (Circuit) event.getData();
-          circ.getAppearance().addCanvasModelListener(this);
+          circ.getAppearance().addCanvasModelWeakListener(null, this);
         }
         computeEnabled();
       } else if (action == ProjectEvent.ACTION_SET_FILE) {
@@ -241,13 +235,13 @@ public class MainMenuListener extends MenuListener {
         return;
       }
 
-      proj.addProjectListener(this);
-      proj.addLibraryListener(this);
+      proj.addProjectWeakListener(null, this);
+      proj.addLibraryWeakListener(/*null,*/ this);
       frame.addPropertyChangeListener(Frame.EDITOR_VIEW, this);
       frame.addPropertyChangeListener(Frame.EXPLORER_VIEW, this);
       Circuit circ = proj.getCurrentCircuit();
       if (circ != null) {
-        circ.getAppearance().addCanvasModelListener(this);
+        circ.getAppearance().addCanvasModelWeakListener(null, this);
       }
 
       menubar.addActionListener(LogisimMenuBar.ADD_CIRCUIT, this);
@@ -279,7 +273,7 @@ public class MainMenuListener extends MenuListener {
 
     void register() {
       Project proj = frame.getProject();
-      proj.addProjectListener(this);
+      proj.addProjectWeakListener(null, this);
       menubar.setSimulateListener(this);
       menubar.setCircuitState(proj.getSimulator(), proj.getCircuitState());
     }

@@ -45,56 +45,16 @@ public abstract class HdlContent implements HdlModel /*, Cloneable */ {
   }
 
   protected EventSourceWeakSupport<HdlModelListener> listeners;
-  //protected EventSourceWeakSupport<CircuitListener> circlisteners;
 
   protected HdlContent() {
     this.listeners = null;
   }
 
   @Override
-  public void addHdlModelListener(HdlModelListener l) {
-    if (listeners == null) {
+  public void addHdlModelWeakListener(Object owner, HdlModelListener l) {
+    if (listeners == null)
       listeners = new EventSourceWeakSupport<HdlModelListener>();
-    }
-    listeners.add(l);
-  }
-
-  // public void addCircuitListener(CircuitListener l) {
-  //   if (circlisteners == null) {
-  //     circlisteners = new EventSourceWeakSupport<CircuitListener>();
-  //   }
-  //   circlisteners.add(l);
-  // }
-  // public void removeCircuitListener(CircuitListener l) {
-  //   if (circlisteners == null) {
-  //     return;
-  //   }
-  //   circlisteners.remove(l);
-  // }
-
-  // @Override
-  // public HdlContent clone() throws CloneNotSupportedException {
-  //   HdlContent ret = (HdlContent) super.clone();
-  //   ret.listeners = null;
-  //   int n = 0;
-  //   if (listeners != null) {
-  //     for (HdlModelListener l : listeners) {
-  //       n++;
-  //     }
-  //   }
-  //   return ret;
-  // }
-
-  public String toString() {
-    String s = super.toString() + " " + listeners;
-    if (listeners != null) {
-      s += " [";
-      for (HdlModelListener l : listeners) {
-        s += "\n" + l.getClass() + " " + l.toString();
-      }
-      s += "\n]";
-    }
-    return s;
+    listeners.add(owner, l);
   }
 
   @Override
@@ -190,11 +150,11 @@ public abstract class HdlContent implements HdlModel /*, Cloneable */ {
   public abstract String getName();
 
   @Override
-  public void removeHdlModelListener(HdlModelListener l) {
+  public void removeHdlModelWeakListener(Object owner, HdlModelListener l) {
     if (listeners == null) {
       return;
     }
-    listeners.remove(l);
+    listeners.remove(owner, l);
     if (listeners.isEmpty()) {
       listeners = null;
     }

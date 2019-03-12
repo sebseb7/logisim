@@ -73,7 +73,8 @@ public class DrawingAttributeSet extends AbstractDrawingAttributeSet {
 
 		@Override
 		protected void copyInto(AbstractAttributeSet dest) {
-			DrawingAttributeSet.this.addAttributeListener(this);
+      System.out.println("warning: DrawingAttributeSet.Restrction.copyInto() seems wrong");
+			DrawingAttributeSet.this.addAttributeWeakListener(null, this);
 		}
 
 		@Override
@@ -102,7 +103,7 @@ public class DrawingAttributeSet extends AbstractDrawingAttributeSet {
 			if (!toolAttrs.equals(selectedAttrs)) {
 				selectedAttrs = new ArrayList<Attribute<?>>(toolAttrs);
 				selectedView = Collections.unmodifiableList(selectedAttrs);
-				DrawingAttributeSet.this.addAttributeListener(this);
+				DrawingAttributeSet.this.addAttributeWeakListener(null, this);
 				fireAttributeListChanged();
 			}
 		}

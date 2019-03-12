@@ -57,7 +57,7 @@ class LogThread extends UniquelyNamedThread implements Model.Listener {
   public LogThread(Model model) {
     super("LogThread");
     this.model = model;
-    model.addModelListener(this);
+    model.addModelWeakListener(null, this);
   }
 
   // precondition: lock held and writing()==true

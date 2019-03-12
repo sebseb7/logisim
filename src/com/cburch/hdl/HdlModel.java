@@ -35,7 +35,7 @@ public interface HdlModel {
 	/**
 	 * Registers a listener for changes to the values.
 	 */
-	public void addHdlModelListener(HdlModelListener l);
+	public void addHdlModelWeakListener(Object owner, HdlModelListener l);
 
 	/**
 	 * Compares the model's content with another model.
@@ -60,7 +60,7 @@ public interface HdlModel {
 	/**
 	 * Unregisters a listener for changes to the values.
 	 */
-	public void removeHdlModelListener(HdlModelListener l);
+	public void removeHdlModelWeakListener(Object owner, HdlModelListener l);
 
 	/**
 	 * Sets the content of the component.

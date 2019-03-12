@@ -62,7 +62,7 @@ import com.cburch.logisim.instance.StdAttr;
 
 public interface Component extends Location.At {
 
-  public void addComponentListener(ComponentListener l);
+  public void addComponentWeakListener(Object owner, ComponentListener l);
 
   public boolean contains(Location pt);
 
@@ -114,7 +114,7 @@ public interface Component extends Location.At {
 
   public void propagate(CircuitState state);
 
-  public void removeComponentListener(ComponentListener l);
+  public void removeComponentWeakListener(Object owner, ComponentListener l);
 
   default public void fireInvalidated() { }
 

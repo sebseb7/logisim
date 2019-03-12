@@ -111,31 +111,25 @@ public final class InstanceComponent
     computeEnds();
   }
 
-  void addAttributeListener(Instance instance) {
+  void addAttributeListener(/*Instance instance*/) {
     if (!attrListenRequested) {
       attrListenRequested = true;
       if (widthAttrs == null)
-        getAttributeSet().addAttributeListener(this);
+        getAttributeSet().addAttributeWeakListener(null, this);
     }
   }
 
-  //
-  // listening methods
-  //
-  public void addComponentListener(ComponentListener l) {
+  public void addComponentWeakListener(Object owner, ComponentListener l) {
     EventSourceWeakSupport<ComponentListener> ls = listeners;
     if (ls == null) {
       ls = new EventSourceWeakSupport<ComponentListener>();
-      ls.add(l);
+      ls.add(owner, l);
       listeners = ls;
     } else {
-      ls.add(l);
+      ls.add(owner, l);
     }
   }
 
-  //
-  // AttributeListener methods
-  //
   public void attributeListChanged(AttributeEvent e) {
   }
 
@@ -196,9 +190,9 @@ public final class InstanceComponent
     if (!attrListenRequested) {
       HashSet<Attribute<BitWidth>> oldWattrs = widthAttrs;
       if (wattrs == null && oldWattrs != null) {
-        getAttributeSet().removeAttributeListener(this);
+        getAttributeSet().removeAttributeWeakListener(null, this);
       } else if (wattrs != null && oldWattrs == null) {
-        getAttributeSet().addAttributeListener(this);
+        getAttributeSet().addAttributeWeakListener(null, this);
       }
     }
     if (es != esOld) {
@@ -378,9 +372,9 @@ public final class InstanceComponent
     bounds = factory.getOffsetBounds(attrs).translate(p.getX(), p.getY());
   }
 
-  public void removeComponentListener(ComponentListener l) {
+  public void removeComponentWeakListener(Object owner, ComponentListener l) {
     if (listeners != null) {
-      listeners.remove(l);
+      listeners.remove(owner, l);
       if (listeners.isEmpty())
         listeners = null;
     }

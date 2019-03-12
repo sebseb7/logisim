@@ -174,7 +174,7 @@ class ProjectExplorerModel implements TreeModel, ProjectListener {
       root = new ProjectExplorerRootNode(this, proj.getLogisimFile());
     else
       root = new ProjectExplorerLibraryNode(this, proj.getLogisimFile(), null);
-    proj.addProjectListener(this);
+    proj.addProjectWeakListener(null, this);
   }
 
   public void addTreeModelListener(TreeModelListener l) {
@@ -316,12 +316,12 @@ class ProjectExplorerModel implements TreeModel, ProjectListener {
       return;
 
     if (proj != null)
-      proj.removeProjectListener(this);
+      proj.removeProjectWeakListener(null, this);
 
     proj = value;
 
     if (proj != null)
-      proj.addProjectListener(this);
+      proj.addProjectWeakListener(null, this);
 
     setLogisimFile(proj == null ? null : proj.getLogisimFile());
   }

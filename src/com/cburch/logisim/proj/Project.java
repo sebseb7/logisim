@@ -130,28 +130,26 @@ public class Project {
   private boolean startupScreen = false;
 
   public Project(LogisimFile file) {
-    fileListeners.add(myListener);
+    fileListeners.add(null, myListener);
     setLogisimFile(file);
 
     this.vhdlSimulator = new VhdlSimulator(this);
-    // circuit.addCircuitListener(vhdlSimulator);
-
   }
 
-  public void addCircuitListener(CircuitListener value) {
-    circuitListeners.add(value);
+  public void addCircuitWeakListener(/*Object owner,*/ CircuitListener value) {
+    circuitListeners.add(null, value);
     Circuit current = getCurrentCircuit();
     if (current != null)
-      current.addCircuitListener(value);
+      current.addCircuitWeakListener(null, value);
   }
 
-  public void addLibraryListener(LibraryListener value) {
-    fileListeners.add(value);
-    file.addLibraryListener(value);
+  public void addLibraryWeakListener(/*Object owner,*/ LibraryListener value) {
+    fileListeners.add(null, value);
+    file.addLibraryWeakListener(null, value);
   }
 
-  public void addProjectListener(ProjectListener what) {
-    projectListeners.add(what);
+  public void addProjectWeakListener(Object owner, ProjectListener what) {
+    projectListeners.add(owner, what);
   }
 
   public boolean confirmClose(String title) {
@@ -318,7 +316,7 @@ public class Project {
     Circuit oldCircuit = old == null ? null : old.getCircuit();
     if (oldCircuit != null) {
       for (CircuitListener l : circuitListeners) {
-        oldCircuit.removeCircuitListener(l);
+        oldCircuit.removeCircuitWeakListener(null, l);
       }
     }
 
@@ -465,20 +463,20 @@ public class Project {
     }
   }
 
-  public void removeCircuitListener(CircuitListener value) {
-    circuitListeners.remove(value);
+  public void removeCircuitWeakListener(/*Object owner,*/ CircuitListener value) {
+    circuitListeners.remove(null, value);
     Circuit current = getCurrentCircuit();
     if (current != null)
-      current.removeCircuitListener(value);
+      current.removeCircuitWeakListener(null, value);
   }
 
-  public void removeLibraryListener(LibraryListener value) {
-    fileListeners.remove(value);
-    file.removeLibraryListener(value);
+  public void removeLibraryWeakListener(/*Object owner,*/ LibraryListener value) {
+    fileListeners.remove(null, value);
+    file.removeLibraryWeakListener(null, value);
   }
 
-  public void removeProjectListener(ProjectListener what) {
-    projectListeners.remove(what);
+  public void removeProjectWeakListener(Object owner, ProjectListener value) {
+    projectListeners.remove(owner, value);
   }
 
   public void repaintCanvas() {
@@ -518,7 +516,7 @@ public class Project {
       }
       if (oldCircuit != null) {
         for (CircuitListener l : circuitListeners) {
-          oldCircuit.removeCircuitListener(l);
+          oldCircuit.removeCircuitWeakListener(null, l);
         }
       }
     }
@@ -536,7 +534,7 @@ public class Project {
       fireEvent(ProjectEvent.ACTION_SET_CURRENT, oldActive, newCircuit);
       if (newCircuit != null) {
         for (CircuitListener l : circuitListeners) {
-          newCircuit.addCircuitListener(l);
+          newCircuit.addCircuitWeakListener(null, l);
         }
       }
       if (oldCircuit != null)
@@ -578,7 +576,7 @@ public class Project {
     LogisimFile old = this.file; // old is only null during constructor
     if (old != null) {
       for (LibraryListener l : fileListeners) {
-        old.removeLibraryListener(l);
+        old.removeLibraryWeakListener(null, l);
       }
     }
     if (optionsFrame != null) {
@@ -599,7 +597,7 @@ public class Project {
     fireEvent(ProjectEvent.ACTION_SET_FILE, old, file);
     setCurrentCircuit(file.getMainCircuit());
     for (LibraryListener l : fileListeners) {
-      file.addLibraryListener(l);
+      file.addLibraryWeakListener(null, l);
     }
     file.setDirty(true); // toggle it so everybody hears the file is fresh
     file.setDirty(false);

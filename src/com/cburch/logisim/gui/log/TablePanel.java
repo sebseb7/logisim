@@ -46,7 +46,6 @@ import javax.swing.JScrollPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import com.cburch.logisim.data.Value;
 import com.cburch.logisim.util.GraphicsUtil;
 
 class TablePanel extends LogPanel {
@@ -228,9 +227,9 @@ class TablePanel extends LogPanel {
   @Override
   public void modelChanged(Model oldModel, Model newModel) {
     if (oldModel != null)
-      oldModel.removeModelListener(myListener);
+      oldModel.removeModelWeakListener(null, myListener);
     if (newModel != null)
-      newModel.addModelListener(myListener);
+      newModel.addModelWeakListener(null, myListener);
   }
 
   class TableView extends JPanel {

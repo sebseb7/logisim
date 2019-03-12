@@ -65,4 +65,20 @@ public class LibraryEvent {
     return source;
   }
 
+  @Override
+  public String toString() {
+    switch(action) {
+    case ADD_TOOL: return "ADD_TOOL";
+    case REMOVE_TOOL: return "REMOVE_TOOL";
+    case MOVE_TOOL: return "MOVE_TOOL";
+    case ADD_LIBRARY: return "ADD_LIBRARY";
+    case REMOVE_LIBRARY: return "REMOVE_LIBRARY";
+    case MOVE_LIBRARY: return "MOVE_LIBRARY";
+    case SET_MAIN: return "SET_MAIN";
+    case SET_NAME: return "SET_NAME";
+    case DIRTY_STATE: return "DIRTY_STATE";
+    default: return "LibraryEvent<?>";
+    }
+  }
+
 }

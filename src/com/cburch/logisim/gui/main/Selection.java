@@ -159,8 +159,8 @@ public class Selection extends SelectionBase {
 
     myListener = new MyListener();
     attrs = new SelectionAttributes(canvas, this);
-    proj.addProjectListener(myListener);
-    proj.addCircuitListener(myListener);
+    proj.addProjectWeakListener(null, myListener);
+    proj.addCircuitWeakListener(/*null,*/myListener);
   }
 
   public boolean contains(Component comp) {

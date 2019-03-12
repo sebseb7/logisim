@@ -117,7 +117,7 @@ public final class Instance implements Location.At {
   private InstanceComponent comp;
 
   public void addAttributeListener() {
-    comp.addAttributeListener(this);
+    comp.addAttributeListener(/*this*/);
   }
 
   public void fireInvalidated() {

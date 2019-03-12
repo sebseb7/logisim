@@ -54,7 +54,7 @@ public final class TextTool extends Tool {
   private class MyListener implements CaretListener, CircuitListener {
     public void circuitChanged(CircuitEvent event) {
       if (event.getCircuit() != caretCircuit) {
-        event.getCircuit().removeCircuitListener(this);
+        event.getCircuit().removeCircuitWeakListener(null, this);
         return;
       }
       int action = event.getAction();
@@ -75,7 +75,7 @@ public final class TextTool extends Tool {
         return;
       }
       caret.removeCaretListener(this);
-      caretCircuit.removeCircuitListener(this);
+      caretCircuit.removeCircuitWeakListener(null, this);
 
       caretCircuit = null;
       caretComponent = null;
@@ -89,7 +89,7 @@ public final class TextTool extends Tool {
         return;
       }
       caret.removeCaretListener(this);
-      caretCircuit.removeCircuitListener(this);
+      caretCircuit.removeCircuitWeakListener(null, this);
 
       String val = caret.getText();
       boolean isEmpty = (val == null || val.equals(""));
@@ -335,7 +335,7 @@ public final class TextTool extends Tool {
       caretCanvas = canvas;
       caretCircuit = canvas.getCircuit();
       caret.addCaretListener(listener);
-      caretCircuit.addCircuitListener(listener);
+      caretCircuit.addCircuitWeakListener(null, listener);
     }
     proj.repaintCanvas();
   }

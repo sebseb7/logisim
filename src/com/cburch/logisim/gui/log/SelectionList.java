@@ -287,10 +287,10 @@ public class SelectionList extends JTable {
     if (logModel != m) {
       SelectionListModel listModel = (SelectionListModel) getModel();
       if (logModel != null)
-        logModel.removeModelListener(listModel);
+        logModel.removeModelWeakListener(this, listModel);
       logModel = m;
       if (logModel != null)
-        logModel.addModelListener(listModel);
+        logModel.addModelWeakListener(this, listModel);
       listModel.selectionChanged(null);
     }
   }

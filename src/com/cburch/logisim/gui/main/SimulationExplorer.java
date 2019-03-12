@@ -72,7 +72,7 @@ class SimulationExplorer extends JPanel
     tree.addMouseListener(this);
     tree.setToggleClickCount(3);
     add(new JScrollPane(tree), BorderLayout.CENTER);
-    proj.addProjectListener(this);
+    proj.addProjectWeakListener(null, this);
 
     ToolTipManager.sharedInstance().registerComponent(tree);
 

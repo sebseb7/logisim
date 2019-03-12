@@ -86,7 +86,7 @@ public class Netlist {
 	private ClockBus clockbus = null;
 
   // Info about hidden networks, needed by certain I/O-related components.
-	private Int3 numHiddenBits;
+	private Int3 numHiddenBits = new Int3();
   
   // Path to one of the instantiations of this circuit. For a circuit that gets
   // instantiated several times, there is one Netlist for the circuit, and the
@@ -234,6 +234,9 @@ public class Netlist {
         continue; // Text, Probe, and other similarly irrelevant components
       if (comp.getFactory() instanceof Pin) {
 				String label = NetlistComponent.labelOf(comp);
+        if (label == null || label.isEmpty())
+          return drcFail(err, comp, "for HDL synthesis, each pin is required to have a unique label. "
+              + "Add a label, or use the \"Annotate\" button above.");
 				if (!CorrectLabel.IsCorrectLabel(label,
 						lang, "Bad label for pin '"+nameOf(comp)+"' in circuit '"+circName+"'", err))
 					return false;
@@ -375,9 +378,9 @@ public class Netlist {
       return in + inout + out;
     }
     public boolean isMixedDirection() {
-      return (in == 0 && inout == 0)
-          || (in == 0 && out == 0)
-          || (inout == 0 && out == 0);
+      return (in > 0 && inout > 0)
+          || (in > 0 && out > 0)
+          || (inout > 0 && out > 0);
     }
     public Int3 forSingleBit() {
       Int3 bit = new Int3();
@@ -385,6 +388,10 @@ public class Netlist {
       bit.inout = inout > 0 ? 1 : 0;
       bit.out = out > 0 ? 1 : 0;
       return bit;
+    }
+    @Override
+    public String toString() {
+      return String.format("{in:%d, inout:%d, out:%d}", in, inout, out);
     }
   }
 

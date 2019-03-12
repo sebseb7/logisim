@@ -118,7 +118,7 @@ public class AddTool extends Tool {
       this.attrs = new FactoryAttributes((FactoryAttributes)base.attrs);
     else
       this.attrs = (AttributeSet) base.attrs.clone();
-    attrs.addAttributeListener(new MyAttributeListener());
+    attrs.addAttributeWeakListener(this, new MyAttributeListener());
   }
 
   public AddTool(Class<? extends Library> libClass, FactoryDescription description) {
@@ -127,7 +127,7 @@ public class AddTool extends Tool {
     this.sourceLoadAttempted = false;
     this.shouldSnap = true;
     this.attrs = new FactoryAttributes(libClass, description);
-    attrs.addAttributeListener(new MyAttributeListener());
+    attrs.addAttributeWeakListener(this, new MyAttributeListener());
     this.keyHandlerTried = false;
   }
 
@@ -138,7 +138,7 @@ public class AddTool extends Tool {
     this.factory = source;
     this.bounds = null;
     this.attrs = new FactoryAttributes(source);
-    attrs.addAttributeListener(new MyAttributeListener());
+    attrs.addAttributeWeakListener(this, new MyAttributeListener());
     Boolean value = (Boolean) source.getFeature(
         ComponentFactory.SHOULD_SNAP, attrs);
     this.shouldSnap = value == null ? true : value.booleanValue();

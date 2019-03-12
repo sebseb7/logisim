@@ -159,7 +159,7 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     // Listen for new pins, clocks, etc., and changes to Signals
     for (SignalInfo item : info)
       item.setListener(this); // includes clock source
-    circ.addCircuitListener(this);
+    circ.addCircuitWeakListener(null, this);
   }
   
   private void renumberSignals() {
@@ -480,12 +480,12 @@ public class Model implements CircuitListener, SignalInfo.Listener {
   //   tEnd += duration;
 	// }
 
-  public void addModelListener(Listener l) {
-    listeners.add(l);
+  public void addModelWeakListener(Object owner, Listener l) {
+    listeners.add(owner, l);
   }
 
-  public void removeModelListener(Listener l) {
-    listeners.remove(l);
+  public void removeModelWeakListener(Object owner, Listener l) {
+    listeners.remove(owner, l);
   }
 
   private void fireSignalsReset(Event e) {

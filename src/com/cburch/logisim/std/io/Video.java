@@ -141,7 +141,7 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
     setEnd(P_CLK, getLocation().translate(10, 0), BitWidth.ONE, EndData.INPUT_ONLY);
     setEnd(P_WE, getLocation().translate(20, 0), BitWidth.ONE, EndData.INPUT_ONLY);
     configureComponent();
-    attrs.addAttributeListener(this);
+    attrs.addAttributeWeakListener(null, this);
   }
 
   public ComponentFactory getFactory() { return factory; }

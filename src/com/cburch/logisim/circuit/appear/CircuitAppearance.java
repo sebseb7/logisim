@@ -80,13 +80,12 @@ public class CircuitAppearance extends Drawing {
     circuitPins = new CircuitPins(portManager);
     myListener = new MyListener();
     suppressRecompute = false;
-    addCanvasModelListener(myListener);
+    addCanvasModelWeakListener(null, myListener);
     setDefaultAppearance(true);
   }
 
-  public void addCircuitAppearanceListener(CircuitAppearanceListener l) {
-    listeners.add(l);
-  }
+  public void addCircuitAppearanceWeakListener(Object owner, CircuitAppearanceListener l) { listeners.add(owner, l); }
+  public void removeCircuitAppearanceWeakListener(Object owner, CircuitAppearanceListener l) { listeners.remove(owner, l); }
 
   @Override
   public void addObjects(int index, Collection<? extends CanvasObject> shapes) {
@@ -309,10 +308,6 @@ public class CircuitAppearance extends Drawing {
     } else {
       fireCircuitAppearanceChanged(CircuitAppearanceEvent.ALL_TYPES);
     }
-  }
-
-  public void removeCircuitAppearanceListener(CircuitAppearanceListener l) {
-    listeners.remove(l);
   }
 
   @Override

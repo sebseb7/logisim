@@ -142,7 +142,7 @@ public abstract class AttributeSetTableModel
         rowMap.put(attr, row);
         rows.add(row);
       }
-      attrs.addAttributeListener(this);
+      attrs.addAttributeWeakListener(null, this);
     }
   }
 
@@ -234,9 +234,9 @@ public abstract class AttributeSetTableModel
 
   public void setAttributeSet(AttributeSet value) {
     if (attrs != value) {
-      attrs.removeAttributeListener(this);
+      attrs.removeAttributeWeakListener(null, this);
       attrs = value;
-      attrs.addAttributeListener(this);
+      attrs.addAttributeWeakListener(null, this);
       attributeListChanged(null);
     }
   }

@@ -123,11 +123,12 @@ public final class Wire
     this.e1 = e1;
   }
 
-  public void addAttributeListener(AttributeListener l) {
+  // Wire is immutable and never issues AttributeEvents, so we don't need to track listeners.
+  public void addAttributeWeakListener(Object owner, AttributeListener l) {
   }
 
-  // (Wire never issues ComponentEvents, so we don't need to track listeners)
-  public void addComponentListener(ComponentListener e) {
+  // Wire never issues ComponentEvents, so we don't need to track listeners.
+  public void addComponentWeakListener(Object owner, ComponentListener e) {
   }
 
   public boolean contains(Location q) {
@@ -256,9 +257,9 @@ public final class Wire
   @Override
   public boolean isToSave(Attribute<?> attr) { return false; }
   @Override
-  public void removeAttributeListener(AttributeListener l) { }
+  public void removeAttributeWeakListener(Object owner, AttributeListener l) { }
   @Override
-  public void removeComponentListener(ComponentListener e) { }
+  public void removeComponentWeakListener(Object owner, ComponentListener e) { }
   @Override
   public <V> void changeAttr(Attribute<V> attr, V value) { }
 

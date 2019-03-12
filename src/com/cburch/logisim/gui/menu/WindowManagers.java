@@ -65,8 +65,8 @@ public class WindowManagers {
     ProjectManager(Project proj) {
       super(proj.getLogisimFile().getName(), false);
       this.proj = proj;
-      proj.addProjectListener(this);
-      proj.addLibraryListener(this);
+      proj.addProjectWeakListener(null, this);
+      proj.addLibraryWeakListener(/*null,*/ this);
       frameOpened(proj.getFrame());
     }
 

@@ -628,9 +628,9 @@ class OptionsPanel extends LogPanel
   @Override
   public void modelChanged(Model oldModel, Model newModel) {
     if (oldModel != null)
-      oldModel.removeModelListener(this);
+      oldModel.removeModelWeakListener(null, this);
     if (newModel != null)
-      newModel.addModelListener(this);
+      newModel.addModelWeakListener(null, this);
     modeChanged(null);
     stepScale.setSelectedItem(newModel.getTimeScale());
     realScale.setSelectedItem(newModel.getTimeScale());

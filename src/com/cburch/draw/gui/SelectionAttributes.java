@@ -119,13 +119,13 @@ public class SelectionAttributes extends AbstractAttributeSet {
 			for (AttributeSet attrs : oldSel.keySet()) {
 				if (!newSel.containsKey(attrs)) {
 					change = true;
-					attrs.removeAttributeListener(this);
+					attrs.removeAttributeWeakListener(null, this);
 				}
 			}
 			for (AttributeSet attrs : newSel.keySet()) {
 				if (!oldSel.containsKey(attrs)) {
 					change = true;
-					attrs.addAttributeListener(this);
+					attrs.addAttributeWeakListener(null, this);
 				}
 			}
 			if (change) {

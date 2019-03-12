@@ -34,8 +34,8 @@ import java.util.List;
 
 public interface AttributeSet {
 
-  public void addAttributeListener(AttributeListener l);
-  public void removeAttributeListener(AttributeListener l);
+  public void addAttributeWeakListener(Object owner, AttributeListener l);
+  public void removeAttributeWeakListener(Object owner, AttributeListener l);
 
   public Object clone();
 

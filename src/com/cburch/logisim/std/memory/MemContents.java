@@ -57,10 +57,10 @@ public class MemContents implements Cloneable, HexModel {
     setDimensions(addrBits, width);
   }
 
-  public void addHexModelListener(HexModelListener l) {
+  public void addHexModelWeakListener(Object owner, HexModelListener l) {
     if (listeners == null)
       listeners = new EventSourceWeakSupport<HexModelListener>();
-    listeners.add(l);
+    listeners.add(owner, l);
   }
 
   public void clear() {
@@ -261,10 +261,10 @@ public class MemContents implements Cloneable, HexModel {
     return true;
   }
 
-  public void removeHexModelListener(HexModelListener l) {
+  public void removeHexModelWeakListener(Object owner, HexModelListener l) {
     if (listeners == null)
       return;
-    listeners.add(l);
+    listeners.remove(owner, l);
     if (listeners.isEmpty())
       listeners = null;
   }

@@ -118,7 +118,7 @@ public class TestThread extends UniquelyNamedThread implements CircuitListener {
 
     matchPins();
 
-    model.getCircuit().addCircuitListener(this);
+    model.getCircuit().addCircuitWeakListener(null, this);
   }
 
   // used only for automated testing via command line arguments

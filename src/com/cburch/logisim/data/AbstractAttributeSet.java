@@ -30,30 +30,25 @@
 
 package com.cburch.logisim.data;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.cburch.logisim.util.EventSourceWeakSupport;
 
 public abstract class AbstractAttributeSet implements Cloneable, AttributeSet {
-  private ArrayList<AttributeListener> listeners = null;
+  private EventSourceWeakSupport<AttributeListener> listeners = null;
 
   public AbstractAttributeSet() { }
 
-  public void addAttributeListener(AttributeListener l) {
+  public void addAttributeWeakListener(Object owner, AttributeListener l) {
     if (listeners == null)
-      listeners = new ArrayList<AttributeListener>();
-    listeners.add(l);
+      listeners = new EventSourceWeakSupport<AttributeListener>();
+    listeners.add(owner, l);
   }
 
-  public void removeAttributeListener(AttributeListener l) {
+  public void removeAttributeWeakListener(Object owner, AttributeListener l) {
     if (listeners == null)
       return;
-    listeners.remove(l);
+    listeners.remove(owner, l);
     if (listeners.isEmpty())
       listeners = null;
-  }
-
-  public boolean amIListening(AttributeListener l) {
-    return listeners != null && listeners.contains(l);
   }
 
   @Override
@@ -76,8 +71,7 @@ public abstract class AbstractAttributeSet implements Cloneable, AttributeSet {
     if (listeners == null)
       return;
     AttributeEvent event = new AttributeEvent(this);
-    List<AttributeListener> ls = new ArrayList<>(listeners);
-    for (AttributeListener l : ls)
+    for (AttributeListener l : listeners)
       l.attributeListChanged(event);
   }
 
@@ -85,8 +79,7 @@ public abstract class AbstractAttributeSet implements Cloneable, AttributeSet {
     if (listeners == null)
       return;
     AttributeEvent event = new AttributeEvent(this, attr, value);
-    List<AttributeListener> ls = new ArrayList<>(listeners);
-    for (AttributeListener l : ls)
+    for (AttributeListener l : listeners)
       l.attributeValueChanged(event);
   }
 

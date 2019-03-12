@@ -186,9 +186,8 @@ public class Circuit implements AttributeDefaultProvider {
     return logiFile;
   }
 
-  public void addCircuitListener(CircuitListener what) {
-    listeners.add(what);
-  }
+  public void addCircuitWeakListener(Object owner, CircuitListener l) { listeners.add(owner, l); }
+  public void removeCircuitWeakListener(Object owner, CircuitListener l) { listeners.remove(owner, l); }
 
   public void RecalcDefaultShape() {
     if (appearance.isDefaultAppearance()) {
@@ -698,8 +697,7 @@ public class Circuit implements AttributeDefaultProvider {
         // logiFile.addVhdlContent(vhdl.getContent());
         vhdl.addCircuitUsing(c, this);
       }
-      c.addComponentListener(myComponentListener);
-      // c.addComponentListener(this.);
+      c.addComponentWeakListener(null, myComponentListener);
     }
     fireEvent(CircuitEvent.ACTION_ADD, c);
   }
@@ -766,13 +764,9 @@ public class Circuit implements AttributeDefaultProvider {
         for (Circuit circ : allAffected)
           circ.appearance.removeDynamicElement((InstanceComponent)c);
       }
-      c.removeComponentListener(myComponentListener);
+      c.removeComponentWeakListener(null, myComponentListener);
     }
     fireEvent(CircuitEvent.ACTION_REMOVE, c);
-  }
-
-  public void removeCircuitListener(CircuitListener what) {
-    listeners.remove(what);
   }
 
   // Note: caller must have validated name already

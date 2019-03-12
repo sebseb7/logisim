@@ -151,7 +151,7 @@ class SimulateOptions extends OptionsPanel {
     add(gateUndefinedPanel);
     add(simRandomness);
 
-    window.getOptions().getAttributeSet().addAttributeListener(myListener);
+    window.getOptions().getAttributeSet().addAttributeWeakListener(null, myListener);
     AttributeSet attrs = getOptions().getAttributeSet();
     myListener.loadSimLimit(attrs.getValue(Options.ATTR_SIM_LIMIT));
     myListener.loadGateUndefined(attrs.getValue(Options.ATTR_GATE_UNDEFINED));

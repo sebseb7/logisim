@@ -73,7 +73,7 @@ public class Splitter extends ManagedComponent
   public Splitter(Location loc, AttributeSet attrs) {
     super(loc, attrs, 3);
     configureComponent();
-    attrs.addAttributeListener(this);
+    attrs.addAttributeWeakListener(null, this);
   }
 
   //

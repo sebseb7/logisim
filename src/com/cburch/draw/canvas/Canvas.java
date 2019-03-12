@@ -126,11 +126,11 @@ public class Canvas extends JComponent {
 		CanvasModel oldValue = model;
 		if (oldValue != value) {
 			if (oldValue != null)
-				oldValue.removeCanvasModelListener(listener);
+				oldValue.removeCanvasModelWeakListener(null, listener);
 			model = value;
 			this.dispatcher = dispatcher;
 			if (value != null)
-				value.addCanvasModelListener(listener);
+				value.addCanvasModelWeakListener(null, listener);
 			selection.clearSelected();
 			repaint();
 			firePropertyChange(MODEL_PROPERTY, oldValue, value);

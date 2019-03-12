@@ -60,7 +60,7 @@ public class ToolbarData {
     for (AttributeListener l : toolListeners) {
       AttributeSet attrs = tool.getAttributeSet();
       if (attrs != null)
-        attrs.addAttributeListener(l);
+        attrs.addAttributeWeakListener(null, l);
     }
   }
 
@@ -86,19 +86,19 @@ public class ToolbarData {
     fireToolbarChanged();
   }
 
-  public void addToolAttributeListener(AttributeListener l) {
+  public void addToolAttributeWeakListener(/*Object owner,*/ AttributeListener l) {
     for (Tool tool : contents) {
       if (tool != null) {
         AttributeSet attrs = tool.getAttributeSet();
         if (attrs != null)
-          attrs.addAttributeListener(l);
+          attrs.addAttributeWeakListener(null, l);
       }
     }
-    toolListeners.add(l);
+    toolListeners.add(null, l);
   }
 
-  public void addToolbarListener(ToolbarListener l) {
-    listeners.add(l);
+  public void addToolbarWeakListener(Object owner, ToolbarListener l) {
+    listeners.add(owner, l);
   }
 
   public void copyFrom(ToolbarData other, LogisimFile file) {
@@ -168,23 +168,23 @@ public class ToolbarData {
     for (AttributeListener l : toolListeners) {
       AttributeSet attrs = tool.getAttributeSet();
       if (attrs != null)
-        attrs.removeAttributeListener(l);
+        attrs.removeAttributeWeakListener(null, l);
     }
   }
 
-  public void removeToolAttributeListener(AttributeListener l) {
+  public void removeToolAttributeWeakListener(/*Object owner,*/ AttributeListener l) {
     for (Tool tool : contents) {
       if (tool != null) {
         AttributeSet attrs = tool.getAttributeSet();
         if (attrs != null)
-          attrs.removeAttributeListener(l);
+          attrs.removeAttributeWeakListener(null, l);
       }
     }
-    toolListeners.remove(l);
+    toolListeners.remove(null, l);
   }
 
-  public void removeToolbarListener(ToolbarListener l) {
-    listeners.remove(l);
+  public void removeToolbarWeakListener(Object owner, ToolbarListener l) {
+    listeners.remove(owner, l);
   }
 
   //

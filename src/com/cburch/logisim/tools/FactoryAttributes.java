@@ -39,13 +39,15 @@ import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeSets;
+import com.cburch.logisim.util.EventSourceWeakSupport;
 
 public class FactoryAttributes implements AttributeSet, AttributeListener, Cloneable {
   private Class<? extends Library> libraryClass;
   private FactoryDescription desc;
   private ComponentFactory factory;
   private AttributeSet baseAttrs;
-  private ArrayList<AttributeListener> listeners;
+  private EventSourceWeakSupport<AttributeListener> listeners
+      = new EventSourceWeakSupport<>();
 
   public FactoryAttributes(Class<? extends Library> libClass,
       FactoryDescription desc) {
@@ -53,7 +55,6 @@ public class FactoryAttributes implements AttributeSet, AttributeListener, Clone
     this.desc = desc;
     this.factory = null;
     this.baseAttrs = null;
-    this.listeners = new ArrayList<AttributeListener>();
   }
 
   public FactoryAttributes(ComponentFactory factory) {
@@ -61,7 +62,6 @@ public class FactoryAttributes implements AttributeSet, AttributeListener, Clone
     this.desc = null;
     this.factory = factory;
     this.baseAttrs = null;
-    this.listeners = new ArrayList<AttributeListener>();
   }
 
   public FactoryAttributes(FactoryAttributes other) {
@@ -69,11 +69,10 @@ public class FactoryAttributes implements AttributeSet, AttributeListener, Clone
     this.desc = other.desc;
     this.factory = other.factory;
     this.baseAttrs = null;
-    this.listeners = new ArrayList<AttributeListener>();
   }
 
-  public void addAttributeListener(AttributeListener l) {
-    listeners.add(l);
+  public void addAttributeWeakListener(Object owner, AttributeListener l) {
+    listeners.add(owner, l);
   }
 
   public void attributeListChanged(AttributeEvent baseEvent) {
@@ -131,7 +130,7 @@ public class FactoryAttributes implements AttributeSet, AttributeListener, Clone
         ret = AttributeSets.EMPTY;
       } else {
         ret = fact.createAttributeSet();
-        ret.addAttributeListener(this);
+        ret.addAttributeWeakListener(null, this);
       }
       baseAttrs = ret;
     }
@@ -154,8 +153,8 @@ public class FactoryAttributes implements AttributeSet, AttributeListener, Clone
     return getBase().isToSave(attr);
   }
 
-  public void removeAttributeListener(AttributeListener l) {
-    listeners.remove(l);
+  public void removeAttributeWeakListener(Object owner, AttributeListener l) {
+    listeners.remove(owner, l);
   }
 
   public void setReadOnly(Attribute<?> attr, boolean value) {

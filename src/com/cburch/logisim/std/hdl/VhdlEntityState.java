@@ -45,11 +45,11 @@ class VhdlEntityState
 
   public VhdlEntityState(Instance parent, VhdlContent content) {
     this.content = content;
-    this.content.addHdlModelListener(this);
+    this.content.addHdlModelWeakListener(null, this);
     this.parent = parent;
 
     if (this.parent != null)
-      parent.getAttributeSet().addAttributeListener(this);
+      parent.getAttributeSet().addAttributeWeakListener(null, this);
   }
 
   @Override
@@ -68,7 +68,7 @@ class VhdlEntityState
       VhdlEntityState ret = (VhdlEntityState) super.clone();
       ret.parent = null;
       // ret.content = content.clone();
-      ret.content.addHdlModelListener(ret);
+      ret.content.addHdlModelWeakListener(null, ret);
       return ret;
     } catch (CloneNotSupportedException e) {
       return null;
@@ -98,11 +98,11 @@ class VhdlEntityState
       return;
 
     if (parent != null)
-      parent.getAttributeSet().removeAttributeListener(this);
+      parent.getAttributeSet().removeAttributeWeakListener(null, this);
 
     parent = value;
     if (value != null)
-      value.getAttributeSet().addAttributeListener(this);
+      value.getAttributeSet().addAttributeWeakListener(null, this);
   }
 
 }

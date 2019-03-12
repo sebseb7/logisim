@@ -124,13 +124,13 @@ public class SignalInfo implements AttributeListener, CircuitListener, Location.
     // i.e., path[0], might get removed from the top-level circuit. Also listen
     // to each other circuit at each level of the path, for similar reasons.
     for (Circuit t : circ)
-      t.addCircuitListener(this);
+      t.addCircuitWeakListener(null, this);
 
     // Listen to attributes of subcircuits, at each level of the path, including
     // the final component at the end of the path, because it affects our name
     // via changes to the location coordinates and/or labels.
     for (Component c : path)
-      c.getAttributeSet().addAttributeListener(this);
+      c.getAttributeSet().addAttributeWeakListener(null, this);
   }
 
   public void setListener(Listener l) {
@@ -195,9 +195,9 @@ public class SignalInfo implements AttributeListener, CircuitListener, Location.
         } else if (cNew != null) {
           // component replaced by alternate version (e.g. moved location)
           changed = true;
-          path[i].getAttributeSet().removeAttributeListener(this);
+          path[i].getAttributeSet().removeAttributeWeakListener(null, this);
           path[i] = cNew;
-          path[i].getAttributeSet().addAttributeListener(this);
+          path[i].getAttributeSet().addAttributeWeakListener(null, this);
 
           if (i < n-1) {
             // sanity check, path[i] should still lead to circ[i+1]
@@ -420,9 +420,9 @@ public class SignalInfo implements AttributeListener, CircuitListener, Location.
     // System.out.println(">>>>>> removing selected component: " + this);
     obsoleted = true;
     for (Circuit t : circ)
-      t.removeCircuitListener(this);
+      t.removeCircuitWeakListener(null, this);
     for (Component c : path)
-      c.getAttributeSet().removeAttributeListener(this);
+      c.getAttributeSet().removeAttributeWeakListener(null, this);
     if (listener != null)
       listener.signalInfoObsoleted(this);
   }

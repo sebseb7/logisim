@@ -58,10 +58,10 @@ public class ProjectExplorerToolNode extends ProjectExplorerModel.Node<Tool>
       Object factory = ((AddTool) tool).getFactory();
       if (factory instanceof SubcircuitFactory) {
         circuit = ((SubcircuitFactory) factory).getSubcircuit();
-        circuit.addCircuitListener(this);
+        circuit.addCircuitWeakListener(null, this);
       } else if (factory instanceof VhdlEntity) {
         vhdl = ((VhdlEntity) factory).getContent();
-        vhdl.addHdlModelListener(this);
+        vhdl.addHdlModelWeakListener(null, this);
       }
     }
   }
@@ -91,10 +91,10 @@ public class ProjectExplorerToolNode extends ProjectExplorerModel.Node<Tool>
   @Override
   protected void decommission() {
     if (circuit != null) {
-      circuit.removeCircuitListener(this);
+      circuit.removeCircuitWeakListener(null, this);
     }
     if (vhdl != null) {
-      vhdl.removeHdlModelListener(this);
+      vhdl.removeHdlModelWeakListener(null, this);
     }
   }
 

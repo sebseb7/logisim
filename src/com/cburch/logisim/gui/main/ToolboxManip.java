@@ -69,12 +69,12 @@ class ToolboxManip implements ProjectExplorer.Listener {
 
     private void addLibrary(Library lib) {
       if (lib instanceof LibraryEventSource) {
-        ((LibraryEventSource) lib).addLibraryListener(this);
+        ((LibraryEventSource) lib).addLibraryWeakListener(null, this);
       }
       for (Tool tool : lib.getTools()) {
         AttributeSet attrs = tool.getAttributeSet();
         if (attrs != null)
-          attrs.addAttributeListener(this);
+          attrs.addAttributeWeakListener(null, this);
       }
     }
 
@@ -99,12 +99,12 @@ class ToolboxManip implements ProjectExplorer.Listener {
         Tool tool = (Tool) event.getData();
         AttributeSet attrs = tool.getAttributeSet();
         if (attrs != null)
-          attrs.addAttributeListener(this);
+          attrs.addAttributeWeakListener(null, this);
       } else if (action == LibraryEvent.REMOVE_TOOL) {
         Tool tool = (Tool) event.getData();
         AttributeSet attrs = tool.getAttributeSet();
         if (attrs != null)
-          attrs.removeAttributeListener(this);
+          attrs.removeAttributeWeakListener(null, this);
       }
       explorer.repaint();
     }
@@ -120,12 +120,12 @@ class ToolboxManip implements ProjectExplorer.Listener {
 
     private void removeLibrary(Library lib) {
       if (lib instanceof LibraryEventSource) {
-        ((LibraryEventSource) lib).removeLibraryListener(this);
+        ((LibraryEventSource) lib).removeLibraryWeakListener(null, this);
       }
       for (Tool tool : lib.getTools()) {
         AttributeSet attrs = tool.getAttributeSet();
         if (attrs != null)
-          attrs.removeAttributeListener(this);
+          attrs.removeAttributeWeakListener(null, this);
       }
     }
 
@@ -155,7 +155,7 @@ class ToolboxManip implements ProjectExplorer.Listener {
   ToolboxManip(Project proj, ProjectExplorer explorer) {
     this.proj = proj;
     this.explorer = explorer;
-    proj.addProjectListener(myListener);
+    proj.addProjectWeakListener(null, myListener);
     myListener.setFile(null, proj.getLogisimFile());
   }
 

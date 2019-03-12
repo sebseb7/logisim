@@ -161,9 +161,9 @@ public class InstanceTextField
     boolean shouldReg = shouldRegister();
     AttributeSet attrs = comp.getAttributeSet();
     if (!wasReg && shouldReg)
-      attrs.addAttributeListener(this);
+      attrs.addAttributeWeakListener(null, this);
     if (wasReg && !shouldReg)
-      attrs.removeAttributeListener(this);
+      attrs.removeAttributeWeakListener(null, this);
 
     updateField(attrs);
   }

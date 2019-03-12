@@ -84,4 +84,9 @@ public class Path {
     return path.hashCode();
   }
 
+  @Override
+  public String toString() {
+    return path;
+  }
+
 }

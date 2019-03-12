@@ -90,7 +90,6 @@ public class Settings {
   private static final String WorkPathName = "logisim_fpga_workspace" + File.separator;
   private static final String XilinxName = "XilinxToolsPath";
   private static final String AlteraName = "AlteraToolsPath";
-  private static final String ToolsAreDisabled = "GenerateHDLOnly";
   private static final String Altera64Bit = "Altera64Bit";
   private static final String HdlTypeName = "HDLTypeToGenerate";
   private static final String Boards = "FPGABoards";
@@ -218,10 +217,6 @@ public class Settings {
 
   public Collection<String> GetBoardNames() {
     return KnownBoards.GetBoardNames();
-  }
-
-  public boolean GetToolsAreDisabled() {
-    return GetBoolean(ToolsAreDisabled, true);
   }
 
   public boolean GetAltera64Bit() {
@@ -390,10 +385,6 @@ public class Settings {
     return false;
   }
 
-  public boolean SetToolsAreDisabled(boolean yup_just_generate_hdl) {
-    return SetBoolean(ToolsAreDisabled, yup_just_generate_hdl);
-  }
-
   public boolean SetAltera64Bit(boolean enable) {
     return SetBoolean(Altera64Bit, enable);
   }
@@ -507,7 +498,6 @@ public class Settings {
     }
     GetXilinxToolPath();
     GetAlteraToolPath();
-    GetToolsAreDisabled();
     GetHDLType();
     GetAltera64Bit();
 

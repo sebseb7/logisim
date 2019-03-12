@@ -65,8 +65,8 @@ public class LayoutEditHandler extends EditHandler
     LayoutClipboard.forCircuit.addPropertyChangeListener(LayoutClipboard.contentsProperty, this);
     LayoutClipboard.forVhdl.addPropertyChangeListener(LayoutClipboard.contentsProperty, this);
     LayoutClipboard.forLibrary.addPropertyChangeListener(LayoutClipboard.contentsProperty, this);
-    proj.addProjectListener(this);
-    proj.addLibraryListener(this);
+    proj.addProjectWeakListener(null, this);
+    proj.addLibraryWeakListener(/*null,*/ this);
   }
 
   @Override

@@ -58,12 +58,12 @@ class ProjectsDirty {
   private static class ProjectListListener implements PropertyChangeListener {
     public synchronized void propertyChange(PropertyChangeEvent event) {
       for (DirtyListener l : listeners) {
-        l.proj.removeLibraryListener(l);
+        l.proj.removeLibraryWeakListener(/*null,*/ l);
       }
       listeners.clear();
       for (Project proj : Projects.getOpenProjects()) {
         DirtyListener l = new DirtyListener(proj);
-        proj.addLibraryListener(l);
+        proj.addLibraryWeakListener(/*null,*/ l);
         listeners.add(l);
 
         LogisimFile lib = proj.getLogisimFile();
