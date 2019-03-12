@@ -257,13 +257,17 @@ public class BoardIO {
     }
 
     String label = params.get("Label");
+    String name = t.toString();
+    if (label != null)
+      name += " " + label;
     int x = Integer.parseInt(params.getOrDefault("LocationX", "-1"));
     int y = Integer.parseInt(params.getOrDefault("LocationY", "-1"));
     int w = Integer.parseInt(params.getOrDefault("Width", "-1"));
     int h = Integer.parseInt(params.getOrDefault("Height", "-1"));
 		if (x < 0 || y < 0 || w < 1 || h < 1)
-      throw new Exception("invalid coordinates or size for I/O resource");
+      throw new Exception("invalid coordinates or size for I/O resource " + name);
 		Bounds r = Bounds.create(x, y, w, h);
+    name += "@ ("+x+","+y+")";
 
     PullBehavior p = PullBehavior.get(params.get("FPGAPinPullBehavior"));
     PinActivity a = (t == Type.Pin) ? PinActivity.ACTIVE_HIGH :
@@ -277,16 +281,25 @@ public class BoardIO {
       width = 1;
       pins = new String[] { params.get("FPGAPinName") };
       if (pins[0] == null)
-        throw new Exception("missing pin FPGA location for " + t + (label != null ? " " + label : ""));
+        throw new Exception("missing pin FPGA location for " + name);
     } else {
-      width = Integer.parseInt(params.get("NrOfPins"));
-      if (width < 0)
-        throw new Exception("invalid pin count for " + t + (label != null ? " " + label : ""));
+      String cnt = params.get("NrOfPins");
+      if (t == Type.Ribbon || t == Type.DIPSwitch) {
+        if (cnt == null)
+          throw new Exception("missing pin count for " + name);
+        width = Integer.parseInt(cnt);
+        if (width <= 0)
+          throw new Exception("invalid pin count for " + name);
+      } else {
+        width = t.defaultWidth();
+        if (cnt != null && Integer.parseInt(cnt) != width)
+          Errors.title("Error").warn("Ignoring invalid pin count in XML for " + name);
+      }
       pins = new String[width];
       for (int i = 0; i < width; i++) {
         pins[i] = params.get("FPGAPin_" + i);
         if (pins[i] == null)
-          throw new Exception("missing pin label " + i + " for " + t + (label != null ? " " + label : ""));
+          throw new Exception("missing pin label " + i + " for " + name);
       }
     }
 

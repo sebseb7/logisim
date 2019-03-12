@@ -232,7 +232,6 @@ public class Commander extends JFrame
       actionItems.put(s, m);
       actionPopup.add(m);
     }
-    configureActions();
     actionButton.addActionListener(e -> doDownloadPrep());
 
     // layout buttons
@@ -284,6 +283,7 @@ public class Commander extends JFrame
     tabbedPane.add(messages); // tab index 0 is for console messages
     tabbedPane.setPreferredSize(new Dimension(700, 20 * Console.FONT_SIZE));
 
+    configureActions();
 
     // layout rest of panel
 
@@ -920,6 +920,8 @@ public class Commander extends JFrame
   }
 
   void configureActions() {
+    ClearConsoles();
+    clearAllMessages();
     actionButton.setEnabled(board != null);
     if (board == null
         || (board.fpga.Vendor == Chipset.ALTERA
@@ -927,10 +929,10 @@ public class Commander extends JFrame
         || (board.fpga.Vendor == Chipset.XILINX
           && settings.GetXilinxToolPath().equals(Settings.Unknown))) {
       if (board == null) {
-        AddInfo("Please select an FPGA board.");
+        AddErrors("Please select an FPGA board.");
       } else {
         String vendor = board.fpga.VendorName;
-        AddInfo("Tool path for " + vendor + " is not set correctly. "
+        AddErrors("Tool path for " + vendor + " is not set correctly. "
             + "Synthesis and download will not be available. "
             + "Please set the " + vendor + " tool path "
             + "using the \"Settings\" button above, or choose "
@@ -938,7 +940,7 @@ public class Commander extends JFrame
         String[] toolset = board.fpga.Vendor == Chipset.ALTERA ?
             Settings.AlteraPrograms : Settings.XilinxPrograms;
         AddInfo("The tool path for " + vendor + " must contain these progams:\n"
-            + "    " + String.join("\n    ", toolset));
+            + "         " + String.join(", ", toolset));
       }
       actionItems.get(HDL_GEN_AND_DOWNLOAD).setSelected(false);
       actionItems.get(HDL_DOWNLOAD_ONLY).setSelected(false);
@@ -946,6 +948,7 @@ public class Commander extends JFrame
       actionItems.get(HDL_DOWNLOAD_ONLY).setEnabled(false);
       setAction(HDL_GEN_ONLY);
     } else {
+      board.printStats(err);
       actionItems.forEach((s, m) -> m.setEnabled(true));
       setAction(HDL_GEN_AND_DOWNLOAD);
     }
