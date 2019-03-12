@@ -41,7 +41,6 @@ import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.netlist.Path;
 import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.std.wiring.ClockHDLGenerator;
@@ -139,9 +138,19 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 
   // Top-level entry point: write all HDL files for the project.
   public boolean writeAllHDLFiles(String rootDir) {
-    return circgen.writeAllHDLFiles(rootDir)
-        && (ticker == null || ticker.writeHDLFiles(rootDir))
-        && writeHDLFiles(rootDir);
+    if (!circgen.writeAllHDLFiles(rootDir)) {
+      _err.AddInfo("Circuit HDL files could not be generated.");
+      return false;
+    }
+    if (ticker != null && !ticker.writeHDLFiles(rootDir)) {
+      _err.AddInfo("Clock ticker HDL files could not be generated.");
+      return false;
+    }
+    if (!writeHDLFiles(rootDir)) {
+      _err.AddInfo("Top level HDL module could not be generated.");
+      return false;
+    }
+    return true;
   }
 
   // @Override

@@ -108,7 +108,7 @@ public class FileWriter {
 				FileName += ".v";
 			}
 			File OutFile = new File(FileName);
-			MyReporter.AddInfo("Creating HDL file : \"" + FileName + "\"");
+			MyReporter.AddInfo("Creating HDL file : " + FileName);
 			if (OutFile.exists()) {
 				MyReporter.AddWarning("HDL file \"" + FileName
 						+ "\" already exists");
@@ -136,7 +136,7 @@ public class FileWriter {
 			}
 			FileName += Name;
 			File OutFile = new File(FileName);
-			MyReporter.AddInfo("Creating file : \"" + FileName + "\"");
+			MyReporter.AddInfo("Creating file : " + FileName);
 			if (OutFile.exists()) {
 				MyReporter.AddWarning("File \"" + FileName
 						+ "\" already exists");

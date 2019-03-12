@@ -47,6 +47,7 @@ public class Path {
 
   // Construct a root path for a top-level circuit.
   public Path(Circuit circ) {
+    // Note: root circuit doesn't have a label, so use circuit name instead.
     this(CorrectLabel.getCorrectLabel(circ.getName().toUpperCase()));
   }
 

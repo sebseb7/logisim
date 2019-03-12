@@ -37,7 +37,6 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ItemEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -308,13 +307,8 @@ public class BindingsDialog extends JDialog {
       JPopupMenu popup = new JPopupMenu("Select Bit");
       String[] pinLabels = io.type.pinLabels(io.width);
       Dest dest = pinBindings.mappings.get(sources.current);
-      // System.out.printf("source is %s\n", sources.current);
-      // System.out.printf("this is %s\n", io);
-      // System.out.printf("dest is %s currently\n", dest);
       for (int i = 0; i < io.width; i++) {
         final int bit = i;
-        // System.out.printf("   selected bit %d? %s\n", i, 
-        //     dest != null && dest.io == io && dest.bit == bit);
         JCheckBoxMenuItem menu = new JCheckBoxMenuItem(pinLabels[i]);
         menu.setSelected(dest != null && dest.io == io && dest.bit == bit);
         if (pinBindings.containsMappingFor(io, bit))
@@ -432,8 +426,8 @@ public class BindingsDialog extends JDialog {
       selectedChanged(old, current);
     }
     void mapCurrent(BoardIO io, int bit) {
-      System.out.printf("Mapping %s of %s to %s\n", 
-          (bit < 0 ? "all bits" : "bit "+bit), current, io);
+      // System.out.printf("Mapping %s of %s to %s\n", 
+      //     (bit < 0 ? "all bits" : "bit "+bit), current, io);
       if (current == null)
           return;
       unmapCurrent();

@@ -43,7 +43,6 @@ import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.netlist.Path;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitAttributes;
-import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.EndData;
@@ -58,7 +57,9 @@ public class CircuitHDLGenerator extends HDLGenerator {
   private Netlist _circNets; // netlist for this circ; _nets is for our parent
 
 	public CircuitHDLGenerator(HDLCTX ctx, Circuit circ) {
-    super(ctx, "circuit", "Circuit_${LABEL}", "i_Circ");
+    super(ctx, "circuit",
+        "Circuit_"+ CorrectLabel.getCorrectLabel(circ.getName().toUpperCase()),
+        "i_Circ");
 		this.circ = circ;
 		this._circNets = circ.getNetlist();
     
@@ -347,7 +348,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
   }
 
   private void emit(Hdl out, Net dest, int b, Net.IndirectSource last, int n) {
-    if (last != null || n > 0)
+    if (last != null && n > 0)
       out.assign(dest.slice(out, b, b-n+1), last.net.slice(out, last.bit, last.bit-n+1));
   }
 
@@ -367,6 +368,15 @@ public class CircuitHDLGenerator extends HDLGenerator {
       }
       emit(out, net, w-1, prev, n);
     }
+  }
+
+  @Override
+  public boolean requiresUniqueLabel() {
+    // Special case: HDL for a circuit does not depend on the specific instance,
+    // so the name of the HDL does not contains ${LABEL}. But we still want
+    // subcircuits to be labeled for the sake of being able to create unique
+    // Path identifiers.
+    return true;
   }
 
   // @Override
