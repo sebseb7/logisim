@@ -136,13 +136,11 @@ public class Commander extends JFrame
   private final JTabbedPane tabbedPane = new JTabbedPane();
 
   public void libraryChanged(LibraryEvent e) {
-    System.out.println("lib: " + e);
     if (e.getAction() == LibraryEvent.ADD_TOOL || e.getAction() == LibraryEvent.REMOVE_TOOL)
       updateCircuitList();
   }
 
   public void circuitChanged(CircuitEvent e) {
-    System.out.println("circ: " + e);
     if (e.getAction() == CircuitEvent.ACTION_SET_NAME)
       updateCircuitList();
   }
@@ -163,7 +161,6 @@ public class Commander extends JFrame
 
     // listen for project changes
     proj.addProjectWeakListener(this, e -> {
-      System.out.println("proj: " + e);
       if (e.getAction() == ProjectEvent.ACTION_SET_CURRENT && e.getCircuit() != null)
         circuitsList.setSelectedItem(e.getCircuit());
       else if (e.getAction() == ProjectEvent.ACTION_SET_FILE)
@@ -186,6 +183,10 @@ public class Commander extends JFrame
       }
     });
     updateCircuitList();
+    Dimension d = circuitsList.getPreferredSize();
+    d.width = Math.max(d.width, 150);
+    circuitsList.setMinimumSize(d);
+    circuitsList.setPreferredSize(d);
     
     // configure language options
     language.addItem(Settings.VHDL);
@@ -372,7 +373,6 @@ public class Commander extends JFrame
       circ = proj.getLogisimFile().getMainCircuit();
     circuitsList.setSelectedItem(circ);
     circuitsList.invalidate();
-    System.out.println("invalidate");
   }
 
   private void updateClockOptions() {
