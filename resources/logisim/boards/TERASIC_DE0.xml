@@ -39,7 +39,7 @@
 <LED Label="PS2_MSDAT" ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinIOStandard="Default" FPGAPinName="PIN_R22" Height="9" LocationX="299" LocationY="170" Width="7"/>
 -->
 
-<!-- Switchs -->
+<!-- Switches -->
 <Button ActivityLevel="Active high" FPGAPinIOStandard="Default" FPGAPinName="PIN_J6" FPGAPinPullBehavior="Float" Height="29" LocationX="365" LocationY="363" Width="14"/>
 <Button ActivityLevel="Active high" FPGAPinIOStandard="Default" FPGAPinName="PIN_H5" FPGAPinPullBehavior="Float" Height="29" LocationX="343" LocationY="363" Width="14"/>
 <Button ActivityLevel="Active high" FPGAPinIOStandard="Default" FPGAPinName="PIN_H6" FPGAPinPullBehavior="Float" Height="29" LocationX="321" LocationY="363" Width="14"/>

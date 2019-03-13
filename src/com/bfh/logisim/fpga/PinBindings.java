@@ -116,7 +116,6 @@ public class PinBindings {
     public final int bit; // -1 means entire NetlistComponent is mapped
     public final BoardIO.Type type;
     public final Int3 width;
-    Int3 seqno;
     public Source(Path p, NetlistComponent c, int b, BoardIO.Type t, Int3 w) {
       path = p;
       comp = c;
@@ -134,9 +133,6 @@ public class PinBindings {
     public int hashCode() {
       return path.toString().hashCode() + 31*bit;
     }
-    public Int3 seqno() {
-      return seqno.copy();
-    }
     @Override
     public String toString() {
       if (bit < 0)
@@ -149,6 +145,7 @@ public class PinBindings {
   public static class Dest {
     public final BoardIO io; // may be synthetic
     public final int bit; // -1 means something maps to this entire BoardIO
+    private Int3 seqno; // set by finalizeMappings(), used during HDL generation
     public Dest(BoardIO i, int b) { io = i; bit = b; }
     @Override
     public String toString() {
@@ -156,6 +153,9 @@ public class PinBindings {
         return io.toString();
       else
         return io.pinLabel(bit) + " of " + io;
+    }
+    public Int3 seqno() {
+      return seqno.copy();
     }
   }
 
@@ -183,7 +183,7 @@ public class PinBindings {
     Int3 counts = new Int3();
     mappings.forEach((s, d) -> {
       if (BoardIO.PhysicalTypes.contains(d.io.type)) {
-        s.seqno = counts.copy();
+        d.seqno = counts.copy();
         counts.increment(s.width);
       }
     });
@@ -200,8 +200,11 @@ public class PinBindings {
   }
 
   public void forEachPhysicalPin(PhysicalPinConsumer f) {
+    err.AddInfo("Assigning input pins");
     forEachPhysicalPin(f, w -> w.in, "FPGA_INPUT_PIN_");
+    err.AddInfo("Assigning inout pins");
     forEachPhysicalPin(f, w -> w.inout, "FPGA_INOUT_PIN_");
+    err.AddInfo("Assigning output pins");
     forEachPhysicalPin(f, w -> w.out, "FPGA_OUTPUT_PIN_");
   }
 
@@ -209,12 +212,17 @@ public class PinBindings {
       Function<Int3, Integer> selector, String signalPrefix) {
     mappings.forEach((s, d) -> {
       int w = selector.apply(s.width);
-      if (w >= 0 && BoardIO.PhysicalTypes.contains(d.io)) {
+      err.AddInfo("  %s ? w=%d", s, w);
+      if (w > 0 && BoardIO.PhysicalTypes.contains(d.io.type)) {
+        err.AddInfo("    mapping to %s", d);
         String[] labels = d.io.pinLabels();
         String[] pins = d.io.pins;
-        int seqno = selector.apply(s.seqno);
+        int seqno = selector.apply(d.seqno);
+        int b = d.bit < 0 ? 0 : d.bit;
         for (int i = 0; i < w; i++)
-          f.process(pins[i], signalPrefix + (seqno + i), d.io, labels[i]);
+          f.process(pins[b+i], signalPrefix + (seqno + i), d.io,
+              d.bit < 0 ? d.io.toString() :
+              String.format("%s of %s", labels[i], d.io.toString()));
       }
     });
   }

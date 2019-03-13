@@ -228,7 +228,7 @@ public class HDLGenerator extends HDLSupport {
       out.indent();
 
       generateVhdlTypes(out);
-      generateVhdlComponentDeclarations(out);
+      declareNeededComponents(out);
 
       if (!wires.isEmpty() || !registers.isEmpty()) {
         for (WireInfo s : wires)
@@ -360,11 +360,11 @@ public class HDLGenerator extends HDLSupport {
         || (hiddenPort != null && hiddenPort.numPorts() > 0)) {
       ArrayList<String> ports = new ArrayList<>();
       for (PortInfo s: inPorts)
-        ports.add(s + " : in " + out.typeForWidth(s.width));
+        ports.add(s.name + " : in " + out.typeForWidth(s.width));
       for (PortInfo s: inOutPorts)
-        ports.add(s + " : inout " + out.typeForWidth(s.width));
+        ports.add(s.name + " : inout " + out.typeForWidth(s.width));
       for (PortInfo s: outPorts)
-        ports.add(s + " : out " + out.typeForWidth(s.width));
+        ports.add(s.name + " : out " + out.typeForWidth(s.width));
       if (clockPort != null) {
 				ports.add(clockPort.ckPortName + " : in " + out.typeForWidth(1));
 				ports.add(clockPort.enPortName + " : in " + out.typeForWidth(1));
@@ -409,16 +409,21 @@ public class HDLGenerator extends HDLSupport {
     ArrayList<String> generics = new ArrayList<>();
 
 		if (out.isVhdl) {
-
-      out.stmt("%s : %s", instName, hdlComponentName);
-			if (!parameters.isEmpty()) {
-        for (ParameterInfo s : parameters)
+        
+      for (ParameterInfo s : parameters)
           generics.add(s.name + " => " +  s.value);
-        out.stmt("generic map(\t %s )", String.join(",\n\t ", generics));
-			}
+      String g = String.join(",\n\t ", generics);
+      String v = String.join(",\n\t ", values);
 
-			if (!values.isEmpty())
-        out.stmt("port map(\t %s )", String.join(",\n\t ", values));
+      if (parameters.isEmpty() && values.isEmpty())
+        out.stmt("%s : %s;", instName, hdlComponentName);
+      else if (parameters.isEmpty())
+        out.stmt("%s : %s port map(\t %s );", instName, hdlComponentName, v);
+      else if (values.isEmpty())
+        out.stmt("%s : %s generic map(\t %s );", instName, hdlComponentName, g);
+      else
+        out.stmt("%s : %s generic map(\t %s ) port map (\t %s );",
+            instName, hdlComponentName, g, v);
 
 		} else {
 
@@ -435,21 +440,22 @@ public class HDLGenerator extends HDLSupport {
         out.stmt("%s #(\t %s ) %s;", hdlComponentName, g, instName);
       else
         out.stmt("%s #(\t %s ) %s ( %s );", hdlComponentName, g, instName, v);
-		}
 
-    out.stmt();
+		}
+    // out.stmt();
 	}
 
 	protected void generateFileHeader(Hdl out) {
-    out.comment(" === Logisim-Evolution Holy Cross Edition auto-generated %s code", _lang);
-    out.comment(" === Project: %s", _projectName);
-    out.comment(" === Component: %s", hdlComponentName);
+    out.comment("Logisim-Evolution Holy Cross Edition auto-generated %s code", _lang);
+    out.comment("Project: %s", _projectName);
+    out.comment("Component: %s", hdlComponentName);
     out.stmt();
 	}
 
-  // Generate any external component declarations that should appear within the
-  // VHDL declarations.
-	protected void generateVhdlComponentDeclarations(Hdl out) { }
+  // Generate external component declarations for any external components needed
+  // by this component. These will appear within the VHDL architecture
+  // declarations.
+	protected void declareNeededComponents(Hdl out) { }
 
   // Generate any custom type declarations that should appear within the VHDL
   // declarations.

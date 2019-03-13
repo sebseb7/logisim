@@ -69,10 +69,10 @@ public class CircuitHDLGenerator extends HDLGenerator {
         continue;
       String label = NetlistComponent.labelOf(pin);
       EndData end = pin.getEnd(0);
-      if (end.isInput())
-        inPorts.add(label, end.getWidth().getWidth(), -1, null);
-      else
+      if (end.isInput()) // note: if data goes into Pin component, then port is an output
         outPorts.add(label, end.getWidth().getWidth(), -1, null);
+      else
+        inPorts.add(label, end.getWidth().getWidth(), -1, null);
     }
 
     // Note: Other setup is deferred until later, because it depends on Netlist
@@ -81,10 +81,16 @@ public class CircuitHDLGenerator extends HDLGenerator {
   }
 
   private boolean finishedSetup = false;
-  private void setup() {
+  public void notifyNetlistReady() {
     if (finishedSetup)
       return;
     finishedSetup = true;
+    
+    // recurse for subcircuits first
+    for (NetlistComponent subcirc : _circNets.subcircuits) {
+      CircuitHDLGenerator g = (CircuitHDLGenerator)subcirc.hdlSupport;
+      g.notifyNetlistReady();
+    }
 
     // hidden ports
     Netlist.Int3 hidden = _circNets.numHiddenBits();
@@ -197,13 +203,13 @@ public class CircuitHDLGenerator extends HDLGenerator {
 
       // Hidden ports
       // note: Toplevel has direct connection and inversions for InOut ports
-      NetlistComponent.Range3 r = comp.getLocalHiddenPortIndices();
-			if (r.end.in >= r.start.in)
-        map.add("LOGISIM_HIDDEN_FPGA_INPUT", "s_LOGISIM_HIDDEN_FPGA_INPUT", r.end.in, r.start.in);
-			if (r.end.inout >= r.start.inout)
-        map.add("LOGISIM_HIDDEN_FPGA_INOUT", "LOGISIM_HIDDEN_FPGA_INOUT", r.end.inout, r.start.inout);
-			if (r.end.out >= r.start.out)
-        map.add("LOGISIM_HIDDEN_FPGA_OUTPUT", "s_LOGISIM_HIDDEN_FPGA_OUTPUT", r.end.out, r.start.out);
+      Netlist.Int3 h = _circNets.numHiddenBits();
+			if (h.in > 0)
+        map.add("LOGISIM_HIDDEN_FPGA_INPUT", "s_LOGISIM_HIDDEN_FPGA_INPUT", h.in-1, 0);
+			if (h.inout > 0)
+        map.add("LOGISIM_HIDDEN_FPGA_INOUT", "LOGISIM_HIDDEN_FPGA_INOUT", h.inout-1, 0);
+			if (h.out > 0)
+        map.add("LOGISIM_HIDDEN_FPGA_OUTPUT", "s_LOGISIM_HIDDEN_FPGA_OUTPUT", h.out-1, 0);
       
       // Normal ports
       for (NetlistComponent pin : _circNets.inpins)
@@ -228,21 +234,25 @@ public class CircuitHDLGenerator extends HDLGenerator {
       String name = CorrectLabel.getCorrectLabel(circ.getName());
       if (writtenComponents.contains(name))
         return true;
-      if (!writeHDLFiles(rootDir))
+      if (!writeHDLFiles(rootDir)) {
+        _err.AddError("Error writing HDL files for " + name);
         return false;
+      }
       writtenComponents.add(name);
 
-      // Generate this circuit's normal components next
+      // Generate this circuit's normal (non-subcircuit, non-inlined) components next
       for (NetlistComponent comp : _circNets.components) {
         if (comp.original.getFactory() instanceof SubcircuitFactory)
           continue;
         HDLSupport g = comp.hdlSupport;
         if (g == null)
-          return false;
+          continue;
         String cname = g.getComponentName();
         if (!writtenComponents.contains(cname) && !g.inlined) {
-          if (!g.writeHDLFiles(rootDir))
+          if (!g.writeHDLFiles(rootDir)) {
+            _err.AddError(name+": error writing HDL files for " + comp.original.getFactory());
             return false;
+          }
           writtenComponents.add(cname);
         }
       }
@@ -250,8 +260,10 @@ public class CircuitHDLGenerator extends HDLGenerator {
       // Recurse for subcircuits last
       for (NetlistComponent subcirc : _circNets.subcircuits) {
         CircuitHDLGenerator g = (CircuitHDLGenerator)subcirc.hdlSupport;
-        if (g == null)
+        if (g == null) {
+          _err.AddError(name+": missing subcircuit HDL support for " + subcirc.original);
           return false;
+        }
         Path subpath = path.extend(subcirc);
         if (!g.writeAllHDLFiles(rootDir, writtenComponents, subpath))
           return false;
@@ -278,11 +290,11 @@ public class CircuitHDLGenerator extends HDLGenerator {
   }
 
 	@Override
-	public void generateVhdlComponentDeclarations(Hdl out) {
-    generateDeclarations(out, _circNets.components);
+	protected void declareNeededComponents(Hdl out) {
+    declareNeededComponents(out, _circNets.components);
   }
 
-  private void generateDeclarations(Hdl out, ArrayList<NetlistComponent> components) {
+  private void declareNeededComponents(Hdl out, ArrayList<NetlistComponent> components) {
 		HashSet<String> done = new HashSet<>();
 		for (NetlistComponent comp: components) {
       HDLSupport g = comp.hdlSupport;
@@ -291,7 +303,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
 			String name = g.getComponentName();
 			if (done.contains(name) || g.inlined)
         continue;
-      ((HDLGenerator)g).generateVhdlComponentDeclarations(out);
+      ((HDLGenerator)g).generateComponentDeclaration(out);
       done.add(name);
 		}
 	}
@@ -304,15 +316,13 @@ public class CircuitHDLGenerator extends HDLGenerator {
     else if (net == null)
       return; // input pin not driving anything, no error
     else if (isOutput)
-      out.assign(net.name, pin.label());
-    else
       out.assign(pin.label(), net.name);
+    else
+      out.assign(net.name, pin.label());
   }
 
 	@Override
   protected void generateBehavior(Hdl out) {
-
-    generateWiring(out);
 
 		// Connect each HDL port to the net connected to the corresponding circuit pin.
     // Note: This is almost exactly the same as getPortMappings(), but
@@ -322,7 +332,9 @@ public class CircuitHDLGenerator extends HDLGenerator {
       generatePortAssignments(out, pin, false);
     for (NetlistComponent pin : _circNets.outpins)
       generatePortAssignments(out, pin, true);
-
+    
+    generateWiring(out);
+    
     // Dynamic clock - DynamicClockHDLGenerator will connected directly to output port
 
     // Handle normal components and subcircuits.

@@ -130,7 +130,7 @@ public class XilinxDownload extends FPGADownload {
 				String line;
 				err.NewConsole("synthesize");
 				while ((line = br.readLine()) != null) {
-					err.print(line);
+					err.printf("%s", line);
 				}
 				CreateProject.waitFor();
 				if (CreateProject.exitValue() != 0) {
@@ -177,7 +177,7 @@ public class XilinxDownload extends FPGADownload {
 				String line;
 				err.NewConsole("constrain");
 				while ((line = br.readLine()) != null) {
-					err.print(line);
+					err.printf("%s", line);
 				}
 				CreateProject.waitFor();
 				if (CreateProject.exitValue() != 0) {
@@ -223,7 +223,7 @@ public class XilinxDownload extends FPGADownload {
 				String line;
 				err.NewConsole("mapping");
 				while ((line = br.readLine()) != null) {
-					err.print(line);
+					err.printf("%s", line);
 				}
 				CreateProject.waitFor();
 				if (CreateProject.exitValue() != 0) {
@@ -290,7 +290,7 @@ public class XilinxDownload extends FPGADownload {
 				String line;
 				err.NewConsole("place & route");
 				while ((line = br.readLine()) != null) {
-					err.print(line);
+					err.printf("%s", line);
 				}
 				CreateProject.waitFor();
 				if (CreateProject.exitValue() != 0) {
@@ -347,7 +347,7 @@ public class XilinxDownload extends FPGADownload {
 				String line;
 				err.NewConsole("generate");
 				while ((line = br.readLine()) != null) {
-					err.print(line);
+					err.printf("%s", line);
 				}
 				CreateProject.waitFor();
 				if (CreateProject.exitValue() != 0) {
@@ -403,7 +403,7 @@ public class XilinxDownload extends FPGADownload {
 				String line;
 				err.NewConsole("download");
 				while ((line = br.readLine()) != null) {
-					err.print(line);
+					err.printf("%s", line);
 				}
 				CreateProject.waitFor();
 				if (CreateProject.exitValue() != 0) {
@@ -527,7 +527,7 @@ public class XilinxDownload extends FPGADownload {
         spec += " | DRIVE = " + io.strength.ma;
       if (io.standard != IoStandard.UNKNOWN && io.standard != IoStandard.DEFAULT)
         spec += " | IOSTANDARD = " + io.standard;
-      out.stmt("NET \"%s\" %s ; # %s", net, spec, label);
+      out.stmt("NET \"%s\" %s  ;# %s", net, spec, label);
     });
 		File f = FileWriter.GetFilePointer(ucfPath, ucf_file, err);
 		return FileWriter.WriteContents(f, out, err);

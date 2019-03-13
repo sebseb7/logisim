@@ -604,7 +604,7 @@ public class Commander extends JFrame
       return String.format("%.2f %s", f, suffix);
   }
 
-  private void RepaintConsoles() {
+  private void repaintConsoles() {
     Rectangle rect = tabbedPane.getBounds();
     rect.x = 0;
     rect.y = 0;
@@ -614,7 +614,7 @@ public class Commander extends JFrame
       tabbedPane.repaint(rect);
   }
 
-  private void ClearConsoles() {
+  private void clearConsoles() {
     synchronized(consoles) {
       consoles.clear();
       tabbedPane.setSelectedIndex(0);
@@ -622,7 +622,8 @@ public class Commander extends JFrame
         tabbedPane.removeTabAt(i);
       }
     }
-    RepaintConsoles();
+    messages.clear();
+    repaintConsoles();
   }
 
   public void NewConsole(String title) {
@@ -699,22 +700,22 @@ public class Commander extends JFrame
       area = consoles.get(i);
     }
     area.append(Message);
-    RepaintConsoles();
+    repaintConsoles();
   }
 
   public void AddErrors(String Message) {
     messages.append(Message, Console.ERROR);
-    RepaintConsoles();
+    repaintConsoles();
   }
 
   public void AddInfo(String Message) {
     messages.append(Message, Console.INFO);
-    RepaintConsoles();
+    repaintConsoles();
   }
 
   public void AddWarning(String Message) {
     messages.append(Message, Console.WARNING);
-    RepaintConsoles();
+    repaintConsoles();
   }
 
   private void annotate() {
@@ -741,6 +742,7 @@ public class Commander extends JFrame
       File dir = new File(dirname);
       if (!dir.exists())
         return true;
+      err.AddInfo("Clearing " + dirname);
       for (File f : dir.listFiles()) {
         if (f.isDirectory()) {
           if (!cleanDirectory(f.getPath()))
@@ -766,7 +768,7 @@ public class Commander extends JFrame
 
   private void clearAllMessages() {
     messages.clear();
-    RepaintConsoles();
+    repaintConsoles();
   }
 
   public void ClearConsole() {
@@ -780,7 +782,7 @@ public class Commander extends JFrame
       area = consoles.get(i);
     }
     area.clear();
-    RepaintConsoles();
+    repaintConsoles();
   }
 
   private boolean justDownload() {
@@ -788,7 +790,7 @@ public class Commander extends JFrame
   }
 
   private void doDownloadPrep() {
-    ClearConsoles();
+    clearConsoles();
     if (board == null) {
       AddErrors("No FPGA board is selected. Please select an FPGA board.");
       return;
@@ -865,19 +867,19 @@ public class Commander extends JFrame
   private void doSynthesisAndDownload(PinBindings pinBindings) {
     if (board == null)
       return;
-    String basedir = projectWorkspace();
-    String circdir = circuitWorkspace() + lang.toLowerCase() + SLASH;
+    String circdir = circuitWorkspace();
+    String langdir = circdir + lang.toLowerCase() + SLASH;
 
     FPGADownload tools = FPGADownload.forVendor(board.fpga.Vendor);
     tools.err = err;
     tools.lang = lang;
     tools.board = board;
     tools.settings = settings;
-    tools.projectPath = basedir;
-    tools.circuitPath = circdir;
-    tools.scriptPath = basedir + SCRIPT_DIR;
-    tools.sandboxPath = basedir + SANDBOX_DIR;
-    tools.ucfPath = basedir + UCF_DIR;
+    tools.projectPath = circdir;
+    tools.circuitPath = langdir;
+    tools.scriptPath = circdir + SCRIPT_DIR;
+    tools.sandboxPath = circdir + SANDBOX_DIR;
+    tools.ucfPath = circdir + UCF_DIR;
     tools.writeToFlash = writeToFlash.isSelected();
 
     if (pinBindings != null) {
@@ -920,8 +922,7 @@ public class Commander extends JFrame
   }
 
   void configureActions() {
-    ClearConsoles();
-    clearAllMessages();
+    clearConsoles();
     actionButton.setEnabled(board != null);
     if (board == null
         || (board.fpga.Vendor == Chipset.ALTERA && settings.GetAlteraToolPath() == null)
@@ -1068,12 +1069,11 @@ public class Commander extends JFrame
 
   private boolean writeHDL(PinBindings pinBindings) {
     Circuit root = circuitsList.getSelectedValue();
-    String basedir = projectWorkspace();
-    basedir += CorrectLabel.getCorrectLabel(root.getName()) + SLASH;
-    if (!cleanDirectory(basedir))
+    String circdir = circuitWorkspace();
+    if (!cleanDirectory(circdir))
       return false;
     for (String subdir : HDL_PATHS)
-      if (!mkdirs(basedir + subdir))
+      if (!mkdirs(circdir + subdir))
         return false;
 
     // Generate HDL for top-level module and everything it contains, including
@@ -1082,12 +1082,13 @@ public class Commander extends JFrame
     ToplevelHDLGenerator g = new ToplevelHDLGenerator(lang, err,
         board.fpga.Vendor, root, pinBindings);
 
+    g.notifyNetlistReady();
     // if (g.hdlDependsOnCircuitState()) { // for NVRAM
     //   CircuitState cs = getCircuitState(root);
-    //   if (!g.writeAllHDLThatDependsOn(cs, null, null, basedir))
+    //   if (!g.writeAllHDLThatDependsOn(cs, null, null, circdir))
     //     return false;
     // }
-    return g.writeAllHDLFiles(basedir);
+    return g.writeAllHDLFiles(circdir);
   }
 
   private CircuitState getCircuitState(Circuit circ) {

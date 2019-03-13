@@ -137,6 +137,7 @@ public class Hdl extends ArrayList<String> {
       return;
     String line = lines[0];
     buf.setLength(0);
+    buf.append(tab);
     int s = 0;
     int t = line.indexOf('\t', s);
     while (t >= 0) {
@@ -165,6 +166,7 @@ public class Hdl extends ArrayList<String> {
     for (int j = idx; j < lines.length; j++) {
       String line = lines[j];
       buf.setLength(0);
+      buf.append(tab);
       int s = 0;
       int t = line.indexOf('\t', s);
       int i = 0;

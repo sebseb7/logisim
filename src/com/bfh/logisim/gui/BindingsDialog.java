@@ -435,6 +435,9 @@ public class BindingsDialog extends JDialog {
       for (Source src : changed)
         model.changed(src);
       selectedChanged(current, current);
+      int i = getSelectedIndex();
+      if (i+1 < model.data.size())
+        setSelectedValue(model.data.get(i+1), true);
     }
     void mapCurrent(BoardIO.Type synthType, int val) {
       if (current == null)
@@ -464,6 +467,9 @@ public class BindingsDialog extends JDialog {
       pinBindings.mappings.remove(current);
       model.changed(current);
       selectedChanged(current, current);
+      int i = getSelectedIndex();
+      if (i+1 < model.data.size())
+        setSelectedValue(model.data.get(i+1), true);
     }
     void resetAll() {
       Source old = current;
@@ -471,6 +477,10 @@ public class BindingsDialog extends JDialog {
       model.sync();
       if (!model.data.contains(current))
         current = model.data.size() > 0 ? model.data.get(0) : null;
+      if (current != null)
+        setSelectedValue(current, true);
+      else
+        clearSelection();
       selectedChanged(old, current);
     }
   }

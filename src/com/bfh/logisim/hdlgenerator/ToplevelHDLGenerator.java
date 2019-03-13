@@ -166,7 +166,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
   // }
 
 	@Override
-	protected void generateComponentDeclaration(Hdl out) {
+	protected void declareNeededComponents(Hdl out) {
 		if (ticker != null) {
       ticker.generateComponentDeclaration(out);
       // Clock components are lifted to the top level, so declare one here.
@@ -270,7 +270,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
         out.assign(signal, maybeNot+out.literal(constval, destwidth.in));
       } else {
         // Handle physical I/O device types.
-        Netlist.Int3 seqno = src.seqno();
+        Netlist.Int3 seqno = dest.seqno();
         // Input pins
         if (destwidth.in == 1)
           out.assign(signal, maybeNot+"FPGA_INPUT_PIN_"+seqno.in);
@@ -301,7 +301,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
           out.assign(bit, offset+i, maybeNot+out.literal(constval, 1));
         } else {
           // Handle physical I/O device types.
-          Netlist.Int3 seqno = src.seqno();
+          Netlist.Int3 seqno = dest.seqno();
           if (destwidth.in == 1)
             out.assign(bit, offset+i, maybeNot+"FPGA_INPUT_PIN_"+seqno.in);
           // Output pins
@@ -311,6 +311,10 @@ public class ToplevelHDLGenerator extends HDLGenerator {
         }
       }
     }
+  }
+  
+  public void notifyNetlistReady() {
+    circgen.notifyNetlistReady();
   }
 
 }

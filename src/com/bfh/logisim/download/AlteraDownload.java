@@ -30,10 +30,10 @@
 
 package com.bfh.logisim.download;
 
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Rectangle;
-import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
@@ -41,6 +41,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
@@ -129,10 +131,17 @@ public class AlteraDownload extends FPGADownload implements Runnable {
 
   public void run() {
     String fatal = null;
+    Throwable failure = null;
     try { fatal = download(); }
-    catch (Throwable e) { fatal = "Altera download failed: " + e.getMessage(); }
+    catch (Throwable e) { failure = e; }
+    if (failure != null) {
+      StringWriter buf = new StringWriter();
+      failure.printStackTrace(new PrintWriter(buf));
+      err.AddFatalError("Altera failed to download with an unexpected error.\n %s\n %s",
+        failure.getMessage(), buf.toString());
+    }
     if (fatal != null)
-      err.AddFatalError(fatal);
+      err.AddFatalError("%s", fatal);
     panel.setVisible(false);
     panel.dispose();
   }
@@ -177,21 +186,21 @@ public class AlteraDownload extends FPGADownload implements Runnable {
     String line;
     if (out == null) {
       err.NewConsole(title);
-      err.print("Command: " + shell(command) + "\n");
+      err.printf("Command: %s\n", shell(command));
     }
     while ((line = br.readLine()) != null) {
       if (out != null)
         out.add(line);
       else
-        err.print(line);
+        err.printf("%s", line);
     }
     altera.waitFor();
     if (altera.exitValue() != 0) {
       if (out != null) {
         err.NewConsole(title);
-        err.print("Command: " + shell(command) + "\n");
+        err.printf("Command: %s\n", shell(command));
         for (String msg : out)
-          err.print(msg);
+          err.printf("%s", msg);
       }
       return false;
     }
@@ -287,20 +296,18 @@ public class AlteraDownload extends FPGADownload implements Runnable {
     if (dev.size() == 0) {
       err.AddSevereWarning("No USB-Blaster cable detected");
     } else if (dev.size() > 1) {
-      err.print("" + dev.size() + " FPGA devices detected:");
+      err.printf("%d FPGA devices detected:", dev.size());
       int i = 1;
-      for (String d : dev) {
-        err.print("   " + i + ") " + d);
-        i++;
-      }
+      for (String d : dev)
+        err.printf("   %d) %s", i++, d);
       cablename = chooseDevice(dev);
       if (cablename == null) {
-        err.print("Download cancelled.");
+        err.printf("Download cancelled.");
         return null;
       }
     }
 
-    err.print("Downloading to FPGA device: " + cablename);
+    err.printf("Downloading to FPGA device: %s", cablename);
 
     if (!alteraCommand("download", null, 1, "-c", cablename, "-m", "jtag", "-o", bin))
       return "Failed to download design; did you connect the board?";
@@ -373,7 +380,7 @@ public class AlteraDownload extends FPGADownload implements Runnable {
     if (ioResources.requiresOscillator)
       out.stmt("    set_location_assignment %s -to %s", board.fpga.ClockPinLocation, CLK_PORT);
     ioResources.forEachPhysicalPin((pin, net, io, label) -> {
-      out.stmt("    set_location_assignment %s -to %s # %s", pin, net, label);
+      out.stmt("    set_location_assignment %s -to %s  ;# %s", pin, net, label);
       if (io.pull == PullBehavior.PULL_UP)
         out.stmt("    set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to %s", net);
     });

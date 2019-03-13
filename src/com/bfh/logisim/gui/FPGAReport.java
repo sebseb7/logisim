@@ -69,7 +69,7 @@ public class FPGAReport {
 		dlg.NewConsole(title);
 	}
 
-	public void print(String msg, Object ...args) {
+	public void printf(String msg, Object ...args) {
 		dlg.AddConsole(String.format(msg, args));
 	}
 }
