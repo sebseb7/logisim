@@ -39,6 +39,7 @@ import javax.swing.JMenuItem;
 
 import com.bfh.logisim.fpga.BoardEditor;
 import com.bfh.logisim.gui.Commander;
+import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.proj.Project;
@@ -47,17 +48,22 @@ public class MenuFPGA extends JMenu implements ActionListener {
 	private Project proj;
 	private JMenuItem editorMenu = new JMenuItem();
 	private JMenuItem commanderMenu = new JMenuItem();
+	private JMenuItem settingsMenu = new JMenuItem();
 	private BoardEditor editor = null;
 	private Commander commander = null;
+  private JFrame parent;
 
 	public MenuFPGA(JFrame parent, LogisimMenuBar menubar, Project proj) {
+    this.parent = parent;
 		this.proj = proj;
 
 		editorMenu.addActionListener(this);
 		commanderMenu.addActionListener(this);
+		settingsMenu.addActionListener(this);
 
 		add(editorMenu);
 		add(commanderMenu);
+		add(settingsMenu);
 		setEnabled(parent instanceof Frame);
 	}
 
@@ -73,12 +79,15 @@ public class MenuFPGA extends JMenu implements ActionListener {
 				commander = new Commander(proj);
       else
         commander.reactivate();
-		}
+		} else if (src == settingsMenu) {
+      Settings.doSettingsDialog(parent);
+    }
 	}
 
 	public void localeChanged() {
 		this.setText(Strings.get("FPGAMenu"));
 		editorMenu.setText(Strings.get("FPGABoardEditor"));
 		commanderMenu.setText(Strings.get("FPGACommander"));
+		settingsMenu.setText(Strings.get("FPGASettings"));
 	}
 }

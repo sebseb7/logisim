@@ -181,12 +181,15 @@ public class FPGASettingsDialog implements ActionListener {
 		panel.pack();
 		panel.setMinimumSize(new Dimension(600, 400));
 		panel.setLocationRelativeTo(parentFrame);
-		panel.setVisible(false);
 	}
 
 	public void doDialog() {
     panel.setVisible(true);
 	}
+
+  public void toFront() {
+    panel.toFront();
+  }
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -231,6 +234,7 @@ public class FPGASettingsDialog implements ActionListener {
 		}
 		settings.SetStaticWorkspacePath(workPath.getText());
 		settings.UpdateSettingsFile();
+    settings.notifyListeners();
 	}
 
 	private void pick(String vendor, String path) {

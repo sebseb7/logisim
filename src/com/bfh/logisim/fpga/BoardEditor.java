@@ -157,7 +157,7 @@ public class BoardEditor extends JFrame {
   }
 
   private void doBuiltin() {
-    Settings settings = new Settings();
+    Settings settings = Settings.getSettings();
     ComboBox<String> boardsList = new ComboBox<>();
     for (String boardname : settings.GetBoardNames())
       boardsList.addItem(boardname);

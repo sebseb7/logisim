@@ -80,7 +80,7 @@ import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.Projects;
 
 public class Commander extends JFrame
-  implements LibraryListener, CircuitListener {
+  implements LibraryListener, CircuitListener, Settings.Listener {
 
   private static final String SLASH = File.separator;
   private static final String SANDBOX_DIR = "sandbox" + SLASH;
@@ -95,7 +95,7 @@ public class Commander extends JFrame
   private int boardsListSelectedIndex;
   private PinBindings pinBindings;
   private final FPGAReport err = new FPGAReport(this);
-  private final Settings settings = new Settings();
+  private final Settings settings = Settings.getSettings();
 
   private static final String MAX_SPEED = "Maximum Speed";
   private static final String DIV_SPEED = "Reduced Speed";
@@ -276,8 +276,9 @@ public class Commander extends JFrame
     c.gridx++;
     clockOptions.add(clockDivCount, c);
     
-    // configure settings button
-    toolSettings.addActionListener(e -> doToolSettings());
+    // configure settings button, and listen for settings changes
+    settings.addSettingsListener(this);
+    toolSettings.addActionListener(e -> Settings.doSettingsDialog(this));
 
     // configure console panels
     tabbedPane.add(messages); // tab index 0 is for console messages
@@ -1025,9 +1026,8 @@ public class Commander extends JFrame
         board.fpga.ClockFrequency, getClkPeriod());
   }
 
-  private void doToolSettings() {
-    FPGASettingsDialog dlg = new FPGASettingsDialog(this, settings);
-    dlg.doDialog();
+  @Override
+  public void fpgaSettingsChanged() {
     configureActions();
   }
 

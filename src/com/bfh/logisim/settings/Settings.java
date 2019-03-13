@@ -31,10 +31,12 @@
 package com.bfh.logisim.settings;
 
 import java.io.File;
-import java.util.Collection;
-import java.net.URLDecoder;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Collection;
 
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -55,6 +57,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.cburch.logisim.util.Errors;
+import com.bfh.logisim.gui.FPGASettingsDialog;
 
 public class Settings {
 
@@ -108,12 +111,21 @@ public class Settings {
   private Document SettingsDocument;
   private boolean modified = false;
   private BoardList KnownBoards = new BoardList();
+  private ArrayList<Listener> listeners = new ArrayList<>();
 
   public static final String[] AlteraPrograms = loadAltera();
 
   public static final String[] XilinxPrograms = loadXilinx();
 
-  public Settings() {
+  private static Settings singleton;
+
+  public static Settings getSettings() {
+    if (singleton == null)
+      singleton = new Settings();
+    return singleton;
+  }
+
+  private Settings() {
     HomePath = System.getProperty("user.home");
     SharedPath = "";
     try {
@@ -128,6 +140,35 @@ public class Settings {
 
     if (!settingsComplete())
       writeXml();
+  }
+
+  public void addSettingsListener(Listener l) {
+    listeners.add(l);
+  }
+
+  public void removeSettingsListener(Listener l) {
+    listeners.remove(l);
+  }
+
+  public static interface Listener {
+    public void fpgaSettingsChanged();
+  }
+
+  private static FPGASettingsDialog dialog;
+  public static void doSettingsDialog(JFrame parentFrame) {
+    if (dialog != null) {
+      dialog.toFront();
+    } else {
+      Settings s = getSettings();
+      dialog = new FPGASettingsDialog(parentFrame, s);
+      dialog.doDialog();
+      dialog = null;
+    }
+  }
+
+  public void notifyListeners() {
+    for (Listener l : listeners)
+      l.fpgaSettingsChanged();
   }
 
   private boolean readFrom(String dir, String name) {
