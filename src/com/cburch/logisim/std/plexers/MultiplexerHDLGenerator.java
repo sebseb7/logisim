@@ -48,10 +48,10 @@ public class MultiplexerHDLGenerator extends HDLGenerator {
     inPorts.add("Sel", ws, n, true);
     if (_attrs.getValue(Plexers.ATTR_ENABLE)) {
       inPorts.add("Enable", 1, n+1, true); // may not be present
-      inPorts.add("Out", bitWidth, n+2, null);
+      inPorts.add("Result", bitWidth, n+2, null);
     } else {
       inPorts.add("Enable", 1, -1, true); // no port, use default instead
-      inPorts.add("Out", bitWidth, n+1, null);
+      inPorts.add("Result", bitWidth, n+1, null);
     }
 
     if (_lang.equals("Verilog"))
@@ -77,19 +77,19 @@ public class MultiplexerHDLGenerator extends HDLGenerator {
       out.indent();
       out.stmt("IF (Enable = '0') THEN");
       if (w == 1)
-        out.stmt("  Out <= '0';");
+        out.stmt("  Result <= '0';");
       else
-        out.stmt("  Out <= (others => '0');");
+        out.stmt("  Result <= (others => '0');");
       out.stmt("ELSE");
       out.stmt("  CASE (Sel) IS");
       for (int i = 0; i < n; i++)
-        out.stmt("    WHEN %s => Out <= In_%d;", i<n-1 ? out.literal(i, ws) : "others", i);
+        out.stmt("    WHEN %s => Result <= In_%d;", i<n-1 ? out.literal(i, ws) : "others", i);
       out.stmt("  END CASE;");
       out.stmt("END IF;");
       out.dedent();
       out.stmt("END PROCESS make_mux;");
     } else {
-      out.stmt("assign Out = s_vec;");
+      out.stmt("assign Result = s_vec;");
       out.stmt("");
       out.stmt("always @(*)");
       out.stmt("begin");
