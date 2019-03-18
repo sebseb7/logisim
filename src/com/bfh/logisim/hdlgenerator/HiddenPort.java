@@ -141,4 +141,10 @@ public class HiddenPort {
     return width.copy();
   }
 
+  @Override
+  public String toString() {
+    return String.format("HiddenPort{dir=%s, width=%s maintype=%s}",
+        in?"in":inout?"inout":"out", width, mainType);
+  }
+
 }

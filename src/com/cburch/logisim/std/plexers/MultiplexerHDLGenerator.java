@@ -44,17 +44,17 @@ public class MultiplexerHDLGenerator extends HDLGenerator {
     if (w > 1)
       parameters.add("BitWidth", w);
     for (int i = 0; i < n; i++)
-      outPorts.add("In_"+i, bitWidth, i, false);
+      inPorts.add("In_"+i, bitWidth, i, false);
     inPorts.add("Sel", ws, n, true);
     if (_attrs.getValue(Plexers.ATTR_ENABLE)) {
       inPorts.add("Enable", 1, n+1, true); // may not be present
-      inPorts.add("Result", bitWidth, n+2, null);
+      outPorts.add("Result", bitWidth, n+2, null);
     } else {
       inPorts.add("Enable", 1, -1, true); // no port, use default instead
-      inPorts.add("Result", bitWidth, n+1, null);
+      outPorts.add("Result", bitWidth, n+1, null);
     }
 
-    if (_lang.equals("Verilog"))
+    if (_lang.equalsIgnoreCase("Verilog"))
       registers.add("s_vec", bitWidth);
   }
 

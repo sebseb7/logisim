@@ -60,7 +60,7 @@ public class NetlistComponent {
       start = new Int3();
     }
     void update(Int3 start, Int3 count) {
-      start = start.copy();
+      this.start = start.copy();
       end.in = start.in + count.in - 1;
       end.inout = start.inout + count.inout - 1;
       end.out = start.out + count.out - 1;

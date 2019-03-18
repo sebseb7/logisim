@@ -216,12 +216,16 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     // here. Also, any FPGA I/O device that is not active-high will get an
     // inversion. In cases where there would be two inversions, we leave them
     // both off.
-    String signal;
-    String bit;
-    int offset;
+    // Note: The signal being mapped might be an entire signal, e.g. s_SomePin,
+    // or it might be a slice of some hidden net, e.g. s_LOGISIM_HIDDEN_OUTPUT[7 downto 3].
+    // And that signal might get mapped together to a single I/O device, or each
+    // bit might be individually mapped to different I/O devices.
+    String signal; // e.g.: s_SomePin or s_LOGISIM_HIDDEN_OUTPUT[7 downto 3].
+    String bit;    // e.g.: s_SomePin or s_LOGISIM_HIDDEN_OUTPUT
+    int offset;    // e.g.: 0 or 3
     if (shadow.original.getFactory() instanceof Pin) {
       signal = "s_" + shadow.label();
-      bit = signal+out.idx;
+      bit = signal;
       offset = 0;
     } else {
       NetlistComponent.Range3 indices = shadow.getGlobalHiddenPortIndices(path);
@@ -230,25 +234,25 @@ public class ToplevelHDLGenerator extends HDLGenerator {
         return;
       }
       if (indices.end.in == indices.start.in) {
-        // signal[5] is the only bit
+        // foo[5] is the only bit
         offset = indices.start.in;
-        bit = "s_LOGISIM_HIDDEN_FPGA_INPUT"+out.idx;
-        signal = String.format(bit, offset);
+        bit = "s_LOGISIM_HIDDEN_FPGA_INPUT";
+        signal = String.format(bit+out.idx, offset);
       } else if (indices.end.in > indices.start.in) {
-        // signal[5] versus signal[8:3]
+        // foo[8:3]
         offset = indices.start.in;
-        signal = "s_LOGISIM_HIDDEN_FPGA_INPUT";
-        bit = signal+out.idx;
+        bit = "s_LOGISIM_HIDDEN_FPGA_INPUT";
+        signal = String.format(bit+out.range, indices.end.in, offset);
       } else if (indices.end.out == indices.start.out) {
-        // signal[5] is the only bit
+        // foo[5] is the only bit
         offset = indices.start.out;
-        bit = "s_LOGISIM_HIDDEN_FPGA_OUTPUT"+out.idx;
-        signal = String.format(bit, offset);
+        bit = "s_LOGISIM_HIDDEN_FPGA_OUTPUT";
+        signal = String.format(bit+out.idx, offset);
       } else if (indices.end.out > indices.start.out) {
-        // signal[5] versus signal[8:3]
+        // foo[8:3]
         offset = indices.start.out;
-        signal = "s_LOGISIM_HIDDEN_FPGA_OUTPUT";
-        bit = signal+out.idx;
+        bit = "s_LOGISIM_HIDDEN_FPGA_OUTPUT";
+        signal = String.format(bit+out.range, indices.end.out, offset);
       } else {
         out.err.AddFatalError("INTERNAL ERROR: Hidden net without input or output bits for path %s", path);
         return;
@@ -275,12 +279,12 @@ public class ToplevelHDLGenerator extends HDLGenerator {
         if (destwidth.in == 1)
           out.assign(signal, maybeNot+"FPGA_INPUT_PIN_"+seqno.in);
         else for (int i = 0; i < destwidth.in; i++)
-          out.assign(signal, i, maybeNot+"FPGA_INPUT_PIN_"+(seqno.in+i));
+          out.assign(bit, offset+i, maybeNot+"FPGA_INPUT_PIN_"+(seqno.in+i));
         // Output pins
         if (destwidth.out == 1)
           out.assign("FPGA_OUTPUT_PIN_"+seqno.out, maybeNot+signal);
         else for (int i = 0; i < destwidth.out; i++)
-          out.assign("FPGA_OUTPUT_PIN_"+(seqno.out+i), maybeNot+signal, i);
+          out.assign("FPGA_OUTPUT_PIN_"+(seqno.out+i), maybeNot+bit, offset+i);
         // Note: no such thing as inout pins
       }
     } else { // Each bit of pin is assigned to a different BoardIO resource.

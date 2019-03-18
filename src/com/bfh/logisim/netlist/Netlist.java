@@ -413,7 +413,7 @@ public class Netlist {
     }
 
 		for (NetlistComponent shadow : components) {
-			if (shadow.hiddenPort == null)
+			if (shadow.hiddenPort == null) // matches subcircuits too
         continue;
       Int3 count = shadow.hiddenPort.width();
       shadow.setLocalHiddenPortIndices(start.copy(), count);
@@ -427,18 +427,16 @@ public class Netlist {
       Circuit subcirc = sub.getSubcircuit();
       Netlist subnets = subcirc.getNetlist();
       Path subpath = path.extend(shadow);
-
-      Int3 count = subnets.numHiddenBits;
-      shadow.setGlobalHiddenPortIndices(subpath, start.copy(), count);
       subnets.recursiveAssignGlobalHiddenNets(subpath, start);
     }
 
 		for (NetlistComponent shadow : components) {
-			if (shadow.hiddenPort == null)
+			if (shadow.hiddenPort == null) // matches subcircuits too
         continue;
       Path subpath = path.extend(shadow);
       Int3 count = shadow.hiddenPort.width();
       shadow.setGlobalHiddenPortIndices(subpath, start.copy(), count);
+      start.increment(count);
     }
   }
 

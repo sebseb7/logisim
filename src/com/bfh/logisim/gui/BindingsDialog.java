@@ -693,12 +693,12 @@ public class BindingsDialog extends JDialog {
           // special case: old was a synthetic I/O device (zeros, ones, etc.)
           int val = old.io.syntheticValue;
           int n = src.width.size();
-            for (int i = 0; i < n; i++) {
-              BoardIO io = BoardIO.makeSynthetic(old.io.type, 1, (val >> i) & 1);
-              Source bitSource = model.data.get(idx+1+i);
-              pinBindings.addMapping(bitSource, io, -1);
-            }
-            updateStatus();
+          for (int i = 0; i < n; i++) {
+            BoardIO io = BoardIO.makeSynthetic(old.io.type, 1, (val >> i) & 1);
+            Source bitSource = model.data.get(idx+1+i);
+            pinBindings.addMapping(bitSource, io, -1);
+          }
+          updateStatus();
         } else if (old != null) { // regular case: physical I/O device
           // find a one-bit type compatible with the original
           Netlist.Int3 bitWidth = src.width.forSingleBit();
@@ -720,6 +720,7 @@ public class BindingsDialog extends JDialog {
             rects.get(old.io).setMappedBitCount(n);
           }
         }
+        setSelectedValue(model.data.get(idx+1), true);
       }
     }
 
