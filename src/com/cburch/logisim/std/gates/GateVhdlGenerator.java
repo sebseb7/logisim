@@ -173,7 +173,7 @@ public class GateVhdlGenerator extends HDLGenerator {
   protected void generateInputInversions(Hdl out, int n) {
     out.stmt("s_mask <= std_logic_vector(to_unsigned(InputNegations, %d));", n);
     for (int i = 1; i <= n; i++)
-      out.stmt("s_in_%d <= NOT(Input_%d) WHEN s_mask(%d) = '1' ELSE Input_%d;", i, i, i, i);
+      out.stmt("s_in_%d <= NOT(Input_%d) WHEN s_mask(%d-1) = '1' ELSE Input_%d;", i, i, i, i);
   }
 
   @Override

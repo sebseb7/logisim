@@ -123,7 +123,7 @@ public class GateVerilogGenerator extends GateVhdlGenerator {
   protected void generateInputInversions(Hdl out, int n) {
     out.stmt("assign s_mask = InputNegations;", n);
     for (int i = 1; i <= n; i++)
-      out.stmt("assign s_in_%d = s_mask[%d] ? ~Input_%d : Input_%d;", i, i, i, i);
+      out.stmt("assign s_in_%d = s_mask[%d-1] ? ~Input_%d : Input_%d;", i, i, i, i);
   }
 
 }
