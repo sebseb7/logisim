@@ -243,10 +243,10 @@ public class Hdl extends ArrayList<String> {
       return (value & 1) == 0 ? zero : one;
 		StringBuffer out = new StringBuffer();
     if (isVhdl) {
-      out.append('\'');
+      out.append(width == 1 ? '\'' : '\"');
       for (int i = width - 1; i >= 0; i--)
         out.append(((value >>> i) & 1) == 0 ? '0' : '1');
-      out.append('\'');
+      out.append(width == 1 ? '\'' : '\"');
     } else {
       out.append(width);
       out.append("'b");
