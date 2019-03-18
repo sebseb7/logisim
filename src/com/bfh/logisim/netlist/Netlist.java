@@ -591,8 +591,16 @@ public class Netlist {
         Location pt = end.getLocation();
         Net net = netAt.get(pt);
         if (end.isInput()) {
-          net.addSink(comp, idx);
+          if (net != null)
+            net.addSink(comp, idx);
+          else {
+            String prefix = String.format("Component %s in circuit '%s': ",
+                nameOf(comp), circ.getName());
+            err.AddInfo("%s component is a sink, but no net connected at %s", prefix, pt);
+          }
         } else {
+          if (net == null)
+            return drcFail(err, comp, "component is driving, but no net connected at %s", pt);
           Component c = net.getSourceComponent();
           if (c == null) {
             net.setSource(comp, idx);

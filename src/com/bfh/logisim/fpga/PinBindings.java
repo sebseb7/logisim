@@ -31,6 +31,7 @@
 package com.bfh.logisim.fpga;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -239,51 +240,64 @@ public class PinBindings {
     }
   }
 
-  public Source sourceFor(Path path) {
-    NetlistComponent comp = components.get(path);
-    Int3 compWidth;
-    BoardIO.Type type;
+  public static final List<BoardIO.Type> SINGLE_BIT_PIN_TYPES =
+      Arrays.asList(new BoardIO.Type[] { BoardIO.Type.Pin });
+  public static final List<BoardIO.Type> MULTI_BIT_PIN_TYPES =
+      Arrays.asList(new BoardIO.Type[] { BoardIO.Type.Ribbon, BoardIO.Type.Pin });
+
+  public List<BoardIO.Type> typesFor(Path path) {
+    return typesFor(components.get(path));
+  }
+
+  public List<BoardIO.Type> typesFor(NetlistComponent comp) {
+    if (comp.hiddenPort == null) {
+      // Top-level input or output port.
+      int w = comp.original.getEnd(0).getWidth().getWidth();
+      return w > 1 ? MULTI_BIT_PIN_TYPES : SINGLE_BIT_PIN_TYPES;
+    } else {
+      // Button, LED, PortIO, and other I/O-related types.
+      return comp.hiddenPort.types;
+    }
+  }
+
+  public Int3 widthFor(Path path) {
+    return widthFor(components.get(path));
+  }
+
+  public Int3 widthFor(NetlistComponent comp) {
     if (comp.hiddenPort == null) {
       // Top-level input or output port.
       int w = comp.original.getEnd(0).getWidth().getWidth();
       boolean i = comp.original.getEnd(0).isOutput(); // output to circuit, input from board
       boolean o = comp.original.getEnd(0).isInput(); // input to circuit, output from board
-      compWidth = new Int3();
+      Int3 compWidth = new Int3();
       if (i && o)
         compWidth.inout = w;
       else if (i)
         compWidth.in = w;
       else
         compWidth.out = w;
-      type = w > 1 ? BoardIO.Type.Ribbon : BoardIO.Type.Pin;
+      return compWidth;
     } else {
-      // Button, LED, PortIO, and other I/O-related types.
-      compWidth = comp.hiddenPort.width();
-      type = selectDefaultType(comp.hiddenPort.types, compWidth.size());
+      return comp.hiddenPort.width();
     }
+  }
+
+  public Source sourceFor(Path path) {
+    NetlistComponent comp = components.get(path);
+    Int3 compWidth = widthFor(comp);
+    List<BoardIO.Type> types = typesFor(comp);
+    BoardIO.Type type = selectDefaultType(types, compWidth.size());
     return new Source(path, comp, -1, type, compWidth);
   }
 
   public ArrayList<Source> bitSourcesFor(Path path) {
     NetlistComponent comp = components.get(path);
+    Int3 bitWidth = widthFor(comp).forSingleBit();
+    List<BoardIO.Type> types = typesFor(comp);
+    BoardIO.Type bitType = selectDefaultType(types, 1);
     ArrayList<Source> ret = new ArrayList<>();
     String[] pinLabels = pinLabels(path);
-    BoardIO.Type bitType;
-    Int3 bitWidth = new Int3();
-    if (comp.hiddenPort == null) {
-      bitType = BoardIO.Type.Pin;
-      boolean i = comp.original.getEnd(0).isOutput(); // output to circuit, input from board
-      boolean o = comp.original.getEnd(0).isInput(); // input to circuit, output from board
-      if (i && o)
-        bitWidth.inout = 1;
-      else if (i)
-        bitWidth.in = 1;
-      else
-        bitWidth.out = 1;
-    } else {
-      bitType = selectDefaultType(comp.hiddenPort.types, 1);
-      bitWidth = comp.hiddenPort.width().forSingleBit();
-    }
     for (int i = 0; i < pinLabels.length; i++)
       ret.add(new Source(path, comp, i, bitType, bitWidth.copy()));
     return ret;

@@ -97,7 +97,8 @@ public class BoardIO {
     SevenSegment,  // phys  out multibit (degenerates to LED)
     Unconnected,   // synth out onebit/multibit
 
-    Unknown;
+    Expanded, // only used by PinBindingsDialog as a placeholder 
+    Unknown; // only used during parsing as temporary placeholder
 
     // Note: The types above are used both to describe physical I/O resources
     // (with the characteristics as noted above). But Logisim components within
@@ -218,11 +219,6 @@ public class BoardIO {
       throw new IllegalArgumentException("BoardIO type "+t+" is not meant for synthetic I/O resources");
     return new BoardIO(t, w, val);
   }
-
-  // public static BoardIO makeConstant(int w, int val) { return new BoardIO(Type.Constant, w, val); }
-  // public static BoardIO makeAllZeros(int w) { return new BoardIO(Type.AllZeros, w, 0); }
-  // public static BoardIO makeAllOnes(int w) { return new BoardIO(Type.AllOnes, w, -1); }
-  // public static BoardIO makeUnconnected(int w) { return new BoardIO(Type.Unconnected, w, 0); }
 
   // constructor for physical I/O resources
   private BoardIO(Type t, int w, String l, Bounds r,

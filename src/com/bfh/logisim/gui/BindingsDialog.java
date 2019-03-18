@@ -31,12 +31,17 @@
 package com.bfh.logisim.gui;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dialog.ModalityType;
+import java.awt.Point;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.event.ItemEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -46,6 +51,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.function.Function;
 
 // import javax.xml.parsers.DocumentBuilder;
@@ -66,10 +72,10 @@ import java.util.function.Function;
 import javax.swing.AbstractListModel;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JComponent;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -89,8 +95,9 @@ import javax.swing.SwingUtilities;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.BoardIO;
 import com.bfh.logisim.fpga.PinBindings;
-import com.bfh.logisim.netlist.NetlistComponent;
+import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.Path;
+import com.cburch.logisim.util.GraphicsUtil;
 import static com.bfh.logisim.fpga.PinBindings.Dest;
 import static com.bfh.logisim.fpga.PinBindings.Source;
 
@@ -181,6 +188,7 @@ public class BindingsDialog extends JDialog {
     overlay.add(picture, LAYER_BOTTOM);
     picture.setBounds(0, 0, picture.getWidth(), picture.getHeight());
     overlay.setPreferredSize(picture.getPreferredSize());
+    overlay.setMinimumSize(picture.getPreferredSize());
     JPanel top = new JPanel();
     top.add(overlay);
     top.setBackground(Color.BLACK);
@@ -237,6 +245,7 @@ public class BindingsDialog extends JDialog {
   private class SelectionPanel extends JPanel {
     SelectionPanel() {
       setPreferredSize(new Dimension(Board.IMG_WIDTH, Board.IMG_HEIGHT));
+      setMinimumSize(new Dimension(Board.IMG_WIDTH, Board.IMG_HEIGHT));
       setBackground(Color.BLACK);
       setOpaque(true);
     }
@@ -252,17 +261,20 @@ public class BindingsDialog extends JDialog {
     }
   }
 
-  private static final Color MAPPED = new Color(0, 0x60, 0);
-  private static final Color MISTY = new Color(1f, 0f, 0f, 0.4f);
-  private static final Color MISTYB = new Color(1f, 0f, 0f);
-  private static final Color HILIGHT = new Color(0f, 1f, 0f, 0.4f);
-  private static final Color HILIGHTB = new Color(0f, 1f, 0f);
-  private static final Color HOVER = new Color(1f, 1f, 0f, 0.4f);
-  private static final Color HOVERB = new Color(1f, 1f, 0f);
+  private static final Color MISTY = new Color(1f, 0f, 0f, 0.4f); // fill
+  private static final Color MISTYB = new Color(1f, 0f, 0f); // border
+  private static final Color HILIGHT = new Color(0f, 1f, 0f, 0.4f); // fill
+  private static final Color HILIGHTB = new Color(0f, 1f, 0f); // border
+  private static final Color HOVER = new Color(1f, 1f, 0f, 0.4f); // fill
+  private static final Color HOVERB = new Color(1f, 1f, 0f); // border
+  private static final Color MAPPED = new Color(0.2f, 0.8f, 0.2f, 0.4f); // fill
+  private static final Color MAPPEDB = new Color(0.2f, 0.8f, 0.2f); // border
+  private static final Color MAPPED_TEXT = new Color(0, 0x60, 0); // text
 
   private class Rect extends JPanel implements MouseListener {
     BoardIO io;
     boolean select, hover;
+    int nmapped;
 
     Rect(BoardIO io) {
       this.io = io;
@@ -274,10 +286,56 @@ public class BindingsDialog extends JDialog {
 
     @Override
     protected void paintComponent(Graphics g) {
-      g.setColor(hover ? HOVERB : select ? HILIGHTB : MISTYB);
-      g.drawRect(0, 0, io.rect.width, io.rect.height);
-      g.setColor(hover ? HOVER : select ? HILIGHT : MISTY);
-      g.fillRect(0, 0, io.rect.width, io.rect.height);
+      if (hover || nmapped == 0 || nmapped == io.width) {
+        g.setColor(hover ? HOVER : select ? HILIGHT : nmapped != 0 ? MAPPED : MISTY);
+        g.fillRect(0, 0, io.rect.width, io.rect.height);
+        g.setColor(hover ? HOVERB : select ? HILIGHTB : nmapped != 0 ? MAPPEDB : MISTYB);
+        g.drawRect(0, 0, io.rect.width-1, io.rect.height-1);
+      } else if (io.rect.width > io.rect.height) {
+        //    _________
+        //   |/_/_/_/_/|  width = 6 bit
+        //
+        double dx = (io.rect.width - 1.0) / (io.width - 1.0);
+        int xt = (int)(nmapped*dx);
+        int xb = (int)((nmapped-1)*dx);
+        int xr = io.rect.width - 1;
+        int yb = io.rect.height - 1;
+        int[] x = new int[] {xt, xr, xr, xb};
+        int[] y = new int[] {0,  0,  yb, yb};
+        g.setColor(MISTY);
+        g.fillPolygon(x, y, 4);
+        g.setColor(MISTYB);
+        g.drawPolygon(x, y, 4);
+        x = new int[] {0, xt, xb, 0};
+        g.setColor(select ? HILIGHT : MAPPED);
+        g.fillPolygon(x, y, 4);
+        g.setColor(select ? HILIGHTB : MAPPEDB);
+        g.drawPolygon(x, y, 4);
+      } else {
+        //  ___
+        // |_- |
+        // |  _|
+        // |_- |  width = 4 bits
+        // |  _|
+        // |_-_|
+        // 
+        double dy = (io.rect.height - 1.0) / (io.width - 1.0);
+        int yb = io.rect.height - 1;
+        int yl = yb - (int)((nmapped-1)*dy);
+        int yr = yb - (int)(nmapped*dy);
+        int xr = io.rect.width - 1;
+        int[] x = new int[] {0,  0, xr, xr};
+        int[] y = new int[] {yl, 0, 0,  yr};
+        g.setColor(MISTY);
+        g.fillPolygon(x, y, 4);
+        g.setColor(MISTYB);
+        g.drawPolygon(x, y, 4);
+        y = new int[] {yb, yl, yr, yb};
+        g.setColor(select ? HILIGHT : MAPPED);
+        g.fillPolygon(x, y, 4);
+        g.setColor(select ? HILIGHTB : MAPPEDB);
+        g.drawPolygon(x, y, 4);
+      }
     }
 
     @Override
@@ -297,7 +355,6 @@ public class BindingsDialog extends JDialog {
       }
     }
 
-    // todo: hilight/tint on hover
     public void mouseEntered(MouseEvent e) { hover = true; repaint(); }
     public void mouseExited(MouseEvent e) { hover = false; repaint(); }
     public void mousePressed(MouseEvent e) { }
@@ -312,7 +369,7 @@ public class BindingsDialog extends JDialog {
         JCheckBoxMenuItem menu = new JCheckBoxMenuItem(pinLabels[i]);
         menu.setSelected(dest != null && dest.io == io && dest.bit == bit);
         if (pinBindings.containsMappingFor(io, bit))
-          menu.setForeground(MAPPED);
+          menu.setForeground(MAPPED_TEXT);
         menu.addActionListener(ev -> sources.mapCurrent(io, bit));
         popup.add(menu);
       }
@@ -328,6 +385,18 @@ public class BindingsDialog extends JDialog {
       if (select == b)
         return;
       select = b;
+      repaint();
+    }
+
+    int getMappedBitCount() { return nmapped; }
+    void setMappedBitCount(int n) {
+      if (n < 0)
+        n = 0;
+      if (n > io.width)
+        n = io.width;
+      if (n == nmapped)
+        return;
+      nmapped = n;
       repaint();
     }
   }
@@ -348,9 +417,15 @@ public class BindingsDialog extends JDialog {
       Collections.sort(data, new NaturalOrderComparator<>(src -> src.path.toString()));
       n = data.size();
       fireIntervalAdded(this, 0, n-1);
-      for (Source src : pinBindings.mappings.keySet())
-        if (src.bit >= 0)
-          expand(src.path, src.comp);
+      pinBindings.mappings.forEach((s, d) -> {
+        if (s.bit >= 0)
+          expand(s.path);
+        // Note: Source.equals() matches only on path and bit, so idx will find
+        // matching row even if types are wrong
+        int idx = data.indexOf(s);
+        // replace default-type source with actual-type source from existing mapping
+        data.set(idx, s);
+      });
     }
     void changed(Source src) {
       int i = data.indexOf(src);
@@ -358,7 +433,11 @@ public class BindingsDialog extends JDialog {
         return;
       fireContentsChanged(this, i, i);
     }
-    void expand(Path path, NetlistComponent comp) {
+    void replace(int idx, Source newSrc) {
+      data.set(idx, newSrc);
+      fireContentsChanged(this, idx, idx);
+    }
+    void expand(Path path) {
       int i = startIndex(path);
       if (i+1 < data.size() && data.get(i+1).path.equals(path))
         return; // already expanded
@@ -366,9 +445,13 @@ public class BindingsDialog extends JDialog {
       data.addAll(i+1, bitSources);
       fireIntervalAdded(this, i+1, i+1+bitSources.size()-1);
     }
+    void collapse(int i, int nbits) {
+      data.subList(i+1, i+nbits+1 /*exclusive*/).clear();
+      fireIntervalRemoved(this, i+1, i+nbits /*inclusive*/);
+    }
     int startIndex(Path path) {
       for (int i = 0; i < data.size(); i++)
-        if (data.get(i).equals(path))
+        if (data.get(i).path.equals(path))
           return i;
       return -1; // should never happen
     }
@@ -379,66 +462,317 @@ public class BindingsDialog extends JDialog {
   }
 
   private class SourceRenderer extends DefaultListCellRenderer {
+    public final TypeButton typeButton = new TypeButton();
+
+    String typeButtonText(Source src) {
+      int w = src.width.size();
+      String dir = src.width.in > 0 ? "in" : src.width.out > 0 ? "out" : "inout";
+      if (w == 1) {
+        return String.format("%s, %s, 1 bit", src.type, dir);
+      } else if (src.bit < 0) {
+        return String.format("%s, %s, %d bits", src.type, dir, w);
+      } else {
+        return String.format("type %s, %s, bit %d", src.type, dir, src.bit);
+      }
+    }
+
     @Override
-    public java.awt.Component getListCellRendererComponent(JList list, Object value,
-        int index, boolean isSelected, boolean cellHasFocus) {
+    public Component getListCellRendererComponent(JList list, Object val,
+        int i, boolean sel, boolean focus) {
       boolean done = false;
-      if (value instanceof Source) {
-        Source src = (Source)value;
+      typeButton.text = "???";
+      boolean indented = false;
+      if (val instanceof Source) {
+        Source src = (Source)val;
         Dest dst = pinBindings.mappings.get(src);
         done = dst != null;
-        int w = src.width.size();
-        String dir = src.width.in > 0 ? "in" : src.width.out > 0 ? "out" : "inout";
-        if (w == 1)
-          value = String.format("%s [type %s, %s, 1 bit]", src.path, src.type, dir);
-        else if (src.bit < 0)
-          value = String.format("%s [type %s, %s, %d bits]", src.path, src.type, dir, w);
-        else
-          value = String.format("    %s [type %s, %s, bit %d]", src.path, src.type, dir, src.bit);
+        typeButton.text = typeButtonText(src);
+        if (src.bit >= 0) {
+          indented = true;
+          val = pinBindings.pinLabels(src.path)[src.bit];
+        } else {
+          val = src.path.toString();
+        }
         if (dst != null)
-          value = value + " mapped to " + dst;
-        // todo: display header part of expanded source as grayed out, or
-        // different, etc.
+          val = val + " mapped to " + dst;
       }
-      java.awt.Component c
-          = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-      if (c instanceof JComponent)
-        ((JComponent)c).setForeground(done ? MAPPED : Color.BLACK);
-        // ((JComponent)c).setBorder(matteBorder);
+      Component c = super.getListCellRendererComponent(list, val, i, sel, focus);
+      if (c instanceof JLabel) {
+        typeButton.height = c.getPreferredSize().height + 4;
+        typeButton.width = indented ? 280 : 220;
+        typeButton.rowHasFocus = sel;
+        ((JLabel)c).setIcon(typeButton);
+        ((JLabel)c).setForeground(done ? MAPPED_TEXT : Color.BLACK);
+      }
       return c;
     }
   }
 
-  private class SourceList extends JList<Source> {
+  private static Color TYPE_BUTTON_COLOR = new Color(0x22, 0x55, 0xcc);
+  private static class TypeButton implements Icon {
+    public final HashMap<String, Rectangle> buttonBounds = new HashMap<>();
+    static final int GAP = 7;
+    String text;
+    int width, height;
+    boolean rowHasFocus;
+
+    public int getIconWidth()	{ return width; }
+    public int getIconHeight() { return height; }
+
+    public void paintIcon(Component c, Graphics g, int x, int y) {
+      RenderingHints hints = new RenderingHints(
+          RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
+      hints.put(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY );
+      ((Graphics2D)g).setRenderingHints(hints);
+      int tx = width - GAP - 10 - 4;
+      int ty = height / 2;
+      Rectangle b = buttonBounds.get(text);
+      if (b == null) {
+        Rectangle t = GraphicsUtil.getTextBounds(g, g.getFont(), text, tx, ty,
+            GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER);
+        b = new Rectangle(t.x-GAP, 2, t.width + GAP + 10 + 4 + GAP, height-4);
+        buttonBounds.put(text, b); // cache for later, and for hitbox detection
+      }
+      g.setColor(rowHasFocus ? TYPE_BUTTON_COLOR : Color.GRAY);
+      g.fillRoundRect(b.x, b.y, b.width, b.height, 10, 10);
+      g.setColor(Color.WHITE);
+      GraphicsUtil.drawText(g, text, tx, ty,
+          GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER);
+      int xx = tx + 4;
+      int yy = ty - 2;
+      g.fillPolygon(new int[] { xx, xx+5, xx+10 }, new int[] { yy, yy+6, yy }, 3);
+    }
+  }
+
+  private class SourceList extends JList<Source> implements MouseListener {
+
     SourcesModel model = new SourcesModel();
     Source current;
+    SourceRenderer renderer;
+    TypeButton typeButton = new TypeButton();
+
     SourceList() {
       setModel(model);
-      setCellRenderer(new SourceRenderer());
+      setCellRenderer(renderer = new SourceRenderer());
       setFont(getFont().deriveFont(Font.PLAIN));
       setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
       current = null;
       addListSelectionListener(e -> selected(getSelectedValue()));
+      addMouseListener(this);
     }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+      Point pt = e.getPoint();
+      int idx = locationToIndex(pt);
+      if (idx < 0)
+        return;
+      setSelectedIndex(idx);
+      Rectangle cell = getCellBounds(idx, idx);
+      if (cell == null || !cell.contains(pt))
+        return;
+      pt.x -= cell.x;
+      pt.y -= cell.y;
+      Source src = (Source)model.getElementAt(idx);
+      String text = renderer.typeButtonText(src);
+      Rectangle b = renderer.typeButton.buttonBounds.get(text);
+      if (b == null)
+        return;
+      if (!b.contains(pt))
+        return;
+      pt.x += cell.x;
+      pt.y += cell.y;
+      doTypeSelectPopup(idx, src, cell.x + b.x, cell.y + b.y + b.height);
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) { }
+    @Override
+    public void mouseExited(MouseEvent e) { }
+    @Override
+    public void mousePressed(MouseEvent e) { }
+    @Override
+    public void mouseReleased(MouseEvent e) { }
+
+    void doTypeSelectPopup(int idx, Source src, int x, int y) {
+      JPopupMenu popup = new JPopupMenu("Select I/O Type");
+      List<BoardIO.Type> types = pinBindings.typesFor(src.path);
+      if (src.bit < 0) {
+        // Show menu for single-bit or un-expanded row of multi-bit I/O component
+        int w = pinBindings.widthFor(src.path).size();
+        for (BoardIO.Type t : types) {
+          if (w > 1 && BoardIO.OneBitTypes.contains(t))
+            continue;
+          JRadioButtonMenuItem menu = new JRadioButtonMenuItem(t.toString());
+          menu.setSelected(src.type == t);
+          menu.addActionListener(ev -> setSourceType(idx, src, t));
+          popup.add(menu);
+        }
+        if (w > 1) {
+          JRadioButtonMenuItem menu = new JRadioButtonMenuItem("Expanded");
+          menu.setSelected(src.type == BoardIO.Type.Expanded);
+          menu.addActionListener(ev -> setSourceType(idx, src, BoardIO.Type.Expanded));
+          popup.add(menu);
+        }
+      } else {
+        // show menu for one bit of an expanded multi-bit I/O component
+        for (BoardIO.Type t : types) {
+          if (!BoardIO.OneBitTypes.contains(t))
+            continue;
+          JRadioButtonMenuItem menu = new JRadioButtonMenuItem(t.toString());
+          menu.setSelected(src.type == t);
+          menu.addActionListener(ev -> setBitSourceType(idx, src, t));
+          popup.add(menu);
+        }
+      }
+      popup.show(this, x, y);
+    }
+
+    // Prereq: src.bit < 0
+    void setSourceType(int idx, Source src, BoardIO.Type t) {
+      if (src.type == t)
+        return;
+      Dest old = unmap(src);
+      boolean phys = old != null && BoardIO.PhysicalTypes.contains(old.io.type);
+      int syntheticValue = old == null ? 0 : old.io.syntheticValue;
+      if (src.type == BoardIO.Type.Expanded) { // note: src.width > 1
+        // collapse: remap if all bits were mapped to bits of a compatable dest
+        int n = src.width.size();
+        old = pinBindings.mappings.get(model.data.get(idx+1));
+        phys = old != null && BoardIO.PhysicalTypes.contains(old.io.type);
+        syntheticValue = 0;
+        for (int i = 0; i < n; i++) {
+          Source bitSrc = model.data.get(idx+1+i);
+          Dest bitDest = unmap(bitSrc);
+          if (old == null)
+            continue;
+          else if (bitDest == null || phys != BoardIO.PhysicalTypes.contains(bitDest.io.type))
+            old = null;
+          else if (phys && (bitDest.io != old.io || bitDest.bit != i))
+            old = null;
+          else if (!phys && 
+              ((old.io.type == BoardIO.Type.Unconnected) ^ (bitDest.io.type == BoardIO.Type.Unconnected)))
+            old = null; // note: zeros, ones, constant can be mixed, but not with Unconnected
+          else
+            syntheticValue |= (bitDest.io.syntheticValue & 1) << i;
+        }
+        model.collapse(idx, n);
+      }
+      Source newSrc = new Source(src.path, src.comp, -1, t, src.width.copy());
+      if (src == current) {
+        current = newSrc;
+        model.replace(idx, newSrc);
+        setEnablesFor(current);
+      }
+      if (src.type == BoardIO.Type.Expanded && old != null && !phys) {
+        int n = src.width.size();
+        BoardIO.Type s;
+        if (old.io.type == BoardIO.Type.Unconnected)
+          s = BoardIO.Type.Unconnected;
+        else if (syntheticValue == 0)
+          s = BoardIO.Type.AllZeros;
+        else if (syntheticValue == (1 << n)-1)
+          s = BoardIO.Type.AllOnes;
+        else
+          s = BoardIO.Type.Constant;
+        pinBindings.addMapping(newSrc, BoardIO.makeSynthetic(s, n, syntheticValue), -1);
+        updateStatus();
+        if (current == newSrc)
+          setEnablesFor(current);
+      } else if (src.type == BoardIO.Type.Expanded && old != null
+          && old.io.isCompatible(newSrc.width, newSrc.type)) {
+        pinBindings.addMapping(newSrc, old.io, -1);
+        rects.get(old.io).setMappedBitCount(newSrc.width.size());
+        updateStatus();
+        if (current == newSrc)
+          setEnablesFor(current);
+      } else if (t == BoardIO.Type.Expanded) { // note: src.width > 1
+        // expand: remap all bits to bits of same dest
+        model.expand(src.path);
+        if (old != null && !BoardIO.PhysicalTypes.contains(old.io.type)) {
+          // special case: old was a synthetic I/O device (zeros, ones, etc.)
+          int val = old.io.syntheticValue;
+          int n = src.width.size();
+            for (int i = 0; i < n; i++) {
+              BoardIO io = BoardIO.makeSynthetic(old.io.type, 1, (val >> i) & 1);
+              Source bitSource = model.data.get(idx+1+i);
+              pinBindings.addMapping(bitSource, io, -1);
+            }
+            updateStatus();
+        } else if (old != null) { // regular case: physical I/O device
+          // find a one-bit type compatible with the original
+          Netlist.Int3 bitWidth = src.width.forSingleBit();
+          BoardIO.Type bitType = null;
+          for (BoardIO.Type tt : pinBindings.typesFor(src.path)) {
+            if (BoardIO.OneBitTypes.contains(tt) && old.io.isCompatible(bitWidth, tt)) {
+              bitType = tt;
+              break;
+            }
+          }
+          if (bitType != null) {
+            int n = src.width.size();
+            for (int i = 0; i < n; i++) {
+              Source bitSource = model.data.get(idx+1+i);
+              setBitSourceType(idx+1+i, bitSource, bitType);
+              pinBindings.addMapping(bitSource, old.io, i);
+            }
+            updateStatus();
+            rects.get(old.io).setMappedBitCount(n);
+          }
+        }
+      }
+    }
+
+    // Prereq: src.bit >= 0
+    void setBitSourceType(int idx, Source src, BoardIO.Type t) {
+      if (src.type == t)
+        return;
+      // change type of one bit of expanded multi-bit I/O component
+      unmap(src); 
+      Source newSrc = new Source(src.path, src.comp, src.bit, t, src.width.copy());
+      if (current == src) {
+        current = newSrc;
+        model.replace(idx, newSrc);
+        setEnablesFor(current);
+      } else {
+        model.replace(idx, newSrc);
+      }
+    }
+
     void selected(Source src) {
-      Source old = current;
       current = src;
-      selectedChanged(old, current);
+      setEnablesFor(current);
     }
     void mapCurrent(BoardIO io, int bit) {
       // System.out.printf("Mapping %s of %s to %s\n", 
       //     (bit < 0 ? "all bits" : "bit "+bit), current, io);
       if (current == null)
           return;
-      unmapCurrent();
+      unmap(current);
       HashSet<Source> changed = pinBindings.addMapping(current, io, bit);
       for (Source src : changed)
         model.changed(src);
-      selectedChanged(current, current);
-      int i = getSelectedIndex();
-      if (i+1 < model.data.size())
-        setSelectedValue(model.data.get(i+1), true);
+      updateStatus();
+      setEnablesFor(current);
+      int i = getSelectedIndex() + 1;
+      while (i < model.data.size() && model.data.get(i).type == BoardIO.Type.Expanded)
+        i++;
+      if (i < model.data.size())
+        setSelectedValue(model.data.get(i), true);
+      // recalculate all nmapped values, easier than updating only changed ones
+      recalculateAllBitCounts();
     }
+
+    void recalculateAllBitCounts() {
+      HashMap<BoardIO, Integer> counts = new HashMap<>();
+      pinBindings.mappings.forEach((s, d) -> {
+        int nbits = counts.getOrDefault(d.io, 0);
+        nbits += s.width.size();
+        counts.put(d.io, nbits);
+      });
+      rects.forEach((io, r) -> r.setMappedBitCount(counts.getOrDefault(r.io, 0)));
+    }
+
     void mapCurrent(BoardIO.Type synthType, int val) {
       if (current == null)
           return;
@@ -458,21 +792,34 @@ public class BindingsDialog extends JDialog {
       BoardIO io = BoardIO.makeSynthetic(synthType, current.width.size(), val);
       mapCurrent(io, -1);
     }
+
+    Dest unmap(Source src) {
+      Dest old = pinBindings.mappings.get(src);
+      if (old == null)
+        return null;
+      pinBindings.mappings.remove(src);
+      Rect r = rects.get(old.io);
+      if (r != null && old.bit < 0)
+        r.setMappedBitCount(0);
+      else if (r != null)
+        r.setMappedBitCount(r.getMappedBitCount() - src.width.size());
+      model.changed(src);
+      updateStatus();
+      if (src == current)
+        setEnablesFor(current);
+      return old;
+    }
+
     void unmapCurrent() {
       if (current == null)
         return;
-      Dest old = pinBindings.mappings.get(current);
-      if (old == null)
-        return;
-      pinBindings.mappings.remove(current);
-      model.changed(current);
-      selectedChanged(current, current);
+      unmap(current);
       int i = getSelectedIndex();
       if (i+1 < model.data.size())
         setSelectedValue(model.data.get(i+1), true);
     }
+
     void resetAll() {
-      Source old = current;
       pinBindings.mappings.clear();
       model.sync();
       if (!model.data.contains(current))
@@ -481,8 +828,10 @@ public class BindingsDialog extends JDialog {
         setSelectedValue(current, true);
       else
         clearSelection();
-      selectedChanged(old, current);
+      updateStatus();
+      setEnablesFor(current);
     }
+
   }
 
   static final Color hilight = new Color(200, 0, 0);
@@ -542,21 +891,10 @@ public class BindingsDialog extends JDialog {
 
   }
 
-  void selectedChanged(Source oldSource, Source current) {
-    updateStatus();
-    if (oldSource == null && current == null)
-      return;
-    if (oldSource != null) {
-      // De-emphasize rect for old mapping destination, if there was one.
-      // Synthetics will be entirely reset below, so skip them here.
-      Dest old = pinBindings.mappings.get(oldSource);
-      if (old != null) {
-        Rect r = rects.get(old.io);
-        if (r != null)
-          r.emphasize(false);
-      }
-    }
-    if (current == null) {
+  // private Source prevCurrent = null;
+  void setEnablesFor(Source current) {
+    // Todo: for expanded, show current mappings for all bits?
+    if (current == null || current.type == BoardIO.Type.Expanded) {
       // No current selection, so hide all rects.
       for (Rect r : rects.values())
         r.setVisible(false);
@@ -566,7 +904,8 @@ public class BindingsDialog extends JDialog {
         b.setEnabled(false);
       }
     } else {
-      if (oldSource != current) {
+      // Mappbale row, so show previous and potential mappings.
+      if (true) { // if (prevCurrent != current)
         for (Rect r : rects.values())
           r.setVisible(false);
         // Recalculate visibility of all rects and synthetics
@@ -588,6 +927,7 @@ public class BindingsDialog extends JDialog {
       for (Rect r : rects.values())
         r.emphasize(dest != null && r.io == dest.io);
     }
+    // prevCurrent = current;
     overlay.repaint();
   }
 
