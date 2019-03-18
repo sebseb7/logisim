@@ -379,10 +379,10 @@ public class Hdl extends ArrayList<String> {
       stmt(map0, name, val);
     }
 
-    // // signal => vector(i)
-    // public void add(String name, String val, int valIdx) {
-    //   stmt(mapBit, name, val, valIdx);
-    // }
+    // signal => vector(i)
+    public void add(String name, String val, int valIdx) {
+      stmt(map, name, String.format(val+idx, valIdx));
+    }
 
     // // vector(i) => vector(i)
     // public void add0(String name, String val, int valIdx) {

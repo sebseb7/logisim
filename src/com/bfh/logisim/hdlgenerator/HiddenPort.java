@@ -71,20 +71,21 @@ public class HiddenPort {
   public final List<String> labels;
   public final List<String> inports, inoutports, outports; // labels by category, for convenience
   private final Int3 width;
+  private final boolean customLabels;
 
   public final BoardIO.Type mainType;
   public final List<BoardIO.Type> altTypes;
   public final List<BoardIO.Type> types; // main + alternates
 
   // Constructors with custom bit labels
-  public static HiddenPort makeInport(String[] labels, BoardIO.Type mainType, BoardIO.Type ...altTypes)    { return new HiddenPort(IN, labels, mainType, altTypes); }
-  public static HiddenPort makeInOutport(String[] labels, BoardIO.Type mainType, BoardIO.Type ...altTypes) { return new HiddenPort(BI, labels, mainType, altTypes); }
-  public static HiddenPort makeOutport(String[] labels, BoardIO.Type mainType, BoardIO.Type ...altTypes)   { return new HiddenPort(OUT, labels, mainType, altTypes); }
+  public static HiddenPort makeInport(String[] labels, BoardIO.Type mainType, BoardIO.Type ...altTypes)    { return new HiddenPort(IN, true, labels, mainType, altTypes); }
+  public static HiddenPort makeInOutport(String[] labels, BoardIO.Type mainType, BoardIO.Type ...altTypes) { return new HiddenPort(BI, true, labels, mainType, altTypes); }
+  public static HiddenPort makeOutport(String[] labels, BoardIO.Type mainType, BoardIO.Type ...altTypes)   { return new HiddenPort(OUT, true, labels, mainType, altTypes); }
 
   // Constructors with generic bit labels
-  public static HiddenPort makeInport(int width, BoardIO.Type mainType, BoardIO.Type ...altTypes)    { return new HiddenPort(IN, generateLabels(IN, width), mainType, altTypes); }
-  public static HiddenPort makeInOutport(int width, BoardIO.Type mainType, BoardIO.Type ...altTypes) { return new HiddenPort(BI, generateLabels(BI, width), mainType, altTypes); }
-  public static HiddenPort makeOutport(int width, BoardIO.Type mainType, BoardIO.Type ...altTypes)   { return new HiddenPort(OUT, generateLabels(OUT, width), mainType, altTypes); }
+  public static HiddenPort makeInport(int width, BoardIO.Type mainType, BoardIO.Type ...altTypes)    { return new HiddenPort(IN, false, generateLabels(IN, width), mainType, altTypes); }
+  public static HiddenPort makeInOutport(int width, BoardIO.Type mainType, BoardIO.Type ...altTypes) { return new HiddenPort(BI, false, generateLabels(BI, width), mainType, altTypes); }
+  public static HiddenPort makeOutport(int width, BoardIO.Type mainType, BoardIO.Type ...altTypes)   { return new HiddenPort(OUT, false, generateLabels(OUT, width), mainType, altTypes); }
 
   // // Constructor for Pin components
   // public static HiddenPort forPin(Component pin) {
@@ -104,8 +105,9 @@ public class HiddenPort {
 
   private static List<String> EMPTY = Collections.unmodifiableList(new ArrayList<String>());
 
-	private HiddenPort(int dir, String[] ports, BoardIO.Type main, BoardIO.Type ...alts) {
+	private HiddenPort(int dir, boolean custom, String[] ports, BoardIO.Type main, BoardIO.Type ...alts) {
     labels = Collections.unmodifiableList(Arrays.asList(ports));
+    customLabels = custom;
     in = (dir == IN);
     inout = (dir == BI);
     out = (dir == OUT);
