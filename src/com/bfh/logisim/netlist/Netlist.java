@@ -83,10 +83,10 @@ public class Netlist {
   private NetlistComponent dynClock; // DynamicClock
 
   // Reference to the single global clock bus used by all Netlists in the design.
-	private ClockBus clockbus = null;
+	private ClockBus clockbus = null; // initialized later
 
   // Info about hidden networks, needed by certain I/O-related components.
-	private Int3 numHiddenBits = new Int3();
+	private Int3 numHiddenBits = null; // initialized later
   
   // Path to one of the instantiations of this circuit. For a circuit that gets
   // instantiated several times, there is one Netlist for the circuit, and the
@@ -119,7 +119,7 @@ public class Netlist {
       clockbus.clear();
       clockbus = null;
     }
-		numHiddenBits.clear();
+		numHiddenBits = null;
     currentPath = null;
 		status = DRC_REQUIRED;
 	}
@@ -149,14 +149,6 @@ public class Netlist {
       return false;
     }
 
-    // Sanity check for effectively-blank designs at the top level.
-    if (inpins.size() + outpins.size() + numHiddenBits.size() == 0) {
-      err.AddFatalError("Top-level circuit '%s' has no input pins, output pins, "
-          +" or I/O devices, so would produce no visible behavior.", circ.getName());
-      recursiveClear();
-      return false;
-    }
-
     Path root = new Path(circ);
 
     // Recursively trace all clock nets to build the global clock bus.
@@ -168,6 +160,14 @@ public class Netlist {
     HashSet<Netlist> visited = new HashSet<>();
     recursiveAssignLocalHiddenNets(visited); // also adds hidden in/inout/out ports
     recursiveAssignGlobalHiddenNets(root, new Int3());
+
+    // Sanity check for effectively-blank designs at the top level.
+    if (inpins.size() + outpins.size() + numHiddenBits.size() == 0) {
+      err.AddFatalError("Top-level circuit '%s' has no input pins, output pins, "
+          + "or I/O devices, so would produce no visible behavior.", circ.getName());
+      recursiveClear();
+      return false;
+    }
 
     return true;
   }
@@ -343,8 +343,8 @@ public class Netlist {
 
   private String nameOf(Component comp) {
     String name = comp.getFactory().getName();
-    String label = comp.getAttributeSet().getValue(StdAttr.LABEL).toString();
-    if (label.isEmpty())
+    String label = comp.getAttributeSet().getValue(StdAttr.LABEL);
+    if (label == null || label.isEmpty())
       return String.format("'%s' at %s", name, comp.getLocation().toString());
     else
       return String.format("'%s' with label '%s'", name, label);
@@ -395,10 +395,11 @@ public class Netlist {
     }
   }
 
+  // this also assigns the numHiddenBits field
 	private void recursiveAssignLocalHiddenNets(HashSet<Netlist> visited) {
     visited.add(this);
 
-    Int3 start = numHiddenBits;
+    Int3 start = new Int3();
 		for (NetlistComponent shadow : subcircuits) {
 			SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
       Circuit subcirc = sub.getSubcircuit();
@@ -419,6 +420,8 @@ public class Netlist {
       shadow.setLocalHiddenPortIndices(start.copy(), count);
       start.increment(count);
     }
+
+    numHiddenBits = start;
   }
 
 	private void recursiveAssignGlobalHiddenNets(Path path, Int3 start) {

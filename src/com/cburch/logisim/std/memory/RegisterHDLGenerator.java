@@ -51,40 +51,37 @@ public class RegisterHDLGenerator extends HDLGenerator {
     if (out.isVhdl) {
       out.stmt("   Q <= s_state_reg;");
       out.stmt("");
-      out.stmt("   make_memory : PROCESS( clock , Reset , Load , ClockEnable , D )");
+      out.stmt("   make_memory : PROCESS( GlobalClock , Reset , Load , ClockEnable , D )");
       out.stmt("   BEGIN");
       out.stmt("      IF (Reset = '1') THEN s_state_reg <= (OTHERS => '0');");
       if (edgeTriggered()) {
-        out.stmt("      IF (GlobalClock'event AND (GlobalClock = '1')) THEN");
+        out.stmt("      ELSIF (GlobalClock'event AND (GlobalClock = '1')) THEN");
         out.stmt("         IF (Load = '1' AND ClockEnable = '1') THEN");
         out.stmt("            s_state_reg <= D;");
         out.stmt("         END IF;");
         out.stmt("      END IF;");
       } else {
-        out.stmt("      IF (GlobalClock = '1') THEN");
+        out.stmt("      ELSIF (GlobalClock = '1') THEN");
         out.stmt("         IF (Load = '1' AND ClockEnable = '1') THEN");
         out.stmt("            s_state_reg <= D;");
         out.stmt("         END IF;");
         out.stmt("      END IF;");
       }
-      out.stmt("      END IF;");
       out.stmt("   END PROCESS make_memory;");
     } else {
-      if (!edgeTriggered()) {
-        out.stmt("   assign Q = s_state_reg;");
-        out.stmt("");
-        out.stmt("   always @(*)");
-        out.stmt("   begin");
-        out.stmt("      if (Reset) s_state_reg <= 0;");
-        out.stmt("      else if ((GlobalClock==1)&Load&ClockEnable) s_state_reg <= D;");
-        out.stmt("   end");
-      } else {
-        out.stmt("   assign Q = s_state_reg;");
-        out.stmt("");
+      out.stmt("   assign Q = s_state_reg;");
+      out.stmt("");
+      if (edgeTriggered()) {
         out.stmt("   always @(posedge GlobalClock or posedge Reset)");
         out.stmt("   begin");
         out.stmt("      if (Reset) s_state_reg <= 0;");
         out.stmt("      else if (Load&ClockEnable) s_state_reg <= D;");
+        out.stmt("   end");
+      } else {
+        out.stmt("   always @(*)");
+        out.stmt("   begin");
+        out.stmt("      if (Reset) s_state_reg <= 0;");
+        out.stmt("      else if ((GlobalClock==1)&Load&ClockEnable) s_state_reg <= D;");
         out.stmt("   end");
       }
     }

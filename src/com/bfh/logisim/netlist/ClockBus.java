@@ -64,9 +64,9 @@ import com.cburch.logisim.std.wiring.Clock;
 // combinational logic or some port that isn't expecting a clock signal.
 public class ClockBus {
 
-  static class Shape {
-    int hi, lo, ph;
-    String desc;
+  public static class Shape {
+    public final int hi, lo, ph;
+    public final String desc;
     Shape(Component clk) {
       hi = clk.getAttributeSet().getValue(Clock.ATTR_HIGH);
       lo = clk.getAttributeSet().getValue(Clock.ATTR_LOW);

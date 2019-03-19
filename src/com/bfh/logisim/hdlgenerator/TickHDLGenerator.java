@@ -30,8 +30,6 @@
 
 package com.bfh.logisim.hdlgenerator;
 
-import java.util.ArrayList;
-
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.library.DynamicClock;
 import com.cburch.logisim.hdl.Hdl;
@@ -174,6 +172,8 @@ public class TickHDLGenerator extends HDLGenerator {
       inPorts.add("ReloadValueLessOne", "CtrWidth", -1, null); // see getPortMappings below
       registers.add("s_tick_reg", 1);
       registers.add("s_count_reg", "CtrWidth");
+      wires.add("s_tick_next", 1);
+      wires.add("s_count_next", "CtrWidth");
     } else {
       // static fixed period
       int w = getStaticCounterWidth();
@@ -181,6 +181,8 @@ public class TickHDLGenerator extends HDLGenerator {
       parameters.add("ReloadValue", period);
       registers.add("s_tick_reg", 1);
       registers.add("s_count_reg", "CtrWidth");
+      wires.add("s_tick_next", 1);
+      wires.add("s_count_next", "CtrWidth");
       wires.add("ReloadValueLessOne", "CtrWidth");
     }
 

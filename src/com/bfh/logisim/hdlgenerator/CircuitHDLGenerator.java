@@ -193,7 +193,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
       // Clock trees
       for (int i = 0; i < _circNets.getClockBus().shapes().size(); i++) {
         String clkTree = ClockHDLGenerator.CLK_TREE_NET + i;
-        map.add(clkTree, "s_" + clkTree); // fixme: why different from above?
+        map.add(clkTree, clkTree);
 			}
 
       // Dynamic clock

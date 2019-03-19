@@ -37,6 +37,7 @@ import com.bfh.logisim.fpga.PinActivity;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.library.DynamicClock;
+import com.bfh.logisim.netlist.ClockBus;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.netlist.Path;
@@ -56,6 +57,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
   private Netlist _circNets; // Netlist of the circUnderTest.
 
   private TickHDLGenerator ticker;
+  private ArrayList<ClockHDLGenerator.CounterPart> clkgens = new ArrayList<>();
   private CircuitHDLGenerator circgen;
   private HDLCTX ctx;
 
@@ -102,7 +104,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 		if (numclk > 0) {
       wires.add(TickHDLGenerator.FPGA_TICK_NET, 1);
 			for (int i = 0; i < numclk; i++)
-				wires.add("s_"+ClockHDLGenerator.CLK_TREE_NET+i,
+				wires.add(ClockHDLGenerator.CLK_TREE_NET+i,
               ClockHDLGenerator.CLK_TREE_WIDTH);
 		}
 
@@ -130,8 +132,13 @@ public class ToplevelHDLGenerator extends HDLGenerator {
       wires.add("s_LOGISIM_DYNAMIC_CLOCK", w);
     }
 
-		if (numclk > 0)
+		if (numclk > 0) {
 			ticker = new TickHDLGenerator(ctx, fpgaClockFreq, tickerPeriod);
+      ClockBus clkbus = _circNets.getClockBus();
+			long id = 0;
+      for (ClockBus.Shape shape : _circNets.getClockBus().shapes())
+        clkgens.add(new ClockHDLGenerator.CounterPart(ctx, shape, clkbus, id++));
+    }
 
 		circgen = new CircuitHDLGenerator(ctx, circUnderTest);
 	}
@@ -144,6 +151,10 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     }
     if (ticker != null && !ticker.writeHDLFiles(rootDir)) {
       _err.AddInfo("Clock ticker HDL files could not be generated.");
+      return false;
+    }
+    if (!clkgens.isEmpty() && !clkgens.get(0).writeHDLFiles(rootDir)) {
+      _err.AddInfo("Clock HDL files could not be generated.");
       return false;
     }
     if (!writeHDLFiles(rootDir)) {
@@ -169,8 +180,8 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 	protected void declareNeededComponents(Hdl out) {
 		if (ticker != null) {
       ticker.generateComponentDeclaration(out);
-      // Clock components are lifted to the top level, so declare one here.
-      _circNets.clocks.get(0).hdlSupport.generateComponentDeclaration(out);
+      // Declare clock gen module. All are identical, so only one declaration needed.
+      clkgens.get(0).generateComponentDeclaration(out);
 		}
     circgen.generateComponentDeclaration(out);
 	}
@@ -184,13 +195,13 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 		});
     out.stmt();
 
-		if (_circNets.clocks.size() > 0) {
+		if (ticker != null) {
       out.comment("clock signal distribution");
       ticker.generateComponentInstance(out, 0L /*id*/, null /*comp*/ /*, null path*/);
 
 			long id = 0;
-			for (NetlistComponent clk : _circNets.clocks)
-        clk.hdlSupport.generateComponentInstance(out, id++, clk /*, null path*/); // FIXME - uniquify clocks
+			for (ClockHDLGenerator.CounterPart clkgen : clkgens)
+        clkgen.generateComponentInstance(out, clkgen.id, null /*comp*/ /*, null path*/);
       out.stmt();
 		}
 
