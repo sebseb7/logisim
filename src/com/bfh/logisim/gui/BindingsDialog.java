@@ -121,13 +121,11 @@ public class BindingsDialog extends JDialog {
   private SourceList sources;
   JLayeredPane overlay;
 
-  private String xmlDir;
-
   // Caution: these *must* be Integer. See javadoc for JLayeredPane.
   private static final Integer LAYER_BOTTOM = 0;
   private static final Integer LAYER_TOP = 1;
 
-  public BindingsDialog(Board board, PinBindings pinBindings, JFrame parentFrame, String projectPath) {
+  public BindingsDialog(Board board, PinBindings pinBindings, JFrame parentFrame) {
     super(parentFrame, ModalityType.APPLICATION_MODAL);
     this.board = board;
     this.pinBindings = pinBindings;
@@ -142,12 +140,6 @@ public class BindingsDialog extends JDialog {
       r.setBounds(io.rect.x, io.rect.y, io.rect.width, io.rect.height);
       r.setVisible(false);
     }
-
-    xmlDir = new File(projectPath).getParent();
-    if (xmlDir == null)
-      xmlDir = "";
-    else if (xmlDir.length() > 0 && !xmlDir.endsWith(File.separator))
-      xmlDir += File.separator;
 
     setTitle("Configure FPGA Pin Bindings");
     setResizable(false);
@@ -414,7 +406,7 @@ public class BindingsDialog extends JDialog {
       }
       for (Path path : pinBindings.components.keySet())
         data.add(pinBindings.sourceFor(path));
-      Collections.sort(data, new NaturalOrderComparator<>(src -> src.path.toString()));
+      Collections.sort(data, new NaturalOrderComparator<>(src -> src.path.relstr()));
       n = data.size();
       fireIntervalAdded(this, 0, n-1);
       pinBindings.mappings.forEach((s, d) -> {
@@ -491,7 +483,7 @@ public class BindingsDialog extends JDialog {
           indented = true;
           val = pinBindings.pinLabels(src.path)[src.bit];
         } else {
-          val = src.path.toString();
+          val = src.path.relstr();
         }
         if (dst != null)
           val = val + " mapped to " + dst;
@@ -938,228 +930,6 @@ public class BindingsDialog extends JDialog {
     boolean finished = txt.startsWith("All");
     done.setText(finished ? "Done" : "Close");
   }
-
-  // private String getFileName(String window_name, String suggested_name) {
-  //   JFileChooser fc = new JFileChooser(OldDirectory);
-  //   fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-  //   fc.setDialogTitle(window_name);
-  //   File SelFile = new File(OldDirectory + suggested_name);
-  //   fc.setSelectedFile(SelFile);
-  //   fc.setFileFilter(Loader.XML_FILTER);
-  //   fc.setAcceptAllFileFilterUsed(false);
-  //   int retval = fc.showSaveDialog(null);
-  //   if (retval == JFileChooser.APPROVE_OPTION) {
-  //     File file = fc.getSelectedFile();
-  //     if (file.getParent() != null) {
-  //       OldDirectory = file.getParent();
-  //       if (OldDirectory == null)
-  //         OldDirectory = "";
-  //       else if (OldDirectory.length() != 0 && !OldDirectory.endsWith(File.separator))
-  //         OldDirectory += File.separator;
-  //     }
-  //     return file.getPath();
-  //   } else {
-  //     return "";
-  //   }
-  // }
-
-  // public void LoadDefaultSaved() {
-  //   String suggestedName =
-  //       CorrectLabel.getCorrectLabel(pinBindings.GetToplevelName())
-  //       + "-" + board.getBoardName() + "-MAP.xml";
-  // }
-
-  // private String[] MapSectionStrings = { "Key", "LocationX", "LocationY", "Width", "Height", "Kind", "Value" };
-  // private void Load() {
-  //   JFileChooser fc = new JFileChooser(OldDirectory);
-  //   fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-  //   fc.setDialogTitle("Choose XML board description file to use");
-  //   fc.setFileFilter(Loader.XML_FILTER);
-  //   fc.setAcceptAllFileFilterUsed(false);
-  //   setVisible(false);
-  //   int retval = fc.showOpenDialog(null);
-  //   if (retval == JFileChooser.APPROVE_OPTION) {
-  //     File file = fc.getSelectedFile();
-  //     String FileName = file.getName();
-  //     String AbsoluteFileName = file.getPath();
-  //     OldDirectory = AbsoluteFileName.substring(0,
-  //         AbsoluteFileName.length() - FileName.length());
-  //     try {
-  //       // Create instance of DocumentBuilderFactory
-  //       DocumentBuilderFactory factory = DocumentBuilderFactory
-  //           .newInstance();
-  //       // Get the DocumentBuilder
-  //       DocumentBuilder parser = factory.newDocumentBuilder();
-  //       // Create blank DOM Document
-  //       File xml = new File(AbsoluteFileName);
-  //       Document MapDoc = parser.parse(xml);
-  //       NodeList Elements = MapDoc
-  //           .getElementsByTagName("LogisimGoesFPGABoardMapInformation");
-  //       Node CircuitInfo = Elements.item(0);
-  //       NodeList CircuitInfoDetails = CircuitInfo.getChildNodes();
-  //       for (int i = 0; i < CircuitInfoDetails.getLength(); i++) {
-  //         if (CircuitInfoDetails.item(i).getNodeName().equals("GlobalMapInformation")) {
-  //           NamedNodeMap Attrs = CircuitInfoDetails.item(i)
-  //               .getAttributes();
-  //           for (int j = 0; j < Attrs.getLength(); j++) {
-  //             if (Attrs.item(j).getNodeName().equals("BoardName")) {
-  //               if (!board.getBoardName().equals(Attrs.item(j).getNodeValue())) {
-  //                 status.setForeground(Color.RED);
-  //                 status
-  //                     .setText("LOAD ERROR: The selected Map file is not for the selected target board!");
-  //                 setVisible(true);
-  //                 return;
-  //               }
-  //             } else if (Attrs.item(j).getNodeName().equals("ToplevelCircuitName")) {
-  //               if (!pinBindings.GetToplevelName().equals(Attrs.item(j).getNodeValue())) {
-  //                 status.setForeground(Color.RED);
-  //                 status
-  //                     .setText("LOAD ERROR: The selected Map file is not for the selected toplevel circuit!");
-  //                 setVisible(true);
-  //                 return;
-  //               }
-  //             }
-  //           }
-  //           break;
-  //         }
-  //       }
-  //       /* cleanup the current map */
-  //       UnMapAll();
-  //       for (int i = 0; i < CircuitInfoDetails.getLength(); i++) {
-  //         if (CircuitInfoDetails.item(i).getNodeName().startsWith("MAPPEDCOMPONENT")) {
-  //           int x = -1, y = -1, width = -1, height = -1, constval = -1;
-  //           String key = "", kind = "";
-  //           NamedNodeMap Attrs = CircuitInfoDetails.item(i).getAttributes();
-  //           for (int j = 0; j < Attrs.getLength(); j++) {
-  //             if (Attrs.item(j).getNodeName().equals(MapSectionStrings[0]))
-  //               key = Attrs.item(j).getNodeValue();
-  //             if (Attrs.item(j).getNodeName().equals(MapSectionStrings[1]))
-  //               x = Integer.parseInt(Attrs.item(j).getNodeValue());
-  //             if (Attrs.item(j).getNodeName().equals(MapSectionStrings[2]))
-  //               y = Integer.parseInt(Attrs.item(j).getNodeValue());
-  //             if (Attrs.item(j).getNodeName().equals(MapSectionStrings[3]))
-  //               width = Integer.parseInt(Attrs.item(j).getNodeValue());
-  //             if (Attrs.item(j).getNodeName().equals(MapSectionStrings[4]))
-  //               height = Integer.parseInt(Attrs.item(j).getNodeValue());
-  //             if (Attrs.item(j).getNodeName().equals(MapSectionStrings[5]))
-  //               kind = Attrs.item(j).getNodeValue();
-  //             if (Attrs.item(j).getNodeName().equals(MapSectionStrings[6]))
-  //               constval = Integer.parseInt(Attrs.item(j).getNodeValue());
-  //           }
-  //           Bounds rect = null;
-  //           if (key.isEmpty()) {
-  //             rect = null;
-  //           } else if ("constant".equals(kind)) {
-  //             rect = Bounds.constant(constval);
-  //           } else if ("device".equals(kind) || "".equals(kind)) {
-  //             if ((x > 0) && (y > 0) && (width > 0) && (height > 0)) {
-  //               for (BoardIO comp : board.GetAllComponents()) {
-  //                 if ((comp.GetRectangle().getXpos() == x)
-  //                     && (comp.GetRectangle().getYpos() == y)
-  //                     && (comp.GetRectangle().getWidth() == width)
-  //                     && (comp.GetRectangle().getHeight() == height)) {
-  //                   rect = comp.GetRectangle();
-  //                   break;
-  //                 }
-  //               }
-  //             }
-  //           } else if ("ones".equals(kind)) {
-  //             rect = Bounds.ones();
-  //           } else if ("zeros".equals(kind)) {
-  //             rect = Bounds.zeros();
-  //           } else if ("disconnected".equals(kind)) {
-  //             rect = Bounds.disconnected();
-  //           } 
-  //           if (rect != null)
-  //             pinBindings.TryMap(key, rect/* , board.GetComponentType(rect) */);
-  //         }
-  //       }
-  //       ClearSelections();
-  //       RebuildSelectionLists();
-  //       picture.paintImmediately(0, 0, picture.getWidth(),
-  //           picture.getHeight());
-  //     } catch (Exception e) {
-  //       /* TODO: handle exceptions */
-  //       System.err.printf(
-  //           "Exceptions not handled yet in Load(), but got an exception: %s\n",
-  //           e.getMessage());
-  //     }
-  //   }
-  //   setVisible(true);
-  // }
-
-  // private void Save() {
-  //   setVisible(false);
-  //   String suggestedName =
-  //       CorrectLabel.getCorrectLabel(pinBindings.GetToplevelName())
-  //       + "-" + board.getBoardName() + "-MAP.xml";
-  //   String SaveFileName = getFileName("Select filename to save the current map", suggestedName);
-  //   if (!SaveFileName.isEmpty()) {
-  //     try {
-  //       // Create instance of DocumentBuilderFactory
-  //       DocumentBuilderFactory factory = DocumentBuilderFactory
-  //           .newInstance();
-  //       // Get the DocumentBuilder
-  //       DocumentBuilder parser = factory.newDocumentBuilder();
-  //       // Create blank DOM Document
-  //       Document MapInfo = parser.newDocument();
-  //       Element root = MapInfo
-  //           .createElement("LogisimGoesFPGABoardMapInformation");
-  //       MapInfo.appendChild(root);
-  //       Element CircuitInfo = MapInfo
-  //           .createElement("GlobalMapInformation");
-  //       CircuitInfo.setAttribute("BoardName", board.getBoardName());
-  //       Attr circ = MapInfo.createAttribute("ToplevelCircuitName");
-  //       circ.setNodeValue(pinBindings.GetToplevelName());
-  //       CircuitInfo.setAttributeNode(circ);
-  //       root.appendChild(CircuitInfo);
-  //       int count = 1;
-  //       for (String key : pinBindings.sources()) {
-  //         Element Map = MapInfo.createElement("MAPPEDCOMPONENT_"
-  //             + Integer.toHexString(count++));
-  //         Bounds rect = pinBindings.GetMap(key);
-  //         Map.setAttribute(MapSectionStrings[0], key);
-  //         Attr k = MapInfo.createAttribute(MapSectionStrings[5]);
-  //         k.setValue("constant");
-  //         Map.setAttributeNode(k);
-  //         if (rect.isConstantInput()) {
-  //           Attr v = MapInfo.createAttribute(MapSectionStrings[6]);
-  //           v.setValue(Integer.toString(rect.getSyntheticInputValue()));
-  //           Map.setAttributeNode(v);
-  //         } else if (!rect.isDeviceSignal()) {
-  //           Attr xpos = MapInfo.createAttribute(MapSectionStrings[1]);
-  //           xpos.setValue(Integer.toString(rect.getXpos()));
-  //           Map.setAttributeNode(xpos);
-  //           Attr ypos = MapInfo.createAttribute(MapSectionStrings[2]);
-  //           ypos.setValue(Integer.toString(rect.getYpos()));
-  //           Map.setAttributeNode(ypos);
-  //           Attr width = MapInfo.createAttribute(MapSectionStrings[3]);
-  //           width.setValue(Integer.toString(rect.getWidth()));
-  //           Map.setAttributeNode(width);
-  //           Attr height = MapInfo.createAttribute(MapSectionStrings[4]);
-  //           height.setValue(Integer.toString(rect.getHeight()));
-  //           Map.setAttributeNode(height);
-  //         }
-  //         root.appendChild(Map);
-  //       }
-  //       TransformerFactory tranFactory = TransformerFactory.newInstance();
-  //       tranFactory.setAttribute("indent-number", 3);
-  //       Transformer aTransformer = tranFactory.newTransformer();
-  //       aTransformer.setOutputProperty(OutputKeys.INDENT, "yes");
-  //       Source src = new DOMSource(MapInfo);
-  //       File file = new File(SaveFileName);
-  //       Result dest = new StreamResult(file);
-  //       aTransformer.transform(src, dest);
-  //     } catch (Exception e) {
-  //       /* TODO: handle exceptions */
-  //       System.err.printf(
-  //           "Exceptions not handled yet in Save(), but got an exception: %s\n",
-  //           e.getMessage());
-  //     }
-  //   }
-  //   setVisible(true);
-  // }
-
 
 	/*
 	   The code below for NaturalOrderComparator comes from:

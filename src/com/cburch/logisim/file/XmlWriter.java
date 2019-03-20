@@ -63,6 +63,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.Attr;
 import org.w3c.dom.NamedNodeMap;
 
+import com.bfh.logisim.fpga.PinBindings;
 import com.cburch.draw.model.AbstractCanvasObject;
 import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.Circuit;
@@ -264,6 +265,9 @@ public class XmlWriter {
     addAttributeSetContent(ret, circuit.getStaticAttributes(), circuit);
     if (tool != null)
       addAttributeSetContent(ret, tool.getAttributeSet(), tool);
+    for (PinBindings.Config fpgaconfig : circuit.getFPGAConfigs()) {
+      ret.appendChild(fpgaconfig.toXml(doc));
+    }
     if (!circuit.getAppearance().isDefaultAppearance()) {
       Element appear = doc.createElement("appear");
       for (Object o : circuit.getAppearance().getObjectsFromBottom()) {

@@ -93,7 +93,6 @@ public class Commander extends JFrame
   private Board board;
   private String lang;
   private int boardsListSelectedIndex;
-  private PinBindings pinBindings;
   private final FPGAReport err = new FPGAReport(this);
   private final Settings settings = Settings.getSettings();
 
@@ -399,6 +398,8 @@ public class Commander extends JFrame
     }
     for (double f : MenuSimulate.SupportedTickFrequencies)
       freqs.add(f);
+    Circuit root = circuitsList.getSelectedValue();
+    PinBindings.Config config = root.getFPGAConfig(settings.GetSelectedBoard());
     for (double f : freqs) {
       int count = countForFreq(base, f);
       if (counts.contains(count))
@@ -407,7 +408,24 @@ public class Commander extends JFrame
       String rate = rateForCount(base, count);
       clockDivCount.addItem(count);
       clockDivRate.addItem(new ExactRate(base, count));
-      if (Math.abs((proj.getSimulator().getTickFrequency() - f)/f) < 0.0001) {
+      if (config == null 
+          && Math.abs((proj.getSimulator().getTickFrequency() - f)/f) < 0.0001) {
+        clockDivCount.setSelectedItem(count);
+        clockDivRate.setSelectedItem(new ExactRate(base, count));
+      }
+    }
+    if (config != null) {
+      if (config.clkmode.equals("maximum")) {
+        clockOption.setSelectedItem(MAX_SPEED);
+      } else if (config.clkmode.equals("dynamic")) {
+        clockOption.setSelectedItem(DYN_SPEED);
+      } else {
+        clockOption.setSelectedItem(DIV_SPEED);
+        int count = config.clkdiv;
+        if (!counts.contains(count)) {
+          clockDivCount.addItem(count);
+          clockDivRate.addItem(new ExactRate(base, count));
+        }
         clockDivCount.setSelectedItem(count);
         clockDivRate.setSelectedItem(new ExactRate(base, count));
       }
@@ -416,6 +434,7 @@ public class Commander extends JFrame
       clockDivCount.setSelectedIndex(0);
     if (clockDivRate.getSelectedValue() == null && clockDivRate.getItemCount() > 0)
       clockDivRate.setSelectedIndex(0);
+
     updatingClockMenus = false;
     setClockDivCount();
     setClockDivRate();
@@ -658,7 +677,6 @@ public class Commander extends JFrame
       configureActions();
       return;
     }
-    cachedPinBindings = null;
     annotateButton.setEnabled(true);
     boardsListSelectedIndex = boardsList.getSelectedIndex();
     settingBoard = false;
@@ -990,30 +1008,32 @@ public class Commander extends JFrame
       root.recursiveResetNetlists();
   }
 
-  private PinBindings cachedPinBindings;
-  private Circuit cachedPinBindingsCircuit;
   private PinBindings performPinAssignments() {
     board.printStats(err);
 
     Circuit root = circuitsList.getSelectedValue();
-    Netlist netlist = root.getNetlist();
-   
-    if (cachedPinBindings == null || cachedPinBindingsCircuit != root) {
-      cachedPinBindings = new PinBindings(err, board, netlist.getMappableComponents());
-      cachedPinBindingsCircuit = root;
-    } else {
-      cachedPinBindings.setComponents(netlist.getMappableComponents());
-    }
+    root.recursiveResetNetlists();
 
-    File f = proj.getLogisimFile().getLoader().getMainFile();
-    String path = f == null ? "" : f.getAbsolutePath();
-    BindingsDialog dlg = new BindingsDialog(board, cachedPinBindings, this, path);
+    Netlist netlist = root.getNetlist();
+    String boardname = settings.GetSelectedBoard();
+  
+    PinBindings.Config config = root.getFPGAConfig(boardname);
+    PinBindings pinBindings = new PinBindings(err, board, netlist.getMappableComponents(), config);
+
+    BindingsDialog dlg = new BindingsDialog(board, pinBindings, this);
     setVisible(false);
     dlg.setVisible(true);
     setVisible(true);
-    if (cachedPinBindings.allPinsAssigned()) {
-      cachedPinBindings.finalizeMappings();
-      return cachedPinBindings;
+    // Save configuration for future use, even if not complete.
+    String clkmode = clockOption.getSelectedValue().equals(MAX_SPEED) ? "maximum"
+        : clockOption.getSelectedValue().equals(DIV_SPEED) ? "reduced"
+        : "dynamic";
+    int clkdiv = getClkPeriod();
+    root.saveFPGAConfig(pinBindings.makeConfig(boardname, clkmode, clkdiv));
+    proj.getLogisimFile().setDirty(true);
+    if (pinBindings.allPinsAssigned()) {
+      pinBindings.finalizeMappings();
+      return pinBindings;
     }
     err.AddError("Some I/O-related components have not been assigned to I/O "
         + "resources on the FPGA board. All components must be assigned.");

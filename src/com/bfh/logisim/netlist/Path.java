@@ -43,7 +43,7 @@ public class Path {
 
   private final String path; // slash-separated representation
 
-  private Path(String s) { path = s; }
+  public Path(String s) { path = s; }
 
   // Construct a root path for a top-level circuit.
   public Path(Circuit circ) {
@@ -61,6 +61,11 @@ public class Path {
     return new Path(path + "/" + NetlistComponent.labelOf(comp));
   }
 
+  // Construct a non-root path for component or subcircuit in some circuit.
+  public Path extend(String subpath) {
+    return new Path(path + "/" + subpath);
+  }
+
   // Return the parent's path for this non-root path. Fails for root path.
   public Path parent() {
     return new Path(path.substring(0, path.indexOf('/')));
@@ -72,7 +77,7 @@ public class Path {
 
   // Return the last part of this path. Works even for root paths.
   public String tail() {
-    return path.substring(path.indexOf('/')+1);
+    return path.substring(path.lastIndexOf('/')+1);
   }
 
   @Override
@@ -88,6 +93,14 @@ public class Path {
   @Override
   public String toString() {
     return path;
+  }
+
+  public String relstr() {
+    return isRoot() ? "" : path.substring(path.indexOf('/')+1);
+  }
+
+  public Path root() {
+    return isRoot() ? this : new Path(path.substring(0, path.indexOf('/')));
   }
 
 }

@@ -44,10 +44,11 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.WeakHashMap;
 
+import com.bfh.logisim.fpga.PinBindings;
+import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Netlist;
-import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.circuit.appear.CircuitAppearance;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
@@ -792,4 +793,28 @@ public class Circuit implements AttributeDefaultProvider {
     }
     return null;
   }
+
+  private ArrayList<PinBindings.Config> fpgaConfigs = new ArrayList<>();
+
+  public ArrayList<PinBindings.Config> getFPGAConfigs() {
+    return fpgaConfigs;
+  }
+
+  public PinBindings.Config getFPGAConfig(String boardname) {
+    for (int i = 0; i < fpgaConfigs.size(); i++)
+      if (fpgaConfigs.get(i).boardname.equals(boardname))
+        return fpgaConfigs.get(i);
+    return null;
+  }
+
+  public void saveFPGAConfig(PinBindings.Config config) {
+    for (int i = 0; i < fpgaConfigs.size(); i++) {
+      if (fpgaConfigs.get(i).boardname.equals(config.boardname)) {
+        fpgaConfigs.set(i, config);
+        return;
+      }
+    }
+    fpgaConfigs.add(config);
+  }
+
 }

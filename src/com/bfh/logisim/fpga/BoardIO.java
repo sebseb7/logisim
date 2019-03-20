@@ -110,7 +110,7 @@ public class BoardIO {
     // pin, and would not make sense to connect to Buttons or LEDs. That is, all
     // logisim components have a specific direction: in, out, or inout.
 
-		private static Type get(String str) {
+		public static Type getPhysicalType(String str) {
 			for (Type t : PhysicalTypes)
 				if (t.name().equalsIgnoreCase(str))
 					return t;
@@ -196,13 +196,13 @@ public class BoardIO {
     width = w;
     syntheticValue = val;
     if (t == Type.Constant)
-      label = String.format("Constant 0x%x", val);
+      label = String.format("constant 0x%x", val);
     else if (t == Type.AllOnes)
       label = "all ones";
     else if (t == Type.AllZeros)
       label = "all zeros";
     else if (t == Type.Unconnected)
-      label = "unconnected (floating) signal";
+      label = "unconnected signal";
     else
       label = "unknown signal";
     activity = PinActivity.ACTIVE_HIGH;
@@ -218,6 +218,21 @@ public class BoardIO {
     if (PhysicalTypes.contains(t))
       throw new IllegalArgumentException("BoardIO type "+t+" is not meant for synthetic I/O resources");
     return new BoardIO(t, w, val);
+  }
+
+  public static BoardIO decodeSynthetic(String str, int w) {
+    if (str.startsWith("constant ")) {
+      int val = Integer.decode(str.substring(9));
+      return makeSynthetic(Type.Constant, w, val);
+    } else if (str.equals("all zeros")) {
+      return makeSynthetic(Type.AllZeros, w, 0);
+    } else if (str.equals("all ones")) {
+      return makeSynthetic(Type.AllOnes, w, -1);
+    } else if (str.equals("unconnected signal")) {
+      return makeSynthetic(Type.Unconnected, w, 0);
+    } else {
+      return null;
+    }
   }
 
   // constructor for physical I/O resources
@@ -239,7 +254,7 @@ public class BoardIO {
   }
 
   public static BoardIO parseXml(Node node) throws Exception {
-    Type t = Type.get(node.getNodeName());
+    Type t = Type.getPhysicalType(node.getNodeName());
     if (t == Type.Unknown)
       throw new Exception("unrecognized I/O resource type: " + node.getNodeName());
 

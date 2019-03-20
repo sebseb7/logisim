@@ -34,7 +34,6 @@ import static com.cburch.logisim.file.Strings.S;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +46,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import com.bfh.logisim.fpga.PinBindings;
 import com.cburch.draw.model.AbstractCanvasObject;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.circuit.Circuit;
@@ -85,6 +85,9 @@ class XmlReader {
       // load appearance
       for (Element e : XmlIterator.forChildElements(elt, "appear"))
         loadAppearance(ctx, e, circ.getName() + ".appear");
+      // load fpga configs
+      for (Element e : XmlIterator.forChildElements(elt, "fpgaconfig"))
+        loadFPGAConfig(ctx, e, circ.getName() + ".fpgaconfig");
     }
 
     private void loadAppearance(ReadContext ctx, Element elt, String context) {
@@ -111,6 +114,14 @@ class XmlReader {
         } catch (RuntimeException e) {
           ctx.addError(S.fmt("fileAppearanceError", tag), context + "." + tag);
         }
+      }
+    }
+
+    private void loadFPGAConfig(ReadContext ctx, Element elt, String context) {
+      try {
+        circuit.saveFPGAConfig(PinBindings.parseConfig(elt));
+      } catch (Exception e) {
+        ctx.addError(S.fmt("fileFPGAConfigError", e.getMessage()), context);
       }
     }
 

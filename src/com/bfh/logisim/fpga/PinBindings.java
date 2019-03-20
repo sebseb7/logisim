@@ -36,10 +36,13 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.function.Function;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import com.bfh.logisim.gui.FPGAReport;
-import com.bfh.logisim.netlist.Path;
 import com.bfh.logisim.netlist.NetlistComponent;
+import com.bfh.logisim.netlist.Path;
+import com.cburch.logisim.file.XmlIterator;
 import com.cburch.logisim.std.wiring.Pin;
 import static com.bfh.logisim.netlist.Netlist.Int3;
 
@@ -160,19 +163,118 @@ public class PinBindings {
     }
   }
 
-  public PinBindings(FPGAReport err, Board board, HashMap<Path, NetlistComponent> components) {
+  public PinBindings(FPGAReport err, Board board,
+      HashMap<Path, NetlistComponent> components, Config config) {
     this.err = err;
 		this.components = components;
 		this.board = board;
+    if (config != null) {
+      Path root = null;
+      for (Path p : components.keySet()) {
+        root = p.root();
+        break;
+      }
+      if (root == null)
+        return; // don't bother, nothing to do
+      for (Config.Mapping m : config.mappings) {
+        try {
+          addMapping(m, root);
+        } catch (Exception e) {
+          err.AddInfo("Ignoring previously saved mapping: %s", e.getMessage());
+        }
+      }
+    }
+  }
+
+  private void addMapping(Config.Mapping m, Path root) throws Exception {
+    String relpath = m.src;
+    String srcPin = null;
+    int i = relpath.indexOf(" of ");
+    if (i > 0) {
+      srcPin = relpath.substring(0, i);
+      relpath = relpath.substring(i+4);
+    }
+    Path path = root.extend(relpath);
+    String destName = m.dest;
+    String destPin = null;
+    i = destName.indexOf(" of ");
+    if (i > 0) {
+      destPin = destName.substring(0, i);
+      destName = destName.substring(i+4);
+    }
+    BoardIO.Type type = BoardIO.Type.getPhysicalType(m.type);
+    if (type == BoardIO.Type.Unknown)
+      throw new Exception(m.type + " is not a valid type");
+    NetlistComponent comp = components.get(path);
+    if (comp == null)
+      throw new Exception("Path " + path + " no longer exists");
+    Int3 compWidth = widthFor(comp);
+    BoardIO io = findBoardIO(destName, compWidth.size());
+    if (io == null)
+      throw new Exception("I/O resource " + destName + " no longer exists");
+    if (!typesFor(comp).contains(type))
+      throw new Exception(type + " is no longer a supported type");
+    if (BoardIO.OneBitTypes.contains(type)) {
+      if (compWidth.size() > 1 && srcPin == null)
+        throw new Exception(type + " is only one bit, but " + compWidth.size() +
+            " bits needed for " + path);
+    } else {
+      if (compWidth.size() == 1 || srcPin != null)
+        throw new Exception(type + " is multi-bit, but only one bit needed for " + m.src);
+    }
+    int srcBit = -1;
+    if (srcPin != null) {
+      srcBit = indexOf(pinLabels(comp), srcPin);
+      if (srcBit < 0)
+        throw new Exception(srcPin + " is no longer part of " + path);
+    }
+    int destBit = -1;
+    if (BoardIO.PhysicalTypes.contains(io.type)) {
+      if (destPin != null) {
+        destBit = indexOf(io.pinLabels(), destPin);
+        if (destBit < 0)
+          throw new Exception(destPin + " is not part of I/O resource " + io);
+      }
+    } else {
+      if (destPin != null)
+        throw new Exception(m.dest + " is not a valid I/O resource");
+      if (io.type == BoardIO.Type.Unconnected) {
+        if (compWidth.in > 0)
+          throw new Exception("component expecting input can't be unconnected");
+      } else {
+        if (compWidth.out + compWidth.inout > 0)
+          throw new Exception("constant input can't be used for component that outputs");
+      }
+    }
+    Source src;
+    if (srcBit >= 0)
+      src = new Source(path, comp, srcBit, type, compWidth.forSingleBit());
+    else
+      src = new Source(path, comp, -1, type, compWidth);
+    addMapping(src, io, destBit, null);
 	}
 
-  public void setComponents(HashMap<Path, NetlistComponent> newComponents) {
-    // todo: preserve existing mappings wherever possible.
-    // For now, we just clear all mappings and reset components.
-    mappings.clear();
-    components.clear();
-    components.putAll(newComponents);
+  private static int indexOf(String[] a, String s) {
+    for (int i = 0; i < a.length; i++)
+      if (a[i].equals(s))
+        return i;
+    return -1;
   }
+
+  private BoardIO findBoardIO(String name, int width) {
+    for (BoardIO io : board)
+      if (io.toString().equals(name))
+        return io;
+    return BoardIO.decodeSynthetic(name, width);
+  }
+
+  // public void setComponents(HashMap<Path, NetlistComponent> newComponents) {
+  //   // todo: preserve existing mappings wherever possible.
+  //   // For now, we just clear all mappings and reset components.
+  //   mappings.clear();
+  //   components.clear();
+  //   components.putAll(newComponents);
+  // }
   
   // ToplevelHDLGenerator has a port for each bit of each physical I/O pin that
   // it uses (for hidden nets and/or top-level circuit pins). Commander calls
@@ -229,7 +331,10 @@ public class PinBindings {
   }
 
   public String[] pinLabels(Path path) {
-    NetlistComponent comp = components.get(path);
+    return pinLabels(components.get(path));
+  }
+
+  public String[] pinLabels(NetlistComponent comp) {
     if (comp.hiddenPort == null) {
       // Top-level input or output port.
       int w = comp.original.getEnd(0).getWidth().getWidth();
@@ -367,6 +472,11 @@ public class PinBindings {
           srcWidth, ioWidth);
       return modified;
     }
+    addMapping(src, io, bit, modified);
+    return modified;
+  }
+
+  private void addMapping(Source src, BoardIO io, int bit, HashSet<Source> modified) {
     // remove existing mappings from same source and mappings to same dest
     mappings.entrySet().removeIf(e -> {
       Source s = e.getKey();
@@ -375,13 +485,13 @@ public class PinBindings {
           s.path.equals(src.path) && (src.bit < 0 || s.bit < 0 || src.bit == s.bit);
       boolean samedest = 
           d.io == io && (bit < 0 || d.bit < 0 || bit == d.bit);
-      if (samesource || samedest)
+      if (modified != null && (samesource || samedest))
         modified.add(s);
       return samesource || samedest;
     });
-    modified.add(src);
+    if (modified != null)
+      modified.add(src);
     mappings.put(src, new Dest(io, bit));
-    return modified;
   }
 
   public String getStatus() { // result begins with "All" if and only if everything mapped
@@ -403,6 +513,98 @@ public class PinBindings {
       if (!isMapped(path))
         return false;
     return true;
+  }
+
+  public Config makeConfig(String boardname, String clkmode, int clkdiv) {
+    Config c = new Config(boardname, clkmode, clkdiv);
+    mappings.forEach((s, d) -> {
+      String src = s.path.relstr();
+      if (s.bit >= 0)
+        src = pinLabels(s.path)[s.bit] + " of " + src;
+      c.mappings.add(new Config.Mapping(src, s.type.toString(), d.toString()));
+    });
+    return c;
+  }
+
+  public static Config parseConfig(Element xml) throws Exception {
+    String boardname = xml.getAttribute("board");
+    if (boardname == null || boardname.isEmpty())
+      throw new Exception("missing boardname");
+    String clkmode = "reduced";
+    int clkdiv = 0;
+    for (Element clk : XmlIterator.forChildElements(xml, "clock")) {
+      clkmode = clk.getAttribute("mode");
+      if (clkmode == null || clkmode.isEmpty())
+        throw new Exception("missing clock mode");
+      else if (clkmode.equals("maximum"))
+        clkdiv = 0;
+      else if (clkmode.equals("dynamic"))
+        clkdiv = -1;
+      else if (clkmode.equals("reduced")) {
+        String s = clk.getAttribute("period");
+        if (s == null || s.isEmpty())
+          throw new Exception("missing period for reduced clock mode");
+        try {
+          clkdiv = Integer.parseInt(s);
+        } catch (Exception e) {
+          throw new Exception("invalid period for reduced clock mode: " + s);
+        }
+      }
+    }
+    Config c = new Config(boardname, clkmode, clkdiv);
+    for (Element m : XmlIterator.forChildElements(xml, "map")) {
+      String src = m.getAttribute("src");
+      if (src == null || src.isEmpty())
+        throw new Exception("missing pin mapping source");
+      String type = m.getAttribute("type");
+      if (type == null || type.isEmpty())
+        throw new Exception("missing pin mapping type");
+      String dest = m.getAttribute("dest");
+      if (dest == null || dest.isEmpty())
+        throw new Exception("missing pin mapping destination");
+      c.mappings.add(new Config.Mapping(src, type, dest));
+    }
+    return c;
+  }
+
+  public static class Config { // holds clock and pin config, to be saved in logisim file
+    public final String boardname; // e.g. "TERASIC_DE0"
+    public final ArrayList<Mapping> mappings = new ArrayList<>();
+    public String clkmode; // "maximum", "reduced", or "dynamic"
+    public int clkdiv; // only for "reduced" mode
+    
+    public static class Mapping {
+      public final String src, type, dest;
+      public Mapping(String s, String t, String d) {
+        src = s;
+        type = t;
+        dest = d;
+      }
+    }
+
+    public Config(String boardname, String clkmode, int clkdiv) {
+      this.boardname = boardname;
+      this.clkmode = clkmode;
+      this.clkdiv = clkdiv;
+    }
+
+    public Element toXml(Document doc) {
+      Element config = doc.createElement("fpgaconfig");
+      config.setAttribute("board", boardname);
+      Element clk = doc.createElement("clock");
+      clk.setAttribute("mode", clkmode);
+      if (clkmode.equals("reduced"))
+        clk.setAttribute("period", ""+clkdiv);
+      config.appendChild(clk);
+      for (Mapping m : mappings) {
+        Element map = doc.createElement("map");
+        map.setAttribute("src", m.src);
+        map.setAttribute("type", m.type);
+        map.setAttribute("dest", m.dest);
+        config.appendChild(map);
+      }
+      return config;
+    }
   }
 
 }
