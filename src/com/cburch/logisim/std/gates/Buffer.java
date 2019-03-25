@@ -161,7 +161,7 @@ class Buffer extends InstanceFactory {
   }
 
   @Override
-  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     if (ctx.lang.equals("VHDL"))
       return GateVhdlGenerator.forBuffer(ctx);
     else

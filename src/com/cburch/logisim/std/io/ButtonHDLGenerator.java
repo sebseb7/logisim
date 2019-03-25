@@ -37,17 +37,17 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class ButtonHDLGenerator extends HDLInliner {
 
-  private ButtonHDLGenerator(HDLCTX ctx, String name) {
+  private ButtonHDLGenerator(ComponentContext ctx, String name) {
     super(ctx, name);
   }
   
-  public static ButtonHDLGenerator forButton(HDLCTX ctx) {
+  public static ButtonHDLGenerator forButton(ComponentContext ctx) {
     ButtonHDLGenerator g = new ButtonHDLGenerator(ctx, "Button_${LABEL}");
     g.hiddenPort = HiddenPort.makeInport(1, HiddenPort.Button, HiddenPort.Pin);
     return g;
   }
 
-  public static ButtonHDLGenerator forDipSwitch(HDLCTX ctx) {
+  public static ButtonHDLGenerator forDipSwitch(ComponentContext ctx) {
     ButtonHDLGenerator g = new ButtonHDLGenerator(ctx, "DIPSwitch_${LABEL}");
     int n = ctx.attrs.getValue(DipSwitch.ATTR_SIZE).getWidth();
     g.hiddenPort = HiddenPort.makeInport(n, HiddenPort.DIPSwitch, HiddenPort.Button, HiddenPort.Ribbon, HiddenPort.Pin);

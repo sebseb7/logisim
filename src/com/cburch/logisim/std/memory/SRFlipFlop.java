@@ -64,7 +64,7 @@ public class SRFlipFlop extends AbstractFlipFlop {
   }
 
   @Override
-  protected FlipFlopHDLGenerator getHDLGenerator(HDLSupport.HDLCTX ctx) {
+  protected FlipFlopHDLGenerator getHDLGenerator(HDLSupport.ComponentContext ctx) {
     return new FlipFlopHDLGenerator(ctx, "SRFF", "S-R Flip-Flip",
         new String[]{ "S", "R" },
         "s_next_state <= (s_current_state_reg OR S) AND NOT(R);",

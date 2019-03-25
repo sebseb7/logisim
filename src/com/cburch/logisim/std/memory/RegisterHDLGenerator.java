@@ -34,7 +34,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class RegisterHDLGenerator extends HDLGenerator {
 
-  public RegisterHDLGenerator(HDLCTX ctx) {
+  public RegisterHDLGenerator(ComponentContext ctx) {
     super(ctx, "memory", "${TRIGGER}Register", "REGISTER");
     parameters.add("BitWidth", stdWidth());
     inPorts.add("D", "BitWidth", Register.IN, false);

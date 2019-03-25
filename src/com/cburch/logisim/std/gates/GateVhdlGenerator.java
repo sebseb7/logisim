@@ -42,7 +42,7 @@ public class GateVhdlGenerator extends HDLGenerator {
   protected final boolean identity;
   protected final boolean invertOutput;
 
-  protected GateVhdlGenerator(String name, HDLCTX ctx, boolean invertOutput) { // unary ops
+  protected GateVhdlGenerator(String name, ComponentContext ctx, boolean invertOutput) { // unary ops
     super(ctx, "gates", deriveHDLName(name, ctx.attrs), "i_Gate");
     this.op = null;
     this.identity = false;
@@ -50,7 +50,7 @@ public class GateVhdlGenerator extends HDLGenerator {
     setup(true);
   }
 
-  protected GateVhdlGenerator(String name, HDLCTX ctx, boolean identity, String op, boolean invertOutput) {
+  protected GateVhdlGenerator(String name, ComponentContext ctx, boolean identity, String op, boolean invertOutput) {
     super(ctx, "gates", deriveHDLName(name, ctx.attrs), "i_Gate");
     this.identity = identity;
     this.op = op;
@@ -96,14 +96,14 @@ public class GateVhdlGenerator extends HDLGenerator {
     return hdlName;
   }
 
-  static GateVhdlGenerator forBuffer(HDLCTX ctx) { return new GateVhdlGenerator("NOP_GATE", ctx, false); }
-  static GateVhdlGenerator forNot(HDLCTX ctx) { return new GateVhdlGenerator("NOT_GATE", ctx, true); }
-  static GateVhdlGenerator forAnd(HDLCTX ctx) { return new GateVhdlGenerator("AND_GATE", ctx, true, "AND", false); }
-  static GateVhdlGenerator forNand(HDLCTX ctx) { return new GateVhdlGenerator("NAND_GATE", ctx, true, "AND", true); }
-  static GateVhdlGenerator forOr(HDLCTX ctx) { return new GateVhdlGenerator("OR_GATE", ctx, false, "OR", false); }
-  static GateVhdlGenerator forNor(HDLCTX ctx) { return new GateVhdlGenerator("NOR_GATE", ctx, false, "OR", true); }
-  static GateVhdlGenerator forXor(HDLCTX ctx) { return new GateVhdlGenerator("XOR_GATE", ctx, false, "XOR", false); }
-  static GateVhdlGenerator forXnor(HDLCTX ctx) { return new GateVhdlGenerator("XNOR_GATE", ctx, false, "XOR", true); }
+  static GateVhdlGenerator forBuffer(ComponentContext ctx) { return new GateVhdlGenerator("NOP_GATE", ctx, false); }
+  static GateVhdlGenerator forNot(ComponentContext ctx) { return new GateVhdlGenerator("NOT_GATE", ctx, true); }
+  static GateVhdlGenerator forAnd(ComponentContext ctx) { return new GateVhdlGenerator("AND_GATE", ctx, true, "AND", false); }
+  static GateVhdlGenerator forNand(ComponentContext ctx) { return new GateVhdlGenerator("NAND_GATE", ctx, true, "AND", true); }
+  static GateVhdlGenerator forOr(ComponentContext ctx) { return new GateVhdlGenerator("OR_GATE", ctx, false, "OR", false); }
+  static GateVhdlGenerator forNor(ComponentContext ctx) { return new GateVhdlGenerator("NOR_GATE", ctx, false, "OR", true); }
+  static GateVhdlGenerator forXor(ComponentContext ctx) { return new GateVhdlGenerator("XOR_GATE", ctx, false, "XOR", false); }
+  static GateVhdlGenerator forXnor(ComponentContext ctx) { return new GateVhdlGenerator("XNOR_GATE", ctx, false, "XOR", true); }
 
   protected void unaryOp(Hdl out) {
     if (!invertOutput)

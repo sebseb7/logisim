@@ -251,10 +251,10 @@ abstract class AbstractFlipFlop extends InstanceFactory {
         GraphicsUtil.V_BASELINE);
   }
 
-  protected abstract FlipFlopHDLGenerator getHDLGenerator(HDLSupport.HDLCTX ctx);
+  protected abstract FlipFlopHDLGenerator getHDLGenerator(HDLSupport.ComponentContext ctx);
 
   @Override
-  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     if (ctx.attrs.getValue(ATTR_ENABLE))
       return null; // flip-flops with enable pin not yet supported
     return getHDLGenerator(ctx);

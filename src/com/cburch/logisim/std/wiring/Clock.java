@@ -204,7 +204,7 @@ public class Clock extends InstanceFactory {
   }
 
   @Override
-  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     // This returns support for CircuitHDLGenerator, etc.
     // Elsewhere, TopLevelHDLGenerator uses ClockHDLGenerator.CounterPart().
     return new ClockHDLGenerator.StubPart(ctx);

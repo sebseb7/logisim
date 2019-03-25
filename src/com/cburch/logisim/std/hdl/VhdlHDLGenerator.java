@@ -37,7 +37,7 @@ import com.cburch.logisim.instance.Port;
 
 public class VhdlHDLGenerator extends HDLGenerator {
 
-  public VhdlHDLGenerator(HDLCTX ctx) {
+  public VhdlHDLGenerator(ComponentContext ctx) {
     super(ctx, "circuit", deriveHDLName(ctx.attrs), "i_Vhdl");
     VhdlContent content = content();
     for (VhdlContent.Generic g : content.getGenerics()) {

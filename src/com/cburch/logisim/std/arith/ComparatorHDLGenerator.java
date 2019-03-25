@@ -34,7 +34,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class ComparatorHDLGenerator extends HDLGenerator {
 
-  public ComparatorHDLGenerator(HDLCTX ctx) {
+  public ComparatorHDLGenerator(ComponentContext ctx) {
     super(ctx, "arithmetic", "${BUS}Comparator", "i_Cmp");
     int w = stdWidth();
     if (w > 1) {

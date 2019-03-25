@@ -94,7 +94,7 @@ public class Comparator extends InstanceFactory {
   }
 
   @Override
-  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     return new ComparatorHDLGenerator(ctx);
   }
 

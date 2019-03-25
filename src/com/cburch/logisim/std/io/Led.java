@@ -111,7 +111,7 @@ public class Led extends InstanceFactory implements DynamicElementProvider {
   }
 
   @Override
-  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     return LightsHDLGenerator.forLed(ctx);
   }
 

@@ -37,7 +37,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class bin2bcdHDLGenerator extends HDLGenerator {
 
-  public bin2bcdHDLGenerator(HDLCTX ctx) {
+  public bin2bcdHDLGenerator(ComponentContext ctx) {
     super(ctx, "bfh", deriveHDLName(ctx.attrs), "i_BinToBcd");
     int w = bitWidth(_attrs);
     int n = numPorts(_attrs);

@@ -37,7 +37,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class DynamicClockHDLGenerator extends HDLInliner {
 
-  public DynamicClockHDLGenerator(HDLCTX ctx) {
+  public DynamicClockHDLGenerator(ComponentContext ctx) {
     super(ctx, "DynamicClock");
   }
 

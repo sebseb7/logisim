@@ -35,7 +35,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class DividerHDLGenerator extends HDLGenerator {
 
-  public DividerHDLGenerator(HDLCTX ctx) {
+  public DividerHDLGenerator(ComponentContext ctx) {
     super(ctx, "arithmetic", uMode(ctx.attrs) ? "UnsignedDivider" : "SignedDivider", "i_Div");
     // todo: 1-bit version?
     // todo: Verilog version

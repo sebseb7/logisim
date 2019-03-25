@@ -32,8 +32,6 @@ package com.cburch.logisim.comp;
 
 import java.awt.Color;
 
-import com.bfh.logisim.netlist.Netlist;
-import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.data.Attribute;
@@ -92,16 +90,10 @@ public interface ComponentFactory extends AttributeDefaultProvider {
    *         the feature.
    */
   public Object getFeature(Object key, AttributeSet attrs);
-  
-  public default boolean HDLSpecialHandling() { return false; }
 
   public default boolean HDLIgnore() { return false; }
 
-  public default HDLSupport getHDLSupport(String lang, FPGAReport err, Netlist nets, AttributeSet attrs, char vendor) {
-    return getHDLSupport(new HDLSupport.HDLCTX(lang, err, nets, attrs, vendor));
-  }
-
-  public default HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) { return null; }
+  public default HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) { return null; }
 
   public String getName();
 

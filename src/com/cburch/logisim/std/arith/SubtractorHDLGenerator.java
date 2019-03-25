@@ -34,7 +34,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class SubtractorHDLGenerator extends HDLGenerator {
 
-  public SubtractorHDLGenerator(HDLCTX ctx) {
+  public SubtractorHDLGenerator(ComponentContext ctx) {
     super(ctx, "arithmetic", "${BUS}Subtractor", "i_Sub");
     int w = stdWidth();
     if (w > 1) {

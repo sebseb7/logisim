@@ -34,7 +34,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class CounterHDLGenerator extends HDLGenerator {
 
-  public CounterHDLGenerator(HDLCTX ctx) {
+  public CounterHDLGenerator(ComponentContext ctx) {
     super(ctx, "memory", "Counter", "i_Ctr");
     parameters.add("BitWidth", stdWidth());
     parameters.add("MaxVal", _attrs.getValue(Counter.ATTR_MAX));

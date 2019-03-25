@@ -56,12 +56,12 @@ public class CircuitHDLGenerator extends HDLGenerator {
 	private Circuit circ;
   private Netlist _circNets; // netlist for this circ; _nets is for our parent
 
-	public CircuitHDLGenerator(HDLCTX ctx, Circuit circ) {
+	public CircuitHDLGenerator(ComponentContext ctx, Circuit circ) {
     super(ctx, "circuit",
         "Circuit_"+ CorrectLabel.getCorrectLabel(circ.getName().toUpperCase()),
         "i_Circ");
 		this.circ = circ;
-		this._circNets = circ.getNetlist();
+		this._circNets = ctx.getNetlist(circ);
     
     // Normal ports
     for (Component pin : circ.getNonWires()) {
@@ -99,7 +99,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
     outPorts.addVector("LOGISIM_HIDDEN_FPGA_OUTPUT", hidden.out, -1, null);
 
     // global clock buses
-    for (int i = 0; i < _circNets.getClockBus().shapes().size(); i++)
+    for (int i = 0; i < ctx.clockbus.shapes().size(); i++)
 			inPorts.add(ClockHDLGenerator.CLK_TREE_NET + i, ClockHDLGenerator.CLK_TREE_WIDTH, -1, null);
 
     // dynamic clock
@@ -165,7 +165,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
 			SubcircuitFactory sub = (SubcircuitFactory) comp.original.getFactory();
 
       // Clock trees
-      for (int i = 0; i < _circNets.getClockBus().shapes().size(); i++) {
+      for (int i = 0; i < ctx.clockbus.shapes().size(); i++) {
         String clkTree = ClockHDLGenerator.CLK_TREE_NET + i;
         map.add(clkTree, clkTree);
 			}
@@ -191,7 +191,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
       // Mappings for the circuit design under test, within the TopLevelHDLGenerator circuit
       
       // Clock trees
-      for (int i = 0; i < _circNets.getClockBus().shapes().size(); i++) {
+      for (int i = 0; i < ctx.clockbus.shapes().size(); i++) {
         String clkTree = ClockHDLGenerator.CLK_TREE_NET + i;
         map.add(clkTree, clkTree);
 			}

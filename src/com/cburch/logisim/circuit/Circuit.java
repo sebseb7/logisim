@@ -45,7 +45,6 @@ import java.util.TreeSet;
 import java.util.WeakHashMap;
 
 import com.bfh.logisim.fpga.PinBindings;
-import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Netlist;
@@ -124,7 +123,6 @@ public class Circuit implements AttributeDefaultProvider {
     public void endChanged(ComponentEvent e) {
       locker.checkForWritePermission("ends changed", Circuit.this);
       autoHdlAnnotationDone = false;
-      netlist.clear();
       Component comp = e.getSource();
       HashMap<Location, EndData> toRemove = toMap(e.getOldData());
       HashMap<Location, EndData> toAdd = toMap(e.getData());
@@ -168,7 +166,6 @@ public class Circuit implements AttributeDefaultProvider {
   private CircuitLocker locker;
 
   private WeakHashMap<Component, Circuit> circuitsUsingThis;
-  private Netlist netlist;
   private boolean autoHdlAnnotationDone;
 
   private LogisimFile logiFile;
@@ -179,7 +176,6 @@ public class Circuit implements AttributeDefaultProvider {
     subcircuitFactory = new SubcircuitFactory(this);
     locker = new CircuitLocker();
     circuitsUsingThis = new WeakHashMap<Component, Circuit>();
-    netlist = new Netlist(this);
     logiFile = file;
   }
 
@@ -209,7 +205,7 @@ public class Circuit implements AttributeDefaultProvider {
     }
   }
 
-  public void autoHdlAnnotate(boolean clearLabels, FPGAReport err, String lang, char vendor) {
+  public void autoHdlAnnotate(boolean clearLabels, Netlist.Context ctx) {
     if (autoHdlAnnotationDone)
       return;
 
@@ -225,10 +221,9 @@ public class Circuit implements AttributeDefaultProvider {
         sortedComps.add(comp);
       } else {
         // All other components that need a non-zero label have a generator.
-        HDLSupport g = comp.getFactory().getHDLSupport(
-            lang, err, 
-            null, /* no nets net */
-            comp.getAttributeSet(), vendor);
+        HDLSupport.ComponentContext subctx =
+            new HDLSupport.ComponentContext(ctx, null /* no nets */, comp.getAttributeSet());
+        HDLSupport g = comp.getFactory().getHDLSupport(subctx);
         if (g == null || !g.requiresUniqueLabel())
           continue;
         sortedComps.add(comp);
@@ -243,7 +238,7 @@ public class Circuit implements AttributeDefaultProvider {
         if (!label.isEmpty())
           continue;
         comp.getAttributeSet().setAttr(StdAttr.LABEL, "");
-        err.AddInfo("Cleared " + this.getName() + "/" + label);
+        ctx.err.AddInfo("Cleared " + this.getName() + "/" + label);
       }
     }
     
@@ -289,7 +284,7 @@ public class Circuit implements AttributeDefaultProvider {
        * "FPGACommanderGUI.java"
        */
       label = suggestion + "_" + id;
-      err.AddInfo("Labeled " + this.getName() + "/" + label);
+      ctx.err.AddInfo("Labeled " + this.getName() + "/" + label);
       comp.getAttributeSet().setAttr(StdAttr.LABEL, label);
       usedLabels.get(idx).add(label);
     }
@@ -298,23 +293,11 @@ public class Circuit implements AttributeDefaultProvider {
     for (Component comp : sortedComps) {
       if (comp.getFactory() instanceof SubcircuitFactory) {
         SubcircuitFactory sub = (SubcircuitFactory) comp.getFactory();
-        sub.getSubcircuit().autoHdlAnnotate(clearLabels, err, lang, vendor);
+        sub.getSubcircuit().autoHdlAnnotate(clearLabels, ctx);
       }
     }
 
     autoHdlAnnotationDone = true;
-  }
-
-  // Annotation module for all components that require a non-zero-length label
-  public void recursiveResetNetlists() {
-    autoHdlAnnotationDone = false;
-    netlist.clear();
-    for (Component comp : this.getNonWires()) {
-      if (comp.getFactory() instanceof SubcircuitFactory) {
-        SubcircuitFactory sub = (SubcircuitFactory) comp.getFactory();
-        sub.getSubcircuit().recursiveResetNetlists();
-      }
-    }
   }
 
   public boolean contains(Component c) {
@@ -565,10 +548,6 @@ public class Circuit implements AttributeDefaultProvider {
     return staticAttrs.getValue(CircuitAttributes.NAME_ATTR);
   }
 
-  public Netlist getNetlist() {
-    return netlist;
-  }
-
   public Set<Component> getNonWires() {
     return comps;
   }
@@ -672,7 +651,6 @@ public class Circuit implements AttributeDefaultProvider {
     locker.checkForWritePermission("add", this);
 
     autoHdlAnnotationDone = false;
-    netlist.clear();
     if (c instanceof Wire) {
       Wire w = (Wire) c;
       if (w.getEnd0().equals(w.getEnd1()))
@@ -710,7 +688,6 @@ public class Circuit implements AttributeDefaultProvider {
     comps = new HashSet<Component>();
     wires = new CircuitWires();
     clocks.clear();
-    netlist.clear();
     autoHdlAnnotationDone = false;
     for (Component comp : oldComps) {
       if (comp.getFactory() instanceof SubcircuitFactory) {
@@ -729,7 +706,6 @@ public class Circuit implements AttributeDefaultProvider {
     locker.checkForWritePermission("remove", this);
 
     autoHdlAnnotationDone = false;
-    netlist.clear();
     if (c instanceof Wire) {
       wires.remove(c);
     } else {

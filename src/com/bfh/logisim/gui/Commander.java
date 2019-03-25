@@ -747,9 +747,11 @@ public class Commander extends JFrame
     Circuit root = circuitsList.getSelectedValue();
     if (root == null)
       return; // huh?
-    if (clearExistingLabels)
-      root.recursiveResetNetlists();
-    root.autoHdlAnnotate(clearExistingLabels, err, lang, board.fpga.Vendor);
+    long oscFreq = board.fpga.ClockFrequency;
+    int clkPeriod = getClkPeriod();
+    Netlist.Context ctx = new Netlist.Context(lang, err, board.fpga.Vendor,
+        root, oscFreq, clkPeriod);
+    root.autoHdlAnnotate(clearExistingLabels, ctx);
     err.AddInfo("Annotation done");
     // TODO: Fix this dirty hack, see Circuit.Annotate() for details.
     proj.repaintCanvas();
@@ -846,18 +848,22 @@ public class Commander extends JFrame
       doSynthesisAndDownload(null);
     } else {
       AddInfo("Performing design rule checks (DRC)");
-      if (!performDRC()) {
+      long oscFreq = board.fpga.ClockFrequency;
+      int clkPeriod = getClkPeriod();
+      Netlist.Context ctx = new Netlist.Context(lang, err, board.fpga.Vendor,
+          root, oscFreq, clkPeriod);
+      if (!ctx.getNetlist(root).validate()) {
         AddErrors("DRC failed, synthesis can't continue.");
         return;
       }
       AddInfo("Performing pin assignment");
-      PinBindings pinBindings = performPinAssignments();
+      PinBindings pinBindings = performPinAssignments(ctx);
       if (pinBindings == null) {
         AddErrors("Pin assignment failed or is incomplete, synthesis can't continue.");
         return;
       }
       AddInfo("Generating HDL files");
-      if (!writeHDL(pinBindings)) {
+      if (!writeHDL(ctx, pinBindings)) {
         AddErrors("HDL file generation failed, synthesis can't continue.");
         return;
       }
@@ -1003,18 +1009,14 @@ public class Commander extends JFrame
       return;
     settings.SetHDLType(lang);
     settings.UpdateSettingsFile();
-    Circuit root = circuitsList.getSelectedValue();
-    if (root != null)
-      root.recursiveResetNetlists();
   }
 
-  private PinBindings performPinAssignments() {
+  private PinBindings performPinAssignments(Netlist.Context ctx) {
     board.printStats(err);
 
     Circuit root = circuitsList.getSelectedValue();
-    root.recursiveResetNetlists();
 
-    Netlist netlist = root.getNetlist();
+    Netlist netlist = ctx.getNetlist(root);
     String boardname = settings.GetSelectedBoard();
   
     PinBindings.Config config = root.getFPGAConfig(boardname);
@@ -1038,12 +1040,6 @@ public class Commander extends JFrame
     err.AddError("Some I/O-related components have not been assigned to I/O "
         + "resources on the FPGA board. All components must be assigned.");
     return null;
-  }
-
-  private boolean performDRC() {
-    Circuit root = circuitsList.getSelectedValue();
-    return root.getNetlist().validate(err, lang, board.fpga.Vendor,
-        board.fpga.ClockFrequency, getClkPeriod());
   }
 
   @Override
@@ -1087,8 +1083,7 @@ public class Commander extends JFrame
     return Integer.parseInt(item.toString());
   }
 
-  private boolean writeHDL(PinBindings pinBindings) {
-    Circuit root = circuitsList.getSelectedValue();
+  private boolean writeHDL(Netlist.Context ctx, PinBindings pinBindings) {
     String circdir = circuitWorkspace();
     if (!cleanDirectory(circdir))
       return false;
@@ -1099,10 +1094,10 @@ public class Commander extends JFrame
     // Generate HDL for top-level module and everything it contains, including
     // the root circuit (and all its subcircuits and components), the top-level
     // ticker (if needed), any clocks lifted to the top-level, etc.
-    ToplevelHDLGenerator g = new ToplevelHDLGenerator(lang, err,
-        board.fpga.Vendor, root, pinBindings);
+    ToplevelHDLGenerator g = new ToplevelHDLGenerator(ctx, pinBindings);
 
     g.notifyNetlistReady();
+    // Circuit root = circuitsList.getSelectedValue();
     // if (g.hdlDependsOnCircuitState()) { // for NVRAM
     //   CircuitState cs = getCircuitState(root);
     //   if (!g.writeAllHDLThatDependsOn(cs, null, null, circdir))

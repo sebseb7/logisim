@@ -52,7 +52,7 @@ public class RamHDLGenerator extends HDLGenerator {
     return lang.equals("VHDL") && separate && synch && (!nvram || vendor == 'A');
   }
 
-  public RamHDLGenerator(HDLCTX ctx) {
+  public RamHDLGenerator(ComponentContext ctx) {
     super(ctx, "memory", deriveHDLName(ctx.attrs), "i_RAM");
     // Address, DataOut0, then... DataOutX, DataInX, CLK, WE, LEX
     inPorts.add("Address", addrWidth(), Mem.ADDR, false);

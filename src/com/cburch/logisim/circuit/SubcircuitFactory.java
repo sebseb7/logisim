@@ -331,7 +331,7 @@ public class SubcircuitFactory extends InstanceFactory {
   }
 
   @Override
-  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     // don't need attrs, since circuit doesn't use them anyway
     return new CircuitHDLGenerator(ctx, this.source);
   }

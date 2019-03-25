@@ -156,10 +156,10 @@ public class TickHDLGenerator extends HDLGenerator {
   private long freq; // not currently used
   private int period;
 
-  public TickHDLGenerator(HDLCTX ctx, long clock_frequency, int tick_period) {
-    super(ctx, "base", deriveHdlName(tick_period), "i_TickGenerator");
-    freq = clock_frequency;
-    period = tick_period; // negative means dynamically adjustable period
+  public TickHDLGenerator(ComponentContext ctx) {
+    super(ctx, "base", deriveHdlName(ctx.clkPeriod), "i_TickGenerator");
+    freq = ctx.oscFreq;
+    period = ctx.clkPeriod; // negative means dynamically adjustable period
 
     inPorts.add("FPGAClock", 1, -1, null); // see getPortMappings below
 

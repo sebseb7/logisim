@@ -62,7 +62,7 @@ public class ClockHDLGenerator {
   public static String[] clkSignalFor(HDLGenerator downstream, int clkid) {
     String clkNet = CLK_TREE_NET + clkid + downstream._hdl.idx;
     String one = downstream._hdl.one;
-    if (downstream._nets.getClockBus().RawFPGAClock) {
+    if (downstream.ctx.clkPeriod == 0) {
       // Raw mode: use ck=CLK_RAW en=1 or ck=~CLK_RAW en=1
       if (downstream._attrs.getValue(StdAttr.EDGE_TRIGGER) == StdAttr.TRIG_FALLING 
           || downstream._attrs.getValue(StdAttr.TRIGGER) == StdAttr.TRIG_FALLING
@@ -92,7 +92,7 @@ public class ClockHDLGenerator {
 
   public static class StubPart extends HDLInliner {
 
-    public StubPart(HDLCTX ctx) {
+    public StubPart(ComponentContext ctx) {
       super(ctx, "ClockStub");
     }
 
@@ -110,22 +110,20 @@ public class ClockHDLGenerator {
   public static class CounterPart extends HDLGenerator {
 
     public final long id;
-    private final ClockBus clkbus;
     private final ClockBus.Shape shape;
 
-    public CounterPart(HDLCTX ctx, ClockBus.Shape shape, ClockBus clkbus, long id) {
+    public CounterPart(ComponentContext ctx, ClockBus.Shape shape, long id) {
       // Note: Only one declaration is made at the top level, so we can only
       // have one HDL implementation version of the counter here. If we wanted
       // multiple HDL implmentation versions here, ToplevelHDLGenerator would to
       // make one declaration for each version used in the circuit under test.
       super(ctx, "base", "LogisimClock", "i_ClockGen");
       this.shape = shape;
-      this.clkbus = clkbus;
       this.id = id;
       int hi = shape.hi;
       int lo = shape.lo;
       int ph = shape.ph;
-      int raw = clkbus.RawFPGAClock ? 1 : 0;
+      int raw = ctx.clkPeriod == 0 ? 1 : 0;
       if (raw == 1 && hi != lo)
         _err.AddFatalError("Clock component detected with " +hi+":"+lo+ " hi:lo duty cycle,"
             + " but maximum clock speed was selected. Only 1:1 duty cycle is supported with "

@@ -187,7 +187,7 @@ public class HDLGenerator extends HDLSupport {
   // will get a unique ID suffix: "i_Add" will become "i_Add_1", "i_Add_2", etc.
   protected final String hdlInstanceNamePrefix;
 
-  protected HDLGenerator(HDLCTX ctx, String subdir,
+  protected HDLGenerator(ComponentContext ctx, String subdir,
       String hdlComponentNameTemplate, String hdlInstanceNamePrefix) {
     super(ctx, hdlComponentNameTemplate, false);
     this.subdir = subdir;

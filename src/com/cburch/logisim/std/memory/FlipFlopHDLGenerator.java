@@ -37,7 +37,7 @@ public class FlipFlopHDLGenerator extends HDLGenerator {
   private String displayName;
   private String vhdlUpdate, verilogUpdate;
 
-  FlipFlopHDLGenerator(HDLCTX ctx, String name, String displayName,
+  FlipFlopHDLGenerator(ComponentContext ctx, String name, String displayName,
       String[] inportNames, String vhdlUpdate, String verilogUpdate) {
     super(ctx, "memory", "${TRIGGER}"+name, "i_"+name);
     this.displayName = displayName;

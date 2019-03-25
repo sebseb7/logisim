@@ -617,9 +617,6 @@ public class Pin extends InstanceFactory {
   }
 
   @Override
-  public boolean HDLSpecialHandling() { return true; }
-
-  @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
     if (attr == ATTR_TYPE) {
       configurePorts(instance);

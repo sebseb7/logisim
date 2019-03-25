@@ -34,7 +34,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class NegatorHDLGenerator extends HDLGenerator {
 
-  public NegatorHDLGenerator(HDLCTX ctx) {
+  public NegatorHDLGenerator(ComponentContext ctx) {
     super(ctx, "arithmetic", "${BUS}Negator", "i_Neg");
     int w = stdWidth();
     if (w > 1) {

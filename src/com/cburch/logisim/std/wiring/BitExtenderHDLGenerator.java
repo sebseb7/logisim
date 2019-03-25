@@ -36,7 +36,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class BitExtenderHDLGenerator extends HDLInliner {
 
-  public BitExtenderHDLGenerator(HDLCTX ctx) {
+  public BitExtenderHDLGenerator(ComponentContext ctx) {
     super(ctx, "BitExtender");
   }
 

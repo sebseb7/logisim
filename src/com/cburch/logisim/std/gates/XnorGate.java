@@ -83,7 +83,7 @@ class XnorGate extends AbstractGate {
   }
 
   @Override
-  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     if (ctx.lang.equals("VHDL"))
       return GateVhdlGenerator.forXnor(ctx);
     else

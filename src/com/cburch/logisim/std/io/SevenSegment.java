@@ -166,7 +166,7 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
   }
 
   @Override
-  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     return LightsHDLGenerator.forSevenSegment(ctx);
   }
 

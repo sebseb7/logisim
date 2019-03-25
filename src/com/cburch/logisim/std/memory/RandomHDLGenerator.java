@@ -34,7 +34,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class RandomHDLGenerator  extends HDLGenerator {
 
-  public RandomHDLGenerator(HDLCTX ctx) {
+  public RandomHDLGenerator(ComponentContext ctx) {
     super(ctx, "memory", "RNG", "i_Rng");
     int seed = _attrs.getValue(Random.ATTR_SEED);
     if (seed == 0)

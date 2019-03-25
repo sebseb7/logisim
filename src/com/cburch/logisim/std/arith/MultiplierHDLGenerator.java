@@ -35,7 +35,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class MultiplierHDLGenerator extends HDLGenerator {
 
-  public MultiplierHDLGenerator(HDLCTX ctx) {
+  public MultiplierHDLGenerator(ComponentContext ctx) {
     super(ctx, "arithmetic", uMode(ctx.attrs) ? "UnsignedMultiplier" : "SignedMultiplier", "i_Mult");
     // todo: 1-bit version?
     // todo: Verilog version

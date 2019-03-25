@@ -34,7 +34,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class hex2sevensegHDLGenerator extends HDLGenerator {
 
-  public hex2sevensegHDLGenerator(HDLCTX ctx) {
+  public hex2sevensegHDLGenerator(ComponentContext ctx) {
     super(ctx,"bfh", "Hex_to_7_Segment_Decoder", "i_HexTo7");
     inPorts.add("Hexin", 4, hex2sevenseg.Hexin, false);
     outPorts.add("Segment_A", 1, hex2sevenseg.Segment_A, null);

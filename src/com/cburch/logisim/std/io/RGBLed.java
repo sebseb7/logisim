@@ -140,7 +140,7 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
   }
 
   @Override
-  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     return LightsHDLGenerator.forRGBLed(ctx);
   }
 

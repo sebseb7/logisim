@@ -67,8 +67,64 @@ import com.cburch.logisim.std.wiring.Tunnel;
 // - hidden nets (needed for Button, Tty, Keyboard, subcircuit, and other I/O components)
 public class Netlist {
 
-  // Circuit for which we store connectivity info.
-	public final Circuit circ;
+  // Global parameters used for one complete generate-synthesis-download effort.
+  public static class Context {
+    public final String lang;
+    public final FPGAReport err;
+    public final char vendor;
+    public final Circuit circUnderTest;
+    public final long oscFreq;
+    public final int clkPeriod; // -1 means dynamic, 0 means raw, >0 means reduced speed
+    private final HashMap<Circuit, Netlist> circNets;
+    public final ClockBus clockbus;
+
+    public Context(String lang, FPGAReport err, char vendor, Circuit root,
+        long oscFreq, int clkPeriod) {
+      this.lang = lang;
+      this.err = err;
+      this.vendor = vendor;
+      this.circUnderTest = root;
+      this.oscFreq = oscFreq;
+      this.clkPeriod = clkPeriod;
+      this.circNets = new HashMap<>();
+      this.clockbus = new ClockBus(oscFreq, clkPeriod);
+    }
+
+    protected Context(Context ctx) {
+      lang = ctx.lang;
+      err = ctx.err;
+      vendor = ctx.vendor;
+      circUnderTest = ctx.circUnderTest;
+      oscFreq = ctx.oscFreq;
+      clkPeriod = ctx.clkPeriod;
+      circNets = ctx.circNets;
+      clockbus = ctx.clockbus;
+    }
+
+    public Netlist getNetlist(Circuit circ) {
+      Netlist n = circNets.get(circ);
+      if (n == null) {
+        n = new Netlist(circ, this);
+        circNets.put(circ, n);
+      }
+      return n;
+    }
+
+    public Netlist getNetlist(Component comp) {
+      if (!(comp.getFactory() instanceof SubcircuitFactory))
+        throw new IllegalArgumentException("expecting subcircuit shadow, got " + comp.getFactory());
+      SubcircuitFactory sub = (SubcircuitFactory)comp.getFactory();
+      return getNetlist(sub.getSubcircuit());
+    }
+
+    public Netlist getNetlist(NetlistComponent subcircShadow) {
+      return getNetlist(subcircShadow.original);
+    }
+  }
+
+  // Circuit and context for which we store connectivity info.
+  public final Context ctx;	
+  public final Circuit circ;
 
   // Signal nets, each defining a collection of connected points.
 	public final ArrayList<Net> nets = new ArrayList<>();
@@ -82,9 +138,6 @@ public class Netlist {
 	public final ArrayList<NetlistComponent> outpins = new ArrayList<>(); // Pin (output)
   private NetlistComponent dynClock; // DynamicClock
 
-  // Reference to the single global clock bus used by all Netlists in the design.
-	private ClockBus clockbus = null; // initialized later
-
   // Info about hidden networks, needed by certain I/O-related components.
 	private Int3 numHiddenBits = null; // initialized later
   
@@ -94,58 +147,22 @@ public class Netlist {
 	public Path currentPath; // set by CircuitHDLGenerator
 
   // Info about design rule checks.
-	private int status;
 	public static final int DRC_ERROR = -1;
 	public static final int DRC_REQUIRED = 0;
 	public static final int DRC_PASSED = 1;
+	private int status = DRC_REQUIRED;
 
-	public Netlist(Circuit c) {
-		circ = c;
-		clear();
+	public Netlist(Circuit circ, Context ctx) {
+		this.circ = circ;
+    this.ctx = ctx;
 	}
-
-	public void clear() {
-    if (status == DRC_REQUIRED)
-      return;
-		nets.clear();
-		netAt.clear();
-		components.clear();
-		subcircuits.clear();
-		clocks.clear();
-		inpins.clear();
-		outpins.clear();
-    dynClock = null;
-    if (clockbus != null) {
-      clockbus.clear();
-      clockbus = null;
-    }
-		numHiddenBits = null;
-    currentPath = null;
-		status = DRC_REQUIRED;
-	}
-
-	private void recursiveClear() {
-    clear();
-		for (Component comp : circ.getNonWires()) {
-			if (comp.getFactory() instanceof SubcircuitFactory) {
-				SubcircuitFactory fac = (SubcircuitFactory) comp.getFactory();
-				fac.getSubcircuit().getNetlist().recursiveClear();
-			}
-		}
-	}
-
+  
   // Primary entry point for performing design-rule-check (DRC) validation on
   // the Netlist for the top-level circuit.
-  public boolean validate(FPGAReport err, String lang, char vendor, 
-      long oscFreq, int clkPeriod) {
-    recursiveClear();
-
-    // Create global hidden clock bus at the top level.
-    clockbus = new ClockBus(oscFreq, clkPeriod);
+  public boolean validate() {
 
     // Recursively validate this Netlist and those of all subcircuits.
-    if (!recursiveValidate(err, lang, vendor, new ArrayList<>(), true)) {
-      recursiveClear();
+    if (!recursiveValidate(new ArrayList<>(), true)) {
       return false;
     }
 
@@ -163,17 +180,15 @@ public class Netlist {
 
     // Sanity check for effectively-blank designs at the top level.
     if (inpins.size() + outpins.size() + numHiddenBits.size() == 0) {
-      err.AddFatalError("Top-level circuit '%s' has no input pins, output pins, "
+      ctx.err.AddFatalError("Top-level circuit '%s' has no input pins, output pins, "
           + "or I/O devices, so would produce no visible behavior.", circ.getName());
-      recursiveClear();
       return false;
     }
 
     return true;
   }
 
-  private boolean recursiveValidate(FPGAReport err, String lang, char vendor,
-      ArrayList<String> sheets, boolean isTop) {
+  private boolean recursiveValidate(ArrayList<String> sheets, boolean isTop) {
 
     // Avoid re-validating when there are multiple instances of this circuit.
     if (status == DRC_PASSED)
@@ -184,7 +199,7 @@ public class Netlist {
     // Sanity check for identically named circuits or infinite recursion.
     String name = circ.getName();
     if (sheets.contains(name)) {
-			err.AddFatalError("Multiple circuits in your design are named '%s'."
+			ctx.err.AddFatalError("Multiple circuits in your design are named '%s'."
           + " Each circuit must have a unique name.", name);
       status = DRC_ERROR;
       return false;
@@ -192,7 +207,7 @@ public class Netlist {
     sheets.add(name);
 
     // Perform the actual DRC and cache the result.
-    if (!drc(err, lang, vendor, sheets, isTop)) {
+    if (!drc(sheets, isTop)) {
       status = DRC_ERROR;
       return false;
     }
@@ -200,14 +215,13 @@ public class Netlist {
     return true;
   }
 
-  private boolean drc(FPGAReport err, String lang, char vendor,
-      ArrayList<String> sheets, boolean isTop) {
+  private boolean drc(ArrayList<String> sheets, boolean isTop) {
 
     String circName = circ.getName();
 
     // DRC Step 1: Check for presence of tri-state devices or bidirectional
     // ports, neither of which are typically supported for HDL synthesis.
-		err.AddInfo("Checking for tri-state drivers or bidirectional ports in circuit '%s'.", circName);
+		ctx.err.AddInfo("Checking for tri-state drivers or bidirectional ports in circuit '%s'.", circName);
 		for (Component comp : circ.getNonWires()) {
       // Note: Splitters and Tunnels can be bidirectional, as those cases are
       // handled as special cases in buildNets().
@@ -218,15 +232,15 @@ public class Netlist {
       if (comp.getFactory().HDLIgnore())
         continue;
 			if (comp.getFactory().HasThreeStateDrivers(comp.getAttributeSet()))
-        return drcFail(err, comp, "component has tri-state output drivers or is configured "
+        return drcFail(comp, "component has tri-state output drivers or is configured "
             + "to allow floating outputs, features typically not supported for FPGA synthesis.");
       for (EndData end : comp.getEnds())
         if (end.getWidth().getWidth() > 0 && (end.isInput() && end.isOutput()))
-          return drcFail(err, comp, "component has a bidirectional port, a feature not yet supported.");
+          return drcFail(comp, "component has a bidirectional port, a feature not yet supported.");
     }
 
     // DRC Step 2: Validate names and labels for a few basic component types.
-    if (!CorrectLabel.IsCorrectLabel(circName, lang, "Circuit has illegal name.", err))
+    if (!CorrectLabel.IsCorrectLabel(circName, ctx.lang, "Circuit has illegal name.", ctx.err))
       return false;
     HashSet<String> pinNames = new HashSet<>();
 		for (Component comp : circ.getNonWires()) {
@@ -235,32 +249,32 @@ public class Netlist {
       if (comp.getFactory() instanceof Pin) {
 				String label = NetlistComponent.labelOf(comp);
         if (label == null || label.isEmpty())
-          return drcFail(err, comp, "for HDL synthesis, each pin is required to have a unique label. "
+          return drcFail(comp, "for HDL synthesis, each pin is required to have a unique label. "
               + "Add a label, or use the \"Annotate\" button above.");
 				if (!CorrectLabel.IsCorrectLabel(label,
-						lang, "Bad label for pin '"+nameOf(comp)+"' in circuit '"+circName+"'", err))
+						ctx.lang, "Bad label for pin '"+nameOf(comp)+"' in circuit '"+circName+"'", ctx.err))
 					return false;
         if (pinNames.contains(label))
-          return drcFail(err, comp, "pin has the same label as another pin in same circuit.");
+          return drcFail(comp, "pin has the same label as another pin in same circuit.");
         pinNames.add(label);
       } else if (comp.getFactory() instanceof SubcircuitFactory
           || comp.getFactory() instanceof VhdlEntity) {
         String compName = comp.getFactory().getName();
 				if (!CorrectLabel.IsCorrectLabel(compName,
-						lang, "Bad name for component '"+compName+"' in circuit '"+circName+"'", err))
+						ctx.lang, "Bad name for component '"+compName+"' in circuit '"+circName+"'", ctx.err))
 					return false;
 			}
     }
 
     // DRC Step 3: Check connectivity (e.g. splitters, tunnels, wires) and build nets.
-		err.AddInfo("Checking wire, tunnel, and splitter connectivity in circuit '%s'.", circName);
-		if (!buildNets(err, lang, vendor))
+		ctx.err.AddInfo("Checking wire, tunnel, and splitter connectivity in circuit '%s'.", circName);
+		if (!buildNets())
 			return false;
-    printNetlistStats(err);
+    printNetlistStats();
 
     // DRC Step 4: Create NetlistComponent shadow objects for each Component,
     // and perform sanity checks.
-    HDLSupport.HDLCTX ctx = new HDLSupport.HDLCTX(lang, err, this, null /* attrs */, vendor);
+    HDLSupport.ComponentContext subctx = new HDLSupport.ComponentContext(ctx, this, null /* attrs */);
 		for (Component comp : circ.getNonWires()) {
       if (comp.getFactory() instanceof SplitterFactory)
         continue;
@@ -268,9 +282,9 @@ public class Netlist {
         continue;
       if (comp.getFactory().HDLIgnore())
         continue;
-      NetlistComponent shadow = new NetlistComponent(comp, ctx);
+      NetlistComponent shadow = new NetlistComponent(comp, subctx);
       if (shadow.hdlSupport == null && !(comp.getFactory() instanceof Pin))
-        return drcFail(err, comp, "component does not support HDL generation.");
+        return drcFail(comp, "component does not support HDL generation.");
       components.add(shadow);
       if (comp.getFactory() instanceof SubcircuitFactory) 
         subcircuits.add(shadow);
@@ -284,9 +298,9 @@ public class Netlist {
         if (isTop && dynClock == null)
           dynClock = shadow;
         else if (isTop)
-          return drcFail(err, comp, "multiple dynamic clock controls found, but at most one allowed.");
+          return drcFail(comp, "multiple dynamic clock controls found, but at most one allowed.");
         else
-          return drcFail(err, comp, "dynamic clock control found in sub-circuit, but this is allowed only in main top-level circuit.");
+          return drcFail(comp, "dynamic clock control found in sub-circuit, but this is allowed only in main top-level circuit.");
       }
     }
 
@@ -302,35 +316,31 @@ public class Netlist {
         continue;
       String label = shadow.label();
       if (label.isEmpty())
-        return drcFail(err, comp, "a unique label is required for this component. "
+        return drcFail(comp, "a unique label is required for this component. "
             + "Run annotate, or manually add labels.");
       if (!CorrectLabel.IsCorrectLabel(label,
-            lang, "Bad label for component '"+nameOf(comp)+"' in circuit '"+circName+"'", err))
+            ctx.lang, "Bad label for component '"+nameOf(comp)+"' in circuit '"+circName+"'", ctx.err))
         return false;
       String name = shadow.hdlSupport.hdlComponentName;
       Component clash = namedComponents.get(name);
       if (clash != null)
-        return drcFail(err, comp, "component '%s' has same the same name, "
+        return drcFail(comp, "component '%s' has same the same name, "
             + "but labels must be unique within a circuit.", nameOf(clash));
       namedComponents.put(name, comp);
     }
 
     // DRC Step 6: Recurse to validate subcircuits.
     for (NetlistComponent shadow : subcircuits) {
-      Component comp = shadow.original;
-      SubcircuitFactory sub = (SubcircuitFactory)comp.getFactory();
-      Circuit subcirc = sub.getSubcircuit();
-      Netlist subnets = subcirc.getNetlist();
-      subnets.clockbus = clockbus;
-      if (!subnets.recursiveValidate(err, lang, vendor, sheets, false))
+      Netlist subnets = ctx.getNetlist(shadow);
+      if (!subnets.recursiveValidate(sheets, false))
         return false;
     }
 
-		err.AddInfo("Circuit '%s' passed all design rule checks.", circName);
+		ctx.err.AddInfo("Circuit '%s' passed all design rule checks.", circName);
     return true;
 	}
 
-  private void printNetlistStats(FPGAReport err) {
+  private void printNetlistStats() {
     int n = 0, b = 0;
 		for (Net net : nets) {
 			if (net.isBus())
@@ -338,7 +348,7 @@ public class Netlist {
       else
 				n++;
     }
-    err.AddInfo("Circuit '%s' contains %d signal nets and %d bus nets.", circ.getName(), n, b);
+    ctx.err.AddInfo("Circuit '%s' contains %d signal nets and %d bus nets.", circ.getName(), n, b);
   }
 
   private String nameOf(Component comp) {
@@ -350,10 +360,10 @@ public class Netlist {
       return String.format("'%s' with label '%s'", name, label);
   }
  
-  private boolean drcFail(FPGAReport err, Component comp, String msg, Object ...args) {
+  private boolean drcFail(Component comp, String msg, Object ...args) {
     String prefix = String.format("Component %s in circuit '%s': ",
         nameOf(comp), circ.getName());
-    err.AddSevereError(prefix + String.format(msg, args));
+    ctx.err.AddSevereError(prefix + String.format(msg, args));
     return false;
   }
 
@@ -401,9 +411,7 @@ public class Netlist {
 
     Int3 start = new Int3();
 		for (NetlistComponent shadow : subcircuits) {
-			SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
-      Circuit subcirc = sub.getSubcircuit();
-      Netlist subnets = subcirc.getNetlist();
+      Netlist subnets = ctx.getNetlist(shadow);
 
       if (!visited.contains(subnets))
         subnets.recursiveAssignLocalHiddenNets(visited);
@@ -426,9 +434,7 @@ public class Netlist {
 
 	private void recursiveAssignGlobalHiddenNets(Path path, Int3 start) {
 		for (NetlistComponent shadow : subcircuits) {
-			SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
-      Circuit subcirc = sub.getSubcircuit();
-      Netlist subnets = subcirc.getNetlist();
+      Netlist subnets = ctx.getNetlist(shadow);
       Path subpath = path.extend(shadow);
       subnets.recursiveAssignGlobalHiddenNets(subpath, start);
     }
@@ -455,7 +461,7 @@ public class Netlist {
     }
   }
 
-	private boolean buildNets(FPGAReport err, String lang, char vendor) {
+	private boolean buildNets() {
 		LinkedList<CopperTrace> traces = new LinkedList<>();
    
     // Make a CopperTrace for every wire.
@@ -525,7 +531,7 @@ public class Netlist {
         if (nw == 0)
           net.setBitWidth(w);
         else if (nw != w)
-          return drcFail(err, comp, "%d-bit port is connected to a %d-bit bus.", w, nw);
+          return drcFail(comp, "%d-bit port is connected to a %d-bit bus.", w, nw);
       }
     }
 
@@ -597,21 +603,21 @@ public class Netlist {
           else {
             String prefix = String.format("Component %s in circuit '%s': ",
                 nameOf(comp), circ.getName());
-            err.AddInfo("%s component is a sink, but no net connected at %s", prefix, pt);
+            ctx.err.AddInfo("%s component is a sink, but no net connected at %s", prefix, pt);
           }
         } else {
           if (net == null)
-            return drcFail(err, comp, "component is driving, but no net connected at %s", pt);
+            return drcFail(comp, "component is driving, but no net connected at %s", pt);
           Component c = net.getSourceComponent();
           if (c == null) {
             net.setSource(comp, idx);
           } else {
             if (c != comp)
-              return drcFail(err, comp, "component is driving a bus that is also "
+              return drcFail(comp, "component is driving a bus that is also "
                   + "driven by component %s.", nameOf(c));
             int endidx = net.getSourceEnd();
             if (endidx != idx)
-              return drcFail(err, comp, "port %d and port %d are both "
+              return drcFail(comp, "port %d and port %d are both "
                   + "driving the same bus.", idx, endidx);
           }
         }
@@ -685,7 +691,7 @@ public class Netlist {
                 small.setSourceForBit(s, net, b);
                 workingset.add(small);
               } else if (!sink.equals(src)) {
-                return drcFail(err, sp.splitter,
+                return drcFail(sp.splitter,
                     "splitter bit %d is being driven by both "
                     + " %s (port %d bit %d) and %s (port %d bit %d).",
                     b,
@@ -713,7 +719,7 @@ public class Netlist {
               big.setSourceForBit(b, net, s);
               workingset.add(big);
             } else if (!sink.equals(src)) {
-              return drcFail(err, sp.splitter,
+              return drcFail(sp.splitter,
                   "splitter bit %d is being driven by both %s (port %d bit %d) "
                   + " and %s (port %d bit %d).",
                   b,
@@ -737,7 +743,7 @@ public class Netlist {
       for (int b = 0; b < net.bitWidth(); b++) {
         if (net.getSourceForBit(b) == null) {
           Net.DirectSink sink = net.getSinks().get(0);
-          return drcFail(err, sink.comp,
+          return drcFail(sink.comp,
               "component port %d is connected to a %d-bit bus with some "
               + "undriven signals (e.g. bit %d)",
               sink.end, net.bitWidth(), b);
@@ -753,9 +759,7 @@ public class Netlist {
   private void recursiveEnumerateNetlists(Path path, HashMap<Path, Netlist> netlists) {
     netlists.put(path, this);
 		for (NetlistComponent shadow : subcircuits) {
-      SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
-      Circuit subcirc = sub.getSubcircuit();
-      Netlist subnets = subcirc.getNetlist();
+      Netlist subnets = ctx.getNetlist(shadow);
       Path subpath = path.extend(shadow);
       subnets.recursiveEnumerateNetlists(subpath, netlists);
     }
@@ -764,9 +768,7 @@ public class Netlist {
 	private void recursiveTraceClockNets(Path path, HashMap<Path, Netlist> netlists) {
     traceClockNets(path, netlists);
 		for (NetlistComponent shadow : subcircuits) {
-      SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
-      Circuit subcirc = sub.getSubcircuit();
-      Netlist subnets = subcirc.getNetlist();
+      Netlist subnets = ctx.getNetlist(shadow);
       Path subpath = path.extend(shadow);
       subnets.recursiveTraceClockNets(subpath, netlists);
     }
@@ -776,7 +778,7 @@ public class Netlist {
 	private void traceClockNets(Path path, HashMap<Path, Netlist> netlists) {
     for (NetlistComponent shadow : clocks) {
       Component clk = shadow.original;
-      int clkid = clockbus.id(clk);
+      int clkid = ctx.clockbus.id(clk);
       Net clknet = netAt.get(clk.getEnd(0).getLocation());
       traceClockNet(clkid, clknet, 0, path, netlists);
     }
@@ -789,7 +791,7 @@ public class Netlist {
   private void traceClockNet(int clkid, Net net, int bit, Path path, HashMap<Path, Netlist> netlists) {
 
     // Start by marking Path:net:bit.
-    if (!clockbus.associate(clkid, path, net, bit))
+    if (!ctx.clockbus.associate(clkid, path, net, bit))
       return; // already marked this net and all downstream signals.
 
     // Then find and mark all downstream signals from net:bit.
@@ -798,9 +800,7 @@ public class Netlist {
     for (Net.DirectSink sink : net.getSinks()) {
       if (!(sink.comp.getFactory() instanceof SubcircuitFactory))
         continue;
-      SubcircuitFactory sub = (SubcircuitFactory)sink.comp.getFactory();
-      Circuit subcirc = sub.getSubcircuit();
-      Netlist subnets = subcirc.getNetlist();
+      Netlist subnets = ctx.getNetlist(sink.comp);
       Path subpath = path.extend(sink.comp);
       NetlistComponent shadow = shadowForSubcirc(subpath);
       // within child, find the Pin that corresponds to this end
@@ -880,9 +880,7 @@ public class Netlist {
 	private void getMappableComponents(HashMap<Path, NetlistComponent> result, Path path) {
     // components in subcircuits
     for (NetlistComponent shadow : subcircuits) {
-      SubcircuitFactory sub = (SubcircuitFactory)shadow.original.getFactory();
-      Circuit subcirc = sub.getSubcircuit();
-      Netlist subnets = subcirc.getNetlist();
+      Netlist subnets = ctx.getNetlist(shadow);
       Path subpath = path.extend(shadow);
       subnets.getMappableComponents(result, subpath);
     }
@@ -923,12 +921,8 @@ public class Netlist {
     return s;
   }
 
-  public ClockBus getClockBus() {
-    return clockbus;
-  }
-
   public int getClockId(Net net) {
-    return clockbus.id(currentPath, net, 0);
+    return ctx.clockbus.id(currentPath, net, 0);
   }
 
   public String circName() {

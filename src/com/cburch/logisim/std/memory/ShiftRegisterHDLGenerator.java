@@ -37,7 +37,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class ShiftRegisterHDLGenerator extends HDLGenerator {
 
-  public ShiftRegisterHDLGenerator(HDLCTX ctx) {
+  public ShiftRegisterHDLGenerator(ComponentContext ctx) {
     super(ctx, "memory", deriveHDLName(ctx.attrs), "i_Shft");
     int w = stdWidth();
     int n = stages();

@@ -64,7 +64,7 @@ public class JKFlipFlop extends AbstractFlipFlop {
   }
 
   @Override
-  protected FlipFlopHDLGenerator getHDLGenerator(HDLSupport.HDLCTX ctx) {
+  protected FlipFlopHDLGenerator getHDLGenerator(HDLSupport.ComponentContext ctx) {
     return new FlipFlopHDLGenerator(ctx, "JKFF", "J-K Flip-Flip",
         new String[]{ "J", "K" },
         "s_next_state <= (NOT(s_current_state_reg) AND J) OR (s_current_state_reg AND NOT(K));",

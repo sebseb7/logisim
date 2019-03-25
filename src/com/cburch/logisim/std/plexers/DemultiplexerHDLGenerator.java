@@ -35,7 +35,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class DemultiplexerHDLGenerator extends HDLGenerator {
 
-  public DemultiplexerHDLGenerator(HDLCTX ctx) {
+  public DemultiplexerHDLGenerator(ComponentContext ctx) {
     super(ctx, "plexers", deriveHDLName(ctx.attrs), "i_Demux");
     int w = stdWidth();
     int ws = selWidth();

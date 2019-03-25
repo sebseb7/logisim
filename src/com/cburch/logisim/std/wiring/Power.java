@@ -105,7 +105,7 @@ public class Power extends InstanceFactory {
   }
 
   @Override
-  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     return new ConstantHDLGenerator(ctx, -1); // vector of ones
   }
 

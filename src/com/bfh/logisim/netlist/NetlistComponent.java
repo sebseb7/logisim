@@ -116,7 +116,7 @@ public class NetlistComponent {
   //   (Bar)/Foo0/RGBLed    [2:0]
 	private HashMap<Path, Range3> globalIndices = new HashMap<>();
 
-	public NetlistComponent(Component comp, HDLSupport.HDLCTX ctx) {
+	public NetlistComponent(Component comp, HDLSupport.ComponentContext ctx) {
     ComponentFactory factory = comp.getFactory();
     AttributeSet attrs = comp.getAttributeSet();
 
@@ -133,7 +133,7 @@ public class NetlistComponent {
       // this.hiddenPort = isTop ? HiddenPort.forPin(comp) : null;
       this.hiddenPort = null;
     } else {
-      this.hdlSupport = factory.getHDLSupport(ctx.lang, ctx.err, ctx.nets, attrs, ctx.vendor);
+      this.hdlSupport = factory.getHDLSupport(ctx);
       this.hiddenPort = hdlSupport != null ? hdlSupport.hiddenPort() : null;
     }
 	}

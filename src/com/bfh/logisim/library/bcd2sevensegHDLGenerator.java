@@ -34,7 +34,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class bcd2sevensegHDLGenerator extends HDLGenerator{
 
-  public bcd2sevensegHDLGenerator(HDLCTX ctx) {
+  public bcd2sevensegHDLGenerator(ComponentContext ctx) {
     super(ctx, "bfh", "BCD_to_7_Segment_decoder", "i_Bcd");
     inPorts.add("BCDin", 4, bcd2sevenseg.BCDin, false);
     outPorts.add("Segment_A", 1, bcd2sevenseg.Segment_A, null);

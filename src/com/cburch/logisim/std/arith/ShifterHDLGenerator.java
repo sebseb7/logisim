@@ -34,7 +34,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class ShifterHDLGenerator extends HDLGenerator {
 
-  public ShifterHDLGenerator(HDLCTX ctx) {
+  public ShifterHDLGenerator(ComponentContext ctx) {
     super(ctx, "arithmetic", "Shifter_${WIDTH}_bit", "i_Shift");
     int w = stdWidth();
     int n = stages();

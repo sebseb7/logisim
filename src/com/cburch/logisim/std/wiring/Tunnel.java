@@ -149,9 +149,6 @@ public class Tunnel extends InstanceFactory {
   }
 
   @Override
-  public boolean HDLSpecialHandling() { return true; }
-
-  @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
     if (attr == StdAttr.FACING) {
       configureLabel(instance);

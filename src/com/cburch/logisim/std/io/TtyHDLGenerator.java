@@ -29,21 +29,17 @@
  */
 package com.cburch.logisim.std.io;
 
-import java.util.ArrayList;
-
-import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.bfh.logisim.hdlgenerator.HiddenPort;
 import com.cburch.logisim.hdl.Hdl;
 
 public class TtyHDLGenerator extends HDLGenerator {
 
-  public TtyHDLGenerator(HDLCTX ctx) {
+  public TtyHDLGenerator(ComponentContext ctx) {
     super(ctx, "io", "Tty_${LABEL}", "i_Tty");
     int w = Tty.getWidth(_attrs.getValue(Tty.ATTR_WIDTH));
     parameters.add("AsciiWidth", w);
-    long freq = _nets.getClockBus().RawFPGAClockFreq;
-    long period_ns = 1000000000 / freq;
+    long period_ns = 1000000000 / ctx.oscFreq;
     parameters.add("CLK_PERIOD_NS", (int)period_ns);
 
     // todo: support CLR

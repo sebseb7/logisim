@@ -35,7 +35,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class BitSelectorHDLGenerator extends HDLGenerator {
 
-  public BitSelectorHDLGenerator(HDLCTX ctx) {
+  public BitSelectorHDLGenerator(ComponentContext ctx) {
     super(ctx, "plexers", deriveHDLName(ctx.attrs), "i_BitSel");
     parameters.add("WidthSel", selWidth());
     parameters.add("WidthIn", stdWidth());

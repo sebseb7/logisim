@@ -180,7 +180,7 @@ public class Constant extends InstanceFactory {
   }
 
   @Override
-  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     return new ConstantHDLGenerator(ctx, ctx.attrs.getValue(Constant.ATTR_VALUE));
   }
 

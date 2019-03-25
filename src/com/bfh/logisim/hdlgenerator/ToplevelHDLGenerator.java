@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import com.bfh.logisim.fpga.BoardIO;
 import com.bfh.logisim.fpga.PinActivity;
 import com.bfh.logisim.fpga.PinBindings;
-import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.library.DynamicClock;
 import com.bfh.logisim.netlist.ClockBus;
 import com.bfh.logisim.netlist.Netlist;
@@ -59,7 +58,6 @@ public class ToplevelHDLGenerator extends HDLGenerator {
   private TickHDLGenerator ticker;
   private ArrayList<ClockHDLGenerator.CounterPart> clkgens = new ArrayList<>();
   private CircuitHDLGenerator circgen;
-  private HDLCTX ctx;
 
   // There is no parent netlist for TopLevel, because it is not embedded inside
   // anything. There are no attributes either.
@@ -68,23 +66,14 @@ public class ToplevelHDLGenerator extends HDLGenerator {
   // so we can leave them empty. So both can use a single context with null nets
   // and empty attributes.
 	
-  public ToplevelHDLGenerator(String lang, FPGAReport err, char vendor,
-			Circuit circUnderTest, PinBindings ioResources) {
-    this(new HDLCTX(lang, err, null /*nets*/, null /*attrs*/, vendor),
-      circUnderTest, ioResources);
-  }
+  public ToplevelHDLGenerator(Netlist.Context ctx, PinBindings ioResources) {
+    super(new ComponentContext(ctx, null, null), "toplevel", HDL_NAME, "i_Toplevel");
 
-	private ToplevelHDLGenerator(HDLCTX ctx, Circuit circUnderTest, PinBindings ioResources) {
-    super(ctx, "toplevel", HDL_NAME, "i_Toplevel");
-
-		this.circUnderTest = circUnderTest;
+		this.circUnderTest = ctx.circUnderTest;
 		this.ioResources = ioResources;
-    this.ctx = ctx;
 
-    _circNets = circUnderTest.getNetlist();
-    int numclk = _circNets.getClockBus().shapes().size();
-		long fpgaClockFreq = _circNets.getClockBus().RawFPGAClockFreq;
-		int tickerPeriod = _circNets.getClockBus().TickerPeriod;
+    _circNets = ctx.getNetlist(circUnderTest);
+    int numclk = ctx.clockbus.shapes().size();
 
     // raw oscillator input
     ioResources.requiresOscillator = numclk > 0;
@@ -132,15 +121,15 @@ public class ToplevelHDLGenerator extends HDLGenerator {
       wires.add("s_LOGISIM_DYNAMIC_CLOCK", w);
     }
 
+    ComponentContext subctx = new ComponentContext(ctx, null, null);
 		if (numclk > 0) {
-			ticker = new TickHDLGenerator(ctx, fpgaClockFreq, tickerPeriod);
-      ClockBus clkbus = _circNets.getClockBus();
+			ticker = new TickHDLGenerator(subctx);
 			long id = 0;
-      for (ClockBus.Shape shape : _circNets.getClockBus().shapes())
-        clkgens.add(new ClockHDLGenerator.CounterPart(ctx, shape, clkbus, id++));
+      for (ClockBus.Shape shape : ctx.clockbus.shapes())
+        clkgens.add(new ClockHDLGenerator.CounterPart(subctx, shape, id++));
     }
 
-		circgen = new CircuitHDLGenerator(ctx, circUnderTest);
+		circgen = new CircuitHDLGenerator(subctx, circUnderTest);
 	}
 
   // Top-level entry point: write all HDL files for the project.

@@ -102,10 +102,8 @@ public class DynamicClock extends InstanceFactory {
 	public void propagate(InstanceState state) { }
 
   @Override
-  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     return new DynamicClockHDLGenerator(ctx);
   }
 	
-//   @Override
-//   public boolean HDLSpecialHandling() { return true; }
 }

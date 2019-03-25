@@ -37,7 +37,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class PriorityEncoderHDLGenerator extends HDLGenerator {
 
-  public PriorityEncoderHDLGenerator(HDLCTX ctx) {
+  public PriorityEncoderHDLGenerator(ComponentContext ctx) {
     super(ctx, "plexers", deriveHDLName(ctx.attrs), "i_PriEnc");
     int ws = selWidth();
     int n = (1 << ws);

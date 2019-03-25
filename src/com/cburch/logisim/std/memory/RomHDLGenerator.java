@@ -39,7 +39,7 @@ public class RomHDLGenerator extends HDLGenerator {
     return lang.equals("VHDL") || Mem.lineSize(attrs) == 1; // TODO: Verilog support
   }
 
-  public RomHDLGenerator(HDLCTX ctx) {
+  public RomHDLGenerator(ComponentContext ctx) {
     super(ctx, "memory", "ROM_${CIRCUIT}_${LABEL}", "i_ROM");
     inPorts.add("Address", addrWidth(), Mem.ADDR, false);
     outPorts.add("Data", dataWidth(), Mem.DATA, null);

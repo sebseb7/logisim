@@ -34,7 +34,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class AdderHDLGenerator extends HDLGenerator {
 
-  public AdderHDLGenerator(HDLCTX ctx) {
+  public AdderHDLGenerator(ComponentContext ctx) {
     super(ctx, "arithmetic", "${BUS}Adder", "i_Add");
     int w = stdWidth();
     if (w > 1) {

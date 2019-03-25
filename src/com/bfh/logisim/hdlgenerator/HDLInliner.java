@@ -32,7 +32,7 @@ package com.bfh.logisim.hdlgenerator;
 
 public class HDLInliner extends HDLSupport {
   
-  protected HDLInliner(HDLCTX ctx, String hdlComponentNameTemplate) {
+  protected HDLInliner(ComponentContext ctx, String hdlComponentNameTemplate) {
     super(ctx, hdlComponentNameTemplate, true);
   }
 

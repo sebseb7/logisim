@@ -38,14 +38,14 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class KeyboardHDLGenerator extends HDLGenerator {
 
-  public KeyboardHDLGenerator(HDLCTX ctx) {
+  public KeyboardHDLGenerator(ComponentContext ctx) {
     super(ctx, "io", "Keyboard_${CIRCUIT}_${LABEL}", "i_Kbd");
     int w = _attrs.getValue(Keyboard.ATTR_WIDTH);
     int d = _attrs.getValue(Keyboard.ATTR_BUFFER);
     parameters.add("AsciiWidth", w);
     parameters.add("FIFO_DEPTH", d);
     // See HDL code below for explanation of these parameters.
-    long freq = _nets.getClockBus().RawFPGAClockFreq;
+    long freq = ctx.oscFreq;
     int counter_size = (int)Math.ceil(Math.log(5.0*freq/1e6) / Math.log(2));
     parameters.add("clk_freq", (int)freq);
     parameters.add("counter_size", counter_size);

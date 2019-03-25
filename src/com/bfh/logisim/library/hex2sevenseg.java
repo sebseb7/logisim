@@ -244,7 +244,7 @@ public class hex2sevenseg extends InstanceFactory {
 	}	
 
   @Override
-  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     if (ctx.lang.equals("VHDL"))
       return new hex2sevensegHDLGenerator(ctx);
     else

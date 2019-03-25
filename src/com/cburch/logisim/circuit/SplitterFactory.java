@@ -145,9 +145,6 @@ public class SplitterFactory extends AbstractComponentFactory {
   }
 
   @Override
-  public boolean HDLSpecialHandling() { return true; }
-
-  @Override
   public void paintIcon(ComponentDrawContext c, int x, int y,
       AttributeSet attrs) {
     Graphics g = c.getGraphics();

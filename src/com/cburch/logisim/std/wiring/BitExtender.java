@@ -108,7 +108,7 @@ public class BitExtender extends InstanceFactory {
   }
 
   @Override
-  public HDLSupport getHDLSupport(HDLSupport.HDLCTX ctx) {
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     return new BitExtenderHDLGenerator(ctx);
   }
 

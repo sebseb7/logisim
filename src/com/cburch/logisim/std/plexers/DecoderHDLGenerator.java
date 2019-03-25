@@ -35,7 +35,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class DecoderHDLGenerator extends HDLGenerator {
 
-  public DecoderHDLGenerator(HDLCTX ctx) {
+  public DecoderHDLGenerator(ComponentContext ctx) {
     super(ctx, "plexers", deriveHDLName(ctx.attrs), "i_Decoder");
     int ws = selWidth();
     int n = (1 << ws);

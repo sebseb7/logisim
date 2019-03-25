@@ -43,22 +43,21 @@ import com.cburch.logisim.instance.StdAttr;
 
 public abstract class HDLSupport {
 
-  // Helper used in constructors to facilitate adding/removing params.
-  public static class HDLCTX {
-    public final String lang;
-    public final FPGAReport err;
+  // Parameters used for one specific component or (sub)circuit within a
+  // generate-synthesis-download effort.
+  public static class ComponentContext extends Netlist.Context {
     public final Netlist nets;
     public final AttributeSet attrs;
-    public final char vendor;
-    public HDLCTX(String lang, FPGAReport err, Netlist nets, AttributeSet attrs, char vendor) {
-      this.lang = lang;
-      this.err = err;
+    public ComponentContext(Netlist.Context ctx /* for entire effort */,
+        Netlist nets /* for circuit containing this component, if any */,
+        AttributeSet attrs /* for this component, if any */) {
+      super(ctx);
       this.nets = nets;
       this.attrs = attrs != null ? attrs : AttributeSets.EMPTY;
-      this.vendor = vendor;
     }
   }
 
+  public final ComponentContext ctx;
   public final String _projectName; // context - fixme
   // Name for HDL module (i.e. base name of HDL file for generated components,
   // and the GUI display name for both generated and inlined components). Must
@@ -80,7 +79,9 @@ public abstract class HDLSupport {
   public final boolean inlined;
   public final Hdl _hdl;
 
-  protected HDLSupport(HDLCTX ctx, String hdlComponentNameTemplate, boolean inlined) {
+  protected HDLSupport(ComponentContext ctx,
+      String hdlComponentNameTemplate, boolean inlined) {
+    this.ctx = ctx;
     this._projectName = ctx.err.getProjectName();
     this._lang = ctx.lang;
     this._err = ctx.err;
