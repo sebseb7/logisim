@@ -45,13 +45,14 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 
+import javax.swing.BorderFactory;
 import javax.swing.Icon;
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFormattedTextField;
-import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-import javax.swing.BorderFactory;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 
@@ -107,10 +108,12 @@ public class Pin extends InstanceFactory {
       PinAttributes attrs = (PinAttributes) state.getAttributeSet();
       tristate = (attrs.threeState && attrs.pull == PULL_NONE);
 
-      setTitle("Enter Decimal");
+      setTitle(S.get(radix == RadixOption.RADIX_10_SIGNED
+            ? "pinEditSignedDecimalTitle"
+            : "pinEditSignedDecimalTitle"));
       GridBagConstraints gbc = new GridBagConstraints();
-      final JButton ok = new JButton("OK");
-      final JButton cancel = new JButton("Cancel");
+      final JButton ok = new JButton(S.get("okOption"));
+      final JButton cancel = new JButton(S.get("cancelOption"));
       ok.addActionListener(new ActionListener() {
         public void actionPerformed(ActionEvent e) {
           accept();
@@ -152,21 +155,37 @@ public class Pin extends InstanceFactory {
         }
         public void changedUpdate(DocumentEvent e) { }
       });
+      text.addKeyListener(this);
+      text.setBorder(BorderFactory.createCompoundBorder(
+            text.getBorder(),
+            BorderFactory.createEmptyBorder(3, 3, 3, 3)));
+      text.setBackground(VALID_COLOR);
 
+      gbc.fill = GridBagConstraints.HORIZONTAL;
+      gbc.weightx = 1.0;
+      gbc.insets = new Insets(8, 4, 8, 4);
       gbc.gridx = 0;
-      gbc.gridy = 1;
+      gbc.gridy = 2;
       add(cancel, gbc);
-      gbc.gridx = 1;
-      gbc.gridy = 1;
+      gbc.gridx++;
       add(ok, gbc);
+      gbc.fill = GridBagConstraints.NONE;
+
       gbc.gridx = 0;
       gbc.gridy = 0;
       gbc.gridwidth = GridBagConstraints.REMAINDER;
       gbc.anchor = GridBagConstraints.BASELINE;
-      gbc.insets = new Insets(8, 4, 8, 4);
-      text.addKeyListener(this);
-      text.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-      text.setBackground(VALID_COLOR);
+
+      long lo, hi;
+      if (radix == RadixOption.RADIX_10_SIGNED) {
+        lo = -(1L << (bitWidth-1));
+        hi = (1L << bitWidth-1) - 1;
+      } else {
+        lo = 0;
+        hi = (1L << bitWidth) - 1;
+      }
+      add(new JLabel(S.fmt(tristate ? "pinEditRangeTristate" : "pinEditRange", lo, hi)), gbc);
+      gbc.gridy++;
       add(text, gbc);
 
       pack();
@@ -299,11 +318,6 @@ public class Pin extends InstanceFactory {
     }
 
     private boolean handleBitPress(InstanceState state, int bit, RadixOption radix, java.awt.Component src, char ch) {
-      PinAttributes attrs = (PinAttributes) state.getAttributeSet();
-      if (!attrs.isInput()) {
-        return false;
-      }
-
       if (src instanceof Canvas && !state.isCircuitRoot()) {
         Canvas canvas = (Canvas)src;
         CircuitState circState = canvas.getCircuitState();
@@ -329,6 +343,7 @@ public class Pin extends InstanceFactory {
       if (bit+r > width.getWidth())
         r = width.getWidth() - bit;
       Value val[] = pinState.intendedValue.getAll();
+      PinAttributes attrs = (PinAttributes) state.getAttributeSet();
       boolean tristate = (attrs.threeState && attrs.pull == PULL_NONE);
       if (ch == 0) {
         boolean zeros = true, ones = true, defined = true;
@@ -382,11 +397,15 @@ public class Pin extends InstanceFactory {
 
     @Override
     public void mousePressed(InstanceState state, MouseEvent e) {
+      if (!((PinAttributes)state.getAttributeSet()).isInput())
+        return;
       bitPressed = getBit(state, e);
     }
 
     @Override
     public void mouseReleased(InstanceState state, MouseEvent e) {
+      if (!((PinAttributes)state.getAttributeSet()).isInput())
+        return;
       RadixOption radix = state.getAttributeValue(RadixOption.ATTRIBUTE);
       if (radix == RadixOption.RADIX_10_SIGNED || radix == RadixOption.RADIX_10_UNSIGNED) {
         EditDecimal dialog = new EditDecimal(state);
@@ -410,6 +429,8 @@ public class Pin extends InstanceFactory {
 
     @Override
     public void keyTyped(InstanceState state, KeyEvent e) {
+      if (!((PinAttributes)state.getAttributeSet()).isInput())
+        return;
       char ch = e.getKeyChar();
       RadixOption radix = state.getAttributeValue(RadixOption.ATTRIBUTE);
       if (radix == RadixOption.RADIX_10_SIGNED || radix == RadixOption.RADIX_10_UNSIGNED)
