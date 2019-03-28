@@ -37,7 +37,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import com.bfh.logisim.gui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.bfh.logisim.hdlgenerator.CircuitHDLGenerator;
 import com.bfh.logisim.library.DynamicClock;
 import com.bfh.logisim.netlist.NetlistComponent;
@@ -50,6 +49,7 @@ import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.std.wiring.Clock;
@@ -77,6 +77,7 @@ public class Netlist {
     public final int clkPeriod; // -1 means dynamic, 0 means raw, >0 means reduced speed
     private final HashMap<Circuit, Netlist> circNets;
     public final ClockBus clockbus;
+    public final Hdl hdl;
 
     public Context(String lang, FPGAReport err, char vendor, Circuit root,
         long oscFreq, int clkPeriod) {
@@ -88,6 +89,7 @@ public class Netlist {
       this.clkPeriod = clkPeriod;
       this.circNets = new HashMap<>();
       this.clockbus = new ClockBus(oscFreq, clkPeriod);
+      this.hdl = new Hdl(lang, err);
     }
 
     protected Context(Context ctx) {
@@ -99,6 +101,7 @@ public class Netlist {
       clkPeriod = ctx.clkPeriod;
       circNets = ctx.circNets;
       clockbus = ctx.clockbus;
+      this.hdl = ctx.hdl;
     }
 
     public Netlist getNetlist(Circuit circ) {
@@ -274,7 +277,6 @@ public class Netlist {
 
     // DRC Step 4: Create NetlistComponent shadow objects for each Component,
     // and perform sanity checks.
-    HDLSupport.ComponentContext subctx = new HDLSupport.ComponentContext(ctx, this, null /* attrs */);
 		for (Component comp : circ.getNonWires()) {
       if (comp.getFactory() instanceof SplitterFactory)
         continue;
@@ -282,7 +284,7 @@ public class Netlist {
         continue;
       if (comp.getFactory().HDLIgnore())
         continue;
-      NetlistComponent shadow = new NetlistComponent(comp, subctx);
+      NetlistComponent shadow = new NetlistComponent(comp, this);
       if (shadow.hdlSupport == null && !(comp.getFactory() instanceof Pin))
         return drcFail(comp, "component does not support HDL generation.");
       components.add(shadow);

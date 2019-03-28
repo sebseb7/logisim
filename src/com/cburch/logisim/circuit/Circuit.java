@@ -222,7 +222,7 @@ public class Circuit implements AttributeDefaultProvider {
       } else {
         // All other components that need a non-zero label have a generator.
         HDLSupport.ComponentContext subctx =
-            new HDLSupport.ComponentContext(ctx, null /* no nets */, comp.getAttributeSet());
+            new HDLSupport.ComponentContext(ctx, null /* no nets */, comp);
         HDLSupport g = comp.getFactory().getHDLSupport(subctx);
         if (g == null || !g.requiresUniqueLabel())
           continue;

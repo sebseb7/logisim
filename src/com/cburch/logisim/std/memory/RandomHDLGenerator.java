@@ -58,16 +58,20 @@ public class RandomHDLGenerator  extends HDLGenerator {
     wires.add("s_mac_hi_1_next", 24);
     wires.add("s_mac_hi_in_2", 24);
     wires.add("s_busy_pipe_next", 2);
-    registers.add("s_current_seed", 48);
-    registers.add("s_reset_reg", 3);
-    registers.add("s_mult_shift_reg", 36);
-    registers.add("s_seed_shift_reg", 48);
-    registers.add("s_start_reg", 1);
-    registers.add("s_mac_lo_reg", 25);
-    registers.add("s_mac_hi_reg", 24);
-    registers.add("s_mac_hi_1_reg", 24);
-    registers.add("s_busy_pipe_reg", 2);
-    registers.add("s_output_reg", "BitWidth");
+      
+    String initialSeed = ctx.hdl.isVhdl
+        ? "X\"0005DEECE66D\" WHEN Seed = 0 ELSE X\"0000\"&std_logic_vector(to_unsigned(Seed,32))"
+        : "(Seed) ? Seed : 48'h5DEECE66D";
+    registers.add("s_current_seed", 48, initialSeed);
+    registers.add("s_reset_reg", 3, ctx.hdl.allZeros);
+    registers.add("s_mult_shift_reg", 36, ctx.hdl.allZeros);
+    registers.add("s_seed_shift_reg", 48, ctx.hdl.allZeros);
+    registers.add("s_start_reg", 1, ctx.hdl.zero);
+    registers.add("s_mac_lo_reg", 25, ctx.hdl.allZeros);
+    registers.add("s_mac_hi_reg", 24, ctx.hdl.allZeros);
+    registers.add("s_mac_hi_1_reg", 24, ctx.hdl.allZeros);
+    registers.add("s_busy_pipe_reg", 2, ctx.hdl.allZeros);
+    registers.add("s_output_reg", "BitWidth", ctx.hdl.allZeros);
   }
 
   @Override

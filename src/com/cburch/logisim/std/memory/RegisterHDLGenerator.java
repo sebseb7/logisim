@@ -43,7 +43,7 @@ public class RegisterHDLGenerator extends HDLGenerator {
     outPorts.add("Q", "BitWidth", Register.OUT, false);
     clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", Register.CK);
 
-    registers.add("s_state_reg", "BitWidth");
+    registers.add("s_state_reg", "BitWidth", ctx.hdl.allZeros);
   }
 
   @Override

@@ -49,9 +49,9 @@ public class CounterHDLGenerator extends HDLGenerator {
     outPorts.add("CompareOut", 1, Counter.CARRY, null);
 
     wires.add("s_real_enable", 1);
-    registers.add("s_counter_value", "BitWidth");
-    registers.add("s_next_counter_value", "BitWidth");
-    registers.add("s_carry", 1);
+    registers.add("s_counter_value", "BitWidth", ctx.hdl.allZeros);
+    registers.add("s_next_counter_value", "BitWidth", null); // not a real register
+    registers.add("s_carry", 1, null); // not a real register
   }
 
   @Override

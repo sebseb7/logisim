@@ -42,7 +42,6 @@ import com.bfh.logisim.hdlgenerator.HiddenPort;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.comp.EndData;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.Pin;
 
@@ -116,15 +115,14 @@ public class NetlistComponent {
   //   (Bar)/Foo0/RGBLed    [2:0]
 	private HashMap<Path, Range3> globalIndices = new HashMap<>();
 
-	public NetlistComponent(Component comp, HDLSupport.ComponentContext ctx) {
+	public NetlistComponent(Component comp, Netlist circNets) {
     ComponentFactory factory = comp.getFactory();
-    AttributeSet attrs = comp.getAttributeSet();
 
 		this.original = comp;
 
     ArrayList<Net> nets = new ArrayList<>();
     for (EndData end : comp.getEnds())
-      nets.add(ctx.nets.netAt.get(end.getLocation()));
+      nets.add(circNets.netAt.get(end.getLocation()));
     this.portConnections = Collections.unmodifiableList(nets);
 
     if (factory instanceof Pin) {
@@ -133,7 +131,9 @@ public class NetlistComponent {
       // this.hiddenPort = isTop ? HiddenPort.forPin(comp) : null;
       this.hiddenPort = null;
     } else {
-      this.hdlSupport = factory.getHDLSupport(ctx);
+      HDLSupport.ComponentContext subctx =
+          new HDLSupport.ComponentContext(circNets.ctx, circNets, comp);
+      this.hdlSupport = factory.getHDLSupport(subctx);
       this.hiddenPort = hdlSupport != null ? hdlSupport.hiddenPort() : null;
     }
 	}

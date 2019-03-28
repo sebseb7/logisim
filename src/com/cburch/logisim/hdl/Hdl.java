@@ -57,6 +57,7 @@ public class Hdl extends ArrayList<String> {
   public final String one;            // '1'                       1b'1
   public final String unconnected;    // open                      (emptystring)
   public final String not;            // not                       ~
+  public final String allZeros;       // (others => '0')           0
 
   private int indent = 0;
   private String tab = "";
@@ -86,6 +87,7 @@ public class Hdl extends ArrayList<String> {
       one = "'1'";
       unconnected = "open";
       not = "not";
+      allZeros = "(others => '0')";
     } else {
       assn = "assign %s \t= %s;";
       bitAssn = "assign %s[%d] \t= %s;";
@@ -99,6 +101,7 @@ public class Hdl extends ArrayList<String> {
       one = "1b'1";
       unconnected = "";
       not = "~";
+      allZeros = "0";
     }
   }
 

@@ -35,6 +35,7 @@ import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.netlist.Path;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.data.BitWidth;
@@ -47,12 +48,15 @@ public abstract class HDLSupport {
   // generate-synthesis-download effort.
   public static class ComponentContext extends Netlist.Context {
     public final Netlist nets;
+    public final Component comp; // null for some top-level things
     public final AttributeSet attrs;
     public ComponentContext(Netlist.Context ctx /* for entire effort */,
         Netlist nets /* for circuit containing this component, if any */,
-        AttributeSet attrs /* for this component, if any */) {
+        Component comp) {
       super(ctx);
       this.nets = nets;
+      this.comp = comp;
+      AttributeSet attrs = comp == null ? null : comp.getAttributeSet();
       this.attrs = attrs != null ? attrs : AttributeSets.EMPTY;
     }
   }
@@ -170,9 +174,13 @@ public abstract class HDLSupport {
     if (s.contains("${LABEL}")) {
       String label = _attrs.getValueOrElse(StdAttr.LABEL, "");
       if (label.isEmpty()) {
-        if (_err != null)
-          _err.AddSevereWarning("Missing a required label for component within circuit \"%s\". "
-              + " Name template is: %s.", circuitName, s);
+        if (_err != null) {
+          String name = ctx.comp == null ? "some component" : NetlistComponent.labelOf(ctx.comp);
+          _err.AddFatalError("Missing label for %s within circuit \"%s\"."
+              + " Please give this component a unique label, or use the"
+              + " annotate function above to auto-label all components."
+              + " (HDL module template was: %s)", name, circuitName, s);
+        }
         label = "ANONYMOUS";
       }
       s = s.replace("${LABEL}", label);

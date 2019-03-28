@@ -55,7 +55,7 @@ public class FlipFlopHDLGenerator extends HDLGenerator {
     inPorts.add("Preset", 1, portnum++, false);
 
     wires.add("s_next_state", 1);
-    registers.add("s_current_state_reg", 1);
+    registers.add("s_current_state_reg", 1, ctx.hdl.zero);
   }
 
   @Override

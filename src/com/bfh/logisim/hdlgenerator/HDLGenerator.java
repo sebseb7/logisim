@@ -74,7 +74,7 @@ public class HDLGenerator extends HDLSupport {
     }
   }
 
-  // Details of signals for wire and registers.
+  // Details of wire signals.
   protected static class WireInfo {
     final String name; // signal name
     final String width; // generic param, or param expression, or constant integer
@@ -96,6 +96,24 @@ public class HDLGenerator extends HDLSupport {
       // See: Hdl.typeForWidth() and its use below.
       if (width > 0)
         add(new WireInfo(name, "("+width+")"));
+    }
+  }
+
+  // Details of register signals.
+  protected static class RegisterInfo extends WireInfo {
+    final String initialValue; // null for no initial value
+    RegisterInfo(String n, String w, String i) {
+      super(n, w);
+      initialValue = i;
+    }
+  }
+
+  public static class RegisterList extends ArrayList<RegisterInfo> {
+    public void add(String name, String width, String initialValue) {
+      add(new RegisterInfo(name, width, initialValue));
+    }
+    public void add(String name, int width, String initialValue) {
+      add(new RegisterInfo(name, ""+width, initialValue));
     }
   }
 
@@ -154,7 +172,7 @@ public class HDLGenerator extends HDLSupport {
 
   // Wires and registers, which appear before the "begin" statement in VHDL.
   protected final WireList wires = new WireList();
-  protected final WireList registers = new WireList();
+  protected final RegisterList registers = new RegisterList();
 
   // Components that have a clock input (like Keyboard, Tty, Register, etc.)
   // don't put the clock input into inPorts because the clock needs special
@@ -233,8 +251,11 @@ public class HDLGenerator extends HDLSupport {
       if (!wires.isEmpty() || !registers.isEmpty()) {
         for (WireInfo s : wires)
           out.stmt("signal %s : %s;", s.name, out.typeForWidth(s.width));
-        for (WireInfo s : registers)
-          out.stmt("signal %s : %s;", s.name, out.typeForWidth(s.width));
+        for (RegisterInfo s : registers)
+          if (s.initialValue == null)
+            out.stmt("signal %s : %s;", s.name, out.typeForWidth(s.width));
+          else
+            out.stmt("signal %s : %s := %s;", s.name, out.typeForWidth(s.width), s.initialValue);
         out.stmt();
 			}
       out.dedent();
@@ -297,8 +318,11 @@ public class HDLGenerator extends HDLSupport {
       if (!wires.isEmpty())
         out.stmt();
 
-      for (WireInfo s : registers)
-        out.stmt("reg %s%s;", out.typeForWidth(s.width), s.name);
+      for (RegisterInfo s : registers)
+        if (s.initialValue == null)
+          out.stmt("reg %s%s;", out.typeForWidth(s.width), s.name);
+        else
+          out.stmt("reg %s%s = %s;", out.typeForWidth(s.width), s.name, s.initialValue);
       if (!registers.isEmpty())
         out.stmt();
 

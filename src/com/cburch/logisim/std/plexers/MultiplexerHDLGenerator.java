@@ -55,7 +55,7 @@ public class MultiplexerHDLGenerator extends HDLGenerator {
     }
 
     if (_lang.equalsIgnoreCase("Verilog"))
-      registers.add("s_vec", bitWidth);
+      registers.add("s_vec", bitWidth, null); // not an actual register
   }
 
   private static String deriveHDLName(AttributeSet attrs) {

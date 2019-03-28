@@ -91,6 +91,8 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 
     // internal clock networks
 		if (numclk > 0) {
+      wires.add(TickHDLGenerator.FPGA_CLKp_NET, 1);
+      wires.add(TickHDLGenerator.FPGA_CLKn_NET, 1);
       wires.add(TickHDLGenerator.FPGA_TICK_NET, 1);
 			for (int i = 0; i < numclk; i++)
 				wires.add(ClockHDLGenerator.CLK_TREE_NET+i,
@@ -123,7 +125,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 
     ComponentContext subctx = new ComponentContext(ctx, null, null);
 		if (numclk > 0) {
-			ticker = new TickHDLGenerator(subctx);
+			ticker = new TickHDLGenerator(subctx, dynClock);
 			long id = 0;
       for (ClockBus.Shape shape : ctx.clockbus.shapes())
         clkgens.add(new ClockHDLGenerator.CounterPart(subctx, shape, id++));
