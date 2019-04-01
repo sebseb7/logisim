@@ -48,6 +48,8 @@ public class CounterHDLGenerator extends HDLGenerator {
     outPorts.add("CountValue", "BitWidth", Counter.OUT, null);
     outPorts.add("CompareOut", 1, Counter.CARRY, null);
 
+    clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", Counter.CK);
+
     wires.add("s_real_enable", 1);
     registers.add("s_counter_value", "BitWidth", ctx.hdl.allZeros);
     registers.add("s_next_counter_value", "BitWidth", null); // not a real register
@@ -82,13 +84,13 @@ public class CounterHDLGenerator extends HDLGenerator {
       out.stmt("make_carry : PROCESS( Direction , s_counter_value )");
       out.stmt("BEGIN");
       out.stmt("   IF (Direction = '0') THEN");
-      out.stmt("      IF (s_counter_value = std_logic_vector(to_unsigned(0,width))) THEN");
+      out.stmt("      IF (s_counter_value = std_logic_vector(to_unsigned(0,BitWidth))) THEN");
       out.stmt("         s_carry <= '1';");
       out.stmt("      ELSE");
       out.stmt("         s_carry <= '0';");
       out.stmt("      END IF; -- Down counting");
       out.stmt("   ELSE");
-      out.stmt("      IF (s_counter_value = std_logic_vector(to_unsigned(max_val,width))) THEN");
+      out.stmt("      IF (s_counter_value = std_logic_vector(to_unsigned(MaxVal,BitWidth))) THEN");
       out.stmt("         s_carry <= '1';");
       out.stmt("      ELSE");
       out.stmt("         s_carry <= '0';");
@@ -112,7 +114,7 @@ public class CounterHDLGenerator extends HDLGenerator {
       out.stmt("      CASE (Mode) IS");
       out.stmt("         WHEN  0     => IF (s_carry = '1') THEN");
       out.stmt("                           IF (v_downcount = '1') THEN ");
-      out.stmt("                              s_next_counter_value <= std_logic_vector(to_unsigned(max_val,width));");
+      out.stmt("                              s_next_counter_value <= std_logic_vector(to_unsigned(MaxVal,BitWidth));");
       out.stmt("                                                  ELSE ");
       out.stmt("                              s_next_counter_value <= (OTHERS => '0');");
       out.stmt("                           END IF;");
@@ -148,7 +150,7 @@ public class CounterHDLGenerator extends HDLGenerator {
       out.stmt("always@(*)");
       out.stmt("begin");
       out.stmt("   if (Direction)");
-      out.stmt("         s_carry = (s_counter_value == max_val) ? 1'b1 : 1'b0;");
+      out.stmt("         s_carry = (s_counter_value == MaxVal) ? 1'b1 : 1'b0;");
       out.stmt("   else");
       out.stmt("         s_carry = (s_counter_value == 0) ? 1'b1 : 1'b0;");
       out.stmt("end");
@@ -163,7 +165,7 @@ public class CounterHDLGenerator extends HDLGenerator {
       out.stmt("   else if ((Mode==0)&s_carry&Direction)");
       out.stmt("      s_next_counter_value = 0;");
       out.stmt("   else if ((Mode==0)&s_carry)");
-      out.stmt("      s_next_counter_value = max_val;");
+      out.stmt("      s_next_counter_value = MaxVal;");
       out.stmt("   else if (Direction)");
       out.stmt("      s_next_counter_value = s_counter_value + 1;");
       out.stmt("   else");

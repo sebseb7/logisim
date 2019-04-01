@@ -37,24 +37,24 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class LightsHDLGenerator extends HDLInliner {
 
-  public LightsHDLGenerator(ComponentContext ctx, String name) {
-    super(ctx, name);
+  public LightsHDLGenerator(ComponentContext ctx) {
+    super(ctx);
   }
 
   public static LightsHDLGenerator forLed(ComponentContext ctx) {
-    LightsHDLGenerator g = new LightsHDLGenerator(ctx, "LED_${LABEL}");
+    LightsHDLGenerator g = new LightsHDLGenerator(ctx);
     g.hiddenPort = HiddenPort.makeOutport(1, HiddenPort.LED, HiddenPort.Pin);
     return g;
   }
 
   public static LightsHDLGenerator forRGBLed(ComponentContext ctx) {
-    LightsHDLGenerator g = new LightsHDLGenerator(ctx, "RGBLED_${LABEL}");
+    LightsHDLGenerator g = new LightsHDLGenerator(ctx);
     g.hiddenPort = HiddenPort.makeOutport(RGBLed.pinLabels(), HiddenPort.RGBLED, HiddenPort.LED, HiddenPort.Ribbon, HiddenPort.Pin);
     return g;
   }
 
   public static LightsHDLGenerator forSevenSegment(ComponentContext ctx) {
-    LightsHDLGenerator g = new LightsHDLGenerator(ctx, "SevenSegment_${LABEL}");
+    LightsHDLGenerator g = new LightsHDLGenerator(ctx);
     g.hiddenPort = HiddenPort.makeOutport(SevenSegment.pinLabels(),
         HiddenPort.SevenSegment, HiddenPort.LED, HiddenPort.Pin);
     return g;

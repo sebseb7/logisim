@@ -38,6 +38,7 @@ import java.util.LinkedList;
 
 import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.CircuitHDLGenerator;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.bfh.logisim.library.DynamicClock;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.netlist.Path;
@@ -78,6 +79,7 @@ public class Netlist {
     private final HashMap<Circuit, Netlist> circNets;
     public final ClockBus clockbus;
     public final Hdl hdl;
+    private final int[] prevSeqno;
 
     public Context(String lang, FPGAReport err, char vendor, Circuit root,
         long oscFreq, int clkPeriod) {
@@ -90,6 +92,7 @@ public class Netlist {
       this.circNets = new HashMap<>();
       this.clockbus = new ClockBus(oscFreq, clkPeriod);
       this.hdl = new Hdl(lang, err);
+      this.prevSeqno = new int[1];
     }
 
     protected Context(Context ctx) {
@@ -101,7 +104,8 @@ public class Netlist {
       clkPeriod = ctx.clkPeriod;
       circNets = ctx.circNets;
       clockbus = ctx.clockbus;
-      this.hdl = ctx.hdl;
+      hdl = ctx.hdl;
+      prevSeqno = ctx.prevSeqno;
     }
 
     public Netlist getNetlist(Circuit circ) {
@@ -122,6 +126,10 @@ public class Netlist {
 
     public Netlist getNetlist(NetlistComponent subcircShadow) {
       return getNetlist(subcircShadow.original);
+    }
+
+    public int seqno() {
+      return ++prevSeqno[0];
     }
   }
 
@@ -250,7 +258,7 @@ public class Netlist {
       if (comp.getFactory().HDLIgnore())
         continue; // Text, Probe, and other similarly irrelevant components
       if (comp.getFactory() instanceof Pin) {
-				String label = NetlistComponent.labelOf(comp);
+				String label = HDLSupport.deriveHdlPathName(comp);
         if (label == null || label.isEmpty())
           return drcFail(comp, "for HDL synthesis, each pin is required to have a unique label. "
               + "Add a label, or use the \"Annotate\" button above.");
@@ -314,21 +322,14 @@ public class Netlist {
       Component comp = shadow.original;
       if (comp.getFactory() instanceof Pin)
         continue; // handled above
-      if (!shadow.hdlSupport.requiresUniqueLabel())
+      String name = shadow.pathName();
+      if (name == null)
         continue;
-      String label = shadow.label();
-      if (label.isEmpty())
-        return drcFail(comp, "a unique label is required for this component. "
-            + "Run annotate, or manually add labels.");
-      if (!CorrectLabel.IsCorrectLabel(label,
-            ctx.lang, "Bad label for component '"+nameOf(comp)+"' in circuit '"+circName+"'", ctx.err))
-        return false;
-      String name = shadow.hdlSupport.hdlComponentName;
-      Component clash = namedComponents.get(name);
+      Component clash = namedComponents.put(name, comp);
       if (clash != null)
-        return drcFail(comp, "component '%s' has same the same name, "
-            + "but labels must be unique within a circuit.", nameOf(clash));
-      namedComponents.put(name, comp);
+        return drcFail(comp, "component '%s' has same the same name '%s'. "
+            + "Please change the labels, or use \"annotate\" above, to ensure "
+            + "are unique within this circuit.", nameOf(clash), name);
     }
 
     // DRC Step 6: Recurse to validate subcircuits.
@@ -556,7 +557,7 @@ public class Netlist {
       Net net = netAt.get(end.getLocation());
       if (net == null || net.name != null)
         continue;
-      net.name = "p_" + NetlistComponent.labelOf(comp);
+      net.name = "p_" + HDLSupport.deriveHdlPathName(comp);
     }
 		for (Component comp : circ.getNonWires()) {
       // A Net connected to output pin "Bar" is named "p_Bar"
@@ -568,7 +569,7 @@ public class Netlist {
       Net net = netAt.get(end.getLocation());
       if (net == null || net.name != null)
         continue;
-      net.name = "p_" + NetlistComponent.labelOf(comp);
+      net.name = "p_" + HDLSupport.deriveHdlPathName(comp);
     }
     // Other nets are named s_NET_A, s_BUS_B, ... s_NET_AAAA, etc.
     int id = 0; 
@@ -863,9 +864,9 @@ public class Netlist {
 	}
 
   private NetlistComponent shadowForSubcirc(Path childPath) {
-    String label = childPath.tail();
+    String name = childPath.tail();
 		for (NetlistComponent shadow : subcircuits) {
-      if (shadow.label().equals(label))
+      if (name.equals(shadow.pathName()))
         return shadow;
     }
     return null;
@@ -930,5 +931,61 @@ public class Netlist {
   public String circName() {
     return circ.getName();
   }
+
+//   HashMap<Component, String> componentUID = new HashMap<>();
+//   public String deriveUnique(Component comp, String prefix) {
+// 
+//       String label = ctx.comp.original.getAttributeSet().getValueOrElse(StdAttr.LABEL, "");
+//       label = label.replaceAll("/", "_"); // path elements may not contain slashes
+//       Location loc = ctx.comp.original.getLocation();
+//       if (label.isEmpty())
+//         prefix = "Unnamed " + prefix;
+//       else
+//         prefix = prefix + " " + label;
+//       , prefix, " at " + loc.toString());
+// 
+// 
+//     String u = componentUID.get(comp);
+//     if (u != null)
+//       return u;
+//     // Gather all components of the same type (i.e. sharing the same prefix)
+//     ArrayList<Component> siblings = new ArrayList<>();
+// 		for (Component c : circ.getNonWires()) {
+//       if (c == comp)
+//         continue;
+//       if (c.getFactory().getClass().equals(comp.getFactory().getClass()))
+//         siblings.add(c);
+//     }
+//     // If this component has a StdAttr.LABEL, try that.
+//     u = comp.getAttributeSet().getValueOrElse(StdAttr.LABEL, "");
+//     u = u.replaceAll("[^a-zA-Z0-9]{2,}", "_");
+//     if (!u.isEmpty() && !containsSuffix(siblings, u))
+//       return prefix + "_" + u;
+// 
+//       if (u.isEmpty() || uidTaken.contains(u.toLowerCase())) {
+//         // Append location to make it more unique.
+//         Location loc = comp.getLocation();
+//         if (!u.isEmpty())
+//           u += "_";
+//         u += loc.x + "_" + loc.y;
+//         if (uidTaken.contains(u.toLowerCase())) {
+//           // Fine, use location with a unique suffix.
+//           int i = 1;
+//           while (uidTaken.contains((u+"_"+i).toLowerCase()))
+//             i++;
+//         }
+//       }
+//       uid.put(comp, u);
+//       uidTaken.add(u.toLowerCase());
+//     }
+//    return u;
+//  }
+
+//   // For HDL component names that need to be globally unique (e.g. PLA or ROM),
+//   // we use a name like "PLA_${UID}", which follows the same strategy but also
+//   // includes the circuit name.
+//   public String generateComponentUID(Component comp, String prefix) {
+//     return generateComponentID(comp, prefix + "_" + circName());
+//   }
 
 }

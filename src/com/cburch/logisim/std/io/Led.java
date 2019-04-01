@@ -38,6 +38,7 @@ import java.awt.event.KeyEvent;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
@@ -52,8 +53,8 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.tools.key.DirectionConfigurator;
+import com.cburch.logisim.util.GraphicsUtil;
 
 public class Led extends InstanceFactory implements DynamicElementProvider {
 
@@ -114,6 +115,9 @@ public class Led extends InstanceFactory implements DynamicElementProvider {
   public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     return LightsHDLGenerator.forLed(ctx);
   }
+
+  @Override
+  public String getHDLNamePrefix(Component comp) { return "LED"; }
 
   @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {

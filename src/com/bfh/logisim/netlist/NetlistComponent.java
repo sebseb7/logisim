@@ -42,7 +42,6 @@ import com.bfh.logisim.hdlgenerator.HiddenPort;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.comp.EndData;
-import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.Pin;
 
 // For each real Component within a Circuit, a shadow NetlistComponent holds
@@ -132,7 +131,7 @@ public class NetlistComponent {
       this.hiddenPort = null;
     } else {
       HDLSupport.ComponentContext subctx =
-          new HDLSupport.ComponentContext(circNets.ctx, circNets, comp);
+          new HDLSupport.ComponentContext(circNets.ctx, circNets, this);
       this.hdlSupport = factory.getHDLSupport(subctx);
       this.hiddenPort = hdlSupport != null ? hdlSupport.hiddenPort() : null;
     }
@@ -167,12 +166,21 @@ public class NetlistComponent {
     return index >= 0 && index < portConnections.size() ? portConnections.get(index) : null;
 	}
 
-  public String label() {
-    return labelOf(original);
+  public String pathName() {
+    return HDLSupport.deriveHdlPathName(original);
   }
 
-  public static String labelOf(Component comp) {
-    return CorrectLabel.getCorrectLabel(comp.getAttributeSet().getValue(StdAttr.LABEL)).toUpperCase();
-  }
+  // public String label() {
+  //   return labelOf(original);
+  // }
+
+  // public static String labelOf(Component comp) {
+  //   String label = comp.getAttributeSet().getValue(StdAttr.LABEL);
+  //   if (label != null)
+  //     return label;
+  //   return comp.getFactory().getName() + comp.getLocation();
+  // }
+  //   return CorrectLabel.getCorrectLabel(comp.getAttributeSet().getValue(StdAttr.LABEL)).toUpperCase();
+  // }
 
 }

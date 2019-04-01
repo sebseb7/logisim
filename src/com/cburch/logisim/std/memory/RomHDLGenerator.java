@@ -40,7 +40,7 @@ public class RomHDLGenerator extends HDLGenerator {
   }
 
   public RomHDLGenerator(ComponentContext ctx) {
-    super(ctx, "memory", "ROM_${CIRCUIT}_${LABEL}", "i_ROM");
+    super(ctx, "memory", "ROM_${UID}", "i_ROM");
     inPorts.add("Address", addrWidth(), Mem.ADDR, false);
     outPorts.add("Data", dataWidth(), Mem.DATA, null);
     int n = Mem.lineSize(_attrs);

@@ -38,7 +38,7 @@ public class HexDigitHDLGenerator extends HDLGenerator {
   // todo: Verilog support
   
   public HexDigitHDLGenerator(ComponentContext ctx) {
-    super(ctx, "io", "HexDigit_${LABEL}", "i_Hex");
+    super(ctx, "io", "HexDigit", "i_Hex");
 
     inPorts.add("Hex", 4, HexDigit.HEX, false);
     inPorts.add("DecimalPoint", 1, HexDigit.DP, false);

@@ -41,13 +41,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.WeakHashMap;
 
 import com.bfh.logisim.fpga.PinBindings;
+import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
-import com.bfh.logisim.netlist.CorrectLabel;
-import com.bfh.logisim.netlist.Netlist;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.circuit.appear.CircuitAppearance;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
@@ -122,7 +120,6 @@ public class Circuit implements AttributeDefaultProvider {
 
     public void endChanged(ComponentEvent e) {
       locker.checkForWritePermission("ends changed", Circuit.this);
-      autoHdlAnnotationDone = false;
       Component comp = e.getSource();
       HashMap<Location, EndData> toRemove = toMap(e.getOldData());
       HashMap<Location, EndData> toAdd = toMap(e.getData());
@@ -166,7 +163,6 @@ public class Circuit implements AttributeDefaultProvider {
   private CircuitLocker locker;
 
   private WeakHashMap<Component, Circuit> circuitsUsingThis;
-  private boolean autoHdlAnnotationDone;
 
   private LogisimFile logiFile;
 
@@ -192,112 +188,55 @@ public class Circuit implements AttributeDefaultProvider {
     }
   }
 
-  private static String labelSuggestionFor(Component comp,
-      HashMap<Component, HDLSupport> generators, String circuitName) {
-    if (comp.getFactory() instanceof Pin) { /* Pins are treated specially */
-      int w = comp.getEnd(0).getWidth().getWidth();
-      if (comp.getEnd(0).isOutput())
-        return w > 1 ? "Input_bus" : "Input";
-      else
-        return w > 1 ? "Output_bus" : "Output";
-    } else {
-      return generators.get(comp).hdlComponentName;
-    }
-  }
-
-  public void autoHdlAnnotate(boolean clearLabels, Netlist.Context ctx) {
-    if (autoHdlAnnotationDone)
-      return;
-
-    // find all components of interest, and sort them
-    HashMap<Component, HDLSupport> generators = new HashMap<>();
-    TreeSet<Component> sortedComps = new TreeSet<>(Location.CompareVertical);
+  public void autoHdlAnnotate(FPGAReport err) {
+    ArrayList<Component> comps = new ArrayList<>();
     for (Component comp : this.getNonWires()) {
       if (comp.getFactory().HDLIgnore())
-        continue;
-      if (comp.getFactory() instanceof Pin) {
-        // Pins are a special case: they are the only hdl-relevant component that
-        // will need a non-zero label, but has no HDL generator to go with it.
-        sortedComps.add(comp);
-      } else {
-        // All other components that need a non-zero label have a generator.
-        HDLSupport.ComponentContext subctx =
-            new HDLSupport.ComponentContext(ctx, null /* no nets */, comp);
-        HDLSupport g = comp.getFactory().getHDLSupport(subctx);
-        if (g == null || !g.requiresUniqueLabel())
-          continue;
-        sortedComps.add(comp);
-        generators.put(comp, g);
-      }
+        continue; // ignore components that do not end up in HDL
+      if (comp.getFactory().getHDLNamePrefix(comp) == null)
+        continue; // ignore ocmponents that do not need a Path name
+      comps.add(comp);
     }
 
-    /* clear old labels, if requested */
-    if (clearLabels) {
-      for (Component comp : sortedComps) {
-        String label = comp.getAttributeSet().getValueOrElse(StdAttr.LABEL, "");
-        if (!label.isEmpty())
-          continue;
-        comp.getAttributeSet().setAttr(StdAttr.LABEL, "");
-        ctx.err.AddInfo("Cleared " + this.getName() + "/" + label);
-      }
-    }
-    
-    /* first pass: collect existing labels, grouped by suggestions */
-    ArrayList<Integer> counts = new ArrayList<Integer>();
-    ArrayList<String> suggestions = new ArrayList<String>();
-    ArrayList<Set<String>> usedLabels = new ArrayList<Set<String>>();
-    for (Component comp : sortedComps) {
-      String suggestion = labelSuggestionFor(comp, generators, getName());
-      if (!suggestions.contains(suggestion)) {
-        suggestions.add(suggestion);
-        counts.add(1);
-        usedLabels.add(new HashSet<String>());
-      }
-      /* if the label is non-zero, add it to the list of used labels */
-      String Label = CorrectLabel.getCorrectLabel(comp.getAttributeSet().getValue(StdAttr.LABEL));
-      if (!Label.isEmpty()) {
-        int idx = suggestions.indexOf(suggestion);
-        usedLabels.get(idx).add(Label);
-      }
-    }
-
-    /* second pass: choose and add labels as needed */
-    for (Component comp : sortedComps) {
-      /* ignore components that have labels */
-      String label = CorrectLabel.getCorrectLabel(comp.getAttributeSet().getValue(StdAttr.LABEL));
-      if (!label.isEmpty())
-        continue;
-
-      String suggestion = labelSuggestionFor(comp, generators, getName());
-      int idx = suggestions.indexOf(suggestion);
-
-      /* find a suitable suffix to go on the suffix */
-      int id = counts.get(idx);
-      while (usedLabels.get(idx).contains(suggestion + "_" + id))
-        id++;
-      counts.set(idx, id + 1);
-
-      /*
-       * TODO: Dirty hack; I do not know how to change the label in such a
-       * way that the whole project is correctly notified so I just change
-       * the label here and do some dirty updates in
-       * "FPGACommanderGUI.java"
-       */
-      label = suggestion + "_" + id;
-      ctx.err.AddInfo("Labeled " + this.getName() + "/" + label);
-      comp.getAttributeSet().setAttr(StdAttr.LABEL, label);
-      usedLabels.get(idx).add(label);
-    }
-
-    /* third pass: recurse into sub-circuits */
-    for (Component comp : sortedComps) {
+    // Scan existing labels to make sure they are okay.
+    HashMap<String, Component> names = new HashMap<>();
+    for (Component comp : comps) {
       if (comp.getFactory() instanceof SubcircuitFactory) {
         SubcircuitFactory sub = (SubcircuitFactory) comp.getFactory();
-        sub.getSubcircuit().autoHdlAnnotate(clearLabels, ctx);
+        sub.getSubcircuit().autoHdlAnnotate(err);
       }
+      String name = HDLSupport.deriveHdlPathName(comp);
+      if (!names.containsKey(name)) {
+        names.put(name, comp); // no name clash, leave this one alone
+        continue;
+      }
+      // Name is alreayd taken, change label, or pick a new label
+      String label = comp.getAttributeSet().getValueOrElse(StdAttr.LABEL, "");
+      int seqno = 0;
+      String suffix;
+      if (!label.isEmpty())
+        suffix = label + "_";
+      else
+        suffix = ""+name.toLowerCase().charAt(0); // e.g. Button b0, Switch s0
+      String newLabel;
+      do {
+        newLabel = suffix + (++seqno);
+        comp.getAttributeSet().setAttr(StdAttr.LABEL, newLabel);
+        name = HDLSupport.deriveHdlPathName(comp);
+      } while (names.containsKey(name));
+      names.put(name, comp);
+      if (label.isEmpty())
+        err.AddInfo("Circuit %s: Added label '%s' for %s at %s.",
+            this.getName(), newLabel, comp.getFactory().getDisplayName(), comp.getLocation());
+      else
+        err.AddInfo("Circuit %s: Changed label '%s' from '%s' for %s at %s.",
+            this.getName(), newLabel, label, comp.getFactory().getDisplayName(), comp.getLocation());
     }
-
-    autoHdlAnnotationDone = true;
+    err.AddInfo("Circuit %s: Finished annotating all components.", this.getName());
+    // FIXME: The above use of setAttr() is a dirty hack. I do not know how to
+    // change the label in such a way that the whole project is correctly
+    // notified so I just change the label here and do some dirty updates in
+    // fpga gui Commander.java
   }
 
   public boolean contains(Component c) {
@@ -650,7 +589,6 @@ public class Circuit implements AttributeDefaultProvider {
 
     locker.checkForWritePermission("add", this);
 
-    autoHdlAnnotationDone = false;
     if (c instanceof Wire) {
       Wire w = (Wire) c;
       if (w.getEnd0().equals(w.getEnd1()))
@@ -688,7 +626,6 @@ public class Circuit implements AttributeDefaultProvider {
     comps = new HashSet<Component>();
     wires = new CircuitWires();
     clocks.clear();
-    autoHdlAnnotationDone = false;
     for (Component comp : oldComps) {
       if (comp.getFactory() instanceof SubcircuitFactory) {
         SubcircuitFactory sub = (SubcircuitFactory) comp.getFactory();
@@ -705,7 +642,6 @@ public class Circuit implements AttributeDefaultProvider {
 
     locker.checkForWritePermission("remove", this);
 
-    autoHdlAnnotationDone = false;
     if (c instanceof Wire) {
       wires.remove(c);
     } else {

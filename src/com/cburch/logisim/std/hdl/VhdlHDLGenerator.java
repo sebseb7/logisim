@@ -79,6 +79,4 @@ public class VhdlHDLGenerator extends HDLGenerator {
     return ((VhdlEntityAttributes)_attrs).getContent();
   }
 
-  // @Override
-  // public boolean requiresUniqueLabel() { return true; } // unique label not necessary?
 }

@@ -35,7 +35,7 @@ import com.cburch.logisim.hdl.Hdl;
 public class PLAVhdlGenerator extends HDLGenerator {
 
   public PLAVhdlGenerator(ComponentContext ctx) {
-    super(ctx, "gates", "PLA_${CIRCUIT}_${LABEL}", "i_PLA");
+    super(ctx, "gates", "PLA_${UID}", "i_PLA");
 
     inPorts.add("Index", _attrs.getValue(PLA.ATTR_IN_WIDTH).getWidth(), PLA.IN_PORT, false);
     outPorts.add("Result", _attrs.getValue(PLA.ATTR_OUT_WIDTH).getWidth(), PLA.OUT_PORT, null);

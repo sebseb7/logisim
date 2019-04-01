@@ -39,7 +39,7 @@ import com.cburch.logisim.hdl.Hdl;
 public class KeyboardHDLGenerator extends HDLGenerator {
 
   public KeyboardHDLGenerator(ComponentContext ctx) {
-    super(ctx, "io", "Keyboard_${CIRCUIT}_${LABEL}", "i_Kbd");
+    super(ctx, "io", "Keyboard", "i_Kbd");
     int w = _attrs.getValue(Keyboard.ATTR_WIDTH);
     int d = _attrs.getValue(Keyboard.ATTR_BUFFER);
     parameters.add("AsciiWidth", w);
@@ -130,7 +130,7 @@ public class KeyboardHDLGenerator extends HDLGenerator {
       out.add("--");
       out.add("--------------------------------------------------------------------------------");
       out.add("");
-      out.add("architecture RTL of " + hdlComponentName + " is ");
+      out.add("architecture logisim_generated of Keyboard is");
       out.add("");
       out.add("  -----------------------------------------------------------------------------");
       out.add("  -- ps2_keyboard scancode protocol");

@@ -58,6 +58,7 @@ import javax.swing.event.DocumentEvent;
 
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.RadixOption;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
@@ -635,6 +636,16 @@ public class Pin extends InstanceFactory {
     // configured for tri-state behavior causes problems for HDL if, and only
     // if, there is some other tri-state component driving the line.
     return false;
+  }
+
+  @Override
+  public String getHDLNamePrefix(Component comp) {
+    // return "Pin";
+    int w = comp.getEnd(0).getWidth().getWidth();
+    if (comp.getEnd(0).isOutput())
+      return w > 1 ? "InputBus" : "Input";
+    else
+      return w > 1 ? "OutputBus" : "Output";
   }
 
   @Override

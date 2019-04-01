@@ -58,7 +58,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
 
 	public CircuitHDLGenerator(ComponentContext ctx, Circuit circ) {
     super(ctx, "circuit",
-        "Circuit_"+ CorrectLabel.getCorrectLabel(circ.getName().toUpperCase()),
+        "Circuit_" + circ.getName().replaceAll("[^a-zA-Z0-9]{2,}", "_"),
         "i_Circ");
 		this.circ = circ;
 		this._circNets = ctx.getNetlist(circ);
@@ -67,7 +67,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
     for (Component pin : circ.getNonWires()) {
       if (!(pin.getFactory() instanceof Pin))
         continue;
-      String label = NetlistComponent.labelOf(pin);
+      String label = HDLSupport.deriveHdlPathName(pin);
       EndData end = pin.getEnd(0);
       if (end.isInput()) // note: if data goes into Pin component, then port is an output
         outPorts.add(label, end.getWidth().getWidth(), -1, null);
@@ -149,11 +149,11 @@ public class CircuitHDLGenerator extends HDLGenerator {
   private void getMapForCircuitPort(Hdl.Map map, NetlistComponent comp, NetlistComponent pin, boolean isOutput) {
     int endid = getEndIndex(comp, pin);
     if (endid < 0) {
-      _err.AddFatalError("INTERNAL ERROR: Missing sub-circuit port '%s'.", pin.label());
+      _err.AddFatalError("INTERNAL ERROR: Missing sub-circuit port '%s'.", pin.pathName());
       return;
     }
     int w = pin.original.getEnd(0).getWidth().getWidth();
-    PortInfo p = new PortInfo(pin.label(), ""+w, endid, isOutput ? null : false);
+    PortInfo p = new PortInfo(pin.pathName(), ""+w, endid, isOutput ? null : false);
     super.getPortMappings(map, comp, p);
   }
 
@@ -213,9 +213,9 @@ public class CircuitHDLGenerator extends HDLGenerator {
       
       // Normal ports
       for (NetlistComponent pin : _circNets.inpins)
-        map.add(pin.label(), "s_" + pin.label());
+        map.add(pin.pathName(), "s_" + pin.pathName());
       for (NetlistComponent pin : _circNets.outpins)
-        map.add(pin.label(), "s_" + pin.label());
+        map.add(pin.pathName(), "s_" + pin.pathName());
 		}
     return map;
 	}
@@ -245,15 +245,15 @@ public class CircuitHDLGenerator extends HDLGenerator {
         if (comp.original.getFactory() instanceof SubcircuitFactory)
           continue;
         HDLSupport g = comp.hdlSupport;
-        if (g == null)
+        if (g == null || g.inlined)
           continue;
-        String cname = g.getComponentName();
-        if (!writtenComponents.contains(cname) && !g.inlined) {
+        String moduleName = g.getHDLModuleName();
+        if (!writtenComponents.contains(moduleName)) {
           if (!g.writeHDLFiles(rootDir)) {
             _err.AddError(name+": error writing HDL files for " + comp.original.getFactory());
             return false;
           }
-          writtenComponents.add(cname);
+          writtenComponents.add(moduleName);
         }
       }
 
@@ -298,13 +298,13 @@ public class CircuitHDLGenerator extends HDLGenerator {
 		HashSet<String> done = new HashSet<>();
 		for (NetlistComponent comp: components) {
       HDLSupport g = comp.hdlSupport;
-      if (g == null)
+      if (g == null || g.inlined)
         continue;
-			String name = g.getComponentName();
-			if (done.contains(name) || g.inlined)
-        continue;
-      ((HDLGenerator)g).generateComponentDeclaration(out);
-      done.add(name);
+			String moduleName = g.getHDLModuleName();
+			if (!done.contains(moduleName)) {
+        ((HDLGenerator)g).generateComponentDeclaration(out);
+        done.add(moduleName);
+      }
 		}
 	}
     
@@ -312,13 +312,13 @@ public class CircuitHDLGenerator extends HDLGenerator {
     Net net = getPortMappingForPin(pin.original);
     if (net == null && isOutput)
       _err.AddSevereWarning("INTERNAL ERROR: Output pin '%s' of circuit '%s' has "
-          + " no driving signal.", pin.label(), circ.getName());
+          + " no driving signal.", pin.pathName(), circ.getName());
     else if (net == null)
       return; // input pin not driving anything, no error
     else if (isOutput)
-      out.assign(pin.label(), net.name);
+      out.assign(pin.pathName(), net.name);
     else
-      out.assign(net.name, pin.label());
+      out.assign(net.name, pin.pathName());
   }
 
 	@Override
@@ -380,15 +380,6 @@ public class CircuitHDLGenerator extends HDLGenerator {
       }
       emit(out, net, w-1, prev, n);
     }
-  }
-
-  @Override
-  public boolean requiresUniqueLabel() {
-    // Special case: HDL for a circuit does not depend on the specific instance,
-    // so the name of the HDL does not contains ${LABEL}. But we still want
-    // subcircuits to be labeled for the sake of being able to create unique
-    // Path identifiers.
-    return true;
   }
 
   // @Override

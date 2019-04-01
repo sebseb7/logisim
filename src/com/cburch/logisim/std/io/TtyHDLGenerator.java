@@ -36,7 +36,7 @@ import com.cburch.logisim.hdl.Hdl;
 public class TtyHDLGenerator extends HDLGenerator {
 
   public TtyHDLGenerator(ComponentContext ctx) {
-    super(ctx, "io", "Tty_${LABEL}", "i_Tty");
+    super(ctx, "io", "Tty", "i_Tty");
     int w = Tty.getWidth(_attrs.getValue(Tty.ATTR_WIDTH));
     parameters.add("AsciiWidth", w);
     long period_ns = 1000000000 / ctx.oscFreq;
@@ -95,7 +95,7 @@ public class TtyHDLGenerator extends HDLGenerator {
       out.add("-- 2016-08-19  1.2      kwalsh      Added TTY style interface");
       out.add("-------------------------------------------------------------------------------");
       out.add("");
-      out.add("architecture RTL of " + hdlComponentName + " is ");
+      out.add("architecture logisim_generated of Tty is ");
       out.add("");
       out.add("  -- constant CLK_PERIOD_NS : positive := 20; -- 50MHz");
       out.add("  constant DELAY_15_MS   : positive := 15 * 10**6 / CLK_PERIOD_NS + 1;");

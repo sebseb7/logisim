@@ -94,7 +94,7 @@ public class ClockHDLGenerator {
   public static class StubPart extends HDLInliner {
 
     public StubPart(ComponentContext ctx) {
-      super(ctx, "ClockStub");
+      super(ctx);
     }
 
     @Override

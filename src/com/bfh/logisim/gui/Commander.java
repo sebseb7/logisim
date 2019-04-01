@@ -107,7 +107,7 @@ public class Commander extends JFrame
   private static final String HDL_DOWNLOAD_ONLY = "Download only";
 
   private static final String ANNOTATE_SOME = "Add missing labels";
-  private static final String ANNOTATE_ALL = "Relabel all components";
+  // private static final String ANNOTATE_ALL = "Relabel all components";
 
   private final JLabel textCircuit = new JLabel("Circuit: ", SwingConstants.RIGHT);
   private final JLabel textLanguage = new JLabel("Language: ", SwingConstants.RIGHT);
@@ -115,8 +115,8 @@ public class Commander extends JFrame
 
   private final BoardIcon boardIcon = new BoardIcon();
   private final JButton annotateButton = new JButton("Annotate");
-  private final JPopupMenu annotatePopup = new JPopupMenu("Options");
-  private final HashMap<String, JCheckBoxMenuItem> annotateItems = new HashMap<>();
+  // private final JPopupMenu annotatePopup = new JPopupMenu("Options");
+  // private final HashMap<String, JCheckBoxMenuItem> annotateItems = new HashMap<>();
 
   private final JButton actionButton = new JButton("Synthesize & Download");
   private final JPopupMenu actionPopup = new JPopupMenu("Options");
@@ -215,13 +215,13 @@ public class Commander extends JFrame
     updateClockOptions();
 
     // configure annotation options and button
-    for (String s : new String[] { ANNOTATE_SOME, ANNOTATE_ALL }) {
-      JCheckBoxMenuItem m = new JCheckBoxMenuItem(s);
-      m.addActionListener(ev -> setAnnotate(s));
-      annotateItems.put(s, m);
-      annotatePopup.add(m);
-    }
-    setAnnotate(ANNOTATE_SOME);
+    // for (String s : new String[] { ANNOTATE_SOME, ANNOTATE_ALL }) {
+    //   JCheckBoxMenuItem m = new JCheckBoxMenuItem(s);
+    //   m.addActionListener(ev -> setAnnotate(s));
+    //   annotateItems.put(s, m);
+    //   annotatePopup.add(m);
+    // }
+    // setAnnotate(ANNOTATE_SOME);
     annotateButton.addActionListener(e -> annotate());
     
     // configure action options
@@ -235,7 +235,8 @@ public class Commander extends JFrame
 
     // layout buttons
     JPanel buttons = new JPanel(); // default FlowLayout
-    buttons.add(new JDropdownButton(annotateButton, annotatePopup, getIcon("dropdown.png")));
+    // buttons.add(new JDropdownButton(annotateButton, annotatePopup, getIcon("dropdown.png")));
+    buttons.add(annotateButton);
     buttons.add(new JDropdownButton(actionButton, actionPopup, getIcon("dropdown.png")));
     buttons.add(writeToFlash);
 
@@ -673,7 +674,6 @@ public class Commander extends JFrame
       board = old;
       boardsList.setSelectedIndex(boardsListSelectedIndex);
       settingBoard = false;
-      annotateButton.setEnabled(board != null);
       configureActions();
       return;
     }
@@ -738,22 +738,14 @@ public class Commander extends JFrame
   }
 
   private void annotate() {
-    boolean clearExistingLabels = annotateItems.get(ANNOTATE_ALL).isSelected();
+    // boolean clearExistingLabels = annotateItems.get(ANNOTATE_ALL).isSelected();
     clearAllMessages();
-    if (board == null) {
-      err.AddError("Please select a valid FPGA board before annotation.");
-      return;
-    }
     Circuit root = circuitsList.getSelectedValue();
     if (root == null)
       return; // huh?
-    long oscFreq = board.fpga.ClockFrequency;
-    int clkPeriod = getClkPeriod();
-    Netlist.Context ctx = new Netlist.Context(lang, err, board.fpga.Vendor,
-        root, oscFreq, clkPeriod);
-    root.autoHdlAnnotate(clearExistingLabels, ctx);
+    root.autoHdlAnnotate(err);
     err.AddInfo("Annotation done");
-    // TODO: Fix this dirty hack, see Circuit.Annotate() for details.
+    // TODO: Fix this dirty hack; see Circuit.autoHdlAnnotate() also.
     proj.repaintCanvas();
     proj.getLogisimFile().setDirty(true);
   }
@@ -986,9 +978,9 @@ public class Commander extends JFrame
       writeToFlash.setToolTipText("Selected FPGA board does not support downloading to flash device.");
   }
 
-  private void setAnnotate(String choice) {
-    annotateItems.forEach((s, m) -> m.setSelected(s == choice));
-  }
+  // private void setAnnotate(String choice) {
+  //   annotateItems.forEach((s, m) -> m.setSelected(s == choice));
+  // }
 
   private void setAction(String choice) {
     actionItems.forEach((s, m) -> m.setSelected(s == choice));

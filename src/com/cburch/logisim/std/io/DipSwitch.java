@@ -37,14 +37,15 @@ import java.awt.event.MouseEvent;
 import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
+import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
@@ -53,10 +54,10 @@ import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.tools.key.DirectionConfigurator;
 import com.cburch.logisim.tools.key.JoinedConfigurator;
+import com.cburch.logisim.util.GraphicsUtil;
 
 public class DipSwitch extends InstanceFactory {
 
@@ -183,6 +184,9 @@ public class DipSwitch extends InstanceFactory {
   public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     return ButtonHDLGenerator.forDipSwitch(ctx);
   }
+
+  @Override
+  public String getHDLNamePrefix(Component comp) { return "DipSwitch"; }
 
   @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {

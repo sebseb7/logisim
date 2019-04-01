@@ -38,6 +38,7 @@ import java.awt.event.KeyEvent;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
@@ -169,6 +170,9 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
   public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     return LightsHDLGenerator.forSevenSegment(ctx);
   }
+
+  @Override
+  public String getHDLNamePrefix(Component comp) { return "SevenSegment"; }
 
   @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {

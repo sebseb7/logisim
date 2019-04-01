@@ -37,18 +37,19 @@ import java.awt.event.KeyEvent;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.instance.InstanceDataSingleton;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.instance.InstanceDataSingleton;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.tools.key.DirectionConfigurator;
 
 public class HexDigit extends InstanceFactory implements DynamicElementProvider {
@@ -188,6 +189,9 @@ public class HexDigit extends InstanceFactory implements DynamicElementProvider 
     else
       return null;
   }
+
+  @Override
+  public String getHDLNamePrefix(Component comp) { return "HexDigit"; }
 
   public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {
     return new HexDigitShape(x, y, path);

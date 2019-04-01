@@ -30,6 +30,7 @@
 
 package com.bfh.logisim.netlist;
 
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
 
@@ -53,12 +54,12 @@ public class Path {
 
   // Construct a non-root path for component or subcircuit in some circuit.
   public Path extend(NetlistComponent shadow) {
-    return new Path(path + "/" + shadow.label());
+    return new Path(path + "/" + shadow.pathName());
   }
 
   // Construct a non-root path for component or subcircuit in some circuit.
   public Path extend(Component comp) {
-    return new Path(path + "/" + NetlistComponent.labelOf(comp));
+    return new Path(path + "/" + HDLSupport.deriveHdlPathName(comp));
   }
 
   // Construct a non-root path for component or subcircuit in some circuit.

@@ -41,7 +41,7 @@ public class PortIOHDLGenerator extends HDLGenerator {
   // todo: verilog support
 
   public PortIOHDLGenerator(ComponentContext ctx) {
-    super(ctx, "io", "PORTIO_${CIRCUIT}_${LABEL}", "PORTIO");
+    super(ctx, "io", "PORTIO_${UID}", "PORTIO");
     
     for (InOutMap io : getPorts(_attrs)) {
       if (io.type == ALWAYSINPUT || io.type == ENABLE)

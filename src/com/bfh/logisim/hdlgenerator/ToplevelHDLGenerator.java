@@ -109,11 +109,11 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     // wires for normal ports for circuit design under test
     for (NetlistComponent shadow : _circNets.inpins) {
       int w = shadow.original.getEnd(0).getWidth().getWidth();
-      wires.add("s_"+shadow.label(), w);
+      wires.add("s_"+shadow.pathName(), w);
     }
     for (NetlistComponent shadow : _circNets.outpins) {
       int w = shadow.original.getEnd(0).getWidth().getWidth();
-      wires.add("s_"+shadow.label(), w);
+      wires.add("s_"+shadow.pathName(), w);
     }
 
     // wires for dynamic clock
@@ -226,7 +226,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     String bit;    // e.g.: s_SomePin or s_LOGISIM_HIDDEN_OUTPUT
     int offset;    // e.g.: 0 or 3
     if (shadow.original.getFactory() instanceof Pin) {
-      signal = "s_" + shadow.label();
+      signal = "s_" + shadow.pathName();
       bit = signal;
       offset = 0;
     } else {

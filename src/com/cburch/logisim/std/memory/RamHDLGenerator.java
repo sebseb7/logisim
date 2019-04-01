@@ -75,7 +75,7 @@ public class RamHDLGenerator extends HDLGenerator {
 
   private static String deriveHDLName(AttributeSet attrs) {
     // if (attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE)
-    //   return "NVRAM_${PATH}";
+    //   return "NVRAM_${UID}";
     int wd = attrs.getValue(Mem.DATA_ATTR).getWidth();
     int wa = attrs.getValue(Mem.ADDR_ATTR).getWidth();
     int n = Mem.lineSize(attrs);
@@ -118,7 +118,7 @@ public class RamHDLGenerator extends HDLGenerator {
 
 		if (out.isVhdl) {
 
-			out.stmt("architecture logisim_generated of " + hdlComponentName + " is ");
+			out.stmt("architecture logisim_generated of " + hdlModuleName + " is ");
       out.indent();
       out.stmt("type MEMORY_ARRAY is array (%d downto 0) of std_logic_vector(%d downto 0);", rows-1, wd-1);
 

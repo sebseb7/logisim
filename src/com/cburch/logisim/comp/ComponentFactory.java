@@ -94,6 +94,7 @@ public interface ComponentFactory extends AttributeDefaultProvider {
   public default boolean HDLIgnore() { return false; }
 
   public default HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) { return null; }
+  public default String getHDLNamePrefix(Component comp) { return null; }
 
   public String getName();
 

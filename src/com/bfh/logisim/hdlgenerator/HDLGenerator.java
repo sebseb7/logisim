@@ -33,12 +33,12 @@ package com.bfh.logisim.hdlgenerator;
 import java.io.File;
 import java.util.ArrayList;
 
-import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Net;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.netlist.Path;
 import com.cburch.logisim.hdl.Hdl;
+import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.ClockHDLGenerator;
 
@@ -201,15 +201,35 @@ public class HDLGenerator extends HDLSupport {
   // A suitable subdirectory for storing HDL files.
   protected final String subdir;
 
+  // Name for HDL module (i.e. base name of HDL module for generated components,
+  // like "Comparator". Must be unique, across the entire HDL project, for each
+  // variation of generated HDL. This name becomes the name of the vhdl/verilog
+  // file (with ".vhd" or ".verilog" extension added), and it becomes the name
+  // of the vhdl/verilog entity for this component. 
+  //
+  // In most cases, all instances of some component type share the same HDL and
+  // the same module name (e.g. "Counter"), or only share some small fixed set
+  // of HDL variations with fixed module names (e.g. "BitAdder" for a 1-bit HDL
+  // version using std_logic, versus "BusAdder" for a parameterized N-bit
+  // version using std_logic_vector). In a few cases, like PLA, Rom, and
+  // (eventually) non-volatile Ram, every instance will essentially have its own
+  // unique HDL implementation generated based on the user-chosen contents of
+  // the instance. In these cases, the module name will include the circuit name
+  // and a unique ID (containing the user-chosen label, the location on the
+  // sheet, and a sequence number if needed).
+  public final String hdlModuleName;
+  protected String getHDLModuleName() { return hdlModuleName; }
+
   // Prefix for generating pretty instance names. No need to be unique, as it
   // will get a unique ID suffix: "i_Add" will become "i_Add_1", "i_Add_2", etc.
   protected final String hdlInstanceNamePrefix;
 
   protected HDLGenerator(ComponentContext ctx, String subdir,
-      String hdlComponentNameTemplate, String hdlInstanceNamePrefix) {
-    super(ctx, hdlComponentNameTemplate, false);
+      String hdlModuleNameTemplate, String hdlInstanceNamePrefix) {
+    super(ctx, false);
     this.subdir = subdir;
-    this.hdlInstanceNamePrefix = CorrectLabel.getCorrectLabel(hdlInstanceNamePrefix);
+    this.hdlModuleName = deriveHDLModuleName(hdlModuleNameTemplate);
+    this.hdlInstanceNamePrefix = hdlInstanceNamePrefix;
     this.vhdlLibraries.add(IEEE_LOGIC);
     this.vhdlLibraries.add(IEEE_NUMERIC);
   }
@@ -226,7 +246,7 @@ public class HDLGenerator extends HDLSupport {
   protected boolean writeArchitecture(String rootDir) {
     Hdl hdl = getArchitecture();
 		if (hdl == null || hdl.isEmpty()) {
-			_err.AddFatalError("INTERNAL ERROR: Generated empty architecture for HDL `%s'.", hdlComponentName);
+			_err.AddFatalError("INTERNAL ERROR: Generated empty architecture for HDL `%s'.", hdlModuleName);
 			return false;
 		}
 		File f = openFile(rootDir, false, false);
@@ -242,7 +262,7 @@ public class HDLGenerator extends HDLSupport {
 
 		if (out.isVhdl) {
 
-			out.stmt("architecture logisim_generated of " + hdlComponentName + " is ");
+			out.stmt("architecture logisim_generated of " + hdlModuleName + " is ");
       out.indent();
 
       generateVhdlTypes(out);
@@ -286,7 +306,7 @@ public class HDLGenerator extends HDLSupport {
       // }
       if (hiddenPort != null)
         portNames.addAll(hiddenPort.labels);
-      out.stmt("module %s(\t %s );", hdlComponentName, String.join(",\n\t ", portNames));
+      out.stmt("module %s(\t %s );", hdlModuleName, String.join(",\n\t ", portNames));
 
       out.indent();
       for (ParameterInfo p : parameters)
@@ -344,7 +364,7 @@ public class HDLGenerator extends HDLSupport {
       return true;
     Hdl hdl = getVhdlEntity();
 		if (hdl == null || hdl.isEmpty()) {
-			_err.AddFatalError("INTERNAL ERROR: Generated empty entity for VHDL `%s'.", hdlComponentName);
+			_err.AddFatalError("INTERNAL ERROR: Generated empty entity for VHDL `%s'.", hdlModuleName);
 			return false;
 		}
 		File f = openFile(rootDir, false, true);
@@ -368,9 +388,9 @@ public class HDLGenerator extends HDLSupport {
 
 	protected void generateVhdlBlackBox(Hdl out, boolean isEntity) {
     if (isEntity)
-      out.stmt("entity %s is", hdlComponentName);
+      out.stmt("entity %s is", hdlModuleName);
     else
-      out.stmt("component %s", hdlComponentName);
+      out.stmt("component %s", hdlModuleName);
 
 		if (!parameters.isEmpty()) {
       ArrayList<String> generics = new ArrayList<>();
@@ -405,7 +425,7 @@ public class HDLGenerator extends HDLSupport {
 		}
 
     if (isEntity)
-      out.stmt("end %s;", hdlComponentName);
+      out.stmt("end %s;", hdlModuleName);
     else
       out.stmt("end component;");
 		out.stmt();
@@ -440,14 +460,14 @@ public class HDLGenerator extends HDLSupport {
       String v = String.join(",\n\t ", values);
 
       if (parameters.isEmpty() && values.isEmpty())
-        out.stmt("%s : %s;", instName, hdlComponentName);
+        out.stmt("%s : %s;", instName, hdlModuleName);
       else if (parameters.isEmpty())
-        out.stmt("%s : %s port map(\t %s );", instName, hdlComponentName, v);
+        out.stmt("%s : %s port map(\t %s );", instName, hdlModuleName, v);
       else if (values.isEmpty())
-        out.stmt("%s : %s generic map(\t %s );", instName, hdlComponentName, g);
+        out.stmt("%s : %s generic map(\t %s );", instName, hdlModuleName, g);
       else
         out.stmt("%s : %s generic map(\t %s ) port map (\t %s );",
-            instName, hdlComponentName, g, v);
+            instName, hdlModuleName, g, v);
 
 		} else {
 
@@ -457,13 +477,13 @@ public class HDLGenerator extends HDLSupport {
       String v = String.join(",\n\t ", values);
 
 			if (generics.isEmpty() && values.isEmpty())
-        out.stmt("%s %s;", hdlComponentName, instName);
+        out.stmt("%s %s;", hdlModuleName, instName);
       else if (generics.isEmpty())
-        out.stmt("%s %s (\t %s );", hdlComponentName, instName, v);
+        out.stmt("%s %s (\t %s );", hdlModuleName, instName, v);
       else if (values.isEmpty())
-        out.stmt("%s #(\t %s ) %s;", hdlComponentName, g, instName);
+        out.stmt("%s #(\t %s ) %s;", hdlModuleName, g, instName);
       else
-        out.stmt("%s #(\t %s ) %s ( %s );", hdlComponentName, g, instName, v);
+        out.stmt("%s #(\t %s ) %s ( %s );", hdlModuleName, g, instName, v);
 
 		}
     // out.stmt();
@@ -472,7 +492,7 @@ public class HDLGenerator extends HDLSupport {
 	protected void generateFileHeader(Hdl out) {
     out.comment("Logisim-Evolution Holy Cross Edition auto-generated %s code", _lang);
     out.comment("Project: %s", _projectName);
-    out.comment("Component: %s", hdlComponentName);
+    out.comment("Module: %s", hdlModuleName);
     out.stmt();
 	}
 
@@ -506,7 +526,7 @@ public class HDLGenerator extends HDLSupport {
     if (!rootDir.endsWith(File.separator))
       rootDir += File.separator;
     String path = rootDir + _lang.toLowerCase() + File.separator + subdir + File.separator;
-    return FileWriter.GetFilePointer(path, hdlComponentName, isMif, isEntity, _err, _lang);
+    return FileWriter.GetFilePointer(path, hdlModuleName, isMif, isEntity, _err, _lang);
 	}
 
   // Return a suitable stem for naming instances of this component within a
@@ -541,7 +561,7 @@ public class HDLGenerator extends HDLSupport {
   protected void getClockPortMappings(Hdl.Map map, NetlistComponent comp) {
     if (clockPort.index < 0 || clockPort.index >= comp.portConnections.size()) {
       _err.AddFatalError("INTERNAL ERROR: Clock port %d of '%s' is missing.",
-          clockPort.index, hdlComponentName);
+          clockPort.index, hdlModuleName);
       map.add(clockPort.ckPortName, _hdl.zero);
       map.add(clockPort.enPortName, _hdl.zero);
       return;
@@ -549,7 +569,7 @@ public class HDLGenerator extends HDLSupport {
     Net net = comp.getConnection(clockPort.index);
     if (net == null) {
       _err.AddSevereWarning("ERROR: Clock port of '%s' in circuit '%s' is not connected.",
-          hdlComponentName, _nets.circName());
+          hdlModuleName, _nets.circName());
       _err.AddSevereWarning("  The component will likely malfunction without a clock.");
       map.add(clockPort.ckPortName, _hdl.zero);
       map.add(clockPort.enPortName, _hdl.zero);
@@ -557,7 +577,7 @@ public class HDLGenerator extends HDLSupport {
     }
     if (net.bitWidth() != 1) {
       _err.AddFatalError("INTERNAL ERROR: Clock port of '%s' in '%s' is connected to a bus.",
-          hdlComponentName, _nets.circName());
+          hdlModuleName, _nets.circName());
       map.add(clockPort.ckPortName, _hdl.zero);
       map.add(clockPort.enPortName, _hdl.zero);
       return;
@@ -573,7 +593,7 @@ public class HDLGenerator extends HDLSupport {
       // triggered.
       if (edgeTriggered()) {
         _err.AddSevereWarning("WARNING: Non-clock signal (or \"gated clock\") connected to clock port for edge-triggered '%s' in circuit '%s'",
-            hdlComponentName, _nets.circName());
+            hdlModuleName, _nets.circName());
         _err.AddSevereWarning("         Expect functional differences between Logisim simulation and FPGA behavior.");
       }
       if (edgeTriggered() && clockPort.ckPortName.equals("FPGAClock")) {
@@ -628,7 +648,7 @@ public class HDLGenerator extends HDLSupport {
           && comp.original.getEnd(p.index).isOutput() && p.defaultValue != null) {
         _err.AddSevereWarning("INTERNAL ERROR: ignoring default value for "
             + "output pin '%s' of '%s' in circuit '%s'.",
-            p.name, hdlComponentName, _nets.circName());
+            p.name, hdlModuleName, _nets.circName());
       }
       getUnconnectedPortMappings(map, p);
     } else if (net.bitWidth() == 1 && !p.width.equals("1")) {
@@ -648,5 +668,63 @@ public class HDLGenerator extends HDLSupport {
     }
   }
 
+  // Return a suitable HDL module name for this component (e.g. "BitAdder" or
+  // "BusAdder") based on a template (e.g. "${BUS}Adder"). Only a few simple
+  // string replacements are made here:
+  //   ${WIDTH}   - replaced with StdAttr.WIDTH.
+  //   ${BUS}     - replaced with "Bit" (StdAttr.WIDTH == 1) or "Bus" (otherwise).
+  //   ${TRIGGER} - replaced with "LevelSensitive", "EdgeTriggered", or "Asynchronous"
+  //                depending on StdAttr.TRIGGER and/or StdAttr.EDGE_TRIGGER.
+  //   ${UID}     - replaced with string that is unique across the entire HDL
+  //                project, containing circuit name, label, location, and a
+  //                sequence number.
+  //
+  // Note: ${UID} is used for PLA, ROM, and anything else that needs an
+  // essentially globally-unique ID. For ROM, the the generated HDL code depends
+  // on the contents of the memory, which is too large of an attribute to simply
+  // include in the HDL module name, as would be done for other HDL-relevant
+  // attributes like ${WIDTH}. We could include a concise unique hash, perhaps.
+  // But instead, we just make it entirely unique.
+  private String deriveHDLModuleName(String nameTemplate) {
+    String s = nameTemplate;
+    if (s.contains("${WIDTH}"))
+        s = s.replace("${WIDTH}", ""+stdWidth());
+    if (s.contains("${BUS}"))
+        s = s.replace("${BUS}", stdWidth() == 1 ? "Bit" : "Bus");
+    if (s.contains("${TRIGGER}")) {
+      if (edgeTriggered())
+        s = s.replace("${TRIGGER}", "EdgeTriggered");
+      else if (_attrs.containsAttribute(StdAttr.TRIGGER))
+        s = s.replace("${TRIGGER}", "LevelSensitive");
+      else
+        s = s.replace("${TRIGGER}", "Asynchronous");
+    }
+    if (s.contains("${UID}")) {
+      // Note: _nets and ctx.comp should not be null here, because none of the
+      // top-level components (TopLevelHDLGenerator, the top-level
+      // CircuitHDLGenerator, TickHDLGenerator, and ClockHDLGenerator) include
+      // UID in their name.
+      if (_nets == null || ctx.comp == null)
+        _err.AddFatalError("INTERNAL ERROR: Missing netlist for component %s", nameTemplate);
+      String u = _nets.circName().replaceAll("[^a-zA-Z0-9]{2,}", "_");
+      // Append label
+      String label = ctx.comp.original.getAttributeSet().getValueOrElse(StdAttr.LABEL, "");
+      if (!label.isEmpty()) {
+        label = label.replaceAll("[^a-zA-Z0-9]{2,}", "_");
+        u += "_" + label;
+      }
+      Location loc = ctx.comp.original.getLocation();
+      u += "_" + loc.x + "_" + loc.y;
+      // prefix + circname + [label] + location will normally be unique, but we
+      // include a seqno just in case user managed to place two components wth
+      // same prefix exactly on top of each other (the GUI tries to prevent
+      // this, but it is still possible if the user is careless with rotations,
+      // or just due to various bugs and corner-cases the GUI does not yet
+      // check).
+      u += "_" + ctx.seqno();
+      s.replace("${UID}", u);
+    }
+    return s;
+  }
 
 }

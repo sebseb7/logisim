@@ -38,6 +38,7 @@ import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.Wire;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
@@ -138,6 +139,9 @@ public class Button extends InstanceFactory {
   public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
     return ButtonHDLGenerator.forButton(ctx);
   }
+
+  @Override
+  public String getHDLNamePrefix(Component comp) { return "Button"; }
 
   @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {

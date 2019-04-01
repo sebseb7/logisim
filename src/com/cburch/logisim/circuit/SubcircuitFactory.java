@@ -337,6 +337,11 @@ public class SubcircuitFactory extends InstanceFactory {
   }
 
   @Override
+  public String getHDLNamePrefix(Component comp) {
+    return "Subcircuit_" + source.getName().replaceAll("[^a-zA-Z0-9]{2,}", "_");
+  }
+
+  @Override
   public void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
     if (attr == StdAttr.FACING) {
       computePorts(instance);

@@ -31,9 +31,6 @@
 package com.cburch.logisim.file;
 import static com.cburch.logisim.file.Strings.S;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 

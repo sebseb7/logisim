@@ -39,7 +39,7 @@ public class ConstantHDLGenerator extends HDLInliner {
   private long val;
 
   public ConstantHDLGenerator(ComponentContext ctx, long val) {
-    super(ctx, "Constant_"+val);
+    super(ctx);
     this.val = val;
   }
 
