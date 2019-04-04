@@ -51,6 +51,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 
 import com.bfh.logisim.settings.Settings;
+import com.bfh.logisim.download.FPGADownload;
 
 public class FPGASettingsDialog implements ActionListener {
 
@@ -96,7 +97,7 @@ public class FPGASettingsDialog implements ActionListener {
 		workPicker.addActionListener(this);
 
 		JLabel alteraLabel = new JLabel("Altera tools path (directory containing "
-        + settings.AlteraPrograms[0]+"):");
+        + FPGADownload.ALTERA_PROGRAMS[0]+"):");
 		alteraPath = new JTextField(apath);
 		alteraPath.setPreferredSize(new Dimension(400, 10));
 		JButton alteraPicker = new JButton("Choose");
@@ -114,7 +115,7 @@ public class FPGASettingsDialog implements ActionListener {
 			altera32Choice.setSelected(true);
 
 		JLabel xilinxLabel = new JLabel("Xilinx tools path (directory containing "
-        + settings.XilinxPrograms[0]+"):");
+        + FPGADownload.XILINX_PROGRAMS[0]+"):");
 		xilinxPath = new JTextField(xpath);
 		xilinxPath.setPreferredSize(new Dimension(400, 10));
 		JButton xilinxPicker = new JButton("Choose");
@@ -219,7 +220,7 @@ public class FPGASettingsDialog implements ActionListener {
 	private void save() {
 		String apath = alteraPath.getText();
 		if (!settings.SetAlteraToolPath(apath)) {
-			String names = pretty(settings.AlteraPrograms);
+			String names = pretty(FPGADownload.ALTERA_PROGRAMS);
 			JOptionPane.showMessageDialog(null,
 					"Error setting Altera tool path.\n" +
 					"Please select a directory containing " + names + ".");
@@ -227,7 +228,7 @@ public class FPGASettingsDialog implements ActionListener {
 		settings.SetAltera64Bit(altera64Choice.isSelected());
 		String xpath = xilinxPath.getText();
 		if (!settings.SetXilinxToolPath(xpath)) {
-			String names = pretty(settings.XilinxPrograms);
+			String names = pretty(FPGADownload.XILINX_PROGRAMS);
 			JOptionPane.showMessageDialog(null,
 					"Error setting Xilinx tool path.\n" +
 					"Please select a directory containing " + names + ".");

@@ -41,35 +41,31 @@ public class FPGAReport {
 		dlg = parent;
 	}
 
-	public void AddError(String msg, Object ...args) {
-		dlg.AddErrors(String.format(msg, args));
-	}
-
-	public void AddFatalError(String msg, Object ...args) {
-		dlg.AddErrors("***FATAL*** " + String.format(msg, args));
-	}
-
 	public void AddInfo(String msg, Object ...args) {
-		dlg.AddInfo(String.format(msg, args));
-	}
-
-	public void AddSevereError(String msg, Object ...args) {
-		dlg.AddErrors("**SEVERE** " + String.format(msg, args));
-	}
-
-	public void AddSevereWarning(String msg, Object ...args) {
-		dlg.AddWarning("**SEVERE** " + String.format(msg, args));
+		dlg.messages.printf(Console.INFO, msg, args);
 	}
 
 	public void AddWarning(String msg, Object ...args) {
-		dlg.AddWarning(String.format(msg, args));
+		dlg.messages.printf(Console.WARNING, msg, args);
 	}
 
-	public void NewConsole(String title) {
-		dlg.NewConsole(title);
+	public void AddSevereWarning(String msg, Object ...args) {
+		dlg.messages.printf(Console.WARNING, "**SEVERE** " + msg, args);
 	}
 
-	public void printf(String msg, Object ...args) {
-		dlg.AddConsole(String.format(msg, args));
+	public void AddSevereError(String msg, Object ...args) {
+		dlg.messages.printf(Console.SEVERE, "**SEVERE** " + msg, args);
+	}
+
+	public void AddError(String msg, Object ...args) {
+		dlg.messages.printf(Console.ERROR, msg, args);
+	}
+
+	public void AddFatalError(String msg, Object ...args) {
+		dlg.messages.printf(Console.ERROR, "***FATAL*** " + msg, args);
+	}
+
+	public Console NewConsole(String title) {
+		return dlg.NewConsole(title);
 	}
 }

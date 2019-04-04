@@ -30,245 +30,60 @@
 
 package com.bfh.logisim.download;
 
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Rectangle;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
-
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JProgressBar;
 
 import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.fpga.PullBehavior;
+import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.hdlgenerator.FileWriter;
-import com.bfh.logisim.hdlgenerator.TickHDLGenerator;
-import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
-import com.bfh.logisim.settings.Settings;
-import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.hdl.Hdl;
 
-public class AlteraDownload extends FPGADownload implements Runnable {
+public class AlteraDownload extends FPGADownload {
 
-  static final String TOP_HDL = ToplevelHDLGenerator.HDL_NAME;
-  static final String CLK_PORT = TickHDLGenerator.FPGA_CLK_NET;
+  public AlteraDownload() { super("Altera"); }
 
-  public AlteraDownload() { }
-
-  private JFrame panel;
-  private JLabel text;
-  private JProgressBar progress;
-  private boolean stopRequested = false;
-
-  private void showProgress() {
-    GridBagConstraints c = new GridBagConstraints();
-    c.fill = GridBagConstraints.HORIZONTAL;
-
-    panel = new JFrame("Altera Downloading");
-    panel.setLayout(new GridBagLayout());
-    panel.setResizable(false);
-    panel.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-    panel.addWindowListener(new WindowAdapter() {
-      public void windowClosed(WindowEvent e) { cancel(); }
-    });
-
-    text = new JLabel("Altera Downloader");
-    text.setMinimumSize(new Dimension(600, 30));
-    text.setPreferredSize(new Dimension(600, 30));
-
-    progress = new JProgressBar(0, 5);
-    progress.setValue(1);
-    progress.setStringPainted(true);
-
-    c.gridx = 0;
-    c.gridy = 0;
-    panel.add(text, c);
-
-    c.gridx = 0;
-    c.gridy = 1;
-    panel.add(progress, c);
-
-    panel.pack();
-    panel.setLocation(Projects.getCenteredLoc(panel.getWidth(), panel.getHeight() * 4));
-    panel.setVisible(true);
+  @Override
+  public boolean readyForDownload() {
+    return new File(sandboxPath + TOP_HDL + ".sof").exists()
+        || new File(sandboxPath + TOP_HDL + ".pof").exists();
   }
 
-  private void setStatus(String msg) {
-    text.setText(msg);
-    Rectangle r = text.getBounds();
-    r.x = r.y = 0;
-    text.repaint(r);
-  }
-
-  private void setProgress(int val) {
-    progress.setValue(val);
-    Rectangle r = progress.getBounds();
-    r.x = r.y = 0;
-    progress.repaint(r);
-  }
-
-  public void cancel() {
-    setStatus("Cancelling... please wait");
-    stopRequested = true;
-    synchronized(lock) {
-      if (altera != null) {
-        altera.destroy();
-      }
-    }
-  }
-
-  public void run() {
-    String fatal = null;
-    Throwable failure = null;
-    try { fatal = download(); }
-    catch (Throwable e) { failure = e; }
-    if (failure != null) {
-      StringWriter buf = new StringWriter();
-      failure.printStackTrace(new PrintWriter(buf));
-      err.AddFatalError("Altera failed to download with an unexpected error.\n %s\n %s",
-        failure.getMessage(), buf.toString());
-    }
-    if (fatal != null)
-      err.AddFatalError("%s", fatal);
-    panel.setVisible(false);
-    panel.dispose();
-  }
-
-  private Process altera = null;
-  private Object lock = new Object();
-
-  private String shell(ArrayList<String> cmd) {
-    String s = "";
-    for (String c : cmd) {
-      if (!c.matches("[a-zA-Z0-9-+_=:,.]*")) {
-        c = c.replaceAll("\\\\", "\\\\");
-        c = c.replaceAll("`", "\\`");
-        c = c.replaceAll("\\$", "\\$");
-        c = c.replaceAll("!", "\\!");
-        c = c.replaceAll("'", "'\\''");
-        c = "'" + c + "'";
-      }
-      if (s.length() > 0)
-        s += " ";
-      s += c;
-    }
-    return s;
-  }
-
-  private boolean alteraCommand(String title, ArrayList<String> out, int progid, String... args)
-      throws IOException, InterruptedException {
+  private ArrayList<String> cmd(String prog, String ...args) {
     ArrayList<String> command = new ArrayList<>();
-    command.add(settings.GetAlteraToolPath() + File.separator + Settings.AlteraPrograms[progid]);
+    command.add(settings.GetAlteraToolPath() + File.separator + prog);
     if (settings.GetAltera64Bit())
       command.add("--64bit");
     for (String arg: args)
       command.add(arg);
-    ProcessBuilder builder = new ProcessBuilder(command);
-    builder.directory(new File(sandboxPath));
-    synchronized(lock) {
-      altera = builder.start();
-    }
-    InputStream is = altera.getInputStream();
-    InputStreamReader isr = new InputStreamReader(is);
-    BufferedReader br = new BufferedReader(isr);
-    String line;
-    if (out == null) {
-      err.NewConsole(title);
-      err.printf("Command: %s\n", shell(command));
-    }
-    while ((line = br.readLine()) != null) {
-      if (out != null)
-        out.add(line);
-      else
-        err.printf("%s", line);
-    }
-    altera.waitFor();
-    if (altera.exitValue() != 0) {
-      if (out != null) {
-        err.NewConsole(title);
-        err.printf("Command: %s\n", shell(command));
-        for (String msg : out)
-          err.printf("%s", msg);
-      }
-      return false;
-    }
-    return true;
+    return command;
   }
 
-  private String download() throws IOException, InterruptedException {
-    setStatus("Generating FPGA files and performing download; this may take a (very long) while...");
-    boolean sofFileExists = new File(sandboxPath + TOP_HDL + ".sof").exists();
+  private String bitfile;
+  private String cablename;
 
-    setProgress(1);
-    if (stopRequested)
-      return null;
-    if (!sofFileExists) {
-      setStatus("Creating Project");
-      if (!alteraCommand("init", null, 0, "-t", scriptPath.replace(projectPath, ".." + File.separator) + "AlteraDownload.tcl"))
-        return "Failed to Create a Quartus Project, cannot download";
+  @Override
+  public ArrayList<Stage> initiateDownload(Commander cmdr) {
+    ArrayList<Stage> stages = new ArrayList<>();
+
+    if (!readyForDownload()) {
+      String script = scriptPath.replace(projectPath, ".." + File.separator) + "AlteraDownload.tcl";
+      stages.add(new Stage(
+            "init", "Creating Quartus Project",
+            cmd(ALTERA_QUARTUS_SH, "-t", script),
+            "Failed to create Quartus project, cannot download"));
+      stages.add(new Stage(
+            "optimize", "Optimizing for Minimal Area",
+            cmd(ALTERA_QUARTUS_MAP, TOP_HDL, "--optimize=area"),
+            "Failed to optimize design, cannot download"));
+      stages.add(new Stage(
+            "synthesize", "Synthesizing (may take a while)",
+            cmd(ALTERA_QUARTUS_SH, "--flow", "compile", TOP_HDL),
+            "Failed to synthesize design, cannot download"));
     }
 
-    setProgress(2);
-    if (stopRequested)
-      return null;
-    if (!sofFileExists) {
-      setStatus("Optimize Project");
-      if (!alteraCommand("optimize", null, 2, TOP_HDL, "--optimize=area"))
-        return "Failed to optimize (AREA) Project, cannot download";
-    }
-
-    setProgress(3);
-    if (stopRequested)
-      return null;
-    if (!sofFileExists) {
-      setStatus("Synthesizing and creating configuration file (this may take a while)");
-      if (!alteraCommand("synthesize", null, 0, "--flow", "compile", TOP_HDL))
-        return "Failed to synthesize design and to create the configuration files, cannot download";
-    }
-
-    setStatus("Downloading");
-    if (stopRequested)
-      return null;
-    Object[] options = { "Yes, download" };
-    if (JOptionPane.showOptionDialog(
-          progress,
-          "Verify that your board is connected and you are ready to download.",
-          "Ready to download ?", JOptionPane.YES_OPTION,
-          JOptionPane.WARNING_MESSAGE, null, options, options[0]) == JOptionPane.CLOSED_OPTION) {
-      err.AddSevereWarning("Download aborted.");
-      return null;
-    }
-
-    setProgress(4);
-    if (stopRequested)
-      return null;
-    // if there is no .sof generated, try with the .pof
-    String bin;
-    if (new File(sandboxPath
-          + TOP_HDL + ".sof")
-        .exists()) {
-      bin = "P;" + TOP_HDL + ".sof";
-    } else if (new File(sandboxPath
-          + TOP_HDL + ".pof")
-        .exists()) {
-      bin = "P;" + TOP_HDL + ".pof";
-    } else {
-      err.AddFatalError("File not found: " +
-          sandboxPath + TOP_HDL + ".sof");
-      return "Error: Design must be synthesized before download.";
-    }
+    // Typical output for FPGA enumerate command:
     // Info: *******************************************************************
     // Info: Running Quartus II 32-bit Programmer
     //     Info: Version 13.0.0 Build 156 04/24/2013 SJ Web Edition
@@ -280,52 +95,66 @@ public class AlteraDownload extends FPGADownload implements Runnable {
     // Info: Quartus II 32-bit Programmer was successful. 0 errors, 0 warnings
     //     Info: Peak virtual memory: 126 megabytes
     //     ...
-
-    ArrayList<String> lines = new ArrayList<>();
-    if (!alteraCommand("download", lines, 1, "--list"))
-      return "Failed to list devices; did you connect the board?";
-    ArrayList<String> dev = new ArrayList<>();
-    for (String line: lines) {
-      int n  = dev.size() + 1;
-      if (!line.matches("^" + n + "\\) .*" ))
-        continue;
-      line = line.replaceAll("^" + n + "\\) ", "");
-      dev.add(line.trim());
-    }
-    String cablename = "usb-blaster";
-    if (dev.size() == 0) {
-      err.AddSevereWarning("No USB-Blaster cable detected");
-    } else if (dev.size() > 1) {
-      err.printf("%d FPGA devices detected:", dev.size());
-      int i = 1;
-      for (String d : dev)
-        err.printf("   %d) %s", i++, d);
-      cablename = chooseDevice(dev);
-      if (cablename == null) {
-        err.printf("Download cancelled.");
-        return null;
+    stages.add(new Stage(
+          "scan", "Searching for FPGA Devices",
+          cmd(ALTERA_QUARTUS_PGM, "--list"),
+          "Could not find any FPGA devices. Did you connect the FPGA board?") {
+      @Override
+      protected boolean prep() {
+        // if there is no .sof generated, we can use a .pof instead
+        if (new File(sandboxPath + TOP_HDL + ".sof").exists()) {
+          bitfile = "P;" + TOP_HDL + ".sof";
+        } else if (new File(sandboxPath + TOP_HDL + ".pof").exists()) {
+          bitfile = "P;" + TOP_HDL + ".pof";
+        } else {
+          console.printf(console.ERROR, "Error: Design must be synthesized before download.");
+          return false;
+        }
+        if (!cmdr.confirmDownload()) {
+          cancelled = true;
+          return false;
+        }
+        return true;
       }
-    }
-
-    err.printf("Downloading to FPGA device: %s", cablename);
-
-    if (!alteraCommand("download", null, 1, "-c", cablename, "-m", "jtag", "-o", bin))
-      return "Failed to download design; did you connect the board?";
-
-    return null;
-  }
-
-  String chooseDevice(ArrayList<String> names) {
-    String[] choices = new String[names.size()];
-    for (int i = 0; i < names.size(); i++)
-      choices[i] = names.get(i);
-    String choice = (String) JOptionPane.showInputDialog(progress,
-        "Multiple FPGA devices detected. Select one to be programmed...",
-        "Select FPGA Device",
-        JOptionPane.QUESTION_MESSAGE, null,
-        choices,
-        choices[0]);
-    return choice;
+      @Override
+      protected boolean post() {
+        ArrayList<String> dev = new ArrayList<>();
+        for (String line: console.getText()) {
+          int n  = dev.size() + 1;
+          if (!line.matches("^" + n + "\\) .*" ))
+            continue;
+          line = line.replaceAll("^" + n + "\\) ", "");
+          dev.add(line.trim());
+        }
+        if (dev.size() == 0) {
+          console.printf(console.ERROR, "No USB-Blaster cable detected");
+          return false;
+        } else if (dev.size() == 1) {
+          cablename = "usb-blaster"; // why not dev.get(0)?
+        } else if (dev.size() > 1) {
+          console.printf("%d FPGA devices detected:", dev.size());
+          int i = 1;
+          for (String d : dev)
+            console.printf("   %d) %s", i++, d);
+          cablename = cmdr.chooseDevice(dev);
+          if (cablename == null) {
+            cancelled = true;
+            return false;
+          }
+        }
+        return true;
+      }
+    });
+    stages.add(new Stage(
+          "download", "Downloading to FPGA", null,
+          "Failed to download design; did you connect the board?") {
+      @Override
+      protected boolean prep() {
+        cmd = cmd(ALTERA_QUARTUS_PGM, "-c", cablename, "-m", "jtag", "-o", bitfile);
+        return true;
+      }
+    });
+    return stages;
   }
 
   @Override
@@ -397,16 +226,4 @@ public class AlteraDownload extends FPGADownload implements Runnable {
     return f != null && FileWriter.WriteContents(f, out, err);
   }
  
-  @Override
-  public boolean readyForDownload() {
-    return new File(sandboxPath + TOP_HDL + ".sof").exists();
-  }
-
-  @Override
-  public boolean initiateDownload() {
-    showProgress();
-    new Thread(this).start();
-    return true;
-  }
-
 }

@@ -56,37 +56,11 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.cburch.logisim.util.Errors;
+import com.bfh.logisim.download.FPGADownload;
 import com.bfh.logisim.gui.FPGASettingsDialog;
+import com.cburch.logisim.util.Errors;
 
 public class Settings {
-
-  private static String[] loadAltera() {
-    String[] alteraProgs = { "quartus_sh", "quartus_pgm", "quartus_map" };
-    String osname = System.getProperty("os.name");
-    if (osname == null)
-      throw new IllegalArgumentException("no os.name");
-    else {
-      if (osname.toLowerCase().indexOf("windows") != -1)
-        for (int i = 0; i < alteraProgs.length; i++)
-          alteraProgs[i] += ".exe";
-    }
-    return alteraProgs;
-  }
-
-  private static String[] loadXilinx() {
-    String[] xilinxProgs = { "xst", "ngdbuild", "map", "par", "bitgen",
-      "impact", "cpldfit", "hprep6" };
-    String osname = System.getProperty("os.name");
-    if (osname == null)
-      throw new IllegalArgumentException("no os.name");
-    else {
-      if (osname.toLowerCase().indexOf("windows") != -1)
-        for (int i = 0; i < xilinxProgs.length; i++)
-          xilinxProgs[i] += ".exe";
-    }
-    return xilinxProgs;
-  }
 
   public static final String VHDL = "VHDL";
   public static final String VERILOG = "Verilog";
@@ -112,10 +86,6 @@ public class Settings {
   private boolean modified = false;
   private BoardList KnownBoards = new BoardList();
   private ArrayList<Listener> listeners = new ArrayList<>();
-
-  public static final String[] AlteraPrograms = loadAltera();
-
-  public static final String[] XilinxPrograms = loadXilinx();
 
   private static Settings singleton;
 
@@ -245,7 +215,7 @@ public class Settings {
 
   public boolean SetAlteraToolPath(String path) {
     path = normalizePath(path);
-    if (path != null && !allToolsPresent(path, AlteraPrograms))
+    if (path != null && !allToolsPresent(path, FPGADownload.ALTERA_PROGRAMS))
       return false;
     setAttribute(WorkSpace, AlteraToolsPath, path);
     return true;
@@ -253,7 +223,7 @@ public class Settings {
 
   public boolean SetXilinxToolPath(String path) {
     path = normalizePath(path);
-    if (path != null && !allToolsPresent(path, XilinxPrograms))
+    if (path != null && !allToolsPresent(path, FPGADownload.XILINX_PROGRAMS))
       return false;
     setAttribute(WorkSpace, XilinxToolsPath, path);
     return true;

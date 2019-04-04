@@ -65,6 +65,10 @@ class JDropdownButton extends AbstractButton {
       menuButton.setPreferredSize(new Dimension(15, 10));
       add(BorderLayout.EAST, menuButton);
       // menuButton.setBorderPainted(false);
+
+      actionButton.addPropertyChangeListener("enabled",
+          evt -> menuButton.setEnabled(actionButton.isEnabled()));
+      menuButton.setEnabled(actionButton.isEnabled());
   
       MouseAdapter ma = new MouseAdapter() {
          public void mouseClicked(MouseEvent me) { }

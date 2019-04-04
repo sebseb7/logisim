@@ -32,6 +32,13 @@ package com.bfh.logisim.gui;
 
 import java.awt.Color;
 import java.awt.GridLayout;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -44,16 +51,24 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 
 public class Console extends JPanel {
-  String title;
-  JTextPane area;
+
+  final Commander cmdr;
+  final String title;
+  final int idx;
+
+  final JTextPane area;
   int count;
+  long start;
+  final ArrayList<String> contents = new ArrayList<>();
 
   public static final int FONT_SIZE = 12;
   public static final String FONT_FAMILY = "monospaced";
 
-  static final StyleContext styles = StyleContext.getDefaultStyleContext();
-  static final AttributeSet INFO, WARNING, SEVERE, ERROR;
+  static final SimpleDateFormat initialDate = new SimpleDateFormat("[yyyy-MM-dd HH:mm:ss]\n");
+
+  public static final AttributeSet INFO, WARNING, SEVERE, ERROR;
   static {
+    StyleContext styles = StyleContext.getDefaultStyleContext();
     AttributeSet aset = SimpleAttributeSet.EMPTY;
     aset = styles.addAttribute(aset, StyleConstants.FontFamily, FONT_FAMILY);
     aset = styles.addAttribute(aset, StyleConstants.FontSize, FONT_SIZE);
@@ -64,8 +79,10 @@ public class Console extends JPanel {
     ERROR = styles.addAttribute(aset, StyleConstants.Foreground, Color.RED);
   }
 
-  public Console(String title) {
+  public Console(Commander cmdr, String title, int idx) {
+    this.cmdr = cmdr;
     this.title = title;
+    this.idx = idx;
     setLayout(new GridLayout(1, 1));
     setName(title);
 
@@ -78,51 +95,91 @@ public class Console extends JPanel {
     scrollpane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
     scrollpane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     add(scrollpane);
+    clear();
   }
 
-  AttributeSet styleFor(String msg) {
+  public AttributeSet styleFor(AttributeSet defaultStyle, String msg) {
     msg = msg.trim();
-    if (msg.startsWith("Warning"))
+    if (msg.toUpperCase().startsWith("WARNING"))
       return WARNING;
-    if (msg.startsWith("Error"))
+    if (msg.toUpperCase().startsWith("ERROR"))
       return ERROR;
-    else if (msg.startsWith("**SEVERE**"))
+    else if (msg.toUpperCase().startsWith("**SEVERE**"))
       return SEVERE;
-    else if (msg.startsWith("**FATAL**"))
+    else if (msg.toUpperCase().startsWith("**FATAL**"))
       return ERROR;
     else
-      return INFO;
+      return defaultStyle;
   }
 
-  String format(String msg) {
+  private String format(String msg) {
     if (msg.endsWith("\n"))
       msg = msg.substring(0, msg.length() - 1);
-    msg.replaceAll("\n", "\n       ");
-    return String.format("%5d> %s\n", count, msg);
+    msg.replaceAll("\n", "\n    ");
+    long elapsed = System.currentTimeMillis() - start;
+    return String.format("[%d.%3ds] %3d> %s\n", elapsed/1000, elapsed%1000, count, msg);
   }
 
-  public void append(String msg) {
-    append(msg, styleFor(msg));
+	public void printf(String msg, Object ...args) {
+    printf(INFO, msg, args);
   }
 
-  public void append(String msg, AttributeSet style) {
-    count++;
-    try {
-      Document doc = area.getDocument();
-      doc.insertString(doc.getLength(), format(msg), style);
+  private Object lock = new Object();
+  public void printf(AttributeSet defaultStyle, String msg, Object ...args) {
+    if (args.length > 0)
+      msg = String.format(msg, args);
+    AttributeSet style = styleFor(defaultStyle, msg);
+    synchronized(lock) {
+      count++;
+      try {
+        Document doc = area.getDocument();
+        doc.insertString(doc.getLength(), format(msg), style);
+        contents.add(msg);
+      } catch (Exception e) { }
     }
-    catch (Exception e) { }
-    // Rectangle rect = tabbedPane.getBounds();
-    // rect.x = 0;
-    // rect.y = 0;
-    // if (EventQueue.isDispatchThread())
-    //     tabbedPane.paintImmediately(rect);
-    // else
-    //     tabbedPane.repaint(rect);
+    try {
+      cmdr.repaintConsole(idx);
+    } catch (Exception e) { }
   }
 
   public void clear() {
-    count = 0;
-    area.setText(null);
+    synchronized (lock) {
+      count = 0;
+      try {
+        area.setText(null);
+        Document doc = area.getDocument();
+        doc.insertString(0, initialDate.format(new Date()), INFO);
+        contents.clear();
+      } catch (Exception e) { }
+      start = System.currentTimeMillis();
+    }
+    try {
+      cmdr.repaintConsole(idx);
+    } catch (Exception e) { }
+  }
+
+  public ArrayList<String> getText() {
+    // String lines[] = area.getText().split("[\\r\\n]+");
+    ArrayList<String> copy = new ArrayList<>();
+    synchronized(lock) {
+      copy.addAll(contents);
+    }
+    return copy;
+  }
+
+  public Thread copyFrom(AttributeSet defaultStyle, InputStream is) {
+    InputStreamReader isr = new InputStreamReader(is);
+    BufferedReader br = new BufferedReader(isr);
+    Thread t = new Thread(() -> {
+      try {
+        String line;
+        while ((line = br.readLine()) != null)
+          printf(defaultStyle, "%s", line);
+      } catch (IOException e) {
+        printf(ERROR, "%s\n", e.getMessage());
+      }
+    });
+    t.start();
+    return t;
   }
 }

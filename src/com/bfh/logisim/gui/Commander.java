@@ -37,6 +37,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Rectangle;
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -50,8 +52,10 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JProgressBar;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -130,7 +134,11 @@ public class Commander extends JFrame
   private final ComboBox<Object> clockDivCount = new ComboBox<>();
   private final ComboBox<String> language = new ComboBox<>();
   private final JButton toolSettings = new JButton("Settings");
-  private final Console messages = new Console("Messages");
+
+  private final JProgressBar progressBar = new JProgressBar(0, 5);
+  private final JButton stop = new JButton("Stop");
+
+  public final Console messages = new Console(this, "Messages", 0);
   private final ArrayList<Console> consoles = new ArrayList<>();
   private final JTabbedPane tabbedPane = new JTabbedPane();
 
@@ -284,6 +292,26 @@ public class Commander extends JFrame
     tabbedPane.add(messages); // tab index 0 is for console messages
     tabbedPane.setPreferredSize(new Dimension(700, 20 * Console.FONT_SIZE));
 
+    // configure progress panel
+    progressBar.setValue(0);
+    progressBar.setString("Ready");
+    progressBar.setStringPainted(true);
+    progressBar.setEnabled(false);
+    stop.addActionListener(e -> stopDownloading());
+    stop.setEnabled(false);
+    JPanel progressPanel = new JPanel();
+    progressPanel.setLayout(new GridBagLayout());
+    c.fill = GridBagConstraints.BOTH;
+    c.insets.top = c.insets.bottom = 0;
+    c.insets.left = c.insets.right = 0;
+    c.gridx = c.gridy = 0;
+    c.weightx = c.weighty = 1.0;
+    progressPanel.add(progressBar, c);
+    c.gridx++;
+    c.insets.left = 5;
+    c.weightx = c.weighty = 0.0;
+    progressPanel.add(stop, c);
+
     configureActions();
 
     // layout rest of panel
@@ -338,13 +366,22 @@ public class Commander extends JFrame
 
     c.gridwidth = 4;
     c.gridy++;
+    c.fill = GridBagConstraints.HORIZONTAL;
+    c.insets.top = 0;
+    add(progressPanel, c);
+
+    c.gridy++;
     c.weightx = c.weighty = 1.0;
+    c.fill = GridBagConstraints.BOTH;
     add(tabbedPane, c);
     c.gridwidth = 1;
 
     c.gridy = 0;
     c.gridx = 3;
     c.gridheight = 4;
+    c.gridheight = 4;
+    c.insets.top = c.insets.bottom = 5;
+    c.insets.left = c.insets.right = 5;
     c.fill = GridBagConstraints.BOTH;
     c.weightx = c.weighty = 0.0;
     add(boardOptions, c);
@@ -639,19 +676,19 @@ public class Commander extends JFrame
     synchronized(consoles) {
       consoles.clear();
       tabbedPane.setSelectedIndex(0);
-      for (int i = tabbedPane.getTabCount() - 1; i > 0; i--) {
+      for (int i = tabbedPane.getTabCount() - 1; i > 0; i--)
         tabbedPane.removeTabAt(i);
-      }
     }
     messages.clear();
     repaintConsoles();
   }
 
-  public void NewConsole(String title) {
-    Console console = new Console(title);
+  public Console NewConsole(String title) {
     synchronized(consoles) {
+      Console console = new Console(this, title, 1+consoles.size());
       consoles.add(console);
       tabbedPane.add(console);
+      return console;
     }
   }
 
@@ -677,7 +714,6 @@ public class Commander extends JFrame
       configureActions();
       return;
     }
-    annotateButton.setEnabled(true);
     boardsListSelectedIndex = boardsList.getSelectedIndex();
     settingBoard = false;
     boardIcon.setImage(board == null ? null : board.image);
@@ -693,7 +729,7 @@ public class Commander extends JFrame
     if (board == null)
       return; // failed to load
     if (settings.GetBoardNames().contains(board.name)) {
-      AddErrors("A board with the name \""+board.name+"\" already exists. "
+      eprintf("A board with the name \""+board.name+"\" already exists. "
           + "Either rename your board file, or edit Logisim's XML settings file by "
           + "hand to remove the existing board.");
       board = null;
@@ -707,34 +743,17 @@ public class Commander extends JFrame
     boardsList.invalidate();
   }
 
-  public void AddConsole(String Message) {
-    Console area;
-    synchronized(consoles) {
-      int i = consoles.size() - 1;
-      if (i == -1) {
-        NewConsole("Console");
-        i = 0;
-      }
-      tabbedPane.setSelectedIndex(1 + i);
-      area = consoles.get(i);
-    }
-    area.append(Message);
+  void repaintConsole(int idx) {
+    tabbedPane.setSelectedIndex(idx);
     repaintConsoles();
   }
 
-  public void AddErrors(String Message) {
-    messages.append(Message, Console.ERROR);
-    repaintConsoles();
+  private void iprintf(String msg, Object ...args) {
+    messages.printf(Console.INFO, msg, args);
   }
 
-  public void AddInfo(String Message) {
-    messages.append(Message, Console.INFO);
-    repaintConsoles();
-  }
-
-  public void AddWarning(String Message) {
-    messages.append(Message, Console.WARNING);
-    repaintConsoles();
+  private void eprintf(String msg, Object ...args) {
+    messages.printf(Console.ERROR, msg, args);
   }
 
   private void annotate() {
@@ -744,7 +763,7 @@ public class Commander extends JFrame
     if (root == null)
       return; // huh?
     root.autoHdlAnnotate(err);
-    err.AddInfo("Annotation done");
+    iprintf("Annotation done");
     // TODO: Fix this dirty hack; see Circuit.autoHdlAnnotate() also.
     proj.repaintCanvas();
     proj.getLogisimFile().setDirty(true);
@@ -755,7 +774,7 @@ public class Commander extends JFrame
       File dir = new File(dirname);
       if (!dir.exists())
         return true;
-      err.AddInfo("Clearing " + dirname);
+      iprintf("Clearing " + dirname);
       for (File f : dir.listFiles()) {
         if (f.isDirectory()) {
           if (!cleanDirectory(f.getPath()))
@@ -805,61 +824,61 @@ public class Commander extends JFrame
   private void doDownloadPrep() {
     clearConsoles();
     if (board == null) {
-      AddErrors("No FPGA board is selected. Please select an FPGA board.");
+      eprintf("No FPGA board is selected. Please select an FPGA board.");
       return;
     }
     Circuit root = circuitsList.getSelectedValue();
     if (root == null) {
-      AddErrors("INTERNAL ERROR: no circuit selected.");
+      eprintf("INTERNAL ERROR: no circuit selected.");
       return;
     }
     String name = proj.getLogisimFile().getName();
     if (name.indexOf(" ") != -1) {
-      AddErrors("The project name '" + name + "' contains a space.");
-      AddErrors("Spaces are not permitted by the HDL synthesis engine. Please");
-      AddErrors("rename your files and directories to not have any spaces.");
+      eprintf("The project name '" + name + "' contains a space.");
+      eprintf("Spaces are not permitted by the HDL synthesis engine. Please");
+      eprintf("rename your files and directories to not have any spaces.");
       return;
     }
     String path = workspacePath();
     if (path == null || path.isEmpty()) {
-      AddWarning("The project workspace path is invalid.");
-      AddWarning("Please change the path in FPGA settings.");
+      eprintf("The project workspace path is invalid.");
+      eprintf("Please change the path in FPGA settings.");
       return;
     }
     if (path.indexOf(" ") != -1) {
-      AddErrors("The workspace directory '" + path + "' contains a space.");
-      AddErrors("Spaces are not permitted by the HDL synthesis engine. Please");
-      AddErrors("rename your files and directories to not have any spaces.");
-      AddErrors("Or, set a valid workspace path in FPGA settings.");
+      eprintf("The workspace directory '" + path + "' contains a space.");
+      eprintf("Spaces are not permitted by the HDL synthesis engine. Please");
+      eprintf("rename your files and directories to not have any spaces.");
+      eprintf("Or, set a valid workspace path in FPGA settings.");
       return;
     }
-    AddInfo("Workspace directory for HDL synthesis: " + path);
+    iprintf("Workspace directory for HDL synthesis: " + path);
     if (actionItems.get(HDL_DOWNLOAD_ONLY).isSelected()) {
-      AddInfo("*** NOTE *** Skipping both HDL generation and synthesis.");
-      AddInfo("*** NOTE *** Recent changes to circuits will not take effect.");
+      iprintf("*** NOTE *** Skipping both HDL generation and synthesis.");
+      iprintf("*** NOTE *** Recent changes to circuits will not take effect.");
       doSynthesisAndDownload(null);
     } else {
-      AddInfo("Performing design rule checks (DRC)");
+      iprintf("Performing design rule checks (DRC)");
       long oscFreq = board.fpga.ClockFrequency;
       int clkPeriod = getClkPeriod();
       Netlist.Context ctx = new Netlist.Context(lang, err, board.fpga.Vendor,
           root, oscFreq, clkPeriod);
       if (!ctx.getNetlist(root).validate()) {
-        AddErrors("DRC failed, synthesis can't continue.");
+        eprintf("DRC failed, synthesis can't continue.");
         return;
       }
-      AddInfo("Performing pin assignment");
+      iprintf("Performing pin assignment");
       PinBindings pinBindings = performPinAssignments(ctx);
       if (pinBindings == null) {
-        AddErrors("Pin assignment failed or is incomplete, synthesis can't continue.");
+        eprintf("Pin assignment failed or is incomplete, synthesis can't continue.");
         return;
       }
-      AddInfo("Generating HDL files");
+      iprintf("Generating HDL files");
       if (!writeHDL(ctx, pinBindings)) {
-        AddErrors("HDL file generation failed, synthesis can't continue.");
+        eprintf("HDL file generation failed, synthesis can't continue.");
         return;
       }
-      AddInfo("HDL files are ready for synthesis.");
+      iprintf("HDL files are ready for synthesis.");
       if (!actionItems.get(HDL_GEN_ONLY).isSelected())
         doSynthesisAndDownload(pinBindings);
     }
@@ -902,24 +921,107 @@ public class Commander extends JFrame
     if (pinBindings != null) {
       // sanity check pin bindings
       if (pinBindings == null || !pinBindings.allPinsAssigned()) {
-        err.AddError("Not all pins have been assigned, synthesis can't continue.");
+        eprintf("Not all pins have been assigned, synthesis can't continue.");
         return;
       }
       // generate scripts and synthesize
       if (!tools.generateScripts(pinBindings)) {
-        err.AddError("Can't generate Tool-specific download scripts");
+        eprintf("Can't generate Tool-specific download scripts");
         return;
       }
     } else {
       // don't generate or synthesize, just sanity-check that project is ready
       if (!tools.readyForDownload()) {
-        err.AddError("HDL files are not ready for download. "
+        eprintf("HDL files are not ready for download. "
             + "Try selecting \"Synthesize and Download\" instead.");
         return;
       }
     }
     // download
-    tools.initiateDownload();
+    String tool = tools.name;
+    ArrayList<FPGADownload.Stage> stages = tools.initiateDownload(this);
+    progressBar.setValue(0);
+    progressBar.setString(String.format("(%d of %d) %s: Initializing", 0, stages.size(), tool));
+    progressBar.setMaximum(stages.size());
+    setDownloadMode(true);
+    doDownload(tool, stages, 0);
+  }
+
+  private void setDownloadMode(boolean dl) {
+    annotateButton.setEnabled(!dl);
+    actionButton.setEnabled(!dl && board != null);
+    writeToFlash.setEnabled(!dl && board != null && board.fpga.FlashDefined
+      && !actionItems.get(HDL_GEN_ONLY).isSelected());
+    boardsList.setEnabled(!dl);
+    circuitsList.setEnabled(!dl);
+    clockOption.setEnabled(!dl);
+    clockDivRate.setEnabled(!dl);
+    clockDivCount.setEnabled(!dl);
+    if (!dl)
+      setClockOption();
+    language.setEnabled(!dl);
+    toolSettings.setEnabled(!dl);
+
+    progressBar.setEnabled(dl);
+    stop.setEnabled(dl);
+  }
+
+  private FPGADownload.Stage downloader;
+
+  public boolean confirmDownload() {
+    Object[] options = { "Yes, download", "Cancel" };
+    int ans = JOptionPane.showOptionDialog(
+        this,
+        "Verify that your FPGA board is connected and you are ready to download.",
+        "Ready to download?", JOptionPane.OK_CANCEL_OPTION,
+        JOptionPane.WARNING_MESSAGE, null, options, options[0]);
+    return ans == JOptionPane.OK_OPTION;
+  }
+
+  public String chooseDevice(ArrayList<String> names) {
+    String[] choices = names.toArray(new String[names.size()]);
+    String choice = (String) JOptionPane.showInputDialog(this,
+        "Multiple FPGA devices detected. Select one to be programmed...",
+        "Select FPGA Device",
+        JOptionPane.QUESTION_MESSAGE, null, choices, choices[0]);
+    return choice;
+  }
+
+  private void doDownload(String tool, ArrayList<FPGADownload.Stage> stages, int i) {
+    downloader = null;
+    int n = stages.size();
+    FPGADownload.Stage prev = i == 0 ? null : stages.get(i-1);
+    if (prev != null && prev.failed) {
+      progressBar.setValue(i);
+      if (prev.cancelled) {
+        eprintf("%s download cancelled.\n", tool);
+        progressBar.setString("Cancelled");
+      } else {
+        eprintf("%s %s failed (exit code %d)\n", tool, prev.title, prev.exitValue);
+        eprintf("%s\n", prev.errmsg);
+        progressBar.setString("Failed");
+      }
+      setDownloadMode(false);
+    } else if (i >= n) {
+      progressBar.setValue(n);
+      progressBar.setString("Success");
+      iprintf("Success");
+      setDownloadMode(false);
+    } else {
+      downloader = stages.get(i);
+      progressBar.setValue(i);
+      progressBar.setString(String.format("(%d of %d) %s: %s", i, stages.size(), tool, downloader.msg));
+      iprintf(tool + ": " + downloader.msg);
+      downloader.console = NewConsole(downloader.title);
+      downloader.startAndThen(() -> doDownload(tool, stages, i+1));
+    }
+  }
+
+  public void stopDownloading() {
+    if (downloader == null || downloader.thread == null)
+      return;
+    downloader.cancelled = true;
+    downloader.thread.interrupt();
   }
 
   private boolean mkdirs(String dirname) {
@@ -945,17 +1047,17 @@ public class Commander extends JFrame
         || (board.fpga.Vendor == Chipset.ALTERA && settings.GetAlteraToolPath() == null)
         || (board.fpga.Vendor == Chipset.XILINX && settings.GetXilinxToolPath() == null)) {
       if (board == null) {
-        AddErrors("Please select an FPGA board.");
+        eprintf("Please select an FPGA board.");
       } else {
         String vendor = board.fpga.VendorName;
-        AddErrors("Tool path for " + vendor + " is not set correctly. "
+        eprintf("Tool path for " + vendor + " is not set correctly. "
             + "Synthesis and download will not be available. "
             + "Please set the " + vendor + " tool path "
             + "using the \"Settings\" button above, or choose "
             + "a board from a different vendor.");
         String[] toolset = board.fpga.Vendor == Chipset.ALTERA ?
-            Settings.AlteraPrograms : Settings.XilinxPrograms;
-        AddInfo("The tool path for " + vendor + " must contain these progams:\n"
+            FPGADownload.ALTERA_PROGRAMS : FPGADownload.XILINX_PROGRAMS;
+        iprintf("The tool path for " + vendor + " must contain these progams:\n"
             + "         " + String.join(", ", toolset));
       }
       actionItems.get(HDL_GEN_AND_DOWNLOAD).setSelected(false);
@@ -1029,7 +1131,7 @@ public class Commander extends JFrame
       pinBindings.finalizeMappings();
       return pinBindings;
     }
-    err.AddError("Some I/O-related components have not been assigned to I/O "
+    eprintf("Some I/O-related components have not been assigned to I/O "
         + "resources on the FPGA board. All components must be assigned.");
     return null;
   }
@@ -1124,5 +1226,6 @@ public class Commander extends JFrame
     java.net.URL url = BindingsDialog.class.getClassLoader().getResource(path);
     return url == null ? null : new ImageIcon(url);
   }
+
 
 }
