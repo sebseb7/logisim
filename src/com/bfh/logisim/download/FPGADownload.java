@@ -195,7 +195,7 @@ public abstract class FPGADownload {
           t1.join();
           t2.join();
           exitValue = process.exitValue();
-          if (!post())
+          if (exitValue != 0 || !post())
             failed = true;
         } catch (InterruptedException ex) {
           process.destroyForcibly();

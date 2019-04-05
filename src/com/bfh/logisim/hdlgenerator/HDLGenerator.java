@@ -722,7 +722,7 @@ public class HDLGenerator extends HDLSupport {
       // or just due to various bugs and corner-cases the GUI does not yet
       // check).
       u += "_" + ctx.seqno();
-      s.replace("${UID}", u);
+      s = s.replace("${UID}", u);
     }
     return s;
   }

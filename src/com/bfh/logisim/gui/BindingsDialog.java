@@ -45,7 +45,6 @@ import java.awt.RenderingHints;
 import java.awt.event.ItemEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -54,21 +53,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.function.Function;
 
-// import javax.xml.parsers.DocumentBuilder;
-// import javax.xml.parsers.DocumentBuilderFactory;
-// import javax.xml.transform.OutputKeys;
-// import javax.xml.transform.Result;
-// import javax.xml.transform.Source;
-// import javax.xml.transform.Transformer;
-// import javax.xml.transform.TransformerFactory;
-// import javax.xml.transform.dom.DOMSource;
-// import javax.xml.transform.stream.StreamResult;
-// import org.w3c.dom.Attr;
-// import org.w3c.dom.Document;
-// import org.w3c.dom.Element;
-// import org.w3c.dom.NamedNodeMap;
-// import org.w3c.dom.Node;
-// import org.w3c.dom.NodeList;
 import javax.swing.AbstractListModel;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
@@ -90,8 +74,6 @@ import javax.swing.JToggleButton;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 
-// import com.bfh.logisim.data.Bounds;
-// import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.BoardIO;
 import com.bfh.logisim.fpga.PinBindings;
@@ -111,8 +93,6 @@ public class BindingsDialog extends JDialog {
 
   private JButton unmap = new JButton("Unset");
   private JButton reset = new JButton("Reset All");
-  // private JButton save = new JButton("Load Map from XML");
-  // private JButton load = new JButton("Save Map to XML");
   private JButton done = new JButton("Close/Done");
   private JLabel status = new JLabel();
 
@@ -121,7 +101,7 @@ public class BindingsDialog extends JDialog {
   private SourceList sources;
   JLayeredPane overlay;
 
-  // Caution: these *must* be Integer. See javadoc for JLayeredPane.
+  // Caution: these *must* be Integer, not int. See javadoc for JLayeredPane.
   private static final Integer LAYER_BOTTOM = 0;
   private static final Integer LAYER_TOP = 1;
 
@@ -551,6 +531,7 @@ public class BindingsDialog extends JDialog {
       current = null;
       addListSelectionListener(e -> selected(getSelectedValue()));
       addMouseListener(this);
+      recalculateAllBitCounts();
     }
 
     @Override
