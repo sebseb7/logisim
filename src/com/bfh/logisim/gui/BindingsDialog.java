@@ -121,6 +121,8 @@ public class BindingsDialog extends JDialog {
       r.setVisible(false);
     }
 
+    sources.recalculateAllBitCounts();
+
     setTitle("Configure FPGA Pin Bindings");
     setResizable(false);
     setAlwaysOnTop(false);
@@ -239,8 +241,8 @@ public class BindingsDialog extends JDialog {
   private static final Color HILIGHTB = new Color(0f, 1f, 0f); // border
   private static final Color HOVER = new Color(1f, 1f, 0f, 0.4f); // fill
   private static final Color HOVERB = new Color(1f, 1f, 0f); // border
-  private static final Color MAPPED = new Color(0.2f, 0.8f, 0.2f, 0.4f); // fill
-  private static final Color MAPPEDB = new Color(0.2f, 0.8f, 0.2f); // border
+  private static final Color MAPPED = new Color(0.4f, 0.7f, 0.1f, 0.4f); // fill
+  private static final Color MAPPEDB = new Color(0.4f, 0.7f, 0.1f); // border
   private static final Color MAPPED_TEXT = new Color(0, 0x60, 0); // text
 
   private class Rect extends JPanel implements MouseListener {
@@ -531,7 +533,6 @@ public class BindingsDialog extends JDialog {
       current = null;
       addListSelectionListener(e -> selected(getSelectedValue()));
       addMouseListener(this);
-      recalculateAllBitCounts();
     }
 
     @Override
