@@ -60,8 +60,8 @@ public class RandomHDLGenerator  extends HDLGenerator {
     wires.add("s_busy_pipe_next", 2);
       
     String initialSeed = ctx.hdl.isVhdl
-        ? "X\"0005DEECE66D\" WHEN Seed = 0 ELSE X\"0000\"&std_logic_vector(to_unsigned(Seed,32))"
-        : "(Seed) ? Seed : 48'h5DEECE66D";
+        ? "X\"0000\"&std_logic_vector(to_unsigned(Seed,32))"
+        : "Seed";
     registers.add("s_current_seed", 48, initialSeed);
     registers.add("s_reset_reg", 3, ctx.hdl.allZeros);
     registers.add("s_mult_shift_reg", 36, ctx.hdl.allZeros);
@@ -84,8 +84,7 @@ public class RandomHDLGenerator  extends HDLGenerator {
   protected void generateBehavior(Hdl out) {
     if (out.isVhdl) {
       out.stmt("Q            <= s_output_reg;");
-      out.stmt("s_InitSeed   <= X\"0005DEECE66D\" WHEN Seed = 0 ELSE");
-      out.stmt("                X\"0000\"&std_logic_vector(to_unsigned(Seed,32));");
+      out.stmt("s_InitSeed   <= X\"0000\"&std_logic_vector(to_unsigned(Seed,32));");
       out.stmt("s_reset      <= '1' WHEN s_reset_reg /= \"010\" ELSE '0';");
       out.stmt("s_reset_next <= \"010\" WHEN (s_reset_reg = \"101\" OR");
       out.stmt("                            s_reset_reg = \"010\") AND");
@@ -167,7 +166,7 @@ public class RandomHDLGenerator  extends HDLGenerator {
       out.stmt("END PROCESS make_output;");
     } else {
       out.stmt("assign Q = s_output_reg;");
-      out.stmt("assign s_InitSeed = (Seed) ? Seed : 48'h5DEECE66D;");
+      out.stmt("assign s_InitSeed = Seed;");
       out.stmt("assign s_reset = (s_reset_reg==3'b010) ? 1'b1 : 1'b0;");
       out.stmt("assign s_reset_next = (((s_reset_reg == 3'b101)|");
       out.stmt("                        (s_reset_reg == 3'b010))&~Clear) ? 3'b010 :");

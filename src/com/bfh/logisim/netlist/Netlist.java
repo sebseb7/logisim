@@ -223,6 +223,7 @@ public class Netlist {
       return false;
     }
 
+    status = DRC_PASSED;
     return true;
   }
 

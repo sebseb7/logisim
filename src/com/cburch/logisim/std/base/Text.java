@@ -36,7 +36,8 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
-import com.cburch.logisim.comp.ComponentDrawContext;;
+import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.TextField;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
@@ -45,6 +46,7 @@ import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
@@ -157,7 +159,42 @@ public class Text extends InstanceFactory implements CustomHandles {
   }
 
   @Override
+  public Component createComponent(Location loc, AttributeSet attrs) {
+    InstanceComponent ret = new InstanceComponent(this, loc, attrs) {
+      @Override
+      public Bounds getBounds() {
+        // Can't properly compute without a graphics context.
+        // But this still gets called in some cases, e.g. while opening a file
+        // to check for overlap, and during some copy-paste operations.
+        return getBounds(null);
+        // return Bounds.EMPTY_BOUNDS.translate(p.getX(), p.getY());
+      }
+      @Override
+      public Bounds getBounds(Graphics g) {
+        Location p = getLocation();
+        return getFactory().getOffsetBounds(getAttributeSet(), g).translate(p.getX(), p.getY());
+      }
+      @Override
+      public void expose(ComponentDrawContext context) {
+        Bounds b = getBounds(context.getGraphics());
+        context.getDestination().repaint(b.getX(), b.getY(), b.getWidth(), b.getHeight());
+      }
+    };
+    configureNewInstance(ret.getInstance());
+    return ret;
+  }
+
+  @Override
   public Bounds getOffsetBounds(AttributeSet attrsBase) {
+    // Can't properly compute without a graphics context.
+    // But this still gets called in some cases, e.g. while opening a file
+    // to check for overlap, and during some copy-paste operations.
+    // return Bounds.EMPTY_BOUNDS;
+    return getOffsetBounds(attrsBase, null);
+  }
+
+  @Override
+  public Bounds getOffsetBounds(AttributeSet attrsBase, Graphics g) {
     TextAttributes attrs = (TextAttributes) attrsBase;
     String text = attrs.getText();
     if (text == null || text.equals("")) {
@@ -165,10 +202,19 @@ public class Text extends InstanceFactory implements CustomHandles {
     } else {
       Bounds bds = attrs.getOffsetBounds();
       if (bds == null) {
-        bds = StringUtil.estimateBounds(attrs.getText(), attrs.getFont(),
-            attrs.getHorizontalAlign(),
-            attrs.getVerticalAlign());
-        attrs.setOffsetBounds(bds);
+        int halign = attrs.getHorizontalAlign();
+        int valign = attrs.getVerticalAlign();
+        String test = attrs.getText();
+        Font font = attrs.getFont();
+        if (g == null) {
+          // This should not happen in most (any) cases...
+          bds = StringUtil.estimateBounds(text, font, halign, valign);
+        } else {
+          String lines[] = text.split("\n");
+          Rectangle r = GraphicsUtil.getTextBounds(g, font, lines, 0, 0, halign, valign);
+          bds = Bounds.create(r).expand(4);
+          attrs.setOffsetBounds(bds);
+        }
       }
       return bds;
     }
@@ -211,7 +257,7 @@ public class Text extends InstanceFactory implements CustomHandles {
     }
 
     if (border) {
-      Bounds bds = painter.getBounds();
+      Bounds bds = painter.getBoundsWithText();
       g.drawRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
     }
     GraphicsUtil.drawText(g, font, lines, loc.getX(), loc.getY(), halign, valign);
@@ -239,7 +285,9 @@ public class Text extends InstanceFactory implements CustomHandles {
     Graphics g = context.getGraphics();
     g.setColor(Color.GRAY);
     InstancePainter painter = context.getInstancePainter();
-    Bounds bds = painter.getBounds();
+    Bounds bds = painter.getBoundsWithText();
+    TextAttributes attrs = (TextAttributes) painter.getAttributeSet();
+    String text = attrs.getText();
     g.drawRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
     painter.drawHandles();
   }

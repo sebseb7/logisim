@@ -387,10 +387,24 @@ public class Hdl extends ArrayList<String> {
       stmt(map, name, String.format(val+idx, valIdx));
     }
 
-    // // vector(i) => vector(i)
-    // public void add0(String name, String val, int valIdx) {
-    //   stmt(map0Bit, name, val, valIdx);
-    // }
+    // VHDL:
+    //   vector(n-1) => vals[n-1]
+    //   ...
+    //   vector(1) => vals[1]
+    //   vector(1) => vals[0]
+    // Verilog:
+    //   .vector({vals[n-1], ..., vals[1], vals[0]})
+    public void addVector(String name, String[] vals) {
+      if (isVhdl) {
+        for (int i = vals.length-1; i >= 0; i--)
+            stmt(map, String.format(name+idx, i), vals[i]);
+      } else {
+        ArrayList<String> v = new ArrayList<>();
+        for (int i = vals.length-1; i >= 0; i--)
+          v.add(vals[i]);
+        stmt(map, name, "{"+String.join(", ", v)+"}");
+      }
+    }
 
   }
 

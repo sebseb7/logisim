@@ -2,7 +2,7 @@
 <TERASIC_DE0>
 <BoardInformation>
 <!--This section decribes the FPGA and its clock-->
-<ClockInformation FPGApin="PIN_B12" Frequency="25000000" IOStandard="Default" PullBehavior="Float"/>
+<ClockInformation FPGApin="PIN_B12" Frequency="50000000" IOStandard="Default" PullBehavior="Float"/>
 <FPGAInformation Family="Cyclone III" JTAGPos="1" Package="FBGA 484" Part="EP3C16F484C6" Speedgrade="6" USBTMC="false" Vendor="ALTERA" CYCLONEII_RESERVE_NCEO_AFTER_CONFIGURATION="USE AS REGULAR IO"/>
 <UnusedPins PullBehavior="Float"/>
 </BoardInformation>

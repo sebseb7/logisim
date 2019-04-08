@@ -188,12 +188,18 @@ public abstract class FPGADownload {
       thread = new Thread(() -> {
         try {
           process.waitFor();
-          try { stdout.close(); } 
-          catch (IOException e) { console.printf(console.ERROR, e.getMessage()); }
-          try { stderr.close(); }
-          catch (IOException e) { console.printf(console.ERROR, e.getMessage()); }
-          t1.join();
-          t2.join();
+          t1.join(500);
+          t2.join(500);
+          if (t1.isAlive()) {
+            try { stdout.close(); } 
+            catch (IOException e) { console.printf(console.ERROR, e.getMessage()); }
+            t1.join();
+          }
+          if (t2.isAlive()) {
+            try { stderr.close(); }
+            catch (IOException e) { console.printf(console.ERROR, e.getMessage()); }
+            t2.join();
+          }
           exitValue = process.exitValue();
           if (exitValue != 0 || !post())
             failed = true;

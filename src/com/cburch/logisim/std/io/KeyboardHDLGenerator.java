@@ -646,7 +646,7 @@ public class KeyboardHDLGenerator extends HDLGenerator {
       out.add("    end if;");
       out.add("  end process;");
       out.add("");
-      out.add("end RTL;");
+      out.add("end logisim_generated;");
       out.add("");
     }
     return out;

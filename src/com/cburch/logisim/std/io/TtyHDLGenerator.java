@@ -488,7 +488,7 @@ public class TtyHDLGenerator extends HDLGenerator {
       out.add("    end if;");
       out.add("  end process reg_op_state;");
       out.add("");
-      out.add("end RTL;");
+      out.add("end logisim_generated;");
       out.add("");
     }
     return out;

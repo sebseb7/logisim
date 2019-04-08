@@ -176,7 +176,7 @@ public class Console extends JPanel {
         while ((line = br.readLine()) != null)
           printf(defaultStyle, "%s", line);
       } catch (IOException e) {
-        printf(ERROR, "%s\n", e.getMessage());
+        printf(ERROR, "%s (from console)\n", e.getMessage());
       }
     });
     t.start();

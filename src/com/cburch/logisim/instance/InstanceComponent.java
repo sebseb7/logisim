@@ -67,7 +67,11 @@ import com.cburch.logisim.util.UnmodifiableList;
 // simply merged into one. Perhaps historical? Perhaps plugins do something
 // different? Maybe some kind of java bytecode lazy loading optimization? For
 // now, I've marked these both as "final". If something breaks, maybe we'll find
-// out.
+// out. 
+// Edit: InstanceComponent is no longer final, and now has one (anonymous)
+// subclass within std/base/Text. That class has some trouble with computing
+// Bounds (unlike all other components, it really needs a graphics context to
+// get the bounds), so it now has its own sublass of InstanceComponent.
 // 
 // So, to sum up:
 //
@@ -75,14 +79,14 @@ import com.cburch.logisim.util.UnmodifiableList;
 //    For every Instance i, we have: i.comp.instance == i
 //    Thus i and c are essentially interchangeable.
 
-public final class InstanceComponent
+public /*final*/ class InstanceComponent
   implements Component, AttributeListener, ToolTipMaker {
 
   private EventSourceWeakSupport<ComponentListener> listeners;
   private InstanceFactory factory;
   private Instance instance;
   private Location loc;
-  private Bounds bounds;
+  private Bounds bounds; // this is only approximate for std/base/Text
   private List<Port> portList;
   private EndData[] endArray;
   private List<EndData> endList;
@@ -99,8 +103,7 @@ public final class InstanceComponent
     this.factory = factory;
     this.instance = Instance.makeFor(this); // new Instance(this);
     this.loc = loc;
-    this.bounds = factory.getOffsetBounds(attrs).translate(loc.getX(),
-        loc.getY());
+    this.bounds = factory.getOffsetBounds(attrs).translate(loc.getX(), loc.getY());
     this.portList = factory.getPorts();
     this.endArray = null;
     this.hasToolTips = false;

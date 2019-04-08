@@ -38,7 +38,6 @@ import java.util.Vector;
 import javax.swing.JList;
 
 import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.proj.Project;
 
@@ -53,7 +52,7 @@ class CircuitJList extends JList {
     Vector<Circuit> options = new Vector<Circuit>();
     boolean currentFound = false;
     for (Circuit circ : file.getCircuits()) {
-      if (!includeEmpty || circ.getBounds() != Bounds.EMPTY_BOUNDS) {
+      if (includeEmpty || !circ.isEmpty()) {
         if (circ == current)
           currentFound = true;
         options.add(circ);

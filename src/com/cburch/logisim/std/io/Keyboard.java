@@ -38,6 +38,7 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
@@ -422,6 +423,9 @@ public class Keyboard extends InstanceFactory {
     circState.setPort(OUT, out, DELAY0);
     circState.setPort(AVL, c != '\0' ? Value.TRUE : Value.FALSE, DELAY1);
   }
+
+  @Override
+  public String getHDLNamePrefix(Component comp) { return "Keyboard"; }
 
   @Override
   public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {

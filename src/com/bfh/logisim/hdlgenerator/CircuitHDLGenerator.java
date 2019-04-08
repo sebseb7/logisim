@@ -202,14 +202,18 @@ public class CircuitHDLGenerator extends HDLGenerator {
         map.add("LOGISIM_DYNAMIC_CLOCK_OUT", "s_LOGISIM_DYNAMIC_CLOCK");
 
       // Hidden ports
-      // note: Toplevel has direct connection and inversions for InOut ports
       Netlist.Int3 h = _circNets.numHiddenBits();
 			if (h.in > 0)
         map.add("LOGISIM_HIDDEN_FPGA_INPUT", "s_LOGISIM_HIDDEN_FPGA_INPUT", h.in-1, 0);
-			if (h.inout > 0)
-        map.add("LOGISIM_HIDDEN_FPGA_INOUT", "LOGISIM_HIDDEN_FPGA_INOUT", h.inout-1, 0);
 			if (h.out > 0)
         map.add("LOGISIM_HIDDEN_FPGA_OUTPUT", "s_LOGISIM_HIDDEN_FPGA_OUTPUT", h.out-1, 0);
+      // Note: Toplevel has direct connection (and no inversions) for InOut ports.
+			if (h.inout > 0) {
+        String[] fpgaPins = new String[h.inout];
+        for (int i = 0; i < h.inout; i++)
+          fpgaPins[i] = "FPGA_INOUT_PIN_" + i;
+        map.addVector("LOGISIM_HIDDEN_FPGA_INOUT", fpgaPins);
+      }
       
       // Normal ports
       for (NetlistComponent pin : _circNets.inpins)

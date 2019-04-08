@@ -853,8 +853,7 @@ class CircuitWires {
       if (y1 > ymax)
         ymax = y1;
     }
-    Bounds bds = Bounds
-        .create(xmin, ymin, xmax - xmin + 1, ymax - ymin + 1);
+    Bounds bds = Bounds.create(xmin, ymin, xmax - xmin + 1, ymax - ymin + 1);
     bounds = bds;
     return bds;
   }

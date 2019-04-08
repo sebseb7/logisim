@@ -50,6 +50,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.function.Function;
 
@@ -415,6 +416,12 @@ public class BindingsDialog extends JDialog {
       int i = startIndex(path);
       if (i+1 < data.size() && data.get(i+1).path.equals(path))
         return; // already expanded
+      Source src = data.get(i);
+      if (src.type != BoardIO.Type.Expanded) {
+        // this only happens during sync(), not from user-action expand
+        replace(i, 
+          new Source(src.path, src.comp, -1, BoardIO.Type.Expanded, src.width.copy()));
+      }
       ArrayList<Source> bitSources = pinBindings.bitSourcesFor(path);
       data.addAll(i+1, bitSources);
       fireIntervalAdded(this, i+1, i+1+bitSources.size()-1);
@@ -460,6 +467,7 @@ public class BindingsDialog extends JDialog {
         Source src = (Source)val;
         Dest dst = pinBindings.mappings.get(src);
         done = dst != null;
+        typeButton.src = src;
         typeButton.text = typeButtonText(src);
         if (src.bit >= 0) {
           indented = true;
@@ -484,9 +492,10 @@ public class BindingsDialog extends JDialog {
 
   private static Color TYPE_BUTTON_COLOR = new Color(0x22, 0x55, 0xcc);
   private static class TypeButton implements Icon {
-    public final HashMap<String, Rectangle> buttonBounds = new HashMap<>();
+    public final IdentityHashMap<Source, Rectangle> buttonBounds = new IdentityHashMap<>();
     static final int GAP = 7;
     String text;
+    Source src;
     int width, height;
     boolean rowHasFocus;
 
@@ -500,12 +509,12 @@ public class BindingsDialog extends JDialog {
       ((Graphics2D)g).setRenderingHints(hints);
       int tx = width - GAP - 10 - 4;
       int ty = height / 2;
-      Rectangle b = buttonBounds.get(text);
+      Rectangle b = buttonBounds.get(src);
       if (b == null) {
         Rectangle t = GraphicsUtil.getTextBounds(g, g.getFont(), text, tx, ty,
             GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER);
         b = new Rectangle(t.x-GAP, 2, t.width + GAP + 10 + 4 + GAP, height-4);
-        buttonBounds.put(text, b); // cache for later, and for hitbox detection
+        buttonBounds.put(src, b); // cache for later, and for hitbox detection
       }
       g.setColor(rowHasFocus ? TYPE_BUTTON_COLOR : Color.GRAY);
       g.fillRoundRect(b.x, b.y, b.width, b.height, 10, 10);
@@ -548,8 +557,7 @@ public class BindingsDialog extends JDialog {
       pt.x -= cell.x;
       pt.y -= cell.y;
       Source src = (Source)model.getElementAt(idx);
-      String text = renderer.typeButtonText(src);
-      Rectangle b = renderer.typeButton.buttonBounds.get(text);
+      Rectangle b = renderer.typeButton.buttonBounds.get(src);
       if (b == null)
         return;
       if (!b.contains(pt))

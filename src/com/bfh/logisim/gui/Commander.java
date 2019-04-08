@@ -37,8 +37,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Rectangle;
 import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -429,7 +427,7 @@ public class Commander extends JFrame
     long base = board == null ? 50000000 : board.fpga.ClockFrequency;
     ArrayList<Integer> counts = new ArrayList<>();
     ArrayList<Double> freqs = new ArrayList<>();
-    double ff = (double)base;
+    double ff = (double)base/2.0; // reduced speed baseline is half of actual base speed
     while (ff >= MenuSimulate.SupportedTickFrequencies[0]*2) {
       freqs.add(ff);
       ff /= 2;
@@ -513,7 +511,7 @@ public class Commander extends JFrame
       if (count < 0)
         rate = "varies";
       else if (count == 0)
-        rate = rateForFreq(2.0*base);
+        rate = rateForFreq(base);
       else
         rate = rateForCount(base, count);
     }
@@ -626,11 +624,12 @@ public class Commander extends JFrame
     return countForFreq(base, freq);
   }
 
-  // base=25mhz, actual=50mhz, count=1 --> 0 0 0 0 0 0 --> 25mhz = 25/1
-  // base=25mhz, actual=50mhz, count=2 --> 1 0 1 0 1 0 --> 12.5mhz = 25/2
-  // base=25mhz, actual=50mhz, count=3 --> 2 1 0 2 1 0 --> 8.3mhz = 25/3
+  // base=50mhz, reduced=25mhz, count=1 --> 0 0 0 0 0 0 --> 25mhz = 25/1
+  // base=50mhz, reduced=25mhz, count=2 --> 1 0 1 0 1 0 --> 12.5mhz = 25/2
+  // base=50mhz, reduced=25mhz, count=3 --> 2 1 0 2 1 0 --> 8.3mhz = 25/3
   private static int countForFreq(long base, double freq) {
-    long count = (long)((double)base / freq);
+    double reduced = base / 2.0;
+    long count = (long)(reduced / freq);
     if ((count > (long) 0x7FFFFFFF) | (count < 0))
       count = (long) 0x7FFFFFFF;
     else if (count == 0)
@@ -639,7 +638,8 @@ public class Commander extends JFrame
   }
 
   private static String rateForCount(long base, int count) {
-    double f = (double)base / count;
+    double reduced = base / 2.0; // reduced speed baseline is half of actual base speed
+    double f = reduced / count;
     return rateForFreq(f);
   }
 

@@ -38,6 +38,7 @@ import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -50,8 +51,8 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.tools.key.DirectionConfigurator;
+import com.cburch.logisim.util.GraphicsUtil;
 
 public class Tty extends InstanceFactory {
   private static int getColumnCount(Object val) {
@@ -274,6 +275,9 @@ public class Tty extends InstanceFactory {
     TtyState tty = getTtyState(state);
     tty.setSendStdout(true);
   }
+
+  @Override
+  public String getHDLNamePrefix(Component comp) { return "TTY"; }
 
   @Override
   public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {

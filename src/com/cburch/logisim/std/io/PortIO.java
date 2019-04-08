@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -263,6 +264,9 @@ public class PortIO extends InstanceFactory {
       catch (CloneNotSupportedException e) { return null; }
     }
   }
+
+  @Override
+  public String getHDLNamePrefix(Component comp) { return "PortIO"; }
 
   @Override
   public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {

@@ -31,6 +31,7 @@
 package com.cburch.logisim.comp;
 
 import java.awt.Color;
+import java.awt.Graphics;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.LogisimVersion;
@@ -99,6 +100,10 @@ public interface ComponentFactory extends AttributeDefaultProvider {
   public String getName();
 
   public Bounds getOffsetBounds(AttributeSet attrs);
+
+  public default Bounds getOffsetBounds(AttributeSet attrs, Graphics g) {
+    return getOffsetBounds(attrs);
+  }
 
   public boolean HasThreeStateDrivers(AttributeSet attrs);
 

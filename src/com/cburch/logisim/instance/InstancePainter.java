@@ -135,9 +135,17 @@ public class InstancePainter implements InstanceState {
   public <E> E getAttributeValue(Attribute<E> attr) {
     return getAttributeSet().getValue(attr);
   }
-
+  
   public Bounds getBounds() {
-    return comp == null ? factory.getOffsetBounds(attrs) : comp.getBounds();
+    return comp == null
+        ? factory.getOffsetBounds(attrs)
+        : comp.getBounds();
+  }
+
+  public Bounds getBoundsWithText() {
+    return comp == null
+        ? factory.getOffsetBounds(attrs, context.getDestination().getGraphics())
+        : comp.getBounds(context.getDestination().getGraphics());
   }
 
   public Circuit getCircuit() {

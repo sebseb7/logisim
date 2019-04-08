@@ -774,7 +774,7 @@ public class Canvas extends JPanel
   public void computeSize(boolean immediate) {
     if (proj.getCurrentCircuit() == null)
       return;
-    Bounds bounds = proj.getCurrentCircuit().getBounds();
+    Bounds bounds = proj.getCurrentCircuit().getCircuitBounds(getGraphics());
     int width = bounds.getX() + bounds.getWidth() + BOUNDS_BUFFER;
     int height = bounds.getY() + bounds.getHeight() + BOUNDS_BUFFER;
     Dimension dim;
@@ -802,7 +802,7 @@ public class Canvas extends JPanel
     if (canvasPane != null) {
       viewableBase = canvasPane.getViewport().getViewRect();
     } else {
-      Bounds bds = proj.getCurrentCircuit().getBounds();
+      Bounds bds = proj.getCurrentCircuit().getCircuitBounds(getGraphics());
       viewableBase = new Rectangle(0, 0, bds.getWidth(), bds.getHeight());
     }
     double zoom = getZoomFactor();

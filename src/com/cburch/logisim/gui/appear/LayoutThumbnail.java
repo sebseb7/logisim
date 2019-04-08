@@ -81,7 +81,7 @@ public class LayoutThumbnail extends JComponent {
           RenderingHints.VALUE_ANTIALIAS_ON);
 
       Circuit circuit = circuitState.getCircuit();
-      Bounds bds = circuit.getBounds(g);
+      Bounds bds = circuit.getCircuitBounds(g);
       Dimension size = getSize();
       double scaleX = (double) (size.width - 2 * BORDER) / bds.getWidth();
       double scaleY = (double) (size.height - 2 * BORDER)
