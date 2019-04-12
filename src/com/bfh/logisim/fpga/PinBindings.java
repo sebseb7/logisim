@@ -281,21 +281,40 @@ public class PinBindings {
   // this to lock in the mappings, giving each physical BoardIO input, inout,
   // and output bit a sequence number, and counting how many bits there are in
   // total.
+  //
+  // For inout ports, it is essential that the seqno assigned here match the
+  // global indices assigned during DRC, since these signals can't be renumbered
+  // in ToplevelHDLGenerator. And note that (so far) the only inout ports are
+  // hidden nets, so the seqno for all inout signals can just come directly from
+  // the global indices. For consistency, we also make the in-pins and out-pins
+  // also follow the global indices for hidden ports, and give non-hidden in-pin
+  // and out-pin signals higher seqno, at the end of the list.
   private Int3 finalizedCounts;
+  private Int3 finalizedOpenCounts;
   public void finalizeMappings() {
     Int3 counts = new Int3();
+    Int3 opens = new Int3();
     mappings.forEach((s, d) -> {
       if (BoardIO.PhysicalTypes.contains(d.io.type)) {
         d.seqno = counts.copy();
         counts.increment(s.width);
+      } else if (d.io.type == BoardIO.Type.Unconnected) {
+        d.seqno = opens.copy();
+        opens.increment(s.width);
       }
     });
     finalizedCounts = counts;
+    finalizedOpenCounts = opens;
   }
 
   // Counts of all I/O-related physical FPGA pins used in the design.
   public Int3 countFPGAPhysicalIOPins() {
     return finalizedCounts.copy();
+  }
+
+  // Counts of all I/O-related unconnected mappings.
+  public Int3 countFPGAUnconnectedIOMappings() {
+    return finalizedOpenCounts.copy();
   }
 
   public static interface PhysicalPinConsumer {

@@ -49,22 +49,22 @@ public class KeyboardHDLGenerator extends HDLGenerator {
     int counter_size = (int)Math.ceil(Math.log(5.0*freq/1e6) / Math.log(2));
     parameters.add("clk_freq", (int)freq);
     parameters.add("counter_size", counter_size);
-    // vhdlLibraries.add(IEEE_UNSIGNED);
+    vhdlLibraries.add(IEEE_UNSIGNED); // for addition on std_logic_vector
 
-    // Note: We expect the slow clock to actually be FPGAClock (or its inverse),
-    // which it will be whenever the clock input is connected to a proper clock
-    // bus. In cases where this is not the case, e.g. when using a gated clock,
-    // are not supported: proper HDL would be tricky, since we need data to
-    // cross between the raw clock domain and slow clock domain. There is a
-    // warning in HDLGenerator about this.
+    // Note: We expect the slow clock to actually be FPGAClock (or its inverse).
+    // This is the case whenever the clock input is connected to a proper clock
+    // bus. Other cases, e.g. using a gated clock, are not supported here:
+    // proper HDL would be tricky, since we need data to cross between the raw
+    // clock domain and slow clock domain. There is a warning in HDLGenerator
+    // about this.
 
     clockPort = new ClockPortInfo("FPGAClock", "SlowClockEnable", Keyboard.CK);
     // inPorts.add("FPGAClock", 1, -1, null); // see getPortMappings, below
-    inPorts.add("ReadEnable", 1, Keyboard.RE, false);
+    inPorts.add("ReadEnable", 1, Keyboard.RE, true); // default enable = true
     // inPorts.add("Clear", 1, Keyboard.CLR, false); // todo
     outPorts.add("Data", "AsciiWidth", Keyboard.OUT, null);
     outPorts.add("Available", 1, Keyboard.AVL, null);
- 
+
     String[] labels = new String[] { "ps2kb_clk", "ps2kb_dat", "ps2ms_clk", "ps2ms_dat" };
     hiddenPort = HiddenPort.makeInOutport(labels, HiddenPort.Ribbon, HiddenPort.Pin);
   }
@@ -202,15 +202,24 @@ public class KeyboardHDLGenerator extends HDLGenerator {
       out.add("  constant DATA_WIDTH : positive := 8;");
       out.add("  signal fifo_pop : std_logic;");
       out.add("");
+      out.add("  type FIFO_Memory is array (0 to FIFO_DEPTH - 1) of std_logic_vector (DATA_WIDTH - 1 downto 0);");
+      out.add("  signal Memory : FIFO_Memory;");
+      out.add("  signal Head : natural range 0 to FIFO_DEPTH - 1 := 0;");
+      out.add("  signal Tail : natural range 0 to FIFO_DEPTH - 1 := 0;");
+      out.add("  signal Full : boolean := false;");
+      out.add("");
       out.add("  signal clk : std_logic;");
-      out.add("  signal ready : std_logic;");
-      out.add("  signal ascii : std_logic_vector(7 downto 0);");
+      out.add("  signal ready : std_logic := '0';");
+      out.add("  signal ascii : std_logic_vector(7 downto 0) := X\"00\";");
       out.add("");
       out.add("begin");
       out.add("");
       out.add("  clk <= FPGAClock;");
       out.add("  Data <= ascii(AsciiWidth-1 downto 0);");
       out.add("  Available <= ready;");
+      // out.add("  HeadHack <= std_logic_vector(to_unsigned(Head, 4));");
+      // out.add("  TailHack <= std_logic_vector(to_unsigned(Tail, 4));");
+      // out.add("  FullHack <= '1' WHEN Full else '0';");
       out.add("");
       out.add("  -----------------------------------------------------------------------------");
       out.add("  -- ps2_keyboard scancode protocol");
@@ -583,66 +592,82 @@ public class KeyboardHDLGenerator extends HDLGenerator {
       out.add("  -- ps2_keyboard scancode protocol");
       out.add("  -----------------------------------------------------------------------------");
       out.add("");
-      out.add("  fifo_pop <= SlowClockEnable AND Read;");
+      out.add("  fifo_pop <= SlowClockEnable AND ReadEnable;");
       out.add("");
       out.add("  -- fifo process");
       out.add("  process (clk)");
-      out.add("    type FIFO_Memory is array (0 to FIFO_DEPTH - 1) of std_logic_vector (DATA_WIDTH - 1 downto 0);");
-      out.add("    variable Memory : FIFO_Memory;");
-      out.add("    variable Head : natural range 0 to FIFO_DEPTH - 1;");
-      out.add("    variable Tail : natural range 0 to FIFO_DEPTH - 1;");
-      out.add("    variable Wrapped : boolean;");
+      out.add("    -- type FIFO_Memory is array (0 to FIFO_DEPTH - 1) of std_logic_vector (DATA_WIDTH - 1 downto 0);");
+      out.add("    -- variable Memory : FIFO_Memory;");
+      out.add("    -- variable Head : natural range 0 to FIFO_DEPTH - 1;");
+      out.add("    -- variable Tail : natural range 0 to FIFO_DEPTH - 1;");
+      out.add("    -- variable Full : boolean;");
+      out.add("    variable NewHead : natural range 0 to FIFO_DEPTH - 1;");
+      out.add("    variable NewTail : natural range 0 to FIFO_DEPTH - 1;");
+      out.add("    variable NewFull : boolean;");
+      out.add("    variable WasEmpty : boolean;");
+      out.add("    variable DoPop : boolean;");
       out.add("  begin");
       out.add("    if (rising_edge(clk)) then");
-      out.add("      -- Pop old data");
-      out.add("      if (fifo_pop = '1') then");
-      out.add("        if ((Wrapped = true) or (Head /= Tail)) then");
-      out.add("          -- Update Tail pointer as needed");
-      out.add("          if (Tail = FIFO_DEPTH - 1) then");
-      out.add("            Tail := 0;");
-      out.add("            Wrapped := false;");
-      out.add("          else");
-      out.add("            Tail := Tail + 1;");
-      out.add("          end if;");
-      out.add("        end if;");
-      out.add("      end if;");
+      out.add("      NewHead := Head; -- default");
+      out.add("      NewTail := Tail; -- default");
+      out.add("      NewFull := Full; -- default");
+      out.add("      WasEmpty := (not Full) and (Head = Tail);");
+      out.add("      DoPop := (fifo_pop = '1') and (not WasEmpty);");
       out.add("");
-      out.add("      -- Update data output");
-      out.add("      ascii <= Memory(Tail);");
-      out.add("");
-      out.add("      -- Push new data");
-      out.add("      if (char_ready = '1') then");
-      out.add("        if ((Wrapped = false) or (Head /= Tail)) then");
-      out.add("            -- Write Data to Memory");
-      out.add("          Memory(Head) := char_ascii;");
-      out.add("");
-      out.add("            -- Increment Head pointer as needed");
-      out.add("          if (Head = FIFO_DEPTH - 1) then");
-      out.add("            Head := 0;");
-      out.add("");
-      out.add("            Wrapped := true;");
-      out.add("          else");
-      out.add("            Head := Head + 1;");
-      out.add("          end if;");
-      out.add("        end if;");
-      out.add("      end if;");
-      out.add("");
-      out.add("      -- Update status flags");
-      out.add("      if (Head = Tail) then");
-      out.add("        if Wrapped then");
-      out.add("          -- full <= '1';");
-      out.add("          ready <= '1';");
-      out.add("          -- empty <= '0';");
+      out.add("      if ((char_ready = '0') and DoPop) then -- Pop old data only");
+      out.add("        NewHead := Head;");
+      out.add("        if (Tail = FIFO_DEPTH - 1) then");
+      out.add("          NewTail := 0;");
       out.add("        else");
-      out.add("          -- full <= '0';");
-      out.add("          ready <= '0';");
-      out.add("          -- empty <= '1';");
+      out.add("          NewTail := Tail + 1;");
       out.add("        end if;");
-      out.add("      else");
-      out.add("        -- full  <= '0';");
+      out.add("        NewFull := false;");
+      out.add("        -- ascii <= Memory(NewTail); -- only matters when queue will still not be empty");
+      out.add("        -- ready <= '1' when (NewTail /= NewHead) else '0';");
+      out.add("        if (NewTail /= NewHead) then");
+      out.add("          ascii <= Memory(NewTail);");
+      out.add("          ready <= '1';");
+      out.add("        else");
+      out.add("          ascii <= X\"00\";");
+      out.add("          ready <= '0';");
+      out.add("        end if;");
+      out.add("");
+      out.add("      elsif ((char_ready = '1') and (not DoPop)) then -- Push new data only");
+      out.add("        if (not Full) then");
+      out.add("          if (Head = FIFO_DEPTH - 1) then");
+      out.add("            NewHead := 0;");
+      out.add("          else");
+      out.add("            NewHead := Head + 1;");
+      out.add("          end if;");
+      out.add("          NewTail := Tail;");
+      out.add("          NewFull := (NewTail = NewHead);");
+      out.add("          Memory(Head) <= char_ascii;");
+      out.add("          if (WasEmpty) then");
+      out.add("            ascii <= char_ascii;");
+      out.add("            ready <= '1';");
+      out.add("          end if;");
+      out.add("        end if;");
+      out.add("");
+      out.add("      elsif ((char_ready = '1') and DoPop) then -- Push and also pop");
+      out.add("        if (Head = FIFO_DEPTH - 1) then");
+      out.add("          NewHead := 0;");
+      out.add("        else");
+      out.add("          NewHead := Head + 1;");
+      out.add("        end if;");
+      out.add("        if (Tail = FIFO_DEPTH - 1) then");
+      out.add("          NewTail := 0;");
+      out.add("        else");
+      out.add("          NewTail := Tail + 1;");
+      out.add("        end if;");
+      out.add("        NewFull := (NewTail = NewHead); -- same as Full (will be unchanged)");
+      out.add("        Memory(Head) <= char_ascii;");
+      out.add("        ascii <= Memory(NewTail);");
       out.add("        ready <= '1';");
-      out.add("        -- empty  <= '0';");
       out.add("      end if;");
+      out.add("");
+      out.add("      Head <= NewHead;");
+      out.add("      Tail <= NewTail;");
+      out.add("      Full <= NewFull;");
       out.add("    end if;");
       out.add("  end process;");
       out.add("");

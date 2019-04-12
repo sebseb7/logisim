@@ -194,8 +194,7 @@ public class Keyboard extends InstanceFactory {
   private static final char FORM_FEED = '\u000c'; // control-L
 
   public static final Attribute<Integer> ATTR_BUFFER = Attributes
-      .forIntegerRange("buflen", S.getter("keybBufferLengthAttr"),
-          1, 256);
+      .forIntegerRange("buflen", S.getter("keybBufferLengthAttr"), 1, 256);
 
   public static final Attribute<Integer> ATTR_WIDTH = Attributes
       .forIntegerRange("asciiwidth", S.getter("asciiWidthAttr"),

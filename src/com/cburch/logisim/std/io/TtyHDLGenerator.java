@@ -43,7 +43,7 @@ public class TtyHDLGenerator extends HDLGenerator {
     parameters.add("CLK_PERIOD_NS", (int)period_ns);
 
     // todo: support CLR
-    _err.AddWarning("Clear signal is likely broken for TTY component in HDL");
+    _err.AddWarning("Note: Clear signal, if used, is likely broken for TTY component in HDL");
 
     // Note: We expect the slow clock to actually be FPGAClock (or its inverse),
     // which it will be whenever the clock input is connected to a proper clock

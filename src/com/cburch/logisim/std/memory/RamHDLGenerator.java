@@ -29,12 +29,8 @@
  */
 package com.cburch.logisim.std.memory;
 
-import java.io.File;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
-import com.bfh.logisim.netlist.NetlistComponent;
-import com.bfh.logisim.netlist.Path;
-// import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
@@ -124,13 +120,13 @@ public class RamHDLGenerator extends HDLGenerator {
 
       out.comment("memory definitions");
       for (int i = 0; i < n; i++)
-        out.stmt("signal s_mem_%d__contents : MEMORY_ARRAY;", i);
+        out.stmt("signal s_mem%d_contents : MEMORY_ARRAY;", i);
       out.stmt();
 
       // if (_attrs.getValue(RamAttributes.ATTR_TYPE) != RamAttributes.NONVOLATILE) {
       //   out.stmt("attribute ram_init_file : string;");
       //   for (int i = 0; i < n; i++)
-      //     out.stmt("attribute ram_init_file of s_mem_%d_contents : signal is nvram_contents_%d;",
+      //     out.stmt("attribute ram_init_file of s_mem%d_contents : signal is nvram_contents_%d;",
       //         i, i);
 			// }
       out.stmt();

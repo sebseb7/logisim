@@ -130,6 +130,16 @@ public class CircuitHDLGenerator extends HDLGenerator {
     return getPortMappingForPin(pin);
   }
 
+  // Generate an instance for the top-most design under test circuit. This has
+  // special handling for hidden inout ports.
+  ToplevelHDLGenerator parent;
+  protected void generateTopComponentInstance(Hdl out, ToplevelHDLGenerator parent) {
+    this.parent = parent;
+    generateComponentInstance(out, 0L, null /*comp*/);
+    this.parent = null;
+  }
+
+
   // For a given internal Pin, get the internal net conncted to it.
   public Net getPortMappingForPin(Component pin) {
     return _circNets.netAt.get(pin.getEnd(0).getLocation());
@@ -188,7 +198,8 @@ public class CircuitHDLGenerator extends HDLGenerator {
         getMapForCircuitPort(map, comp, pin, true);
 
 		} else {
-      // Mappings for the circuit design under test, within the TopLevelHDLGenerator circuit
+      // Mappings for the circuit design under test, within the TopLevelHDLGenerator circuit.
+      // Use ToplevelHDLGenerator parent to map inout ports to fpga pins.
       
       // Clock trees
       for (int i = 0; i < ctx.clockbus.shapes().size(); i++) {
@@ -209,9 +220,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
         map.add("LOGISIM_HIDDEN_FPGA_OUTPUT", "s_LOGISIM_HIDDEN_FPGA_OUTPUT", h.out-1, 0);
       // Note: Toplevel has direct connection (and no inversions) for InOut ports.
 			if (h.inout > 0) {
-        String[] fpgaPins = new String[h.inout];
-        for (int i = 0; i < h.inout; i++)
-          fpgaPins[i] = "FPGA_INOUT_PIN_" + i;
+        String[] fpgaPins = parent.getBidirPinAssignments(h.inout);
         map.addVector("LOGISIM_HIDDEN_FPGA_INOUT", fpgaPins);
       }
       

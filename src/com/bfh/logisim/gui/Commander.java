@@ -96,6 +96,7 @@ public class Commander extends JFrame
   private String lang;
   private int boardsListSelectedIndex;
   private final FPGAReport err = new FPGAReport(this);
+  public int fatals, warns, errors;
   private final Settings settings = Settings.getSettings();
 
   private static final String MAX_SPEED = "Maximum Speed";
@@ -679,6 +680,7 @@ public class Commander extends JFrame
       for (int i = tabbedPane.getTabCount() - 1; i > 0; i--)
         tabbedPane.removeTabAt(i);
     }
+    fatals = errors = warns = 0;
     messages.clear();
     repaintConsoles();
   }
@@ -863,18 +865,18 @@ public class Commander extends JFrame
       int clkPeriod = getClkPeriod();
       Netlist.Context ctx = new Netlist.Context(lang, err, board.fpga.Vendor,
           root, oscFreq, clkPeriod);
-      if (!ctx.getNetlist(root).validate()) {
+      if (!ctx.getNetlist(root).validate() || fatals > 0) {
         eprintf("DRC failed, synthesis can't continue.");
         return;
       }
       iprintf("Performing pin assignment");
       PinBindings pinBindings = performPinAssignments(ctx);
-      if (pinBindings == null) {
+      if (pinBindings == null || fatals > 0) {
         eprintf("Pin assignment failed or is incomplete, synthesis can't continue.");
         return;
       }
       iprintf("Generating HDL files");
-      if (!writeHDL(ctx, pinBindings)) {
+      if (!writeHDL(ctx, pinBindings) || fatals > 0) {
         eprintf("HDL file generation failed, synthesis can't continue.");
         return;
       }
@@ -925,7 +927,7 @@ public class Commander extends JFrame
         return;
       }
       // generate scripts and synthesize
-      if (!tools.generateScripts(pinBindings)) {
+      if (!tools.generateScripts(pinBindings) || fatals > 0) {
         eprintf("Can't generate Tool-specific download scripts");
         return;
       }

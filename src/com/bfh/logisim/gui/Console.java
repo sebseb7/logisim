@@ -117,7 +117,7 @@ public class Console extends JPanel {
       msg = msg.substring(0, msg.length() - 1);
     msg.replaceAll("\n", "\n    ");
     long elapsed = System.currentTimeMillis() - start;
-    return String.format("[%d.%3ds] %3d> %s\n", elapsed/1000, elapsed%1000, count, msg);
+    return String.format("[%d.%03ds] %3d> %s\n", elapsed/1000, elapsed%1000, count, msg);
   }
 
 	public void printf(String msg, Object ...args) {

@@ -46,22 +46,27 @@ public class FPGAReport {
 	}
 
 	public void AddWarning(String msg, Object ...args) {
+    dlg.warns++;
 		dlg.messages.printf(Console.WARNING, msg, args);
 	}
 
 	public void AddSevereWarning(String msg, Object ...args) {
+    dlg.warns++;
 		dlg.messages.printf(Console.WARNING, "**SEVERE** " + msg, args);
 	}
 
 	public void AddSevereError(String msg, Object ...args) {
+    dlg.errors++;
 		dlg.messages.printf(Console.SEVERE, "**SEVERE** " + msg, args);
 	}
 
 	public void AddError(String msg, Object ...args) {
+    dlg.errors++;
 		dlg.messages.printf(Console.ERROR, msg, args);
 	}
 
 	public void AddFatalError(String msg, Object ...args) {
+    dlg.fatals++;
 		dlg.messages.printf(Console.ERROR, "***FATAL*** " + msg, args);
 	}
 

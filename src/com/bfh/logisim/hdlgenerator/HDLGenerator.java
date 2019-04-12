@@ -508,9 +508,9 @@ public class HDLGenerator extends HDLSupport {
   // Generate HDL code for the component, i.e. the actual behavioral RTL code.
   protected void generateBehavior(Hdl out) { }
 
-  static final String IEEE_LOGIC = "std_logic_1164"; // standard + extended + extended2
-  static final String IEEE_UNSIGNED = "std_logic_unsigned"; //                extended2
-  static final String IEEE_NUMERIC = "numeric_std"; //             extended + extended2
+  protected static final String IEEE_LOGIC = "std_logic_1164"; // standard + extended + extended2
+  protected static final String IEEE_UNSIGNED = "std_logic_unsigned"; //                extended2
+  protected static final String IEEE_NUMERIC = "numeric_std"; //             extended + extended2
   protected ArrayList<String> vhdlLibraries = new ArrayList<>();
 	protected void generateVhdlLibraries(Hdl out) {
     if (vhdlLibraries.size() == 0)
