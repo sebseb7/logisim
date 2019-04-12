@@ -270,6 +270,10 @@ public final class EditTool extends Tool {
 
   @Override
   public void keyPressed(Canvas canvas, KeyEvent e) {
+    if (current == wiring) {
+      wiring.keyPressed(canvas, e);
+      return;
+    }
     switch (e.getKeyCode()) {
     case KeyEvent.VK_BACK_SPACE:
     case KeyEvent.VK_DELETE:
@@ -277,8 +281,6 @@ public final class EditTool extends Tool {
         Action act = SelectionActions.delete(canvas.getSelection());
         canvas.getProject().doAction(act);
         e.consume();
-      } else {
-        wiring.keyPressed(canvas, e);
       }
       break;
     case KeyEvent.VK_INSERT:
