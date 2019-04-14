@@ -474,12 +474,11 @@ class VariableTab extends AnalyzerTab {
 
     @Override
     public void listChanged(VariableListEvent event) {
-      int oldSize = listCopy.length;
       updateCopy();
       Integer idx = event.getIndex();
       switch (event.getType()) {
       case VariableListEvent.ALL_REPLACED:
-        fireTableRowsUpdated(0, oldSize);
+        fireTableDataChanged();
         return;
       case VariableListEvent.ADD:
         fireTableRowsInserted(idx, idx);
