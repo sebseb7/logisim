@@ -185,10 +185,10 @@ public class ClockHDLGenerator {
         registers.add("counter", "CtrWidth", "std_logic_vector(to_unsigned(InitCounter, CtrWidth))");
         registers.add("ctrzero", 1, "std_logic(to_unsigned(InitCtrZero,1)(0))");
       } else {
-        registers.add("usr", 1, "(Phase < HighTicks) ? 1 : 0");
-        registers.add("inv", 1, "(Phase < HighTicks) ? 0 : 1");
-        registers.add("counter", "CtrWidth", "(Phase < HighTicks) ? HighTicks-Phase-1 : HighTicks+LowTicks-Phase-1");
-        registers.add("ctrzero", 1, "(Phase == HighTicks-1 || Phase == HighTicks+LowTicks-1) ? 1 : 0");
+        registers.add("usr", 1, "(Phase < HighTicks) ? 1'b1 : 1'b0");
+        registers.add("inv", 1, "(Phase < HighTicks) ? 1'b0 : 1'b1");
+        registers.add("counter", "CtrWidth", "(Phase < HighTicks) ? HighTicks-Phase-1 : HighTicks+LowTicks-Phase-1"); // note: warns about trucnation
+        registers.add("ctrzero", 1, "(Phase == HighTicks-1 || Phase == HighTicks+LowTicks-1) ? 1'b1 : 1'b0");
       }
       wires.add("s_rise", 1);
       wires.add("s_fall", 1);
@@ -229,21 +229,21 @@ public class ClockHDLGenerator {
         out.stmt("                  std_logic_vector(to_unsigned((HighTicks-1),CtrWidth));");
       } else {
         out.stmt("assign ClockBus = (Raw == 1 && Phase == 0)");
-        out.stmt("                  ? {CLKn, CLKp, 1'b1, 1'b1, CLKn, CLKp};");
+        out.stmt("                  ? {CLKn, CLKp, 1'b1, 1'b1, CLKn, CLKp}");
         out.stmt("                  : (Raw == 1 && Phase == 1)");
-        out.stmt("                  ? {CLKn, CLKp, 1'b1, 1'b1, CLKp, CLKn};");
+        out.stmt("                  ? {CLKn, CLKp, 1'b1, 1'b1, CLKp, CLKn}");
         out.stmt("                  : {CLKn, CLKp, s_fall, s_rise, inv, usr};");
         out.stmt();
         out.stmt("always @(posedge CLKp)");
         out.stmt("begin");
-        out.stmt("  if (Tick) then");
-        out.stmt("    if (s_rise || s_fall) then");
+        out.stmt("  if (Tick) begin");
+        out.stmt("    if (s_rise || s_fall) begin");
         out.stmt("      usr <= s_rise;");
         out.stmt("      inv <= s_fall;");
-        out.stmt("    end if;");
+        out.stmt("    end");
         out.stmt("    ctrzero <= (s_counter_next == 0) ? 1'b1 : 1'b0;");
         out.stmt("    counter <= s_counter_next;");
-        out.stmt("  end if;");
+        out.stmt("  end");
         out.stmt("end");
         out.stmt();
         out.stmt("assign s_rise = Tick & ctrzero & ~usr;");

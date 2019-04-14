@@ -318,8 +318,8 @@ public class HDLGenerator extends HDLSupport {
 			for (PortInfo p : outPorts)
 				out.stmt("output %s%s;", out.typeForWidth(p.width), p.name);
       if (clockPort != null) {
-				out.stmt("input %s%s; // special clock signal", clockPort.ckPortName);
-				out.stmt("input %s%s; // special clock enable", clockPort.enPortName);
+				out.stmt("input %s; // special clock signal", clockPort.ckPortName);
+				out.stmt("input %s; // special clock enable", clockPort.enPortName);
       }
       // if (tickerPort != null) {
 			// 	out.stmt("input %s%s; // special clock signal", clockPort.ckPortName);

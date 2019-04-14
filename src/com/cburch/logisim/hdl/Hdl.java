@@ -53,8 +53,8 @@ public class Hdl extends ArrayList<String> {
   public final String bitAssnBit;     // %s(%d) <= %s(%d);         assign %s[%d] = %s[%d];
   public final String idx;            // (%d)                      [%d]
   public final String range;          // (%d downto %d)            [%d:%d]
-  public final String zero;           // '0'                       1b'0
-  public final String one;            // '1'                       1b'1
+  public final String zero;           // '0'                       1'b0
+  public final String one;            // '1'                       1'b1
   public final String unconnected;    // open                      (emptystring)
   public final String not;            // not                       ~
   public final String allZeros;       // (others => '0')           0
@@ -97,8 +97,8 @@ public class Hdl extends ArrayList<String> {
       bitAssnBit = "assign %s[%d] \t= %s[%d];";
       idx = "[%d]";
       range = "[%d:%d]";
-      zero = "1b'0";
-      one = "1b'1";
+      zero = "1'b0";
+      one = "1'b1";
       unconnected = "";
       not = "~";
       allZeros = "0";
