@@ -354,7 +354,10 @@ public class LibraryManager {
     try {
       ret = new LoadedLibrary(loader.loadJarFile(toReadAbsolute, className));
     } catch (LoadFailedException e) {
-      Errors.project(loader.getMainFile()).show(e.getMessage());
+      if (e.cause != null)
+        Errors.project(loader.getMainFile()).show(e.getMessage(), e.cause);
+      else
+        Errors.project(loader.getMainFile()).show(e.getMessage());
       return null;
     }
 
@@ -404,7 +407,10 @@ public class LibraryManager {
     try {
       ret = new LoadedLibrary(loader.loadLogisimLibraryStage3(toRead));
     } catch (LoadFailedException e) {
-      Errors.project(loader.getMainFile()).show(e.getMessage());
+      if (e.cause != null)
+        Errors.project(loader.getMainFile()).show(e.getMessage(), e.cause);
+      else
+        Errors.project(loader.getMainFile()).show(e.getMessage());
       return null;
     }
 
@@ -424,7 +430,10 @@ public class LibraryManager {
       } catch (LoadCanceledByUser e) {
         // eat exception
       } catch (LoadFailedException e) {
-        Errors.project(loader.getMainFile()).show(e.getMessage());
+        if (e.cause != null)
+          Errors.project(loader.getMainFile()).show(e.getMessage(), e.cause);
+        else
+          Errors.project(loader.getMainFile()).show(e.getMessage());
       }
     }
   }

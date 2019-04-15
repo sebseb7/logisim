@@ -32,8 +32,15 @@ package com.cburch.logisim.file;
 
 public class LoadFailedException extends Exception {
   private static final long serialVersionUID = 1L;
+  public final Throwable cause;
 
   LoadFailedException(String desc) {
     super(desc);
+    this.cause = null;
+  }
+
+  LoadFailedException(String desc, Throwable cause) {
+    super(desc);
+    this.cause = cause;
   }
 }

@@ -157,9 +157,8 @@ public class ProjectLibraryActions {
       }
 
       Library lib = loader.loadJarLibrary(f, className);
-      if (lib != null) {
+      if (lib != null)
         proj.doAction(LogisimFileActions.loadLibrary(lib));
-      }
     }
   }
 

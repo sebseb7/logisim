@@ -197,7 +197,7 @@ public class Loader implements LibraryLoader {
     try {
       retClass = loader.loadClass(className);
     } catch (ClassNotFoundException e) {
-      throw new LoadFailedException(S.fmt("jarClassNotFoundError", className));
+      throw new LoadFailedException(S.fmt("jarClassNotFoundError", className), e);
     }
     if (!(Library.class.isAssignableFrom(retClass))) {
       throw new LoadFailedException(S.fmt("jarClassNotLibraryError", className));
@@ -207,8 +207,8 @@ public class Loader implements LibraryLoader {
     Library ret;
     try {
       ret = (Library) retClass.newInstance();
-    } catch (Exception e) {
-      throw new LoadFailedException(S.fmt("jarLibraryNotCreatedError", className));
+    } catch (Throwable e) {
+      throw new LoadFailedException(S.fmt("jarLibraryNotCreatedError", className), e);
     }
     return ret;
   }
@@ -244,9 +244,9 @@ public class Loader implements LibraryLoader {
       ret = LogisimFile.load(actual, this);
     } catch (LoadCanceledByUser e) {
       throw e;
-    } catch (IOException e) {
+    } catch (Throwable e) {
       throw new LoadFailedException(
-            S.fmt("logisimLoadError", LogisimFile.toProjectName(actual), e.toString()));
+            S.fmt("logisimLoadError", LogisimFile.toProjectName(actual), e.toString()), e);
     } finally {
       filesOpening.pop();
     }
