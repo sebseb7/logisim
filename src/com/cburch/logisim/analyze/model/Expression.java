@@ -48,6 +48,7 @@ public abstract class Expression {
     public default T visitAnd(Expression e, Expression a, Expression b) { return visitBinary(e, a, b, Op.AND); }
     public default T visitOr(Expression e, Expression a, Expression b) { return visitBinary(e, a, b, Op.OR); }
     public default T visitXor(Expression e, Expression a, Expression b) { return visitBinary(e, a, b, Op.XOR); }
+    public default T visitXnor(Expression e, Expression a, Expression b) { return visitBinary(e, a, b, Op.XNOR); }
     public default T visitEq(Expression e, Expression a, Expression b) { return visitBinary(e, a, b, Op.EQ); }
   }
 
@@ -60,6 +61,7 @@ public abstract class Expression {
     public int visitAnd(Expression a, Expression b);
     public int visitOr(Expression a, Expression b);
     public int visitXor(Expression a, Expression b);
+    public int visitXnor(Expression a, Expression b);
     public int visitEq(Expression a, Expression b);
   }
 
@@ -107,6 +109,11 @@ public abstract class Expression {
       }
 
       @Override
+      public int visitXnor(Expression a, Expression b) {
+        return ~(a.visit(this) ^ b.visit(this));
+      }
+
+      @Override
       public int visitEq(Expression a, Expression b) {
         return ~(a.visit(this) ^ b.visit(this)&1);
       }
@@ -114,7 +121,7 @@ public abstract class Expression {
     return (ret & 1) != 0;
   }
 
-  public abstract int getPrecedence();
+  public abstract int getPrecedence(Notation notation);
   public abstract Op getOp();
 
   public boolean isCircular() {
@@ -201,6 +208,11 @@ public abstract class Expression {
       }
 
       @Override
+      public Object visitXnor(Expression e, Expression a, Expression b) {
+        return null;
+      }
+
+      @Override
       public Object visitEq(Expression e, Expression a, Expression b) {
         return null;
       }
@@ -261,6 +273,17 @@ public abstract class Expression {
       }
 
       @Override
+      public Expression visitXnor(Expression e, Expression a, Expression b) {
+        Expression l = a.visit(this);
+        Expression r = b.visit(this);
+        if (l == null)
+          return r;
+        if (r == null)
+          return l;
+        return Expressions.xnor(l, r);
+      }
+
+      @Override
       public Expression visitEq(Expression e, Expression a, Expression b) {
         Expression l = a.visit(this);
         Expression r = b.visit(this);
@@ -313,6 +336,13 @@ public abstract class Expression {
       }
 
       @Override
+      public Expression visitXnor(Expression e, Expression a, Expression b) {
+        Expression l = a.visit(this);
+        Expression r = b.visit(this);
+        return Expressions.xnor(l, r);
+      }
+
+      @Override
       public Expression visitEq(Expression e, Expression a, Expression b) {
         Expression l = a.visit(this);
         Expression r = b.visit(this);
@@ -322,38 +352,94 @@ public abstract class Expression {
   }
 
   public static enum Notation {
-    ENGINEERING(0), MATHEMATICS(1), PROGRAMMING(2);
+    ENGINEERING(0), LOGIC(1), ALTLOGIC(2), PROGBOOLS(3), PROGBITS(4);
 
     public final int Id;
+    public final int[] opLvl;
+    public final String[] opSym;
 
-    private Notation(int id) { Id = id; }
+    // Notes on precedence:
+    // all forms of NOT are the highest precedence level
+    public static final int NOT_PRECEDENCE = 14;
+    // times and implicit and are next
+    public static final int IMPLICIT_AND_PRECEDENCE = 13;
+    public static final int TIMES_PRECEDENCE = 13;
+    // oplus is next
+    public static final int OPLUS_PRECEDENCE = 12;
+    // plus is next
+    public static final int PLUS_PRECEDENCE = 11;
+    // otimes is next
+    public static final int OTIMES_PRECEDENCE = 10;
+    // not-equals, not-equiv, equiv, vee, vee-underbar, and cap are next
+    public static final int LOGIC_PRECEDENCE = 9;
+    // & is next
+    public static final int BITAND_PRECEDENCE = 8;
+    // ^ is next
+    public static final int BITXOR_PRECEDENCE = 7;
+    // | is next
+    public static final int BITOR_PRECEDENCE = 6;
+    // && is next
+    public static final int AND_PRECEDENCE = 5;
+    // || is next
+    public static final int OR_PRECEDENCE = 4;
+    // "and" is next
+    public static final int PYTHON_AND_PRECEDENCE = 3;
+    // "xor" is next
+    public static final int PYTHON_XOR_PRECEDENCE = 2;
+    // "or" is next
+    public static final int PYTHON_OR_PRECEDENCE = 1;
+    // all forms of equals are level 0
+    public static final int EQ_PRECEDENCE = 0;
+
+    private Notation(int id) {
+      Id = id;
+      // Precendence level and symbol for each of { EQ, XNOR, OR, XOR, AND, NOT }
+      switch(id) {
+      case 0: // Engineering notation: otimes, plus, oplus, times, and overbar
+        opLvl = new int[] { 0, 10, 11, 12, 13, 14, };
+        opSym = new String[] { " := ", " \u2299 ", " + ", " \u2295 ", " \u22C5 ", "overbar", };
+        break;
+      case 1:
+        // Logic notation: equiv, vee, vee-underbar, cap, tilde
+        opLvl = new int[] { 0, 9, 9, 9, 9, 14, };
+        opSym = new String[] { ": ", " \u2261", " \u2228 ", " \u22BB ", " \u2227 ", "~", };
+        break;
+      case 2:
+        // Alternative Logic notation: equiv, vee, not-equiv, cap, ell
+        opLvl = new int[] { 0, 9, 9, 9, 9, 14, };
+        opSym = new String[] { ": ", " \u2261 ", " \u2228 ", " \u2262 ", " \u2227 ", "\u00AC", };
+        break;
+      case 3:
+        // Programming with booleans notation: ==, ||, !=, &&, !
+        opLvl = new int[] { 0, 9, 4, 9, 5, 14, };
+        opSym = new String[] { " = ", " == ", " || ", " != ", " && ", "!", };
+        break;
+      case 4:
+      default:
+        // Programming with bits notation: ^ ~, |, ^, &, ~
+        opLvl = new int[] { 0, 9, 6, 7, 8, 14, };
+        opSym = new String[] { " = ", " ^ ~ ", " | ", " ^ ", " & ", "~", };
+        break;
+      }
+    }
 
     public String toString() {
       String key = name().toLowerCase() + "Notation";
       return S.get(key);
     }
+
   }
 
   public static enum Op {
-    EQ(0,2), OR(1,2), XOR(2,2), AND(3,2), NOT(4,1);
+    EQ(0,2), XNOR(1,2), OR(2,2), XOR(3,2), AND(4,2), NOT(5,1);
 
-    public final int Id, Level, Arity;
-    public final String[] Sym;
+    public final int Id, Arity;
 
     private Op(int id, int arity) {
       Id = id;
-      Level = id; // so far, precedence level coincides with id
       Arity = arity;
-      Sym = new String[] { OPSYM[0][Id], OPSYM[1][Id], OPSYM[2][Id] };
     }
   }
-
-  // Notation choices:
-  public static final String[][] OPSYM = {
-    { " = ", " \u2228 ", " \u2295 ", " \u2227 ", "~", }, // engineering
-    { " = ", " + ", "\u2295", " \u22C5 ", "\u00AC", }, // mathematics
-    { " == ", " || ", " ^ ", " && ", "!", }, // programming
-  };
 
   @Override
   public String toString() {
@@ -365,15 +451,18 @@ public abstract class Expression {
     visit(new Visitor<Void>() {
       @Override
       public Void visitBinary(Expression e, Expression a, Expression b, Op op) {
-        if (a.getPrecedence() < op.Level) {
+        int opLvl = notation.opLvl[op.Id];
+        int aLvl = a.getPrecedence(notation);
+        int bLvl = b.getPrecedence(notation);
+        if (aLvl < opLvl || (aLvl == opLvl && a.getOp() != op)) {
           text.append("(");
           a.visit(this);
           text.append(")");
         } else {
           a.visit(this);
         }
-        text.append(op.Sym[notation.Id]);
-        if (b.getPrecedence() < op.Level) {
+        text.append(notation.opSym[op.Id]);
+        if (bLvl < opLvl || (bLvl == opLvl && b.getOp() != op)) {
           text.append("(");
           b.visit(this);
           text.append(")");
@@ -391,8 +480,10 @@ public abstract class Expression {
 
       @Override
       public Void visitNot(Expression e, Expression a) {
-        text.append(Op.NOT.Sym[notation.Id]);
-        if (a.getPrecedence() < Op.NOT.Level) {
+        int opLvl = notation.opLvl[Op.NOT.Id];
+        int aLvl = a.getPrecedence(notation);
+        text.append(notation.opSym[Op.NOT.Id]);
+        if (aLvl < opLvl || (aLvl == opLvl && a.getOp() != Op.NOT)) {
           text.append("(");
           a.visit(this);
           text.append(")");

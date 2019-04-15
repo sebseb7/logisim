@@ -123,6 +123,11 @@ abstract class CircuitDetermination {
     }
 
     @Override
+    public CircuitDetermination visitXnor(Expression e, Expression a, Expression b) {
+      return binary(a.visit(this), b.visit(this), XnorGate.FACTORY);
+    }
+
+    @Override
     public CircuitDetermination visitEq(Expression e, Expression a, Expression b) {
       return binary(a.visit(this), b.visit(this), XnorGate.FACTORY);
     }

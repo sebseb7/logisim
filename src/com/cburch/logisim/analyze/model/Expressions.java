@@ -37,8 +37,8 @@ public class Expressions {
     }
 
     @Override
-    public int getPrecedence() {
-      return Expression.Op.AND.Level;
+    public int getPrecedence(Expression.Notation notation) {
+      return notation.opLvl[Expression.Op.AND.Id];
     }
 
     @Override
@@ -99,7 +99,7 @@ public class Expressions {
     }
 
     @Override
-    public int getPrecedence() {
+    public int getPrecedence(Expression.Notation notation) {
       return Integer.MAX_VALUE;
     }
 
@@ -140,8 +140,8 @@ public class Expressions {
     }
 
     @Override
-    public int getPrecedence() {
-      return Expression.Op.NOT.Level;
+    public int getPrecedence(Expression.Notation notation) {
+      return notation.opLvl[Expression.Op.NOT.Id];
     }
 
     @Override
@@ -171,8 +171,8 @@ public class Expressions {
     }
 
     @Override
-    public int getPrecedence() {
-      return Expression.Op.OR.Level;
+    public int getPrecedence(Expression.Notation notation) {
+      return notation.opLvl[Expression.Op.OR.Id];
     }
 
     @Override
@@ -207,7 +207,7 @@ public class Expressions {
     }
 
     @Override
-    public int getPrecedence() {
+    public int getPrecedence(Expression.Notation notation) {
       return Integer.MAX_VALUE;
     }
 
@@ -238,8 +238,8 @@ public class Expressions {
     }
 
     @Override
-    public int getPrecedence() {
-      return Expression.Op.XOR.Level;
+    public int getPrecedence(Expression.Notation notation) {
+      return notation.opLvl[Expression.Op.XOR.Id];
     }
 
     @Override
@@ -258,14 +258,40 @@ public class Expressions {
     }
   }
 
+  private static class Xnor extends Binary {
+    Xnor(Expression a, Expression b) {
+      super(a, b);
+    }
+
+    @Override
+    public int getPrecedence(Expression.Notation notation) {
+      return notation.opLvl[Expression.Op.XNOR.Id];
+    }
+
+    @Override
+    public Op getOp() {
+      return Expression.Op.XNOR;
+    }
+
+    @Override
+    public <T> T visit(Visitor<T> visitor) {
+      return visitor.visitXnor(this, a, b);
+    }
+
+    @Override
+    int visit(IntVisitor visitor) {
+      return visitor.visitXnor(a, b);
+    }
+  }
+
   protected static class Eq extends Binary {
     Eq(Expression a, Expression b) {
       super(a, b);
     }
 
     @Override
-    public int getPrecedence() {
-      return Expression.Op.EQ.Level;
+    public int getPrecedence(Expression.Notation notation) {
+      return notation.opLvl[Expression.Op.EQ.Id];
     }
 
     @Override
@@ -316,6 +342,14 @@ public class Expressions {
     if (b == null)
       return a;
     return new Xor(a, b);
+  }
+
+  public static Expression xnor(Expression a, Expression b) {
+    if (a == null)
+      return b;
+    if (b == null)
+      return a;
+    return new Xnor(a, b);
   }
 
   public static Expression eq(Expression a, Expression b) {

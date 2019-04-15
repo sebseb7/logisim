@@ -420,7 +420,9 @@ class ExpressionRenderer extends JPanel {
     @Override
     public Box visitBinary(Expression e, Expression a, Expression b, Expression.Op op) {
       Box bb_a;
-      if (a.getPrecedence() < op.Level) {
+      int opLvl = notation.opLvl[op.Id];
+      int aLvl = a.getPrecedence(notation);
+      if (aLvl < opLvl || (aLvl == opLvl && a.getOp() != op)) {
         ParenBox lparen = new LeftParenBox(depth);
         ParenBox rparen = new RightParenBox(depth);
         depth++;
@@ -433,13 +435,14 @@ class ExpressionRenderer extends JPanel {
         bb_a = a.visit(this);
       }
 
-      Box mid = new OpBox(op.Sym[notation.Id], op.Level, depth);
+      Box mid = new OpBox(notation.opSym[op.Id], opLvl, depth);
 
       if (b == null)
         return new BoundingBox(e, depth, mid, bb_a);
 
+      int bLvl = b.getPrecedence(notation);
       Box bb_b;
-      if (b.getPrecedence() < op.Level) {
+      if (bLvl < opLvl || (bLvl == opLvl && b.getOp() != op)) {
         ParenBox lparen = new LeftParenBox(depth);
         ParenBox rparen = new RightParenBox(depth);
         depth++;
@@ -465,7 +468,7 @@ class ExpressionRenderer extends JPanel {
     }
     @Override
     public Box visitNot(Expression e, Expression a) {
-      if (notation == Expression.Notation.ENGINEERING) {
+      if (notation.opSym[Expression.Op.NOT.Id].equals("overbar")) {
         depth++;
         Box inner = a.visit(this);
         depth--;

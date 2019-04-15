@@ -465,8 +465,10 @@ class ExpressionTab extends AnalyzerTab {
       add(label);
       add(select);
       select.addItem(Expression.Notation.ENGINEERING);
-      select.addItem(Expression.Notation.MATHEMATICS);
-      select.addItem(Expression.Notation.PROGRAMMING);
+      select.addItem(Expression.Notation.LOGIC);
+      select.addItem(Expression.Notation.ALTLOGIC);
+      select.addItem(Expression.Notation.PROGBOOLS);
+      select.addItem(Expression.Notation.PROGBITS);
       /* select.setRenderer(new DefaultListCellRenderer() {
         public Component getListCellRendererComponent(JList<?> list,
             Object value, int index, boolean isSelected, boolean cellHasFocus) {
