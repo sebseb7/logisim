@@ -47,7 +47,9 @@ import javax.swing.filechooser.FileFilter;
 import com.cburch.hdl.HdlFile;
 import com.cburch.logisim.Main;
 import com.cburch.logisim.std.Builtin;
+import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.JFileChoosers;
 import com.cburch.logisim.util.StringGetter;
@@ -106,7 +108,21 @@ public class Loader implements LibraryLoader {
   // Used here, in LibraryManager, and in MemMenu.
   public File getCurrentDirectory() {
     File ref = filesOpening.empty() ? mainFile : filesOpening.peek();
-    return ref == null ? null : ref.getParentFile();
+    if (ref == null)
+      return null;
+    try {
+      File dir = ref.getParentFile();
+      if (dir != null)
+        return dir.getCanonicalFile();
+    } catch (Exception e) {
+      // fall through
+    }
+    try {
+      ref = ref.getCanonicalFile();
+      return ref.getParentFile();
+    } catch (IOException e) {
+      return null;
+    }
   }
 
   // Used by LibraryManager.
@@ -118,29 +134,36 @@ public class Loader implements LibraryLoader {
     // Determine the actual file name.
     File file = new File(name);
     if (!file.isAbsolute()) {
-      File currentDirectory = getCurrentDirectory();
-      if (currentDirectory != null)
-        file = new File(currentDirectory, name);
+      try {
+        file = file.getAbsoluteFile();
+        // File currentDirectory = getCurrentDirectory();
+        // if (currentDirectory != null)
+        //   file = new File(currentDirectory, name);
+      } catch (Exception e) {
+        Errors.title("Error finding JAR library").show(
+            String.format("Could not locate JAR library: %s", name), e);
+        file = null;
+      }
     }
     // It doesn't exist. Figure it out from the user.
-    if (!file.canRead() && Main.headless) {
-      String msg = file.exists()
+    if ((file == null || !file.canRead()) && Main.headless) {
+      String msg = (file != null && file.exists())
           ? S.fmt("fileLibraryUnreadableError", name, file.getName())
-          : S.fmt("fileLibraryMissingError", name, file.getName());
-      System.out.println(msg);
+          : S.fmt("fileLibraryMissingError", name, file == null ? name : file.getName());
       System.exit(1);
     }
-    while (!file.canRead()) {
+    while (file == null || !file.canRead()) {
       Object[] choices = {
         S.get("fileLibraryMissingChoiceCancel"),
         S.get("fileLibraryMissingChoiceSkip"),
         S.get("fileLibraryMissingChoiceSelect") };
-      String msg = file.exists()
+      String msg = file != null && file.exists()
           ? S.fmt("fileLibraryUnreadableMessage", name, file.getName())
-          : S.fmt("fileLibraryMissingMessage", name, file.getName());
-      int choice = JOptionPane.showOptionDialog(parent,
+          : S.fmt("fileLibraryMissingMessage", name, file == null ? name : file.getName());
+      int choice = -1;
+      choice = JOptionPane.showOptionDialog(parent,
           "<html><body><p style='width: 400px;'>" + msg + "</p></body></html>",
-          S.fmt("logisimLoadError", file.getName(), S.get("fileLibraryMissingTitleDetail")),
+          S.fmt("logisimLoadError", name, S.get("fileLibraryMissingTitleDetail")),
           JOptionPane.DEFAULT_OPTION,
           JOptionPane.ERROR_MESSAGE,
           null /* icon */,
@@ -207,6 +230,14 @@ public class Loader implements LibraryLoader {
     Library ret;
     try {
       ret = (Library) retClass.newInstance();
+      // Backwards-compatibility: fix any null libraryClass references in
+      // the library's AddTool objects.
+      for (Tool t : ret.getTools()) {
+        if (t instanceof AddTool) {
+          AddTool tool = (AddTool)t;
+          tool.fixupLibraryClass(ret.getClass());
+        }
+      }
     } catch (Throwable e) {
       throw new LoadFailedException(S.fmt("jarLibraryNotCreatedError", className), e);
     }

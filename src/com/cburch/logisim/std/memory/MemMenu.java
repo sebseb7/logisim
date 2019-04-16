@@ -34,10 +34,7 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.IOException;
 
-import javax.swing.JFileChooser;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
@@ -48,8 +45,6 @@ import com.cburch.logisim.gui.hex.HexFrame;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.MenuExtender;
-import com.cburch.logisim.file.LogisimFile;
-import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.std.memory.MemContents;
 
 class MemMenu implements ActionListener, MenuExtender {

@@ -402,8 +402,11 @@ public class MemContents implements Cloneable, HexModel {
         if (dstPage == null)
           dstPage = pages[dp] = MemContentsSub.createPage(PAGE_SIZE, width);
         // copy locations di..di+n on this page
+        int[] oldVals = dstPage.get(di, n);
         int[] vals = srcPage.get(si, n);
         dstPage.set(di, vals);
+        // fire here
+        fireBytesChanged(dp*PAGE_SIZE+di, n, oldVals);
       }
       count -= n;
       di += n;

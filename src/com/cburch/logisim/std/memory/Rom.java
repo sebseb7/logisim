@@ -39,7 +39,6 @@ import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
-import java.util.WeakHashMap;
 
 import javax.swing.JLabel;
 

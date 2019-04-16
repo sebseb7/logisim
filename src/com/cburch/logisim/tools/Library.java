@@ -254,4 +254,8 @@ public abstract class Library {
     }
   }
 
+  // removeLibrary() is not used. It is here for JAR-library backwards compatibility
+  // with other verisions of Logisim-Evolution and/or original Logisim.
+  public boolean removeLibrary(String Name) { return false; }
+
 }

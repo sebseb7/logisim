@@ -144,6 +144,21 @@ public class AddTool extends Tool {
     this.shouldSnap = value == null ? true : value.booleanValue();
   }
 
+  // This constructor is deprecated. It is here for JAR-library backwards
+  // compatibility with other verisions of Logisim-Evolution and/or original
+  // Logisim.
+	public AddTool(ComponentFactory source) {
+    this(null, source);
+    // The null libraryClass here is fixed in Loader.loadJarFile().
+	}
+
+  // This is used only to fix the null libraryClass from deprecated constructor
+  // above.
+  public void fixupLibraryClass(Class<? extends Library> libClass) {
+    if (libraryClass == null)
+      libraryClass = libClass;
+  }
+
   public void cancelOp() {
   }
 
