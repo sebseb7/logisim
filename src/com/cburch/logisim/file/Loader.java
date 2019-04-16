@@ -133,7 +133,6 @@ public class Loader implements LibraryLoader {
 
     // Determine the actual file name.
     File file = new File(name);
-    System.out.printf("get file for: '%s'\n", file);
     if (!file.isAbsolute()) {
       try {
         File currentDirectory = getCurrentDirectory();
