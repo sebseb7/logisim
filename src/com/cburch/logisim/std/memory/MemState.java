@@ -283,22 +283,24 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
   void scrollToShow(long addr) {
     if (RecalculateParameters)
       return;
-    if (isValidAddr(addr)) {
-      int NrOfDataItemsDisplayed = NrOfLines * NrDataSymbolsEachLine;
-      while (addr < curScroll) {
-        curScroll -= NrDataSymbolsEachLine;
-        if (curScroll < 0)
-          curScroll = 0;
-      }
-      while (addr >= (curScroll + NrOfDataItemsDisplayed)) {
-        curScroll += NrDataSymbolsEachLine;
-      }
+    int addrBits = contents.getLogLength();
+    if ((addr >>> addrBits) != 0)
+      return;
+    if (addr < curScroll) {
+      long linesToScroll = (curScroll - addr + NrDataSymbolsEachLine-1)/NrDataSymbolsEachLine;
+      curScroll -= linesToScroll * NrDataSymbolsEachLine;
+    } else if (addr >= (curScroll + NrOfLines * NrDataSymbolsEachLine)) {
+      long curScrollEnd = curScroll + NrOfLines * NrDataSymbolsEachLine - 1;
+      long linesToScroll = (addr - curScrollEnd + NrDataSymbolsEachLine-1)/NrDataSymbolsEachLine;
+      curScroll += linesToScroll * NrDataSymbolsEachLine;
+      long TotalNrOfEntries = (1 << addrBits);
+      if ((curScroll + (NrOfLines * NrDataSymbolsEachLine)) > TotalNrOfEntries)
+        curScroll = TotalNrOfEntries - (NrOfLines * NrDataSymbolsEachLine);
     }
+    if (curScroll < 0)
+      curScroll = 0;
   }
 
-  //
-  // methods for accessing the address bits
-  //
   private void setBits(int addrBits, int dataBits) {
     RecalculateParameters = true;
     if (contents == null) {
