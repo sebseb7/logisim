@@ -56,7 +56,6 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlContent;
-import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
@@ -269,23 +268,24 @@ public class XmlClipReader extends XmlReader {
       if (badComponents.isEmpty())
         return; // done
 
-      String msg = "Some pasted components depend on items not " +
-          "included in this project.\n";
+      String msg = S.get("filePasteDependencyError");
       ArrayList<String> missing = new ArrayList<>();
       for (String circName : circuits.keySet())
-        missing.add("Missing circuit: " + circName);
+        missing.add(S.fmt("filePasteDependencyCircuitError", circName));
       for (String vhdlName : vhdl.keySet())
-        missing.add("Missing vhdl: " + vhdlName);
+        missing.add(S.fmt("filePasteDependencyVHDLError", vhdlName));
       for (String libName : libraries.keySet())
-        missing.add("Missing library: " + libraries.get(libName).getDisplayName());
+        missing.add(S.fmt("filePasteDependencyLibraryError", libraries.get(libName).getDisplayName()));
       for (String libName : skippedLibraries)
-        missing.add("Skipped library: " + libName);
+        missing.add(S.fmt("filePasteDependencySkipLibraryError", libName));
       JList<String> names = new JList<String>((String[])missing.toArray(new String[missing.size()]));
       JScrollPane scroll = new JScrollPane(names);
-      String opts[] = new String[] { "Add Missing Dependencies",
-        "Skip Affected Components", "Cancel" };
+      String opts[] = new String[] {
+        S.get("filePasteAddMissingDependencies"),
+        S.get("filePasteSkipAffectedComponents"),
+        S.get("filePasteCancel"), };
       int ans = JOptionPane.showOptionDialog(
-          null/*parent*/, new Object[] { msg, scroll }, "Missing Dependencies"/*title*/,
+          null/*parent*/, new Object[] { msg, scroll }, S.get("filePasteDependencyTitle"),
           JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null/*icon*/,
           opts, opts[0]);
       if (ans == JOptionPane.YES_OPTION || ans == JOptionPane.OK_OPTION)

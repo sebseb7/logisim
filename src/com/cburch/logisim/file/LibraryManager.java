@@ -321,11 +321,14 @@ public class LibraryManager {
       return "file#" + file;
     } else if (desc.startsWith("jar#")) {
       String path = desc.substring(4);
+      String suffix = "";
       int i = path.lastIndexOf('#');
-      if (i >= 0)
+      if (i >= 0) {
+        suffix = path.substring(i);
         path = path.substring(0, i);
+      }
       String file = new File(path).getName();
-      return "file#" + file + (i >= 0 ? path.substring(i) : "");
+      return "jar#" + file + suffix;
     } else {
       return desc;
     }
