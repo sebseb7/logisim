@@ -133,23 +133,26 @@ public class Loader implements LibraryLoader {
 
     // Determine the actual file name.
     File file = new File(name);
+    System.out.printf("get file for: '%s'\n", file);
     if (!file.isAbsolute()) {
       try {
-        file = file.getAbsoluteFile();
-        // File currentDirectory = getCurrentDirectory();
-        // if (currentDirectory != null)
-        //   file = new File(currentDirectory, name);
+        File currentDirectory = getCurrentDirectory();
+        if (currentDirectory != null)
+          file = new File(currentDirectory, name);
+        // file = file.getAbsoluteFile();
       } catch (Exception e) {
         Errors.title("Error finding JAR library").show(
             String.format("Could not locate JAR library: %s", name), e);
         file = null;
       }
     }
+    File circFile = filesOpening.empty() ? null : filesOpening.peek();
+    String circName = circFile != null ? "project '"+circFile.toString()+"'" : "this project";
     // It doesn't exist. Figure it out from the user.
     if ((file == null || !file.canRead()) && Main.headless) {
       String msg = (file != null && file.exists())
-          ? S.fmt("fileLibraryUnreadableError", name, file.getName())
-          : S.fmt("fileLibraryMissingError", name, file == null ? name : file.getName());
+          ? S.fmt("fileLibraryUnreadableError", name, circName)
+          : S.fmt("fileLibraryMissingError", name, circName);
       System.exit(1);
     }
     while (file == null || !file.canRead()) {
@@ -158,8 +161,8 @@ public class Loader implements LibraryLoader {
         S.get("fileLibraryMissingChoiceSkip"),
         S.get("fileLibraryMissingChoiceSelect") };
       String msg = file != null && file.exists()
-          ? S.fmt("fileLibraryUnreadableMessage", name, file.getName())
-          : S.fmt("fileLibraryMissingMessage", name, file == null ? name : file.getName());
+          ? S.fmt("fileLibraryUnreadableMessage", name, circName)
+          : S.fmt("fileLibraryMissingMessage", name, circName);
       int choice = -1;
       choice = JOptionPane.showOptionDialog(parent,
           "<html><body><p style='width: 400px;'>" + msg + "</p></body></html>",
