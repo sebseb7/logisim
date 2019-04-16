@@ -67,6 +67,17 @@ public class Value {
     }
   }
 
+  public static Value create_unsafe(int width, int error, int unknown, int value) {
+    int hashCode = 31 * (31 * (31 * width + error) + unknown) + value;
+    Value val = cache.get(hashCode);
+    if (val != null && val.value == value && val.width == width
+        && val.error == error && val.unknown == unknown)
+      return val;
+    Value ret = new Value(width, error, unknown, value);
+    cache.put(hashCode, ret);
+    return ret;
+  }
+
   public static Value create(Value[] values) {
     if (values.length == 0)
       return NIL;

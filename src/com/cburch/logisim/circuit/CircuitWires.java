@@ -795,27 +795,35 @@ class CircuitWires {
     }
 
     // now propagate values through circuit
+next_bundle:
     for (ThreadBundle tb : bundles) {
       WireBundle b = tb.b;
-
+      if (!b.isValid() || b.threads == null)
+        continue next_bundle; // skip entire bundle
+      
+      int width = b.threads.length;
+      if (width < 0 || width > 32) // sanity check: should never happen
+        continue next_bundle; // skip entire bundle
       Value bv = null;
-      if (!b.isValid() || b.threads == null) {
-        ; // do nothing
-      } else if (b.threads.length == 1) {
+      if (width == 1) {
         bv = s.thr_values.get(b.threads[0]);
       } else {
-        Value[] tvs = new Value[b.threads.length];
-        boolean tvs_valid = true;
-        for (int i = 0; i < tvs.length; i++) {
+        int error = 0, unknown = 0, value = 0;
+        for (int i = 0; i < width; i++) {
           Value tv = s.thr_values.get(b.threads[i]);
-          if (tv == null) {
-            tvs_valid = false;
-            break;
-          }
-          tvs[i] = tv;
+          if (tv == null)
+            continue next_bundle; // skip entire bundle
+          int mask = 1 << i;
+          if (tv == Value.TRUE)
+            value |= mask;
+          else if (tv == Value.FALSE)
+            ;
+          else if (tv == Value.UNKNOWN)
+            unknown |= mask;
+          else
+            error |= mask;
         }
-        if (tvs_valid)
-          bv = Value.create(tvs);
+        bv = Value.create_unsafe(width, error, unknown, value);
       }
 
       if (bv != null) {
