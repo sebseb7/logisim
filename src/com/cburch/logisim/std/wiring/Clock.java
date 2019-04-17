@@ -157,9 +157,9 @@ public class Clock extends InstanceFactory {
     } else {
       dirty = state.updateTick(ticks, attrs);
     }
-    if (dirty)
-      Instance.getInstanceFor(comp).fireInvalidated();
-    return true;
+    // if (dirty)
+    //   Instance.getInstanceFor(comp).fireInvalidated();
+    return dirty;
   }
 
   public static final Attribute<Integer> ATTR_HIGH = new DurationAttribute(
