@@ -81,6 +81,8 @@ public class Propagator {
     public void attributeValueChanged(AttributeEvent e) {
       if (e.getAttribute().equals(Options.ATTR_SIM_RAND))
         prop.updateRandomness();
+      else if (e.getAttribute().equals(Options.ATTR_SIM_LIMIT))
+        prop.updateSimLimit();
     }
   }
 
@@ -129,9 +131,6 @@ public class Propagator {
     }
   }
 
-  //
-  // static methods
-  //
   static Value computeValue(SetData causes) {
     if (causes == null)
       return Value.NIL;
@@ -176,6 +175,7 @@ public class Propagator {
     Listener l = new Listener(this);
     root.getProject().getOptions().getAttributeSet().addAttributeWeakListener(this, l);
     updateRandomness();
+    updateSimLimit();
   }
 
   private SetData addCause(CircuitState state, SetData head, SetData data) {
@@ -209,10 +209,7 @@ public class Propagator {
     return head;
   }
 
-  //
-  // private methods
-  //
-  void checkComponentEnds(CircuitState state, Component comp) {
+  static void checkComponentEnds(CircuitState state, Component comp) {
     for (EndData end : comp.getEnds()) {
       Location loc = end.getLocation();
       SetData oldHead = state.causes.get(loc);
@@ -287,7 +284,7 @@ public class Propagator {
     return propagate(null, null);
   }
 
-  public boolean propagate(Simulator.Listener propListener, Simulator.Event propEvent) {
+  public boolean propagate(Simulator.Listener propListener, Simulator.Event propEvent) { // Safe to call from sim thread
     oscPoints.clear();
     root.processDirtyPoints();
     root.processDirtyComponents();
@@ -317,7 +314,7 @@ public class Propagator {
     return iters > 0;
   }
 
-  private SetData removeCause(CircuitState state, SetData head, Location loc,
+  private static SetData removeCause(CircuitState state, SetData head, Location loc,
       Component cause) {
     HashMap<Location, SetData> causes = state.causes;
     if (head == null) {
@@ -384,7 +381,7 @@ public class Propagator {
     setDataSerialNumber++;
   }
 
-  boolean step(PropagationPoints changedPoints) {
+  boolean step(PropagationPoints changedPoints) { // Safe to call from sim thread
     oscPoints.clear();
     root.processDirtyPoints();
     root.processDirtyComponents();
@@ -401,7 +398,7 @@ public class Propagator {
     return true;
   }
 
-  private void stepInternal(PropagationPoints changedPoints) {
+  private void stepInternal(PropagationPoints changedPoints) { // Safe to call from sim thread
     if (toProcess.isEmpty())
       return;
 
@@ -469,6 +466,13 @@ public class Propagator {
     while ((1 << logVal) < val)
       logVal++;
     simRandomShift = logVal;
+  }
+
+  private void updateSimLimit() {
+    Options opts = root.getProject().getOptions();
+    Object limit = opts.getAttributeSet().getValue(Options.ATTR_SIM_LIMIT);
+    int val = ((Integer) limit).intValue();
+    simLimit = val;
   }
 
 }

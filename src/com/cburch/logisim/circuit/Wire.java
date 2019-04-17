@@ -301,8 +301,10 @@ public final class Wire
   public void propagate(CircuitState state) {
     // Normally this is handled by CircuitWires, and so it won't get
     // called. The exception is when a wire is added or removed
-    state.markPointAsDirty(e0);
-    state.markPointAsDirty(e1);
+    try { throw new Exception("** never happens? **"); }
+    catch (Exception e) { e.printStackTrace(); }
+    // state.markPointAsDirty(e0);
+    // state.markPointAsDirty(e1);
   }
 
   public boolean sharesEnd(Wire other) {
