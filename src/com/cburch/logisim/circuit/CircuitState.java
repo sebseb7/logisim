@@ -38,7 +38,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 import com.cburch.logisim.circuit.Propagator.SetData;
 import com.cburch.logisim.comp.Component;
@@ -103,7 +102,9 @@ public class CircuitState implements InstanceData {
           markPointAsDirty(w.getEnd1());
         } else {
           Propagator.checkComponentEnds(CircuitState.this, comp);
-          dirtyComponents.remove(comp);
+          synchronized (dirtyLock) {
+            dirtyComponents.remove(comp);
+          }
         }
       }
 
@@ -111,17 +112,15 @@ public class CircuitState implements InstanceData {
       else if (action == CircuitEvent.ACTION_CLEAR) {
         temporaryClock = null;
         knownClocks = false;
-        synchronized (dirtyLock) {
-          substates.clear();
-          substatesWorking = new CircuitState[0];
-        }
         wireData = null;
         componentData.clear();
         values.clear(); // slow path
         clearFastpathGrid(); // fast path
-        dirtyComponents.clear();
         synchronized (dirtyLock) {
+          dirtyComponents.clear();
           dirtyPoints.clear();
+          substates.clear();
+          substatesWorking = new CircuitState[0];
         }
         causes.clear();
       }
@@ -196,7 +195,8 @@ public class CircuitState implements InstanceData {
   private Map<Location, Value> values = new HashMap<>();
   HashMap<Location, SetData> causes = new HashMap<>();
 
-  private CopyOnWriteArraySet<Component> dirtyComponents = new CopyOnWriteArraySet<>();
+  // private CopyOnWriteArraySet<Component> dirtyComponents = new CopyOnWriteArraySet<>();
+  private HashSet<Component> dirtyComponents = new HashSet<>(); // protected by dirtyLock
   // private CopyOnWriteArraySet<Location> dirtyPoints = new CopyOnWriteArraySet<>();
   // private HashSet<Location> dirtyPoints = new HashSet<>();
   private ArrayList<Location> dirtyPoints = new ArrayList<>(); // protected by dirtyLock
@@ -285,12 +285,12 @@ public class CircuitState implements InstanceData {
       System.arraycopy(src.fastpath_grid[y], 0,
           this.fastpath_grid[y], 0, FASTPATH_GRID_WIDTH);
     }
-    this.dirtyComponents.addAll(src.dirtyComponents);
     synchronized(src.dirtyLock) {
       // note: we don't bother with our this.dirtyLock here: it isn't needed
       // (b/c no other threads have a reference to this yet), and to avoid the
       // possibility of deadlock (though that shouldn't happen either since no
       // other threads have references to this yet).
+      this.dirtyComponents.addAll(src.dirtyComponents);
       this.dirtyPoints.addAll(src.dirtyPoints);
     }
     if (src.wireData != null) {
@@ -395,21 +395,21 @@ public class CircuitState implements InstanceData {
   }
 
   private void markAllComponentsDirty() {
-    dirtyComponents.addAll(circuit.getNonWires());
+    synchronized (dirtyLock) {
+      dirtyComponents.addAll(circuit.getNonWires());
+    }
   }
 
   public void markComponentAsDirty(Component comp) {
-    try {
+    synchronized (dirtyLock) {
       dirtyComponents.add(comp);
-    } catch (RuntimeException e) {
-      CopyOnWriteArraySet<Component> set = new CopyOnWriteArraySet<Component>();
-      set.add(comp);
-      dirtyComponents = set;
     }
   }
 
   public void markComponentsDirty(Collection<Component> comps) {
-    dirtyComponents.addAll(comps);
+    synchronized (dirtyLock) {
+      dirtyComponents.addAll(comps);
+    }
   }
 
   void markPointAsDirty(Location pt) {
@@ -418,42 +418,24 @@ public class CircuitState implements InstanceData {
     }
   }
 
+  HashSet<Component> dirtyComponentsWorking = new HashSet<>();
   void processDirtyComponents() {
-    if (!dirtyComponents.isEmpty()) {
-      // This seeming wasted copy is to avoid ConcurrentModifications
-      // if we used an iterator instead.
-      Object[] toProcess;
-      RuntimeException firstException = null;
-      for (int tries = 4; true; tries--) {
-        try {
-          toProcess = dirtyComponents.toArray();
-          break;
-        } catch (RuntimeException e) {
-          if (firstException == null)
-            firstException = e;
-          if (tries == 0) {
-            toProcess = new Object[0];
-            dirtyComponents = new CopyOnWriteArraySet<Component>();
-            throw firstException;
-          }
-        }
-      }
-      dirtyComponents.clear();
-      for (Object compObj : toProcess) {
-        if (compObj instanceof Component) {
-          Component comp = (Component) compObj;
-          comp.propagate(this);
-          if (comp.getFactory() instanceof Pin && parentState != null) {
-            // should be propagated in superstate
-            parentComp.propagate(parentState);
-          }
-        }
-      }
-    }
-
+    if (!dirtyComponentsWorking.isEmpty())
+      throw new IllegalStateException("INTERNAL ERROR: dirtyComponentsWorking not empty");
     synchronized (dirtyLock) {
+      HashSet<Component> other = dirtyComponents;
+      dirtyComponents = dirtyComponentsWorking; // dirtyComponents is now empty
+      dirtyComponentsWorking = other; // working set is now ready to process
       substatesWorking = substates.toArray(substatesWorking);
     }
+
+    for (Component comp : dirtyComponentsWorking) {
+      comp.propagate(this);
+      // pin values also get propagated to parent state
+      if (comp.getFactory() instanceof Pin && parentState != null)
+        parentComp.propagate(parentState);
+    }
+    dirtyComponentsWorking.clear();
 
     for (CircuitState substate : substatesWorking) {
       if (substate == null)
@@ -470,7 +452,7 @@ public class CircuitState implements InstanceData {
     synchronized (dirtyLock) {
       ArrayList<Location> other = dirtyPoints;
       dirtyPoints = dirtyPointsWorking; // dirtyPoints is now empty
-      dirtyPointsWorking = other; // working set is now ready to proces
+      dirtyPointsWorking = other; // working set is now ready to process
       substatesWorking = substates.toArray(substatesWorking);
     }
     if (circuit.wires.isMapVoided()) {
@@ -524,17 +506,15 @@ public class CircuitState implements InstanceData {
     }
     values.clear(); // slow path
     clearFastpathGrid(); // fast path
-    dirtyComponents.clear();
     synchronized (dirtyLock) {
+      dirtyComponents.clear();
       dirtyPoints.clear();
+      for (CircuitState sub : substates)
+        sub.reset();
     }
     causes.clear();
     markAllComponentsDirty();
 
-    synchronized (dirtyLock) {
-      for (CircuitState sub : substates)
-        sub.reset();
-    }
   }
 
   public CircuitState createCircuitSubstateFor(Component comp, Circuit circ) {
