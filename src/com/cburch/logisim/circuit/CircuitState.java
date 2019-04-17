@@ -103,7 +103,9 @@ public class CircuitState implements InstanceData {
         } else {
           Propagator.checkComponentEnds(CircuitState.this, comp);
           synchronized (dirtyLock) {
-            dirtyComponents.remove(comp);
+            // dirtyComponents.remove(comp);
+            while (dirtyComponents.remove(comp))
+              ;
           }
         }
       }
@@ -196,7 +198,8 @@ public class CircuitState implements InstanceData {
   HashMap<Location, SetData> causes = new HashMap<>();
 
   // private CopyOnWriteArraySet<Component> dirtyComponents = new CopyOnWriteArraySet<>();
-  private HashSet<Component> dirtyComponents = new HashSet<>(); // protected by dirtyLock
+  // private HashSet<Component> dirtyComponents = new HashSet<>(); // protected by dirtyLock
+  private ArrayList<Component> dirtyComponents = new ArrayList<>(); // protected by dirtyLock
   // private CopyOnWriteArraySet<Location> dirtyPoints = new CopyOnWriteArraySet<>();
   // private HashSet<Location> dirtyPoints = new HashSet<>();
   private ArrayList<Location> dirtyPoints = new ArrayList<>(); // protected by dirtyLock
@@ -379,7 +382,14 @@ public class CircuitState implements InstanceData {
       // fast path
       int x = p.x/10;
       int y = p.y/10;
-      return fastpath_grid[y][x];
+      // int xy = circuit.wires.points.fastpathRedirect(x, y);
+      // x = (xy >> 16) & 0xffff;
+      // y = xy & 0xffff;
+      Value v = fastpath_grid[y][x];
+      if (v != null)
+        return v;
+      else
+        return CircuitWires.getBusValue(this, p);
     } else {
       // slow path
       return values.get(p);
@@ -418,12 +428,12 @@ public class CircuitState implements InstanceData {
     }
   }
 
-  HashSet<Component> dirtyComponentsWorking = new HashSet<>();
+  ArrayList<Component> dirtyComponentsWorking = new ArrayList<>();
   void processDirtyComponents() {
     if (!dirtyComponentsWorking.isEmpty())
       throw new IllegalStateException("INTERNAL ERROR: dirtyComponentsWorking not empty");
     synchronized (dirtyLock) {
-      HashSet<Component> other = dirtyComponents;
+      ArrayList<Component> other = dirtyComponents;
       dirtyComponents = dirtyComponentsWorking; // dirtyComponents is now empty
       dirtyComponentsWorking = other; // working set is now ready to process
       substatesWorking = substates.toArray(substatesWorking);
@@ -558,53 +568,62 @@ public class CircuitState implements InstanceData {
 
 
   // for CircuitWires - to set value at point
-  void setValueByWire(Location p, Value v) {
+  void setValueByWire(Location p, Value v) { // todo: cache relevant Components in CircuitWires
     boolean changed;
     if (p.x % 10 == 0 && p.y % 10 == 0
         && p.x < FASTPATH_GRID_WIDTH*10
         && p.y < FASTPATH_GRID_HEIGHT*10) {
-      // fast path
-      int x = p.x/10;
-      int y = p.y/10;
-      if (v == Value.NIL) {
-        if (fastpath_grid[y][x] != null) {
-          changed = true;
-          fastpath_grid[y][x] = null;
-        } else {
-          changed = false;
-        }
-      } else {
-        if (!v.equals(fastpath_grid[y][x])) {
-          changed = true;
-          fastpath_grid[y][x] = v;
-        } else {
-          changed = false;
-        }
-      }
+      changed = fastpath(p, v);
     } else {
-      // slow path
-      if (v == Value.NIL) {
-        Object old = values.remove(p);
-        changed = (old != null && old != Value.NIL);
-      } else {
-        Object old = values.put(p, v);
-        changed = !v.equals(old);
-      }
+      changed = slowpath(p, v);
     }
     if (changed) {
-      boolean found = false;
-      for (Component comp : circuit.getComponents(p)) {
-        if (!(comp instanceof Wire) && !(comp instanceof Splitter)) {
-          found = true;
-          markComponentAsDirty(comp);
-        }
-      }
-      // NOTE: this will cause a double-propagation on components
-      // whose outputs have just changed.
-
-      if (found)
-        base.locationTouched(this, p);
+      markDirtyComponentsAt(p);
     }
+  }
+
+  private boolean fastpath(Location p, Value v) {
+    int x = p.x/10;
+    int y = p.y/10;
+    if (v == Value.NIL) {
+      if (fastpath_grid[y][x] != null) {
+        fastpath_grid[y][x] = null;
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      if (!v.equals(fastpath_grid[y][x])) {
+        fastpath_grid[y][x] = v;
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+  
+  private boolean slowpath(Location p, Value v) {
+    if (v == Value.NIL) {
+      Object old = values.remove(p);
+      return (old != null && old != Value.NIL);
+    } else {
+      Object old = values.put(p, v);
+      return !v.equals(old);
+    }
+  }
+
+  private void markDirtyComponentsAt(Location p) {
+    boolean found = false;
+    for (Component comp : circuit.getComponents(p)) {
+      if (!(comp instanceof Wire) && !(comp instanceof Splitter)) {
+        found = true;
+        markComponentAsDirty(comp);
+      }
+    }
+    // NOTE: this will cause a double-propagation on components
+    // whose outputs have just changed.
+    if (found)
+      base.locationTouched(this, p);
   }
 
   void setWireData(CircuitWires.State data) {

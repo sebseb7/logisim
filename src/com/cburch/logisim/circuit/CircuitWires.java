@@ -174,25 +174,39 @@ class CircuitWires {
     }
   }
 
+  static Location[] locationsWithComponents(CircuitPoints pts, Location[] locs) {
+    ArrayList<Location> found = new ArrayList<>();
+    for (Location p : locs) {
+      for (Component comp : pts.getComponents(p)) {
+        if (!(comp instanceof Wire) && !(comp instanceof Splitter)) {
+          found.add(p);
+        }
+      }
+    }
+    int n = found.size();
+    return n == locs.length ? locs : found.toArray(new Location[n]);
+  }
+
   static class ValuedBus {
     int idx = -1;
     ValuedThread[] threads;
-    Location[] points;
+    Location[] componentPoints; // subset of wire bundle xpoints that have components at them
     Value[] valAtPoint;
     Value valAtPointSum; // cached sum of valAtPoint, or null if dirty
+    Value val; // cached final value for bus
     int width;
     ValuedBus[] dependentBuses; // buses affected if this one changes value.
     boolean dirty;
-    ValuedBus(WireBundle wb) {
+    ValuedBus(WireBundle wb, CircuitPoints pts) {
       idx = -1; // filled in by caller
-      points = wb.xpoints;
-      valAtPoint = new Value[points.length];
+      componentPoints = locationsWithComponents(pts, wb.xpoints);
+      valAtPoint = new Value[componentPoints.length];
       width = wb.threads == null ? -1 : wb.getWidth().getWidth();
       dirty = true;
     }
     // ValuedBus(ValuedBus vb) { // for cloning
     //   idx = vb.idx;
-    //   points = vb.points;
+    //   componentPoints = vb.componentPoints;
     //   valAtPoint = vb.valAtPoint.clone();
     //   valAtPointSum = vb.valAtPointSum;
     //   width = vb.width;
@@ -254,7 +268,7 @@ class CircuitWires {
   }
 
   State newState(CircuitState circState) {
-    return new State(circState, getBundleMap());
+    return new State(circState, getBundleMap(), points);
   }
 
   static class State {
@@ -263,14 +277,14 @@ class CircuitWires {
     int numDirty;
     HashMap<Location, ValuedBus> busAt = new HashMap<>();
 
-    State(CircuitState circState, BundleMap bundleMap) {
+    State(CircuitState circState, BundleMap bundleMap, CircuitPoints pts) {
       this.bundleMap = bundleMap;
       HashMap<WireBundle, ValuedBus> allBuses = new HashMap<>();
       HashMap<ValuedBus, WireBundle> srcBuses = new HashMap<>();
       buses = new ValuedBus[bundleMap.bundles.size()];
       int i = 0;
       for (WireBundle wb : bundleMap.bundles) {
-        ValuedBus vb = new ValuedBus(wb);
+        ValuedBus vb = new ValuedBus(wb, pts);
         vb.idx = i++;
         buses[vb.idx] = vb;
         for (Location loc : wb.xpoints) {
@@ -286,8 +300,8 @@ class CircuitWires {
       for (ValuedBus vb : buses) {
         vb.makeThreads(srcBuses.get(vb).threads, allBuses, allThreads);
         if (circState != null) {
-          for (int j = 0; j < vb.points.length; j++) {
-            Value val = circState.getComponentOutputAt(vb.points[j]);
+          for (int j = 0; j < vb.componentPoints.length; j++) {
+            Value val = circState.getComponentOutputAt(vb.componentPoints[j]);
             vb.valAtPoint[j] = val;
           }
         }
@@ -417,7 +431,6 @@ class CircuitWires {
   private HashSet<Component> pulls = new HashSet<Component>(); // of Components with PullResistor factory
 
   final CircuitPoints points = new CircuitPoints();
-  // derived data
   private Bounds bounds = Bounds.EMPTY_BOUNDS;
 
   private volatile BundleMap masterBundleMap = null;
@@ -684,6 +697,19 @@ class CircuitWires {
     }
   }
 
+  static Value getBusValue(CircuitState state, Location loc) {
+    State s = state.getWireData();
+    if (s == null)
+      return Value.NIL; // return state.getValue(loc); // fallback, probably wrong, who cares
+    ValuedBus vb = s.busAt.get(loc);
+    if (vb == null)
+      return Value.NIL; // return state.getValue(loc); // fallback, probably wrong, who cares
+    Value v = vb.val;
+    if (v == null)
+      return Value.NIL; // return state.getValue(loc); // fallback, probably wrong, who cares
+    return v;
+  }
+
   void draw(ComponentDrawContext context, Collection<Component> hidden) {
     boolean showState = context.getShowState();
     CircuitState state = context.getCircuitState();
@@ -705,7 +731,7 @@ class CircuitWires {
           if (!isValid)
             g.setColor(Value.NIL_COLOR);
           else
-            g.setColor(state.getValue(s).getColor());
+            g.setColor(getBusValue(state, s).getColor());
         } else {
           g.setColor(Color.BLACK);
         }
@@ -771,7 +797,7 @@ class CircuitWires {
             if (!isValid)
               g.setColor(Value.NIL_COLOR);
             else
-              g.setColor(state.getValue(s).getColor());
+              g.setColor(getBusValue(state, s).getColor());
           } else {
             g.setColor(Color.BLACK);
           }
@@ -808,7 +834,7 @@ class CircuitWires {
                 if (!isValid)
                   g.setColor(Value.NIL_COLOR);
                 else
-                  g.setColor(state.getValue(loc).getColor());
+                  g.setColor(getBusValue(state, loc).getColor());
               } else {
                 g.setColor(Color.BLACK);
               }
@@ -942,16 +968,10 @@ class CircuitWires {
     return new WireSet(wires);
   }
 
-  //
-  // query methods
-  //
   boolean isMapVoided() {
     return masterBundleMap == null; // volatile read by simulation thread
   }
 
-  //
-  // utility methods
-  //
   void propagate(CircuitState circState, ArrayList<Location> points) {
     BundleMap map = getBundleMap();
     ArrayList<WireThread> dirtyThreads = new ArrayList<>();
@@ -960,7 +980,7 @@ class CircuitWires {
     State s = circState.getWireData();
     if (s == null || s.bundleMap != map) {
       // if it is outdated, we need to compute for all threads
-      s = new State(circState, map);
+      s = new State(circState, map, this.points);
       circState.setWireData(s);
       // note: all buses are already marked as dirty
     }
@@ -975,14 +995,14 @@ class CircuitWires {
         // propagate NIL across entire bundle
         if (vb.dirty)
           s.markClean(vb);
-        for (Location buspt : vb.points)
+        for (Location buspt : vb.componentPoints)
           circState.setValueByWire(buspt, Value.NIL);
       } else {
         // common case... it is wired to a normal bus: update the stored value
         // of this point on the bus, mark the bus as dirty, and mark as dirty
         // any related buses.
-        for (int i = 0; i < vb.points.length; i++) {
-          if (vb.points[i].equals(p)) {
+        for (int i = 0; i < vb.componentPoints.length; i++) {
+          if (vb.componentPoints[i].equals(p)) {
             Value val = circState.getComponentOutputAt(p);
             Value old = vb.valAtPoint[i];
             if ((val == null || val == Value.NIL) &&
@@ -1020,9 +1040,9 @@ class CircuitWires {
     // and post those notifications to all bus points
     for (int i = 0; i < s.numDirty; i++) {
       ValuedBus vb = s.buses[i];
-      Value val = vb.recalculate();
+      Value val = vb.val = vb.recalculate();
       vb.dirty = false;
-      for (Location p : vb.points)
+      for (Location p : vb.componentPoints)
         circState.setValueByWire(p, val);
     }
     s.numDirty = 0;

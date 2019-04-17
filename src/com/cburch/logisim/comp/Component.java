@@ -42,7 +42,7 @@ import com.cburch.logisim.instance.StdAttr;
 
 // Tentative Design Notes (3 of 3): There are only four known things that
 // implement the Component interface. One is InstanceComponent (with it's
-// matching twin helper Instance). Another is Wire. The other two are Slitter
+// matching twin helper Instance). Another is Wire. The other two are Splitter
 // and Video, which both descend from ManagedComponent, which descends from
 // AbstractComponent, which implements the Component interface. Seems a bit
 // overkill, no?
