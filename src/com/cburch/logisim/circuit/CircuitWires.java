@@ -952,7 +952,7 @@ class CircuitWires {
   //
   // utility methods
   //
-  void propagate(CircuitState circState, Set<Location> points) {
+  void propagate(CircuitState circState, ArrayList<Location> points) {
     BundleMap map = getBundleMap();
     ArrayList<WireThread> dirtyThreads = new ArrayList<>();
 

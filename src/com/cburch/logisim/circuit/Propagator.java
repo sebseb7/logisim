@@ -178,7 +178,7 @@ public class Propagator {
     updateSimLimit();
   }
 
-  private SetData addCause(CircuitState state, SetData head, SetData data) {
+  private static SetData addCause(CircuitState state, SetData head, SetData data) {
     if (data.val == null) { // actually, it should be removed
       return removeCause(state, head, data.loc, data.cause);
     }
@@ -347,11 +347,7 @@ public class Propagator {
     isOscillating = false;
   }
 
-  //
-  // package-protected helper methods
-  //
-  void setValue(CircuitState state, Location pt, Value val, Component cause,
-      int delay) {
+  void setValue(CircuitState state, Location pt, Value val, Component cause, int delay) {
     if (cause instanceof Wire || cause instanceof Splitter)
       return;
     if (delay <= 0) {
