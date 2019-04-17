@@ -36,7 +36,7 @@ import java.util.Arrays;
 
 import com.cburch.logisim.util.Cache;
 
-public class Value {
+public final class Value {
 
   private static Value create(int width, int error, int unknown, int value) {
     if (width == 0) {
@@ -325,14 +325,48 @@ public class Value {
       if (other == UNKNOWN)
         return this;
       return ERROR;
+    } else if (this.width == other.width) {
+      int disagree = (this.value ^ other.value) & ~(this.unknown | other.unknown);
+      return Value.create(
+          width,
+          this.error | other.error | disagree,
+          this.unknown & other.unknown,
+          this.value | other.value);
     } else {
-      int disagree = (this.value ^ other.value)
-          & ~(this.unknown | other.unknown);
-      return Value.create(Math.max(this.width, other.width), this.error
-          | other.error | disagree, this.unknown & other.unknown,
-          (this.value & ~this.unknown)
-          | (other.value & ~other.unknown));
+      int thisknown = ~this.unknown & (this.width == 32 ? -1 : ~(-1 << this.width));
+      int otherknown = ~other.unknown & (other.width == 32 ? -1 : ~(-1 << other.width));
+      int disagree = (this.value ^ other.value) & thisknown & otherknown;
+      return Value.create(
+          Math.max(this.width, other.width),
+          this.error | other.error | disagree,
+          ~thisknown & ~otherknown,
+          this.value | other.value);
     }
+  }
+
+  public static final Value combineLikeWidths(Value[] vals) { // all widths must match
+    for (int i = 0; i < vals.length; i++) {
+      Value v = vals[i];
+      if (v != null && v != NIL) {
+        int width = v.width;
+        int error = v.error;
+        int unknown = v.unknown;
+        int value = v.value;
+        for (int j = i+1; j < vals.length; j++) {
+          v = vals[j];
+          if (v == null || v == NIL)
+            continue;
+          if (v.width != width)
+            throw new IllegalArgumentException("INTERNAL ERROR: mismatched widths in Value.combine");
+          int disagree = (value ^ v.value) & ~(unknown | v.unknown);
+          error |= v.error | disagree;
+          unknown &= v.unknown;
+          value |= v.value;
+        }
+        return Value.create(width, error, unknown, value);
+      }
+    }
+    return Value.NIL;
   }
 
   /**
