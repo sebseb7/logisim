@@ -30,35 +30,62 @@
 
 package com.cburch.logisim.circuit;
 
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.HashSet;
 
 class WireThread {
-  private WireThread parent;
-  private CopyOnWriteArraySet<CircuitWires.ThreadBundle> bundles = new CopyOnWriteArraySet<CircuitWires.ThreadBundle>();
+  private WireThread representative;
+  private HashSet<BundlePosition> tempBundlePositions = new HashSet<>();
+  public int steps; // will be set when BundleMap is done being constructed
+  public WireBundle[] bundle; // will be set when BundleMap is done being constructed
+  public int[] position; // will be set when BundleMap is done being constructed
 
-  WireThread() {
-    parent = this;
+  private static class BundlePosition {
+    int pos;
+    WireBundle b;
+    BundlePosition(int pos, WireBundle b) {
+      this.pos = pos;
+      this.b = b;
+    }
   }
 
-  WireThread find() {
+  WireThread() {
+    representative = this;
+  }
+
+  void addBundlePosition(int pos, WireBundle b) {
+    tempBundlePositions.add(new BundlePosition(pos, b));
+  }
+
+  void finishConstructing() {
+    if (tempBundlePositions == null)
+      return;
+    steps = tempBundlePositions.size();
+    bundle = new WireBundle[steps];
+    position = new int[steps];
+    int i = 0;
+    for (BundlePosition bp : tempBundlePositions) {
+      bundle[i] = bp.b;
+      position[i] = bp.pos;
+      i++;
+    }
+    tempBundlePositions = null;
+  }
+
+  WireThread getRepresentative() {
     WireThread ret = this;
-    if (ret.parent != ret) {
+    if (ret.representative != ret) {
       do
-        ret = ret.parent;
-      while (ret.parent != ret);
-      this.parent = ret;
+        ret = ret.representative;
+      while (ret.representative != ret);
+      this.representative = ret;
     }
     return ret;
   }
 
-  CopyOnWriteArraySet<CircuitWires.ThreadBundle> getBundles() {
-    return bundles;
-  }
-
   void unite(WireThread other) {
-    WireThread group = this.find();
-    WireThread group2 = other.find();
-    if (group != group2)
-      group.parent = group2;
+    WireThread us = this.getRepresentative();
+    WireThread them = other.getRepresentative();
+    if (us != them)
+      us.representative = them;
   }
 }

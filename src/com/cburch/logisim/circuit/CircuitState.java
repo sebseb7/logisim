@@ -434,6 +434,7 @@ public class CircuitState implements InstanceData {
       // Note: this is a stopgap hack until we figure out the cause of the
       // concurrent modification exception.
       for (int i = 3; i >= 0; i--) {
+        if (i != 3) System.out.printf("map voided (tries left %d)\n", i);
         try {
           dirty.addAll(circuit.wires.points.getSplitLocations());
           break;

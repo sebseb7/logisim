@@ -390,11 +390,11 @@ public class Analyze {
           throw new AnalyzeException.CannotHandle("incompatible widths");
         }
         WireThread t = bundle.threads[p.bit];
-        for (CircuitWires.ThreadBundle tb : t.getBundles()) {
-          for (Location p2 : tb.b.points) {
+        for (int i = 0; i < t.steps; i++) {
+          for (Location p2 : t.bundle[i].xpoints) {
             if (p2.equals(p))
               continue;
-            LocationBit p2b = new LocationBit(p2, tb.loc);
+            LocationBit p2b = new LocationBit(p2, t.position[i]);
             Expression old = expressionMap.get(p2b);
             if (old != null) {
               Component eCause = expressionMap.currentCause;

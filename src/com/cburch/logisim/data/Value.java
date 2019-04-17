@@ -263,8 +263,7 @@ public class Value {
 
   private Value(int width, int error, int unknown, int value) {
     // To ensure that the one-bit values are unique, this should be called
-    // only
-    // for the one-bit values and by the private create method
+    // only for the one-bit values and by the private create method
     this.width = width;
     this.error = error;
     this.unknown = unknown;
