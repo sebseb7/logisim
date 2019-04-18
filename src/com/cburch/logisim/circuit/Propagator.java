@@ -32,7 +32,7 @@ package com.cburch.logisim.circuit;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.PriorityQueue;
+//import java.util.PriorityQueue;
 import java.util.Random;
 
 import com.cburch.logisim.comp.Component;
@@ -86,7 +86,7 @@ public class Propagator {
     }
   }
 
-  static class SetData implements Comparable<SetData> {
+  static class SetData extends SplayQueue.Node implements Comparable<SetData> {
     int time;
     int serialNumber;
     CircuitState state; // state of circuit containing component
@@ -97,6 +97,7 @@ public class Propagator {
 
     private SetData(int time, int serialNumber, CircuitState state,
         Location loc, Component cause, Value val) {
+      super(((long)time << 32) | (serialNumber & 0xFFFFFFFFL));
       this.time = time;
       this.serialNumber = serialNumber;
       this.state = state;
@@ -156,7 +157,8 @@ public class Propagator {
    * within Logisim (though they wouldn't oscillate in practice).
    */
   private volatile int simRandomShift;
-  private PriorityQueue<SetData> toProcess = new PriorityQueue<SetData>();
+  // private PriorityQueue<SetData> toProcess = new PriorityQueue<SetData>();
+  private SplayQueue<SetData> toProcess = new SplayQueue<SetData>();
   private int clock = 0;
   private boolean isOscillating = false;
   private boolean oscAdding = false;
@@ -246,34 +248,6 @@ public class Propagator {
   boolean isPending() {
     return !toProcess.isEmpty();
   }
-
-  /*
-   * TODO for the SimulatorPrototype class void step() { clock++;
-   *
-   * // propagate all values for this clock tick HashMap visited = new
-   * HashMap(); // State -> set of ComponentPoints handled while
-   * (!toProcess.isEmpty()) { SetData data; data = (SetData) toProcess.peek();
-   * if (data.time != clock) break; toProcess.remove(); CircuitState state =
-   * data.state;
-   *
-   * // if it's already handled for this clock tick, continue HashSet handled
-   * = (HashSet) visited.get(state); if (handled != null) { if
-   * (!handled.add(new ComponentPoint(data.cause, data.loc))) continue; } else
-   * { handled = new HashSet(); visited.put(state, handled); handled.add(new
-   * ComponentPoint(data.cause, data.loc)); }
-   *
-   * if (oscAdding) oscPoints.add(state, data.loc);
-   *
-   * // change the information about value SetData oldHead = (SetData)
-   * state.causes.get(data.loc); Value oldVal = computeValue(oldHead); SetData
-   * newHead = addCause(state, oldHead, data); Value newVal =
-   * computeValue(newHead);
-   *
-   * // if the value at point has changed, propagate it if
-   * (!newVal.equals(oldVal)) { state.markPointAsDirty(data.loc); } }
-   *
-   * clearDirtyPoints(); clearDirtyComponents(); }
-   */
 
   void locationTouched(CircuitState state, Location loc) {
     if (oscAdding)
@@ -367,8 +341,7 @@ public class Propagator {
         }
       }
     }
-    toProcess.add(new SetData(clock + delay, setDataSerialNumber, state,
-          pt, cause, val));
+    toProcess.add(new SetData(clock + delay, setDataSerialNumber, state, pt, cause, val));
 
     // DEBUGGING
     // System.printf("%s: set %s in %s to %s by %s after %s\n",
@@ -394,6 +367,8 @@ public class Propagator {
     return true;
   }
 
+  long __n = 0;
+  long __c = 0;
   private void stepInternal(PropagationPoints changedPoints) { // Safe to call from sim thread
     if (toProcess.isEmpty())
       return;
@@ -407,8 +382,15 @@ public class Propagator {
       SetData data = toProcess.peek();
       if (data == null || data.time != clock)
         break;
+      __n++;
+      __c += toProcess.size();
       toProcess.remove();
       CircuitState state = data.state;
+
+      if (__n % 1000000 == 0) {
+        System.out.printf("%s pri queue %s ops avg size %s\n",
+            this, __n, ((double)__c)/__n);
+      }
 
       // if it's already handled for this clock tick, continue
       HashSet<ComponentPoint> handled = visited.get(state);
