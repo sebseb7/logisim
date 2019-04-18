@@ -158,7 +158,8 @@ public class Propagator {
    */
   private volatile int simRandomShift;
   // private PriorityQueue<SetData> toProcess = new PriorityQueue<SetData>();
-  private SplayQueue<SetData> toProcess = new SplayQueue<SetData>();
+  // private SplayQueue<SetData> toProcess = new SplayQueue<SetData>();
+  private LinkedQueue<SetData> toProcess = new LinkedQueue<SetData>();
   private int clock = 0;
   private boolean isOscillating = false;
   private boolean oscAdding = false;
@@ -367,8 +368,6 @@ public class Propagator {
     return true;
   }
 
-  long __n = 0;
-  long __c = 0;
   private void stepInternal(PropagationPoints changedPoints) { // Safe to call from sim thread
     if (toProcess.isEmpty())
       return;
@@ -382,15 +381,8 @@ public class Propagator {
       SetData data = toProcess.peek();
       if (data == null || data.time != clock)
         break;
-      __n++;
-      __c += toProcess.size();
       toProcess.remove();
       CircuitState state = data.state;
-
-      if (__n % 1000000 == 0) {
-        System.out.printf("%s pri queue %s ops avg size %s\n",
-            this, __n, ((double)__c)/__n);
-      }
 
       // if it's already handled for this clock tick, continue
       HashSet<ComponentPoint> handled = visited.get(state);
