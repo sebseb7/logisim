@@ -56,6 +56,9 @@ import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.std.wiring.Pin;
 
+// Note: Each CircuitState belongs to (at most) one Propagator. Some of the
+// members in here more properly belong to Propagator (or, vice versa, some of
+// the functionality in Propagator could equally well be in here.
 public class CircuitState implements InstanceData {
 
   private class MyCircuitListener implements CircuitListener {
@@ -199,6 +202,8 @@ public class CircuitState implements InstanceData {
   private HashMap<Component, Object> componentData = new HashMap<>();
   private Map<Location, Value> values = new HashMap<>();
   HashMap<Location, SetData> causes = new HashMap<>();
+  HashSet<Propagator.ComponentPoint> visited = new HashSet<>(); // used by Propagator
+  int visitedNonce; // used by Propagator;
 
   // private CopyOnWriteArraySet<Component> dirtyComponents = new CopyOnWriteArraySet<>();
   // private HashSet<Component> dirtyComponents = new HashSet<>(); // protected by dirtyLock
