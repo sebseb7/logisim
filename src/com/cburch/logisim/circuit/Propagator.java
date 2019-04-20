@@ -30,13 +30,11 @@
 
 package com.cburch.logisim.circuit;
 
-import java.util.HashMap;
 //import java.util.PriorityQueue;
 import java.util.Random;
 
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
-import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.Location;
@@ -85,17 +83,26 @@ public class Propagator {
     }
   }
 
-  static class SetData extends SplayQueue.Node implements Comparable<SetData> {
-    int time;
-    int serialNumber;
-    CircuitState state; // state of circuit containing component
-    Component cause; // component emitting the value
-    Location loc; // the location at which value is emitted
-    Value val; // value being emitted
-    SetData next = null;
+  static class DrivenValue {
+    DrivenValue next; // linked list
+    final Component driver;
+    Value val;
+    DrivenValue(Component c, Value v) { driver = c; val = v; }
+  }
 
-    private SetData(int time, int serialNumber, CircuitState state,
-        Location loc, Component cause, Value val) {
+  private static class SimulatorEvent extends SplayQueue.Node
+    implements Comparable<SimulatorEvent> {
+
+    int time;
+    int serialNumber; // used to make the times unique
+
+    CircuitState state; // state of circuit containing component
+    Location loc; // the location at which value is emitted
+    Component cause; // component emitting the value
+    Value val; // value being emitted
+
+    private SimulatorEvent(int time, int serialNumber,
+        CircuitState state, Location loc, Component cause, Value val) {
       super(((long)time << 32) | (serialNumber & 0xFFFFFFFFL));
       this.time = time;
       this.serialNumber = serialNumber;
@@ -105,18 +112,15 @@ public class Propagator {
       this.val = val;
     }
 
-    public SetData cloneFor(CircuitState newState) {
+    public SimulatorEvent cloneFor(CircuitState newState) {
       Propagator newProp = newState.getPropagator();
       int dtime = newProp.clock - state.getPropagator().clock;
-      SetData ret = new SetData(time + dtime,
-          newProp.setDataSerialNumber, newState, loc, cause, val);
-      newProp.setDataSerialNumber++;
-      if (this.next != null)
-        ret.next = this.next.cloneFor(newState);
+      SimulatorEvent ret = new SimulatorEvent(time + dtime,
+          newProp.eventSerialNumber++, newState, loc, cause, val);
       return ret;
     }
 
-    public int compareTo(SetData o) {
+    public int compareTo(SimulatorEvent o) {
       // Yes, these subtractions may overflow. This is intentional, as it
       // avoids potential wraparound problems as the counters increment.
       int ret = this.time - o.time;
@@ -131,14 +135,43 @@ public class Propagator {
     }
   }
 
-  static Value computeValue(SetData causes) {
-    if (causes == null)
-      return Value.NIL;
-    Value ret = causes.val;
-    for (SetData n = causes.next; n != null; n = n.next) {
-      ret = ret.combine(n.val);
+  // This one is only used to initialize  TODO: can we eliminate this... is it used only when initializing BundleMap?
+  static Value getDrivenValueAt(CircuitState circState, Location p) {
+    // for CircuitWires - to get values, ignoring wires' contributions
+    DrivenValue vals;
+    synchronized (circState.valuesLock) {
+      vals = circState.slowpath_drivers.get(p);
     }
+    return computeValue(vals);
+  }
+
+  static Value computeValue(DrivenValue vals) {
+    if (vals == null)
+      return Value.NIL;
+    Value ret = vals.val;
+    for (DrivenValue v = vals.next; v != null; v = v.next)
+      ret = ret.combine(v.val);
     return ret;
+  }
+
+  static void copyDrivenValues(CircuitState dest, CircuitState src) {
+    // note: we don't bother with our this.valuesLock here: it isn't needed
+    // (b/c no other threads have a reference to this yet), and to avoid the
+    // possibility of deadlock (though that shouldn't happen either since no
+    // other threads have references to this yet).
+    dest.slowpath_drivers.clear();
+    synchronized (src.valuesLock)  {
+      for (Location loc : src.slowpath_drivers.keySet()) {
+        DrivenValue v = src.slowpath_drivers.get(loc);
+        DrivenValue n = new DrivenValue(v.driver, v.val);
+        dest.slowpath_drivers.put(loc, n);
+        while (v.next != null) {
+          n.next = new DrivenValue(v.next.driver, v.next.val);
+          v = v.next;
+          n = n.next;
+        }
+      }
+    }
   }
 
   private CircuitState root; // root of state tree
@@ -156,9 +189,9 @@ public class Propagator {
    * within Logisim (though they wouldn't oscillate in practice).
    */
   private volatile int simRandomShift;
-  // private PriorityQueue<SetData> toProcess = new PriorityQueue<SetData>();
-  // private SplayQueue<SetData> toProcess = new SplayQueue<SetData>();
-  private LinkedQueue<SetData> toProcess = new LinkedQueue<SetData>();
+  // private PriorityQueue<SimulatorEvent> toProcess = new PriorityQueue<>();
+  // private SplayQueue<SimulatorEvent> toProcess = new SplayQueue<>();
+  private LinkedQueue<SimulatorEvent> toProcess = new LinkedQueue<>();
   private int clock = 0;
   private boolean isOscillating = false;
   private boolean oscAdding = false;
@@ -167,9 +200,9 @@ public class Propagator {
   private Random noiseSource = new Random();
   private int noiseCount = 0;
 
-  private int setDataSerialNumber = 0;
-  static int lastId = 0;
+  private int eventSerialNumber = 0;
 
+  static int lastId = 0;
   int id = lastId++;
 
   public Propagator(CircuitState root) {
@@ -180,53 +213,32 @@ public class Propagator {
     updateSimLimit();
   }
 
-  private static SetData addCause(CircuitState state, SetData head, SetData data) {
-    if (data.val == null) { // actually, it should be removed
-      return removeCause(state, head, data.loc, data.cause);
-    }
+  // precondition: state.valuesLock held
+  private static DrivenValue addCause(CircuitState state, DrivenValue head, 
+      Location loc, Component cause, Value val) {
+    if (val == null) // actually, it should be removed
+      return removeCause(state, head, loc, cause);
 
-    HashMap<Location, SetData> causes = state.causes;
-
-    // first check whether this is change of previous info.
-    boolean replaced = false;
-    for (SetData n = head; n != null; n = n.next) {
-      if (n.cause == data.cause) {
-        n.val = data.val;
-        replaced = true;
-        break;
+    // first check whether this is change of previous info
+    for (DrivenValue n = head; n != null; n = n.next) {
+      if (n.driver == cause) {
+        n.val = val;
+        return head;
       }
     }
 
-    // otherwise, insert to list of causes
-    if (!replaced) {
-      if (head == null) {
-        causes.put(data.loc, data);
-        head = data;
-      } else {
-        data.next = head.next;
-        head.next = data;
-      }
+    // otherwise, insert into list of causes
+    DrivenValue n = new DrivenValue(cause, val);
+    if (head == null) {
+      head = n;
+      state.slowpath_drivers.put(loc, head);
+    } else {
+      n.next = head.next;
+      head.next = n;
     }
 
     return head;
   }
-
-  // static void checkComponentEnds(CircuitState state, Component comp) {
-  //   for (EndData end : comp.getEnds()) {
-  //     Location loc = end.getLocation();
-  //     SetData oldHead = state.causes.get(loc);
-  //     Value oldVal = computeValue(oldHead);
-  //     SetData newHead = removeCause(state, oldHead, loc, comp);
-  //     Value newVal = computeValue(newHead);
-  //     Value wireVal = state.getValueByWire(loc);
-
-  //     if (!newVal.equals(oldVal) || wireVal != null)
-  //       state.markPointAsDirty(loc, newVal);
-
-  //     if (wireVal != null)
-  //       state.setValueByWire(loc, Value.NIL);
-  //   }
-  // }
 
   public void drawOscillatingPoints(ComponentDrawContext context) {
     if (isOscillating)
@@ -288,22 +300,23 @@ public class Propagator {
     return iters > 0;
   }
 
-  private static SetData removeCause(CircuitState state, SetData head, Location loc,
-      Component cause) {
-    HashMap<Location, SetData> causes = state.causes;
-    if (head == null) {
-      ;
-    } else if (head.cause == cause) {
+  // precondition: state.valuesLock held
+  private static DrivenValue removeCause(CircuitState state, DrivenValue head, 
+      Location loc, Component cause) {
+    if (head == null)
+      return null;
+
+    if (head.driver == cause) {
       head = head.next;
       if (head == null)
-        causes.remove(loc);
+        state.slowpath_drivers.remove(loc);
       else
-        causes.put(loc, head);
+        state.slowpath_drivers.put(loc, head);
     } else {
-      SetData prev = head;
-      SetData cur = head.next;
+      DrivenValue prev = head;
+      DrivenValue cur = head.next;
       while (cur != null) {
-        if (cur.cause == cause) {
+        if (cur.driver == cause) {
           prev.next = cur.next;
           break;
         }
@@ -341,13 +354,13 @@ public class Propagator {
         }
       }
     }
-    toProcess.add(new SetData(clock + delay, setDataSerialNumber, state, pt, cause, val));
+    toProcess.add(new SimulatorEvent(clock + delay, eventSerialNumber, state, pt, cause, val));
 
     // DEBUGGING
     // System.printf("%s: set %s in %s to %s by %s after %s\n",
     //     clock, pt, state, val, cause, delay);
 
-    setDataSerialNumber++;
+    eventSerialNumber++;
   }
 
   boolean step(PropagationPoints changedPoints) { // Safe to call from sim thread
@@ -378,11 +391,11 @@ public class Propagator {
 
     // propagate all values for this clock tick
     while (true) {
-      SetData data = toProcess.peek();
-      if (data == null || data.time != clock)
+      SimulatorEvent ev = toProcess.peek();
+      if (ev == null || ev.time != clock)
         break;
       toProcess.remove();
-      CircuitState state = data.state;
+      CircuitState state = ev.state;
 
       // if it's already handled for this clock tick, continue
       if (state.visitedNonce != visitedNonce) {
@@ -390,25 +403,28 @@ public class Propagator {
         state.visitedNonce = visitedNonce;
         state.visited.clear();
       }
-      if (!state.visited.add(new ComponentPoint(data.cause, data.loc)))
+      if (!state.visited.add(new ComponentPoint(ev.cause, ev.loc)))
         continue; // this component+loc change has already been handled
 
       // DEBUGGING
       // System.out.printf("%s: proc %s in %s to %s by %s\n",
-      //     data.time, data.loc, data.state, data.val, data.cause);
+      //     ev.time, ev.loc, ev.state, ev.val, ev.cause);
 
       if (changedPoints != null)
-        changedPoints.add(state, data.loc);
+        changedPoints.add(state, ev.loc);
 
       // change the information about value
-      SetData oldHead = state.causes.get(data.loc);
-      Value oldVal = computeValue(oldHead);
-      SetData newHead = addCause(state, oldHead, data);
-      Value newVal = computeValue(newHead);
+      Value oldVal, newVal;
+      synchronized (state.valuesLock) {
+        DrivenValue oldHead = state.slowpath_drivers.get(ev.loc);
+        oldVal = computeValue(oldHead);
+        DrivenValue newHead = addCause(state, oldHead, ev.loc, ev.cause, ev.val);
+        newVal = computeValue(newHead);
+      }
 
       // if the value at point has changed, propagate it
       if (!newVal.equals(oldVal)) {
-        state.markPointAsDirty(data.loc, newVal);
+        state.markPointAsDirty(ev.loc, newVal);
       }
     }
 
