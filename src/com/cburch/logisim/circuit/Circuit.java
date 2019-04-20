@@ -498,8 +498,8 @@ public class Circuit implements AttributeDefaultProvider {
     return wires.points.getSplitCauses(loc);
   }
 
-  public Set<Location> getSplitLocations() {
-    return wires.points.getSplitLocations();
+  public Set<Location> getAllLocations() {
+    return wires.points.getAllLocations();
   }
 
   public AttributeSet getStaticAttributes() {

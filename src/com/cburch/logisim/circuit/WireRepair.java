@@ -94,7 +94,7 @@ class WireRepair extends CircuitTransaction {
 
   private void doMerges(CircuitMutator mutator) {
     MergeSets sets = new MergeSets();
-    for (Location loc : circuit.wires.points.getSplitLocations()) {
+    for (Location loc : circuit.wires.points.getAllLocations()) {
       Collection<?> at = circuit.getComponents(loc);
       if (at.size() == 2) {
         Iterator<?> atit = at.iterator();
@@ -135,7 +135,7 @@ class WireRepair extends CircuitTransaction {
   }
 
   private void doMergeSet(ArrayList<Wire> mergeSet,
-      ReplacementMap replacements, Set<Location> splitLocs) {
+      ReplacementMap replacements, Set<Location> allLocs) {
     TreeSet<Location> ends = new TreeSet<>();
     for (Wire w : mergeSet) {
       ends.add(w.getEnd0());
@@ -147,7 +147,7 @@ class WireRepair extends CircuitTransaction {
     mids.add(whole.getEnd0());
     mids.add(whole.getEnd1());
     for (Location loc : whole) {
-      if (splitLocs.contains(loc)) {
+      if (allLocs.contains(loc)) {
         for (Component comp : circuit.getComponents(loc)) {
           if (!mergeSet.contains(comp)) {
             mids.add(loc);
@@ -216,23 +216,23 @@ class WireRepair extends CircuitTransaction {
     }
 
     ReplacementMap replacements = new ReplacementMap();
-    Set<Location> splitLocs = circuit.wires.points.getSplitLocations();
+    Set<Location> allLocs = circuit.wires.points.getAllLocations();
     for (ArrayList<Wire> mergeSet : mergeSets.getMergeSets()) {
       if (mergeSet.size() > 1) {
-        doMergeSet(mergeSet, replacements, splitLocs);
+        doMergeSet(mergeSet, replacements, allLocs);
       }
     }
     mutator.replace(circuit, replacements);
   }
 
   private void doSplits(CircuitMutator mutator) {
-    Set<Location> splitLocs = circuit.wires.points.getSplitLocations();
+    Set<Location> allLocs = circuit.wires.points.getAllLocations();
     ReplacementMap repl = new ReplacementMap();
     for (Wire w : circuit.getWires()) {
       Location w0 = w.getEnd0();
       Location w1 = w.getEnd1();
       ArrayList<Location> splits = null;
-      for (Location loc : splitLocs) {
+      for (Location loc : allLocs) {
         if (w.contains(loc) && !loc.equals(w0) && !loc.equals(w1)) {
           if (splits == null)
             splits = new ArrayList<>();

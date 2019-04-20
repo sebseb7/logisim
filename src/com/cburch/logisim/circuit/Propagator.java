@@ -211,22 +211,22 @@ public class Propagator {
     return head;
   }
 
-  static void checkComponentEnds(CircuitState state, Component comp) {
-    for (EndData end : comp.getEnds()) {
-      Location loc = end.getLocation();
-      SetData oldHead = state.causes.get(loc);
-      Value oldVal = computeValue(oldHead);
-      SetData newHead = removeCause(state, oldHead, loc, comp);
-      Value newVal = computeValue(newHead);
-      Value wireVal = state.getValueByWire(loc);
+  // static void checkComponentEnds(CircuitState state, Component comp) {
+  //   for (EndData end : comp.getEnds()) {
+  //     Location loc = end.getLocation();
+  //     SetData oldHead = state.causes.get(loc);
+  //     Value oldVal = computeValue(oldHead);
+  //     SetData newHead = removeCause(state, oldHead, loc, comp);
+  //     Value newVal = computeValue(newHead);
+  //     Value wireVal = state.getValueByWire(loc);
 
-      if (!newVal.equals(oldVal) || wireVal != null) {
-        state.markPointAsDirty(loc);
-      }
-      if (wireVal != null)
-        state.setValueByWire(loc, Value.NIL);
-    }
-  }
+  //     if (!newVal.equals(oldVal) || wireVal != null)
+  //       state.markPointAsDirty(loc, newVal);
+
+  //     if (wireVal != null)
+  //       state.setValueByWire(loc, Value.NIL);
+  //   }
+  // }
 
   public void drawOscillatingPoints(ComponentDrawContext context) {
     if (isOscillating)
@@ -408,7 +408,7 @@ public class Propagator {
 
       // if the value at point has changed, propagate it
       if (!newVal.equals(oldVal)) {
-        state.markPointAsDirty(data.loc);
+        state.markPointAsDirty(data.loc, newVal);
       }
     }
 
