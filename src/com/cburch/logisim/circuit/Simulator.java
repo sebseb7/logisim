@@ -61,12 +61,18 @@ public class Simulator {
     public boolean didPropagate() { return didPropagate; }
   }
 
-  public static interface Listener {
+  public static interface StatusListener {
     public void simulatorReset(Event e);
-    default public boolean wantProgressEvents() { return false; }
-    default public void propagationInProgress(Event e) { };
-    public void propagationCompleted(Event e);
     public void simulatorStateChanged(Event e);
+  }
+
+  public static interface Listener extends StatusListener {
+    public void propagationCompleted(Event e);
+  }
+
+  public static interface ProgressListener extends Listener {
+    public boolean wantProgressEvents();
+    public void propagationInProgress(Event e);
   }
 
   // This thread keeps track of the current stepPoints (when running in step
@@ -334,7 +340,7 @@ public class Simulator {
       if (doProp || doNudge) try {
         propagated = doProp;
         // todo: need to fire events in here for chrono fine grained
-        Listener p = sim.getPropagationListener();
+        ProgressListener p = sim._progressListener; // events fired on simulator thread, but probably should not be
         Event evt = p == null ? null : new Event(sim, false, false, false);
         stepPoints.clear();
         if (prop != null)
@@ -422,7 +428,9 @@ public class Simulator {
   // methods, but the gui thread can call add/removeSimulateorListener() at any
   // time. Really, the _fire*() methods should be done on the gui thread, I
   // suspect.
-  private ArrayList<Listener> listeners = new ArrayList<>();
+  private ArrayList<StatusListener> statusListeners = new ArrayList<>();
+  private ArrayList<Listener> activityListeners = new ArrayList<>();
+  private volatile ProgressListener _progressListener = null;
   private Object lock = new Object();
 
   // private class Dummy extends UniquelyNamedThread {
@@ -465,15 +473,47 @@ public class Simulator {
     setTickFrequency(AppPreferences.TICK_FREQUENCY.get().doubleValue());
   }
 
-  public void addSimulatorListener(Listener l) {
-    synchronized(lock) {
-      listeners.add(l);
+  public void addSimulatorListener(StatusListener l) {
+    if (l instanceof Listener) {
+      synchronized(lock) {
+        statusListeners.add(l);
+        activityListeners.add((Listener)l);
+        if (_numListeners >= 0) {
+          if (_numListeners+1 >= _listeners.length) {
+            Listener[] t = new Listener[2 * _listeners.length];
+            for (int i = 0; i < _numListeners; i++)
+              t[i] = _listeners[i];
+            _listeners = t;
+          }
+          _listeners[_numListeners] = (Listener)l;
+          _numListeners++;
+        }
+        if (l instanceof ProgressListener) {
+          if (_progressListener != null)
+            throw new IllegalStateException("only one chronogram listener supported");
+          _progressListener = (ProgressListener)l;
+        }
+      }
+    } else {
+      synchronized(lock) {
+        statusListeners.add(l);
+      }
     }
   }
 
-  public void removeSimulatorListener(Listener l) {
-    synchronized(lock) {
-      listeners.remove(l);
+  public void removeSimulatorListener(StatusListener l) {
+    if (l instanceof Listener) {
+      synchronized(lock) {
+        if (l == _progressListener)
+          _progressListener = null;
+        statusListeners.remove(l);
+        activityListeners.remove((Listener)l);
+        _numListeners = -1;
+      }
+    } else {
+      synchronized(lock) {
+        statusListeners.remove(l);
+      }
     }
   }
 
@@ -493,26 +533,51 @@ public class Simulator {
     simThread.addPendingInput(state, comp);
   }
 
-  private ArrayList<Listener> copyListeners() {
-    ArrayList<Listener> copy;
+  private ArrayList<StatusListener> copyStatusListeners() {
+    ArrayList<StatusListener> copy;
     synchronized (lock) {
-      copy = new ArrayList<Listener>(listeners);
+      copy = new ArrayList<StatusListener>(statusListeners);
     }
     return copy;
   }
 
+  // fast copy, only as needed, only used by simThread
+  // invariant: whenever the simulator thread observes _numListeners = n, where
+  //   n >= 0, then there was recently exactly n listeners registered, and those
+  //   n listeners are in _listeners[0..n-1]. No other thread will invalidate
+  //   the _listeners variable or change any of those slots.
+  private volatile Listener[] _listeners = new Listener[10];
+  private volatile int _numListeners = 0;
+  
   // called from simThread, but probably should not be
   private void _fireSimulatorReset() {
     Event e = new Event(this, false, false, false);
-    for (Listener l : copyListeners())
+    for (StatusListener l : copyStatusListeners())
       l.simulatorReset(e);
   }
 
   // called from simThread, but probably should not be
   private void _firePropagationCompleted(boolean t, boolean s, boolean p) {
+    int n = _numListeners;
+    Listener[] list = _listeners;
+    if (n < 0) {
+      // fast copy was out of date, maybe need to refresh
+      synchronized (lock) {
+        n = activityListeners.size();
+        if (n > _listeners.length)
+          _listeners = new Listener[2*n];
+        for (int i = 0; i < n; i++)
+          _listeners[i] = activityListeners.get(i);
+        for (int i = n; i < _listeners.length; i++)
+          _listeners[i] = null;
+        _numListeners = n;
+      }
+    }
+    if (n == 0)
+      return; // nothing to do, no listeners as of just a moment ago
     Event e = new Event(this, t, s, p);
-    for (Listener l : copyListeners())
-      l.propagationCompleted(e);
+    for (int i = 0; i < n; i++)
+      _listeners[i].propagationCompleted(e);
   }
 
   // called from simThread (via Propagator.propagate()), but probably should not be
@@ -521,25 +586,24 @@ public class Simulator {
   //   for (Listener l : copyListeners())
   //     l.propagationInProgress(e);
   // }
-  // called from simThread, but probably should not be
-  private Listener getPropagationListener() {
-    Listener p = null;
-    for (Listener l : copyListeners()) {
-      if (l.wantProgressEvents()) {
-        if (p != null)
-          throw new IllegalStateException("only one chronogram listener supported");
-        else
-          p = l;
-      }
-    }
-    return p;
-  }
+  // // called from simThread, but probably should not be
+  // private ProgressListener getPropagationListener() {
+  //   Listener p = null;
+  //   for (StatusListener l : copyStatusListeners()) {
+  //     if (l instanceof Listener && ((Listener)l).wantProgressEvents()) {
+  //       if (p != null)
+  //         throw new IllegalStateException("only one chronogram listener supported");
+  //       p = (Listener)l;
+  //     }
+  //   }
+  //   return p;
+  // }
 
   // called only from gui thread, but need copy here anyway because listeners
   // can add/remove from listeners list?
   private void fireSimulatorStateChanged() {
     Event e = new Event(this, false, false, false);
-    for (Listener l : copyListeners())
+    for (StatusListener l : copyStatusListeners())
       l.simulatorStateChanged(e);
   }
 

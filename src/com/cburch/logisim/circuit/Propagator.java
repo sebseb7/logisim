@@ -280,7 +280,7 @@ public class Propagator {
     return propagate(null, null);
   }
 
-  public boolean propagate(Simulator.Listener propListener, Simulator.Event propEvent) { // Safe to call from sim thread
+  public boolean propagate(Simulator.ProgressListener propListener, Simulator.Event propEvent) { // Safe to call from sim thread
     oscPoints.clear();
     root.processDirtyPoints();
     root.processDirtyComponents();

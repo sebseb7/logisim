@@ -87,7 +87,7 @@ public class MenuSimulate extends Menu {
   }
 
   private class MyListener
-    implements ActionListener, Simulator.Listener, ChangeListener {
+    implements ActionListener, Simulator.StatusListener, ChangeListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -151,10 +151,6 @@ public class MenuSimulate extends Menu {
         if (state != null)
           proj.removeCircuitState(state);
       }
-    }
-
-    @Override
-    public void propagationCompleted(Simulator.Event e) {
     }
 
     @Override

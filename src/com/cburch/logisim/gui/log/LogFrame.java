@@ -69,7 +69,7 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
   private LogMenuListener menuListener;
 
   private class MyListener implements ProjectListener,
-          LibraryListener, Simulator.Listener, LocaleListener {
+          LibraryListener, Simulator.ProgressListener, LocaleListener {
 
     public void libraryChanged(LibraryEvent event) {
       int action = event.getAction();

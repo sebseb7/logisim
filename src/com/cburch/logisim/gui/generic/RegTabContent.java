@@ -108,7 +108,7 @@ public class RegTabContent extends JScrollPane
     setViewportView(panel);
     proj = frame.getProject();
     getVerticalScrollBar().setUnitIncrement(16);
-    proj.getSimulator().addSimulatorListener(this);
+    // proj.getSimulator().addSimulatorListener(this);
 
     c.fill = GridBagConstraints.HORIZONTAL;
     c.anchor = GridBagConstraints.FIRST_LINE_START;
@@ -121,8 +121,12 @@ public class RegTabContent extends JScrollPane
       public void componentShown(ComponentEvent e) {
         showing = true;
         fill();
+        proj.getSimulator().addSimulatorListener(RegTabContent.this);
       }
-      public void componentHidden ( ComponentEvent e ) { showing = false; }
+      public void componentHidden ( ComponentEvent e ) {
+        showing = false;
+        proj.getSimulator().removeSimulatorListener(RegTabContent.this);
+      }
     });
 
     proj.addProjectWeakListener(null, this);
