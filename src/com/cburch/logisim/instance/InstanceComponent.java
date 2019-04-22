@@ -407,8 +407,14 @@ public /*final*/ class InstanceComponent
 
   public String toString() {
     InstanceTextField field = textField;
-    String label =  field != null ? field.getText() : attrs.getValue(StdAttr.LABEL);
-    return "InstanceComponent{factory="+factory.getName()
-        +",loc="+loc+",label="+label+"}@"+super.toString();
+    if (field != null) {
+      String label = field.getText();
+      return "InstanceComponent{factory="+factory.getName()
+          +",loc="+loc+",textfield="+label+"}@"+System.identityHashCode(this);
+    } else {
+      String label = attrs.getValue(StdAttr.LABEL);
+      return "InstanceComponent{factory="+factory.getName()
+          +",loc="+loc+",stdlabel="+label+"}@"+System.identityHashCode(this);
+    }
   }
 }

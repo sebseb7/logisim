@@ -38,7 +38,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import com.cburch.logisim.circuit.Propagator.DrivenValue;
+// import com.cburch.logisim.circuit.Propagator.DrivenValue;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentState;
@@ -55,6 +55,13 @@ import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.std.wiring.Pin;
 
+// CircuitState holds the simulation state of a Circuit (or Subcircuit), i.e.
+// the values being carried along all wires and buses, along with the
+// InstanceData for all components embedded in the circuit. Most of the
+// dynamically-computed data is actually in CircuitWires. In here there is
+// mostly just a few pointers to other data structures and the dirty lists
+// (lists of locations or components that need to be recomputed).
+//
 // Note: Each CircuitState belongs to (at most) one Propagator. Some of the
 // members in here more properly belong to Propagator (or, vice versa, some of
 // the functionality in Propagator could equally well be in here.
@@ -68,7 +75,8 @@ public class CircuitState implements InstanceData {
       if (action == CircuitEvent.ACTION_ADD) {
         // Nothing to do: CircuitWires.BundleMap will be voided, causing
         // everything to be marked dirty.
-        // Component comp = (Component) event.getData();
+        Component comp = (Component) event.getData();
+        // System.out.println("added comp " + comp);
         // if (comp instanceof Wire) {
         //   Wire w = (Wire) comp;
         //   markPointAsDirty(w.getEnd0(), null);
@@ -107,10 +115,12 @@ public class CircuitState implements InstanceData {
           // Wire w = (Wire) comp;
           // markPointAsDirty(w.getEnd0(), null);
           // markPointAsDirty(w.getEnd1(), null);
+          // System.out.println("removed wire " + comp);
         } else {
           // Nothing else to do: CircuitWires.BundleMap will be voided, causing
           // everything to be marked dirty.
           // Propagator.checkComponentEnds(CircuitState.this, comp);
+          // System.out.println("removed comp " + comp);
           synchronized (dirtyLock) {
             // dirtyComponents.remove(comp);
             while (dirtyComponents.remove(comp))
@@ -132,12 +142,12 @@ public class CircuitState implements InstanceData {
         synchronized (dirtyLock) {
           dirtyComponents.clear();
           dirtyPoints.clear();
-          dirtyPointVals.clear();
+          // dirtyPointVals.clear();
           substates.clear();
           substatesWorking = new CircuitState[0];
           substatesDirty = true;
         }
-        slowpath_drivers.clear();
+        // slowpath_drivers.clear();
       }
 
       /* Component changed */
@@ -230,13 +240,13 @@ public class CircuitState implements InstanceData {
   // you somehow froze all their inputs then removed all wires, splitters,
   // tunnels, and other connectivity within the circuit so that each component's
   // outputs could be observed in isolation.
-  HashMap<Location, DrivenValue> slowpath_drivers = new HashMap<>(); // used by Propagator, protected by valuesLock
+  // HashMap<Location, DrivenValue> slowpath_drivers = new HashMap<>(); // used by Propagator, protected by valuesLock
   // DrivenValue[][] fastpath_drivers = new DrivenValue[FASTPATH_GRID_HEIGHT][FASTPATH_GRID_WIDTH]; // used by Propagator, protected by valuesLock
 
   Object valuesLock = new Object();
 
-  HashSet<Propagator.ComponentPoint> visited = new HashSet<>(); // used by Propagator
-  int visitedNonce; // used by Propagator;
+  // HashSet<Propagator.ComponentPoint> visited = new HashSet<>(); // used by Propagator
+  // int visitedNonce; // used by Propagator;
   // The visited member holds the set of every [component,loc] pair (where the
   // component is among those in this circuit) that has been visited during the
   // current iteration of Propagator.stepInternal().
@@ -246,8 +256,9 @@ public class CircuitState implements InstanceData {
   private ArrayList<Component> dirtyComponents = new ArrayList<>(); // protected by dirtyLock
   // private CopyOnWriteArraySet<Location> dirtyPoints = new CopyOnWriteArraySet<>();
   // private HashSet<Location> dirtyPoints = new HashSet<>();
-  private ArrayList<Location> dirtyPoints = new ArrayList<>(); // protected by dirtyLock
-  private ArrayList<Value> dirtyPointVals = new ArrayList<>(); // protected by dirtyLock
+  // private ArrayList<Location> dirtyPoints = new ArrayList<>(); // protected by dirtyLock
+  // private ArrayList<Value> dirtyPointVals = new ArrayList<>(); // protected by dirtyLock
+  private ArrayList<Propagator.SimulatorEvent> dirtyPoints = new ArrayList<>(); // protected by dirtyLock
   private HashSet<CircuitState> substates = new HashSet<>(); // protected by dirtyLock
   private Object dirtyLock = new Object();
 
@@ -320,7 +331,7 @@ public class CircuitState implements InstanceData {
         this.componentData.put(key, newValue);
       }
     }
-    Propagator.copyDrivenValues(this, src);
+    // Propagator.copyDrivenValues(this, src);
     // note: we don't bother with our this.valuesLock here: it isn't needed
     // (b/c no other threads have a reference to this yet), and to avoid the
     // possibility of deadlock (though that shouldn't happen either since no
@@ -340,7 +351,7 @@ public class CircuitState implements InstanceData {
       // other threads have references to this yet).
       this.dirtyComponents.addAll(src.dirtyComponents);
       this.dirtyPoints.addAll(src.dirtyPoints);
-      this.dirtyPointVals.addAll(src.dirtyPointVals);
+      // this.dirtyPointVals.addAll(src.dirtyPointVals);
     }
     if (src.wireData != null) {
       this.wireData = circuit.wires.newState(this); // all buses will be marked as dirty
@@ -463,10 +474,11 @@ public class CircuitState implements InstanceData {
     }
   }
 
-  void markPointAsDirty(Location pt, Value newVal) {
+  void markPointAsDirty(Propagator.SimulatorEvent ev) { // Location pt, Component cause, Value drivenValue) {
     synchronized(dirtyLock) {
-      dirtyPoints.add(pt);
-      dirtyPointVals.add(newVal);
+      dirtyPoints.add(ev);
+      // dirtyPoints.add(pt);
+      // dirtyPointVals.add(newVal);
     }
   }
 
@@ -499,20 +511,21 @@ public class CircuitState implements InstanceData {
     }
   }
 
-  private ArrayList<Location> dirtyPointsWorking = new ArrayList<>();
-  private ArrayList<Value> dirtyPointValsWorking = new ArrayList<>();
+  // private ArrayList<Location> dirtyPointsWorking = new ArrayList<>();
+  // private ArrayList<Value> dirtyPointValsWorking = new ArrayList<>();
+  private ArrayList<Propagator.SimulatorEvent> dirtyPointsWorking = new ArrayList<>();
   private CircuitState[] substatesWorking = new CircuitState[0];
   private boolean substatesDirty = true;
   void processDirtyPoints() {
     if (!dirtyPointsWorking.isEmpty())
       throw new IllegalStateException("INTERNAL ERROR: dirtyPointsWorking not empty");
     synchronized (dirtyLock) {
-      ArrayList<Location> other = dirtyPoints;
-      ArrayList<Value> otherVals = dirtyPointVals;
+      ArrayList<Propagator.SimulatorEvent> other = dirtyPoints;
+      // ArrayList<Value> otherVals = dirtyPointVals;
       dirtyPoints = dirtyPointsWorking; // dirtyPoints is now empty
-      dirtyPointVals = dirtyPointValsWorking; // dirtyPointVals is now empty
+      // dirtyPointVals = dirtyPointValsWorking; // dirtyPointVals is now empty
       dirtyPointsWorking = other; // working set is now ready to process
-      dirtyPointValsWorking = otherVals; // working set is now ready to process
+      // dirtyPointValsWorking = otherVals; // working set is now ready to process
       if (substatesDirty) {
         substatesDirty = false;
         substatesWorking = substates.toArray(substatesWorking);
@@ -553,9 +566,10 @@ public class CircuitState implements InstanceData {
     //   }
     // }
     // if (!dirtyPointsWorking.isEmpty()) {
-      circuit.wires.propagate(this, dirtyPointsWorking, dirtyPointValsWorking);
+      // circuit.wires.propagate(this, dirtyPointsWorking, dirtyPointValsWorking);
+      circuit.wires.propagate(this, dirtyPointsWorking);
       dirtyPointsWorking.clear();
-      dirtyPointValsWorking.clear();
+      // dirtyPointValsWorking.clear();
     // }
 
     for (CircuitState substate : substatesWorking) {
@@ -586,11 +600,11 @@ public class CircuitState implements InstanceData {
     synchronized (dirtyLock) {
       dirtyComponents.clear();
       dirtyPoints.clear();
-      dirtyPointVals.clear();
+      // dirtyPointVals.clear();
       for (CircuitState sub : substates)
         sub.reset();
     }
-    slowpath_drivers.clear();
+    // slowpath_drivers.clear();
     markAllComponentsDirty();
 
   }
@@ -637,40 +651,52 @@ public class CircuitState implements InstanceData {
   }
 
   // for CircuitWires - to set value at point
-  void setValueByWire(Location p, Value v, Component[] affected) {
-    boolean changed;
-    if (p.x % 10 == 0 && p.y % 10 == 0
-        && p.x < FASTPATH_GRID_WIDTH*10
-        && p.y < FASTPATH_GRID_HEIGHT*10) {
-      synchronized (valuesLock) {
-        changed = fastpath(p, v);
+  void setValueByWire(Value v, Location[] points, CircuitWires.BusConnection[] connections) {
+    for (Location p : points) {
+      if (p.x % 10 == 0 && p.y % 10 == 0
+          && p.x < FASTPATH_GRID_WIDTH*10
+          && p.y < FASTPATH_GRID_HEIGHT*10) {
+        synchronized (valuesLock) {
+          fastpath(p, v);
+        }
+      } else {
+        synchronized (valuesLock) {
+          slowpath(p, v);
+        }
       }
-    } else {
-      synchronized (valuesLock) {
-        changed = slowpath(p, v);
-      }
+      base.locationTouched(this, p);
     }
-    if (changed)
-      markDirtyComponents(p, affected);
+    for (CircuitWires.BusConnection bc : connections) {
+      if (bc.isSink || (bc.isBidirectional && !Value.equal(v, bc.drivenValue)))
+        markComponentAsDirty(bc.component);
+    }
   }
 
-  // for CircuitWires - to set value at point
-  void setValueByWire(Location p, Value v) {
-    boolean changed;
-    if (p.x % 10 == 0 && p.y % 10 == 0
-        && p.x < FASTPATH_GRID_WIDTH*10
-        && p.y < FASTPATH_GRID_HEIGHT*10) {
-      synchronized (valuesLock) {
-        changed = fastpath(p, v);
-      }
-    } else {
-      synchronized (valuesLock) {
-        changed = slowpath(p, v);
-      }
+  void clearValuesByWire() {
+    synchronized (valuesLock) {
+      slowpath_values.clear(); // slow path
+      clearFastpathGrid(); // fast path
     }
-    if (changed)
-      markDirtyComponentsAt(p);
   }
+
+  // // for CircuitWires - to set value at point where there is no bus, just a
+  // // bunch of components
+  // void setValueByWire(Value v, Location p) {
+  //   boolean changed;
+  //   if (p.x % 10 == 0 && p.y % 10 == 0
+  //       && p.x < FASTPATH_GRID_WIDTH*10
+  //       && p.y < FASTPATH_GRID_HEIGHT*10) {
+  //     synchronized (valuesLock) {
+  //       changed = fastpath(p, v);
+  //     }
+  //   } else {
+  //     synchronized (valuesLock) {
+  //       changed = slowpath(p, v);
+  //     }
+  //   }
+  //   if (changed)
+  //     markDirtyComponentsAt(p);
+  // }
 
   private boolean fastpath(Location p, Value v) { // precondition: valuesLock held
     int x = p.x/10;
@@ -702,30 +728,30 @@ public class CircuitState implements InstanceData {
     }
   }
 
-  private void markDirtyComponentsAt(Location p) {
-    boolean found = false;
-    for (Component comp : circuit.getComponents(p)) {
-      if (!(comp instanceof Wire) && !(comp instanceof Splitter)) {
-        found = true;
-        markComponentAsDirty(comp);
-      }
-    }
-    // NOTE: this will cause a double-propagation on components
-    // whose outputs have just changed.
-    // FIXME: huh?
-    if (found)
-      base.locationTouched(this, p);
-  }
+  // private void markDirtyComponentsAt(Location p) {
+  //   boolean found = false;
+  //   for (Component comp : circuit.getComponents(p)) {
+  //     if (!(comp instanceof Wire) && !(comp instanceof Splitter)) {
+  //       found = true;
+  //       markComponentAsDirty(comp);
+  //     }
+  //   }
+  //   // NOTE: this will cause a double-propagation on components
+  //   // whose outputs have just changed.
+  //   // FIXME: huh?
+  //   if (found)
+  //     base.locationTouched(this, p);
+  // }
 
-  private void markDirtyComponents(Location p, Component[] affected) {
-    for (Component comp : affected)
-      markComponentAsDirty(comp);
-    // NOTE: this will cause a double-propagation on components
-    // whose outputs have just changed.
-    // FIXME: huh?
-    if (affected.length > 0)
-      base.locationTouched(this, p);
-  }
+  // private void markDirtyComponents(Location p, Component[] affected) {
+  //   for (Component comp : affected)
+  //     markComponentAsDirty(comp);
+  //   // NOTE: this will cause a double-propagation on components
+  //   // whose outputs have just changed.
+  //   // FIXME: huh?
+  //   if (affected.length > 0)
+  //     base.locationTouched(this, p);
+  // }
 
   void setWireData(CircuitWires.State data) {
     wireData = data;

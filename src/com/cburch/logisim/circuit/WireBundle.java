@@ -42,8 +42,8 @@ class WireBundle {
   private WireBundle parent;
   private Location widthDeterminant = null;
   private boolean isBuss = false;
-  WireThread[] threads = null; // will be set when undleMap is done being constructed
-  Location[] xpoints = null; // will be set when BundleMap is done being constructed
+  WireThread[] threads = null; // will be set when Connectivity is done being constructed
+  Location[] xpoints = null; // will be set when Connectivity is done being constructed
   HashSet<Location> tempPoints = new HashSet<>();
   private WidthIncompatibilityData incompatibilityData = null;
 
