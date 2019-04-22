@@ -161,9 +161,10 @@ class WireRepair extends CircuitTransaction {
     if (mids.size() == 2) {
       mergeResult.add(whole);
     } else {
-      Location e0 = mids.first();
+      Location e0 = null;
       for (Location e1 : mids) {
-        mergeResult.add(Wire.create(e0, e1));
+        if (e0 != null)
+          mergeResult.add(Wire.create(e0, e1));
         e0 = e1;
       }
     }
@@ -179,16 +180,8 @@ class WireRepair extends CircuitTransaction {
     }
   }
 
-  /*
-   * for debugging: private void printWires(String prefix, PrintStream out) {
-   * boolean first = true; for (Wire w : circuit.getWires()) { if (first) {
-   * out.println(prefix + ": " + w); first = false; } else {
-   * out.println("      " + w); } } out.println(prefix + ": none"); }
-   */
-
   private void doOverlaps(CircuitMutator mutator) {
-    HashMap<Location, ArrayList<Wire>> wirePoints;
-    wirePoints = new HashMap<>();
+    HashMap<Location, ArrayList<Wire>> wirePoints = new HashMap<>();
     for (Wire w : circuit.getWires()) {
       for (Location loc : w) {
         ArrayList<Wire> locWires = wirePoints.get(loc);
@@ -207,9 +200,8 @@ class WireRepair extends CircuitTransaction {
           Wire w0 = locWires.get(i);
           for (int j = i + 1; j < n; j++) {
             Wire w1 = locWires.get(j);
-            if (w0.overlaps(w1, false)) {
+            if (w0.overlaps(w1, false))
               mergeSets.merge(w0, w1);
-            }
           }
         }
       }
@@ -218,9 +210,8 @@ class WireRepair extends CircuitTransaction {
     ReplacementMap replacements = new ReplacementMap();
     Set<Location> allLocs = circuit.wires.points.getAllLocations();
     for (ArrayList<Wire> mergeSet : mergeSets.getMergeSets()) {
-      if (mergeSet.size() > 1) {
+      if (mergeSet.size() > 1)
         doMergeSet(mergeSet, replacements, allLocs);
-      }
     }
     mutator.replace(circuit, replacements);
   }
