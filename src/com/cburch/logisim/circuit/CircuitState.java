@@ -45,9 +45,11 @@ import com.cburch.logisim.comp.ComponentState;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstanceState;
+import com.cburch.logisim.instance.InstanceStateImpl;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.memory.Ram;
 import com.cburch.logisim.std.memory.RamState;
@@ -371,24 +373,31 @@ public class CircuitState implements InstanceData {
     return componentData.get(comp);
   }
 
+  private InstanceStateImpl reusableInstanceState = new InstanceStateImpl(this, null);
+
+  // FIXME: wtf?
   public InstanceState getInstanceState(Component comp) {
     Object factory = comp.getFactory();
     if (factory instanceof InstanceFactory) {
-      return ((InstanceFactory) factory).createInstanceState(this, comp);
+      if (comp != ((InstanceComponent)comp).getInstance().getComponent()) 
+        throw new IllegalStateException("instanceComponent.getInstance().getComponent() is wrong");
+      // return ((InstanceFactory) factory).createInstanceState(this, comp);
+      reusableInstanceState.repurpose(this, comp);
+      return reusableInstanceState;
     } else {
-      throw new RuntimeException(
-          "getInstanceState requires instance component");
+      throw new RuntimeException("getInstanceState requires instance component");
     }
   }
 
+  // FIXME: wtf?
   public InstanceState getInstanceState(Instance instance) {
     Object factory = instance.getFactory();
     if (factory instanceof InstanceFactory) {
-      return ((InstanceFactory) factory).createInstanceState(this,
-          instance);
+      // return ((InstanceFactory) factory).createInstanceState(this, instance);
+      reusableInstanceState.repurpose(this, instance.getComponent());
+      return reusableInstanceState;
     } else {
-      throw new RuntimeException(
-          "getInstanceState requires instance component");
+      throw new RuntimeException("getInstanceState requires instance component");
     }
   }
 

@@ -58,9 +58,11 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
+import com.cburch.logisim.instance.InstanceStateImpl;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
@@ -85,10 +87,7 @@ public class SubcircuitFactory extends InstanceFactory {
       CircuitState superState = proj.getCircuitState();
       if (superState == null)
         return;
-
-      CircuitState subState = getSubstate(superState, instance);
-      if (subState == null)
-        return;
+      CircuitState subState = getSubstate(superState, instance.getComponent());
       proj.setCircuitState(subState);
     }
 
@@ -311,23 +310,34 @@ public class SubcircuitFactory extends InstanceFactory {
   }
 
   public CircuitState getSubstate(CircuitState superState, Component comp) {
-    return getSubstate(createInstanceState(superState, comp));
-  }
-
-  //
-  // propagation-oriented methods
-  //
-  public CircuitState getSubstate(CircuitState superState, Instance instance) {
-    return getSubstate(createInstanceState(superState, instance));
-  }
-
-  private CircuitState getSubstate(InstanceState instanceState) {
-    CircuitState subState = (CircuitState)instanceState.getData();
+    //  return getSubstate(createInstanceState(superState, comp));
+    CircuitState subState = (CircuitState)superState.getData(comp);
     if (subState == null) {
-      subState = instanceState.createCircuitSubstateFor(source);
-      instanceState.fireInvalidated();
+      subState = superState.createCircuitSubstateFor(comp, source);
+      if (comp instanceof InstanceComponent)
+        ((InstanceComponent) comp).fireInvalidated();
+      else
+        System.out.println("wrong kind... " + comp);
     }
     return subState;
+  }
+
+  // public CircuitState getSubstate(CircuitState superState, Instance instance) {
+  //   return getSubstate(createInstanceState(superState, instance));
+  // }
+
+  private CircuitState getSubstate(InstanceState stateInContext) {
+    if (stateInContext instanceof InstanceStateImpl)
+      return getSubstate(((InstanceStateImpl)stateInContext).getCircuitState(),
+          ((InstanceStateImpl)stateInContext).getComponent());
+    else
+      throw new IllegalArgumentException("getSubstate on wrong type " + stateInContext);
+    // CircuitState subState = (CircuitState)instanceState.getData();
+    // if (subState == null) {
+    //   subState = instanceState.createCircuitSubstateFor(source);
+    //   instanceState.fireInvalidated();
+    // }
+    // return subState;
   }
 
   @Override
@@ -407,17 +417,17 @@ public class SubcircuitFactory extends InstanceFactory {
   }
 
   @Override
-  public void propagate(InstanceState superState) {
-    CircuitState subState = getSubstate(superState);
+  public void propagate(InstanceState stateInContext) {
+    CircuitState subState = getSubstate(stateInContext);
 
     CircuitAttributes attrs =
-        (CircuitAttributes)superState.getAttributeSet();
+        (CircuitAttributes)stateInContext.getAttributeSet();
     Instance[] pins = attrs.getPinInstances();
     for (int i = 0; i < pins.length; i++) {
       Instance pin = pins[i];
       InstanceState pinState = subState.getInstanceState(pin);
       if (Pin.FACTORY.isInputPin(pin)) {
-        Value newVal = superState.getPortValue(i);
+        Value newVal = stateInContext.getPortValue(i);
         Value oldVal = Pin.FACTORY.getValue(pinState);
         if (!newVal.equals(oldVal)) {
           Pin.FACTORY.setValue(pinState, newVal);
@@ -425,7 +435,7 @@ public class SubcircuitFactory extends InstanceFactory {
         }
       } else { // it is output-only
         Value val = pinState.getPortValue(0);
-        superState.setPort(i, val, 1);
+        stateInContext.setPort(i, val, 1);
       }
     }
   }

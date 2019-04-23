@@ -44,7 +44,10 @@ public class InstanceStateImpl implements InstanceState {
   private CircuitState circuitState;
   private Component component;
 
+  static int cnt = 0;
   public InstanceStateImpl(CircuitState circuitState, Component component) {
+    int n = ++cnt; // System.out.println("alloc " + (++cnt));
+    if (n % 10000 == 0) try { throw new Exception(); } catch (Exception e) { e.printStackTrace(); }
     this.circuitState = circuitState;
     this.component = component;
 
@@ -92,6 +95,10 @@ public class InstanceStateImpl implements InstanceState {
     if (component instanceof InstanceComponent)
       return ((InstanceComponent) component).getInstance();
     return null;
+  }
+
+  public Component getComponent() {
+    return component;
   }
 
   public Value getPortValue(int portIndex) {

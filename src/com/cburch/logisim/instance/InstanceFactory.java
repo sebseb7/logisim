@@ -125,16 +125,15 @@ public abstract class InstanceFactory extends AbstractComponentFactory {
     return ret;
   }
 
-  public final InstanceState createInstanceState(CircuitState state,
-      Component comp) {
-    return createInstanceState(state,
-        ((InstanceComponent) comp).getInstance());
-  }
+  // // FIXME: wtf?
+  // public final InstanceState createInstanceState(CircuitState state, Component comp) {
+  //   return createInstanceState(state, ((InstanceComponent) comp).getInstance());
+  // }
 
-  public final InstanceState createInstanceState(CircuitState state,
-      Instance instance) {
-    return new InstanceStateImpl(state, instance.getComponent());
-  }
+  // // FIXME: wtf?
+  // public final InstanceState createInstanceState(CircuitState state, Instance instance) {
+  //   return new InstanceStateImpl(state, instance.getComponent());
+  // }
 
   @Override
   public final void drawGhost(ComponentDrawContext context, Color color,
