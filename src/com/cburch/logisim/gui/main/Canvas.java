@@ -469,8 +469,8 @@ public class Canvas extends JPanel
     @Override
     public void propagationCompleted(Simulator.Event e) {
       paintThread.requestRepaint();
-      if (e.didTick())
-        waitForRepaintDone();
+      // if (e.didTick())
+      //   waitForRepaintDone();
     }
 
     @Override
@@ -717,7 +717,7 @@ public class Canvas extends JPanel
 
   private volatile boolean paintDirty = false; // only for within paintComponent
 
-  private boolean inPaint = false; // only for within paintComponent
+  private volatile boolean inPaint = false; // only for within paintComponent
 
   private Object repaintLock = new Object(); // for waitForRepaintDone
 

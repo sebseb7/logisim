@@ -192,9 +192,18 @@ public class Propagator {
    * within Logisim (though they wouldn't oscillate in practice).
    */
   private volatile int simRandomShift;
+
+  // The simulator event queue can be implemented by a PriorityQueue,
+  // SplayQueue, or LinkedQueue. LinkedQueue seems fastest in practice, though
+  // it has poor worst-case performance. SplayQueue should have good
+  // expected-case performance, but it seems a bit slower than LinkedQueue.
+  // Priority queue seems slightly worse than the others. It is trivial to
+  // switch between the implementations, just re-comment these next lines.
+
   // private PriorityQueue<SimulatorEvent> toProcess = new PriorityQueue<>();
   // private SplayQueue<SimulatorEvent> toProcess = new SplayQueue<>();
   private LinkedQueue<SimulatorEvent> toProcess = new LinkedQueue<>();
+
   private int clock = 0;
   private boolean isOscillating = false;
   private boolean oscAdding = false;
