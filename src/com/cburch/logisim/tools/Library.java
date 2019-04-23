@@ -44,6 +44,7 @@ import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.file.XmlWriter;
 import com.cburch.logisim.gui.main.LayoutClipboard;
+import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.DragDrop;
 
 public abstract class Library {
@@ -206,9 +207,11 @@ public abstract class Library {
 
   public class TransferableLibrary implements DragDrop.Support, DragDrop.Ghost {
     private LogisimFile file;
+    private Project proj;
 
-    public TransferableLibrary(LogisimFile file) {
+    public TransferableLibrary(LogisimFile file, Project proj) {
       this.file = file;
+      this.proj = proj;
     }
 
     public LogisimFile getLogisimFile() { return file; }
@@ -218,7 +221,7 @@ public abstract class Library {
 
     @Override
     public Object convertTo(String mimetype) {
-      return XmlWriter.encodeSelection(file, Library.this);
+      return XmlWriter.encodeSelection(file, proj, Library.this);
     }
 
     @Override

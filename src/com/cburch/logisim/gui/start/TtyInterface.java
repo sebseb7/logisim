@@ -297,7 +297,7 @@ public class TtyInterface {
   public static void run(Startup args) {
     File fileToOpen = args.getFilesToOpen().get(0);
     Loader loader = new Loader(null);
-    LogisimFile file;
+    LogisimFile.FileWithSimulations file;
     try {
       file = loader.openLogisimFile(fileToOpen, args.getSubstitutions());
     } catch (LoadCanceledByUser e) {
@@ -323,20 +323,20 @@ public class TtyInterface {
     System.exit(ret);
   }
 
-  static int doList(LogisimFile file) {
-    for (Circuit c : file.getCircuits()) {
+  static int doList(LogisimFile.FileWithSimulations file) {
+    for (Circuit c : file.file.getCircuits()) {
       System.out.println(c);
     }
     return 0;
   }
 
-  static int doPng(String names[], LogisimFile file) {
+  static int doPng(String names[], LogisimFile.FileWithSimulations file) {
     double scale = 1.0;
     String format = ExportImage.FORMAT_PNG;
     Project proj = new Project(file);
     Canvas canvas = new Canvas(proj);
     int err = 0;
-    for (Circuit c : file.getCircuits()) {
+    for (Circuit c : file.file.getCircuits()) {
       for (String n : names) {
         if (!n.trim().equals("*") && !n.trim().equals(c.toString()))
           continue;
@@ -352,10 +352,10 @@ public class TtyInterface {
     return err;
   }
 
-  static int doTty(int format, File loadfile, LogisimFile file, String circuitToTest) {
+  static int doTty(int format, File loadfile, LogisimFile.FileWithSimulations file, String circuitToTest) {
     if ((format & FORMAT_STATISTICS) != 0) {
       format &= ~FORMAT_STATISTICS;
-      displayStatistics(file);
+      displayStatistics(file.file);
     }
     if (format == 0) { // no simulation remaining to perform, so just exit
       System.exit(0);
@@ -364,9 +364,9 @@ public class TtyInterface {
     Project proj = new Project(file);
     Circuit circuit;
     if (circuitToTest == null || circuitToTest.length() == 0) {
-      circuit = file.getMainCircuit();
+      circuit = file.file.getMainCircuit();
     } else {
-      circuit = file.getCircuit(circuitToTest);
+      circuit = file.file.getCircuit(circuitToTest);
     }
     Map<Instance, String> pinNames = Analyze.getPinLabels(circuit);
     ArrayList<Instance> outputPins = new ArrayList<Instance>();

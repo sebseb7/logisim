@@ -67,6 +67,7 @@ import com.bfh.logisim.fpga.PinBindings;
 import com.cburch.draw.model.AbstractCanvasObject;
 import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
@@ -74,6 +75,8 @@ import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Location;
+import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.AddTool;
@@ -186,25 +189,25 @@ public class XmlWriter {
     } catch (Exception e) { } // non-fatal
   }
 
-  static void write(LogisimFile file, OutputStream out, File destFile)
+  static void write(LogisimFile file, Project proj, OutputStream out, File destFile)
       throws ParserConfigurationException, TransformerConfigurationException, TransformerException {
 
     DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
     DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
     Document doc = docBuilder.newDocument();
 
-    XmlWriter context = new XmlWriter(file, doc, destFile);
+    XmlWriter context = new XmlWriter(file, proj, doc, destFile);
     context.fromLogisimFile();
     xform(doc, out);
   }
 
-  public static String encodeSelection(LogisimFile file, Object sel) {
+  public static String encodeSelection(LogisimFile file, Project proj, Object sel) {
     try {
       DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
       DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
       Document doc = docBuilder.newDocument();
 
-      XmlWriter context = new XmlWriter(file, doc, null);
+      XmlWriter context = new XmlWriter(file, proj, doc, null);
 
       context.fromSelection(sel);
 
@@ -219,13 +222,15 @@ public class XmlWriter {
   }
 
   private LogisimFile file;
+  private Project proj;
   private Document doc;
   private File destFile; // file being written, used to relativize library paths
   private String destDir; // dir path of circ file begin written, used to relativize paths of components
   private HashMap<Library, String> libIDs = new HashMap<>();
 
-  private XmlWriter(LogisimFile file, Document doc, File destFile) {
+  private XmlWriter(LogisimFile file, Project proj, Document doc, File destFile) {
     this.file = file;
+    this.proj = proj;
     this.doc = doc;
     this.destFile = destFile;
     if (destFile != null)
@@ -259,6 +264,38 @@ public class XmlWriter {
     XmlAttributesUtil.addAttributeSetContent(doc, destDir, elt, attrs, source);
   }
 
+  private static String subcircPathName(String circName, Location loc) {
+    return String.format("subcirc(%s)@%s", circName, loc);
+  }
+
+  private static String componentPathName(Component comp) {
+    return String.format("%s@%s", comp.getFactory().getName(), comp.getLocation());
+  }
+
+  private void enumerateNonVolatileState(String path, CircuitState circState,
+      HashMap<String, AttributeSet> nvs) {
+    Circuit circuit = circState.getCircuit();
+    for (Component comp : circuit.getNonWires()) {
+      ComponentFactory factory = comp.getFactory();
+      if (factory instanceof SubcircuitFactory) {
+        Circuit subcirc = ((SubcircuitFactory)factory).getSubcircuit();
+        CircuitState subState = (CircuitState)circState.getData(comp);
+        if (subState == null)
+          continue;
+        String subpath = path + subcircPathName(subcirc.getName(), comp.getLocation()) + "/";
+        enumerateNonVolatileState(subpath, subState, nvs);
+      } else {
+        AttributeSet attrs = factory.getNonVolatileSimulationState(comp, circState);
+        if (attrs == null)
+          continue;
+        String nodepath = path + componentPathName(comp);
+        AttributeSet old = nvs.put(nodepath, attrs);
+        if (old != null)
+          showError(S.fmt("nonVolatilePathConflictError", nodepath));
+      }
+    }
+  }
+
   Element fromCircuit(Circuit circuit, AddTool tool) {
     Element ret = doc.createElement("circuit");
     ret.setAttribute("name", circuit.getName());
@@ -267,6 +304,24 @@ public class XmlWriter {
       addAttributeSetContent(ret, tool.getAttributeSet(), tool);
     for (PinBindings.Config fpgaconfig : circuit.getFPGAConfigs()) {
       ret.appendChild(fpgaconfig.toXml(doc));
+    }
+    // If there are top-level simulations of this circuit, save any non-volatile
+    // state associated with them.
+    for (CircuitState circState : proj.getRootCircuitStates()) {
+      if (!circState.getCircuit().equals(circuit))
+        continue;
+      HashMap<String, AttributeSet> nvs = new HashMap<>();
+      enumerateNonVolatileState("/", circState, nvs);
+      if (nvs.size() == 0)
+        continue;
+      Element sim = doc.createElement("simulation");
+      nvs.forEach((path, attrs) -> {
+        Element elt = doc.createElement("state");
+        elt.setAttribute("path", path);
+        addAttributeSetContent(elt, attrs, null);
+        sim.appendChild(elt);
+      });
+      ret.appendChild(sim);
     }
     if (!circuit.getAppearance().isDefaultAppearance()) {
       Element appear = doc.createElement("appear");
@@ -376,6 +431,7 @@ public class XmlWriter {
   //   - tool*
   //     - a*
   // - circuit*
+  //   - simulation*
   //   - a*
   //   - comp*
   //   - wire*
@@ -441,6 +497,7 @@ public class XmlWriter {
   // - selection
   //   - circuit; or vhdl; or comp* and wire*; or lib
   // - circuit*
+  //   - simulation*
   //   - a*
   //   - comp*
   //   - wire*

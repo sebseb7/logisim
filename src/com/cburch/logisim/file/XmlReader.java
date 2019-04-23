@@ -70,6 +70,7 @@ class XmlReader {
     Circuit circuit;
     Map<Element, Component> knownComponents = new HashMap<>();
     List<AbstractCanvasObject> appearance = new ArrayList<>();
+    List<HashMap<String, Element>> simulations = new ArrayList<>();
 
     public CircuitData(ReadContext ctx, Element elt, Circuit circ) {
       circuitElement = elt;
@@ -88,6 +89,9 @@ class XmlReader {
       // load fpga configs
       for (Element e : XmlIterator.forChildElements(elt, "fpgaconfig"))
         loadFPGAConfig(ctx, e, circ.getName() + ".fpgaconfig");
+      // load non-volatile simulation state
+      for (Element e : XmlIterator.forChildElements(elt, "simulation"))
+        loadSimulation(ctx, e, circ.getName() + ".simulation");
     }
 
     private void loadAppearance(ReadContext ctx, Element elt, String context) {
@@ -122,6 +126,28 @@ class XmlReader {
         circuit.saveFPGAConfig(PinBindings.parseConfig(elt));
       } catch (Exception e) {
         ctx.addError(S.fmt("fileFPGAConfigError", e.getMessage()), context);
+      }
+    }
+
+    private void loadSimulation(ReadContext ctx, Element elt, String context) {
+      try {
+        HashMap<String, Element> sim = new HashMap<>();
+        for (Element e : XmlIterator.forChildElements(elt, "state")) {
+          String path = e.getAttribute("path");
+          if (path == null || path.equals("")) {
+            ctx.addError(S.get("simulationPathMissingError"), context);
+            continue;
+          }
+          // AttributeSet attrs = parseAttributeSet(ctx, e, context + "." + path);
+          // AttributeSet old = sim.put(path, attrs);
+          Element old = sim.put(path, e);
+          if (old != null)
+            ctx.addError(S.fmt("simulationPathDuplicateError", path), context);
+        }
+        if (sim.size() > 0)
+          simulations.add(sim);
+      } catch (Exception e) {
+        ctx.addError(S.fmt("fileLoadSimulationError", e.getMessage()), context);
       }
     }
 

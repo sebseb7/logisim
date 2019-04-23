@@ -120,7 +120,7 @@ public class LayoutClipboard<T>
   }
 
   public XmlData encode(Project proj, T value) {
-    String xml = XmlWriter.encodeSelection(proj.getLogisimFile(), value);
+    String xml = XmlWriter.encodeSelection(proj.getLogisimFile(), proj, value);
     return xml == null ? null : new XmlData(xml);
   }
 

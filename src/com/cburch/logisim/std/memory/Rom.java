@@ -82,8 +82,7 @@ public class Rom extends Mem {
     @Override
     public MemContents parse(String value) {
       int lineBreak = value.indexOf('\n');
-      String first = lineBreak < 0 ? value : value
-          .substring(0, lineBreak);
+      String first = lineBreak < 0 ? value : value.substring(0, lineBreak);
       String rest = lineBreak < 0 ? "" : value.substring(lineBreak + 1);
       StringTokenizer toks = new StringTokenizer(first);
       try {
@@ -111,7 +110,7 @@ public class Rom extends Mem {
     public String toStandardString(MemContents state) {
       int addr = state.getLogLength();
       int data = state.getWidth();
-      String contents = HexFile.saveToString(state);
+      String contents = HexFile.saveToStringForCircFile(state);
       return "addr/data: " + addr + " " + data + "\n" + contents;
     }
   }

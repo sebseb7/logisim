@@ -44,6 +44,7 @@ import java.util.WeakHashMap;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.std.Builtin;
 import com.cburch.logisim.util.Errors;
+import com.cburch.logisim.proj.Project;
 
 public class LibraryManager {
 
@@ -125,7 +126,7 @@ public class LibraryManager {
 
     @Override
     void setBase(Loader loader, LoadedLibrary lib) throws LoadFailedException, LoadCanceledByUser {
-      lib.setBase(loader.loadLogisimLibraryStage3(absoluteFile));
+      lib.setBase(loader.loadLogisimLibraryStage3(absoluteFile).file);
     }
 
   }
@@ -236,8 +237,7 @@ public class LibraryManager {
     ProjectsDirty.initialize();
   }
 
-  public void fileSaved(Loader loader, File dest, File oldFile,
-      LogisimFile file) {
+  public void fileSaved(Loader loader, File dest, File oldFile, LogisimFile file, Project proj) {
     LoadedLibrary old = findKnown(oldFile);
     if (old != null) {
       old.setDirty(false);
@@ -245,7 +245,9 @@ public class LibraryManager {
 
     LoadedLibrary lib = findKnown(dest);
     if (lib != null) {
-      LogisimFile clone = file.cloneLogisimFile(dest, loader);
+      LogisimFile clone = file.cloneLogisimFile(dest, loader, proj);
+      if (clone == null)
+        throw new IllegalStateException("clone failed");
       clone.setName(file.getName());
       clone.setDirty(false);
       lib.setBase(clone);
@@ -408,7 +410,7 @@ public class LibraryManager {
       return ret;
 
     try {
-      ret = new LoadedLibrary(loader.loadLogisimLibraryStage3(toRead));
+      ret = new LoadedLibrary(loader.loadLogisimLibraryStage3(toRead).file);
     } catch (LoadFailedException e) {
       if (e.cause != null)
         Errors.project(loader.getMainFile()).show(e.getMessage(), e.cause);

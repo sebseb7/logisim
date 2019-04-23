@@ -262,16 +262,16 @@ public class Loader implements LibraryLoader {
 
   // This is used only by Loader.loadLogisimFile(), which calls
   // LibraryManager.loadLogisimFileStage2(), which calls this.
-  LogisimFile loadLogisimLibraryStage3(File request) throws LoadFailedException, LoadCanceledByUser {
+  LogisimFile.FileWithSimulations loadLogisimLibraryStage3(File request) throws LoadFailedException, LoadCanceledByUser {
     return loadLogisimFile(request);
   }
 
-  private LogisimFile loadLogisimFile(File actual) throws LoadFailedException, LoadCanceledByUser {
+  private LogisimFile.FileWithSimulations loadLogisimFile(File actual) throws LoadFailedException, LoadCanceledByUser {
     if (filesOpening.contains(actual))
       throw new LoadFailedException(
           S.fmt("logisimCircularError", LogisimFile.toProjectName(actual)));
 
-    LogisimFile ret = null;
+    LogisimFile.FileWithSimulations ret = null;
     filesOpening.push(actual);
     try {
       ret = LogisimFile.load(actual, this);
@@ -284,7 +284,7 @@ public class Loader implements LibraryLoader {
       filesOpening.pop();
     }
     if (ret != null)
-      ret.setName(LogisimFile.toProjectName(actual));
+      ret.file.setName(LogisimFile.toProjectName(actual));
     return ret;
   }
 
@@ -301,16 +301,16 @@ public class Loader implements LibraryLoader {
     return lib;
   }
 
-  public LogisimFile openLogisimFile(File file) throws LoadFailedException, LoadCanceledByUser {
-      LogisimFile ret = loadLogisimFile(file);
+  public LogisimFile.FileWithSimulations openLogisimFile(File file) throws LoadFailedException, LoadCanceledByUser {
+      LogisimFile.FileWithSimulations ret = loadLogisimFile(file);
       if (ret == null)
         throw new LoadFailedException("File could not be opened"); // fixme i18n
       setMainFile(file);
-      showMessages(ret);
+      showMessages(ret.file);
       return ret;
   }
 
-  public LogisimFile openLogisimFile(File file, Map<String, String> substitutions)
+  public LogisimFile.FileWithSimulations openLogisimFile(File file, Map<String, String> substitutions)
       throws LoadFailedException, LoadCanceledByUser {
     this.substitutions = substitutions;
     try {
@@ -320,10 +320,10 @@ public class Loader implements LibraryLoader {
     }
   }
 
-  public LogisimFile openLogisimFile(File srcFile, InputStream reader)
+  public LogisimFile.FileWithSimulations openLogisimFile(File srcFile, InputStream reader)
       throws /* LoadFailedException, */ IOException, LoadCanceledByUser {
-    LogisimFile ret = LogisimFile.load(srcFile, reader, this);
-    showMessages(ret);
+    LogisimFile.FileWithSimulations ret = LogisimFile.load(srcFile, reader, this);
+    showMessages(ret.file);
     return ret;
   }
 

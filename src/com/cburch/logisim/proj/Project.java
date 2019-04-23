@@ -30,9 +30,10 @@
 
 package com.cburch.logisim.proj;
 
-import java.util.List;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 
 import com.cburch.hdl.HdlModel;
 import com.cburch.logisim.circuit.Circuit;
@@ -41,10 +42,12 @@ import com.cburch.logisim.circuit.CircuitLocker;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.Simulator;
 import com.cburch.logisim.circuit.SubcircuitFactory;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.file.Options;
+import com.cburch.logisim.file.XmlProjectReader;
 import com.cburch.logisim.gui.log.LogFrame;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.gui.main.Frame;
@@ -129,7 +132,7 @@ public class Project {
   private MyListener myListener = new MyListener();
   private boolean startupScreen = false;
 
-  public Project(LogisimFile file) {
+  public Project(LogisimFile.FileWithSimulations file) {
     fileListeners.add(null, myListener);
     setLogisimFile(file);
 
@@ -572,7 +575,7 @@ public class Project {
     value.getCanvas().getSelection().addListener(myListener);
   }
 
-  public void setLogisimFile(LogisimFile value) {
+  public void setLogisimFile(LogisimFile.FileWithSimulations value) {
     LogisimFile old = this.file; // old is only null during constructor
     if (old != null) {
       for (LibraryListener l : fileListeners) {
@@ -585,7 +588,7 @@ public class Project {
       optionsFrame.dispose();
       optionsFrame = null;
     }
-    file = value;
+    file = value.file;
     recentRootState.clear();
     allRootStates.clear();
     fireEvent(ProjectEvent.ACTION_CLEAR_STATES, null);
@@ -595,10 +598,34 @@ public class Project {
     redoLog.clear();
     undoMods = 0;
     fireEvent(ProjectEvent.ACTION_SET_FILE, old, file);
+
+    value.simulations.forEach((circ, sims) ->  {
+      sims.forEach(sim -> {
+        CircuitState rootState = CircuitState.createRootState(this, circ);
+        sim.forEach((path, attrs) -> {
+          ArrayList<Component> cpath = XmlProjectReader.findComponent(circ, path);
+          if (cpath == null)
+            return; // continue sim.forEach
+          CircuitState circState = rootState;
+          for (int i = 0; i < cpath.size()-1; i++) {
+            Component comp = cpath.get(i);
+            if (!(comp.getFactory() instanceof SubcircuitFactory))
+              return; // continue sim.forEach
+            SubcircuitFactory factory = (SubcircuitFactory)comp.getFactory();
+            circState = factory.getSubstate(circState, comp);
+          }
+          Component comp = cpath.get(cpath.size()-1);
+          comp.getFactory().setNonVolatileSimulationState(comp, circState, attrs);
+        });
+        recentRootState.put(circ, rootState);
+        allRootStates.add(rootState);
+      });
+    });
     setCurrentCircuit(file.getMainCircuit());
     for (LibraryListener l : fileListeners) {
       file.addLibraryWeakListener(null, l);
     }
+
     file.setDirty(true); // toggle it so everybody hears the file is fresh
     file.setDirty(false);
   }

@@ -396,10 +396,10 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       if (tool instanceof AddTool) {
         if (((AddTool)tool).getFactory() instanceof SubcircuitFactory) {
           // System.out.println("xfer explorer AddTool circuit item: " + tool);
-          return ((AddTool)tool).new TransferableCircuit(proj.getLogisimFile());
+          return ((AddTool)tool).new TransferableCircuit(proj.getLogisimFile(), proj);
         } else if (((AddTool)tool).getFactory() instanceof VhdlEntity) {
           // System.out.println("xfer explorer AddTool vhdl item: " + tool);
-          return ((AddTool)tool).new TransferableVhdl(proj.getLogisimFile());
+          return ((AddTool)tool).new TransferableVhdl(proj.getLogisimFile(), proj);
         }
       }
       // Other tools (e.g. Muxes, Wiring) can be dragged out to be dropped into 
@@ -415,7 +415,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       Library lib = getSelectedLibrary();
       if (lib != null) {
         // System.out.println("xfer explorer Library item: " + lib);
-        return lib.new TransferableLibrary(proj.getLogisimFile());
+        return lib.new TransferableLibrary(proj.getLogisimFile(), proj);
       }
       return null;
     }

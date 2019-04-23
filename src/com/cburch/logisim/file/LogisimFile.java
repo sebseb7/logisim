@@ -42,6 +42,7 @@ import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -57,6 +58,8 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
+import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
@@ -73,18 +76,20 @@ public class LogisimFile extends Library implements LibraryEventSource {
     OutputStream out;
     LogisimFile file;
     File destFile;
+    Project proj;
 
-    WritingThread(OutputStream out, LogisimFile file, File destFile) {
+    WritingThread(OutputStream out, LogisimFile file, File destFile, Project proj) {
       super("WritingThread");
       this.out = out;
       this.file = file;
       this.destFile = destFile;
+      this.proj = proj;
     }
 
     @Override
     public void run() {
       try {
-        file.write(out, destFile);
+        file.write(out, destFile, proj);
       } catch (IOException e) {
         Errors.project(destFile).show(S.fmt("fileDuplicateError", e.toString()), e);
       }
@@ -117,7 +122,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
     return new String(first, 0, lineBreak, "UTF-8");
   }
 
-  public static LogisimFile load(File file, Loader loader) throws IOException, LoadCanceledByUser {
+  public static FileWithSimulations load(File file, Loader loader) throws IOException, LoadCanceledByUser {
     InputStream in = new FileInputStream(file);
     Throwable firstExcept = null;
     try {
@@ -148,7 +153,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
     return null;
   }
 
-  public static LogisimFile load(File srcFile, InputStream in, Loader loader)
+  public static FileWithSimulations load(File srcFile, InputStream in, Loader loader)
       throws IOException, LoadCanceledByUser {
     try {
       return loadSub(in, loader, null);
@@ -158,7 +163,15 @@ public class LogisimFile extends Library implements LibraryEventSource {
     }
   }
 
-  private static LogisimFile loadSub(InputStream in, Loader loader, File srcFile)
+  public static class FileWithSimulations {
+    public final LogisimFile file;
+    public final HashMap<Circuit, ArrayList<HashMap<String, AttributeSet>>> simulations = new HashMap<>();
+    public FileWithSimulations(LogisimFile file) {
+      this.file = file;
+    }
+  }
+
+  private static FileWithSimulations loadSub(InputStream in, Loader loader, File srcFile)
       throws IOException, SAXException, LoadCanceledByUser {
     // fetch first line and then reset
     BufferedInputStream inBuffered = new BufferedInputStream(in);
@@ -173,8 +186,8 @@ public class LogisimFile extends Library implements LibraryEventSource {
     }
 
     XmlProjectReader xmlReader = new XmlProjectReader(loader, srcFile);
-    LogisimFile ret = xmlReader.parseProject(inBuffered);
-    ret.loader = loader;
+    FileWithSimulations ret = xmlReader.parseProjectWithSimulations(inBuffered);
+    ret.file.loader = loader;
     return ret;
   }
 
@@ -251,7 +264,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
   }
 
   @SuppressWarnings("resource")
-  public LogisimFile cloneLogisimFile(File destFile, Loader newloader) {
+  public LogisimFile cloneLogisimFile(File destFile, Loader newloader, Project proj) {
     PipedInputStream reader = new PipedInputStream();
     PipedOutputStream writer = new PipedOutputStream();
     try {
@@ -260,9 +273,9 @@ public class LogisimFile extends Library implements LibraryEventSource {
       Errors.project(destFile).show(S.fmt("fileDuplicateError", e.toString()), e);
       return null;
     }
-    new WritingThread(writer, this, destFile).start();
+    new WritingThread(writer, this, destFile, proj).start();
     try {
-      return LogisimFile.load(destFile, reader, newloader);
+      return LogisimFile.load(destFile, reader, newloader).file;
     } catch (IOException | LoadCanceledByUser e) {
       Errors.project(destFile).show(S.fmt("fileDuplicateError", e.toString()), e);
     } finally {
@@ -588,9 +601,9 @@ public class LogisimFile extends Library implements LibraryEventSource {
   //   write(out, null);
   // }
 
-  void write(OutputStream out, File dest) throws IOException {
+  void write(OutputStream out, File dest, Project proj) throws IOException {
     try {
-      XmlWriter.write(this, out, dest);
+      XmlWriter.write(this, proj, out, dest);
     } catch (TransformerConfigurationException e) {
       Errors.project(dest).show("internal error configuring transformer", e);
     } catch (ParserConfigurationException e) {
@@ -604,7 +617,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
     }
   }
 
-  public boolean save(File dest) {
+  public boolean save(File dest, Project proj) {
     Library reference = LibraryManager.instance.findReference(this, dest);
     if (reference != null) {
       Errors.title(S.get("fileSaveErrorTitle")).show(
@@ -625,12 +638,12 @@ public class LogisimFile extends Library implements LibraryEventSource {
       //   }
       // }
       fwrite = new FileOutputStream(dest);
-      write(fwrite, dest);
+      write(fwrite, dest, proj);
       setName(toProjectName(dest));
 
       File oldFile = loader.getMainFile();
       loader.setMainFile(dest);
-      LibraryManager.instance.fileSaved(loader, dest, oldFile, this);
+      LibraryManager.instance.fileSaved(loader, dest, oldFile, this, proj);
     } catch (IOException e) {
       if (backupCreated)
         recoverBackup(backup, dest);

@@ -154,16 +154,24 @@
 package com.cburch.logisim.gui.hex;
 import static com.cburch.logisim.gui.hex.Strings.S;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 
 import com.cburch.logisim.Main;
 import com.cburch.logisim.file.Loader;
@@ -1425,6 +1433,20 @@ public class HexFile {
 
   public static MemContents parseFromCircFile(String src, int addrSize, int wordSize)
       throws IOException {
+    if (src.startsWith("compressed\n")) {
+      byte[] bytes = src.getBytes("UTF-8");
+      ByteArrayInputStream input = new ByteArrayInputStream(bytes, 11, bytes.length-11);
+      InputStream decoded = Base64.getMimeDecoder().wrap(input);
+      InflaterInputStream uncompress = new InflaterInputStream(decoded, new Inflater());
+
+      ByteArrayOutputStream result = new ByteArrayOutputStream();
+      byte[] buffer = new byte[1024];
+      int length;
+      while ((length = uncompress.read(buffer)) != -1)
+        result.write(buffer, 0, length);
+      src = result.toString("UTF-8");
+      uncompress.close();
+    }
     return parse(false, src, "v2.0 raw", addrSize, wordSize).model;
   }
 
@@ -1456,11 +1478,29 @@ public class HexFile {
     new HexWriter(out, src, desc).save();
   }
 
-  public static String saveToString(MemContents src) {
-    return saveToString(src, null, -1);
+  // This uses v2.0 raw format, optionally with zip+base64+linebreaks if the
+  // content is large.
+  public static String saveToStringForCircFile(MemContents src) {
+    String ret = saveToString(src, null, -1);
+    if (ret.length() <= 5000)
+      return ret;
+    try {
+      ByteArrayOutputStream result = new ByteArrayOutputStream();
+      result.write("compressed\n".getBytes("UTF-8"));
+      byte[] LF = System.lineSeparator().getBytes("UTF-8"); // "\n" or "\r\n"
+      OutputStream encoded = Base64.getMimeEncoder(76, LF).wrap(result);
+      DeflaterOutputStream compress = new DeflaterOutputStream(encoded, new Deflater());
+      compress.write(ret.getBytes("UTF-8"));
+      compress.finish();
+      return new String(result.toByteArray(), "UTF-8");
+    } catch (Exception e) {
+      e.printStackTrace();
+      return ret;
+    }
   }
 
-  // No header is output. As a special, if desc is null, v2.0 raw will be used.
+  // No header is output. As a special case, if desc is null, v2.0 raw will be
+  // used.
   // For binary format, this uses binary sanitizer (non-ascii printable bytes
   // will appear as unicode error placeholder chars), otherwise only plain
   // ascii will be output, with whitespace preserved.

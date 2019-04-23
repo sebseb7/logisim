@@ -36,9 +36,11 @@ import java.util.WeakHashMap;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.CircuitState;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
@@ -46,9 +48,11 @@ import com.cburch.logisim.data.Value;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.gui.hex.HexFrame;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
+import com.cburch.logisim.instance.InstanceStateImpl;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
@@ -554,7 +558,6 @@ public class Ram extends Mem {
       return true;
     MemContents contents = ret.getContents();
 
-
     AttributeOption type = instance.getAttributeValue(RamAttributes.ATTR_TYPE);
     if (type == RamAttributes.VOLATILE)
       contents.clear();
@@ -566,7 +569,59 @@ public class Ram extends Mem {
     //   }
     // }
     return false;
-   }
+  }
+
+//  public AttributeSet getNonVolatileSimulationAttributes(Component comp) {
+//    // return Collections.singletonList(NV_CONTENTS_ATTR);
+//    AttributeOption type = comp.getAttributeSet().getValue(RamAttributes.ATTR_TYPE);
+//    if (type != RamAttributes.NONVOLATILE)
+//      return null;
+//    int addrBits = state.getAttributeValue(ADDR_ATTR).getWidth();
+//    int dataBits = state.getAttributeValue(DATA_ATTR).getWidth();
+//    MemContents contents = MemContents.create(addrBits, dataBits);
+//    return AttributeSets.fixedSet(new Attribute<?>[] { NV_CONTENTS_ATTR },
+//        new Object[] { contents });
+//  }
+//
+  @Override
+  public AttributeSet getNonVolatileSimulationState(Component comp, CircuitState state) {
+    AttributeOption type = comp.getAttributeSet().getValue(RamAttributes.ATTR_TYPE);
+    if (type != RamAttributes.NONVOLATILE)
+      return null;
+    MemContents contents;
+    if (state == null) {
+      int addrBits = comp.getAttributeSet().getValue(ADDR_ATTR).getWidth();
+      int dataBits = comp.getAttributeSet().getValue(DATA_ATTR).getWidth();
+      contents = MemContents.create(addrBits, dataBits);
+    } else {
+      RamState ret = (RamState)state.getData(comp);
+      if (ret == null)
+        return null;
+      contents = ret.getContents();
+      if (contents.isClear())
+        return null;
+    }
+    return AttributeSets.fixedSet(new Attribute<?>[] { NV_CONTENTS_ATTR },
+        new Object[] { contents });
+  }
+
+  @Override
+  public void setNonVolatileSimulationState(Component comp, CircuitState state, AttributeSet attrs) {
+    AttributeOption type = comp.getAttributeSet().getValue(RamAttributes.ATTR_TYPE);
+    if (type != RamAttributes.NONVOLATILE)
+      return;
+    MemContents src = attrs.getValue(NV_CONTENTS_ATTR);
+    if (src == null)
+      return;
+    if (!(comp instanceof InstanceComponent))
+      return;
+    Instance instance = ((InstanceComponent)comp).getInstance();
+    InstanceState istate = new InstanceStateImpl(state, comp);
+    MemContents contents = getContents(istate);;
+    contents.copyFrom(0, src, 0, (int)(src.getLastOffset()+1));
+  }
+  
+  public static Attribute<MemContents> NV_CONTENTS_ATTR = Rom.CONTENTS_ATTR;
 
   @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {

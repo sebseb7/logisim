@@ -52,7 +52,10 @@ import org.xml.sax.SAXException;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.SubcircuitFactory;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Location;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.AddTool;
@@ -61,11 +64,12 @@ import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.InputEventUtil;
 
-class XmlProjectReader extends XmlReader {
+public class XmlProjectReader extends XmlReader {
 
   class ReadProjectContext extends ReadContext {
 
     HashMap<String, Library> libs = new HashMap<>();
+    HashMap<Circuit, ArrayList<HashMap<String, AttributeSet>>> simulations = new HashMap<>();
 
     ReadProjectContext(LogisimFile f, String path) { super(f, path); }
 
@@ -246,6 +250,37 @@ class XmlProjectReader extends XmlReader {
       XmlCircuitReader builder = new XmlCircuitReader(this, circuitsData);
       builder.execute();
 
+      // fifth, load any saved simulations
+      for (CircuitData cd : circuitsData) {
+        ArrayList<HashMap<String, AttributeSet>> simData = new ArrayList<>();
+        for (HashMap<String, Element> sim : cd.simulations) {
+          HashMap<String, AttributeSet> simState = new HashMap<>();
+          sim.forEach((path, simElt) -> {
+            ArrayList<Component> cpath = findComponent(cd.circuit, path);
+            if (cpath == null) {
+              addError(S.fmt("simulationPathInvalidError", path), "non-volatile simulation state");
+              return; // continue forEach
+            }
+            Component comp = cpath.get(cpath.size()-1);
+            AttributeSet attrs = comp.getFactory().getNonVolatileSimulationState(comp, null);
+            if (attrs == null) {
+              addError(S.fmt("simulationPathVolatileError", path), "non-volatile simulation state");
+              return; // continue forEach
+            }
+            try {
+              initAttributeSet(simElt, attrs, null);
+              simState.put(path, attrs);
+            } catch (XmlReaderException ex) {
+              addErrors(ex, "non-volatile simulation state");
+            }
+          });
+          if (simState.size() > 0)
+            simData.add(simState);
+        }
+        if (simData.size() > 0)
+          simulations.put(cd.circuit, simData);
+      }
+
       // last, configure AddTool attributes for circuits within the project
       for (CircuitData cd : circuitsData) {
         AddTool tool = file.findToolFor(cd.circuit);
@@ -273,7 +308,8 @@ class XmlProjectReader extends XmlReader {
     }
   }
 
-  LogisimFile parseProject(InputStream is)
+
+  LogisimFile.FileWithSimulations parseProjectWithSimulations(InputStream is)
       throws IOException, SAXException, LoadCanceledByUser {
     Document doc = loadXmlFrom(is);
     Element elt = doc.getDocumentElement();
@@ -298,7 +334,9 @@ class XmlProjectReader extends XmlReader {
       }
       Errors.title("XML Error").show(all.substring(0, all.length() - 1));
     }
-    return file;
+    LogisimFile.FileWithSimulations ret = new LogisimFile.FileWithSimulations(file);
+    ret.simulations.putAll(context.simulations);
+    return ret;
   }
 
   private Loader loader;
@@ -1065,6 +1103,56 @@ class XmlProjectReader extends XmlReader {
         }
       }
     }
+  }
+
+  public static ArrayList<Component> findComponent(Circuit circuit, String path) {
+    if (!path.startsWith("/"))
+      return null;
+    String[] elts = path.substring(1).split("/", -1);
+    ArrayList<Component> cpath = new ArrayList<>();
+    // subcirc(main)@(x,y)/subcirc(foo)@(x,y)/RAM@(x,y)
+    for (int i = 0; i < elts.length; i++) {
+      int idx = elts[i].lastIndexOf('@');
+      if (idx <= 0)
+        return null;
+      String name = elts[i].substring(0, idx);
+      Location loc;
+      try {
+        loc = Location.parse(elts[i].substring(idx+1));
+      } catch (NumberFormatException e) {
+        return null;
+      }
+      if (i < elts.length-1) {
+        if (!name.startsWith("subcirc(") || !name.endsWith(")"))
+          return null;
+        String subcircName = name.substring(8, name.length()-1);
+        Circuit subcirc = null;
+        for (Component sub : circuit.getComponents(loc)) {
+          if (!(sub.getFactory() instanceof SubcircuitFactory))
+              continue;
+          SubcircuitFactory f = (SubcircuitFactory)sub.getFactory();
+          if (f.getSubcircuit().getName().equals(subcircName)) {
+            subcirc = f.getSubcircuit();
+            cpath.add(sub);
+            break;
+          }
+        }
+        if (subcirc == null)
+          return null;
+        circuit = subcirc;
+      } else {
+        // for (Component sub : circuit.getComponents(loc))
+        for (Component sub : circuit.getNonWires()) {
+          if (!sub.getLocation().equals(loc))
+            continue;
+          if (!(sub.getFactory().getName().equals(name)))
+            continue;
+          cpath.add(sub);
+          return cpath;
+        }
+      }
+    }
+    return null;
   }
 
 }

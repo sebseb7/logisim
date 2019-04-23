@@ -655,11 +655,13 @@ public class AddTool extends Tool {
   public class TransferableAddTool<E> implements DragDrop.Support, DragDrop.Ghost {
     private DragDrop dnd;
     private LogisimFile file;
+    private Project proj;
     private E elt;
 
-    public TransferableAddTool(DragDrop dnd, LogisimFile file, E elt) {
+    public TransferableAddTool(DragDrop dnd, LogisimFile file, Project proj, E elt) {
       this.dnd = dnd;
       this.file = file;
+      this.proj = proj;
       this.elt = elt;
     }
 
@@ -669,7 +671,7 @@ public class AddTool extends Tool {
 
     @Override
     public Object convertTo(String mimetype) {
-      return elt ==  null ? null : XmlWriter.encodeSelection(file, elt);
+      return elt ==  null ? null : XmlWriter.encodeSelection(file, proj, elt);
     }
 
     @Override
@@ -697,14 +699,14 @@ public class AddTool extends Tool {
   }
 
   public class TransferableCircuit extends TransferableAddTool<Circuit> {
-    public TransferableCircuit(LogisimFile file) {
-      super(circuitDnd, file, getCircuit(getFactory()));
+    public TransferableCircuit(LogisimFile file, Project proj) {
+      super(circuitDnd, file, proj, getCircuit(getFactory()));
     }
   }
 
   public class TransferableVhdl extends TransferableAddTool<VhdlContent> {
-    public TransferableVhdl(LogisimFile file) {
-      super(circuitDnd, file, getVhdl(getFactory()));
+    public TransferableVhdl(LogisimFile file, Project proj) {
+      super(circuitDnd, file, proj, getVhdl(getFactory()));
     }
   }
 

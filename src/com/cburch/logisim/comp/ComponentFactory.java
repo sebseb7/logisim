@@ -32,9 +32,11 @@ package com.cburch.logisim.comp;
 
 import java.awt.Color;
 import java.awt.Graphics;
+// import java.util.List;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.LogisimVersion;
+import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeSet;
@@ -106,6 +108,10 @@ public interface ComponentFactory extends AttributeDefaultProvider {
   }
 
   public boolean HasThreeStateDrivers(AttributeSet attrs);
+
+  // default public List<Attribute<?>> getNonVolatileSimulationAttributes(Component comp) { return null; }
+  default public AttributeSet getNonVolatileSimulationState(Component comp, CircuitState state) { return null; }
+  default public void setNonVolatileSimulationState(Component comp, CircuitState state, AttributeSet attrs) { }
 
   public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver);
 

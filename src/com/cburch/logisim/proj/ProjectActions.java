@@ -102,6 +102,11 @@ public class ProjectActions {
 
   private static Project completeProject(SplashScreen monitor, Loader loader,
       LogisimFile file, boolean isStartup) {
+    return completeProject(monitor, loader, new LogisimFile.FileWithSimulations(file), isStartup);
+  }
+
+  private static Project completeProject(SplashScreen monitor, Loader loader,
+      LogisimFile.FileWithSimulations file, boolean isStartup) {
     if (monitor != null)
       monitor.setProgress(SplashScreen.PROJECT_CREATE);
     Project ret = new Project(file);
@@ -116,7 +121,7 @@ public class ProjectActions {
     InputStream templReader = AppPreferences.getEmptyTemplate().createStream();
     LogisimFile file;
     try {
-      file = loader.openLogisimFile(null, templReader);
+      file = loader.openLogisimFile(null, templReader).file;
     } catch (Exception t) {
       file = LogisimFile.createNew(loader);
       file.addCircuit(new Circuit("main", file));
@@ -143,7 +148,7 @@ public class ProjectActions {
     InputStream templReader = AppPreferences.getTemplate().createStream();
     LogisimFile file;
     try {
-      file = loader.openLogisimFile(null, templReader);
+      file = loader.openLogisimFile(null, templReader).file;
     } catch (IOException ex) {
       displayException(errReportFrame, ex);
       file = createEmptyFile(loader);
@@ -168,7 +173,7 @@ public class ProjectActions {
 
   public static Project doNew(Frame baseProjectFrame) {
     LogisimFile file = createNewFile(baseProjectFrame);
-    Project newProj = new Project(file);
+    Project newProj = new Project(new LogisimFile.FileWithSimulations(file));
     Frame frame = createFrame(baseProjectFrame, newProj);
     frame.setVisible(true);
     frame.getCanvas().requestFocus();
@@ -187,7 +192,7 @@ public class ProjectActions {
     InputStream templReader = AppPreferences.getTemplate().createStream();
     LogisimFile file = null;
     try {
-      file = loader.openLogisimFile(null, templReader);
+      file = loader.openLogisimFile(null, templReader).file;
     } catch (IOException ex) {
       displayException(monitor, ex);
     } catch (LoadCanceledByUser ex) {
@@ -260,14 +265,14 @@ public class ProjectActions {
     }
 
     try {
-      LogisimFile lib = loader.openLogisimFile(f);
+      LogisimFile.FileWithSimulations libWithSim = loader.openLogisimFile(f);
       AppPreferences.updateRecentFile(f);
-      if (lib == null)
+      if (libWithSim == null)
         return null;
       if (proj == null) {
-        proj = new Project(lib);
+        proj = new Project(libWithSim);
       } else {
-        proj.setLogisimFile(lib);
+        proj.setLogisimFile(libWithSim);
       }
     } catch (LoadCanceledByUser ex) {
       // eat exception
@@ -297,7 +302,7 @@ public class ProjectActions {
     if (monitor != null)
       monitor.setProgress(SplashScreen.FILE_LOAD);
     Loader loader = new Loader(monitor);
-    LogisimFile file = loader.openLogisimFile(source, substitutions);
+    LogisimFile.FileWithSimulations file = loader.openLogisimFile(source, substitutions);
     AppPreferences.updateRecentFile(source);
 
     return completeProject(monitor, loader, file, false);
@@ -307,8 +312,8 @@ public class ProjectActions {
       Map<String, String> substitutions)
       throws LoadFailedException, LoadCanceledByUser {
     Loader loader = new Loader(monitor);
-    LogisimFile file = loader.openLogisimFile(source);
-    return new Project(file);
+    LogisimFile file = loader.openLogisimFile(source).file;
+    return new Project(new LogisimFile.FileWithSimulations(file));
   }
 
   public static void doQuit() {
@@ -334,7 +339,7 @@ public class ProjectActions {
   private static boolean doSave(Project proj, File f) {
     Tool oldTool = proj.getTool();
     proj.setTool(null);
-    boolean ret = proj.getLogisimFile().save(f);
+    boolean ret = proj.getLogisimFile().save(f, proj);
     if (ret) {
       AppPreferences.updateRecentFile(f);
       proj.setFileAsClean();
