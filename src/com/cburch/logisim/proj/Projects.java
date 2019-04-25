@@ -107,13 +107,7 @@ public class Projects {
     @Override
     public void windowClosing(WindowEvent event) {
       Frame frame = (Frame) event.getSource();
-      if ((frame.getExtendedState() & Frame.ICONIFIED) == 0) {
-        mostRecentFrame = frame;
-        try {
-          frameLocations.put(frame, frame.getLocationOnScreen());
-        } catch (Exception t) {
-        }
-      }
+      frameClosing(frame);
     }
 
     @Override
@@ -181,8 +175,7 @@ public class Projects {
     return ret;
   }
 
-  private static void projectRemoved(Project proj, Frame frame,
-      MyListener listener) {
+  private static void projectRemoved(Project proj, Frame frame, MyListener listener) {
     frame.removeWindowListener(listener);
     openProjects.remove(proj);
     proj.getSimulator().shutDown();
@@ -253,6 +246,18 @@ public class Projects {
   private static Frame mostRecentFrame = null;
 
   private Projects() {
+  }
+
+  public static void frameClosing(Frame frame) {
+    if ((frame.getExtendedState() & Frame.ICONIFIED) == 0) {
+      mostRecentFrame = frame;
+      try {
+        Point pt = frame.getLocationOnScreen();
+        if (pt != null)
+          frameLocations.put(frame, pt);
+      } catch (Exception t) {
+      }
+    }
   }
 
   public static final PropertyChangeWeakSupport.Producer propertyChangeProducer =

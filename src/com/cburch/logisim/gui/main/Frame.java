@@ -187,6 +187,12 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     public void windowClosing(WindowEvent e) {
       if (confirmClose(S.get("confirmCloseTitle"))) {
         layoutCanvas.closeCanvas();
+        // frameClosing() is needed to record window position, which may be used
+        // in savePreferences() later. Normally Projects has a listener that
+        // invokes frameClosing() directly, but that may not be called before
+        // this listener, depending on AWT ordering of listeners, and the
+        // location must be recorded before the dispose call.
+        Projects.frameClosing(Frame.this);
         Frame.this.dispose();
       }
     }
