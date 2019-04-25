@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import com.bfh.logisim.library.DynamicClock;
-import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Net;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
@@ -57,9 +56,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
   private Netlist _circNets; // netlist for this circ; _nets is for our parent
 
 	public CircuitHDLGenerator(ComponentContext ctx, Circuit circ) {
-    super(ctx, "circuit",
-        "Circuit_" + circ.getName().replaceAll("[^a-zA-Z0-9]{2,}", "_"),
-        "i_Circ");
+    super(ctx, "circuit", ctx.sanitizeCircuitName(circ), "i_Circ");
 		this.circ = circ;
 		this._circNets = ctx.getNetlist(circ);
     
@@ -244,7 +241,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
 		_circNets.currentPath = path;
     try {
       // Generate this circuit first
-      String name = CorrectLabel.getCorrectLabel(circ.getName());
+      String name = getHDLModuleName();
       if (writtenComponents.contains(name))
         return true;
       if (!writeHDLFiles(rootDir)) {
@@ -293,7 +290,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
     // Instead of using the circuit as defined within logisim, we can substitute
     // an external user-defined VHDL implementation.
     if (circ.getStaticAttributes().getValue(CircuitAttributes.CIRCUIT_IS_VHDL_BOX)) {
-      String name = CorrectLabel.getCorrectLabel(circ.getName());
+      String name = getHDLModuleName();
       return FileWriter.CopyArchitecture(
 						circ.getStaticAttributes().getValue(CircuitAttributes.CIRCUIT_VHDL_PATH),
             rootDir + subdir, name, _err, _lang);

@@ -437,6 +437,7 @@ public class PLATable {
     static String normalizeName(String s) {
       if (s == null)
         return "pla.txt";
+      // This is just to prefer names sane over wierd ones.
       s = s.trim();
       s = s.replace("[^a-zA-Z0-9().-]", " ");
       s = s.replace("\\s+", "_");

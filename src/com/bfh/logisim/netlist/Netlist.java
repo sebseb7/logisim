@@ -52,7 +52,6 @@ import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.std.wiring.Tunnel;
@@ -80,6 +79,8 @@ public class Netlist {
     public final ClockBus clockbus;
     public final Hdl hdl;
     private final int[] prevSeqno;
+    public final HashMap<Object, String> uniqueHDLNames;
+    public final HashSet<String> forbiddenHDLNames;
 
     public Context(String lang, FPGAReport err, char vendor, Circuit root,
         long oscFreq, int clkPeriod) {
@@ -93,6 +94,8 @@ public class Netlist {
       this.clockbus = new ClockBus(oscFreq, clkPeriod);
       this.hdl = new Hdl(lang, err);
       this.prevSeqno = new int[1];
+      this.uniqueHDLNames = new HashMap<>();
+      this.forbiddenHDLNames = new HashSet<>();
     }
 
     protected Context(Context ctx) {
@@ -106,6 +109,8 @@ public class Netlist {
       clockbus = ctx.clockbus;
       hdl = ctx.hdl;
       prevSeqno = ctx.prevSeqno;
+      uniqueHDLNames = ctx.uniqueHDLNames;
+      forbiddenHDLNames = ctx.forbiddenHDLNames;
     }
 
     public Netlist getNetlist(Circuit circ) {
@@ -131,6 +136,39 @@ public class Netlist {
     public int seqno() {
       return ++prevSeqno[0];
     }
+
+    public String sanitizeCircuitName(Circuit circ) {
+      // A circuit named "Foo" will be put into an HDL module "Circuit_Foo" in a
+      // file like "some/path/Circuit_Foo.vhd". For circuits that have a name
+      // containing HDL-illegal characters, sanitize the name by replacing any
+      // illegal character sequence with a single underscore. If that turns out
+      // to not be unique, just add a unique prefix until it is.
+      return sanitizeName(circ, "Circuit", circ.getName());
+    }
+
+    public String sanitizeName(Object obj, String prefix, String name) {
+      String result = uniqueHDLNames.get(obj);
+      if (result != null)
+        return result;
+      // VHDL names must:
+      //  - use only valid characters
+      //  - not contain two consecutive underscores
+      //  - not end with an underscore
+      //  - start with a letter (we assume prefix starts with a letter)
+      //  - be unique (names are not case sensitive)
+      String suffix = name.replaceAll("[^a-zA-Z0-9]{1,}", "_");
+      suffix = suffix.replaceAll("^_", ""); // pfx will end in underscore
+      suffix = suffix.replaceAll("_$", "");
+      String pfx = prefix + "_";
+      int i = 0;
+      while (forbiddenHDLNames.contains((pfx + suffix).toUpperCase()))
+        pfx = prefix + (++i) + "_";
+      result = prefix + "_" + suffix;
+      uniqueHDLNames.put(obj, result);
+      forbiddenHDLNames.add(result.toUpperCase());
+      return result;
+    }
+
   }
 
   // Circuit and context for which we store connectivity info.
@@ -251,32 +289,33 @@ public class Netlist {
           return drcFail(comp, "component has a bidirectional port, a feature not yet supported.");
     }
 
+    // We can now skip step 2: all names are made HDL-safe and sufficiently unique automatically.
     // DRC Step 2: Validate names and labels for a few basic component types.
-    if (!CorrectLabel.IsCorrectLabel(circName, ctx.lang, "Circuit has illegal name.", ctx.err))
-      return false;
-    HashSet<String> pinNames = new HashSet<>();
-		for (Component comp : circ.getNonWires()) {
-      if (comp.getFactory().HDLIgnore())
-        continue; // Text, Probe, and other similarly irrelevant components
-      if (comp.getFactory() instanceof Pin) {
-				String label = HDLSupport.deriveHdlPathName(comp);
-        if (label == null || label.isEmpty())
-          return drcFail(comp, "for HDL synthesis, each pin is required to have a unique label. "
-              + "Add a label, or use the \"Annotate\" button above.");
-				if (!CorrectLabel.IsCorrectLabel(label,
-						ctx.lang, "Bad label for pin '"+nameOf(comp)+"' in circuit '"+circName+"'", ctx.err))
-					return false;
-        if (pinNames.contains(label))
-          return drcFail(comp, "pin has the same label as another pin in same circuit.");
-        pinNames.add(label);
-      } else if (comp.getFactory() instanceof SubcircuitFactory
-          || comp.getFactory() instanceof VhdlEntity) {
-        String compName = comp.getFactory().getName();
-				if (!CorrectLabel.IsCorrectLabel(compName,
-						ctx.lang, "Bad name for component '"+compName+"' in circuit '"+circName+"'", ctx.err))
-					return false;
-			}
-    }
+    // if (!CorrectLabel.IsCorrectLabel(circName, ctx.lang, "Circuit has illegal name.", ctx.err))
+    //   return false;
+    // HashSet<String> pinNames = new HashSet<>();
+		// for (Component comp : circ.getNonWires()) {
+    //   if (comp.getFactory().HDLIgnore())
+    //     continue; // Text, Probe, and other similarly irrelevant components
+    //   if (comp.getFactory() instanceof Pin) {
+		// 		String label = HDLSupport.deriveHdlPathName(comp);
+    //     if (label == null || label.isEmpty())
+    //       return drcFail(comp, "for HDL synthesis, each pin is required to have a unique label. "
+    //           + "Add a label, or use the \"Annotate\" button above.");
+		// 		if (!CorrectLabel.IsCorrectLabel(label,
+		// 				ctx.lang, "Bad label for pin '"+nameOf(comp)+"' in circuit '"+circName+"'", ctx.err))
+		// 			return false;
+    //     if (pinNames.contains(label))
+    //       return drcFail(comp, "pin has the same label as another pin in same circuit.");
+    //     pinNames.add(label);
+    //   } else if (comp.getFactory() instanceof SubcircuitFactory
+    //       || comp.getFactory() instanceof VhdlEntity) {
+    //     String compName = comp.getFactory().getName();
+		// 		if (!CorrectLabel.IsCorrectLabel(compName,
+		// 				ctx.lang, "Bad name for component '"+compName+"' in circuit '"+circName+"'", ctx.err))
+		// 			return false;
+		// 	}
+    // }
 
     // DRC Step 3: Check connectivity (e.g. splitters, tunnels, wires) and build nets.
 		ctx.err.AddInfo("Checking wire, tunnel, and splitter connectivity in circuit '%s'.", circName);
@@ -932,61 +971,5 @@ public class Netlist {
   public String circName() {
     return circ.getName();
   }
-
-//   HashMap<Component, String> componentUID = new HashMap<>();
-//   public String deriveUnique(Component comp, String prefix) {
-// 
-//       String label = ctx.comp.original.getAttributeSet().getValueOrElse(StdAttr.LABEL, "");
-//       label = label.replaceAll("/", "_"); // path elements may not contain slashes
-//       Location loc = ctx.comp.original.getLocation();
-//       if (label.isEmpty())
-//         prefix = "Unnamed " + prefix;
-//       else
-//         prefix = prefix + " " + label;
-//       , prefix, " at " + loc.toString());
-// 
-// 
-//     String u = componentUID.get(comp);
-//     if (u != null)
-//       return u;
-//     // Gather all components of the same type (i.e. sharing the same prefix)
-//     ArrayList<Component> siblings = new ArrayList<>();
-// 		for (Component c : circ.getNonWires()) {
-//       if (c == comp)
-//         continue;
-//       if (c.getFactory().getClass().equals(comp.getFactory().getClass()))
-//         siblings.add(c);
-//     }
-//     // If this component has a StdAttr.LABEL, try that.
-//     u = comp.getAttributeSet().getValueOrElse(StdAttr.LABEL, "");
-//     u = u.replaceAll("[^a-zA-Z0-9]{2,}", "_");
-//     if (!u.isEmpty() && !containsSuffix(siblings, u))
-//       return prefix + "_" + u;
-// 
-//       if (u.isEmpty() || uidTaken.contains(u.toLowerCase())) {
-//         // Append location to make it more unique.
-//         Location loc = comp.getLocation();
-//         if (!u.isEmpty())
-//           u += "_";
-//         u += loc.x + "_" + loc.y;
-//         if (uidTaken.contains(u.toLowerCase())) {
-//           // Fine, use location with a unique suffix.
-//           int i = 1;
-//           while (uidTaken.contains((u+"_"+i).toLowerCase()))
-//             i++;
-//         }
-//       }
-//       uid.put(comp, u);
-//       uidTaken.add(u.toLowerCase());
-//     }
-//    return u;
-//  }
-
-//   // For HDL component names that need to be globally unique (e.g. PLA or ROM),
-//   // we use a name like "PLA_${UID}", which follows the same strategy but also
-//   // includes the circuit name.
-//   public String generateComponentUID(Component comp, String prefix) {
-//     return generateComponentID(comp, prefix + "_" + circName());
-//   }
 
 }

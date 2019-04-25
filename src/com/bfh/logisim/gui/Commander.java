@@ -64,7 +64,6 @@ import com.bfh.logisim.fpga.BoardReader;
 import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
-import com.bfh.logisim.netlist.CorrectLabel;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.circuit.Circuit;
@@ -898,8 +897,16 @@ public class Commander extends JFrame
 
   private String circuitWorkspace() {
     String rootname = circuitsList.getSelectedValue().getName();
-    return projectWorkspace() +
-        CorrectLabel.getCorrectLabel(rootname) + SLASH;
+    // We use the root circuit name as part of the workspace path. This isn't
+    // actually necessary, but is nice to have different top-level generations
+    // in their own directories. The name needs to be filesystem-safe, but
+    // doesn't really need to be unique in any way.
+    String safename = rootname.replaceAll("[^a-zA-Z0-9]{1,}", "_");
+    safename = safename.replaceAll("^_", "");
+    safename = safename.replaceAll("_$", "");
+    if (safename.equals(""))
+      safename = "design_under_test";
+    return projectWorkspace() + safename + SLASH;
   }
 
   private void doSynthesisAndDownload(PinBindings pinBindings) {

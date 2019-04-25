@@ -170,17 +170,5 @@ public class NetlistComponent {
     return HDLSupport.deriveHdlPathName(original);
   }
 
-  // public String label() {
-  //   return labelOf(original);
-  // }
-
-  // public static String labelOf(Component comp) {
-  //   String label = comp.getAttributeSet().getValue(StdAttr.LABEL);
-  //   if (label != null)
-  //     return label;
-  //   return comp.getFactory().getName() + comp.getLocation();
-  // }
-  //   return CorrectLabel.getCorrectLabel(comp.getAttributeSet().getValue(StdAttr.LABEL)).toUpperCase();
-  // }
 
 }

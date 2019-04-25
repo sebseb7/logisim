@@ -136,6 +136,8 @@ public abstract class HDLSupport {
   // Note: Here we just use the label or location to make things unique.
   // Elsewhere (during DRC and/or annotate) we check if this is sufficiently
   // unique and, if not, either fail or re-label the components.
+  // FIXME: we actually don't check anywhere. We should do it here using
+  // Netlist.Context instead.
   //
   // Note: Only subcircuits and components with I/O bindings need path names.
   // Other components will never appear as part of a path.
@@ -146,16 +148,22 @@ public abstract class HDLSupport {
     // Special case: Pin components path names are used within the HDL itself
     // for the HDL port names. So the path name must be unique even after
     // sanitizing (i.e. removing illegal characaters).
+    // FIXME: We don't actually ensure this, but just hope for the best here.
     boolean sanitize = comp.getFactory() instanceof Pin;
     String suffix = comp.getAttributeSet().getValueOrElse(StdAttr.LABEL, "");
     if (!suffix.isEmpty())
       suffix = suffix.replaceAll("/", "_"); // path elements may not contain slashes
     else
       suffix = "at " + comp.getLocation();
-    if (sanitize)
-      return prefix + "_" + suffix.replaceAll("[^a-zA-Z0-9]{2,}", "_");
-    else
+    if (sanitize) {
+      String s = prefix + "_" + suffix;
+      s = s.replaceAll("[^a-zA-Z0-9]{1,}", "_");
+      s = s.replaceAll("^_", "");
+      s = s.replaceAll("_$", "");
+      return s;
+    } else {
       return prefix + " " + suffix;
+    }
   }
 
   // Some components can have hidden connections to FPGA board resource, e.g. an

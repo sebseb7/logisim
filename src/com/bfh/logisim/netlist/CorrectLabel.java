@@ -33,71 +33,7 @@ package com.bfh.logisim.netlist;
 import java.util.Arrays;
 import java.util.List;
 
-import com.bfh.logisim.gui.FPGAReport;
-import com.bfh.logisim.settings.Settings;
-
 public class CorrectLabel {
-
-  // If label is null or empty, returns emptystring.
-  // Ensures label starts with an alpha not a digit.
-  // Replaces dashes with underscores.
-  // Q: why doesn't this safe-ify the names? Or at least check for illegal
-  // names?
-  public static String getCorrectLabel(String Label) {
-    if (Label == null || Label.isEmpty())
-      return "";
-    StringBuffer result = new StringBuffer();
-    if (Numbers.contains(Label.substring(0, 1)))
-      result.append("L_");
-    result.append(Label.replace(" ", "_").replace("-", "_"));
-    return result.toString();
-  }
-
-  public static String getCorrectLabelWithVariables(String Label) {
-    return getCorrectLabel(Label);
-  }
-
-  public static String VhdlNameErrors(String Label) {
-    return NameErrors(Label, Settings.VHDL, "VHDL entity name");
-  }
-
-  public static String NameErrors(String Label, String HDLIdentifier,
-      String ErrorIdentifierString) {
-    if (Label.isEmpty())
-      return null;
-    for (int i = 0; i < Label.length(); i++) {
-      if (!Chars.contains(Label.toLowerCase().substring(i, i + 1))
-          && !Numbers.contains(Label.substring(i, i + 1))) {
-        return ErrorIdentifierString
-            + " contains the illegal character \""
-            + Label.substring(i, i + 1) + "\", please rename.";
-      }
-    }
-    if (HDLIdentifier.equals(Settings.VHDL)) {
-      if (VHDLKeywords.contains(Label.toLowerCase())) {
-        return ErrorIdentifierString
-            + " is a reserved VHDL keyword, please rename.";
-      }
-    } else {
-      if (HDLIdentifier.equals(Settings.VERILOG)) {
-        if (VerilogKeywords.contains(Label)) {
-          return ErrorIdentifierString
-              + " is a reserved Verilog keyword, please rename.";
-        }
-      }
-    }
-    return null;
-  }
-
-  public static boolean IsCorrectLabel(String Label, String HDLIdentifier,
-      String ErrorIdentifierString, FPGAReport Reporter) {
-    String err = NameErrors(Label, HDLIdentifier, ErrorIdentifierString);
-    if (err != null) {
-      Reporter.AddFatalError(err);
-      return false;
-    }
-    return true;
-  }
 
   private static final String[] NumbersStr = { "0", "1", "2", "3", "4", "5",
     "6", "7", "8", "9" };

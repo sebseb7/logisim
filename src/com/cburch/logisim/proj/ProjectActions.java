@@ -90,15 +90,15 @@ public class ProjectActions {
     }
   }
 
-  /**
-   * Returns true if the filename contains valid characters only, that is,
-   * alphanumeric characters and underscores.
-   */
-  private static boolean checkValidFilename(String filename) {
-    Pattern p = Pattern.compile("[^a-z0-9_.]", Pattern.CASE_INSENSITIVE);
-    Matcher m = p.matcher(filename);
-    return (!m.find());
-  }
+  // /**
+  //  * Returns true if the filename contains valid characters only, that is,
+  //  * alphanumeric characters and underscores.
+  //  */
+  // private static boolean checkValidFilename(String filename) {
+  //   Pattern p = Pattern.compile("[^a-z0-9_.]", Pattern.CASE_INSENSITIVE);
+  //   Matcher m = p.matcher(filename);
+  //   return (!m.find());
+  // }
 
   private static Project completeProject(SplashScreen monitor, Loader loader,
       LogisimFile file, boolean isStartup) {
@@ -372,11 +372,11 @@ public class ProjectActions {
       if (returnVal != JFileChooser.APPROVE_OPTION) {
         return false;
       }
-      validFilename = checkValidFilename(chooser.getSelectedFile().getName());
-      if (!validFilename) {
-        JOptionPane.showMessageDialog(chooser,
-            "The file name contains invalid characters. Only alphanumeric characters and underscores are accepted.");
-      }
+      // validFilename = checkValidFilename(chooser.getSelectedFile().getName());
+      // if (!validFilename) {
+      //   JOptionPane.showMessageDialog(chooser,
+      //       "The file name contains invalid characters. Only alphanumeric characters and underscores are accepted.");
+      // }
     } while (!validFilename);
 
     File f = chooser.getSelectedFile();

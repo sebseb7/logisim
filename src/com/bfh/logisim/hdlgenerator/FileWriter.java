@@ -51,13 +51,11 @@ public class FileWriter {
 			}
 			File inFile = new File(source);
 			if (!inFile.exists()) {
-				reporter.AddFatalError("Source file \"" + source
-						+ "\" does not exist!");
+				reporter.AddFatalError("Source file \"" + source + "\" does not exist!");
 				return false;
 			}
 			// copy file
-			String destPath = dest + componentName + ArchitectureExtension
-					+ ".vhd";
+			String destPath = dest + componentName + ArchitectureExtension + ".vhd";
 			File outFile = new File(destPath);
 			InputStream in = new FileInputStream(inFile);
 			OutputStream out = new FileOutputStream(outFile);

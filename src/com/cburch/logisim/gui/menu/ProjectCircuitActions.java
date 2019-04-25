@@ -66,7 +66,6 @@ import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
-import com.cburch.logisim.util.SyntaxChecker;
 
 public class ProjectCircuitActions {
   private static void analyzeError(Project proj, String message) {
@@ -393,8 +392,6 @@ public class ProjectCircuitActions {
     name = name.trim();
     if (name.equals(""))
       return S.get("circuitNameMissingError");
-    else if (!SyntaxChecker.isVariableNameAcceptable(name))
-      return S.get("circuitNameInvalidName");
     else if (lib.getTool(name) != null)
       return S.get("circuitNameDuplicateError");
     return null;

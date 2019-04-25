@@ -348,7 +348,11 @@ public class SubcircuitFactory extends InstanceFactory {
 
   @Override
   public String getHDLNamePrefix(Component comp) {
-    return "Subcircuit_" + source.getName().replaceAll("[^a-zA-Z0-9]{2,}", "_");
+    String s = "Subcircuit_" + source.getName();
+    s = s.replaceAll("[^a-zA-Z0-9]{1,}", "_");
+    s = s.replaceAll("^_", "");
+    s = s.replaceAll("_$", "");
+    return s;
   }
 
   @Override

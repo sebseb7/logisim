@@ -41,7 +41,6 @@ import com.cburch.logisim.gui.generic.AttributeSetTableModel;
 import com.cburch.logisim.gui.menu.ProjectCircuitActions;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.SetAttributeAction;
-import com.cburch.logisim.util.SyntaxChecker;
 
 class AttrTableComponentModel extends AttributeSetTableModel {
   Project proj;
@@ -83,10 +82,6 @@ class AttrTableComponentModel extends AttributeSetTableModel {
         return;
       err = ProjectCircuitActions.getNewNameErrors(
               proj.getLogisimFile(), name, false);
-    } else if (AttributeSets.isAttrLabel(attr)) {
-      String label = (String)value;
-      if (!SyntaxChecker.isVariableNameAcceptable(label))
-        err = S.get("variableNameNotAcceptable");
     }
     if (err != null) {
       System.err.println("new name err: " + err);

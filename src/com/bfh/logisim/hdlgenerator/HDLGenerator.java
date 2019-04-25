@@ -710,7 +710,7 @@ public class HDLGenerator extends HDLSupport {
       // Append label
       String label = ctx.comp.original.getAttributeSet().getValueOrElse(StdAttr.LABEL, "");
       if (!label.isEmpty()) {
-        label = label.replaceAll("[^a-zA-Z0-9]{2,}", "_");
+        label = label.replaceAll("[^a-zA-Z0-9]{1,}", "_");
         u += "_" + label;
       }
       Location loc = ctx.comp.original.getLocation();
@@ -724,6 +724,9 @@ public class HDLGenerator extends HDLSupport {
       u += "_" + ctx.seqno();
       s = s.replace("${UID}", u);
     }
+    s = s.replaceAll("[^a-zA-Z0-9]{1,}", "_");
+    s = s.replaceAll("^_", "");
+    s = s.replaceAll("_$", "");
     return s;
   }
 

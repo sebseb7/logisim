@@ -36,7 +36,6 @@ import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.gui.generic.AttrTableSetException;
 import com.cburch.logisim.gui.generic.AttributeSetTableModel;
 import com.cburch.logisim.gui.menu.ProjectCircuitActions;
@@ -45,7 +44,6 @@ import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Tool;
-import com.cburch.logisim.util.SyntaxChecker;
 
 public class AttrTableToolModel extends AttributeSetTableModel {
   Project proj;
@@ -125,10 +123,6 @@ public class AttrTableToolModel extends AttributeSetTableModel {
         return; // no change
       err = ProjectCircuitActions.getNewNameErrors(
               proj.getLogisimFile(), name, true);
-    } else if (AttributeSets.isAttrLabel(attr)) {
-      String label = (String)value;
-      if (!SyntaxChecker.isVariableNameAcceptable(label))
-        err = S.get("variableNameNotAcceptable");
     }
     if (err != null)
       throw new AttrTableSetException(err);
