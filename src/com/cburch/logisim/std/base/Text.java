@@ -204,7 +204,6 @@ public class Text extends InstanceFactory implements CustomHandles {
       if (bds == null) {
         int halign = attrs.getHorizontalAlign();
         int valign = attrs.getVerticalAlign();
-        String test = attrs.getText();
         Font font = attrs.getFont();
         if (g == null) {
           // This should not happen in most (any) cases...

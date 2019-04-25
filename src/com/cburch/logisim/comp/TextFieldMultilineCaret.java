@@ -73,8 +73,8 @@ class TextFieldMultilineCaret extends TextFieldCaret {
     // draw selection
     if (pos != end) {
       g.setColor(SELECTION_BACKGROUND);
-      Rectangle p = GraphicsUtil.getTextCursor(g, lines, x, y, pos < end ? pos : end, halign, valign);
-      Rectangle e = GraphicsUtil.getTextCursor(g, lines, x, y, pos < end ? end : pos, halign, valign);
+      Rectangle p = GraphicsUtil.getTextCursor(g, font, lines, x, y, pos < end ? pos : end, halign, valign);
+      Rectangle e = GraphicsUtil.getTextCursor(g, font, lines, x, y, pos < end ? end : pos, halign, valign);
       if (p.y == e.y) {
         g.fillRect(p.x, p.y - 1, e.x - p.x + 1, e.height + 2);
       } else {
@@ -92,7 +92,7 @@ class TextFieldMultilineCaret extends TextFieldCaret {
 
     // draw cursor
     if (pos == end) {
-      Rectangle p = GraphicsUtil.getTextCursor(g, lines, x, y, pos, halign, valign);
+      Rectangle p = GraphicsUtil.getTextCursor(g, font, lines, x, y, pos, halign, valign);
       if (p != null)
         g.drawLine(p.x, p.y, p.x, p.y + p.height);
     }
@@ -123,9 +123,9 @@ class TextFieldMultilineCaret extends TextFieldCaret {
       TextMetrics tm = new TextMetrics(g);
       int halign = field.getHAlign();
       int valign = field.getVAlign();
-      Rectangle r = GraphicsUtil.getTextCursor(g, lines, 0, 0, pos, halign, valign);
+      Rectangle r = GraphicsUtil.getTextCursor(g, field.getFont(), lines, 0, 0, pos, halign, valign);
       if (r != null) {
-        pos = GraphicsUtil.getTextPosition(g, lines,
+        pos = GraphicsUtil.getTextPosition(g, field.getFont(), lines,
             r.x, r.y + tm.ascent + dy * tm.height, halign, valign);
       } else if (dy < 0) {
         pos = 0;
@@ -168,7 +168,7 @@ class TextFieldMultilineCaret extends TextFieldCaret {
     int halign = field.getHAlign();
     int valign = field.getVAlign();
     String lines[] = curText.split("\n", -1); // keep blank lines at end
-    return GraphicsUtil.getTextPosition(g, lines, x, y, halign, valign);
+    return GraphicsUtil.getTextPosition(g, field.getFont(), lines, x, y, halign, valign);
   }
 
 }

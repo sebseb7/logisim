@@ -106,8 +106,8 @@ class TextFieldCaret implements Caret, TextFieldListener {
     int halign = field.getHAlign();
     int valign = field.getVAlign();
     Font font = field.getFont();
-    if (field.getFont() != null)
-      g.setFont(field.getFont());
+    if (font != null)
+      g.setFont(font);
 
     // draw boundary
     Bounds box = getBounds(g);
@@ -119,8 +119,8 @@ class TextFieldCaret implements Caret, TextFieldListener {
     // draw selection
     if (pos != end) {
       g.setColor(SELECTION_BACKGROUND);
-      Rectangle p = GraphicsUtil.getTextCursor(g, curText, x, y, pos < end ? pos : end, halign, valign);
-      Rectangle e = GraphicsUtil.getTextCursor(g, curText, x, y, pos < end ? end : pos, halign, valign);
+      Rectangle p = GraphicsUtil.getTextCursor(g, font, curText, x, y, pos < end ? pos : end, halign, valign);
+      Rectangle e = GraphicsUtil.getTextCursor(g, font, curText, x, y, pos < end ? end : pos, halign, valign);
       g.fillRect(p.x, p.y - 1, e.x - p.x + 1, e.height + 2);
     }
 
@@ -130,7 +130,7 @@ class TextFieldCaret implements Caret, TextFieldListener {
 
     // draw cursor
     if (pos == end) {
-      Rectangle p = GraphicsUtil.getTextCursor(g, curText, x, y, pos, halign, valign);
+      Rectangle p = GraphicsUtil.getTextCursor(g, font, curText, x, y, pos, halign, valign);
       g.drawLine(p.x, p.y, p.x, p.y + p.height);
     }
   }
@@ -387,7 +387,7 @@ class TextFieldCaret implements Caret, TextFieldListener {
     y -= field.getY();
     int halign = field.getHAlign();
     int valign = field.getVAlign();
-    return GraphicsUtil.getTextPosition(g, curText, x, y, halign, valign);
+    return GraphicsUtil.getTextPosition(g, field.getFont(), curText, x, y, halign, valign);
   }
 
   public void removeCaretListener(CaretListener l) {

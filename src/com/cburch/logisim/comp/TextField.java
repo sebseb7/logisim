@@ -68,9 +68,6 @@ public class TextField {
     this.font = font;
   }
 
-  //
-  // listener methods
-  //
   public void addTextFieldListener(TextFieldListener l) {
     listeners.add(l);
   }

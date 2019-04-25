@@ -77,21 +77,22 @@ public class GraphicsUtil {
   }
 
   // Returns a cursor box at specified character position.
-  static public Rectangle getTextCursor(Graphics g, String text,
+  static public Rectangle getTextCursor(Graphics g, Font font, String text,
       int x, int y, int pos, int halign, int valign) {
-    Rectangle r = getTextBounds(g, text, x, y, halign, valign);
+    Rectangle r = getTextBounds(g, font, text, x, y, halign, valign);
     if (pos > 0)
-      r.x += new TextMetrics(g, text.substring(0, pos)).width;
+      r.x += new TextMetrics(g, font, text.substring(0, pos)).width;
     r.width = 1;
     return r;
   }
 
-  static public int getTextPosition(Graphics g, String text,
+  static public int getTextPosition(Graphics g, Font font, String text,
       int x, int y, int halign, int valign) {
-    Rectangle r = getTextBounds(g, text, 0, 0, halign, valign);
+    Rectangle r = getTextBounds(g, font, text, 0, 0, halign, valign);
     x -= (int)r.x;
     int last = 0;
-    Font font = g.getFont();
+    if (font == null)
+      font = g.getFont();
     FontRenderContext fr = ((Graphics2D)g).getFontRenderContext();
     for (int i = 0; i < text.length(); i++) {
       int cur = (int)font.getStringBounds(text.substring(0, i + 1), fr).getWidth();
@@ -188,11 +189,10 @@ public class GraphicsUtil {
 
   static final String TAB = "    "; // TAB = four spaces
 
-  static public int tabStringWidth(Graphics g, String text) {
+  static private int tabStringWidth(Graphics g, Font font, String text) {
     String segments[] = text.split("\t", -1);
     if (segments.length == 0)
       return 0;
-    Font font = g.getFont();
     FontRenderContext fr = ((Graphics2D)g).getFontRenderContext();
     if (segments.length == 1)
       return (int)font.getStringBounds(segments[0], fr).getWidth();
@@ -203,10 +203,12 @@ public class GraphicsUtil {
   }
 
   // Returns a cursor box at specified character position.
-  static public Rectangle getTextCursor(Graphics g, String text[],
+  static public Rectangle getTextCursor(Graphics g, Font font, String text[],
       int x, int y, int pos, int halign, int valign) {
-    TextMetrics tm = new TextMetrics(g);
-    Rectangle r = getTextBounds(g, text, x, y, halign, valign);
+    TextMetrics tm = new TextMetrics(g, font, null);
+    if (font == null)
+      font = g.getFont();
+    Rectangle r = getTextBounds(g, font, text, x, y, halign, valign);
     int width = (int)r.getWidth();
     // "ab\nc\n" --> 0 a 1 b 2 \n 3 \n 4 c 5 \n 6
     x = (int)r.getX();
@@ -217,7 +219,7 @@ public class GraphicsUtil {
         y += tm.height;
         continue;
       }
-      int linewidth = tabStringWidth(g, line);
+      int linewidth = tabStringWidth(g, font, line);
       switch (halign) {
       case H_CENTER:
         x += (width - linewidth)/2;
@@ -227,16 +229,18 @@ public class GraphicsUtil {
         break;
       }
       if (pos > 0)
-        x += tabStringWidth(g, line.substring(0, pos));
+        x += tabStringWidth(g, font, line.substring(0, pos));
       return new Rectangle(x, y, 1, tm.ascent + tm.descent);
     }
     return null;
   }
 
-  static public int getTextPosition(Graphics g, String text[],
+  static public int getTextPosition(Graphics g, Font font, String text[],
       int x, int y, int halign, int valign) {
-    Rectangle r = getTextBounds(g, text, 0, 0, halign, valign);
-    TextMetrics tm = new TextMetrics(g);
+    Rectangle r = getTextBounds(g, font, text, 0, 0, halign, valign);
+    TextMetrics tm = new TextMetrics(g, font, null);
+    if (font == null)
+      font = g.getFont();
     x -= (int)r.getX();
     y -= (int)r.getY();
     int pos = 0;
@@ -246,7 +250,7 @@ public class GraphicsUtil {
         pos += line.length() + 1;
         continue;
       }
-      int linewidth = tabStringWidth(g, line);
+      int linewidth = tabStringWidth(g, font, line);
       switch (halign) {
       case H_CENTER:
         x -= (r.getWidth() - linewidth)/2;
@@ -257,7 +261,7 @@ public class GraphicsUtil {
       }
       int last = 0;
       for (int i = 0; i < line.length(); i++) {
-        int cur = tabStringWidth(g, line.substring(0, i + 1));
+        int cur = tabStringWidth(g, font, line.substring(0, i + 1));
         if (x <= (last + cur) / 2) {
           return pos + i;
         }
@@ -283,19 +287,19 @@ public class GraphicsUtil {
     if (text.length == 0)
       return;
     Rectangle bds = getTextBounds(g, text, x, y, halign, valign);
-    Font font = g.getFont();
     FontRenderContext fr = ((Graphics2D)g).getFontRenderContext();
     TextMetrics tm = new TextMetrics(g);
+    Font font = g.getFont();
     y = bds.y + tm.ascent;
     for (String line : text) {
       int linewidth;
       switch (halign) {
       case H_CENTER:
-        linewidth = tabStringWidth(g, line);
+        linewidth = tabStringWidth(g, font, line);
         x = bds.x + (bds.width - linewidth)/2;
         break;
       case H_RIGHT:
-        linewidth = tabStringWidth(g, line);
+        linewidth = tabStringWidth(g, font, line);
         x = bds.x + (bds.width - linewidth);
         break;
       default:
@@ -319,11 +323,13 @@ public class GraphicsUtil {
       int x, int y, int halign, int valign) {
     int n = text.length;
     if (n == 0)
-      return getTextBounds(g, "", x, y, halign, valign);
+      return getTextBounds(g, font, "", x, y, halign, valign);
     TextMetrics tm = new TextMetrics(g, font, null);
-    int width = tabStringWidth(g, text[0]);
+    if (font == null)
+      font = g.getFont();
+    int width = tabStringWidth(g, font, text[0]);
     for (int i = 1; i < n; i++) {
-      int w = tabStringWidth(g, text[i]);
+      int w = tabStringWidth(g, font, text[i]);
       if (w > width)
         width = w;
     }
