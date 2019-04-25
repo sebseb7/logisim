@@ -151,10 +151,10 @@ public class CircuitAttributes extends AbstractAttributeSet {
       new Attribute<?>[] {
         StdAttr.FACING,
         StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT,
-        NAME_ATTR,
+        /* NAME_ATTR,
         CIRCUIT_LABEL_ATTR, CIRCUIT_LABEL_FACING_ATTR, CIRCUIT_LABEL_FONT_ATTR,
         CIRCUIT_IS_VHDL_BOX, CIRCUIT_VHDL_PATH,
-        APPEARANCE_ATTR });
+        APPEARANCE_ATTR */ });
 
   private Circuit source;
   private Instance subcircInstance;
