@@ -144,16 +144,22 @@ class CanvasPainter implements PropertyChangeListener {
     boolean showHalo = AppPreferences.ATTRIBUTE_HALO.get();
     if (showHalo && haloedComponent != null && haloedCircuit == circ
         && !hidden.contains(haloedComponent)) {
-      GraphicsUtil.switchToWidth(g, 3);
-      g.setColor(Canvas.HALO_COLOR);
       Bounds bds = haloedComponent.getBounds(g).expand(5);
+      int x = bds.getX();
+      int y = bds.getY();
       int w = bds.getWidth();
       int h = bds.getHeight();
-      double a = Canvas.SQRT_2 * w;
-      double b = Canvas.SQRT_2 * h;
-      g.drawOval((int) Math.round(bds.getX() + w / 2.0 - a / 2.0),
-          (int) Math.round(bds.getY() + h / 2.0 - b / 2.0),
-          (int) Math.round(a), (int) Math.round(b));
+      if (w < 15) {
+        x -= (w-15)/2;
+        w = 15;
+      }
+      if (h < 15) {
+        y -= (h-15)/2;
+        h = 15;
+      }
+      g.setColor(Canvas.HALO_COLOR);
+      GraphicsUtil.switchToWidth(g, 3);
+      g.drawRoundRect(x, y, w, h, 5, 5);
       GraphicsUtil.switchToWidth(g, 1);
       g.setColor(Color.BLACK);
     }
@@ -181,14 +187,20 @@ class CanvasPainter implements PropertyChangeListener {
     Component c = haloedComponent;
     if (c == null)
       return;
-    Bounds bds = c.getBounds(g).expand(7);
+    Bounds bds = c.getBounds(g).expand(8);
+    int x = bds.getX();
+    int y = bds.getY();
     int w = bds.getWidth();
     int h = bds.getHeight();
-    double a = Canvas.SQRT_2 * w;
-    double b = Canvas.SQRT_2 * h;
-    canvas.repaint((int) Math.round(bds.getX() + w / 2.0 - a / 2.0),
-        (int) Math.round(bds.getY() + h / 2.0 - b / 2.0),
-        (int) Math.round(a), (int) Math.round(b));
+    if (w < 20) {
+      x -= (w-20)/2;
+      w = 20;
+    }
+    if (h < 20) {
+      y -= (h-20)/2;
+      h = 20;
+    }
+    canvas.repaint(x, y, w, h);
   }
 
   //
