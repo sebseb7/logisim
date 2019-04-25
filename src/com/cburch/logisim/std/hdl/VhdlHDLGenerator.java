@@ -30,6 +30,7 @@
 
 package com.cburch.logisim.std.hdl;
 
+import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
@@ -38,7 +39,7 @@ import com.cburch.logisim.instance.Port;
 public class VhdlHDLGenerator extends HDLGenerator {
 
   public VhdlHDLGenerator(ComponentContext ctx) {
-    super(ctx, "circuit", deriveHDLName(ctx.attrs), "i_Vhdl");
+    super(ctx, "circuit", deriveHDLName(ctx, ctx.attrs), "i_Vhdl");
     VhdlContent content = content();
     for (VhdlContent.Generic g : content.getGenerics()) {
       int v = _attrs.getValue(VhdlEntityAttributes.forGeneric(g));
@@ -53,8 +54,9 @@ public class VhdlHDLGenerator extends HDLGenerator {
     }
   }
 
-  static String deriveHDLName(AttributeSet attrs) {
-    return ((VhdlEntityAttributes) attrs).getContent().getName(); // .toLowerCase();
+  static String deriveHDLName(Netlist.Context ctx, AttributeSet attrs) {
+    VhdlContent content = ((VhdlEntityAttributes)attrs).getContent();
+    return ctx.sanitizeName(content, "Vhdl", content.getName());
   }
 
   @Override

@@ -46,7 +46,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
-import com.bfh.logisim.netlist.CorrectLabel;
+import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.draw.model.CanvasObject;
 import com.cburch.hdl.HdlModel;
@@ -138,10 +138,12 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
   }
 
   public String getHDLNameForInstanceSimulation(AttributeSet attrs) {
-    String label = "";
-    if (attrs.getValue(StdAttr.LABEL) != null && attrs.getValue(StdAttr.LABEL).length() != 0)
-      label = "_" + attrs.getValue(StdAttr.LABEL).toLowerCase();
-    return CorrectLabel.getCorrectLabel(VhdlHDLGenerator.deriveHDLName(attrs) + label);
+    String suffix = "";
+    String label = attrs.getValue(StdAttr.LABEL);
+    if (label != null && label.length() != 0)
+      suffix = "_" + label.toLowerCase();
+    VhdlContent content = ((VhdlEntityAttributes)attrs).getContent();
+    return VhdlSimulator.ctx.sanitizeName(this, "Vhdl", content.getName() + suffix);
   }
 
   @Override
@@ -327,7 +329,8 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
       String content = this.content.getContent();
 
-      content = content.replaceAll("(?i)" + VhdlHDLGenerator.deriveHDLName(attrs),
+      content = content.replaceAll(
+          "(?i)" + VhdlHDLGenerator.deriveHDLName(VhdlSimulator.ctx, attrs), // wrong ctx?
           getHDLNameForInstanceSimulation(attrs));
 
       writer.print(content);

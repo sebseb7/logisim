@@ -313,7 +313,6 @@ public class XmlProjectReader extends XmlReader {
       throws IOException, SAXException, LoadCanceledByUser {
     Document doc = loadXmlFrom(is);
     Element elt = doc.getDocumentElement();
-    elt = ensureLogisimCompatibility(elt);
 
     considerRepairs(doc, elt);
     LogisimFile file = new LogisimFile(loader);
@@ -352,52 +351,6 @@ public class XmlProjectReader extends XmlReader {
   // misformed xml data, e.g. from old or broken versions of Logisim.
   // --------------------------------------------------------------------------------
 
-  /**
-   * Change label names in an XML tree according to a list of suggested labels
-   *
-   * @param root
-   *            root element of the XML tree
-   * @param nodeType
-   *            type of nodes to consider
-   * @param attrType
-   *            type of attributes to consider
-   * @param validLabels
-   *            label set of correct label names
-   */
-  public static void applyValidLabels(Element root, String nodeType,
-      String attrType, Map<String, String> validLabels)
-      throws IllegalArgumentException {
-    assert (root != null);
-    assert (nodeType != null);
-    assert (attrType != null);
-    assert (nodeType.length() > 0);
-    assert (attrType.length() > 0);
-    assert (validLabels != null);
-
-    switch (nodeType) {
-    case "circuit":
-      replaceCircuitNodes(root, attrType, validLabels);
-      break;
-    case "comp":
-      replaceCompNodes(root, validLabels);
-      break;
-    default:
-      throw new IllegalArgumentException("Invalid node type requested: "
-          + nodeType);
-    }
-  }
-
-  public static Element ensureLogisimCompatibility(Element elt) {
-    Map<String, String> validLabels;
-    validLabels = findValidLabels(elt, "circuit", "name");
-    applyValidLabels(elt, "circuit", "name", validLabels);
-    validLabels = findValidLabels(elt, "circuit", "label");
-    applyValidLabels(elt, "circuit", "label", validLabels);
-    validLabels = findValidLabels(elt, "comp", "label");
-    applyValidLabels(elt, "comp", "label", validLabels);
-    return (elt);
-  }
-
   private static void findLibraryUses(ArrayList<Element> dest, String label,
       Iterable<Element> candidates) {
     for (Element elt : candidates) {
@@ -406,119 +359,6 @@ public class XmlProjectReader extends XmlReader {
         dest.add(elt);
       }
     }
-  }
-
-  /**
-   * Check an XML tree for VHDL-incompatible labels, then propose a list of
-   * valid ones. Here valid means: [a-zA-Z][a-zA-Z0-9_]* This applies, in our
-   * context, to circuit's names and labels (and their corresponding
-   * component's names, of course), and to comp's labels.
-   *
-   * @param root
-   *            root element of the XML tree
-   * @param nodeType
-   *            type of nodes to consider
-   * @param attrType
-   *            type of attributes to consider
-   * @return map containing the original attribute values as keys, and the
-   *         corresponding valid attribute values as the values
-   */
-  public static Map<String, String> findValidLabels(Element root,
-      String nodeType, String attrType) {
-    assert (root != null);
-    assert (nodeType != null);
-    assert (attrType != null);
-    assert (nodeType.length() > 0);
-    assert (attrType.length() > 0);
-
-    Map<String, String> validLabels = new HashMap<>();
-
-    List<String> initialLabels = getXMLLabels(root, nodeType, attrType);
-
-    Iterator<String> iterator = initialLabels.iterator();
-    while (iterator.hasNext()) {
-      String label = iterator.next();
-      if (!validLabels.containsKey(label)) {
-        // Check if the name is invalid, in which case create
-        // a valid version and put it in the map
-        if (VhdlContent.labelVHDLInvalid(label)) {
-          String initialLabel = label;
-          label = generateValidVHDLLabel(label);
-          validLabels.put(initialLabel, label);
-        }
-      }
-    }
-
-    return validLabels;
-  }
-
-  /**
-   * Given a label, generates a valid VHDL label by removing invalid
-   * characters, putting a letter at the beginning, and putting a shortened (8
-   * characters) UUID at the end if the name has been altered. Whitespaces at
-   * the beginning and at the end of the string are trimmed by default (if
-   * this is the only change, then no suffix is appended).
-   *
-   * @param initialLabel
-   *            initial (possibly invalid) label
-   * @return a valid VHDL label
-   */
-  public static String generateValidVHDLLabel(String initialLabel) {
-    return (generateValidVHDLLabel(initialLabel, UUID.randomUUID()
-          .toString().substring(0, 8)));
-  }
-
-  /**
-   * Given a label, generates a valid VHDL label by removing invalid
-   * characters, putting a letter at the beginning, and putting the requested
-   * suffix at the end if the name has been altered. Whitespaces at the
-   * beginning and at the end of the string are trimmed by default (if this is
-   * the only change, then no suffix is appended).
-   *
-   * @param initialLabel
-   *            initial (possibly invalid) label
-   * @param suffix
-   *            string that has to be appended to a modified label
-   * @return a valid VHDL label
-   */
-  public static String generateValidVHDLLabel(String initialLabel,
-      String suffix) {
-    assert (initialLabel != null);
-
-    // As a default, trim whitespaces at the beginning and at the end
-    // of a label (no risks with that potentially, therefore avoid
-    // to append the suffix if that was the only change)
-    initialLabel = initialLabel.trim();
-
-    String label = initialLabel;
-
-    if (label.isEmpty()) {
-      System.err.println("Warning: Empty label is not a valid VHDL label");
-      label = "L_";
-    }
-
-    // If the string has a ! or ~ symbol, then replace it with "NOT"
-    label = label.replaceAll("[\\!~]", "NOT_");
-
-    // Force string to start with a letter
-    if (!label.matches("^[A-Za-z].*$"))
-      label = "L_" + label;
-
-    // Force the rest to be either letters, or numbers, or underscores
-    label = label.replaceAll("[^A-Za-z0-9_]", "_");
-    // Suppress multiple successive underscores and an underscore at the end
-    label = label.replaceAll("_+", "_");
-    if (label.endsWith("_"))
-      label = label.substring(0, label.length() - 1);
-
-    if (!label.equals(initialLabel)) {
-      // Concatenate a unique ID if the string has been altered
-      label = label + "_" + suffix;
-      // Replace the "-" characters in the UUID with underscores
-      label = label.replaceAll("-", "_");
-    }
-
-    return (label);
   }
 
   /**

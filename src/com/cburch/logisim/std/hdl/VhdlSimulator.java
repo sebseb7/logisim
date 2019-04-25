@@ -42,6 +42,7 @@ import java.util.List;
 
 import javax.help.UnsupportedOperationException;
 
+import com.bfh.logisim.netlist.Netlist;
 import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
 import com.cburch.logisim.circuit.CircuitState;
@@ -86,8 +87,7 @@ public class VhdlSimulator implements CircuitListener {
   final static Charset ENCODING = StandardCharsets.UTF_8;
   final static String VHDL_TEMPLATES_PATH = "/resources/logisim/hdl/";
   final static String SIM_RESOURCES_PATH = "/resources/logisim/sim/";
-  final static String SIM_PATH = System.getProperty("java.io.tmpdir")
-      + "/logisim/sim/";
+  final static String SIM_PATH = System.getProperty("java.io.tmpdir") + "/logisim/sim/";
   final static String SIM_SRC_PATH = SIM_PATH + "src/";
 
   final static String SIM_COMP_PATH = SIM_PATH + "comp/";
@@ -422,5 +422,7 @@ public class VhdlSimulator implements CircuitListener {
     socketClient.start();
     setState(State.RUNNING);
   }
+
+  public static final Netlist.Context ctx = new Netlist.Context("VHDL", null, '?', null, 0, 0);
 
 }
