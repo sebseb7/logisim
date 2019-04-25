@@ -429,7 +429,8 @@ public class CircuitState implements InstanceData {
   }
 
   public Value getValue(Location p) {
-    if (p.x % 10 == 0 && p.y % 10 == 0
+    if (p.x >= 0 && p.y >= 0
+        && p.x % 10 == 0 && p.y % 10 == 0
         && p.x < FASTPATH_GRID_WIDTH*10
         && p.y < FASTPATH_GRID_HEIGHT*10) {
       // fast path
@@ -505,13 +506,16 @@ public class CircuitState implements InstanceData {
       }
     }
 
-    for (Component comp : dirtyComponentsWorking) {
-      comp.propagate(this);
-      // pin values also get propagated to parent state
-      if (comp.getFactory() instanceof Pin && parentState != null)
-        parentComp.propagate(parentState);
+    try { // comp.propagate() can fail if external (or std) library is buggy
+      for (Component comp : dirtyComponentsWorking) {
+        comp.propagate(this);
+        // pin values also get propagated to parent state
+        if (comp.getFactory() instanceof Pin && parentState != null)
+          parentComp.propagate(parentState);
+      }
+    } finally {
+      dirtyComponentsWorking.clear();
     }
-    dirtyComponentsWorking.clear();
 
     for (CircuitState substate : substatesWorking) {
       if (substate == null)
@@ -644,7 +648,14 @@ public class CircuitState implements InstanceData {
   public void setData(Component comp, Object data) {
     if (data instanceof CircuitState) {
       // fixme: should never happen?
-      System.out.println("fixme: setData with circuitstate... should never happen");
+      // System.out.println("fixme: setData with circuitstate... happens when subcirc is copy/paste/moved? replaced with another identical one?");
+      // try { throw new Exception(); }
+      // catch (Exception e) { e.printStackTrace(); }
+      // data was already removed from componentData[orig].
+      // need to register it now under componentdata[comp], done below.
+      // also need to set parentcomp
+      // but don't need to add to substates, b/c it should already be there
+      ((CircuitState)data).parentComp = comp;
     }
     componentData.put(comp, data);
   }
@@ -662,7 +673,8 @@ public class CircuitState implements InstanceData {
   // for CircuitWires - to set value at point
   void setValueByWire(Value v, Location[] points, CircuitWires.BusConnection[] connections) {
     for (Location p : points) {
-      if (p.x % 10 == 0 && p.y % 10 == 0
+      if (p.x >= 0 && p.y >= 0
+          && p.x % 10 == 0 && p.y % 10 == 0
           && p.x < FASTPATH_GRID_WIDTH*10
           && p.y < FASTPATH_GRID_HEIGHT*10) {
         synchronized (valuesLock) {
@@ -692,7 +704,8 @@ public class CircuitState implements InstanceData {
   // // bunch of components
   // void setValueByWire(Value v, Location p) {
   //   boolean changed;
-  //   if (p.x % 10 == 0 && p.y % 10 == 0
+  //   if (p.x >= 0 && p.y >= 0
+  //       && p.x % 10 == 0 && p.y % 10 == 0
   //       && p.x < FASTPATH_GRID_WIDTH*10
   //       && p.y < FASTPATH_GRID_HEIGHT*10) {
   //     synchronized (valuesLock) {

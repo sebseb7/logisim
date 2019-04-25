@@ -290,6 +290,9 @@ public class Multiplexer extends InstanceFactory {
     } else {
       Value sel = state.getPortValue(inputs);
       if (sel.isFullyDefined()) {
+        int xx = sel.toIntValue();
+        if (xx < 0 || xx >= inputs)
+          System.out.printf("mux bad sel=%s inputs=%d\n", sel, inputs);
         out = state.getPortValue(sel.toIntValue());
       } else if (sel.isErrorValue()) {
         out = Value.createError(data);

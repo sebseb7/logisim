@@ -56,6 +56,7 @@ import com.cburch.logisim.gui.prefs.PreferencesFrame;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.LocaleManager;
 
@@ -95,6 +96,7 @@ public class Startup {
     options.put("-clearprops", 0); // obsolete synonym for -clearprefs
     options.put("-noupdate", 0); // obsolte like auto-updates
     options.put("-analyze", 0); // obsolete option to enable analysis menu
+    options.put("-debug", 0); // undocumented, enables debug console
   }
 
   public static Startup parseArgs(String[] args) {
@@ -123,6 +125,8 @@ public class Startup {
         printUsage();
       if (arg.equals("-locale"))
         setLocale(args[i]);
+      if (arg.equals("-debug"))
+        Debug.enable();
     }
 
     if (GraphicsEnvironment.isHeadless() && !Main.headless)

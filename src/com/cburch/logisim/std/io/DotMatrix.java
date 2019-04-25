@@ -108,6 +108,9 @@ public class DotMatrix extends InstanceFactory {
       Value[] vals = rowVector.getAll();
       for (int i = 0; i < vals.length; i++, gridloc += stride) {
         Value val = vals[i];
+        if (gridloc < 0 || gridloc >= grid.length)
+          System.out.printf("bad gridloc=%d i=%d index=%d cols=%d stride=%d vals.length=%d grid.length=%d\n",
+              gridloc, i, index, cols, stride, vals.length, grid.length);
         if (grid[gridloc] == Value.TRUE) {
           persistTo[gridloc] = persist - 1;
         }
