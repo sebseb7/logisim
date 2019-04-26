@@ -1187,7 +1187,7 @@ public class CircuitWires {
         // this bundle has inconsistent widths, or no width, hence no localDrivenValue
         vb.localDrivenValue = Value.NIL;
       } else {
-        vb.localDrivenValue = Value.combineLikeWidths(vb.connections);
+        vb.localDrivenValue = Value.combineLikeWidths(vb.width, vb.connections);
       }
     }
 

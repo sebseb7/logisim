@@ -627,9 +627,35 @@ public class Pin extends InstanceFactory {
   public boolean HasThreeStateDrivers(AttributeSet attrs) {
     // We deliberately ignore the tri-state property for Pin because a Pin
     // configured for tri-state behavior causes problems for HDL if, and only
-    // if, there is some other tri-state component driving the line.
+    // if, there is some other tri-state component driving the line. The
+    // synthesis tools will ensure any output port is driven by something, and
+    // as long as that something is not tri-state capable, then there is no
+    // problem. 
+    //
+    // The case of an output pin with pull-down or pull-up behavior is a little
+    // tricker: if there is no bus connection at all, we can just substitute the
+    // pull value as a constant; if there is a bus connection and we can be sure
+    // that there is a (non-tri-state) driver, we can ignore the pull behavior
+    // for output pin. That should be possible with Circuit.wires, but we don't
+    // actually check for it. Lastly, if there is a bus connection and no
+    // driver, then the Logisim simulation would use the pull-down behavior, but
+    // the HDL synthesis will fail with a missing-driver error. We can warn
+    // about this: "Pull behavior of output pin ignored: pin has a connected
+    // bus, which is assumed to be driven. If not, HDL synthesis will fail, even
+    // though Logisim simulation treats the un-driven bus as floating."
+    //
+    // For an input pin with the tri-state property, the only issue arises if
+    // the pin is left unconnected (or undriven) in the outer circuit. We could
+    // use a default port value of null, then detect that and warn in the outer
+    // circuit. Otherwise, we use the pull behavior as the default behavior.
+    //
+    // FIXME: Ideally, Netlist would detect buses with no drivers, omit them,
+    // then use that to substitute the correct default from the pull value, for
+    // both input and output pins.
     return false;
   }
+
+  // FIXME: pull value on an output pin should be taken as pull in CircuitWires
 
   @Override
   public String getHDLNamePrefix(Component comp) {
@@ -831,15 +857,19 @@ public class Pin extends InstanceFactory {
     }
   }
 
-  // FIXME: Attributes are a confusing mess. "Output?", "Three State?", and
-  // "Pull Behavior" all interact in complicated ways. There seems to currently
-  // only be a few possible combinations that are implemented:
+  // Before version 4.0.0HC: Attributes are a confusing mess. "Output?", "Three
+  // State?", and "Pull Behavior" all interact in complicated ways. There seems
+  // to currently only be a few possible combinations that are implemented:
   //   Output pin:
   //     UI can display 0, 1, E, or X, and subcircuit passes whatever is
-  //     displayed up to parent. Tristate and pull options are ignored.
+  //     received. When connected to a blue wire, displays X regardless of
+  //     tri-state option. When connected to a gray wire, or to no wire at all,
+  //     it displays either 0 (if tri-state option is not selected), or X (if
+  //     tri-state option is selected), but regardless, passes the X up to
+  //     parent. The pull option is ignored.
   //   Input pin with tristate but no pull:
   //     UI can display and choose 0, 1, or X, and also shows red if there is an
-  //     error on the output bus. Parent circuit can send 0, 1, x, or E, and all
+  //     error on the output bus. Parent circuit can send 0, 1, X, or E, and all
   //     will pass through into subcircuit.
   //   Input pin with pull-up (or pull-down):
   //     UI can display and choose only 0 or 1, but also shows red if there is
@@ -850,12 +880,13 @@ public class Pin extends InstanceFactory {
   //     when viewing a subcircuit doesn't distinguish between the case where
   //     parent circuit sends 1, and when parent sends an X that gets pulled-up
   //     to 1. I think it could show blue in one case, just like it shows red in
-  //     cases of errors. Or show x, but color it to match the 1 value (or 0
+  //     cases of errors. Or show X, but color it to match the 1 value (or 0
   //     value).
   //   Input pin without tristate:
   //     This behaves the same as as tri-state with pull-down.
   //
   // Notice that tri-state=false is esentially pointless, and can be removed.
+  //
   //
   // It seems plausible to add support for another combination:
   //   Output pin with pull-up (or pull-down):
@@ -863,11 +894,14 @@ public class Pin extends InstanceFactory {
   //      being sent up to parent. Color could match what is being sent up to
   //      parent.
   //
-  // Summarizing and simplifying new proposal:
-  //   Output pin with no pull:
+  // Version 4.0.0HC: Simplified new behavior:
+  //   Note: Any gray wire (NIL value) is treated as if it were a blue wire
+  //      (Unknown value).
+  //   Output pin with tri-state/floating option (no pull):
   //      Depending on value of connected bus, UI displays 0, 1, E, or X, and
-  //      subcircuit passes whatever is displayed up to parent. Color matches
-  //      both the connected bus and the value passed up to parent.
+  //      subcircuit passes whatever is displayed up to parent. Here, color
+  //      matches both the connected bus (but gray counts as blue) and the value
+  //      passed up to parent (but NIL counts as Unknown).
   //   Output pin with pull-up (or pull-down):
   //      Depending on value of connected bus, UI displays 0, 1, or E, with any
   //      X values displaying as 0 or 1. Color matches connected bus. So a
