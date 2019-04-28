@@ -255,7 +255,7 @@ public class Circuit implements AttributeDefaultProvider {
     for (int i = 0; i < pin.length; ++i) {
       if (Pin.FACTORY.isInputPin(pin[i])) {
         InstanceState pinState = state.getInstanceState(pin[i]);
-        Pin.FACTORY.setValue(pinState, val[i]);
+        Pin.FACTORY.driveInputPin(pinState, val[i]);
       }
     }
 

@@ -619,8 +619,8 @@ public class CircuitBuilder {
     ComponentFactory factory = Pin.FACTORY;
     AttributeSet attrs = factory.createAttributeSet();
     attrs.setAttr(StdAttr.FACING, isOutput ? Direction.WEST : Direction.EAST);
-    attrs.setAttr(Pin.ATTR_TYPE, isOutput);
-    attrs.setAttr(Pin.ATTR_TRISTATE, Boolean.FALSE);
+    attrs.setAttr(Pin.ATTR_TYPE, isOutput ? Pin.OUTPUT : Pin.INPUT);
+    attrs.setAttr(Pin.ATTR_BEHAVIOR, Pin.SIMPLE);
     attrs.setAttr(StdAttr.LABEL, name);
     attrs.setAttr(StdAttr.LABEL_LOC, Direction.NORTH);
     attrs.setAttr(StdAttr.WIDTH, BitWidth.create(width));

@@ -831,7 +831,7 @@ public class CircuitState implements InstanceData {
       Value vOld = pin.getValue(state);
       Value vNew = ticks%2==0 ? Value.FALSE : Value.TRUE;
       if (!vNew.equals(vOld)) {
-        pin.setValue(state, vNew);
+        pin.driveInputPin(state, vNew);
         // state.fireInvalidated();
         markComponentAsDirty(temporaryClock);
         // If simulator is in single step mode, we want to hilight the

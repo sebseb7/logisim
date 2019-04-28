@@ -606,7 +606,7 @@ public class TtyInterface {
           v[b] = value ?  Value.TRUE : Value.FALSE;
         }
         InstanceState pinState = circuitState.getInstanceState(pin);
-        Pin.FACTORY.setValue(pinState, Value.create(v));
+        Pin.FACTORY.driveInputPin(pinState, Value.create(v));
         valueMap.put(pin, Value.create(v));
       }
 

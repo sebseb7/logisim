@@ -149,8 +149,8 @@ public class DefaultEvolutionAppearance {
       Direction pinEdge;
       String labelString = pin.getAttributeValue(StdAttr.LABEL);
       int LabelWidth = textWidth(labelString);
-      if (pin.getAttributeValue(Pin.ATTR_TYPE)) {
-        pinEdge=Direction.EAST;
+      if (pin.getAttributeValue(Pin.ATTR_TYPE) == Pin.OUTPUT) {
+        pinEdge = Direction.EAST;
         if (LabelWidth>MaxRightLabelLength) {
           MaxRightLabelLength = LabelWidth;
           b = labelString;
@@ -158,7 +158,7 @@ public class DefaultEvolutionAppearance {
       }
       else {
         pinEdge=Direction.WEST;
-        if (LabelWidth>MaxLeftLabelLength) {
+        if (LabelWidth > MaxLeftLabelLength) {
           MaxLeftLabelLength = LabelWidth;
           a = labelString;
         }

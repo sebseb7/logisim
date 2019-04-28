@@ -34,67 +34,77 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.cburch.logisim.circuit.RadixOption;
-import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.BitWidth;
+import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.StdAttr;
 
 class PinAttributes extends ProbeAttributes {
   public static PinAttributes instance = new PinAttributes();
 
-  private static final List<Attribute<?>> ATTRIBUTES = Arrays
+  private static final List<Attribute<?>> INPIN_ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { StdAttr.FACING, Pin.ATTR_TYPE,
-        StdAttr.WIDTH, Pin.ATTR_TRISTATE, Pin.ATTR_PULL,
+        StdAttr.WIDTH, Pin.ATTR_BEHAVIOR,
+        StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT,
+        RadixOption.ATTRIBUTE });
+  private static final List<Attribute<?>> OUTPIN_ATTRIBUTES = Arrays
+      .asList(new Attribute<?>[] { StdAttr.FACING, Pin.ATTR_TYPE,
+        StdAttr.WIDTH, /*Pin.ATTR_BEHAVIOR, */
         StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT,
         RadixOption.ATTRIBUTE });
 
   BitWidth width = BitWidth.ONE;
-  boolean threeState = false; // true;
-  int type = EndData.INPUT_ONLY;
-  Object pull = Pin.PULL_NONE;
+  AttributeOption type = Pin.INPUT;
+  AttributeOption behavior = Pin.SIMPLE;
 
-  public PinAttributes() {
-  }
+  public PinAttributes() { }
 
   @Override
   public List<Attribute<?>> getAttributes() {
-    return ATTRIBUTES;
+    if (type == Pin.INPUT)
+      return INPIN_ATTRIBUTES;
+    else
+      return OUTPIN_ATTRIBUTES;
   }
 
   @Override
   public <V> V getValue(Attribute<V> attr) {
     if (attr == StdAttr.WIDTH)
       return (V) width;
-    if (attr == Pin.ATTR_TRISTATE)
-      return (V) Boolean.valueOf(threeState);
     if (attr == Pin.ATTR_TYPE)
-      return (V) Boolean.valueOf(type == EndData.OUTPUT_ONLY);
-    if (attr == Pin.ATTR_PULL)
-      return (V) pull;
+      return (V) type;
+    if (attr == Pin.ATTR_BEHAVIOR)
+      return (V) behavior;
     return super.getValue(attr);
   }
 
-  boolean isInput() {
-    return type != EndData.OUTPUT_ONLY;
-  }
+  boolean isInput() { return type == Pin.INPUT; }
+  boolean isOutput() { return type == Pin.OUTPUT; }
 
-  boolean isOutput() {
-    return type != EndData.INPUT_ONLY;
+  Value defaultBitValue() {
+    if (isOutput() || behavior == Pin.TRISTATE)
+      return Value.UNKNOWN;
+    else if (behavior == Pin.PULL_UP)
+      return Value.TRUE;
+    else
+      return Value.FALSE;
   }
 
   @Override
   public <V> void updateAttr(Attribute<V> attr, V value) {
-    if (attr == StdAttr.WIDTH)
+    if (attr == StdAttr.WIDTH) {
       width = (BitWidth) value;
-    else if (attr == Pin.ATTR_TRISTATE)
-      threeState = ((Boolean) value).booleanValue();
-    else if (attr == Pin.ATTR_TYPE)
-      type = ((Boolean) value).booleanValue()
-          ? EndData.OUTPUT_ONLY
-          : EndData.INPUT_ONLY;
-    else if (attr == Pin.ATTR_PULL)
-      pull = value;
-    else
+    } else if (attr == Pin.ATTR_TYPE) {
+      fireAttributeListChanged();
+      type = (AttributeOption) value;
+    } else if (attr == Pin.ATTR_BEHAVIOR) {
+      if (behavior != value) {
+        behavior = (AttributeOption) value;
+        fireAttributeListChanged();
+      }
+    } else {
       super.updateAttr(attr, value);
+    }
   }
 }

@@ -37,10 +37,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.swing.JOptionPane;
 
@@ -361,258 +359,6 @@ public class XmlProjectReader extends XmlReader {
     }
   }
 
-  /**
-   * Traverses an XML tree and gets a list of attribute values for the given
-   * attribute and node types.
-   *
-   * @param root
-   *            root element of the XML tree
-   * @param nodeType
-   *            type of nodes to consider
-   * @param attrType
-   *            type of attributes to consider
-   * @return list of names for the considered node/attribute pairs
-   */
-  public static List<String> getXMLLabels(Element root, String nodeType,
-      String attrType) throws IllegalArgumentException {
-    assert (root != null);
-    assert (nodeType != null);
-    assert (attrType != null);
-    assert (nodeType.length() > 0);
-    assert (attrType.length() > 0);
-
-    ArrayList<String> attrValuesList = new ArrayList<>();
-
-    switch (nodeType) {
-    case "circuit":
-      inspectCircuitNodes(root, attrType, attrValuesList);
-      break;
-    case "comp":
-      inspectCompNodes(root, attrValuesList);
-      break;
-    default:
-      throw new IllegalArgumentException("Invalid node type requested: "
-          + nodeType);
-    }
-
-    return attrValuesList;
-  }
-
-  /**
-   * Check XML's circuit nodes, and return a list of values corresponding to
-   * the desired attribute.
-   *
-   * @param root
-   *            XML's root
-   * @param attrType
-   *            attribute type (either name or label)
-   * @param attrValuesList
-   *            empty list that will contain the values found
-   */
-  private static void inspectCircuitNodes(Element root, String attrType,
-      List<String> attrValuesList) throws IllegalArgumentException {
-    assert (root != null);
-    assert (attrType != null);
-    assert (attrValuesList != null);
-    assert (attrValuesList.isEmpty());
-
-    // Circuits are top-level in the XML file
-    switch (attrType) {
-    case "name":
-      for (Element circElt : XmlIterator
-          .forChildElements(root, "circuit")) {
-        // Circuit's name is directly available as an attribute
-        String name = circElt.getAttribute("name");
-        attrValuesList.add(name);
-      }
-      break;
-    case "label":
-      for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
-        // label is available through its a child node
-        for (Element attrElt : XmlIterator.forChildElements(circElt, "a")) {
-          if (attrElt.hasAttribute("name")) {
-            String aName = attrElt.getAttribute("name");
-            if (aName.equals("label")) {
-              String label = attrElt.getAttribute("val");
-              if (label.length() > 0) {
-                attrValuesList.add(label);
-              }
-            }
-          }
-        }
-      }
-      break;
-    default:
-      throw new IllegalArgumentException(
-          "Invalid attribute type requested: " + attrType
-          + " for node type: circuit");
-    }
-  }
-
-  /**
-   * Check XML's comp nodes, and return a list of values corresponding to the
-   * desired attribute. The checked comp nodes are NOT those referring to
-   * circuits -- we can see if this is the case by checking whether the lib
-   * attribute is present or not.
-   *
-   * @param root
-   *            XML's root
-   * @param attrValuesList
-   *            empty list that will contain the values found
-   */
-  private static void inspectCompNodes(Element root, List<String> attrValuesList) {
-    assert (root != null);
-    assert (attrValuesList != null);
-    assert (attrValuesList.isEmpty());
-
-    for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
-      // In circuits, we have to look for components, then take
-      // just those components that do have a lib attribute and look at
-      // their
-      // a child nodes
-      for (Element compElt : XmlIterator
-          .forChildElements(circElt, "comp")) {
-        if (compElt.hasAttribute("lib")) {
-          for (Element attrElt : XmlIterator.forChildElements(compElt, "a")) {
-            if (attrElt.hasAttribute("name")) {
-              String aName = attrElt.getAttribute("name");
-              if (aName.equals("label")) {
-                String label = attrElt.getAttribute("val");
-                if (label.length() > 0) {
-                  attrValuesList.add(label);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Replace invalid labels in circuit nodes.
-   *
-   * @param root
-   *            XML's root
-   * @param attrType
-   *            attribute type (either name or label)
-   * @param validLabels
-   *            map containing valid label values
-   */
-  private static void replaceCircuitNodes(Element root, String attrType,
-      Map<String, String> validLabels) throws IllegalArgumentException {
-    assert (root != null);
-    assert (attrType != null);
-    assert (validLabels != null);
-
-    if (validLabels.isEmpty()) {
-      // Particular case, all the labels were good!
-      return;
-    }
-
-    // Circuits are top-level in the XML file
-    switch (attrType) {
-    case "name":
-      // We have not only to replace the circuit names in each circuit,
-      // but in the corresponding comps too!
-      for (Element circElt : XmlIterator
-          .forChildElements(root, "circuit")) {
-        // Circuit's name is directly available as an attribute
-        String name = circElt.getAttribute("name");
-        if (validLabels.containsKey(name)) {
-          circElt.setAttribute("name", validLabels.get(name));
-          // Also, it is present as value for the "circuit" attribute
-          for (Element attrElt : XmlIterator.forChildElements(circElt, "a")) {
-            if (attrElt.hasAttribute("name")) {
-              String aName = attrElt.getAttribute("name");
-              if (aName.equals("circuit")) {
-                attrElt.setAttribute("val",
-                    validLabels.get(name));
-              }
-            }
-          }
-        }
-        // Now do the comp part
-        for (Element compElt : XmlIterator.forChildElements(circElt, "comp")) {
-          // Circuits are components without lib
-          if (!compElt.hasAttribute("lib")) {
-            if (compElt.hasAttribute("name")) {
-              String cName = compElt.getAttribute("name");
-              if (validLabels.containsKey(cName)) {
-                compElt.setAttribute("name",
-                    validLabels.get(cName));
-              }
-            }
-          }
-        }
-      }
-      break;
-    case "label":
-      for (Element circElt : XmlIterator
-          .forChildElements(root, "circuit")) {
-        // label is available through its a child node
-        for (Element attrElt : XmlIterator.forChildElements(circElt, "a")) {
-          if (attrElt.hasAttribute("name")) {
-            String aName = attrElt.getAttribute("name");
-            if (aName.equals("label")) {
-              String label = attrElt.getAttribute("val");
-              if (validLabels.containsKey(label)) {
-                attrElt.setAttribute("val",
-                    validLabels.get(label));
-              }
-            }
-          }
-        }
-      }
-      break;
-    default:
-      throw new IllegalArgumentException(
-          "Invalid attribute type requested: " + attrType
-          + " for node type: circuit");
-    }
-  }
-
-  /**
-   * Replace invalid labels in comp nodes.
-   *
-   * @param root
-   *            XML's root
-   * @param validLabels
-   *            map containing valid label values
-   */
-  private static void replaceCompNodes(Element root, Map<String, String> validLabels) {
-    assert (root != null);
-    assert (validLabels != null);
-
-    if (validLabels.isEmpty()) {
-      // Particular case, all the labels were good!
-      return;
-    }
-
-    for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
-      // In circuits, we have to look for components, then take
-      // just those components that do have a lib attribute and look at
-      // their
-      // a child nodes
-      for (Element compElt : XmlIterator.forChildElements(circElt, "comp")) {
-        if (compElt.hasAttribute("lib")) {
-          for (Element attrElt : XmlIterator.forChildElements(compElt, "a")) {
-            if (attrElt.hasAttribute("name")) {
-              String aName = attrElt.getAttribute("name");
-              if (aName.equals("label")) {
-                String label = attrElt.getAttribute("val");
-                if (validLabels.containsKey(label)) {
-                  attrElt.setAttribute("val",
-                      validLabels.get(label));
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
   private void addToLabelMap(HashMap<String, String> labelMap,
       String srcLabel, String dstLabel, String toolNames) {
     if (srcLabel != null && dstLabel != null) {
@@ -624,6 +370,7 @@ public class XmlProjectReader extends XmlReader {
 
   private void considerRepairs(Document doc, Element root) {
     LogisimVersion version = LogisimVersion.parse(root.getAttribute("source"));
+
     if (version.compareTo(LogisimVersion.get(2, 3, 0)) < 0) {
       // This file was saved before an Edit tool existed. Most likely
       // we should replace the Select and Wiring tools in the toolbar
@@ -649,6 +396,7 @@ public class XmlProjectReader extends XmlReader {
         }
       }
     }
+
     if (version.compareTo(LogisimVersion.get(2, 6, 3)) < 0) {
       for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
         for (Element attrElt : XmlIterator.forChildElements(circElt, "a")) {
@@ -662,21 +410,14 @@ public class XmlProjectReader extends XmlReader {
       repairForWiringLibrary(doc, root);
       repairByEradicatingLibrary(doc, root, "Legacy", "#Legacy");
     }
+
     if (version.compareTo(LogisimVersion.get(2, 7, 2)) < 0) {
       addBuiltinLibrariesIfMissing(doc, root);
       // pre logisim-evolution, we didn't have "Appearance" labels
       // on many components. Add StdAttr.APPEAR_CLASSIC on each subcircuit
       // and instances of FlipFlops, Registers, Counters, RAM, ROM, and
       // Shift Registers.
-      String memLibName = null;
-      for (Element libElt : XmlIterator.forChildElements(root, "lib")) {
-        String desc = libElt.getAttribute("desc");
-        String name = libElt.getAttribute("name");
-        if (name != null && desc != null && desc.equals("#Memory")) {
-          memLibName = name;
-          break;
-        }
-      }
+      String memLibName = findLibNameByDesc(root, "#Memory");
       for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
         setDefaultAttribute(doc, circElt, "appearance", "classic");
         if (memLibName != null) {
@@ -700,34 +441,63 @@ public class XmlProjectReader extends XmlReader {
         }
       }
     }
-    /*
-    if (version.compareTo(LogisimVersion.get(4, 0, 0)) < 0) {
-      String memLibName = null;
-      for (Element libElt : XmlIterator.forChildElements(root, "lib")) {
-        String desc = libElt.getAttribute("desc");
-        String name = libElt.getAttribute("name");
-        if (name != null && desc != null && desc.equals("#Memory")) {
-          memLibName = name;
-          break;
+
+    // As of version 4.0.0-HC, the #TCL library is gone.
+    repairByEradicatingLibrary(doc, root, "TCL", "#TCL");
+
+    // Before version 4.0.0-HC, Pin components had attributes:
+    //   output=true|false
+    //   tristate=true|false
+    //   pull=up|down (or missing)
+    // These are now consolodated into two attributes:
+    //   type=input|output
+    //   behavior=simple|tristate|pullup|pulldown
+    String wiringLibName = findLibNameByDesc(root, "#Wiring");
+    for (Element compElt : XmlIterator.forDescendantElements(root, "comp")) {
+      String lib = compElt.getAttribute("lib");
+      String name = compElt.getAttribute("name");
+      if (name == null || lib == null || !name.equals("Pin") || !lib.equals(wiringLibName))
+        continue;
+      String output = null, tristate = null, pull = null, type = null, behavior = null;
+      ArrayList<Element> bad = new ArrayList<>();
+      for (Element attrElt : XmlIterator.forChildElements(compElt, "a")) {
+        String aname = attrElt.getAttribute("name");
+        String aval = attrElt.getAttribute("val");
+        if ("output".equalsIgnoreCase(aname)) {
+            output = aval;
+            bad.add(attrElt);
+        } else if ("tristate".equalsIgnoreCase(aname)) {
+            tristate = aval;
+            bad.add(attrElt);
+        } else if ("pull".equalsIgnoreCase(aname)) {
+            pull = aval;
+            bad.add(attrElt);
+        } else if ("type".equalsIgnoreCase(aname)) {
+            type = aval;
+        } else if ("behavior".equalsIgnoreCase(aname)) {
+            behavior = aval;
         }
       }
-      for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
-        if (memLibName != null) {
-          for (Element compElt : XmlIterator.forChildElements(circElt, "comp")) {
-            String lib = compElt.getAttribute("lib");
-            String name = compElt.getAttribute("name");
-            if (lib == null || name == null || !lib.equals(memLibName))
-              continue;
-            if (name.equals("Register"))
-              setDefaultAttribute(doc, compElt, "showInTab", "false");
-          }
-        }
+      for(Element b : bad)
+        compElt.removeChild(b);
+      if (type == null && output != null)
+        appendChildAttribute(doc, compElt, "type", output.equalsIgnoreCase("true") ? "output" : "inputk");
+      if (behavior == null) {
+        if ("up".equalsIgnoreCase(pull))
+          appendChildAttribute(doc, compElt, "behavior", "pullup");
+        else if ("down".equalsIgnoreCase(pull))
+          appendChildAttribute(doc, compElt, "behavior", "pulldown");
+        else if ("true".equalsIgnoreCase(tristate))
+          appendChildAttribute(doc, compElt, "behavior", "tristate");
       }
     }
-    */
-    // if (version.compareTo(LogisimVersion.get(4, 0, 0)) < 0) {
-      repairByEradicatingLibrary(doc, root, "TCL", "#TCL");
-    // }
+  }
+
+  private static void appendChildAttribute(Document doc, Element elt, String name, String val) {
+    Element a = doc.createElement("a");
+    a.setAttribute("name", name);
+    a.setAttribute("val", val);
+    elt.appendChild(a);
   }
 
   private void addBuiltinLibrariesIfMissing(Document doc, Element root) {
@@ -943,6 +713,16 @@ public class XmlProjectReader extends XmlReader {
         }
       }
     }
+  }
+
+  private static String findLibNameByDesc(Element root, String libdesc) {
+    for (Element libElt : XmlIterator.forChildElements(root, "lib")) {
+      String desc = libElt.getAttribute("desc");
+      String name = libElt.getAttribute("name");
+      if (name != null && desc != null && desc.equals(libdesc))
+        return name;
+    }
+    return null;
   }
 
   public static ArrayList<Component> findComponent(Circuit circuit, String path) {
