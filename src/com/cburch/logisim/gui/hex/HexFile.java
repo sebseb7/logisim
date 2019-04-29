@@ -1492,6 +1492,12 @@ public class HexFile {
       DeflaterOutputStream compress = new DeflaterOutputStream(encoded, new Deflater());
       compress.write(ret.getBytes("UTF-8"));
       compress.finish();
+      try { compress.flush(); } catch (IOException e) { e.printStackTrace(); }
+      try { encoded.flush(); } catch (IOException e) { e.printStackTrace(); }
+      try { result.flush(); } catch (IOException e) { e.printStackTrace(); }
+      try { compress.close(); } catch (IOException e) { e.printStackTrace(); }
+      try { encoded.close(); } catch (IOException e) { e.printStackTrace(); }
+      try { result.close(); } catch (IOException e) { e.printStackTrace(); }
       return new String(result.toByteArray(), "UTF-8");
     } catch (Exception e) {
       e.printStackTrace();

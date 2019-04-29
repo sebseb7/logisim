@@ -627,6 +627,10 @@ public class CircuitState implements InstanceData {
       if (oldState != null && oldState.parentComp == comp) {
         // fixme: Does this ever happen?
         System.out.println("fixme: removed stale circuitstate... should never happen");
+        System.out.printf("this = %s with parentComp %s \n", this, this.parentComp);
+        System.out.printf("comp = %s for circuit %s\n", comp, circ);
+        System.out.printf("oldState = %s with parentComp %s\n", oldState, oldState.parentComp);
+        try { throw new Exception("removed stale CircuitState"); } catch (Exception e) { e.printStackTrace(); }
         synchronized(dirtyLock) {
           substates.remove(oldState);
           substatesDirty = true;

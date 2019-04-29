@@ -267,6 +267,7 @@ public class XmlProjectReader extends XmlReader {
             }
             try {
               initAttributeSet(simElt, attrs, null);
+              for (com.cburch.logisim.data.Attribute a : attrs.getAttributes())
               simState.put(path, attrs);
             } catch (XmlReaderException ex) {
               addErrors(ex, "non-volatile simulation state");

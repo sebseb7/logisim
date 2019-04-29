@@ -93,10 +93,13 @@ public class Rom extends Mem {
         int data = Integer.parseInt(toks.nextToken());
         return HexFile.parseFromCircFile(rest, addr, data);
       } catch (IOException e) {
+        e.printStackTrace();
         return null;
       } catch (NumberFormatException e) {
+        e.printStackTrace();
         return null;
       } catch (NoSuchElementException e) {
+        e.printStackTrace();
         return null;
       }
     }

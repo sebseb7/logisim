@@ -607,14 +607,14 @@ public class Ram extends Mem {
 
   @Override
   public void setNonVolatileSimulationState(Component comp, CircuitState state, AttributeSet attrs) {
+    if (!(comp instanceof InstanceComponent))
+      throw new IllegalStateException("Component %s has unexpected type");
     AttributeOption type = comp.getAttributeSet().getValue(RamAttributes.ATTR_TYPE);
     if (type != RamAttributes.NONVOLATILE)
-      return;
+      throw new IllegalStateException("Component is not non-volatile");
     MemContents src = attrs.getValue(NV_CONTENTS_ATTR);
     if (src == null)
-      return;
-    if (!(comp instanceof InstanceComponent))
-      return;
+      throw new IllegalStateException("Component is missing simulation state");
     Instance instance = ((InstanceComponent)comp).getInstance();
     InstanceState istate = new InstanceStateImpl(state, comp);
     MemContents contents = getContents(istate);;

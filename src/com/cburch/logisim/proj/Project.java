@@ -599,28 +599,39 @@ public class Project {
     undoMods = 0;
     fireEvent(ProjectEvent.ACTION_SET_FILE, old, file);
 
+    ArrayList<String> simErrs = new ArrayList<>();
     value.simulations.forEach((circ, sims) ->  {
       sims.forEach(sim -> {
         CircuitState rootState = CircuitState.createRootState(this, circ);
         sim.forEach((path, attrs) -> {
           ArrayList<Component> cpath = XmlProjectReader.findComponent(circ, path);
-          if (cpath == null)
+          if (cpath == null) {
+            simErrs.add(String.format("Component not found: %s", path));
             return; // continue sim.forEach
+          }
           CircuitState circState = rootState;
           for (int i = 0; i < cpath.size()-1; i++) {
             Component comp = cpath.get(i);
-            if (!(comp.getFactory() instanceof SubcircuitFactory))
+            if (!(comp.getFactory() instanceof SubcircuitFactory)) {
+              simErrs.add(String.format("Bad element %s of component path: %s", i, path));
               return; // continue sim.forEach
+            }
             SubcircuitFactory factory = (SubcircuitFactory)comp.getFactory();
             circState = factory.getSubstate(circState, comp);
           }
           Component comp = cpath.get(cpath.size()-1);
-          comp.getFactory().setNonVolatileSimulationState(comp, circState, attrs);
+          try {
+            comp.getFactory().setNonVolatileSimulationState(comp, circState, attrs);
+          } catch (Throwable e) {
+            simErrs.add(String.format("Error restoring data for %s: %s", path, e.getMessage()));
+          }
         });
         recentRootState.put(circ, rootState);
         allRootStates.add(rootState);
       });
     });
+    if (!simErrs.isEmpty())
+      showError(String.join("\n", simErrs));
     setCurrentCircuit(file.getMainCircuit());
     for (LibraryListener l : fileListeners) {
       file.addLibraryWeakListener(null, l);
@@ -630,9 +641,6 @@ public class Project {
     file.setDirty(false);
   }
 
-  //
-  // actions
-  //
   public void setStartupScreen(boolean value) {
     startupScreen = value;
   }
