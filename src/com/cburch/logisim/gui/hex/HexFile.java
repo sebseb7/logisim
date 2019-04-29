@@ -608,7 +608,11 @@ public class HexFile {
     void setPreview() {
       int n = r.decodedWordCount;
       preview_hdr.setText(String.format("decoded %d of %d words, %d bits each", n, r.mEnd+1, r.mWidth));
-      if (n > 0)
+      if (n > 8*1024)
+        preview_mem.setText(saveToString(r.dst, "v3.0 hex words addressed", 4*1024) +
+            String.format("\n(Note: preview above shows only the first %d of %d values.)",
+              4*1024, n));
+      else if (n > 0)
         preview_mem.setText(saveToString(r.dst, "v3.0 hex words addressed", n));
       else
         preview_mem.setText("");
@@ -1898,7 +1902,13 @@ public class HexFile {
     void refresh() {
       String desc = chooser.getFileFilter().getDescription();
       String hdr = headerForFormat(desc);
-      preview.setText(hdr + saveToString(m, desc, -1));
+      long n = m.getLastOffset() + 1;
+      if (n > 8*1024)
+        preview.setText(hdr + saveToString(m, desc, 4*1024) +
+            String.format("\n(Note: preview above shows only the first %d of %d values.)",
+              4*1024, n));
+      else
+        preview.setText(hdr + saveToString(m, desc, -1));
       preview.setCaretPosition(0);
     }
   }
