@@ -364,19 +364,9 @@ public class ProjectActions {
       chooser.setSelectedFile(loader.getMainFile());
     }
 
-    int returnVal;
-    boolean validFilename = false;
-    do {
-      returnVal = chooser.showSaveDialog(proj.getFrame());
-      if (returnVal != JFileChooser.APPROVE_OPTION) {
-        return false;
-      }
-      // validFilename = checkValidFilename(chooser.getSelectedFile().getName());
-      // if (!validFilename) {
-      //   JOptionPane.showMessageDialog(chooser,
-      //       "The file name contains invalid characters. Only alphanumeric characters and underscores are accepted.");
-      // }
-    } while (!validFilename);
+    int returnVal = chooser.showSaveDialog(proj.getFrame());
+    if (returnVal != JFileChooser.APPROVE_OPTION)
+      return false;
 
     File f = chooser.getSelectedFile();
     String circExt = LogisimFile.LOGISIM_EXTENSION;
