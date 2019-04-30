@@ -97,6 +97,9 @@ public class CircuitWires {
     // Given a location, returns wire bundle at that location (if any)
     HashMap<Location, WireBundle> pointBundles = new HashMap<>();
 
+    // All components except wires, splitters, and pull resistors
+    ArrayList<Component> allComponents = new ArrayList<>();
+
     // All locations touched by a wire bundle
     ArrayList<Location> allLocations = new ArrayList<>();
 
@@ -232,6 +235,13 @@ public class CircuitWires {
           || (comp.getFactory() instanceof Pin);
       isBidirectional = (e.getType() == EndData.INPUT_OUTPUT);
       drivenValue = null;
+    }
+
+    @Override
+    public String toString() {
+      return String.format("component %s at %s is %sdirectional %s val %s",
+          component, location, isBidirectional ? "bi" : "uni",
+          isSink ? "sink" : "source", drivenValue);
     }
   }
   
@@ -375,6 +385,21 @@ public class CircuitWires {
   State newState(CircuitState circState) { // for cloning CircuitState
     return new State(getConnectivity(), circState.getWireData());
   }
+
+  // void dump(State s) {
+  //   for (int i = 0; i < s.buses.length; i++) {
+  //     System.out.printf("bus %d (%s):\n", i, i < s.numDirty ? "dirty" : "clean");
+  //     ValuedBus vb = s.buses[i];
+  //     System.out.printf("  idx %d %s width %s threads %s val %s %s\n", vb.idx, 
+  //         vb.dirty ? "dirty" : "clean",
+  //         vb.width, vb.threads,
+  //         vb.localDrivenValue, vb.busVal);
+  //     for (int j = 0; j < vb.connections.length; j++) {
+  //       System.out.printf("    connection at %s to %s\n",
+  //           vb.locations[j], vb.connections[j]);
+  //     }
+  //   }
+  // }
 
   static class State {
     private Connectivity connectivity; // original source of connectivity info
@@ -703,6 +728,18 @@ public class CircuitWires {
     }
 
     // All bundles are made, all threads are now sewn together.
+
+    // Record all interesting components so they can be marked as dirty when
+    // this wire connectivity map is used to initialize a new State.
+    // for (Component c: components) {
+    //   if (comp instanceof Wire || comp instanceof Splitter)
+    //     continue;
+    //   Object factory = comp.getFactory();
+    //   if (factory instanceof Tunnel || factory instanceof PullResistor)
+    //     continue;
+    //   allComponents.add(comp);
+    // }
+    ret.allComponents.addAll(components);
 
     // Record all component locations so they can be marked as dirty when this
     // wire connectivity map is used to initialize a new State.
@@ -1126,7 +1163,8 @@ public class CircuitWires {
       // be connected to any bus), and vice versa. So we should mark all
       // components as dirty.
       circState.clearValuesByWire();
-      circState.markComponentsDirty(components);
+      circState.markComponentsDirty(map.allComponents);
+      // circState.markDirtyPoints(map.allLocations);
     }
 
     // make note of updates from simulator
@@ -1257,6 +1295,8 @@ public class CircuitWires {
       } else if (factory instanceof PullResistor) {
         pulls.remove(comp);
         comp.getAttributeSet().removeAttributeWeakListener(null, tunnelListener);
+      } else {
+        components.remove(comp);
       }
     }
     points.remove(comp);

@@ -275,8 +275,7 @@ public class Multiplexer extends InstanceFactory {
   public void propagate(InstanceState state) {
     BitWidth data = state.getAttributeValue(StdAttr.WIDTH);
     BitWidth select = state.getAttributeValue(Plexers.ATTR_SELECT);
-    boolean enable = state.getAttributeValue(Plexers.ATTR_ENABLE)
-        .booleanValue();
+    boolean enable = state.getAttributeValue(Plexers.ATTR_ENABLE);
     int inputs = 1 << select.getWidth();
     Value en = enable ? state.getPortValue(inputs + 1) : Value.TRUE;
     Value out;
@@ -289,16 +288,12 @@ public class Multiplexer extends InstanceFactory {
       out = Value.createError(data);
     } else {
       Value sel = state.getPortValue(inputs);
-      if (sel.isFullyDefined()) {
-        int xx = sel.toIntValue();
-        if (xx < 0 || xx >= inputs)
-          System.out.printf("mux bad sel=%s inputs=%d\n", sel, inputs);
+      if (sel.isFullyDefined())
         out = state.getPortValue(sel.toIntValue());
-      } else if (sel.isErrorValue()) {
+      else if (sel.isErrorValue())
         out = Value.createError(data);
-      } else {
+      else
         out = Value.createUnknown(data);
-      }
     }
     state.setPort(inputs + (enable ? 2 : 1), out, Plexers.DELAY);
   }

@@ -875,4 +875,28 @@ public class CircuitState implements InstanceData {
   public int getId() {
     return id;
   }
+
+  // public synchronized void dump(String msg, Object ...fmt) {
+  //   synchronized (dirtyLock) {
+  //     synchronized (valuesLock) {
+  //       Thread.dumpStack();
+  //       System.out.printf("dumping circuitstate values: %s\n", String.format(msg, fmt));
+  //       System.out.println("slowpath:");
+  //       slowpath_values.forEach((loc, val) -> System.out.printf("  [%s] %s\n", loc, val));
+  //       System.out.println("fastpath:");
+  //       for (int i = 0; i < FASTPATH_GRID_HEIGHT; i++) {
+  //         for (int j = 0; j < FASTPATH_GRID_WIDTH; j++) {
+  //           Value val = fastpath_values[i][j];
+  //           if (val != null)
+  //             System.out.printf("  [(%d,%d)] %s\n", 10*j, 10*i, val);
+  //         }
+  //       }
+  //       if (wireData != null) {
+  //         System.out.println("wiredata:");
+  //         circuit.wires.dump(wireData);
+  //       }
+  //     }
+  //   }
+  // }
+
 }
