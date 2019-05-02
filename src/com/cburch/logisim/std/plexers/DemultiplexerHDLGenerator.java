@@ -75,12 +75,12 @@ public class DemultiplexerHDLGenerator extends HDLGenerator {
       String s = out.literal(i, ws);
       if (out.isVhdl) {
         if (w == 1) {
-          out.stmt("Out_%d <= DataIn WHEN Sel = %d AND Enable = '1' ELSE '0';", i, s);
+          out.stmt("Out_%d <= DataIn WHEN Sel = %s AND Enable = '1' ELSE '0';", i, s);
         } else {
-          out.stmt("Out_%d <= DataIn WHEN Sel = %d AND Enable = '1' ELSE (others => '0');", i, s);
+          out.stmt("Out_%d <= DataIn WHEN Sel = %s AND Enable = '1' ELSE (others => '0');", i, s);
         }
       } else {
-        out.stmt("assign Out_%d = (Enable & (Sel == %d)) ? DataIn : 0;", i, s);
+        out.stmt("assign Out_%d = (Enable & (Sel == %s)) ? DataIn : 0;", i, s);
       }
     }
   }
