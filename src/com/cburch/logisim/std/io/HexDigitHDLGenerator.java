@@ -78,6 +78,7 @@ public class HexDigitHDLGenerator extends HDLGenerator {
       out.stmt("      when \"1100\" => s_pattern <= \"0111001\";");
       out.stmt("      when \"1101\" => s_pattern <= \"1011110\";");
       out.stmt("      when \"1110\" => s_pattern <= \"1111001\";");
+      out.stmt("      when \"1111\" => s_pattern <= \"1110001\";");
       out.stmt("      when others   => s_pattern <= \"1001001\"; -- err");
       out.stmt("   end case;");
       out.stmt("end process MakeSegments;");

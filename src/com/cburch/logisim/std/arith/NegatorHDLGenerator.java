@@ -52,7 +52,7 @@ public class NegatorHDLGenerator extends HDLGenerator {
   @Override
   protected void generateBehavior(Hdl out) {
     if (out.isVhdl && isBus())
-      out.stmt("Result <= std_logic_vector(unsigned(not(DataX))) + 1;");
+      out.stmt("Result <= std_logic_vector(unsigned(not(DataX)) + 1);");
     else if (out.isVhdl)
       out.stmt("Result <= DataX;");
     else if (out.isVerilog)
