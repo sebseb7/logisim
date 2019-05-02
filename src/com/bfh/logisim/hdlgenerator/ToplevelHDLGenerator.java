@@ -41,6 +41,7 @@ import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.netlist.Path;
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.std.wiring.ClockHDLGenerator;
@@ -160,17 +161,17 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     return true;
   }
 
-  // @Override
-  // public boolean hdlDependsOnCircuitState() { // for NVRAM
-  //   return circgen.hdlDependsOnCircuitState();
-  // }
+  @Override
+  public boolean hdlDependsOnCircuitState() { // for NVRAM
+    return circgen.hdlDependsOnCircuitState();
+  }
 
-  // @Override
-  // public boolean writeAllHDLThatDependsOn(CircuitState cs,
-  //     NetlistComponent ignored1, Path ignored2, String rootDir) { // for NVRAM
-  //   return circgen.writeAllHDLThatDependsOn(cs, null,
-  //       new Path(circUnderTest), rootDir);
-  // }
+  @Override
+  public boolean writeAllHDLThatDependsOn(CircuitState cs,
+      NetlistComponent ignored1, Path ignored2, String rootDir) { // for NVRAM
+    return circgen.writeAllHDLThatDependsOn(cs, null,
+        new Path(circUnderTest), rootDir);
+  }
 
 	@Override
 	protected void declareNeededComponents(Hdl out) {

@@ -42,6 +42,7 @@ import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.netlist.Path;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitAttributes;
+import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.EndData;
@@ -392,27 +393,30 @@ public class CircuitHDLGenerator extends HDLGenerator {
     }
   }
 
-  // @Override
-  // protected boolean hdlDependsOnCircuitState() { // for NVRAM
-  //   for (NetlistComponent comp : _circNets.components) {
-  //     HDLSupport g = comp.hdlSupport;
-  //     if (g != null && g.hdlDependsOnCircuitState())
-  //       return true;
-  //   }
-  //   return false;
-  // }
+  @Override
+  public boolean hdlDependsOnCircuitState() { // for NVRAM
+    for (NetlistComponent comp : _circNets.components) {
+      HDLSupport g = comp.hdlSupport;
+      if (g != null && g.hdlDependsOnCircuitState())
+        return true;
+    }
+    return false;
+  }
 
-  // @Override
-  // public boolean writeAllHDLThatDependsOn(CircuitState cs, NetlistComponent shadow,
-  //     Path path, String rootDir) { // for NVRAM
-  //   for (NetlistComponent comp : _circNets.components) {
-  //     HDLSupport g = comp.hdlSupport;
-  //     if (g == null)
-  //       continue;
-  //     Path subpath = path.extend(comp);
-  //     CircuitState substate = (CircuitState)cs.getData(comp.original);
-  //     if (!g.writeAllHDLThatDependsOn(cs, comp, subpath, rootDir))
-  //       return true;
-  //   }
-  // }
+  @Override
+  public boolean writeAllHDLThatDependsOn(CircuitState cs, NetlistComponent shadow,
+      Path path, String rootDir) { // for NVRAM
+    if (shadow != null) {
+      cs = (CircuitState)cs.getData(shadow.original);
+    }
+    for (NetlistComponent comp : _circNets.components) {
+      HDLSupport g = comp.hdlSupport;
+      if (g == null)
+        continue;
+      Path subpath = path.extend(comp);
+      if (!g.writeAllHDLThatDependsOn(cs, comp, subpath, rootDir))
+        return false;
+    }
+    return true;
+  }
 }

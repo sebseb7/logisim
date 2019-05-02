@@ -289,7 +289,7 @@ public class Netlist {
           return drcFail(comp, "component has a bidirectional port, a feature not yet supported.");
     }
 
-    // We can now skip step 2: all names are made HDL-safe and sufficiently unique automatically.
+    // We can now skip this step: all names are made HDL-safe and sufficiently unique automatically.
     // DRC Step 2: Validate names and labels for a few basic component types.
     // if (!CorrectLabel.IsCorrectLabel(circName, ctx.lang, "Circuit has illegal name.", ctx.err))
     //   return false;
@@ -338,6 +338,8 @@ public class Netlist {
       components.add(shadow);
       if (comp.getFactory() instanceof SubcircuitFactory) 
         subcircuits.add(shadow);
+      else if (!isTop && shadow.hdlSupport != null && shadow.hdlSupport.hdlDependsOnCircuitState())
+        return drcFail(comp, "component depends on circuit state, so may appear only in top level circuit.");
       else if (comp.getFactory() instanceof Clock) 
         clocks.add(shadow);
       else if (comp.getFactory() instanceof Pin && comp.getEnd(0).isOutput())

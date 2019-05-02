@@ -121,8 +121,8 @@ public class HDLGenerator extends HDLSupport {
   protected static class ParameterInfo {
     final String name; // param name
     final String type; // "integer", "natural", "positive", or "string" (only used for VHDL)
-    /*final*/ Object value; // Integer or String value for a given instance
-    final Object defaultValue; // default Integer or String value that appears in declarations 
+    final Object value; // Integer or String value for a given instance
+    final Object defaultValue; // default Integer or String value that appears in declarations, or null
     public ParameterInfo(String n, String t, int v, int d) {
       name = n;
       type = t;
@@ -310,7 +310,10 @@ public class HDLGenerator extends HDLSupport {
 
       out.indent();
       for (ParameterInfo p : parameters)
-        out.stmt("parameter %s = %s;", p.name, p.defaultValue); // note: verilog does not include type
+        if (p.defaultValue != null)
+          out.stmt("parameter %s = %s;", p.name, p.defaultValue); // note: verilog does not include type
+        else
+          out.stmt("parameter %s;", p.name); // note: verilog does not include type
 			for (PortInfo p : inPorts)
 				out.stmt("input %s%s;", out.typeForWidth(p.width), p.name);
 			for (PortInfo p : inOutPorts)
@@ -395,7 +398,10 @@ public class HDLGenerator extends HDLSupport {
 		if (!parameters.isEmpty()) {
       ArrayList<String> generics = new ArrayList<>();
       for (ParameterInfo p : parameters)
-        generics.add(p.name + " : " + p.type + " := " + p.defaultValue);
+        if (p.defaultValue != null)
+          generics.add(p.name + " : " + p.type + " := " + p.defaultValue);
+        else
+          generics.add(p.name + " : " + p.type);
       out.stmt("generic(\t %s );", String.join(";\n\t ", generics));
     }
 
@@ -523,10 +529,14 @@ public class HDLGenerator extends HDLSupport {
 
   // Returns a file opened for writing.
 	protected File openFile(String rootDir, boolean isMif, boolean isEntity) {
+    return openFile(rootDir, isMif, isEntity, -1);
+  }
+
+	protected File openFile(String rootDir, boolean isMif, boolean isEntity, int idx) {
     if (!rootDir.endsWith(File.separator))
       rootDir += File.separator;
     String path = rootDir + _lang.toLowerCase() + File.separator + subdir + File.separator;
-    return FileWriter.GetFilePointer(path, hdlModuleName, isMif, isEntity, _err, _lang);
+    return FileWriter.GetFilePointer(path, hdlModuleName, isMif, isEntity, idx, _err, _lang);
 	}
 
   // Return a suitable stem for naming instances of this component within a

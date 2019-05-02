@@ -1200,12 +1200,12 @@ public class Commander extends JFrame
     ToplevelHDLGenerator g = new ToplevelHDLGenerator(ctx, pinBindings);
 
     g.notifyNetlistReady();
-    // Circuit root = circuitsList.getSelectedValue();
-    // if (g.hdlDependsOnCircuitState()) { // for NVRAM
-    //   CircuitState cs = getCircuitState(root);
-    //   if (!g.writeAllHDLThatDependsOn(cs, null, null, circdir))
-    //     return false;
-    // }
+    Circuit root = circuitsList.getSelectedValue();
+    if (g.hdlDependsOnCircuitState()) { // for NVRAM
+      CircuitState cs = getCircuitState(root);
+      if (!g.writeAllHDLThatDependsOn(cs, null, null, circdir))
+        return false;
+    }
     return g.writeAllHDLFiles(circdir);
   }
 
@@ -1221,7 +1221,7 @@ public class Commander extends JFrame
           circ.getName());
       return null;
     }
-    if (list.size() > 0) {
+    if (list.size() > 1) {
       err.AddSevereWarning("Circuit %s contains non-volatile RAM or other components that depend "
           + "on the current simulator state, but there are multiple running simulations with this "
           + "circuit as the root. The first maching simulator state will be used for HDL synthesis.",

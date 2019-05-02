@@ -35,6 +35,7 @@ import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.netlist.Path;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.data.BitWidth;
@@ -98,12 +99,12 @@ public abstract class HDLSupport {
   // For non-inlined HDLGenerator classes.
   public boolean writeHDLFiles(String rootDir) { return true; }
 	protected void generateComponentDeclaration(Hdl out) { }
-	protected void generateComponentInstance(Hdl out, long id, NetlistComponent comp/*, Path path*/) { }
+	protected void generateComponentInstance(Hdl out, long id, NetlistComponent comp) { }
 	protected String getInstanceNamePrefix() { return null; }
   protected String getHDLModuleName() { return null; }
-  // protected boolean hdlDependsOnCircuitState() { return false; } // for NVRAM
-  // public boolean writeAllHDLThatDependsOn(CircuitState cs, NetlistComponent comp,
-  //     Path path, String rootDir) { return true; } // for NVRAM
+  public boolean hdlDependsOnCircuitState() { return false; } // for NVRAM
+  public boolean writeAllHDLThatDependsOn(CircuitState cs, NetlistComponent comp,
+      Path path, String rootDir) { return true; } // for NVRAM
 
   // For HDLInliner classes.
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) { }
