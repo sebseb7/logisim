@@ -40,15 +40,16 @@ class TtyState implements InstanceData, Cloneable {
   private Value lastClock;
   private String[] rowData;
   private int colCount;
-  private StringBuffer lastRow;
+  private char[] lastRow;
   private int row;
+  private int col; // only for lastRow
   private boolean sendStdout;
 
   public TtyState(int rows, int cols) {
     lastClock = Value.UNKNOWN;
     rowData = new String[rows - 1];
     colCount = cols;
-    lastRow = new StringBuffer(cols);
+    lastRow = new char[colCount];
     sendStdout = false;
     clear();
   }
@@ -58,34 +59,34 @@ class TtyState implements InstanceData, Cloneable {
       TtyInterface.sendFromTty(c);
     }
 
-    int lastLength = lastRow.length();
     switch (c) {
     case 12: // control-L
-      row = 0;
-      lastRow.delete(0, lastLength);
-      Arrays.fill(rowData, "");
+      clear();
       break;
     case '\b': // backspace
-      if (lastLength > 0)
-        lastRow.delete(lastLength - 1, lastLength);
+      if (col > 0)
+        lastRow[--col] = ' ';
       break;
-    case '\n':
-    case '\r': // newline
+    case '\n': // newline
       commit();
+      break;
+    case '\r': // carriage return
+      col = 0;
       break;
     default:
       if (!Character.isISOControl(c)) {
-        if (lastLength == colCount)
-          commit();
-        lastRow.append(c);
+        if (col == colCount)
+          commit(); // wrap
+        lastRow[col++] = c;
       }
     }
   }
 
   public void clear() {
-    Arrays.fill(rowData, "");
-    lastRow.delete(0, lastRow.length());
     row = 0;
+    Arrays.fill(rowData, "");
+    col = 0;
+    Arrays.fill(lastRow, ' ');
   }
 
   @Override
@@ -93,6 +94,7 @@ class TtyState implements InstanceData, Cloneable {
     try {
       TtyState ret = (TtyState) super.clone();
       ret.rowData = this.rowData.clone();
+      ret.lastRow = this.lastRow.clone();
       return ret;
     } catch (CloneNotSupportedException e) {
       return null;
@@ -102,16 +104,17 @@ class TtyState implements InstanceData, Cloneable {
   private void commit() {
     if (row >= rowData.length) {
       System.arraycopy(rowData, 1, rowData, 0, rowData.length - 1);
-      rowData[row - 1] = lastRow.toString();
+      rowData[row - 1] = new String(lastRow);
     } else {
-      rowData[row] = lastRow.toString();
+      rowData[row] = new String(lastRow);
       row++;
     }
-    lastRow.delete(0, lastRow.length());
+    col = 0;
+    Arrays.fill(lastRow, ' ');
   }
 
   public int getCursorColumn() {
-    return lastRow.length();
+    return col;
   }
 
   public int getCursorRow() {
@@ -122,7 +125,7 @@ class TtyState implements InstanceData, Cloneable {
     if (index < row)
       return rowData[index];
     else if (index == row)
-      return lastRow.toString();
+      return new String(lastRow);
     else
       return "";
   }
@@ -155,14 +158,17 @@ class TtyState implements InstanceData, Cloneable {
     int oldCols = colCount;
     if (cols != oldCols) {
       colCount = cols;
-      if (cols < oldCols) { // will need to trim any long rows
+      if (col > colCount)
+        col = colCount;
+      char[] oldLastRow = lastRow;
+      lastRow = new char[colCount];
+      Arrays.fill(lastRow, ' ');
+      System.arraycopy(oldLastRow, 0, lastRow, 0, Math.min(colCount, oldCols));
+      if (cols < oldCols) { // will need to trim any overly-long rows
         for (int i = 0; i < rows - 1; i++) {
           String s = rowData[i];
           if (s.length() > cols)
             rowData[i] = s.substring(0, cols);
-        }
-        if (lastRow.length() > cols) {
-          lastRow.delete(cols, lastRow.length());
         }
       }
     }
