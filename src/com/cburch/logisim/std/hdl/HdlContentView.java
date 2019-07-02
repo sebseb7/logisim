@@ -45,8 +45,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
-import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.RSyntaxDocument;
+import org.fife.ui.rsyntaxtextarea.ErrorStrip;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import com.cburch.hdl.HdlFile;
@@ -152,6 +152,7 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
     model.setContent(editor.getText());
     dirty = false;
     toolbar.setDirty(!model.isValid());
+    editor.forceReparsing(parser);
     if (!model.isValid())
       model.showErrors();
   }
@@ -172,8 +173,10 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
   private static final String EXPORT_DIR = "hdl_export";
 
   private RSyntaxTextArea editor;
+  private RTextScrollPane scrollpane;
   private HdlModel model;
   private Project project;
+  private VhdlParser parser;
 
   private HdlToolbarModel toolbar;
 
@@ -194,16 +197,23 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
       ((RSyntaxDocument)editor.getDocument()).setSyntaxStyle(new VhdlSyntax());
       editor.setCodeFoldingEnabled(true);
     } else {
-      editor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_DELPHI);
-      editor.setCodeFoldingEnabled(true);
+      throw new IllegalArgumentException("unrecognized language: " + lang);
     }
+
     editor.setAntiAliasingEnabled(true);
     editor.getDocument().addDocumentListener(this);
 
-    RTextScrollPane sp = new RTextScrollPane(editor);
-    sp.setFoldIndicatorEnabled(true);
+    scrollpane = new RTextScrollPane(editor);
+    scrollpane.setFoldIndicatorEnabled(true);
+    scrollpane.setIconRowHeaderEnabled(true);
 
-    add(sp, BorderLayout.CENTER);
+    if (lang.equals("vhdl")) {
+      parser = new VhdlParser(scrollpane.getGutter()); // disabled, initially
+      parser.enabled = false;
+      editor.addParser(parser);
+    }
+
+    add(scrollpane, BorderLayout.CENTER);
     add(buttonsPanel, BorderLayout.NORTH);
 
     // pack();
@@ -268,10 +278,15 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
   boolean dirty = false;
   public void setText(String content) {
     dirty = true;
-    editor.setText(content);
+    parser.enabled = false;
+    scrollpane.getGutter().removeAllTrackingIcons();
+    editor.setText(content == null ? "" : content);
     editor.discardAllEdits();
     dirty = false;
     editor.setCaretPosition(0);
+    parser.enabled = (content != null);
+    if (parser.enabled)
+      editor.forceReparsing(parser);
   }
 
   public void clearHdlModel() {
@@ -279,10 +294,9 @@ public class HdlContentView extends JPanel implements DocumentListener, HdlModel
       return;
     if (!editor.getText().equals(model.getContent()))
       model.setContent(editor.getText());
-    model.removeHdlModelWeakListener(null, toolbar);
     model.removeHdlModelWeakListener(null, this);
     model = null;
-    setText("");
+    setText(null);
     dirty = false;
   }
 

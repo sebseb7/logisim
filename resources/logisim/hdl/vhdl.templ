@@ -6,20 +6,25 @@
 -- Description:
 
 library ieee;
-  use ieee.std_logic_1164.all;
-  --use ieee.numeric_std.all;
+use ieee.std_logic_1164.all;
+-- use ieee.numeric_std.all;
+
+-- Single-bit wires in logisim circuit diagrams are represented using std_logic.
+-- Multi-bit buses are represented using std_logic_vector(N downto 0).
+-- For interoperation with logisim circuits, your VHDL entities should use those
+-- types as well.
+-- Note: Logisim does not yet support Using generic parameters for port sizes.
 
 entity %entityname% is
   generic(
     EXAMPLE_PARAM : integer := 42;
-    ANOTHER_PARAM : integer := 226;
+    ANOTHER_PARAM : integer := 226
   );
   port(
-    -- Note: Logisim does not yet support Using generic parameters for port sizes.
     example_input : in std_logic;
     example_other : in std_logic_vector(3 downto 0); 
-    example_output : out std_logic_vector(7 downto 0);
-  )
+    example_output : out std_logic_vector(7 downto 0)
+  );
 end %entityname%;
 
 architecture SomeArchitecture of %entityname% is

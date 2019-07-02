@@ -336,7 +336,7 @@ public class VhdlContent extends HdlContent {
       if (errCode != Softwares.SUCCESS)
         return false;
 
-      VhdlParser parser = new VhdlParser(content.toString());
+      VhdlParser parser = new VhdlParser(name, content.toString());
       try {
         parser.parse();
       } catch (Exception ex) {
