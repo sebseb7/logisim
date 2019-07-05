@@ -32,54 +32,34 @@ package com.cburch.hdl;
 
 public interface HdlModel {
 
-	/**
-	 * Registers a listener for changes to the values.
-	 */
+  // Registers a listener for changes to the values.
 	public void addHdlModelWeakListener(Object owner, HdlModelListener l);
 
-	/**
-	 * Compares the model's content with another model.
-	 */
+  // Compares the model's content with another model.
 	public boolean compare(HdlModel model);
 
-	/**
-	 * Compares the model's content with a string.
-	 */
+	// Compares the model's content with a string.
 	public boolean compare(String value);
 
-	/**
-	 * Gets the content of the HDL-IP component.
-	 */
+	// Gets the content of the HDL-IP component.
 	public String getContent();
 
-	/**
-	 * Get the component's name
-	 */
+	// Get the component's name.
 	public String getName();
 
-	/**
-	 * Unregisters a listener for changes to the values.
-	 */
+	// Unregisters a listener for changes to the values.
 	public void removeHdlModelWeakListener(Object owner, HdlModelListener l);
 
-	/**
-	 * Sets the content of the component.
-	 */
+	// Sets the content of the component.
 	public boolean setContent(String content);
 
-	/**
-	 * Checks whether the content of the component is valid.
-	 */
+	// Checks whether the content of the component is valid.
 	public boolean isValid();
 
-	/**
-	 * Displays errors, if any.
-	 */
+	// Displays errors, if any.
 	public void showErrors();
 
-	/**
-	 * Fire notification that the display has changed.
-	 */
+	// Fire notification that the display has changed.
 	public void displayChanged();
 
 }
