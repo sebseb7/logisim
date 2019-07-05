@@ -293,6 +293,16 @@ class ToolboxManip implements ProjectExplorer.Listener {
             return;
           }
         }
+        if (source instanceof VhdlEntity) {
+          VhdlEntity vhdlEntity = (VhdlEntity) source;
+          VhdlContent vhdl = vhdlEntity.getContent();
+          if (proj.getCurrentHdl() == vhdl) {
+            AttrTableModel m = new AttrTableVhdlModel(proj, vhdl);
+            proj.getFrame().setAttrTableModel(m);
+            setDefaultTool(null, proj);
+            return;
+          }
+        }
       }
       proj.setTool(tool);
       proj.getFrame().viewAttributes(tool);

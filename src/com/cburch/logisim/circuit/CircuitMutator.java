@@ -32,7 +32,9 @@ package com.cburch.logisim.circuit;
 
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.std.hdl.VhdlContent;
 
+// fixme: CircuitMutatorImpl is the one and only implementation of this
 public interface CircuitMutator {
   public void add(Circuit circuit, Component comp);
 
@@ -49,4 +51,6 @@ public interface CircuitMutator {
       Object value);
 
   public void setForCircuit(Circuit circuit, Attribute<?> attr, Object value);
+
+  public void setForVhdl(VhdlContent vhdl, Attribute<?> attr, Object value);
 }

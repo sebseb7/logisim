@@ -129,6 +129,8 @@ class CanvasPainter implements PropertyChangeListener {
 
   private void drawWithUserState(Graphics base, Graphics g, Project proj) {
     Circuit circ = proj.getCurrentCircuit();
+    if (circ == null)
+      return;
     Selection sel = proj.getSelection();
     Set<Component> hidden;
     Tool dragTool = canvas.getDragTool();

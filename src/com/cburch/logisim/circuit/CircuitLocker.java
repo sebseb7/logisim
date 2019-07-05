@@ -59,11 +59,11 @@ public class CircuitLocker {
       for (Circuit circ : lockOrder) {
         Integer access = requests.get(circ);
         CircuitLocker locker = circ.getLocker();
-        if (access == CircuitTransaction.READ_ONLY) {
-          Lock lock = locker.circuitLock.readLock();
-          lock.lock();
-          circuitLocks.put(circ, lock);
-        } else if (access == CircuitTransaction.READ_WRITE) {
+        // if (access == CircuitTransaction.READ_ONLY) {
+        //   Lock lock = locker.circuitLock.readLock();
+        //   lock.lock();
+        //   circuitLocks.put(circ, lock);
+        // } else if (access == CircuitTransaction.READ_WRITE) {
           Thread curThread = Thread.currentThread();
           if (locker.mutatingThread == curThread) {
             ; // nothing to do - thread already has lock
@@ -77,7 +77,7 @@ public class CircuitLocker {
             }
             locker.mutatingMutator = mutator;
           }
-        }
+        // }
       }
     } catch (RuntimeException t) {
       releaseLocks(circuitLocks);

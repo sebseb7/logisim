@@ -39,17 +39,15 @@ import java.util.HashSet;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.std.hdl.VhdlContent;
 
+// fixme: this is the one and only implementation of CircuitMutator
 class CircuitMutatorImpl implements CircuitMutator {
-  private ArrayList<CircuitChange> log;
-  private HashMap<Circuit, ReplacementMap> replacements;
-  private HashSet<Circuit> modified;
+  private ArrayList<CircuitChange> log = new ArrayList<>();
+  private HashMap<Circuit, ReplacementMap> replacements = new HashMap<>();
+  private HashSet<Circuit> modified = new HashSet<>();
 
-  public CircuitMutatorImpl() {
-    log = new ArrayList<CircuitChange>();
-    replacements = new HashMap<Circuit, ReplacementMap>();
-    modified = new HashSet<Circuit>();
-  }
+  public CircuitMutatorImpl() { }
 
   public void add(Circuit circuit, Component comp) {
     modified.add(circuit);
@@ -169,6 +167,15 @@ class CircuitMutatorImpl implements CircuitMutator {
     AttributeSet attrs = circuit.getStaticAttributes();
     Object oldValue = attrs.getValue(a);
     log.add(CircuitChange.setForCircuit(circuit, attr, oldValue, newValue));
+    attrs.setAttr(a, newValue);
+  }
+
+  public void setForVhdl(VhdlContent vhdl, Attribute<?> attr, Object newValue) {
+    @SuppressWarnings("unchecked")
+    Attribute<Object> a = (Attribute<Object>) attr;
+    AttributeSet attrs = vhdl.getStaticAttributes();
+    Object oldValue = attrs.getValue(a);
+    log.add(CircuitChange.setForVhdl(vhdl, attr, oldValue, newValue));
     attrs.setAttr(a, newValue);
   }
 }

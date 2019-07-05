@@ -227,8 +227,8 @@ public class CircuitWires {
       component = comp;
       location = loc;
       EndData e = comp.getEnd(loc);
-      // if (e == null)
-      //   System.out.printf("missing end for %s at %s\n", comp, loc);
+      if (e == null)
+        System.out.printf("missing end for %s at %s\n", comp, loc);
       // Special case: Pin is treated as a sink, because it needs notifications
       // of any changes to inputs in order to set the UI color propertly.
       isSink = (e.getType() == EndData.INPUT_ONLY)

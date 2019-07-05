@@ -37,8 +37,8 @@ import java.util.concurrent.locks.Lock;
 import com.cburch.logisim.circuit.appear.CircuitPins;
 
 public abstract class CircuitTransaction {
-  public static final Integer READ_ONLY = Integer.valueOf(1);
-  public static final Integer READ_WRITE = Integer.valueOf(2);
+  // public static final Integer READ_ONLY = 1; // never used
+  public static final Integer READ_WRITE = 2;
 
   public final CircuitTransactionResult execute() {
     CircuitMutatorImpl mutator = new CircuitMutatorImpl();

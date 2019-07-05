@@ -112,7 +112,7 @@ public class MainMenuListener extends MenuListener {
           ProjectCircuitActions.doRemoveHdl(proj, hdl);
       } else if (src == LogisimMenuBar.EDIT_LAYOUT) {
         if (proj.getCurrentHdl() != null)
-          frame.setEditorView(Frame.EDIT_HDL);
+          frame.setEditorView(Frame.EDIT_HDL); // not yet necessary
         else
           frame.setEditorView(Frame.EDIT_LAYOUT);
       } else if (src == LogisimMenuBar.EDIT_APPEARANCE) {
@@ -179,8 +179,8 @@ public class MainMenuListener extends MenuListener {
       menubar.setEnabled(LogisimMenuBar.EDIT_APPEARANCE, viewingLayout);
       menubar.setEnabled(LogisimMenuBar.TOGGLE_APPEARANCE, viewingLayout || viewingAppearance);
       menubar.setEnabled(LogisimMenuBar.REVERT_APPEARANCE, canRevert);
-      menubar.setEnabled(LogisimMenuBar.ANALYZE_CIRCUIT, true);
-      menubar.setEnabled(LogisimMenuBar.CIRCUIT_STATS, true);
+      menubar.setEnabled(LogisimMenuBar.ANALYZE_CIRCUIT, viewingLayout);
+      menubar.setEnabled(LogisimMenuBar.CIRCUIT_STATS, viewingLayout);
       fireEnableChanged();
     }
 

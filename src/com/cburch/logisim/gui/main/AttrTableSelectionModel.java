@@ -31,17 +31,19 @@
 package com.cburch.logisim.gui.main;
 import static com.cburch.logisim.gui.main.Strings.S;
 
+import com.cburch.hdl.HdlModel;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.gui.generic.AttrTableSetException;
 import com.cburch.logisim.gui.generic.AttributeSetTableModel;
 import com.cburch.logisim.gui.main.Selection.Event;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.tools.SetAttributeAction;
 
 class AttrTableSelectionModel extends AttributeSetTableModel
@@ -121,12 +123,16 @@ class AttrTableSelectionModel extends AttributeSetTableModel
   public boolean isRowValueEditable(int rowIndex) {
     Selection selection = frame.getCanvas().getSelection();
     Circuit circuit = frame.getCanvas().getCircuit();
+    HdlModel hdl = frame.getHdlEditorView();
     if (selection.isEmpty() && circuit != null) {
       // Empty selection is really modifying the circuit, so just delegate to
       // that model. This is a little redundant with the check in
       // SelectionAtributes.isReadOnly().
       AttrTableCircuitModel circuitModel = new AttrTableCircuitModel(project, circuit);
       return circuitModel.isRowValueEditable(rowIndex);
+    } else if (selection.isEmpty() && hdl != null && hdl instanceof VhdlContent) {
+      AttrTableVhdlModel vhdlModel = new AttrTableVhdlModel(project, (VhdlContent)hdl);
+      return vhdlModel.isRowValueEditable(rowIndex);
     } else {
       // Non-empty selection calls superclass, which ultimately relies on
       // SelectionAttributes.isReadOnly(attr), which should handle all cases:
@@ -148,11 +154,15 @@ class AttrTableSelectionModel extends AttributeSetTableModel
     // We rely on isRowValueEditable() to filter out all non-editable cases.
     Selection selection = frame.getCanvas().getSelection();
     Circuit circuit = frame.getCanvas().getCircuit();
+    HdlModel hdl = frame.getHdlEditorView();
     if (selection.isEmpty() && circuit != null) {
       AttrTableCircuitModel circuitModel = new AttrTableCircuitModel(project, circuit);
       circuitModel.setValueRequested(attr, value);
+    } else if (selection.isEmpty() && hdl != null && hdl instanceof VhdlContent) {
+      AttrTableVhdlModel vhdlModel = new AttrTableVhdlModel(project, (VhdlContent)hdl);
+      vhdlModel.setValueRequested(attr, value);
     } else {
-      // idea: if attr = label, make each label unique by appending number
+      // todo (idea): if attr = label, make each label unique by appending number
       SetAttributeAction act = new SetAttributeAction(circuit,
           S.getter("selectionAttributeAction"));
       for (Component comp : selection.getComponents()) {

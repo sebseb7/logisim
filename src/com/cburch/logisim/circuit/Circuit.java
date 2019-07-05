@@ -333,9 +333,8 @@ public class Circuit implements AttributeDefaultProvider {
   }
 
   private void fireEvent(CircuitEvent event) {
-    for (CircuitListener l : listeners) {
+    for (CircuitListener l : listeners)
       l.circuitChanged(event);
-    }
   }
 
   void fireEvent(int action, Object data) {

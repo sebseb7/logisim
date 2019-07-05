@@ -31,50 +31,50 @@
 package com.cburch.logisim.gui.main;
 import static com.cburch.logisim.gui.main.Strings.S;
 
-import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.circuit.CircuitMutation;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.gui.generic.AttrTableSetException;
 import com.cburch.logisim.gui.generic.AttributeSetTableModel;
 import com.cburch.logisim.gui.menu.ProjectCircuitActions;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.std.hdl.VhdlContent;
+import com.cburch.logisim.std.hdl.VhdlEntity;
 
-public class AttrTableCircuitModel extends AttributeSetTableModel {
+public class AttrTableVhdlModel extends AttributeSetTableModel {
   private Project proj;
-  private Circuit circ;
+  private VhdlContent vhdl;
 
-  public AttrTableCircuitModel(Project proj, Circuit circ) {
-    super(circ.getStaticAttributes());
+  public AttrTableVhdlModel(Project proj, VhdlContent vhdl) {
+    super(vhdl.getStaticAttributes());
     this.proj = proj;
-    this.circ = circ;
+    this.vhdl = vhdl;
   }
 
   @Override
   public String getTitle() {
-    return S.fmt("circuitAttrTitle", circ.getName());
+    return S.fmt("vhdlAttrTitle", vhdl.getName());
   }
 
   @Override
   public boolean isRowValueEditable(int rowIndex) {
-    // circuits outside current project can't be modified at all
+    // hdl outside current project can't be modified at all
     return super.isRowValueEditable(rowIndex) &&
-      proj.getLogisimFile().contains(circ);
+      proj.getLogisimFile().contains(vhdl);
   }
 
   @Override
   public <V> void setValueRequested(Attribute<V> attr, V value)
       throws AttrTableSetException {
-    if (!proj.getLogisimFile().contains(circ)) {
+    if (!proj.getLogisimFile().contains(vhdl)) {
       // This should never happen, prevented by isRowValueEditable().
-      String msg = S.get("cannotModifyCircuitError");
+      String msg = S.get("cannotModifyVhdlError");
       throw new AttrTableSetException(msg);
     }
     String err = null;
-    // validate circuit name, label, and other attributes
-    if (attr == CircuitAttributes.NAME_ATTR) {
+    // validate vhdl name, label, and other attributes
+    if (attr == VhdlEntity.NAME_ATTR) {
       String name = ((String)value).trim();
-      if (name.equals(circ.getName()))
+      if (name.equals(vhdl.getName()))
         return;
       err = ProjectCircuitActions.getNewNameErrors(
               proj.getLogisimFile(), name, false);
@@ -82,8 +82,8 @@ public class AttrTableCircuitModel extends AttributeSetTableModel {
     if (err != null)
       throw new AttrTableSetException(err);
 
-    CircuitMutation xn = new CircuitMutation(circ);
-    xn.setForCircuit(attr, value);
-    proj.doAction(xn.toAction(S.getter("changeCircuitAttrAction")));
+    CircuitMutation xn = new CircuitMutation(vhdl);
+    xn.setForVhdl(attr, value);
+    proj.doAction(xn.toAction(S.getter("changeVhdlAttrAction")));
   }
 }

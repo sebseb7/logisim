@@ -32,6 +32,7 @@ package com.cburch.logisim.circuit;
 
 import java.util.Collection;
 
+// fixme: can this simply be replaced by CircuitMutator/CircuitMutatorImpl ?
 public class CircuitTransactionResult {
   private CircuitMutatorImpl mutator;
 

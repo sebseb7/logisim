@@ -51,14 +51,17 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.Library;
 
 public class CircuitAttributes extends AbstractAttributeSet {
+
+  // For each subcircuit instance, one of these listens for changes both to the
+  // underlying circuit's static attributes and to the underlying circuit's
+  // appearance.
   private class MyListener
     implements AttributeListener, CircuitAppearanceListener {
+
     private Circuit source;
-    private MyListener(Circuit s) {
-      source = s;
-    }
-    public void attributeListChanged(AttributeEvent e) {
-    }
+    private MyListener(Circuit s) { source = s; }
+
+    public void attributeListChanged(AttributeEvent e) { }
 
     public void attributeValueChanged(AttributeEvent e) {
       @SuppressWarnings("unchecked")
@@ -66,35 +69,39 @@ public class CircuitAttributes extends AbstractAttributeSet {
       fireAttributeValueChanged(a, e.getValue());
     }
 
+    // When the underlying source circuit apparance changes, we ask the
+    // subcircuit factory to recompute the ports and bounds for this instance,
+    // and we invalidate the instance so it is redrawn.
     public void circuitAppearanceChanged(CircuitAppearanceEvent e) {
       SubcircuitFactory factory;
       factory = (SubcircuitFactory) subcircInstance.getFactory();
-      if (e.isConcerning(CircuitAppearanceEvent.PORTS)) {
+      if (e.isConcerning(CircuitAppearanceEvent.PORTS))
         factory.computePorts(subcircInstance);
-      }
-      if (e.isConcerning(CircuitAppearanceEvent.BOUNDS)) {
+      if (e.isConcerning(CircuitAppearanceEvent.BOUNDS))
         subcircInstance.recomputeBounds();
-      }
       subcircInstance.fireInvalidated();
+      // FIXME: Also reset the custom flag... why here?
       if (source != null & !source.getAppearance().isDefaultAppearance())
         source.getStaticAttributes().setAttr(APPEARANCE_ATTR, APPEAR_CUSTOM);
     }
   }
 
+  // For each circuit, one of these listens for certain changes to static
+  // attributes (name changes, and changes to a default appearance type).
   private static class StaticListener implements AttributeListener {
     private Circuit source;
 
-    private StaticListener(Circuit s) {
-      source = s;
-    }
+    private StaticListener(Circuit s) { source = s; }
 
-    public void attributeListChanged(AttributeEvent e) {
-    }
+    public void attributeListChanged(AttributeEvent e) { }
 
     public void attributeValueChanged(AttributeEvent e) {
       if (e.getAttribute() == NAME_ATTR) {
+        // When the name changes, we fire CircuitListener.circuitChanged().
         source.fireEvent(CircuitEvent.ACTION_SET_NAME, e.getValue());
       } else if (e.getAttribute() == APPEARANCE_ATTR) {
+        // When the appearance changes to a default (computed, non-custom)
+        // style, we recalculate the shape.
         if (e.getValue() == APPEAR_CLASSIC || e.getValue() == APPEAR_FPGA) {
           source.getAppearance().setDefaultAppearance(true);
           source.RecalcDefaultShape();

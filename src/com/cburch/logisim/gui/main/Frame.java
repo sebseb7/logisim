@@ -90,6 +90,7 @@ import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.std.hdl.HdlContentView;
+import com.cburch.logisim.std.hdl.VhdlContent;;
 import com.cburch.logisim.std.hdl.VhdlSimulatorConsole;
 import com.cburch.logisim.std.hdl.VhdlSimulatorListener;
 import com.cburch.logisim.tools.Library;
@@ -145,23 +146,20 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
       } else if (action == ProjectEvent.ACTION_SET_CURRENT) {
         if (event.getData() instanceof Circuit) {
           setEditorView(EDIT_LAYOUT);
-          if (appearance != null) {
+          if (appearance != null)
             appearance.setCircuit(project, project.getCircuitState());
-          }
         } else if (event.getData() instanceof HdlModel) {
           setHdlEditorView((HdlModel)event.getData());
         }
-        viewAttributes(project.getTool());
+        viewAttributes(null, null, true);
         computeTitle();
       } else if (action == ProjectEvent.ACTION_SET_TOOL) {
-        if (attrTable == null) {
+        if (attrTable == null)
           return; // for startup
-        }
         Tool oldTool = (Tool) event.getOldData();
         Tool newTool = (Tool) event.getData();
-        if (!getEditorView().equals(EDIT_APPEARANCE)) {
+        if (!getEditorView().equals(EDIT_APPEARANCE))
           viewAttributes(oldTool, newTool, false);
-        }
       }
     }
 
@@ -483,12 +481,14 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
   private void computeTitle() {
     String s;
     Circuit circuit = project.getCurrentCircuit();
+    HdlModel hdl = project.getCurrentHdl();
     String name = project.getLogisimFile().getName();
-    if (circuit != null) {
+    if (circuit != null)
       s = S.fmt("titleCircFileKnown", circuit.getName(), name);
-    } else {
+    else if (hdl != null)
+      s = S.fmt("titleCircFileKnown", hdl.getName(), name);
+    else
       s = S.fmt("titleFileKnown", name);
-    }
     this.setTitle(s + " (v " + Main.VERSION_NAME + ")");
     myProjectListener.enableSave();
   }
@@ -622,9 +622,8 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
 
   public void setEditorView(String view) {
     String curView = mainPanel.getView();
-    if (hdlEditor.getHdlModel() == null && curView.equals(view)) {
+    if (hdlEditor.getHdlModel() == null && curView.equals(view))
       return;
-    }
     editRegion.setFraction(1.0);
     hdlEditor.setHdlModel(null);
 
@@ -646,7 +645,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
       toolbar.setToolbarModel(layoutToolbarModel);
       zoom.setZoomModel(layoutZoomModel);
       menuListener.setEditHandler(layoutEditHandler);
-      viewAttributes(project.getTool(), true);
+      viewAttributes(null, project.getTool(), true);
       mainPanel.setView(view);
       layoutCanvas.requestFocus();
     }
@@ -686,27 +685,36 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     viewAttributes(null, newTool, false);
   }
 
-  private void viewAttributes(Tool newTool, boolean force) {
-    viewAttributes(null, newTool, force);
-  }
+  // private void viewAttributes(Tool newTool, boolean force) {
+  //   viewAttributes(null, newTool, force);
+  // }
 
   private void viewAttributes(Tool oldTool, Tool newTool, boolean force) {
     if (newTool == null && !force)
       return;
     AttributeSet newAttrs = newTool == null ? null : newTool.getAttributeSet(layoutCanvas);
     if (newAttrs == null) {
-      AttrTableModel oldModel = attrTable.getAttrTableModel();
-      boolean same = oldModel instanceof AttrTableToolModel
-          && ((AttrTableToolModel) oldModel).getTool() == oldTool;
-      if (!force && !same && !(oldModel instanceof AttrTableCircuitModel)) {
-        return;
-      }
+      // AttrTableModel oldModel = attrTable.getAttrTableModel();
+      // boolean same = oldModel instanceof AttrTableToolModel
+      //     && ((AttrTableToolModel) oldModel).getTool() == oldTool;
+      // if (!force && !same && !(oldModel instanceof AttrTableCircuitModel)) {
+      //   System.out.println("skip view attr");
+      //   System.out.printf("oldTool = %s\n", oldTool);
+      //   System.out.printf("newTool = %s\n", newTool);
+      //   System.out.printf("oldModel = %s\n", oldModel);
+      //   if (oldModel instanceof AttrTableToolModel)
+      //     System.out.printf("oldModel.tool = %s\n", ((AttrTableToolModel) oldModel).getTool());
+      //   Thread.dumpStack();
+      //   // return;
+      // }
       Circuit circ = project.getCurrentCircuit();
-      if (circ != null) {
+      HdlModel hdl = project.getCurrentHdl();
+      if (circ != null)
         setAttrTableModel(new AttrTableCircuitModel(project, circ));
-      } else if (force) {
+      else if (hdl != null && hdl instanceof VhdlContent)
+        setAttrTableModel(new AttrTableVhdlModel(project, (VhdlContent)hdl));
+      else if (force)
         setAttrTableModel(null);
-      }
     } else if (newAttrs instanceof SelectionAttributes) {
       setAttrTableModel(attrTableSelectionModel);
     } else {

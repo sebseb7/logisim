@@ -317,7 +317,7 @@ public class SubcircuitFactory extends InstanceFactory {
       if (comp instanceof InstanceComponent)
         ((InstanceComponent) comp).fireInvalidated();
       else
-        System.out.println("wrong kind... " + comp);
+        System.out.println("wrong kind ?!?!  ... " + comp);
     }
     return subState;
   }
@@ -362,7 +362,9 @@ public class SubcircuitFactory extends InstanceFactory {
     } else if (attr == StdAttr.LABEL_LOC) {
       configureLabel(instance);
     } else if (attr == CircuitAttributes.APPEARANCE_ATTR) {
-      final Circuit src = source;
+      // final Circuit src = source;
+      // System.out.println("subcirc instance changed appearance for " + source);
+      // Thread.dumpStack();
       CircuitTransaction xn = new ChangeAppearanceTransaction();
       source.getLocker().execute(xn);
     }

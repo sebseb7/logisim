@@ -46,9 +46,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
-import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
-import com.cburch.draw.model.CanvasObject;
 import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
 import com.cburch.logisim.circuit.Circuit;
@@ -58,7 +56,6 @@ import com.cburch.logisim.circuit.appear.DefaultEvolutionAppearance;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
@@ -94,30 +91,24 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
   public VhdlEntity(VhdlContent content) {
     super("", null);
     this.content = content;
-    this.content.addHdlModelWeakListener(null, this);
+    content.addHdlModelWeakListener(null, this);
     if (content.isValid())
       this.setIconName("vhdl.gif");
     else
       this.setIconName("vhdl-invalid.gif");
     setFacingAttribute(StdAttr.FACING);
+    appearance = new VhdlAppearance(content);
   }
 
   @Override
   public String getName() {
-    if (content == null)
-      return "VHDL Entity";
-    else
-      return content.getName();
+    return content.getName();
   }
 
   @Override
   public StringGetter getDisplayGetter() {
-    if (content == null)
-      return S.getter("vhdlComponent");
-    else
-      return StringUtil.constantGetter(content.getName());
+    return StringUtil.constantGetter(content.getName());
   }
-
 
   public VhdlContent getContent() {
     return content;
@@ -129,6 +120,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
     attrs.setInstance(instance);
     instance.addAttributeListener();
 
+    // System.out.printf("vhdl new instance: %s\n", instance);
     updatePorts(instance);
   }
 
@@ -148,13 +140,6 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
   @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {
-    // int nbInputs = content.getInputsNumber();
-    // int nbOutputs = content.getOutputsNumber();
-
-    // return Bounds.create(0, 0, WIDTH, Math.max(nbInputs, nbOutputs)
-    //    * PORT_GAP + HEIGHT);
-    if (appearance == null)
-      return Bounds.create(0, 0, 100, 100);
     Direction facing = attrs.getValue(StdAttr.FACING);
     return appearance.getOffsetBounds().rotate(Direction.EAST, facing, 0, 0);
   }
@@ -169,30 +154,45 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
   @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-    if (attr == StdAttr.FACING) {
+    // System.out.printf("vhdl instance changed: %s attr %s\n", instance, attr);
+    if (attr == StdAttr.FACING)
       updatePorts(instance);
-    } else if (attr == StdAttr.APPEARANCE) {
-      updatePorts(instance);
-    }
+    // else if (attr == StdAttr.APPEARANCE) {
+    //   System.out.println("appearance never changes here?");
+    //   updatePorts(instance);
+    // }
   }
 
   private static class VhdlAppearance extends CircuitAppearance {
-    String style;
-    VhdlAppearance(List<CanvasObject> shapes) {
+
+    VhdlAppearance(VhdlContent content) {
       super(null);
-      setObjectsForce(shapes);
+      ArrayList<Instance> pins = computePins(content);
+      if (content.getAppearance() == StdAttr.APPEAR_CLASSIC)
+        setObjectsForce(DefaultClassicAppearance.build(pins));
+      else
+        setObjectsForce(DefaultEvolutionAppearance.build(pins, content.getName()));
     }
-    static VhdlAppearance create(List<Instance> pins, String name, AttributeOption style) {
-      if (style == StdAttr.APPEAR_CLASSIC) {
-        VhdlAppearance a = new VhdlAppearance(DefaultClassicAppearance.build(pins));
-        a.style = "classic";
-        return a;
-      } else {
-        VhdlAppearance a = new VhdlAppearance(DefaultEvolutionAppearance.build(pins, name));
-        a.style = "evolution";
-        return a;
+
+    private static ArrayList<Instance> computePins(VhdlContent content) {
+      // System.out.println("computing pins for " + content.getName());
+      // Thread.dumpStack();
+      ArrayList<Instance> pins = new ArrayList<>();
+      int y = 0;
+      for (VhdlParser.PortDescription p: content.getPorts()) {
+        // /System.out.println("port: " + p);
+        AttributeSet a = Pin.FACTORY.createAttributeSet();
+        a.setAttr(StdAttr.LABEL, p.getName());
+        a.setAttr(Pin.ATTR_TYPE, p.getType() == Port.INPUT ? Pin.INPUT : Pin.OUTPUT);
+        a.setAttr(StdAttr.FACING, p.getType() == Port.INPUT ? Direction.EAST : Direction.WEST);
+        a.setAttr(StdAttr.WIDTH, p.getWidth());
+        InstanceComponent ic = (InstanceComponent)Pin.FACTORY.createComponent(Location.create(100, y), a);
+        pins.add(ic.getInstance());
+        y += 10;
       }
+      return pins;
     }
+
   }
 
   private void paintBase(InstancePainter painter, Graphics g) {
@@ -349,21 +349,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
   private VhdlAppearance appearance;
 
   void updatePorts(Instance instance) {
-    ArrayList<Instance> pins = new ArrayList<Instance>();
-    int y = 0;
-    for (VhdlParser.PortDescription p: content.getPorts()) {
-      AttributeSet a = Pin.FACTORY.createAttributeSet();
-      a.setAttr(StdAttr.LABEL, p.getName());
-      a.setAttr(Pin.ATTR_TYPE, p.getType() == Port.INPUT ? Pin.INPUT : Pin.OUTPUT);
-      a.setAttr(StdAttr.FACING, p.getType() == Port.INPUT ? Direction.EAST : Direction.WEST);
-      a.setAttr(StdAttr.WIDTH, p.getWidth());
-      InstanceComponent ic = (InstanceComponent)Pin.FACTORY.createComponent(Location.create(100, y), a);
-      pins.add(ic.getInstance());
-      y += 10;
-    }
-    AttributeOption style = instance.getAttributeValue(StdAttr.APPEARANCE);
-    appearance = VhdlAppearance.create(pins, getName(), style);
-
+    // System.out.println("updating ports for instance");
     Direction facing = instance.getAttributeValue(StdAttr.FACING);
     Map<Location, Instance> portLocs = appearance.getPortOffsets(facing);
 
@@ -373,15 +359,13 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
       i++;
       Location loc = portLoc.getKey();
       Instance pin = portLoc.getValue();
-      String type = Pin.FACTORY.isInputPin(pin) ? Port.INPUT
-          : Port.OUTPUT;
+      String type = Pin.FACTORY.isInputPin(pin) ? Port.INPUT : Port.OUTPUT;
       BitWidth width = pin.getAttributeValue(StdAttr.WIDTH);
       ports[i] = new Port(loc.getX(), loc.getY(), type, width);
 
       String label = pin.getAttributeValue(StdAttr.LABEL);
-      if (label != null && label.length() > 0) {
+      if (label != null && label.length() > 0)
         ports[i].setToolTip(StringUtil.constantGetter(label));
-      }
     }
     instance.setPorts(ports);
     instance.recomputeBounds();
@@ -393,6 +377,8 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
       this.setIconName("vhdl.gif");
     else
       this.setIconName("vhdl-invalid.gif");
+    // System.out.println("refreshing appearance");
+    appearance = new VhdlAppearance(content);
   }
 
   @Override
@@ -402,7 +388,10 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
   public void displayChanged(HdlModel source) { }
 
   @Override
-  public void appearanceChanged(HdlModel source) { }
+  public void appearanceChanged(HdlModel source) {
+    // System.out.println("appearance changed notice, refreshing");
+    appearance = new VhdlAppearance(content);
+  }
 
   private WeakHashMap<Component, Circuit> circuitsUsingThis = new WeakHashMap<>();
   public Collection<Circuit> getCircuitsUsingThis() {

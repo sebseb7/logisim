@@ -318,16 +318,14 @@ public class Project {
     // }
     Circuit oldCircuit = old == null ? null : old.getCircuit();
     if (oldCircuit != null) {
-      for (CircuitListener l : circuitListeners) {
+      for (CircuitListener l : circuitListeners)
         oldCircuit.removeCircuitWeakListener(null, l);
-      }
     }
 
     circuitState = null;
     hdlModel = hdl;
-    if (old != null) {
+    if (old != null)
       simulator.setCircuitState(null);
-    }
 
     Object oldActive = old;
     if (oldHdl != null)
@@ -646,6 +644,7 @@ public class Project {
   }
 
   public void setTool(Tool value) {
+    // System.out.println("set tool from " + tool + " to " + value + ", hdl="+hdlModel);
     if (tool == value || hdlModel != null)
       return;
     Tool old = tool;

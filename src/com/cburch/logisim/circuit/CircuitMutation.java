@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 
 import com.cburch.logisim.comp.Component;
@@ -43,27 +42,29 @@ import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.util.StringGetter;
-import com.cburch.logisim.std.hdl.VhdlEntity;
+import com.cburch.logisim.std.hdl.VhdlContent;
 
 public final class CircuitMutation extends CircuitTransaction {
-  private Circuit primary;
-  private List<CircuitChange> changes;
+  private Circuit primaryCircuit;
+  private VhdlContent primaryVhdl;
+  private ArrayList<CircuitChange> changes = new ArrayList<>();
 
-  CircuitMutation() {
-    this(null);
-  }
+  CircuitMutation() { }
 
   public CircuitMutation(Circuit circuit) {
-    this.primary = circuit;
-    this.changes = new ArrayList<CircuitChange>();
+    primaryCircuit = circuit;
+  }
+
+  public CircuitMutation(VhdlContent vhdl) {
+    primaryVhdl = vhdl;
   }
 
   public void add(Component comp) {
-    changes.add(CircuitChange.add(primary, comp));
+    changes.add(CircuitChange.add(primaryCircuit, comp));
   }
 
   public void addAll(Collection<? extends Component> comps) {
-    changes.add(CircuitChange.addAll(primary, new ArrayList<Component>(comps)));
+    changes.add(CircuitChange.addAll(primaryCircuit, new ArrayList<Component>(comps)));
   }
 
   void change(CircuitChange change) {
@@ -71,30 +72,37 @@ public final class CircuitMutation extends CircuitTransaction {
   }
 
   public void clear() {
-    changes.add(CircuitChange.clear(primary, null));
+    changes.add(CircuitChange.clear(primaryCircuit, null));
   }
 
   @Override
   protected Map<Circuit, Integer> getAccessedCircuits() {
     HashMap<Circuit, Integer> accessMap = new HashMap<>();
-    HashSet<Circuit> supercircsDone = new HashSet<Circuit>();
-    HashSet<VhdlEntity> vhdlDone = new HashSet<>();
+    HashSet<Object> supercircsDone = new HashSet<>();
+    // HashSet<VhdlEntity> vhdlDone = new HashSet<>();
     HashSet<ComponentFactory> siblingsDone = new HashSet<>();
     for (CircuitChange change : changes) {
       Circuit circ = change.getCircuit();
-      accessMap.put(circ, READ_WRITE);
+      VhdlContent vhdl = change.getVhdl();
+      // note: if circ is null, change converns VhdlContent, which doesn't have
+      // a lock yet.
+      if (circ != null)
+        accessMap.put(circ, READ_WRITE);
 
-      if (change.concernsSupercircuit()) {
-        boolean isFirstForCirc = supercircsDone.add(circ);
-        if (isFirstForCirc) {
-          for (Circuit supercirc : circ.getCircuitsUsingThis()) {
-            accessMap.put(supercirc, READ_WRITE);
-          }
-        }
+      if (vhdl != null &&
+          change.concernsSupercircuit() && supercircsDone.add(vhdl)) {
+        for (Circuit supercirc : vhdl.getEntityFactory().getCircuitsUsingThis())
+          accessMap.put(supercirc, READ_WRITE);
+      }
+      if (circ != null &&
+          change.concernsSupercircuit() && supercircsDone.add(circ)) {
+        for (Circuit supercirc : circ.getCircuitsUsingThis())
+          accessMap.put(supercirc, READ_WRITE);
       }
 
       if (change.concernsSiblingComponents()) {
-        ComponentFactory factory = change.getComponent().getFactory();
+        System.out.println("processing change that concerns siblings.. nvm");
+        /*ComponentFactory factory = change.getComponent().getFactory();
         boolean isFirstForSibling = siblingsDone.add(factory);
         if (isFirstForSibling) {
           if (factory instanceof SubcircuitFactory) {
@@ -114,7 +122,7 @@ public final class CircuitMutation extends CircuitTransaction {
               }
             }
           }
-        }
+        } */
       }
     }
     return accessMap;
@@ -125,23 +133,23 @@ public final class CircuitMutation extends CircuitTransaction {
   }
 
   public void remove(Component comp) {
-    changes.add(CircuitChange.remove(primary, comp));
+    changes.add(CircuitChange.remove(primaryCircuit, comp));
   }
 
   public void removeAll(Collection<? extends Component> comps) {
-    changes.add(CircuitChange.removeAll(primary, new ArrayList<Component>(
+    changes.add(CircuitChange.removeAll(primaryCircuit, new ArrayList<Component>(
             comps)));
   }
 
   public void replace(Component oldComp, Component newComp) {
     ReplacementMap repl = new ReplacementMap(oldComp, newComp);
-    changes.add(CircuitChange.replace(primary, repl));
+    changes.add(CircuitChange.replace(primaryCircuit, repl));
   }
 
   public void replace(ReplacementMap replacements) {
     if (!replacements.isEmpty()) {
       replacements.freeze();
-      changes.add(CircuitChange.replace(primary, replacements));
+      changes.add(CircuitChange.replace(primaryCircuit, replacements));
     }
   }
 
@@ -166,11 +174,15 @@ public final class CircuitMutation extends CircuitTransaction {
   }
 
   public void set(Component comp, Attribute<?> attr, Object value) {
-    changes.add(CircuitChange.set(primary, comp, attr, value));
+    changes.add(CircuitChange.set(primaryCircuit, comp, attr, value));
   }
 
   public void setForCircuit(Attribute<?> attr, Object value) {
-    changes.add(CircuitChange.setForCircuit(primary, attr, value));
+    changes.add(CircuitChange.setForCircuit(primaryCircuit, attr, value));
+  }
+
+  public void setForVhdl(Attribute<?> attr, Object value) {
+    changes.add(CircuitChange.setForVhdl(primaryVhdl, attr, value));
   }
 
   public Action toAction(StringGetter name) {

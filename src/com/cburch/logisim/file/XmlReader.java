@@ -57,6 +57,7 @@ import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.Library;
@@ -194,7 +195,11 @@ class XmlReader {
         return null;
       }
       String vhdl = elt.getTextContent();
-      return VhdlContent.parse(name, vhdl, file);
+      VhdlContent ret = VhdlContent.parse(name, vhdl, file);
+      String a = elt.getAttribute("appearance");
+      if (a != null && a.equalsIgnoreCase("classic"))
+        ret.getStaticAttributes().setAttr(StdAttr.APPEARANCE, StdAttr.APPEAR_CLASSIC);
+      return ret;
     }
 
     Library parseLibrary(Loader loader, Element elt) throws LoadCanceledByUser {

@@ -164,10 +164,7 @@ public class Popups {
       add(dup, S.get(dup), e -> SelectionActions.doDuplicate(proj, vhdl));
       addSeparator();
 
-      add(editCode, S.get(editCode), e -> {
-        proj.setCurrentHdlModel(vhdl);
-        proj.getFrame().setEditorView(Frame.EDIT_HDL);
-      });
+      add(editCode, S.get(editCode), e -> proj.setCurrentHdlModel(vhdl));
       // todo: vhdl custom appearance
       // add(editAppearance, S.get(editAppearance), e -> {
       //   proj.setCurrentHdlModel(vhdl);

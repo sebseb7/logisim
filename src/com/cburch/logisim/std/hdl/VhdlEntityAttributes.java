@@ -31,25 +31,28 @@
 package com.cburch.logisim.std.hdl;
 
 import java.awt.Font;
-import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import com.cburch.logisim.data.AbstractAttributeSet;
-import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeOption;
-import com.cburch.logisim.data.Direction;
-import com.cburch.logisim.data.AttributeSet;
-import com.cburch.logisim.data.AttributeSets;
-import com.cburch.logisim.data.AttributeListener;
-import com.cburch.logisim.data.AttributeEvent;
-import com.cburch.logisim.util.StringGetter;
-import com.cburch.logisim.util.StringUtil;
-import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.instance.Instance;
 import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
+import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.CircuitMutator;
+import com.cburch.logisim.circuit.CircuitTransaction;
+import com.cburch.logisim.data.AbstractAttributeSet;
+import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeEvent;
+import com.cburch.logisim.data.AttributeListener;
+import com.cburch.logisim.data.AttributeOption;
+import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.AttributeSets;
+import com.cburch.logisim.data.Direction;
+import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.util.StringGetter;
+import com.cburch.logisim.util.StringUtil;
 
 public class VhdlEntityAttributes extends AbstractAttributeSet {
 
@@ -105,34 +108,55 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
       return new VhdlGenericAttribute("vhdl_" + name, disp, Integer.MIN_VALUE, Integer.MAX_VALUE, g);
   }
 
-  private static List<Attribute<?>> static_attributes = Arrays.asList(
-      (Attribute<?>)VhdlEntity.NAME_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.APPEARANCE);
+  // private static List<Attribute<?>> static_attributes =
+  //     Arrays.asList((Attribute<?>)VhdlEntity.NAME_ATTR, StdAttr.APPEARANCE);
+  
+  // For each vhdl, one of these listens for certain changes to static
+  // attributes (name changes, and changes of appearance type).
+  private static class StaticListener implements AttributeListener {
+    private VhdlContent vhdl;
+
+    private StaticListener(VhdlContent v) { vhdl = v; }
+
+    public void attributeListChanged(AttributeEvent e) { }
+
+    public void attributeValueChanged(AttributeEvent e) {
+      if (e.getAttribute() == VhdlEntity.NAME_ATTR) {
+        // When the name attribute changes, fire HdlContent.nameChanged() ?
+        // Or when the name changes, fire HdlContent.contentSet() ?
+        // vhdl.fireContentSet();
+        vhdl.setName((String)e.getValue());
+      } else if (e.getAttribute() == StdAttr.APPEARANCE) {
+        // When the appearance attribute changes, update the appearance in the
+        // factory and recalculate the shape.
+        // vhdl.getEntityFactory()
+        // source.getAppearance().setDefaultAppearance(true);
+        // source.RecalcDefaultShape();
+        vhdl.setAppearance((AttributeOption)e.getValue());
+      }
+    }
+  }
 
   static AttributeSet createBaseAttrs(VhdlContent content) {
-    VhdlContent.Generic[] g = content.getGenerics();
-    List<Attribute<Integer>> a = content.getGenericAttributes();
-    Attribute<?>[] attrs = new Attribute<?>[5 + g.length];
-    Object[] value = new Object[5 + g.length];
+    // VhdlContent.Generic[] g = content.getGenerics();
+    // List<Attribute<Integer>> a = content.getGenericAttributes();
+    Attribute<?>[] attrs = new Attribute<?>[2/* + g.length*/];
+    Object[] value = new Object[2/* + g.length*/];
     attrs[0] = VhdlEntity.NAME_ATTR;
     value[0] = content.getName();
-    attrs[1] = StdAttr.LABEL;
-    value[1] = "";
-    attrs[2] = StdAttr.LABEL_FONT;
-    value[2] = StdAttr.DEFAULT_LABEL_FONT;
-    attrs[3] = StdAttr.FACING;
-    value[3] = Direction.EAST;
-    attrs[4] = StdAttr.APPEARANCE;
-    value[4] = StdAttr.APPEAR_FPGA;
-    for (int i = 0; i < g.length; i++) {
-      attrs[5+i] = a.get(i);
-      value[5+i] = new Integer(g[i].getDefaultValue());
-    }
+    attrs[1] = StdAttr.APPEARANCE;
+    value[1] = StdAttr.APPEAR_FPGA;
+    // for (int i = 0; i < g.length; i++) {
+    //   attrs[2+i] = a.get(i);
+    //   value[2+i] = new Integer(g[i].getDefaultValue());
+    // }
+    // FIXME: mark name as not-to-save?
     AttributeSet ret = AttributeSets.fixedSet(attrs, value);
-    // ret.addAttributeListener(new StaticListener(content));
+    ret.addAttributeWeakListener(content, new StaticListener(content));
     return ret;
   }
 
-  private class MyListener implements AttributeListener {
+  /* private class MyListener implements AttributeListener {
     public void attributeListChanged(AttributeEvent e) { }
     public void attributeValueChanged(AttributeEvent e) {
       if (e.getAttribute() == VhdlEntity.NAME_ATTR)
@@ -140,7 +164,7 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
       else if (e.getAttribute() == StdAttr.APPEARANCE)
         setAttr(StdAttr.APPEARANCE, (AttributeOption)e.getValue());
     }
-  }
+  } */
 
   private VhdlContent content;
   private Instance vhdlInstance;
@@ -169,7 +193,7 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
 
   void setInstance(Instance value) {
     vhdlInstance = value;
-    if (vhdlInstance != null && listener != null) {
+    if (vhdlInstance != null && listener == null) {
       listener = new VhdlEntityListener(this);
       content.addHdlModelWeakListener(null, listener);
     }
@@ -177,25 +201,22 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
 
   void updateGenerics() {
     List<Attribute<Integer>> genericAttrs = content.getGenericAttributes();
-    instanceAttrs = new ArrayList<Attribute<?>>(5 + genericAttrs.size());
-    instanceAttrs.add(VhdlEntity.NAME_ATTR);
-    instanceAttrs.add(StdAttr.LABEL);
-    instanceAttrs.add(StdAttr.LABEL_FONT);
+    instanceAttrs = new ArrayList<Attribute<?>>(3 + genericAttrs.size());
     instanceAttrs.add(StdAttr.FACING);
-    instanceAttrs.add(StdAttr.APPEARANCE);
-    for (Attribute<Integer> a : genericAttrs) {
+    instanceAttrs.add(StdAttr.LABEL);
+    // todo: StdAttr.LABEL_LOC
+    instanceAttrs.add(StdAttr.LABEL_FONT);
+    for (Attribute<Integer> a : genericAttrs)
       instanceAttrs.add(a);
-    }
     if (genericValues == null)
       genericValues = new HashMap<Attribute<Integer>, Integer>();
-    ArrayList<Attribute<Integer>> toRemove = new ArrayList<Attribute<Integer>>();
+    ArrayList<Attribute<Integer>> toRemove = new ArrayList<>();
     for (Attribute<Integer> a : genericValues.keySet()) {
       if (!genericAttrs.contains(a))
         toRemove.add(a);
     }
-    for (Attribute<Integer> a : toRemove) {
+    for (Attribute<Integer> a : toRemove)
       genericValues.remove(a);
-    }
     fireAttributeListChanged();
   }
 
@@ -203,7 +224,7 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
   protected void copyInto(AbstractAttributeSet dest) {
     VhdlEntityAttributes attr = (VhdlEntityAttributes) dest;
     attr.content = content; // .clone();
-    // attr.label = unchanged;
+    // note: attr.label is left unchanged
     attr.labelFont = labelFont;
     attr.facing = facing;
     attr.instanceAttrs = instanceAttrs;
@@ -220,14 +241,14 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
 
   @Override
   public <V> V getValue(Attribute<V> attr) {
-    if (attr == VhdlEntity.NAME_ATTR)
-      return (V) content.getName();
+    // if (attr == VhdlEntity.NAME_ATTR)
+    //   return (V) content.getName(); // never happens
+    // if (attr == StdAttr.APPEARANCE)
+    //   return (V) content.getAppearance(); // never happens
     if (attr == StdAttr.LABEL)
       return (V) label;
     if (attr == StdAttr.LABEL_FONT)
       return (V) labelFont;
-    if (attr == StdAttr.APPEARANCE)
-      return (V) content.getAppearance();
     if (attr == StdAttr.FACING)
       return (V) facing;
     if (genericValues != null)
@@ -237,40 +258,78 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
 
   @Override
   public <V> void updateAttr(Attribute<V> attr, V value) {
-    if (attr == VhdlEntity.NAME_ATTR)
-      content.setName((String) value);
-    else if (attr == StdAttr.LABEL)
+    // if (attr == VhdlEntity.NAME_ATTR)
+    //   content.setName((String) value); // never happens
+    // else if (attr == StdAttr.APPEARANCE)
+    //  content.setAppearance((AttributeOption)value); // never happens
+    if (attr == StdAttr.LABEL)
       label = (String) value;
     else if (attr == StdAttr.LABEL_FONT)
       labelFont = (Font) value;
     else if (attr == StdAttr.FACING)
       facing = (Direction) value;
-    else if (attr == StdAttr.APPEARANCE)
-      content.setAppearance((AttributeOption)value);
     else if (genericValues != null)
       genericValues.put((Attribute<Integer>)attr, (Integer)value);
   }
 
+  // For each vhdl instance, one of these listens to the vhdl content to be
+  // notified of changes to appearance, name, etc.
   static class VhdlEntityListener implements HdlModelListener {
     VhdlEntityAttributes attrs;
-    VhdlEntityListener(VhdlEntityAttributes attrs) {
-      this.attrs = attrs;
-    }
+    VhdlEntityListener(VhdlEntityAttributes a) { attrs = a; }
+    
     @Override
     public void contentSet(HdlModel source) {
-      attrs.updateGenerics();
-      attrs.vhdlInstance.fireInvalidated();
-      attrs.vhdlInstance.recomputeBounds();
-      attrs.fireAttributeValueChanged(VhdlEntity.NAME_ATTR, ((VhdlContent)source).getName());
+      CircuitTransaction xn = new VhdlUpdatedTransaction(attrs);
+      xn.execute();
+      // attrs.updateGenerics();
+      // // System.out.println("updating ports...");
+      // ((VhdlEntity)attrs.vhdlInstance.getFactory()).updatePorts(attrs.vhdlInstance);
+      // attrs.vhdlInstance.fireInvalidated();
+      // // attrs.vhdlInstance.recomputeBounds(); // also recompute ports
+      // // attrs.fireAttributeValueChanged(VhdlEntity.NAME_ATTR, ((VhdlContent)source).getName());
     }
+
+    private static class VhdlUpdatedTransaction extends CircuitTransaction {
+      VhdlEntityAttributes attrs;
+      Instance vhdlInstance;
+      VhdlEntity vhdlEntity;
+      VhdlUpdatedTransaction(VhdlEntityAttributes a) {
+        attrs = a;
+        vhdlInstance = attrs.vhdlInstance;
+        vhdlEntity = (VhdlEntity)vhdlInstance.getFactory();
+      }
+      @Override
+      protected Map<Circuit, Integer> getAccessedCircuits() {
+        // note: this is overkill by far... this transaction only touches one
+        // circuit, but sadly we don't know which one.
+        Map<Circuit, Integer> accessMap = new HashMap<Circuit, Integer>();
+        for (Circuit supercirc : vhdlEntity.getCircuitsUsingThis()) {
+          accessMap.put(supercirc, READ_WRITE);
+        }
+        return accessMap;
+      }
+      @Override
+      protected void run(CircuitMutator mutator) {
+        attrs.updateGenerics();
+        vhdlEntity.updatePorts(attrs.vhdlInstance);
+        vhdlInstance.fireInvalidated();
+      }
+    }
+    
     @Override
     public void aboutToSave(HdlModel source) { }
+    
     @Override
     public void displayChanged(HdlModel source) { }
+    
     @Override
     public void appearanceChanged(HdlModel source) {
-      attrs.vhdlInstance.recomputeBounds();
-      attrs.fireAttributeValueChanged(StdAttr.APPEARANCE, ((VhdlContent)source).getAppearance());
+      // attrs.vhdlInstance.recomputeBounds(); // also recompute ports...
+      // System.out.println("updating ports 2...");
+      ((VhdlEntity)attrs.vhdlInstance.getFactory()).updatePorts(attrs.vhdlInstance);
+      attrs.vhdlInstance.fireInvalidated();
+      // attrs.fireAttributeValueChanged(StdAttr.APPEARANCE, ((VhdlContent)source).getAppearance());
     }
   }
 

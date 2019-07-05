@@ -276,6 +276,7 @@ public class VhdlContent extends HdlContent {
   }
 
   public boolean setName(String name) {
+    // System.out.println("vhdl set name " + name);
     if (name == null)
       return false;
     if (labelVHDLInvalidNotify(name, logiFile))
@@ -325,6 +326,7 @@ public class VhdlContent extends HdlContent {
 
   @Override
   public boolean setContent(String vhdl) {
+    // System.out.println("vhdl set content..." + vhdl.length());
     if (valid && content.toString().equals(vhdl))
       return true;
     content = new StringBuffer(vhdl);
@@ -366,6 +368,8 @@ public class VhdlContent extends HdlContent {
       ports.clear();
       ports.addAll(parser.getInputs());
       ports.addAll(parser.getOutputs());
+      // System.out.println("did adding ports..." + ports.size());
+      // Thread.dumpStack();
 
       // If name and type is unchanged, keep old generic and attribute.
       Generic[] oldGenerics = generics;

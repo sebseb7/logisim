@@ -76,6 +76,7 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
@@ -350,6 +351,8 @@ public class XmlWriter {
     vhdl.aboutToSave();
     Element ret = doc.createElement("vhdl");
     ret.setAttribute("name", vhdl.getName());
+    if (vhdl.getAppearance() == StdAttr.APPEAR_CLASSIC)
+      ret.setAttribute("appearance", "classic");
     ret.setTextContent(vhdl.getContent());
     return ret;
   }
