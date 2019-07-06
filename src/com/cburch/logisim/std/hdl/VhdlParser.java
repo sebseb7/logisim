@@ -211,40 +211,6 @@ public class VhdlParser extends AbstractParser {
     }
   }
 
-  public static class GenericDescription {
-
-    protected String name;
-    protected String type;
-    protected int dval;
-
-    public GenericDescription(String name, String type, int dval) {
-      this.name = name;
-      this.type = type;
-      this.dval = dval;
-    }
-
-    public GenericDescription(String name, String type) {
-      this.name = name;
-      this.type = type;
-      if (type.equals("positive"))
-        dval = 1;
-      else
-        dval = 0;
-    }
-
-    public String getName() {
-      return this.name;
-    }
-
-    public String getType() {
-      return this.type;
-    }
-
-    public int getDefaultValue() {
-      return this.dval;
-    }
-  }
-
   // All regex patterns used in this file follow the same conventions, so we use
   // shortcuts: space means any amount of whitespace, two spaces means any
   // non-empty amount of whitespace, dot matches anything including newlines,
@@ -277,7 +243,7 @@ public class VhdlParser extends AbstractParser {
 
   private ArrayList<PortDescription> inputs = new ArrayList<>();
   private ArrayList<PortDescription> outputs = new ArrayList<>();
-  private ArrayList<GenericDescription> generics = new ArrayList<>();
+  private ArrayList<HdlContent.Generic> generics = new ArrayList<>();
   private String title;
   private String source;
   private String name;
@@ -316,7 +282,7 @@ public class VhdlParser extends AbstractParser {
     return outputs;
   }
 
-  public List<GenericDescription> getGenerics() {
+  public List<HdlContent.Generic> getGenerics() {
     return generics;
   }
 
@@ -438,26 +404,23 @@ public class VhdlParser extends AbstractParser {
           S.get("genericTypeException") + ": " + type);
     }
     type = type.toLowerCase();
-    int dval = 0;
-    if (type.equals("positive")) {
-      dval = 1;
-    }
+    String dval = type.equals("positive") ? "1" : "0";
     if (input.next(DVALUE)) {
       String s = input.match().group(1);
-      try {
-        dval = Integer.decode(s);
-      } catch (NumberFormatException e) {
-        throw new IllegalVhdlContentException(input.loc(1),
-            S.get("genericValueException") + ": " + s);
-      }
-      if (type.equals("natural") && dval < 0 || type.equals("positive") && dval < 1)
-        throw new IllegalVhdlContentException(input.loc(2),
-            S.get("genericValueException") + ": " + dval);
+      // try {
+      //   dval = Integer.decode(s);
+      // } catch (NumberFormatException e) {
+      //   throw new IllegalVhdlContentException(input.loc(1),
+      //       S.get("genericValueException") + ": " + s);
+      // }
+      // if (type.equals("natural") && dval < 0 || type.equals("positive") && dval < 1)
+      //   throw new IllegalVhdlContentException(input.loc(2),
+      //       S.get("genericValueException") + ": " + dval);
+      dval = s;
     }
 
-    for (String name : names.split("\\s*,\\s*")) {
-      generics.add(new GenericDescription(name, type, dval));
-    }
+    for (String name : names.split("\\s*,\\s*"))
+      generics.add(new HdlContent.Generic(name, type, dval));
   }
 
   private boolean parseGenerics(Scanner input) throws IllegalVhdlContentException {

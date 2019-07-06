@@ -56,24 +56,6 @@ import com.bfh.logisim.netlist.CorrectLabel;
 
 public class VhdlContent extends HdlContent {
 
-  public static class Generic extends VhdlParser.GenericDescription {
-    // private int val;
-    public Generic(VhdlParser.GenericDescription g) {
-      super(g.name, g.type, g.dval);
-      //val = g.dval;
-    }
-    public Generic(Generic g) {
-      super(g.name, g.type, g.dval);
-      // val = g.val;
-    }
-    /* public int getValue() {
-       return this.val;
-    }
-    public void setValue(int i) {
-    this.val = i;;
-    } */
-  }
-
   public static VhdlContent create(String name, LogisimFile file) {
     VhdlContent content = new VhdlContent(name, file);
     String s = TEMPLATE;
@@ -121,8 +103,6 @@ public class VhdlContent extends HdlContent {
   private static final String RESOURCE = "/resources/logisim/hdl/vhdl.templ";
 
   private static final String TEMPLATE = loadTemplate();
-
-  private static final Port EMPTY[] = new Port[0];
 
   protected AttributeSet staticAttrs;
   protected StringBuffer content;
@@ -188,18 +168,14 @@ public class VhdlContent extends HdlContent {
   }
 
   public Generic[] getGenerics() {
-    if (generics == null) {
-      return new Generic[0];
-    }
-    return generics;
+    return generics == null ? new Generic[0] : generics;
   }
 
   public List<Attribute<Integer>> getGenericAttributes() {
     if (genericAttrs == null) {
       genericAttrs = new ArrayList<Attribute<Integer>>();
-      for (Generic g : getGenerics()) {
+      for (Generic g : getGenerics())
         genericAttrs.add(VhdlEntityAttributes.forGeneric(g));
-      }
     }
     return genericAttrs;
   }
@@ -378,7 +354,7 @@ public class VhdlContent extends HdlContent {
       generics = new Generic[parser.getGenerics().size()];
       genericAttrs = new ArrayList<Attribute<Integer>>();
       int i = 0;
-      for (VhdlParser.GenericDescription g : parser.getGenerics()) {
+      for (Generic g : parser.getGenerics()) {
         boolean found = false;
         if (oldGenerics != null) {
           for (int j = 0; j < oldGenerics.length; j++) {
@@ -393,7 +369,7 @@ public class VhdlContent extends HdlContent {
           }
         }
         if (!found) {
-          generics[i] = new Generic(g);
+          generics[i] = g;
           genericAttrs.add(VhdlEntityAttributes.forGeneric(generics[i]));
         }
         i++;

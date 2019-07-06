@@ -73,7 +73,7 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
 
     @Override
     public java.awt.Component getCellEditor(Integer value) {
-      return super.getCellEditor(value != null ? value : g.getDefaultValue());
+      return super.getCellEditor(value != null ? value : g.getDefaultIntValue());
     }
 
     @Override

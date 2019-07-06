@@ -43,7 +43,7 @@ public class VhdlHDLGenerator extends HDLGenerator {
     VhdlContent content = content();
     for (VhdlContent.Generic g : content.getGenerics()) {
       int v = _attrs.getValue(VhdlEntityAttributes.forGeneric(g));
-      parameters.add(new ParameterInfo(g.getName(), g.getType(), v, g.getDefaultValue()));
+      parameters.add(new ParameterInfo(g.getName(), g.getType(), v, g.getDefaultIntValue()));
     }
     int i = 0;
     for (VhdlParser.PortDescription p : content.getPorts()) {

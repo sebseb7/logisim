@@ -162,5 +162,38 @@ public abstract class HdlContent implements HdlModel /*, Cloneable */ {
 
   @Override
   public abstract boolean setContent(String content); // does not necessarily validate
+  
+  public static class Generic {
+
+    public final String name;
+    public final String type; // may be null
+    public final String dval; // may be null
+
+    public Generic(String name, String type, String dval) {
+      this.name = name;
+      this.type = type;
+      this.dval = dval;
+    }
+
+    // public Generic(String name, String type) {
+    //   this.name = name;
+    //   this.type = type;
+    //   this.dval = (type != null && type.equals("positive")) ? "1" : "0";
+    // }
+
+    public String getName() { return name; }
+    public String getType() { return type; }
+    public String getDefaultValue() { return dval; }
+
+    public int getDefaultIntValue() {
+      try {
+        if (dval != null)
+          return Integer.decode(dval);
+      } catch (NumberFormatException e) { }
+      if (type != null && type.equalsIgnoreCase("positive"))
+        return 1;
+      return 0;
+    }
+  }
 
 }
