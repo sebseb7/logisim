@@ -29,6 +29,7 @@ java-runtime/
 .DS_Store
 *.app
 *.dmg
+*.pkg
 
 # Windows files
 *.exe
