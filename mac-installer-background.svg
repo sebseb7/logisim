@@ -9,16 +9,16 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="1274"
-   height="1274"
-   viewBox="0 0 1274 1273.9999"
+   width="220"
+   height="220"
+   viewBox="0 0 220 219.99999"
    id="svg4360"
    version="1.1"
    inkscape:version="0.91 r"
    sodipodi:docname="mac-installer-background.svg"
    inkscape:export-filename="/home/kwalsh/logisim-evolution/mac-installer-background.png"
-   inkscape:export-xdpi="12.857142"
-   inkscape:export-ydpi="12.857142">
+   inkscape:export-xdpi="90"
+   inkscape:export-ydpi="90">
   <defs
      id="defs4362" />
   <sodipodi:namedview
@@ -32,7 +32,7 @@
      inkscape:cx="450.11356"
      inkscape:cy="537.7763"
      inkscape:document-units="px"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="layer2"
      showgrid="false"
      inkscape:window-width="1338"
      inkscape:window-height="912"
@@ -61,77 +61,81 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(229.14957,97.063086)">
-    <path
-       style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.67163271px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 81.116767,252.66952 C 211.16623,518.10136 167.08224,706.40413 87.17769,885.02503 453.78121,871.17198 586.06884,715.40402 703.37075,573.89805 600.46313,459.8084 464.69441,279.15264 81.116767,252.66952 Z"
-       id="path4999"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cccc" />
-  </g>
+     transform="translate(229.14957,-956.93691)" />
   <g
      inkscape:groupmode="layer"
      id="layer2"
      inkscape:label="Layer 2"
-     transform="translate(229.14957,97.063086)">
+     transform="translate(229.14957,-956.93691)">
     <g
-       id="g4964"
-       transform="matrix(1.488909,0,0,1.488909,-173.13002,-128.03472)">
-      <rect
-         ry="0"
-         rx="0"
-         y="454.85696"
-         x="583.3631"
-         height="27.779196"
-         width="87.378197"
-         id="rect4927"
-         style="fill:#01d200;fill-opacity:1" />
-      <rect
-         ry="0"
-         rx="0"
-         y="594.51056"
-         x="112.88454"
-         height="27.779196"
-         width="87.378197"
-         id="rect4927-8"
-         style="fill:#01d200;fill-opacity:1" />
-      <rect
-         ry="0"
-         rx="0"
-         y="316.46997"
-         x="112.88454"
-         height="27.779196"
-         width="87.378197"
-         id="rect4927-8-9"
-         style="fill:#006400;fill-opacity:1" />
+       id="g3347"
+       transform="matrix(0.13186067,0,0,0.13186067,-175.65137,992.00736)">
       <path
-         sodipodi:nodetypes="sccccsscccsssssssssssssss"
+         sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
-         id="path4925"
-         d="m 165.27452,681.16827 c 1.74221,-5.67866 7.70708,-19.78098 7.70708,-19.78098 l 24.71196,-66.43141 c 24.80659,-80.31438 24.88778,-168.75789 0.22725,-247.56117 -15.79383,-43.90672 -20.8619,-53.98978 -35.69694,-82.09635 -5.80828,-9.39799 -9.74211,-17.82831 -8.74186,-18.73406 2.75247,-2.4924 108.22614,10.54642 136.69302,16.8982 101.27156,22.59663 157.93443,56.36554 253.39173,145.377 21.8269,23.35149 43.62195,44.31816 52.78472,61.84455 -9.40865,16.09782 -22.10419,29.27558 -36.00407,44.9821 -23.89988,24.27795 -70.70643,71.25411 -109.78929,96.70191 -57.2537,37.27932 -147.64254,64.48513 -249.39392,75.06422 -38.03197,3.95422 -38.97419,3.78977 -35.88968,-6.26401 z m 72.44936,-15.28442 c 57.2062,-7.62614 135.16243,-29.88453 174.52537,-49.83124 12.61587,-6.39294 37.51623,-22.52653 55.33415,-35.85242 40.636,-30.39137 109.10514,-102.41694 109.10514,-110.69701 0,-10.7613 -86.43159,-93.40828 -129.9924,-122.39265 -47.61818,-31.68404 -72.59569,-43.27181 -124.92072,-57.95424 -37.32802,-10.47426 -134.24719,-26.85657 -137.8097,-23.29407 -1.06003,1.06004 1.57333,8.69687 5.85191,16.97074 50.73585,98.11231 56.74875,223.91281 16.23744,339.71582 -6.40878,18.31974 -13.48209,37.49516 -15.71846,42.6121 -3.56385,8.15425 -2.27659,8.9586 10.42105,6.51158 7.96794,-1.53557 24.60274,-4.14044 36.96622,-5.78861 z"
-         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-opacity:1" />
-    </g>
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:160px;line-height:125%;font-family:'Times New Roman';-inkscape-font-specification:'Times New Roman, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="-193.03749"
-       y="159.63092"
-       id="text3344"
-       sodipodi:linespacing="125%"><tspan
-         sodipodi:role="line"
-         x="-193.03749"
+         id="path4999"
+         d="M 81.116767,252.66952 C 211.16623,518.10136 167.08224,706.40413 87.17769,885.02503 453.78121,871.17198 586.06884,715.40402 703.37075,573.89805 600.46313,459.8084 464.69441,279.15264 81.116767,252.66952 Z"
+         style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.67163271px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         transform="translate(0,4.741211e-6)" />
+      <g
+         transform="matrix(1.488909,0,0,1.488909,-173.13002,-128.03472)"
+         id="g4964">
+        <rect
+           style="fill:#01d200;fill-opacity:1"
+           id="rect4927"
+           width="87.378197"
+           height="27.779196"
+           x="583.3631"
+           y="454.85696"
+           rx="0"
+           ry="0" />
+        <rect
+           style="fill:#01d200;fill-opacity:1"
+           id="rect4927-8"
+           width="87.378197"
+           height="27.779196"
+           x="112.88454"
+           y="594.51056"
+           rx="0"
+           ry="0" />
+        <rect
+           style="fill:#006400;fill-opacity:1"
+           id="rect4927-8-9"
+           width="87.378197"
+           height="27.779196"
+           x="112.88454"
+           y="316.46997"
+           rx="0"
+           ry="0" />
+        <path
+           style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:7.58376217;stroke-opacity:1"
+           d="m 165.27452,681.16827 c 1.74221,-5.67866 7.70708,-19.78098 7.70708,-19.78098 l 24.71196,-66.43141 c 24.80659,-80.31438 24.88778,-168.75789 0.22725,-247.56117 -15.79383,-43.90672 -20.8619,-53.98978 -35.69694,-82.09635 -5.80828,-9.39799 -9.74211,-17.82831 -8.74186,-18.73406 2.75247,-2.4924 108.22614,10.54642 136.69302,16.8982 101.27156,22.59663 157.93443,56.36554 253.39173,145.377 21.8269,23.35149 43.62195,44.31816 52.78472,61.84455 -9.40865,16.09782 -22.10419,29.27558 -36.00407,44.9821 -23.89988,24.27795 -70.70643,71.25411 -109.78929,96.70191 -57.2537,37.27932 -147.64254,64.48513 -249.39392,75.06422 -38.03197,3.95422 -38.97419,3.78977 -35.88968,-6.26401 z m 72.44936,-15.28442 c 57.2062,-7.62614 135.16243,-29.88453 174.52537,-49.83124 12.61587,-6.39294 37.51623,-22.52653 55.33415,-35.85242 40.636,-30.39137 109.10514,-102.41694 109.10514,-110.69701 0,-10.7613 -86.43159,-93.40828 -129.9924,-122.39265 -47.61818,-31.68404 -72.59569,-43.27181 -124.92072,-57.95424 -37.32802,-10.47426 -134.24719,-26.85657 -137.8097,-23.29407 -1.06003,1.06004 1.57333,8.69687 5.85191,16.97074 50.73585,98.11231 56.74875,223.91281 16.23744,339.71582 -6.40878,18.31974 -13.48209,37.49516 -15.71846,42.6121 -3.56385,8.15425 -2.27659,8.9586 10.42105,6.51158 7.96794,-1.53557 24.60274,-4.14044 36.96622,-5.78861 z"
+           id="path4925"
+           inkscape:connector-curvature="0"
+           sodipodi:nodetypes="sccccsscccsssssssssssssss" />
+      </g>
+      <text
+         sodipodi:linespacing="125%"
+         id="text3344"
          y="159.63092"
-         id="tspan3352">Logisim Evolution</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:160px;line-height:125%;font-family:'Times New Roman';-inkscape-font-specification:'Times New Roman, Italic';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#800080;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="-208.58437"
-       y="1054.6261"
-       id="text3356"
-       sodipodi:linespacing="125%"><tspan
-         sodipodi:role="line"
-         id="tspan3358"
+         x="-193.03749"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:160px;line-height:125%;font-family:'Times New Roman';-inkscape-font-specification:'Times New Roman, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         xml:space="preserve"><tspan
+           id="tspan3352"
+           y="159.63092"
+           x="-193.03749"
+           sodipodi:role="line">Logisim Evolution</tspan></text>
+      <text
+         sodipodi:linespacing="125%"
+         id="text3356"
+         y="1054.6261"
          x="-208.58437"
-         y="1054.6261">Holy Cross Edition</tspan></text>
+         style="font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:160px;line-height:125%;font-family:'Times New Roman';-inkscape-font-specification:'Times New Roman, Italic';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#800080;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         xml:space="preserve"><tspan
+           y="1054.6261"
+           x="-208.58437"
+           id="tspan3358"
+           sodipodi:role="line">Holy Cross Edition</tspan></text>
+    </g>
   </g>
 </svg>
