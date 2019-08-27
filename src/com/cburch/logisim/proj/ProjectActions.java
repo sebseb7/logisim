@@ -286,9 +286,8 @@ public class ProjectActions {
     }
 
     Frame frame = proj.getFrame();
-    if (frame == null) {
-      frame = createFrame(baseProject == null ? baseProject.getFrame() : null, proj);
-    }
+    if (frame == null)
+      frame = createFrame(baseProject != null ? baseProject.getFrame() : null, proj);
     frame.setVisible(true);
     frame.toFront();
     frame.getCanvas().requestFocus();
@@ -315,15 +314,17 @@ public class ProjectActions {
     return new Project(new LogisimFile.FileWithSimulations(file));
   }
 
-  public static void doQuit() {
+  public static boolean doQuit() {
     Frame top = Projects.getTopFrame();
-    top.savePreferences();
+    if (top != null)
+      top.savePreferences();
 
     for (Project proj : new ArrayList<Project>(Projects.getOpenProjects())) {
       if (!proj.confirmClose(S.get("confirmQuitTitle")))
-        return;
+        return false;
     }
     System.exit(0);
+    return true; // never reached
   }
 
   public static boolean doSave(Project proj) {

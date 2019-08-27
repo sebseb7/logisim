@@ -39,6 +39,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.awt.Desktop;
+import java.awt.desktop.QuitEvent;
+import java.awt.desktop.QuitHandler;
+import java.awt.desktop.QuitResponse;
 import java.awt.desktop.QuitStrategy;
 import java.awt.GraphicsEnvironment;
 
@@ -358,19 +361,30 @@ public class Startup {
       }
       desktop = Desktop.getDesktop();
 
-      if (desktop.isSupported(Desktop.Action.APP_SUDDEN_TERMINATION))
-        desktop.disableSuddenTermination();
-      else
-        System.out.println("Note [1]: no support to prevent sudden termination");
-
-      if (desktop.isSupported(Desktop.Action.APP_QUIT_STRATEGY)) {
-        desktop.setQuitStrategy(QuitStrategy.CLOSE_ALL_WINDOWS);
-        Main.QuitMenuAutomaticallyPresent = true;
+      if (desktop.isSupported(Desktop.Action.APP_SUDDEN_TERMINATION)) {
+        Main.SupportsSuddenTerminationHandling = true;
+        desktop.enableSuddenTermination();
       } else {
-        System.out.println("Note [2]: no support to control quit strategy");
+        System.out.println("Note [1]: no support to prevent sudden termination");
       }
 
-      // setQuitHandler(QuitHandler quitHandler); ... ProjectActions.doQuit()
+      if (desktop.isSupported(Desktop.Action.APP_QUIT_STRATEGY)
+          && desktop.isSupported(Desktop.Action.APP_QUIT_HANDLER)) {
+        Main.QuitMenuAutomaticallyPresent = true;
+        // desktop.setQuitStrategy(QuitStrategy.CLOSE_ALL_WINDOWS);
+        desktop.setQuitStrategy(QuitStrategy.NORMAL_EXIT);
+        desktop.setQuitHandler(new QuitHandler() {
+          public void handleQuitRequestWith(QuitEvent e, QuitResponse response) {
+            boolean ok = ProjectActions.doQuit();
+            if (ok)
+              response.performQuit(); // never reached: doQuit calls System.exit() on success.
+            else
+              response.cancelQuit();
+          }
+        });
+      } else {
+        System.out.println("Note [2]: no support to control quit strategy and handler");
+      }
 
       if (desktop.isSupported(Desktop.Action.APP_OPEN_FILE))
         desktop.setOpenFileHandler(e -> { 

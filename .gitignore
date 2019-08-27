@@ -30,6 +30,7 @@ java-runtime/
 *.app
 *.dmg
 *.pkg
+java-runtime-mac
 
 # Windows files
 *.exe

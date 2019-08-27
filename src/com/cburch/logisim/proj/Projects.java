@@ -99,8 +99,15 @@ public class Projects {
       if (frame == proj.getFrame()) {
         projectRemoved(proj, frame, this);
       }
-      if (openProjects.isEmpty() && !Main.HasWindowlessMenubar) {
-        ProjectActions.doQuit();
+      if (openProjects.isEmpty()) {
+        if (!Main.HasWindowlessMenubar) {
+          ProjectActions.doQuit();
+        } else {
+          Frame top = getTopFrame();
+          if (top != null)
+            top.savePreferences();
+          Main.setSuddenTerminationAllowed(true);
+        }
       }
     }
 
@@ -118,6 +125,8 @@ public class Projects {
       if (frame == proj.getFrame() && !openProjects.contains(proj)) {
         openProjects.add(proj);
         propertyChangeProducer.firePropertyChange(projectListProperty, null, null);
+        if (proj.isFileDirty())
+          Main.setSuddenTerminationAllowed(false);
       }
     }
   }
@@ -180,6 +189,24 @@ public class Projects {
     openProjects.remove(proj);
     proj.getSimulator().shutDown();
     propertyChangeProducer.firePropertyChange(projectListProperty, null, null);
+    projectCleaned();
+  }
+
+  public static void projectDirtied() {
+    Main.setSuddenTerminationAllowed(false);
+  }
+
+  public static void projectCleaned() {
+    for (Project p : openProjects) {
+      if (p.isFileDirty()) {
+        Main.setSuddenTerminationAllowed(false);
+        return;
+      }
+    }
+    Frame top = getTopFrame();
+    if (top != null)
+      top.savePreferences();
+    Main.setSuddenTerminationAllowed(true);
   }
 
   static void windowCreated(Project proj, Frame oldFrame, Frame frame) {
@@ -219,6 +246,8 @@ public class Projects {
     if (frame.isVisible() && !openProjects.contains(proj)) {
       openProjects.add(proj);
       propertyChangeProducer.firePropertyChange(projectListProperty, null, null);
+      if (proj.isFileDirty())
+        Main.setSuddenTerminationAllowed(false);
     }
     frame.addWindowListener(myListener);
   }

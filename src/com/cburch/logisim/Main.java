@@ -33,6 +33,7 @@ package com.cburch.logisim;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.awt.Desktop;
 
 import javax.swing.JOptionPane;
 
@@ -67,8 +68,25 @@ public class Main {
   public static boolean QuitMenuAutomaticallyPresent = false;
   public static boolean HasWindowlessMenubar = false;
 
+  public static boolean SupportsSuddenTerminationHandling = false;
+  private static boolean TerminationAllowed = true;
+  private static Object TerminationLock = new Object();
+  public static void setSuddenTerminationAllowed(boolean allow) {
+    if (!SupportsSuddenTerminationHandling)
+      return;
+    synchronized (TerminationLock) {
+      if (TerminationAllowed != allow) {
+        Desktop desktop = Desktop.getDesktop();
+        if (allow)
+          desktop.enableSuddenTermination();
+        else
+          desktop.disableSuddenTermination();
+        TerminationAllowed = allow;
+      }
+    }
+  }
+
   public static final LogisimVersion VERSION = LogisimVersion.get(4, 0, 0, "HC"); // candidate
   public static final String VERSION_NAME = VERSION.toString();
   public static final int COPYRIGHT_YEAR = 2018;
-
 }

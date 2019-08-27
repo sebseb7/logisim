@@ -582,6 +582,10 @@ public class LogisimFile extends Library implements LibraryEventSource {
       dirty = value;
       fireEvent(LibraryEvent.DIRTY_STATE, value ? Boolean.TRUE
           : Boolean.FALSE);
+      if (dirty)
+        Projects.projectDirtied();
+      else
+        Projects.projectCleaned();
     }
   }
 
