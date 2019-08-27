@@ -210,38 +210,14 @@ public class Projects {
   }
 
   static void windowCreated(Project proj, Frame oldFrame, Frame frame) {
-    if (oldFrame != null) {
+    if (oldFrame != null)
       projectRemoved(proj, oldFrame, myListener);
-    }
 
-    if (frame == null) {
+    if (frame == null)
       return;
-    }
 
-    // locate the window
-    Point lowest = null;
-    for (Project p : openProjects) {
-      Frame f = p.getFrame();
-      if (f == null) {
-        continue;
-      }
-      Point loc = p.getFrame().getLocation();
-      if (lowest == null || loc.y > lowest.y) {
-        lowest = loc;
-      }
-    }
-    if (lowest != null) {
-      Dimension sz = frame.getToolkit().getScreenSize();
-      int x = Math.min(lowest.x + 20, sz.width - 200);
-      int y = Math.min(lowest.y + 20, sz.height - 200);
-      if (x < 0) {
-        x = 0;
-      }
-      if (y < 0) {
-        y = 0;
-      }
-      frame.setLocation(x, y);
-    }
+    frame.setLocationByPlatform(true);
+    System.out.println("auto locating");
 
     if (frame.isVisible() && !openProjects.contains(proj)) {
       openProjects.add(proj);
@@ -270,7 +246,7 @@ public class Projects {
   // openProjects is maintained in order of most recent activation order:
   //  - activate brings to front
   //  - minimize sends to back
-  private static ArrayList<Project> openProjects = new ArrayList<Project>();
+  private static ArrayList<Project> openProjects = new ArrayList<>();
 
   private static Frame mostRecentFrame = null;
 
