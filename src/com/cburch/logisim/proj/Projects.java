@@ -217,7 +217,6 @@ public class Projects {
       return;
 
     frame.setLocationByPlatform(true);
-    System.out.println("auto locating");
 
     if (frame.isVisible() && !openProjects.contains(proj)) {
       openProjects.add(proj);
