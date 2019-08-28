@@ -38,6 +38,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.WeakHashMap;
 
 import com.cburch.logisim.Main;
@@ -123,6 +124,7 @@ public class Projects {
       Project proj = frame.getProject();
 
       if (frame == proj.getFrame() && !openProjects.contains(proj)) {
+        openingLocations.remove(frame.getLocation());
         openProjects.add(proj);
         propertyChangeProducer.firePropertyChange(projectListProperty, null, null);
         if (proj.isFileDirty())
@@ -216,13 +218,69 @@ public class Projects {
     if (frame == null)
       return;
 
-    frame.setLocationByPlatform(true);
+    // Cascade project windows. Unfortunately, frame.setLocationByPlatform(true)
+    // does not work reliably on all platforms. It might also cascade
+    // non-project windows (like settings, analyzer box, etc.), while we only
+    // want to cascade the projects.
+    //
+    // Strategy: find project window nearest the top-right corner (argmax x-y),
+    // with ties broken in favor of the window right-most one (argmax x).
+    // Put the new window 20 pixels offset down-right from that, so long as it
+    // stays away from edge of screen. If too close to edge, put it at top, just
+    // to the right of that diagonal (x-y=const) line, so long as it stays away
+    // from the edge. Failing that, randomize location.
+
+    Point p = null;
+    for (Point loc : openingLocations) {
+      if (p == null || (loc.x - loc.y) > (p.x - p.y))
+        p = loc;
+    }
+    for (Project p2 : openProjects) {
+      Frame f = p2.getFrame();
+      if (f == null)
+        continue;
+      Point loc = p2.getFrame().getLocation();
+      if (p == null || (loc.x - loc.y) > (p.x - p.y))
+        p = loc;
+    }
+
+    if (p == null) {
+      p = frame.getLocation();
+    } else {
+      p.x += 20;
+      p.y += 20;
+      Dimension w = frame.getSize();
+      w.width += 60;
+      w.height += 60;
+      Dimension screen = frame.getToolkit().getScreenSize();
+      if (p.x >= screen.width - w.width ||
+          p.y >= screen.height - w.height) {
+        p = new Point(p.x - p.y + 60 + 40, 60);
+        p.x = Math.max(p.x, 0);
+        p.y = Math.max(p.y, 0);
+        if (p.x >= screen.width - w.width ||
+            p.y >= screen.height - w.height) {
+          Random r = new Random();
+          if (screen.width - w.width - 60 <= 0)
+            p.x = 0;
+          else
+            p.x = r.nextInt(screen.width - w.width - 60) + 60;
+          if (screen.height - w.height - 60 <= 0)
+            p.y = 0;
+          else
+            p.y = r.nextInt(screen.height - w.height - 60) + 60;
+        }
+      }
+      frame.setLocation(p);
+    }
 
     if (frame.isVisible() && !openProjects.contains(proj)) {
       openProjects.add(proj);
       propertyChangeProducer.firePropertyChange(projectListProperty, null, null);
       if (proj.isFileDirty())
         Main.setSuddenTerminationAllowed(false);
+    } else {
+      openingLocations.add(p);
     }
     frame.addWindowListener(myListener);
   }
@@ -246,6 +304,12 @@ public class Projects {
   //  - activate brings to front
   //  - minimize sends to back
   private static ArrayList<Project> openProjects = new ArrayList<>();
+  // openingLocations contains locations of project windows that are about to be
+  // opened, but are not yet in openProjects list. This is needed because window
+  // cascade position can sometimes need to be calculated for several windows
+  // opening at once (e.g. from command line) before any of them appear on
+  // screen.
+  private static ArrayList<Point> openingLocations = new ArrayList<>();
 
   private static Frame mostRecentFrame = null;
 
