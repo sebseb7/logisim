@@ -209,16 +209,17 @@ public class ZoomControl extends JPanel {
     label = new ZoomLabel();
     sliderModel = new SliderModel(model);
 
-    JButton plus = new ZoomButton("zoomin.gif", false);
-    JButton minus = new ZoomButton("zoomout.gif", true);
+    JButton plus = new ZoomButton("zoomin.png", false);
+    JButton minus = new ZoomButton("zoomout.png", true);
     slider = new JSlider(sliderModel);
 
     JPanel zoom = new JPanel(new BorderLayout());
     zoom.add(minus, BorderLayout.WEST);
-    zoom.add(label, BorderLayout.CENTER);
+    // zoom.add(label, BorderLayout.CENTER);
     zoom.add(plus, BorderLayout.EAST);
-    zoom.add(slider, BorderLayout.NORTH);
-    zoom.add(new JLabel("Zoom", SwingConstants.CENTER), BorderLayout.SOUTH);
+    // zoom.add(slider, BorderLayout.NORTH);
+    zoom.add(slider, BorderLayout.CENTER);
+    // zoom.add(new JLabel("Zoom", SwingConstants.CENTER), BorderLayout.SOUTH);
 
     this.add(zoom, BorderLayout.CENTER);
 
