@@ -429,6 +429,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     topTab.setFont(new Font("Dialog", Font.BOLD, 9));
     topTab.add("Design", explPanel); // index=0 
     topTab.add("Simulate", simPanel); // index=1 (see ACTION_SET_STATE below)
+    // FIXME: on mac, JTabbedPane leaves too much whitespace here
 
     JPanel attrFooter = new JPanel(new BorderLayout());
     attrFooter.add(zoom);
