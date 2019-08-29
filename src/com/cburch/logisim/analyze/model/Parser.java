@@ -73,6 +73,32 @@ public class Parser {
     ParserException error(StringGetter message) {
       return new ParserException(message, offset, length);
     }
+
+    public String toString() {
+      return String.format("[<%s> %s at:%d+%d prec:%d]",
+          text, typeStr(type), offset, length, precedence);
+    }
+    static String typeStr(int type) {
+      switch(type) {
+      case TOKEN_AND: return "TOKEN_AND";
+      case TOKEN_OR: return "TOKEN_OR";
+      case TOKEN_XOR: return "TOKEN_XOR";
+      case TOKEN_EQ: return "TOKEN_EQ";
+      case TOKEN_XNOR: return "TOKEN_XNOR";
+      case TOKEN_NOT: return "TOKEN_NOT";
+      case TOKEN_NOT_POSTFIX: return "TOKEN_NOT_POSTFIX";
+      case TOKEN_LPAREN: return "TOKEN_LPAREN";
+      case TOKEN_RPAREN: return "TOKEN_RPAREN";
+      case TOKEN_IDENT: return "TOKEN_IDENT";
+      case TOKEN_CONST: return "TOKEN_CONST";
+      case TOKEN_WHITE: return "TOKEN_WHITE";
+      case TOKEN_ERROR_BADCHAR: return "TOKEN_ERROR_BADCHAR";
+      case TOKEN_ERROR_BRACE: return "TOKEN_ERROR_BRACE";
+      case TOKEN_ERROR_SUBSCRIPT: return "TOKEN_ERROR_SUBSCRIPT";
+      case TOKEN_ERROR_IDENT: return "TOKEN_ERROR_IDENT";
+      default: return "TOKEN_"+type;
+      }
+    }
   }
 
   private static boolean okCharacter(char c) {
@@ -84,10 +110,22 @@ public class Parser {
   }
 
   private static Expression parse(ArrayList<Token> tokens) throws ParserException {
+
+    // System.out.print("parsing:\n");
+    // for (Token t : tokens)
+    //   System.out.printf("     %s\n", t);
+    // System.out.println();
+
     ArrayList<Context> stack = new ArrayList<Context>();
     Expression current = null;
     for (int i = 0; i < tokens.size(); i++) {
       Token t = tokens.get(i);
+      // System.out.printf("token %d: %s\n", i, t);
+      // int ii = 0;
+      // for (Context c : stack) {
+      //   System.out.printf("  stack[%d]: level %d, cause %s, expr <%s>\n",
+      //       ii++, c.level, c.cause, c.current);
+      // }
       if (t.type == TOKEN_IDENT || t.type == TOKEN_CONST) {
         Expression here;
         if (t.type == TOKEN_IDENT) {
@@ -152,7 +190,14 @@ public class Parser {
         current = null;
       }
     }
+    // System.out.printf("finishing: current = <%s>\n", current);
+    // int ii = 0;
+    // for (Context c : stack) {
+    //   System.out.printf("  stack[%d]: level %d, cause %s, expr <%s>\n",
+    //       ii++, c.level, c.cause, c.current);
+    // }
     current = popTo(stack, -1, current);
+    // System.out.printf("done: current = <%s>\n", current);
     if (!stack.isEmpty()) {
       Context top = pop(stack);
       throw top.cause.error(S.getter("rparenMissingError"));
@@ -398,6 +443,8 @@ outerloop:
           tokens.add(new Token(TOKEN_XOR, start, "^", Expression.Notation.LOGIC_PRECEDENCE));
           break;
         case '+':
+          tokens.add(new Token(TOKEN_OR, start, "+", Expression.Notation.PLUS_PRECEDENCE));
+          break;
         case '\u22C1': // large disjunction
         case '\u2228': // small disjunction
           tokens.add(new Token(TOKEN_OR, start, "+", Expression.Notation.LOGIC_PRECEDENCE));
@@ -405,11 +452,11 @@ outerloop:
         case '\u2225': // logical or
           tokens.add(new Token(TOKEN_OR, start, "+", Expression.Notation.OR_PRECEDENCE));
           break;
-        case '*':
         case '\u22C0': // large conjunction
         case '\u2227': // small conjunction
           tokens.add(new Token(TOKEN_AND, start, "*", Expression.Notation.LOGIC_PRECEDENCE));
           break;
+        case '*':
         case '\u22C5': // cdot
         case '\u2219': // bullet
         case '\u00B7': // middle-dot
