@@ -263,6 +263,7 @@ public final class WiringTool extends Tool {
         updateDirection();
       }
       break;
+    case KeyEvent.VK_DELETE:
     case KeyEvent.VK_BACK_SPACE:
       if (!pending || wires.isEmpty())
         return;

@@ -355,6 +355,7 @@ public class AddTool extends Tool {
       case KeyEvent.VK_RIGHT:
         setFacing(canvas, Direction.EAST);
         break;
+      case KeyEvent.VK_DELETE:
       case KeyEvent.VK_BACK_SPACE:
         if (lastAddition != null
             && canvas.getProject().getLastAction() == lastAddition) {

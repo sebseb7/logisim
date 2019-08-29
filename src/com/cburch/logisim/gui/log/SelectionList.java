@@ -257,6 +257,7 @@ public class SelectionList extends JTable {
 
     InputMap inputMap = getInputMap();
     inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "Delete");
+    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "Delete");
     ActionMap actionMap = getActionMap();
     actionMap.put("Delete", new AbstractAction() {
       public void actionPerformed(ActionEvent e) {

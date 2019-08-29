@@ -38,6 +38,7 @@ import java.awt.event.KeyEvent;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 
+import com.cburch.logisim.Main;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
@@ -106,7 +107,9 @@ class MenuEdit extends Menu {
     cut.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, menuMask));
     copy.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, menuMask));
     paste.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, menuMask));
-    delete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
+    // Note: On Mac, backspace and delete are the reverse of linux and windows.
+    delete.setAccelerator(KeyStroke.getKeyStroke(Main.MacOS ?
+          KeyEvent.VK_BACK_SPACE : KeyEvent.VK_DELETE, 0));
     dup.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, menuMask));
     selall.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, menuMask));
     search.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, menuMask));
