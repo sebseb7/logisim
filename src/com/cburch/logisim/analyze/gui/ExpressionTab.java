@@ -70,6 +70,7 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
@@ -106,6 +107,8 @@ class ExpressionTab extends AnalyzerTab {
   private JLabel error = new JLabel();
   private JLabel label = new JLabel();
   private NotationSelector notation;
+
+  private static final int VGAP = 14;
 
   public class ExpressionTableModel extends AbstractTableModel
     implements VariableListListener, OutputExpressionsListener {
@@ -234,14 +237,18 @@ class ExpressionTab extends AnalyzerTab {
       int width = table.getColumnModel().getColumn(0).getWidth();
       prettyView.setExpressionWidth(width);
       prettyView.setExpression(listCopy[idx]);
-      int h = prettyView.getExpressionHeight() + 14;
-      if (table.getRowHeight(idx) != h)
-        table.setRowHeight(idx, h);
+      int h = prettyView.getExpressionHeight() + VGAP;
+      if (table.getRowHeight(idx) != h) {
+        // calling setRowHeight doesn't always properly invalidate() the table
+        // unless we invoke it later, outside of any event handler.
+        SwingUtilities.invokeLater(() -> {
+          table.setRowHeight(idx, h);
+        });
+      }
     }
     void updateRowHeights() {
-      for (int i = 0; i < listCopy.length; i++) {
+      for (int i = 0; i < listCopy.length; i++)
         updateRowHeight(i);
-      }
     }
   }
 
@@ -620,13 +627,13 @@ class ExpressionTab extends AnalyzerTab {
     @Override
     public Dimension getExportImageSize() {
       int width = table.getWidth();
-      int height = 14;
+      int height = VGAP;
       int n = table.getRowCount();
       for (int i = 0; i < n; i++) {
         NamedExpression ne = (NamedExpression)table.getValueAt(i, 0);
         prettyView.setExpressionWidth(width);
         prettyView.setExpression(ne);
-        height += prettyView.getExpressionHeight() + 14;
+        height += prettyView.getExpressionHeight() + VGAP;
       }
       return new Dimension(width + 6, height);
     }
@@ -636,7 +643,7 @@ class ExpressionTab extends AnalyzerTab {
       int width = img.getWidth();
       int height = img.getHeight();
       g.setClip(0, 0, width, height);
-      g.translate(6/2, 14);
+      g.translate(6/2, VGAP);
       int n = table.getRowCount();
       for (int i = 0; i < n; i++) {
         NamedExpression ne = (NamedExpression)table.getValueAt(i, 0);
@@ -647,7 +654,7 @@ class ExpressionTab extends AnalyzerTab {
         int rh = prettyView.getExpressionHeight();
         prettyView.setSize(new Dimension(width-6, rh));
         prettyView.paintComponent(g);
-        g.translate(0, rh + 14);
+        g.translate(0, rh + VGAP);
       }
     }
 
@@ -655,7 +662,7 @@ class ExpressionTab extends AnalyzerTab {
     public int print(Graphics2D g, PageFormat pf, int pageNum, double w, double h) {
 
       int width = (int)Math.ceil(w);
-      g.translate(6/2, 14/2);
+      g.translate(6/2, VGAP/2);
 
       int n = table.getRowCount();
       double y = 0;
@@ -677,9 +684,9 @@ class ExpressionTab extends AnalyzerTab {
         if (pg == pageNum) {
           prettyView.setSize(new Dimension(width-6, rh));
           prettyView.paintComponent(g);
-          g.translate(0, rh + 14);
+          g.translate(0, rh + VGAP);
         }
-        y += rh + 14;
+        y += rh + VGAP;
       }
       return (pg < pageNum ? Printable.NO_SUCH_PAGE : Printable.PAGE_EXISTS);
     }
