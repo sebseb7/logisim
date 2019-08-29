@@ -42,11 +42,22 @@ class MenuItemCheckImpl extends JCheckBoxMenuItem implements MenuItem {
 
   public MenuItemCheckImpl(Menu menu, LogisimMenuItem menuItem) {
     helper = new MenuItemHelper(this, menu, menuItem);
-    super.addActionListener(helper);
+    super.addActionListener(e -> actionPerformed(e));
     setEnabled(true);
   }
 
   public void actionPerformed(ActionEvent event) {
+    // On Mac, JCheckboxMenuItem sends *two* events whenever an accelerator key
+    // is pressed. For example, typing Command-K will first send an
+    // actionPerformed event with the Command modifier, then a second event with
+    // no modifiers. This will cause the checkbox to toggle twice, defeating the
+    // purpose. We filter out all events with META_MASK (i.e. Apple Command key)
+    // as a workaround. This might be fixed in JDK 13, but not entirely clear
+    // and seems to be low priority (bug has existed for many JDK versions).
+    // see: https://bugs.openjdk.java.net/browse/JDK-8208712
+    // see: https://bugs.openjdk.java.net/browse/JDK-8216971
+    if ((event.getModifiers() & ActionEvent.META_MASK) != 0)
+      return;
     helper.actionPerformed(event);
   }
 
