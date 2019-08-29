@@ -78,7 +78,7 @@ public class Parser {
   private static boolean okCharacter(char c) {
     return Character.isWhitespace(c)
         || Character.isJavaIdentifierStart(c)
-        || "()01~-^+*!&|=\':[]".indexOf(c) >= 0
+        || "()01~-^+*!&|=\':[]/".indexOf(c) >= 0
         || "\u2260\u2262\u22C0\u22C1\u2227\u2228\u2295\u22C5\u00AC\u2219".indexOf(c) >= 0
         || "\u21D4\u2261\u2194\u02DC\u00B7\u2225\u22BB\u22A4\u22A5".indexOf(c) >= 0;
   }
@@ -374,6 +374,7 @@ outerloop:
         case '-':
         case '\u00AC': // logical not
         case '\u02DC': // tilde
+        case '/': // slash (for overbar)
           tokens.add(new Token(TOKEN_NOT, start, "~", Expression.Notation.NOT_PRECEDENCE));
           break;
         case '!':

@@ -395,9 +395,9 @@ public abstract class Expression {
       Id = id;
       // Precendence level and symbol for each of { EQ, XNOR, OR, XOR, AND, NOT }
       switch(id) {
-      case 0: // Engineering notation: otimes, plus, oplus, times, and overbar
+      case 0: // Engineering notation: otimes, plus, oplus, times, and overbar (slash)
         opLvl = new int[] { 0, 10, 11, 12, 13, 14, };
-        opSym = new String[] { " := ", " \u2299 ", " + ", " \u2295 ", " \u22C5 ", "overbar", };
+        opSym = new String[] { " := ", " \u2299 ", " + ", " \u2295 ", " \u22C5 ", "/", };
         break;
       case 1:
         // Logic notation: equiv, vee, vee-underbar, cap, tilde

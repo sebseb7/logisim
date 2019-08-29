@@ -468,7 +468,7 @@ class ExpressionRenderer extends JPanel {
     }
     @Override
     public Box visitNot(Expression e, Expression a) {
-      if (notation.opSym[Expression.Op.NOT.Id].equals("overbar")) {
+      if (notation.opSym[Expression.Op.NOT.Id].equals("/")) { // overbar
         depth++;
         Box inner = a.visit(this);
         depth--;
