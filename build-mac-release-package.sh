@@ -22,8 +22,10 @@
 #   which come with a new jpackage tool, which apparently can be used to package
 #   files created with JDK 11. Both of these appear to be broken in various
 #   ways: the backport can't deal with license files correctly, and neither sets
-#   the permissions correctly on the installed files
-#   However, this appears to be broken in several ways: 
+#   the permissions correctly on the installed files.
+#   Workaround: Install early access JDK 14, and use that jpackage tool with
+#   the JDK 11 runtime and build artifacts, combined with a postinstall script
+#   to fix the permissions.
 # - MacOS is becoming increasingly (and rapidly) more strict about running code
 #   from unsigned/unofficial sources. It seems that the most recent versions of
 #   MacOS may not be able to run unsigned sources at all, at least not without
