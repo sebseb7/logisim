@@ -371,8 +371,8 @@ class TableTab extends AnalyzerTab {
         Insets i = gc.insets;
         gc.insets.set(i.top, i.left, i.bottom, i.right + pad);
         layout.setConstraints(headerPane, gc);
-        invalidate();
-        repaint();
+        header.invalidate();
+        revalidate();
       }
     });
 
