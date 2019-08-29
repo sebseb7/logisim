@@ -97,16 +97,6 @@ class BuildCircuitButton extends JButton {
       }
 
       VariableList outputs = model.getOutputs();
-      boolean enableNands = true;
-      for (String output : outputs.bits) {
-        Expression expr = model.getOutputExpressions().getExpression(output);
-        if (expr != null
-            && (expr.contains(Expression.Op.XOR) || expr.contains(Expression.Op.EQ))) {
-          enableNands = false;
-          break;
-        }
-      }
-      nands.setEnabled(enableNands);
 
       GridBagLayout gb = new GridBagLayout();
       GridBagConstraints gc = new GridBagConstraints();

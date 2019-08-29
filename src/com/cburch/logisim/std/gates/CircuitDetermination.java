@@ -133,9 +133,6 @@ abstract class CircuitDetermination {
     }
   }
 
-  //
-  // static members
-  //
   static class Gate extends CircuitDetermination {
     private ComponentFactory factory;
     private ArrayList<CircuitDetermination> inputs = new ArrayList<CircuitDetermination>();
@@ -151,7 +148,6 @@ abstract class CircuitDetermination {
         sub.convertToNands();
       }
 
-      // repair large XOR/XNORs to odd/even parity gates
       if (factory == NotGate.FACTORY) {
         inputs.add(inputs.get(0));
       } else if (factory == AndGate.FACTORY) {
@@ -163,6 +159,59 @@ abstract class CircuitDetermination {
         notOutput();
       } else if (factory == NandGate.FACTORY) {
         ;
+      } else if (factory == XorGate.FACTORY ||
+          factory == XnorGate.FACTORY) {
+        if (inputs.size() == 1) {
+          // XOR with 1 input is a no-op. Convert to double negation.
+          // XNOR with 1 input is same as NOT.
+          inputs.add(inputs.get(0));
+          if (factory == XorGate.FACTORY)
+            notOutput();
+        } else {
+          // Note: We use "odd parity" (or "even parity" for XNOR) behavior here,
+          // rather than "one and only one" behavior.
+          // For n>3, we make 2 subcircuits, one handling the bottom half of the
+          // inputs, the other handling the top half.
+          // For n==3, we create only one subcircuit, to handle the bottom two
+          // inputs, and use the first input as-is.
+          if (inputs.size() > 2) {
+            int n = inputs.size();
+            int half = n / 2;
+            Gate sub = new Gate(XorGate.FACTORY);
+            sub.inputs = new ArrayList<>(this.inputs.subList(half, n));
+            sub.convertToNands();
+            inputs.subList(half, n).clear();
+            inputs.add(sub);
+          }
+          if (inputs.size() > 2) {
+            int n = inputs.size();
+            Gate sub = new Gate(XorGate.FACTORY);
+            sub.inputs = this.inputs;
+            this.inputs = new ArrayList<>();
+            this.inputs.add(sub);
+            this.inputs.add(sub.inputs.remove(n-1));
+            sub.convertToNands();
+          }
+          // convert: xor(a, b)
+          // into: nand(x, y), x = nand(a, z), y = nand(z, b), z = nand(a, b)
+          CircuitDetermination a = inputs.get(0);
+          CircuitDetermination b = inputs.get(1);
+          Gate z = new Gate(NandGate.FACTORY);
+          z.inputs = this.inputs;
+          Gate y = new Gate(NandGate.FACTORY);
+          y.inputs = new ArrayList<>();
+          y.inputs.add(z);
+          y.inputs.add(b);
+          Gate x = new Gate(NandGate.FACTORY);
+          x.inputs = new ArrayList<>();
+          x.inputs.add(a);
+          x.inputs.add(z);
+          this.inputs = new ArrayList<>();
+          this.inputs.add(x);
+          this.inputs.add(y);
+          if (factory == XnorGate.FACTORY)
+            notOutput();
+        }
       } else {
         throw new IllegalArgumentException("Cannot handle "
             + factory.getDisplayName());
@@ -182,6 +231,8 @@ abstract class CircuitDetermination {
           subFactory = OrGate.FACTORY;
         else if (factory == NandGate.FACTORY)
           subFactory = AndGate.FACTORY;
+        else if (factory == XnorGate.FACTORY)
+          subFactory = XorGate.FACTORY;
         else
           subFactory = factory;
 
@@ -244,6 +295,8 @@ abstract class CircuitDetermination {
     }
 
     private void notOutput() {
+      // change: this_nand(A, B)
+      // into: this_nand(sub, sub), where sub = new_nand(A, B)
       Gate sub = new Gate(NandGate.FACTORY);
       sub.inputs = this.inputs;
       this.inputs = new ArrayList<CircuitDetermination>();
@@ -264,8 +317,10 @@ abstract class CircuitDetermination {
         ComponentFactory subFactory = factory;
         if (subFactory == NandGate.FACTORY)
           subFactory = AndGate.FACTORY;
-        if (subFactory == NorGate.FACTORY)
+        else if (subFactory == NorGate.FACTORY)
           subFactory = OrGate.FACTORY;
+        else if (subFactory == XnorGate.FACTORY)
+          subFactory = XorGate.FACTORY;
 
         int per = num / newNum;
         int numExtra = num - per * newNum;
