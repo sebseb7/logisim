@@ -65,6 +65,7 @@ import javax.swing.JTree;
 import javax.swing.KeyStroke;
 import javax.swing.ToolTipManager;
 import javax.swing.TransferHandler;
+import javax.swing.UIManager;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultTreeCellRenderer;
@@ -152,8 +153,8 @@ public class ProjectExplorer extends JTree implements LocaleListener {
         Tool tool = toolNode.getValue();
         if (isCurrentView(tool)) {
           label.setFont(boldFont);
-          label.setBackground(VIEWED_TOOL_COLOR);
-          label.setOpaque(true);
+          // label.setBackground(VIEWED_TOOL_COLOR);
+          // label.setOpaque(true);
         }
         label.setText(tool.getDisplayName());
         label.setIcon(new ToolIcon(tool));
@@ -249,11 +250,11 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       boolean haloed = !viewed
           && (tool == haloedTool && AppPreferences.ATTRIBUTE_HALO.get());
 
-      // draw halo if appropriate
-      if (haloed) {
+      // draw active-tool-halo or current-viewed-halo if appropriate
+      if (viewed || haloed) {
         Shape s = g.getClip();
         g.clipRect(x, y, 20, 20);
-        g.setColor(Canvas.HALO_COLOR);
+        g.setColor(viewed ? VIEWED_TOOL_HALO_COLOR : Canvas.HALO_COLOR);
         g.fillOval(x-2, y-2, 23, 23);
         g.setColor(Color.BLACK);
         g.setClip(s);
@@ -286,7 +287,9 @@ public class ProjectExplorer extends JTree implements LocaleListener {
   private static final String DIRTY_MARKER = "*";
 
   public static final Color MAGNIFYING_INTERIOR = new Color(200, 200, 255, 64);
-  public static final Color VIEWED_TOOL_COLOR = new Color(255, 255, 153);
+  // public static final Color VIEWED_TOOL_COLOR = new Color(255, 255, 153);
+  public static final Color VIEWED_TOOL_HALO_COLOR =
+      UIManager.getDefaults().getColor("List.selectionBackground");
 
   private Project proj;
   private MyListener myListener = new MyListener();

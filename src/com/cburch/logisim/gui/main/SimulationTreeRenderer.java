@@ -35,6 +35,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Shape;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -56,17 +57,23 @@ public class SimulationTreeRenderer extends DefaultTreeCellRenderer {
       this.isCurrentView = isCurrentView;
     }
 
-    public int getIconHeight() {
-      return 20;
-    }
-
-    public int getIconWidth() {
-      return 20;
-    }
+    public int getIconHeight() { return 20; }
+    public int getIconWidth() { return 20; }
 
     public void paintIcon(Component c, Graphics g, int x, int y) {
       ComponentDrawContext context = new ComponentDrawContext(c, null,
           null, g, g);
+      
+      // draw current-viewed-halo if appropriate
+      if (isCurrentView) {
+        Shape s = g.getClip();
+        g.clipRect(x, y, 20, 20);
+        g.setColor(ProjectExplorer.VIEWED_TOOL_HALO_COLOR);
+        g.fillOval(x-2, y-2, 23, 23);
+        g.setColor(Color.BLACK);
+        g.setClip(s);
+      }
+
       factory.paintIcon(context, x, y, factory.createAttributeSet());
 
       // draw magnifying glass if appropriate
@@ -115,8 +122,8 @@ public class SimulationTreeRenderer extends DefaultTreeCellRenderer {
         boolean viewed = node.isCurrentView(model);
         if (viewed) {
           label.setFont(boldFont);
-          label.setBackground(ProjectExplorer.VIEWED_TOOL_COLOR);
-          label.setOpaque(true);
+          // label.setBackground(ProjectExplorer.VIEWED_TOOL_COLOR);
+          // label.setOpaque(true);
         }
         label.setText(node.toString()); // resizes when bold
         label.setIcon(new RendererIcon(factory, viewed));
