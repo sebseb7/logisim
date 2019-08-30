@@ -1,21 +1,21 @@
-logisim-evolution (Holy Cross Edition)
+Logisim-Evolution (Holy Cross Edition)
 ======================================
 
-You can get the latest *stable version* of Logisim-evolution (Holy Cross Edition) here:
+You can get the latest *stable version* of Logisim-Evolution (Holy Cross Edition) here:
 
-[![Download for Windows](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-windows.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.1hc.exe) 
-[![Download for Mac](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-mac.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.1hc.dmg)
-[![Download for Linux](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-linux.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-3.1.1hc.jar)
-
-A newer *development snapshot* with many new features and bug fixes can be found here:
-
-[![Download for Windows](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-windows.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-4.0.0hc.exe) 
+[![Download for Windows](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-windows.jpg)](http://mathcs.holycross.edu/~kwalsh/Logisim-Evolution-4.0.0hc.exe) 
+[![Download for Mac](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-mac.jpg)](http://mathcs.holycross.edu/~kwalsh/Logisim-Evolution-4.0.0hc.pkg)
 [![Download for Linux](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-linux.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-4.0.0hc.jar)
 
-Windows and Mac versions will work only on Windows or Mac. The
-platform-independent JAR file should work on any platform. To run the JAR file,
-open a command line (or Mac Terminal or Windows CMD.exe
-prompt) and type `java -jar logisim-evolution-3.1.1hc.jar` from within the
+An alternative [ZIP format version for Windows](http://mathcs.holycross.edu/~kwalsh/Logisim-Evolution-4.0.0hc.zip) is
+also available. After downloading it, extract the compressed contents to a directory of your choice and run the
+extracted exe file.
+
+Windows and Mac versions will work only on Windows or Mac. The platform-independent JAR file should work on any
+platform, but requires that Java version 11 or above be installed separately (the AdoptOpenJDK version
+available [here](https://adoptopenjdk.net/releases.html?variant=openjdk11&jvmVariant=hotspot) is one possible choice).
+To run the JAR file, open a command line (or Mac Terminal or Windows CMD.exe
+prompt) and type `java -jar logisim-evolution-4.0.0hc.jar` from within the
 directory where you have downloaded the JAR file.
 
 
