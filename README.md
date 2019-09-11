@@ -7,6 +7,13 @@ You can get the latest *stable version* of Logisim-Evolution (Holy Cross Edition
 [![Download for Mac](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-mac.jpg)](http://mathcs.holycross.edu/~kwalsh/Logisim-Evolution-4.0.0hc.pkg)
 [![Download for Linux](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-linux.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-4.0.0hc.jar)
 
+**MAC Security Warning**: On some recent MacOS versions, the OS security
+gatekeeper may prevent you from opening the PKG file above directly. Instead,
+right-click and "Save As..." to save the PKG file to your download folder. Then
+go to your download folder in the finder, right click the PKG file and "Open
+with... Installer (Default)". When given a security warning, click "Open". This
+should install the program.
+
 An alternative [ZIP format version for Windows](http://mathcs.holycross.edu/~kwalsh/Logisim-Evolution-4.0.0hc.zip) is
 also available. After downloading it, extract the compressed contents to a directory of your choice and run the
 extracted exe file.
