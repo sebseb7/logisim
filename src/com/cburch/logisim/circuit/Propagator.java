@@ -386,9 +386,9 @@ public class Propagator {
     }
     toProcess.add(new SimulatorEvent(clock + delay, eventSerialNumber, state, pt, cause, val));
 
-    // DEBUGGING
-    // System.printf("%s: set %s in %s to %s by %s after %s\n",
-    //     clock, pt, state, val, cause, delay);
+    // DEBUG: System.out.printf("%s: set %s in %s to %s by %s after %s\n",
+    // DEBUG:     clock, pt, state, val, cause, delay);
+    // DEBUG: Thread.dumpStack();
 
     eventSerialNumber++;
   }
@@ -412,12 +412,10 @@ public class Propagator {
 
   // private int visitedNonce = 1;
   private void stepInternal(PropagationPoints changedPoints) { // Safe to call from sim thread
-		// DEBUGGING
-		System.out.println("== Step Internal ==");
+		// DEBUG: System.out.println("== Step Internal ==");
     
 		if (toProcess.isEmpty()) {
-			// DEBUGGING
-			System.out.println("-- Done --");
+			// DEBUG: System.out.println("-- Done --");
       return;
 		}
 
@@ -442,9 +440,8 @@ public class Propagator {
       // if (!state.visited.add(new ComponentPoint(ev.cause, ev.loc)))
       //   continue; // this component+loc change has already been handled
 
-      // DEBUGGING
-			System.out.printf("%s: proc %s in %s to %s by %s\n",
-					ev.time, ev.loc, ev.state, ev.val, ev.cause);
+			// DEBUG: System.out.printf("%s: proc %s in %s to %s by %s\n",
+			// DEBUG: 		ev.time, ev.loc, ev.state, ev.val, ev.cause);
 
       if (changedPoints != null)
         changedPoints.add(state, ev.loc);
@@ -464,15 +461,14 @@ public class Propagator {
       // }
     }
 
-		// DEBUGGING
-		System.out.println("-- process dirty points --");
-		root.dump("for %s before processDirtyPoints", this);
+		// DEBUG: System.out.println("-- process dirty points --");
+		// DEBUG: root.dump("for %s before processDirtyPoints", this);
     root.processDirtyPoints();
-		root.dump("for %s after processDirtyPoints, before processDirtyComponents", this);
-		System.out.println("-- process dirty components --");
+		// DEBUG: root.dump("for %s after processDirtyPoints, before processDirtyComponents", this);
+		// DEBUG: System.out.println("-- process dirty components --");
     root.processDirtyComponents();
-		root.dump("for %s after processDirtyComponents", this);
-		System.out.println("-- Done --");
+		// DEBUG: root.dump("for %s after processDirtyComponents", this);
+		// DEBUG: System.out.println("-- Done --");
   }
 
   public boolean toggleClocks() {
