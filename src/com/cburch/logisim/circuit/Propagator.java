@@ -412,8 +412,14 @@ public class Propagator {
 
   // private int visitedNonce = 1;
   private void stepInternal(PropagationPoints changedPoints) { // Safe to call from sim thread
-    if (toProcess.isEmpty())
+		// DEBUGGING
+		System.out.println("== Step Internal ==");
+    
+		if (toProcess.isEmpty()) {
+			// DEBUGGING
+			System.out.println("-- Done --");
       return;
+		}
 
     // update clock
     clock = toProcess.peek().time;
@@ -437,8 +443,8 @@ public class Propagator {
       //   continue; // this component+loc change has already been handled
 
       // DEBUGGING
-      // System.out.printf("%s: proc %s in %s to %s by %s\n",
-      //     ev.time, ev.loc, ev.state, ev.val, ev.cause);
+			System.out.printf("%s: proc %s in %s to %s by %s\n",
+					ev.time, ev.loc, ev.state, ev.val, ev.cause);
 
       if (changedPoints != null)
         changedPoints.add(state, ev.loc);
@@ -458,8 +464,15 @@ public class Propagator {
       // }
     }
 
+		// DEBUGGING
+		System.out.println("-- process dirty points --");
+		root.dump("for %s before processDirtyPoints", this);
     root.processDirtyPoints();
+		root.dump("for %s after processDirtyPoints, before processDirtyComponents", this);
+		System.out.println("-- process dirty components --");
     root.processDirtyComponents();
+		root.dump("for %s after processDirtyComponents", this);
+		System.out.println("-- Done --");
   }
 
   public boolean toggleClocks() {

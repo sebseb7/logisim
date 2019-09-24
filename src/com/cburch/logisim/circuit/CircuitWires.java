@@ -386,20 +386,21 @@ public class CircuitWires {
     return new State(getConnectivity(), circState.getWireData());
   }
 
-  // void dump(State s) {
-  //   for (int i = 0; i < s.buses.length; i++) {
-  //     System.out.printf("bus %d (%s):\n", i, i < s.numDirty ? "dirty" : "clean");
-  //     ValuedBus vb = s.buses[i];
-  //     System.out.printf("  idx %d %s width %s threads %s val %s %s\n", vb.idx, 
-  //         vb.dirty ? "dirty" : "clean",
-  //         vb.width, vb.threads,
-  //         vb.localDrivenValue, vb.busVal);
-  //     for (int j = 0; j < vb.connections.length; j++) {
-  //       System.out.printf("    connection at %s to %s\n",
-  //           vb.locations[j], vb.connections[j]);
-  //     }
-  //   }
-  // }
+	// DEBUGGING
+  void dump(State s) {
+    for (int i = 0; i < s.buses.length; i++) {
+      System.out.printf("bus %d (%s):\n", i, i < s.numDirty ? "dirty" : "clean");
+      ValuedBus vb = s.buses[i];
+      System.out.printf("  idx %d %s width %s threads %s val %s %s\n", vb.idx, 
+          vb.dirty ? "dirty" : "clean",
+          vb.width, vb.threads,
+          vb.localDrivenValue, vb.busVal);
+      for (int j = 0; j < vb.connections.length; j++) {
+        System.out.printf("    connection at %s to %s\n",
+            vb.locations[j], vb.connections[j]);
+      }
+    }
+  }
 
   static class State {
     private Connectivity connectivity; // original source of connectivity info
