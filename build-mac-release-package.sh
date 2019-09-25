@@ -89,7 +89,7 @@ fi
 INSTALLER_TYPE="pkg" # Options: dmg or pkg
 OUTPUT="."
 JAR="logisim-evolution.jar"
-VERSION="4.0.0" # must be numerical x.y.z
+VERSION="4.0.1" # must be numerical x.y.z
 FILE_ASSOCIATIONS="file-associations.properties"
 APP_ICON="logisim.icns"
 JAVA_APP_IDENTIFIER="edu.holycross.cs.kwalsh.logisim"
@@ -141,3 +141,13 @@ ${PACKAGER} \
 rm -rf mac-staging
 rm -rf mac-resources
 mv "Logisim-Evolution-${VERSION}.pkg" "Logisim-Evolution-${VERSION}-HC.pkg"
+
+cat <<END
+
+To notarize, run this command:
+
+ALTOOLPW=enter-app-specific-password-here
+xcrun altool --notarize-app --primary-bundle-id "$JAVA_APP_IDENTIFIER" \
+    --username "kwalsh@holycross.edu" --password "\$ALTOOLPW" \
+    --file Logisim-Evolution-${VERSION}-HC.pkg
+
