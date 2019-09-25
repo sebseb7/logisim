@@ -4,8 +4,8 @@ Logisim-Evolution (Holy Cross Edition)
 You can get the latest *stable version* of Logisim-Evolution (Holy Cross Edition) here:
 
 [![Download for Windows](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-windows.jpg)](http://mathcs.holycross.edu/~kwalsh/Logisim-Evolution-4.0.0hc.exe) 
-[![Download for Mac](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-mac.jpg)](http://mathcs.holycross.edu/~kwalsh/Logisim-Evolution-4.0.0hc.pkg)
-[![Download for Linux](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-linux.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-4.0.0hc.jar)
+[![Download for Mac](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-mac.jpg)](http://mathcs.holycross.edu/~kwalsh/Logisim-Evolution-4.0.1-HC.pkg)
+[![Download for Linux](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-linux.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-4.0.1hc.jar)
 
 **MAC Security Warning**: On some recent MacOS versions, the OS security
 gatekeeper may prevent you from opening the PKG file above directly. Instead,
