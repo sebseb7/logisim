@@ -37,7 +37,7 @@ revolve around:
 * support for VHDL _generics_;
 * UI changes to aid in HDL editing and FPGA downloading.
 * Performance has been improved in this version with help from the [YourKit java profiler](https://www.yourkit.com/java/profiler/).
-  [![YourKit Logo](http://mathcs.holycross.edu/~kwalsh/yklogo.png)]
+  ![YourKit Logo](http://mathcs.holycross.edu/~kwalsh/yklogo.png)
 
 On a historical note: I am also the author of all the scattered code mentioning
 "Cornell's version of Logisim", both in the reds-heig fork and Carl Burch's
