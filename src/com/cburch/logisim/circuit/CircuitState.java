@@ -152,21 +152,7 @@ public class CircuitState implements InstanceData {
         // slowpath_drivers.clear();
       }
 
-      /* Component changed */
-//      else if (action == CircuitEvent.ACTION_CHANGE) {
-//        Object data = event.getData();
-//        if (data instanceof Collection) {
-//          @SuppressWarnings("unchecked")
-//          Collection<Component> comps = (Collection<Component>) data;
-//          markComponentsDirty(comps);
-//          for (Component comp : comps)
-//            Propagator.checkComponentEnds(CircuitState.this, comp);
-//        } else {
-//          Component comp = (Component) event.getData();
-//          markComponentAsDirty(comp);
-//          Propagator.checkComponentEnds(CircuitState.this, comp);
-//        }
-//      }
+      /* Component ends changed */
       else if (action == CircuitEvent.ACTION_INVALIDATE) {
         Component comp = (Component) event.getData();
         markComponentAsDirty(comp);
@@ -174,9 +160,6 @@ public class CircuitState implements InstanceData {
         // invalidated components (which are likely Pins, Buttons, or other
         // inputs), so pass this component to the simulator for display.
         proj.getSimulator().addPendingInput(CircuitState.this, comp);
-
-        // TODO detemine if this should really be missing
-        // Propagator.checkComponentEnds(CircuitState.this, comp);
       } else if (action == CircuitEvent.TRANSACTION_DONE) {
         ReplacementMap map = event.getResult().getReplacementMap(circuit);
         if (map == null)
