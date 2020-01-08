@@ -98,24 +98,21 @@ class SelectionBase {
     return proj;
   }
 
-  //
-  // action methods
-  //
   public void add(Component comp) {
-    if (selected.add(comp)) {
+    if (selected.add(comp))
       fireSelectionChanged();
-    }
   }
 
   public void addAll(Collection<? extends Component> comps) {
-    if (selected.addAll(comps)) {
+    if (selected.addAll(comps))
       fireSelectionChanged();
-    }
   }
 
-  //
-  // listener methods
-  //
+  public void addLifted(Collection<Wire> wires) {
+    if (lifted.addAll(wires))
+      fireSelectionChanged();
+  }
+
   public void addListener(Selection.Listener l) {
     listeners.add(l);
   }
@@ -129,9 +126,8 @@ class SelectionBase {
     if (selected.isEmpty() && lifted.isEmpty())
       return;
 
-    if (dropLifted && !lifted.isEmpty()) {
+    if (dropLifted && !lifted.isEmpty())
       xn.addAll(lifted);
-    }
 
     selected.clear();
     lifted.clear();

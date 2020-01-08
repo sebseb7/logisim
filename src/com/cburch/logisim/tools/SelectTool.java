@@ -48,8 +48,10 @@ import javax.swing.Icon;
 
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.CircuitMutation;
 import com.cburch.logisim.circuit.ReplacementMap;
 import com.cburch.logisim.circuit.Wire;
+import com.cburch.logisim.circuit.WireFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentFactory;
@@ -128,6 +130,7 @@ public final class SelectTool extends Tool {
   private static final int IDLE = 0;
   private static final int MOVING = 1;
   private static final int RECT_SELECT = 2;
+  private static final int RECT_SNIP_SELECT = 3;
   private static final Icon toolIcon = Icons.getIcon("select.gif");
 
   private static final Color COLOR_UNMATCHED = new Color(192, 0, 0);
@@ -228,32 +231,16 @@ public final class SelectTool extends Tool {
           }
         }
       }
-    } else if (state == RECT_SELECT) {
-      int left = start.getX();
-      int right = left + dx;
-      if (left > right) {
-        int i = left;
-        left = right;
-        right = i;
-      }
-      int top = start.getY();
-      int bot = top + dy;
-      if (top > bot) {
-        int i = top;
-        top = bot;
-        bot = i;
-      }
+    } else if (state == RECT_SELECT || state == RECT_SNIP_SELECT) {
+      Bounds bds = Bounds.create(start.x, start.y, dx, dy);
 
       Graphics gBase = context.getGraphics();
-      int w = right - left - 1;
-      int h = bot - top - 1;
-      if (w > 2 && h > 2) {
+      if (bds.width > 3 && bds.height > 3) {
         gBase.setColor(BACKGROUND_RECT_SELECT);
-        gBase.fillRect(left + 1, top + 1, w - 1, h - 1);
+        gBase.fillRect(bds.x + 1, bds.y + 1, bds.width - 2, bds.height - 2);
       }
 
       Circuit circ = canvas.getCircuit();
-      Bounds bds = Bounds.create(left, top, right - left, bot - top);
       for (Component c : circ.getAllWithin(bds)) {
         Location cloc = c.getLocation();
         Graphics gDup = gBase.create();
@@ -262,14 +249,25 @@ public final class SelectTool extends Tool {
             cloc.getX(), cloc.getY(), c.getAttributeSet());
         gDup.dispose();
       }
+      if (state == RECT_SNIP_SELECT) {
+        Bounds b = bds.snapToGrid();
+        if (b != Bounds.EMPTY_BOUNDS) {
+          for (Wire c : circ.getWiresIntersecting(b)) {
+            Location cloc = c.getLocation();
+            Graphics gDup = gBase.create();
+            context.setGraphics(gDup);
+            ((WireFactory)c.getFactory()).drawPartialGhost(
+                context, COLOR_RECT_SELECT,
+                cloc.getX(), cloc.getY(), c.getAttributeSet(), b);
+            gDup.dispose();
+          }
+        }
+      }
 
       gBase.setColor(COLOR_RECT_SELECT);
       GraphicsUtil.switchToWidth(gBase, 2);
-      if (w < 0)
-        w = 0;
-      if (h < 0)
-        h = 0;
-      gBase.drawRect(left, top, w, h);
+      gBase.drawRect(bds.x, bds.y,
+          Math.max(0, bds.width-1), Math.max(0, bds.height-1));
     }
   }
 
@@ -281,7 +279,8 @@ public final class SelectTool extends Tool {
   @Override
   public Cursor getCursor() {
     return state == IDLE ? selectCursor
-        : (state == RECT_SELECT ? rectSelectCursor : moveCursor);
+        : (state == RECT_SELECT || state == RECT_SNIP_SELECT ? rectSelectCursor
+            : moveCursor);
   }
 
   @Override
@@ -397,7 +396,7 @@ public final class SelectTool extends Tool {
       Project proj = canvas.getProject();
       computeDxDy(proj, e, g);
       handleMoveDrag(canvas, curDx, curDy, e.getModifiersEx());
-    } else if (state == RECT_SELECT) {
+    } else if (state == RECT_SELECT || state == RECT_SNIP_SELECT) {
       Project proj = canvas.getProject();
       curDx = e.getX() - start.getX();
       curDy = e.getY() - start.getY();
@@ -462,7 +461,7 @@ public final class SelectTool extends Tool {
         proj.doAction(act);
       }
     }
-    setState(proj, RECT_SELECT);
+    setState(proj, RECT_SNIP_SELECT);
     proj.repaintCanvas();
   }
 
@@ -507,22 +506,54 @@ public final class SelectTool extends Tool {
       }
       moveGesture = null;
       proj.repaintCanvas();
-    } else if (state == RECT_SELECT) {
-      Bounds bds = Bounds.create(start).add(start.getX() + curDx,
-          start.getY() + curDy);
+    } else if (state == RECT_SELECT || state == RECT_SNIP_SELECT) {
+      Bounds bds = Bounds.create(start.x, start.y, curDx, curDy);
       Circuit circuit = canvas.getCircuit();
+
+      Collection<Wire> wiresToLift = new ArrayList<>();
+      if (state == RECT_SNIP_SELECT) {
+        Collection<Wire> wiresToAdd = new ArrayList<>();
+        Collection<Wire> wiresToRemove = new ArrayList<>();
+        // If user has just partially-selected some wires, split them
+        // into pieces and lift out the selected portions...
+        Bounds b = bds.snapToGrid();
+        if (b != Bounds.EMPTY_BOUNDS) {
+          for (Wire w : circuit.getWiresIntersecting(b)) {
+            Wire[] parts = WireFactory.splitWire(w, b);
+            if (parts == null)
+              continue;
+            wiresToRemove.add(w);
+            wiresToLift.add(parts[1]);
+            if (parts[0] != null)
+              wiresToAdd.add(parts[0]);
+            if (parts[2] != null)
+              wiresToAdd.add(parts[2]);
+          }
+          if (!wiresToLift.isEmpty()) {
+            CircuitMutation mutation = new CircuitMutation(circuit);
+            mutation.addAll(wiresToAdd);
+            mutation.removeAll(wiresToRemove);
+            Action act = mutation.toAction(S.getter("wireSnipAction"));
+            proj.doAction(act);
+          }
+        }
+      }
+
       Selection sel = proj.getSelection();
       Collection<Component> in_sel = sel.getComponentsWithin(bds, g);
       for (Component comp : circuit.getAllWithin(bds, g)) {
         if (!in_sel.contains(comp))
           sel.add(comp);
       }
+      sel.addLifted(wiresToLift);
       Action act = SelectionActions.drop(sel, in_sel);
       if (act != null) {
         proj.doAction(act);
       }
       setState(proj, IDLE);
       proj.repaintCanvas();
+    } else if (state == RECT_SNIP_SELECT) {
+
     }
   }
 
@@ -559,8 +590,7 @@ public final class SelectTool extends Tool {
 
     if (!handlers.isEmpty()) {
       boolean consume = false;
-      ArrayList<KeyConfigurationResult> results;
-      results = new ArrayList<KeyConfigurationResult>();
+      ArrayList<KeyConfigurationResult> results = new ArrayList<>();
       for (Map.Entry<Component, KeyConfigurator> entry : handlers
           .entrySet()) {
         Component comp = entry.getKey();
