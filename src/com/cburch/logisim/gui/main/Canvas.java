@@ -151,13 +151,15 @@ public class Canvas extends JPanel
 
     @Override
     public void mouseClicked(MouseEvent e) {
+      Tool tool = getToolFor(e);
+      if (tool != null)
+        tool.mouseClicked(Canvas.this, getGraphics(), e);
     }
 
     @Override
     public void mouseDragged(MouseEvent e) {
-      if (drag_tool != null) {
+      if (drag_tool != null)
         drag_tool.mouseDragged(Canvas.this, getGraphics(), e);
-      }
     }
 
     @Override
@@ -208,9 +210,8 @@ public class Canvas extends JPanel
       proj.getFrame().clearExplorerSelection();
       Canvas.this.requestFocus();
       drag_tool = getToolFor(e);
-      if (drag_tool != null) {
+      if (drag_tool != null)
         drag_tool.mousePressed(Canvas.this, getGraphics(), e);
-      }
 
       completeAction();
     }

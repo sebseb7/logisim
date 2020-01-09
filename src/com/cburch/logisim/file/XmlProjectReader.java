@@ -509,6 +509,46 @@ public class XmlProjectReader extends XmlReader {
         }
       }
     }
+
+    if (version.compareTo(LogisimVersion.get(4, 0, 2)) < 0) {
+      // This file was saved before the Wire Cutter tool existed. Let's
+      // add it to the toolbar next to wiring (or edit (or select)).
+      for (Element toolbar : XmlIterator.forChildElements(root, "toolbar")) {
+        Element wiring = null;
+        Element select = null;
+        Element edit = null;
+        Element cutter = null;
+        for (Element elt : XmlIterator.forChildElements(toolbar, "tool")) {
+          String eltName = elt.getAttribute("name");
+          if (eltName != null && !eltName.equals("")) {
+            if (eltName.equals("Select Tool"))
+              select = elt;
+            if (eltName.equals("Wiring Tool"))
+              wiring = elt;
+            if (eltName.equals("Edit Tool"))
+              edit = elt;
+            if (eltName.equals("Cutter Tool"))
+              edit = elt;
+          }
+        }
+        if (cutter == null) {
+          String baselib = findLibNameByDesc(root, "#Base");
+          if (baselib != null) {
+            cutter  = doc.createElement("tool");
+            cutter.setAttribute("lib", baselib);
+            cutter.setAttribute("name", "Cutter Tool");
+            if (wiring != null)
+              toolbar.insertBefore(cutter, wiring.getNextSibling());
+            else if (edit != null)
+              toolbar.insertBefore(cutter, edit.getNextSibling());
+            else if (select != null)
+              toolbar.insertBefore(cutter, select.getNextSibling());
+            else
+              toolbar.insertBefore(cutter, toolbar.getFirstChild());
+          }
+        }
+      }
+    }
   }
 
   private void convertObsoletePinAttributes(Document doc, Element elt, String wiringLibName) {
