@@ -43,6 +43,7 @@ import com.cburch.logisim.std.io.Io;
 import com.cburch.logisim.std.memory.Memory;
 import com.cburch.logisim.std.plexers.Plexers;
 import com.cburch.logisim.std.wiring.Wiring;
+import com.cburch.logisim.std.wiring.Analog;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 
@@ -51,7 +52,7 @@ public class Builtin extends Library {
 
   public Builtin() {
     libraries = Arrays.asList(new Library[] { new Base(), new Gates(),
-      new Wiring(), new Plexers(), new Arithmetic(), new Memory(),
+      new Wiring(), new Analog(), new Plexers(), new Arithmetic(), new Memory(),
       new Io(), new BFHPraktika(), });
   }
 
@@ -60,6 +61,7 @@ public class Builtin extends Library {
         || libClass == Base.class
         || libClass == Gates.class
         || libClass == Wiring.class
+        || libClass == Analog.class
         || libClass == Plexers.class
         || libClass == Arithmetic.class
         || libClass == Memory.class

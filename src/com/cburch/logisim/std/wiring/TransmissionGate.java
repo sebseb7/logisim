@@ -66,9 +66,9 @@ public class TransmissionGate extends InstanceFactory {
   public TransmissionGate() {
     super("Transmission Gate", S.getter("transmissionGateComponent"));
     setIconName("transmis.gif");
-    setAttributes(new Attribute[] { StdAttr.FACING, Wiring.ATTR_GATE,
+    setAttributes(new Attribute[] { StdAttr.FACING, Analog.ATTR_GATE,
       StdAttr.WIDTH }, new Object[] { Direction.EAST,
-        Wiring.GATE_TOP_LEFT, BitWidth.ONE });
+        Analog.GATE_TOP_LEFT, BitWidth.ONE });
     setFacingAttribute(StdAttr.FACING);
     setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
   }
@@ -119,9 +119,9 @@ public class TransmissionGate extends InstanceFactory {
 
   private void drawInstance(InstancePainter painter, boolean isGhost) {
     Bounds bds = painter.getBounds();
-    Object powerLoc = painter.getAttributeValue(Wiring.ATTR_GATE);
+    Object powerLoc = painter.getAttributeValue(Analog.ATTR_GATE);
     Direction facing = painter.getAttributeValue(StdAttr.FACING);
-    boolean flip = (facing == Direction.SOUTH || facing == Direction.WEST) == (powerLoc == Wiring.GATE_TOP_LEFT);
+    boolean flip = (facing == Direction.SOUTH || facing == Direction.WEST) == (powerLoc == Analog.GATE_TOP_LEFT);
 
     int degrees = Direction.WEST.toDegrees() - facing.toDegrees();
     if (flip)
@@ -202,7 +202,7 @@ public class TransmissionGate extends InstanceFactory {
 
   @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-    if (attr == StdAttr.FACING || attr == Wiring.ATTR_GATE) {
+    if (attr == StdAttr.FACING || attr == Analog.ATTR_GATE) {
       instance.recomputeBounds();
       updatePorts(instance);
     } else if (attr == StdAttr.WIDTH) {
@@ -240,8 +240,8 @@ public class TransmissionGate extends InstanceFactory {
       dx = 1;
     }
 
-    Object powerLoc = instance.getAttributeValue(Wiring.ATTR_GATE);
-    boolean flip = (facing == Direction.SOUTH || facing == Direction.WEST) == (powerLoc == Wiring.GATE_TOP_LEFT);
+    Object powerLoc = instance.getAttributeValue(Analog.ATTR_GATE);
+    boolean flip = (facing == Direction.SOUTH || facing == Direction.WEST) == (powerLoc == Analog.GATE_TOP_LEFT);
 
     Port[] ports = new Port[4];
     ports[OUTPUT] = new Port(0, 0, Port.OUTPUT, StdAttr.WIDTH);

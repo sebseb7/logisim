@@ -409,7 +409,7 @@ public class XmlProjectReader extends XmlReader {
     }
 
     if (version.compareTo(LogisimVersion.get(2, 7, 2)) < 0) {
-      addBuiltinLibrariesIfMissing(doc, root);
+      addBuiltinLibrariesIfMissing(doc, root, null);
       // pre logisim-evolution, we didn't have "Appearance" labels
       // on many components. Add StdAttr.APPEAR_CLASSIC on each subcircuit
       // and instances of FlipFlops, Registers, Counters, RAM, ROM, and
@@ -450,10 +450,12 @@ public class XmlProjectReader extends XmlReader {
     //   type=input|output
     //   behavior=simple|tristate|pullup|pulldown
     String wiringLibName = findLibNameByDesc(root, "#Wiring");
-    for (Element compElt : XmlIterator.forDescendantElements(root, "comp"))
-      convertObsoletePinAttributes(doc, compElt, wiringLibName);
-    for (Element toolElt : XmlIterator.forDescendantElements(root, "tool"))
-      convertObsoletePinAttributes(doc, toolElt, wiringLibName);
+    if (wiringLibName != null) {
+      for (Element compElt : XmlIterator.forDescendantElements(root, "comp"))
+        convertObsoletePinAttributes(doc, compElt, wiringLibName);
+      for (Element toolElt : XmlIterator.forDescendantElements(root, "tool"))
+        convertObsoletePinAttributes(doc, toolElt, wiringLibName);
+    }
 
     // As of version 4.0.2, quad-input wide primitive gates have reasonable layout.
     if (version.compareTo(LogisimVersion.get(4, 0, 2)) < 0) {
@@ -510,45 +512,10 @@ public class XmlProjectReader extends XmlReader {
       }
     }
 
-    if (version.compareTo(LogisimVersion.get(4, 0, 2)) < 0) {
-      // This file was saved before the Wire Cutter tool existed. Let's
-      // add it to the toolbar next to wiring (or edit (or select)).
-      for (Element toolbar : XmlIterator.forChildElements(root, "toolbar")) {
-        Element wiring = null;
-        Element select = null;
-        Element edit = null;
-        Element cutter = null;
-        for (Element elt : XmlIterator.forChildElements(toolbar, "tool")) {
-          String eltName = elt.getAttribute("name");
-          if (eltName != null && !eltName.equals("")) {
-            if (eltName.equals("Select Tool"))
-              select = elt;
-            if (eltName.equals("Wiring Tool"))
-              wiring = elt;
-            if (eltName.equals("Edit Tool"))
-              edit = elt;
-            if (eltName.equals("Cutter Tool"))
-              edit = elt;
-          }
-        }
-        if (cutter == null) {
-          String baselib = findLibNameByDesc(root, "#Base");
-          if (baselib != null) {
-            cutter  = doc.createElement("tool");
-            cutter.setAttribute("lib", baselib);
-            cutter.setAttribute("name", "Cutter Tool");
-            if (wiring != null)
-              toolbar.insertBefore(cutter, wiring.getNextSibling());
-            else if (edit != null)
-              toolbar.insertBefore(cutter, edit.getNextSibling());
-            else if (select != null)
-              toolbar.insertBefore(cutter, select.getNextSibling());
-            else
-              toolbar.insertBefore(cutter, toolbar.getFirstChild());
-          }
-        }
-      }
+    if (version.compareTo(LogisimVersion.get(4, 0, 3)) < 0) {
+      repairForAnalogLibrary(doc, root);
     }
+
   }
 
   private void convertObsoletePinAttributes(Document doc, Element elt, String wiringLibName) {
@@ -597,7 +564,7 @@ public class XmlProjectReader extends XmlReader {
     elt.appendChild(a);
   }
 
-  private void addBuiltinLibrariesIfMissing(Document doc, Element root) {
+  private void addBuiltinLibrariesIfMissing(Document doc, Element root, String filter) {
     HashSet<String> found = new HashSet<>();
     Node end = root.getFirstChild();
     int maxLib = 0;
@@ -616,6 +583,8 @@ public class XmlProjectReader extends XmlReader {
     for (Library lib : loader.getBuiltin().getLibraries()) {
       String desc = LibraryManager.instance.getShortDescriptor(lib);
       if (found.contains(desc))
+        continue;
+      if (filter != null && !filter.equals(desc))
         continue;
       Element libElt = doc.createElement("lib");
       libElt.setAttribute("name", "" + (maxLib + 1));
@@ -792,6 +761,65 @@ public class XmlProjectReader extends XmlReader {
     relocateTools(oldBaseElt, newBaseElt, labelMap);
     relocateTools(oldBaseElt, wiringElt, labelMap);
     relocateTools(gatesElt, wiringElt, labelMap);
+    updateFromLabelMap(XmlIterator.forDescendantElements(root, "comp"),
+        labelMap);
+    updateFromLabelMap(XmlIterator.forDescendantElements(root, "tool"),
+        labelMap);
+  }
+
+  // As of version 4.0.3, a new Analog library is added containing Power,
+  // Ground, Transistor, and Transmission Gate. These components used to be in
+  // the Wiring library, so we need to add the new library, move the tools, and
+  // patch any affected components and toolbars.
+  private void repairForAnalogLibrary(Document doc, Element root) {
+    Element wiringElt = null;
+    String wiringLabel = null;
+    int maxLabel = -1;
+    Element firstLibElt = null;
+    Element lastLibElt = null;
+    for (Element libElt : XmlIterator.forChildElements(root, "lib")) {
+      String desc = libElt.getAttribute("desc");
+      String label = libElt.getAttribute("name");
+      if (desc == null) {
+        // skip these tests
+      } else if (desc.equals("#Wiring")) {
+        wiringElt = libElt;
+        wiringLabel = label;
+      } else if (desc.equals("#Analog")) {
+        // Analog library already in file. This shouldn't happen, but if
+        // somehow it does, we don't want to add it again.
+        return;
+      }
+
+      if (firstLibElt == null)
+        firstLibElt = libElt;
+      lastLibElt = libElt;
+      try {
+        if (label != null) {
+          int thisLabel = Integer.parseInt(label);
+          if (thisLabel > maxLabel)
+            maxLabel = thisLabel;
+        }
+      } catch (NumberFormatException e) {
+        // ignore, will likely fail later anyway
+      }
+    }
+
+    if (wiringElt == null) {
+      addBuiltinLibrariesIfMissing(doc, root, "#Analog");
+      return;
+    }
+
+    String newAnalogLabel = "" + (maxLabel + 1);
+    Element newAnalogElt = doc.createElement("lib");
+    newAnalogElt.setAttribute("desc", "#Analog");
+    newAnalogElt.setAttribute("name", newAnalogLabel);
+    root.insertBefore(newAnalogElt, lastLibElt.getNextSibling());
+
+    HashMap<String, String> labelMap = new HashMap<>();
+    addToLabelMap(labelMap, wiringLabel, newAnalogLabel,
+        "Power;Ground;Transistor;Transmission Gate;Pull Resistor");
+    relocateTools(wiringElt, newAnalogElt, labelMap);
     updateFromLabelMap(XmlIterator.forDescendantElements(root, "comp"),
         labelMap);
     updateFromLabelMap(XmlIterator.forDescendantElements(root, "tool"),

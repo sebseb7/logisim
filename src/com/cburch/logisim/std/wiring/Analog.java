@@ -34,49 +34,60 @@ import static com.cburch.logisim.std.Strings.S;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cburch.logisim.circuit.SplitterFactory;
+import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeOption;
+import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.FactoryDescription;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 
-public class Wiring extends Library {
+public class Analog extends Library {
+
+  static final AttributeOption GATE_TOP_LEFT = new AttributeOption("tl",
+      S.getter("wiringGateTopLeftOption"));
+  static final AttributeOption GATE_BOTTOM_RIGHT = new AttributeOption("br",
+      S.getter("wiringGateBottomRightOption"));
+  static final Attribute<AttributeOption> ATTR_GATE = Attributes.forOption(
+      "gate", S.getter("wiringGateAttr"), new AttributeOption[] {
+        GATE_TOP_LEFT, GATE_BOTTOM_RIGHT });
 
   private static FactoryDescription[] DESCRIPTIONS = {
-    new FactoryDescription("Bit Extender",
-        S.getter("extenderComponent"), "extender.gif",
-        "BitExtender"),
+    new FactoryDescription("Power", S.getter("powerComponent"),
+        "power.gif", "Power"),
+    new FactoryDescription("Ground", S.getter("groundComponent"),
+        "ground.gif", "Ground"),
+    new FactoryDescription("Transistor",
+        S.getter("transistorComponent"), "trans0.gif",
+        "Transistor"),
+    new FactoryDescription("Transmission Gate",
+        S.getter("transmissionGateComponent"),
+        "transmis.gif", "TransmissionGate"),
   };
 
   private List<Tool> tools = null;
 
-  public Wiring() {
+  public Analog() {
   }
 
   @Override
   public String getDisplayName() {
-    return S.get("wiringLibrary");
+    return S.get("analogLibrary");
   }
 
   @Override
   public String getName() {
-    return "Wiring";
+    return "Analog";
   }
-  
+
   @Override
   public List<Tool> getTools() {
     if (tools == null) {
-      List<Tool> ret = new ArrayList<>(6 + DESCRIPTIONS.length);
-      ret.add(new AddTool(Wiring.class, SplitterFactory.instance));
-      ret.add(new AddTool(Wiring.class, Pin.FACTORY));
-      ret.add(new AddTool(Wiring.class, Probe.FACTORY));
-      ret.add(new AddTool(Wiring.class, Tunnel.FACTORY));
-      ret.add(new AddTool(Wiring.class, Clock.FACTORY));
-      ret.add(new AddTool(Wiring.class, Constant.FACTORY));
-      ret.addAll(FactoryDescription.getTools(Wiring.class, DESCRIPTIONS));
+      List<Tool> ret = new ArrayList<>(1 + DESCRIPTIONS.length);
+      ret.addAll(FactoryDescription.getTools(Analog.class, DESCRIPTIONS));
+      ret.add(new AddTool(Analog.class, PullResistor.FACTORY));
       tools = ret;
     }
     return tools;
   }
-
 }
