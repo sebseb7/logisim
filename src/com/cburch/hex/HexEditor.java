@@ -34,8 +34,10 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 
 import javax.swing.JComponent;
 import javax.swing.Scrollable;
@@ -57,6 +59,8 @@ public class HexEditor extends JComponent implements Scrollable {
 
 	private static final long serialVersionUID = 1L;
 
+  public static final Font FONT = new Font("monospaced", Font.PLAIN, 12);
+
 	private HexModel model;
 	private Listener listener;
 	private Measures measures;
@@ -70,6 +74,7 @@ public class HexEditor extends JComponent implements Scrollable {
 		this.caret = new Caret(this);
 		this.highlighter = new Highlighter(this);
 
+    setFont(FONT);
 		setOpaque(true);
 		setBackground(Color.WHITE);
 		if (model != null)
@@ -161,6 +166,14 @@ public class HexEditor extends JComponent implements Scrollable {
 
 	@Override
 	protected void paintComponent(Graphics g) {
+    Graphics2D g2 = (Graphics2D)g;
+    g2.setRenderingHint(
+        RenderingHints.KEY_TEXT_ANTIALIASING,
+        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+    g2.setRenderingHint(
+        RenderingHints.KEY_ANTIALIASING,
+        RenderingHints.VALUE_ANTIALIAS_ON);
+
 		measures.ensureComputed(g);
 
 		Rectangle clip = g.getClipBounds();
