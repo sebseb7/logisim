@@ -29,6 +29,7 @@
  */
 
 package com.cburch.logisim.instance;
+import static com.cburch.logisim.std.Strings.S;
 
 import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.Attribute;
@@ -104,7 +105,7 @@ public class Port {
     this.widthFixed = -1; // -1 means use attr instead
     this.widthAttr = attr;
     this.exclude = toExclusive(exclude);
-    this.toolTip = null;
+    this.toolTip = getDefaultTooltip(this.type);
   }
 
   public Port(int dx, int dy, String type, BitWidth bits) {
@@ -118,7 +119,7 @@ public class Port {
     this.widthFixed = bits.getWidth();
     this.widthAttr = null;
     this.exclude = toExclusive(exclude);
-    this.toolTip = null;
+    this.toolTip = getDefaultTooltip(this.type);
   }
 
   public Port(int dx, int dy, String type, int bits) {
@@ -127,6 +128,17 @@ public class Port {
 
   public Port(int dx, int dy, String type, int bits, String exclude) {
     this(dx, dy, type, BitWidth.create(bits), exclude);
+  }
+
+  private static StringGetter getDefaultTooltip(int type) {
+      if (type == EndData.INPUT_ONLY)
+          return S.getter("portInputTooltip");
+      else if (type == EndData.OUTPUT_ONLY)
+          return S.getter("portOutputTooltip");
+      else if (type == EndData.INPUT_OUTPUT)
+          return S.getter("portBidirTooltip");
+      else
+          return S.getter("portBadTooltip");
   }
 
   public int getFixedBitWidth() {
