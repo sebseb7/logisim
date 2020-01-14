@@ -136,7 +136,7 @@ public class Text extends InstanceFactory implements CustomHandles {
 
   private Text() {
     super("Text", S.getter("textComponent"));
-    setIconName("text.gif");
+    setIconName("comment.png");
     setShouldSnap(false);
   }
 

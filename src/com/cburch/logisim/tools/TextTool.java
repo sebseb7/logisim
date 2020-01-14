@@ -36,6 +36,8 @@ import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
+import javax.swing.Icon;
+
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
@@ -49,6 +51,7 @@ import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.base.Text;
+import com.cburch.logisim.util.Icons;
 
 public final class TextTool extends Tool {
   private class MyListener implements CaretListener, CircuitListener {
@@ -357,9 +360,19 @@ public final class TextTool extends Tool {
       proj.repaintCanvas();
     }
   }
+  
+  private static final Icon toolIcon = Icons.getIcon("text.gif");
 
   @Override
   public void paintIcon(ComponentDrawContext c, int x, int y) {
-    Text.FACTORY.paintIcon(c, x, y, null);
+    Graphics g = c.getGraphics();
+    if (toolIcon != null) {
+      toolIcon.paintIcon(c.getDestination(), g, x + 2, y + 2);
+    } else {
+      int[] xp = { x + 5, x + 5, x + 9, x + 12, x + 14, x + 11, x + 16 };
+      int[] yp = { y, y + 17, y + 12, y + 18, y + 18, y + 12, y + 12 };
+      g.setColor(java.awt.Color.black);
+      g.fillPolygon(xp, yp, xp.length);
+    }
   }
 }
