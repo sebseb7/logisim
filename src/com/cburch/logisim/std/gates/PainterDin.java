@@ -115,7 +115,7 @@ class PainterDin {
 
     Graphics g = painter.getGraphics();
     // draw state if appropriate
-    // ignore lines if in print view
+    // ignore lines for unconnected inputs if in print view
     int r = Math.min(height / 2, width);
     Integer hash = Integer.valueOf(r << 4 | inputs);
     int[] lens = orLenArrays.get(hash);
@@ -141,7 +141,7 @@ class PainterDin {
         && painter.getInstance() != null;
     GraphicsUtil.switchToWidth(g, 2);
     for (int i = 0; i < inputs; i++) {
-      if (!printView || painter.isPortConnected(i)) {
+      if (!printView || painter.isPortConnected(i+1)) {
         Location loc = factory.getInputOffset(attrs, i);
         int x = loc.getX();
         int y = loc.getY();
