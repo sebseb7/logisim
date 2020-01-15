@@ -233,10 +233,14 @@ class PLA extends InstanceFactory {
   @Override
   public void propagate(InstanceState state) {
     BitWidth outWidth = state.getAttributeValue(ATTR_OUT_WIDTH);
-    PLATable tt = state.getAttributeValue(ATTR_TABLE);
     Value input = state.getPortValue(IN_PORT);
-    int val = tt.valueFor(input.toIntValue());
-    state.setPort(1, Value.createKnown(outWidth, val), 1);
+    if (!input.isFullyDefined()) {
+      state.setPort(1, Value.createError(outWidth), 1);
+    } else {
+      PLATable tt = state.getAttributeValue(ATTR_TABLE);
+      int val = tt.valueFor(input.toIntValue());
+      state.setPort(1, Value.createKnown(outWidth, val), 1);
+    }
   }
 
   @Override
@@ -281,7 +285,7 @@ class PLA extends InstanceFactory {
       if (painter.getShowState()) {
         PLATable tt = painter.getAttributeValue(ATTR_TABLE);
         Value input = painter.getPortValue(IN_PORT);
-        String comment = tt.commentFor(input.toIntValue());
+        String comment = input.isFullyDefined() ? tt.commentFor(input.toIntValue()) : "-";
         int jj = comment.indexOf("#"); // don't display secondary comment
         if (jj >= 0)
           comment = comment.substring(0, jj).trim();
