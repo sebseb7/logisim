@@ -77,7 +77,7 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
     int dataBits = contents.getWidth();
 
     CharHeight = StringUtil.estimateBounds("0", FONT).getHeight();
-    SpaceSize = StringUtil.estimateBounds(" ", FONT).getWidth();
+    SpaceSize = StringUtil.estimateBounds(" ", FONT).getWidth() * 3/4;
 
     int estAddrWidth = StringUtil.estimateBounds(StringUtil.toHexString(addrBits, 0), FONT).getWidth();
     AddrBlockSize = ((estAddrWidth + 9) / 10) * 10;
@@ -215,11 +215,14 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
   }
 
   private boolean classicAppearance = true;
+  private int displayWidth = 0, displayHeight = 0;
   public void paint(Graphics g, int leftX, int topY,
       int offsetX, int offsetY,
       int DisplayWidth, int DisplayHeight, boolean classic, int dataLines) {
-    if (RecalculateParameters || classicAppearance != classic) {
+    if (RecalculateParameters || classicAppearance != classic || displayWidth != DisplayWidth || DisplayHeight != displayHeight) {
       classicAppearance = classic;
+      displayWidth = DisplayWidth;
+      displayHeight = DisplayHeight;
       CalculateDisplayParameters(g, offsetX, offsetY, DisplayWidth, DisplayHeight);
     }
     int BlockHeight = NrOfLines * (CharHeight + 2);
