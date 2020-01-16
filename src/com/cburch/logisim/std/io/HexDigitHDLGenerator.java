@@ -34,8 +34,6 @@ import com.bfh.logisim.hdlgenerator.HiddenPort;
 import com.cburch.logisim.hdl.Hdl;
 
 public class HexDigitHDLGenerator extends HDLGenerator {
-
-  // todo: Verilog support
   
   public HexDigitHDLGenerator(ComponentContext ctx) {
     super(ctx, "io", "HexDigit", "i_Hex");
