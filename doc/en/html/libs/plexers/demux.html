@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>Demultiplexer</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -25,10 +26,10 @@ current value received through the input on the south edge.
 I find it useful to think of a demultiplexer as analogous to a railroad
 switch, controlled by the select input.</p>
 
-<p>(Incidentally, some authorities spell this
+<p>Note: Incidentally, some authorities spell this
 <em>demultiplex<strong>o</strong>r</em>,
 but <em>demultiplex<strong>e</strong>r</em> is the predominant
-spelling.)</p>
+spelling.</p>
 
 <h2>Pins (assuming component faces east, select is bottom/left)</h2>
 
@@ -48,7 +49,7 @@ If the select input contains any unspecified bits, then all outputs are
 floating.</dd>
 
 <dt>South edge, left side (input, bit width 1)</dt>
-<dd>Enable: When 0, all outputs consist of all floating bits,
+<dd>Enable (optional): When 0, all outputs consist of all floating bits,
 regardless of the data and select inputs.</dd>
 
 <dt>South edge, right side indicated by gray circle (input, bit width matches Select Bits attribute)</dt>
@@ -87,12 +88,10 @@ zero (No).</dd>
 <dt>Disabled Output</dt>
 <dd>Specifies what each bit of the outputs should be when the component is
 disabled (i.e., when the enable pin is 0). Options include zero and floating;
-in the latter case, the outputs are effectively disconnected from any other ports.</dd>
+in the latter case, when disabled the outputs are effectively disconnected from any other ports.</dd>
 
 <dt>Include Enable?</dt>
-<dd>The component has an enable input when this attribute is <q>yes.</q>
-The attribute is primarily for supporting circuits built using older versions of
-Logisim that did not provide an enable input.</dd>
+<dd>Whether the component should have an enable input.</dd>
 
 </dl>
 
@@ -100,11 +99,9 @@ Logisim that did not provide an enable input.</dd>
 
 <p>None.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
 
-<p>None.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

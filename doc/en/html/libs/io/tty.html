@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>TTY</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -61,6 +62,9 @@ are ignored.</dd>
 <dt>Columns</dt>
 <dd>The maximum number of characters displayed in each row of terminal.</dd>
 
+<dt>ASCII Size</dt>
+<dd>The number of bits to use for the input port.</dd>
+
 <dt>Trigger</dt>
 <dd>If the value is <q>Rising Edge,</q> then when the clock input changes
 from 0 to 1, the data input is processed (when enabled by the write-enable
@@ -74,17 +78,25 @@ clock input changes from 1 to 0.</dd>
 <dt>Background</dt>
 <dd>The color with which to draw the terminal's background.</dd>
 
+<dt>Label</dt>
+<dd>The text within the label associated with the component.</dd>
+
+<dt>Label Location</dt>
+<dd>The location of the label relative to the component.</dd>
+
+<dt>Label Font</dt>
+<dd>The font with which to render the label.</dd>
+
 </dl>
 
 <h2>Poke Tool Behavior</h2>
 
 <p>None.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>Supports VHDL synthesis. The Clear signal is not yet
+fully supported for synthesis.</p>
 
-<p>None.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

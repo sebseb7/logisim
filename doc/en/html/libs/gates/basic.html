@@ -1,20 +1,17 @@
 <html>
 <head>
 <title>AND/OR/NAND/NOR Gate</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
 
-<table><tr><td>
+<h1>
 <img  align="center" src="../../../icons/andGate.gif" width="32" height="32">
 <img  align="center" src="../../../icons/orGate.gif" width="32" height="32">
 <img  align="center" src="../../../icons/nandGate.gif" width="32" height="32">
-<img  align="center" src="../../../icons/norGate.gif" width="32" height="32"><br>
-<img  align="center" src="../../../icons/andGateRect.gif" width="32" height="32">
-<img  align="center" src="../../../icons/orGateRect.gif" width="32" height="32">
-<img  align="center" src="../../../icons/nandGateRect.gif" width="32" height="32">
-<img  align="center" src="../../../icons/norGateRect.gif" width="32" height="32">
-</td><td valign="center"><h1><em>AND/OR/NAND/NOR Gate</em></h1></table>
+<img  align="center" src="../../../icons/norGate.gif" width="32" height="32">
+<em>AND, OR, NAND, NOR Gates</em></h1>
 
 <p><table>
 <tr><td><strong>Library:</strong></td>
@@ -44,12 +41,12 @@ function of the inputs, and emit the result on the output.</p>
 
 <p>By default, any inputs that are left unconnected are ignored
 &mdash; that's if the input truly has nothing attached to it,
-not even a wire.
+not even disconnected a wire.
 In this way, you can insert a 5-input gate but only attach two inputs,
 and it will work as a 2-input gate;
 this relieves you from having to worry about configuring
 the number of inputs every time you create a gate.
-(If all inputs are unconnected, the output is the error value <em>X</em>.)
+(If all inputs are unconnected, the output is the error value <em>E</em>.)
 Some users, though, prefer that Logisim insist that all inputs be connected,
 since this is what corresponds to real-world gates.
 You can enable this behavior by going to the Project &gt; Options&hellip; menu item,
@@ -57,35 +54,35 @@ selecting the Simulation tab, and
 selecting <q>Error for undefined inputs</q> for
 <q>Gate Output When Undefined.</q></p>
 
-<p>The two-input truth table for the gates is the following.
-(The letter <em>X</em> represents the error value,
-and the letter <em>Z</em> represents the floating value.)</p>
+<p>The two-input truth table for the gates are as follows. The letter <em>E</em>
+represents the error value, and the letter <em>X</em> represents the floating
+value (often <em>Z</em> is used to represent floating values).</p>
 
 <center><table>
 <tr><td><table>
 <tr><th colspan="4" align="center"><b>AND</b></th></tr>
-<tr><td></td><th align="center">0</th><th align="center">1</th><th align="center">X/Z</th></tr>
+<tr><td></td><th align="center">0</th><th align="center">1</th><th align="center">E/X</th></tr>
 <tr><th align="center">0</th><td align="center">0</td><td align="center">0</td><td align="center">0</td></tr>
-<tr><th align="center">1</th><td align="center">0</td><td align="center">1</td><td align="center">X</td></tr>
-<tr><th align="center">X/Z</th><td align="center">0</td><td align="center">X</td><td align="center">X</td></tr>
+<tr><th align="center">1</th><td align="center">0</td><td align="center">1</td><td align="center">E</td></tr>
+<tr><th align="center">E/X</th><td align="center">0</td><td align="center">E</td><td align="center">E</td></tr>
 </table></td><td>&nbsp;&nbsp;&nbsp;</td><td><table>
 <tr><th colspan="4" align="center"><b>OR</b></th></tr>
-<tr><td></td><th align="center">0</th><th align="center">1</th><th align="center">X/Z</th></tr>
-<tr><th align="center">0</th><td align="center">0</td><td align="center">1</td><td align="center">X</td></tr>
+<tr><td></td><th align="center">0</th><th align="center">1</th><th align="center">E/X</th></tr>
+<tr><th align="center">0</th><td align="center">0</td><td align="center">1</td><td align="center">E</td></tr>
 <tr><th align="center">1</th><td align="center">1</td><td align="center">1</td><td align="center">1</td></tr>
-<tr><th align="center">X/Z</th><td align="center">X</td><td align="center">1</td><td align="center">X</td></tr>
+<tr><th align="center">E/X</th><td align="center">E</td><td align="center">1</td><td align="center">E</td></tr>
 </table></td></tr><tr><td><table>
 <tr><th colspan="4" align="center"><b>NAND</b></th></tr>
-<tr><td></td><th align="center">0</th><th align="center">1</th><th align="center">X/Z</th></tr>
+<tr><td></td><th align="center">0</th><th align="center">1</th><th align="center">E/X</th></tr>
 <tr><th align="center">0</th><td align="center">1</td><td align="center">1</td><td align="center">1</td></tr>
-<tr><th align="center">1</th><td align="center">1</td><td align="center">0</td><td align="center">X</td></tr>
-<tr><th align="center">X/Z</th><td align="center">1</td><td align="center">X</td><td align="center">X</td></tr>
+<tr><th align="center">1</th><td align="center">1</td><td align="center">0</td><td align="center">E</td></tr>
+<tr><th align="center">E/X</th><td align="center">1</td><td align="center">E</td><td align="center">E</td></tr>
 </table></td><td>&nbsp;&nbsp;&nbsp;</td><td><table>
 <tr><th colspan="4" align="center"><b>NOR</b></th></tr>
-<tr><td></td><th align="center">0</th><th align="center">1</th><th align="center">X/Z</th></tr>
-<tr><th align="center">0</th><td align="center">1</td><td align="center">0</td><td align="center">X</td></tr>
+<tr><td></td><th align="center">0</th><th align="center">1</th><th align="center">E/X</th></tr>
+<tr><th align="center">0</th><td align="center">1</td><td align="center">0</td><td align="center">E</td></tr>
 <tr><th align="center">1</th><td align="center">0</td><td align="center">0</td><td align="center">0</td></tr>
-<tr><th align="center">X/Z</th><td align="center">X</td><td align="center">0</td><td align="center">X</td></tr>
+<tr><th align="center">E/X</th><td align="center">E</td><td align="center">0</td><td align="center">E</td></tr>
 </table></td></tr></table></center>
 
 <p>In short, these components work as expected as long as all inputs
@@ -149,15 +146,16 @@ beyond what the shape naturally accommodates.</dd>
 side.</dd>
 
 <dt>Output Value</dt>
-<dd>Indicates how false and true results should be translated into output values.
-By default, false is indicated by a low voltage (0) and true by a high voltage (1),
-but one or the other can be replaced by a high-impedance (<q>floating</q>) value
-instead. This allows wired-or and wired-and connections, as illustrated below:
-At left, the buffers' Output Value attribute is floating/1 and the resistor pulls to 0,
-giving wired-or behavior;
-at right, the buffers' Output Value attribute is 0/floating and the resistor pulls to 1,
-giving wired-and behavior.
-
+<dd>Indicates the set of possible outputs.  When "0/1" is selected, both 0 and 1
+are possible outputs and the component behaves according to the table above.
+When "0/floating" is selected, the component will output a floating X value
+whenever it would normally output a 1. Similarly, when "floating/1" is selected,
+the component will output a floating X value whenever it would normally output
+a 0. The floating output options allow for wired-or and wired-and connections,
+as illustrated below: At left, the Buffers' Output Value attributes are floating/1
+and the resistor pulls to 0, giving wired-or behavior; at right, the Buffers'
+Output Value attributes are 0/floating and the resistor pulls to 1, giving
+wired-and behavior.
 <center><img src="../../../img-libs/wand-wor.png" width="220" height="91"></center></dd> 
 
 <dt>Label</dt>
@@ -168,8 +166,8 @@ giving wired-and behavior.
 
 <dt>Negate <var>x</var></dt>
 <dd>If <q>yes</q>, the input is negated before it is fed into the gate.
-The inputs are counted top-down if the facing is east or west,
-and they are counted left-to-right if the facing is north or south.</dd>
+Inputs are counted from top-to-bottom if facing east or west,
+and left-to-right if facing north or south.</dd>
 
 </dl>
 
@@ -177,11 +175,11 @@ and they are counted left-to-right if the facing is north or south.</dd>
 
 <p>None.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>All basic gates support VHDL and Verilog synthesis.
+Floating outputs (selected with 'Output Value' attribute) are not supported for
+synthesis.</p>
 
-<p>Allows the label associated with the gate to be edited.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

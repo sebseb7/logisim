@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>Buffer</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -65,11 +66,17 @@ and the arrow keys alter its <q>Facing</q> attribute.</p>
 <dd>The bit width of the component's inputs and outputs.</dd>
 
 <dt>Output Value</dt>
-<dd>Indicates how false and true results should be translated into output values.
-By default, false is indicated by a low voltage (0) and true by a high voltage (1),
-but one or the other can be replaced by a high-impedance (<q>floating</q>) value
-instead. This allows wired-or and wired-and connections, as illustrated in
-the <a href="basic.html">AND/OR/NAND/NOR Gate documentation</a>.</dd>
+<dd>Indicates the set of possible outputs.  When "0/1" is selected, both 0 and 1
+are possible outputs and the component behaves according to the table above.
+When "0/floating" is selected, the component will output a floating X value
+whenever it would normally output a 1. Similarly, when "floating/1" is selected,
+the component will output a floating X value whenever it would normally output
+a 0. The floating output options allow for wired-or and wired-and connections,
+as illustrated below: At left, the Buffers' Output Value attributes are floating/1
+and the resistor pulls to 0, giving wired-or behavior; at right, the Buffers'
+Output Value attributes are 0/floating and the resistor pulls to 1, giving
+wired-and behavior.
+<center><img src="../../../img-libs/wand-wor.png" width="220" height="91"></center></dd> 
 
 <dt>Label</dt>
 <dd>The text within the label associated with the gate.</dd>
@@ -83,11 +90,12 @@ the <a href="basic.html">AND/OR/NAND/NOR Gate documentation</a>.</dd>
 
 <p>None.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>All basic gates support VHDL and Verilog synthesis.
+Floating outputs (selected with 'Output Value' attribute) are not supported for
+synthesis.</p>
 
-<p>Allows the label associated with the gate to be edited.</p>
 
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

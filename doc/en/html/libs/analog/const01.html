@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>Power/Ground</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -9,9 +10,9 @@
 
 <p><table>
 <tr><td><strong>Library:</strong></td>
-	<td><a href="index.html">Wiring</a></td></tr>
+	<td><a href="index.html">Analog</a></td></tr>
 <tr><td><strong>Introduced:</strong></td>
-	<td>2.7.0</td></tr>
+	<td>2.7.0 (moved to Analog in 4.0.2 HC)</td></tr>
 <tr><td valign="top"><strong>Appearance:</strong></td>
 	<td valign="top"><img src="../../../img-libs/power.png" width="17" height="16">
 	<img src="../../../img-libs/ground.png" width="17" height="14"></td></tr>
@@ -27,8 +28,10 @@ of three shortening parallel lines, this value will be zero
 (or, if the Data Bits attribute is more than 1, an all-zero value).</p>
 
 <p>The same functionality can be achieved using the more versatile
-<a href="constant.html">Constant</a> component. The only reason to prefer
-ground and power is that they are standard electronic symbols.</p>
+<a href="../wiring/constant.html"><img class="icon" src="../../../icons/constant0.gif"> <img
+   class="icon"  src="../../../icons/constant.gif"> Constant</a> component. The only reason to prefer
+ground and power is that they are standard electronic symbols. They are not
+typically used for data values, however.</p>
 
 <h2>Pins</h2>
 
@@ -59,11 +62,9 @@ and the arrow keys alter its <q>Facing</q> attribute.</p>
 
 <p>None.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
 
-<p>None.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

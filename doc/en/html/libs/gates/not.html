@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>NOT Gate</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -16,6 +17,7 @@
 	<td valign="top"><table><tbody>
 	<tr><th align="left">Shaped:</th><td><img src="../../../img-libs/not-shaped.png" width="34" height="16"></td></tr>
 	<tr><th align="left">Rectangular:</th><td><img src="../../../img-libs/not-rect.png" width="34" height="21"></td></tr>
+	<tr><th align="left">DIN 40700:</th><td><img src="../../../img-libs/not-din.gif" width="24" height="24"></td></tr>
 	</tbody></table></td></tr>
 </table></p>
 
@@ -29,10 +31,8 @@ The truth table for a NOT gate is the following.</p>
 <tr><td align="center">0</td><td align="center">1</td></tr>
 <tr><td align="center">1</td><td align="center">0</td></tr>
 </table></center>
-<p>If the input is unspecified (i.e., floating), then the output will also be
-unspecified - unless the "Gate Output When Undefined" option is "Error for
-undefined inputs," in which case the output is an error. If the input is an
-error value, then the output will also be.</p>
+<p>If the input is unspecified (i.e., floating) or an error, then the output
+will be an error.</p>
 
 <p>A multi-bit NOT gate will perform the above transformation bitwise on
 its input.</p>
@@ -41,11 +41,11 @@ its input.</p>
 
 <dl>
 
-<dt>West edge (input, bit width according to Data Bits attribute)
-<dd>The component's input.
+<dt>West edge (input, bit width according to Data Bits attribute)</dt>
+<dd>The component's input.</dd>
 
-<dt>East edge (output, bit width according to Data Bits attribute)
-<dd>The output, whose value is the complement of the input value.
+<dt>East edge (output, bit width according to Data Bits attribute)</dt>
+<dd>The output, whose value is the complement of the input value.</dd>
 
 </dl>
 
@@ -68,11 +68,17 @@ and the arrow keys alter its <q>Facing</q> attribute.</p>
 component.</dd>
 
 <dt>Output Value</dt>
-<dd>Indicates how false and true results should be translated into output values.
-By default, false is indicated by a low voltage (0) and true by a high voltage (1),
-but one or the other can be replaced by a high-impedance (<q>floating</q>) value
-instead. This allows wired-or and wired-and connections, as illustrated in
-the <a href="basic.html">AND/OR/NAND/NOR Gate documentation</a>.</dd>
+<dd>Indicates the set of possible outputs.  When "0/1" is selected, both 0 and 1
+are possible outputs and the component behaves according to the table above.
+When "0/floating" is selected, the component will output a floating X value
+whenever it would normally output a 1. Similarly, when "floating/1" is selected,
+the component will output a floating X value whenever it would normally output
+a 0. The floating output options allow for wired-or and wired-and connections,
+as illustrated below: At left, the Not Gates' Output Value attributes are floating/1
+and the resistor pulls to 0, giving wired-or behavior; at right, the Not Gates'
+Output Value attributes are 0/floating and the resistor pulls to 1, giving
+wired-and behavior.
+<center><img src="../../../img-libs/wand-wor-not.png" width="220" height="91"></center></dd> 
 
 <dt>Label</dt>
 <dd>The text within the label associated with the gate.</dd>
@@ -86,11 +92,11 @@ the <a href="basic.html">AND/OR/NAND/NOR Gate documentation</a>.</dd>
 
 <p>None.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>All basic gates support VHDL and Verilog synthesis.
+Floating outputs (selected with 'Output Value' attribute) are not supported for
+synthesis.</p>
 
-<p>Allows the label associated with the gate to be edited.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

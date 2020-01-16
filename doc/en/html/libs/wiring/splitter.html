@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>Splitter</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -22,8 +23,8 @@
 <p>The splitter creates a correspondence between a multi-bit value and several
 separate subsets of those bits. Despite its name, it can either
 split a multi-bit value into component parts, or it can combine
-component parts into a multi-bit value - or indeed it can do both at once.
-A more complete description of splitters is found in the `<a
+component parts into a multi-bit value; or it can do both at once.
+A more complete description of splitters is found in the '<a
 href="../../guide/bundles/splitting.html">Splitters</a>' section of the
 <em>User's Guide</em>.</p>
 
@@ -32,7 +33,7 @@ circuit: Whereas all other components have a computed delay for purposes
 of simulating their behavior, values propagate through splitters (as
 well as wires) instantaneously.</p>
 
-<p><strong>Note:</strong> The term <em>splitter</em> is a non-standard
+<p class="aside"><strong>Note:</strong> The term <em>splitter</em> is a non-standard
 term, which is unique to Logisim as far as I know. I am unaware of any
 standard term for such a concept; the only term I have heard used is
 <em>bus ripper</em>, but this term is unnecessarily violent for my
@@ -47,15 +48,15 @@ and we refer to the multiple connecting points on the other side as its
 
 <dl>
 
-<dt>Combined end (input/output bit width matches Bit Width In attribute)
-<dd>A value holding all of the bits traveling through the splitter.
+<dt>Combined end (input/output bit width matches Bit Width In attribute)</dt>
+<dd><p>A value holding all of the bits traveling through the splitter.</p></dd>
 
-<dt>Split ends (input/output, bit width computed based on Bit <var>x</var> attributes)
-<dd>The number of split ends is specified in the Fan Out attribute, and
+<dt>Split ends (input/output, bit width computed based on Bit <var>x</var> attributes)</td>
+<dd><p>The number of split ends is specified in the Fan Out attribute, and
 each split end has an index that is at least 0 and less than the Fan Out
 attribute. For each split end, all bits for which Bit <var>x</var>
 refers to its index travels through that split end; the order of these
-bits is the same as their order within the combined end.
+bits is the same as their order within the combined end.</p></dd>
 
 </dl>
 
@@ -89,6 +90,9 @@ And the <q>Legacy</q> option draws diagonal lines to each split end, without lab
 this option is primarily for compatibility with versions
 older than 2.7.0, when this was the only option for splitter appearance.</p></dd>
 
+<dt>Spacing</td>
+<dd><p>Controls how far appart the split end pins are placed.</p></dd>
+
 <dt>Bit <var>x</var></dt>
 <dd><p>The index of the split end to which bit <var>x</var> of the combined
 end corresponds. The split ends are indexed starting from 0 at the top
@@ -112,11 +116,9 @@ Distribute Descending does the same but starts from the highest-numbered end.</p
 
 <p>None.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
 
-<p>None.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

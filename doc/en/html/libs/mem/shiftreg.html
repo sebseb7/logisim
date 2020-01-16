@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>Shift Register</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -14,7 +15,8 @@
 <tr><td><strong>Introduced:</strong></td>
 	<td>2.3.0</td></tr>
 <tr><td valign="top"><strong>Appearance:</strong></td>
-	<td valign="top"><img src="../../../img-libs/shiftreg.png" width="104" height="44"></td></tr>
+    <td><table><tr><th align="right" height="50">Classic Logisim:</th><td rowspan="2" valign="top"><img src="../../../img-libs/shiftreg.png"></td></tr>
+    <tr><th align="right">ANSI:</th></tr></table></td></tr>
 </table></p>
 
 <h2>Behavior</h2>
@@ -101,6 +103,15 @@ update at the instant the clock falls from 1 to 0.</dd>
 <dt>Label Font</dt>
 <dd>The font with which to render the label.</dd>
 
+<dt>Show in Registers Tab</dt>
+<dd>Whether the value of the register should appear in the "State" tab at the
+bottom left of the canvas, which can be useful for seeing all of the state
+values contained in a circuit at a glance.</dd>
+
+<dt>Appearance</dt>
+<dd>Selects between the "Classic Logisim" appearance style, which is somewhat
+more compact, or "ANSI" style, which is more conventional but larger.</dd>
+
 </dl>
 
 <h2>Poke Tool Behavior</h2>
@@ -111,11 +122,9 @@ component will bring keyboard focus to the clicked stage
 (indicated by a red rectangle), and typing a hexadecimal digit will
 change the value stored in that stage.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
 
-<p>Allows the label associated with the component to be edited.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>Transmission Gate</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -10,9 +11,9 @@
 
 <p><table>
 <tr><td><strong>Library:</strong></td>
-	<td><a href="index.html">Wiring</a></td></tr>
+	<td><a href="index.html">Analog</a></td></tr>
 <tr><td><strong>Introduced:</strong></td>
-	<td>2.7.0</td></tr>
+	<td>2.7.0 (moved to Analog in 4.0.2 HC)</td></tr>
 <tr><td valign="top"><strong>Appearance:</strong></td>
 	<td valign="top"><img src="../../../img-libs/transmis.png" width="44" height="43"></td></tr>
 </table></p>
@@ -36,35 +37,43 @@ The <em>p-gate</em> input's line has a circle, while the <em>n-gate</em> input's
 <tr><td></td><td align="center"><em>n-gate</em></td><td></td></tr>
 </table></center>
 
-<p>The transmission gate is simply the combination of two complementary
-transistors. Indeed, the same behavior can be achieved in Logisim by using just
-one transistor. However, designers sometimes prefer to use matched pairs of
-transistors due to electrical issues with draining voltage
-that is more complex than Logisim attempts to simulate.</p>
+<p>The transmission gate is essentially just the combination of two
+complementary transistors connected in parallel. Indeed, a similar behavior can
+be achieved in Logisim by using a pair of transistors. However, </p>
 
 <p>The values at <em>n-gate</em> and <em>p-gate</em> are expected to be
 opposite to each other. If <em>p-gate</em> is 0 while <em>n-gate</em> is 1,
 then the value found at <em>source</em> is transmitted to <em>drain</em>.
 If <em>p-gate</em> is 1 while <em>p-gate</em> is 0, then the connection is broken,
-so the value at <em>drain</em> is left floating. In all other cases, <em>drain</em>
-receives an error output &mdash; unless <em>source</em> is floating,
+so the value at <em>drain</em> is left floating ('X'). In all other cases, <em>drain</em>
+receives an error ('E') output &mdash; unless <em>source</em> is floating ('X'),
 in which case <em>drain</em> is floating as well. This behavior is summarized by the following table.</p>
 
 <center><table>
 <tr><th><em>p-gate</em></th><th><em>n-gate</em></th><th><em>drain</em></th></tr>
-<tr><td align="center">0</td><td align="center">0</td><td align="center">X*</td></tr>
+<tr><td align="center">0</td><td align="center">0</td><td align="center">E*</td></tr>
 <tr><td align="center">0</td><td align="center">1</td><td align="center"><em>source</em></td></tr>
-<tr><td align="center">1</td><td align="center">0</td><td align="center">Z</td></tr>
-<tr><td align="center">1</td><td align="center">1</td><td align="center">X*</td></tr>
-<tr><td align="center">X/Z</td><td align="center"><em>any</em></td><td align="center">X*</td></tr>
-<tr><td align="center"><em>any</em></td><td align="center">X/Z</td><td align="center">X*</td></tr>
+<tr><td align="center">1</td><td align="center">0</td><td align="center">X</td></tr>
+<tr><td align="center">1</td><td align="center">1</td><td align="center">E*</td></tr>
+<tr><td align="center">E/X</td><td align="center"><em>any</em></td><td
+        align="center">E*</td></tr>
+<tr><td align="center"><em>any</em></td><td align="center">E/X</td><td
+        align="center">E*</td></tr>
 </tbody></table>
-<p>* <em>If <em>source</em> is Z, <em>drain</em> is Z; otherwise <em>drain</em> is X.</p>
+<p>* Note: If <em>source</em> is X, <em>drain</em> is X; otherwise <em>drain</em> is E.</p>
 </center>
 
 <p>If the Data Bits attribute is more than 1, each <em>gate</em> input is still
 a single bit, but the <em>gate</em> values are applied simultaneously to each of the
 <em>source</em> input's bits.</p>
+
+<blockquote class="warning">Note: Logisim's transmission gate is not bidirectional: values can
+    only flow from source to drain. This is in contrast to typical transmission
+    gates which can operate in either direction. Moreover, in Logisim, if the
+    transmission gate's two control signals are not complementary, then the gate
+    will simply output an error in most cases, whereas actual transmission gates
+    would likely pass current in on direction or the other in some
+    scenarios.</blockquote>
 
 <h2>Pins (assuming component faces east, gate line top/left)</h2>
 
@@ -84,7 +93,7 @@ if triggered by the <em>p-gate</em> and <em>n-gate</em> inputs.</dd>
 <dd>The component's output, which will match the <em>source</em> input
 if <em>p-gate</em> is 0 and <em>n-gate</em> is 1, or it will be floating if
 <em>p-gate</em> is 1 and <em>n-gate</em> is 0. For all other values on <em>p-gate</em> and <em>n-gate</em>,
-the output is an error value.</dd>
+the output is an error value or, in some cases, a floating value.</dd>
 
 </dl>
 
@@ -111,11 +120,10 @@ and the arrow keys alter its <q>Facing</q> attribute.</p>
 
 <p>None.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>None. FPGA devices generally do not support 
+tri-state devices.
 
-<p>None.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>Controlled Buffer/Inverter</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -20,29 +21,30 @@
 
 <h2>Behavior</h2>
 
-<p>The controlled buffer and inverter, often called <em>three-state
+<p>The tri-state buffer and tri-state inverter, often called <em>controlled
 buffers/inverters</em>, each have a one-bit "control"
 input pin on the south side. The value at this control pin affects how
 the component behaves:</p>
 <ul>
 
-<li>When the value on this pin is 1,
-then the component behaves just like the respective component (a <a
-href="buffer.html">buffer</a> or a <a href="not.html">inverter</a> (NOT
-gate)).</li>
+<li>When the value on the control pin is 1,
+then the component behaves just like the respective component, either a <a
+href="buffer.html">buffer</a> or a <a href="not.html">NOT Gate</a> (a.k.a
+"inverter").</li>
 
-<li>When the value is 0 or unknown (i.e., floating), then the
-component's output is also floating.</li>
+<li>When the control pin value is 0 or unknown (i.e., floating), then the
+component's output is floating, regardless of the other input pin.</li>
 
-<li>When the value is an error value (such as would occur when two
+<li>When the control pin value is an error value (such as would occur when two
 conflicting values are being fed into the input), then the output is an
 error value.</li>
 
 </ul>
 
 <p>Controlled buffers can be useful when you have a wire (often called a
-<em>bus</em>) whose value should match the output of one of several
-components.  By placing a controlled buffer between each component
+<em>shared bus</em>) whose value should match the output of one of several
+components, each of which is independently controllable by some control signal.
+By placing a tri-state buffer between each component
 output and the bus, you can control whether that component's output is
 fed onto the bus or not.</p>
 
@@ -80,7 +82,7 @@ and the arrow keys alter its <q>Facing</q> attribute.</p>
 <dd>The bit width of the component's inputs and outputs.</dd>
 
 <dt>Gate Size</dt>
-<dd>(Controlled inverter only) Determines whether to draw a larger or a smaller
+<dd>(Tri-state inverter only) Determines whether to draw a larger or a smaller
 version of the component.</dd>
 
 <dt>Control Line Location</dt>
@@ -101,11 +103,9 @@ the control line is to the north.</dd>
 
 <p>None.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>Tri-state devides are not supported for synthesis.</p>
 
-<p>Allows the label associated with the gate to be edited.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

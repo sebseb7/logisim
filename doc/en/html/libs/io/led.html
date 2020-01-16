@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>LED</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -42,12 +43,16 @@ the arrow keys alter its <q>Facing</q> attribute.</p>
 <dt>Facing</dt>
 <dd>The location of the input pin relative to the component.</dd>
 
-<dt>Color</dt>
-<dd>The color to display when the input value is 1.</dd>
+<dt>On Color</dt>
+<dd>The color to display when the led is "On".</dd>
+
+<dt>Off Color</dt>
+<dd>The color to display when the led is "Off".</dd>
 
 <dt>Active On High?</dt>
-<dd>If <q>yes</q>, then the LED is colored when the input is 1.
-If <q>no</q>, it is colored when the input is 0.</dd>
+<dd>If <q>yes</q>, then the LED is "On" when the input is 1, and "Off"
+otherwise. If <q>no</q>, it is "On" when the input is 0, and "Off"
+otherwise.</dd>
 
 <dt>Label</dt>
 <dd>The text within the label associated with the component.</dd>
@@ -67,11 +72,9 @@ If <q>no</q>, it is colored when the input is 0.</dd>
 
 <p>None.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.</p>
 
-<p>Allows the label associated with the component to be edited.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

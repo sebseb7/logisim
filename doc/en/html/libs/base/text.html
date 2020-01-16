@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>Text Tool</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -10,58 +11,61 @@
 
 <p><table>
 <tr><td><strong>Library:</strong></td>
-	<td><a href="index.html">Base</a></td></tr>
+	<td><a href="index.html">Mouse Tools</a></td></tr>
 <tr><td><strong>Introduced:</strong></td>
 	<td>2.0 Beta 1</td></tr>
 </table></p>
 
 <h2>Behavior</h2>
 
-<p>The text tool allows you to create and edit labels associated with
-components. Which components support labels are indicated in the 'Text
-Tool Behavior' section of their documentation. As of the current
-release, the following components in the built-in libraries support labels.</p>
-<center><table>
-<tr><td valign="top"><strong>Base library</strong></td>
-     <td><a href="pin.html">Pin</a>
-	 <br><a href="clock.html">Clock</a>
-	 <br><a href="label.html">Label</a>
-	 <br><a href="probe.html">Probe</a>
-	 </td></tr>
-<tr><td valign="top"><strong>Memory library</strong></td>
-     <td><a href="../mem/flipflops.html">D/T/JK/SR Flip-Flop</a>
-	 <br><a href="../mem/register.html">Register</a>
-	 <br><a href="../mem/counter.html">Counter</a>
-	 <br><a href="../mem/shiftreg.html">Shift Register</a>
-	 <br><a href="../mem/random.html">Random</a>
-	 </td></tr>
-<tr><td valign="top"><strong>Input/Output library</strong></td>
-     <td><a href="../io/button.html">Button</a>
-	 <br><a href="../io/led.html">LED</a>
-	 </td></tr>
-</table></center>
-<p>For components that can take a label but have none assigned to it currently,
-you can click anywhere within the component to add a label. If there is already
-a label, you need to click within the label. If you click at a point where there
-is not currently a label to be edited, Logisim will initiate the addition of a
-new Label component.</p>
+<p>The Text Tool can add free-form text comments to a circuit, or create and
+edit labels associated with components. Most components in the built-in
+libraries support labels, though some do not.</p>
 
-<p>In the current version of Logisim, text editing features are
-still fairly primitive.
-Selections of a region of text within a label is impossible.
-There is no way to insert a line break into a label.</p>
+<p>For components that can take a label but have none assigned to it currently,
+click anywhere within the component to add a label. If there is already
+a label, click with the label to edit it.</p>
+
+<p>Click any blank area of the canvas to add a new text comment, or click an
+existing text comment to edit it.</p>
 
 <h2>Attributes</h2>
 
-<p>The attributes for the tool are the same as for the <a
-href="label.html">label component</a>. These attributes have no effect
-when editing the label on an existing component, but they are imparted
-to any labels created using the text tool.</p>
+<p>When editing a label for a component, that component's attributes are
+displayed.</p>
 
-<p>Clicking on a component supporting the Text Tool will
-display that component's attributes.</p>
+Text comments have the following attributes:
 
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<dl>
+
+<dt>Text</dt>
+<dd>The text appearing in the comment. This can be edited by changing the
+attribute in the attribute table, or using the <a class="icon"
+href="text.html"><img src="../../../icons/text.gif"> Text Tool</a> directly the
+canvas.</dd>
+
+<dt>Font</dt>
+<dd>The font used for the comment.</dd>
+
+<dt>Horizontal Alignment</dt>
+<dd>Controls the horiztonal alignment, as well as where the text appears relative to
+the origin (i.e. where the mouse was clicked when creating the comment).  "Left"
+uses left-alignment, and positions the text so its left edge is at the origin.
+"Right" uses right-alignment, and positions the text so its right edge is at the
+origin. "Center" horiztonally centers each line, and positions the text
+horizontally so the center is at the origin.</dd>
+
+<dt>Vertical Alignment</dt>
+<dd>Controls the where the text appears relative to the origin (i.e. where the
+mouse was clicked when creating the comment). "Base" positions the text so the
+origin is at the baseline of the first line of text. "Top" positions the text so
+the origin is at the top of first line of the text. "Bottom" positions the text
+so the origin is at the bottom of the last line of text. "Center" centers the
+text vertically at the origin.</dd>
+
+</dl>
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

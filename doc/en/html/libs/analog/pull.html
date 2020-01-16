@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>Pull Resistor</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -12,9 +13,9 @@
 
 <p><table>
 <tr><td><strong>Library:</strong></td>
-	<td><a href="index.html">Wiring</a></td></tr>
+	<td><a href="index.html">Analog</a></td></tr>
 <tr><td><strong>Introduced:</strong></td>
-	<td>2.5.0 (in Base library, moved to Wiring in 2.7.0)</td></tr>
+	<td>2.5.0 (in Base library, moved to Wiring in 2.7.0, then to Analog in 4.0.2 HC)</td></tr>
 <tr><td valign="top"><strong>Appearance:</strong></td>
 	<td valign="top">
 	<table><tbody>
@@ -27,13 +28,17 @@
 
 <p>When connected to a point,
 this component has an effect only when
-the value at that point is the floating value (Z).
+the value at that point is the floating value (X).
 In this case, the resistor pulls the wire to which it is connected
 toward the value indicated in its <q>Pull Direction</q> attribute.</p>
 
 <p>If it is connected to a multiple-bit value, then each bit in the
 value that is floating is pulled in the direction specified, while
 the bits that are not floating are left unchanged.</p>
+
+<p>If multiple pull resistors are connected to the same wire, they must all pull
+in the same direction. Otherwise, whenever the wire would otherwise be floating
+the pull resistors will cause the wire to have an error (E) value instead.</p>
 
 <h2>Pins</h2>
 
@@ -59,11 +64,10 @@ the arrow keys alter its <q>Facing</q> attribute.</p>
 
 <p>None.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>None. FPGA devices generally do not support pull
+resistors or tri-state devices.
 
-<p>None.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

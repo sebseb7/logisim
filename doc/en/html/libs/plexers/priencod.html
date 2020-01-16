@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>Priority Encoder</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -22,8 +23,8 @@
 <p>The component has a number of inputs on its west edge, with the first
 labeled <q>0</q> and the other numbered from there. The component determines
 the indices of the inputs whose values are 1, and it emits the highest index.
-For example, if inputs 0, 2, 5, and 6 are all 1, then the priority encoder
-emits a value of 110. If no inputs are 1, or if the component is
+For example, if inputs 0, 2, 5, and 6 are all 1, with the others being 0, then the priority encoder
+emits a value of 110 (six in binary). If no inputs are 1, or if the component is
 disabled, then the output of the priority encoder is floating.</p>
 
 <p>The priority encoder is designed so that a number of encoders can be
@@ -39,10 +40,10 @@ will be all-floating bits, and the second
 priority encoder will be enabled and it will identify the highest-priority
 input with a 1.</p>
 
-<p>An additional output of the priority encoder is 1 whenever the priority
+<p>The group select output of the priority encoder is 1 whenever the priority
 encoder is enabled and finds a 1 on one of the indexed inputs. When
 chaining priority encoders together, this output can be used to identify
-which of the encoders was triggered.</p>
+which, if any, of the encoders was triggered.</p>
 
 <h2>Pins (assuming component faces east)</h2>
 
@@ -97,11 +98,9 @@ in the latter case, the output is effectively disconnected from any other ports.
 
 <p>None.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
 
-<p>None.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

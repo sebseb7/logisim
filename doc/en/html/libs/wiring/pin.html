@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>Pin</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -20,21 +21,20 @@
 
 <h2>Behavior</h2>
 
-<p>A pin is an output or an input to a circuit, depending on the value
-of its Output? attribute. In drawing a pin, Logisim represents output
+<p>A pin serves as an output from a circuit or as an input to a circuit, depending on the value
+of its 'Type' attribute. Logisim represents output
 pins using a circle or rounded rectangle, and input pins are represented
 using squares or rectangles. In either case, the individual bits of the
 value being sent or received is displayed within the component (except
-within printer view, when the component only says how many bits wide the
-pin is).</p>
+in printer view, when the bit width is shown instead).</p>
 
 <p>A pin is a convenient component for interacting with a circuit, and
 beginning Logisim users need not use them in any other way. But a
 user building a circuit using several subcircuits (as described in the
 `<a href="../../guide/subcirc/index.html">Subcircuits</a>' section of
 the <em>User's Guide</em>) will use pins also
-to specify the interface between a
-circuit and a subcircuit. In particular, a circuit layout's pin
+to specify the interface between an outer
+circuit and the subcircuits it contains. In particular, a circuit layout's pin
 components define the pins that appear on the subcircuit component when
 the layout is used within another circuit. In such a circuit, the values
 sent and received to those locations on the subcircuit component are
@@ -42,10 +42,14 @@ tied to the pins within the subcircuit layout.</p>
 
 <h2>Pins</h2>
 
-<p>A pin component has only one pin, which will be an input to the
-component if the pin is an output pin, and it will be an output to the
-component if the pin is an input pin.  In either case, its bit width
-matches the Data Bits attribute, and its location is specified by the
+<p>A pin component has only one pin. Counterintuitively, when the Pin
+component's type is set to 'input', the pin will actually be an output&mdash;
+the Pin component in this case is taking input from the user (or from some other
+circuit in which this layout is embedded) and outputting that value to the
+connected wire. Conversely, when the Pin's type is set to 'output' the pin takes
+input from the connected wire and outputs it to the screen for the user to see
+(or to some other circuit in which thhis layout is embedded). In either case,
+its bit width matches the Data Bits attribute, and its location depends on the
 Facing attribute.</p>
 
 <h2>Attributes</h2>
@@ -60,30 +64,41 @@ and Alt with an arrow key alters its <q>Label Location</q> attribute.</p>
 <dt>Facing</dt>
 <dd>The side of the component where its input/output pin should be.</dd>
 
-<dt>Output?</dt>
-<dd>Specifies whether the component is an output pin or an input pin.
-(Note that if the pin component is an input pin, then the pin that acts
-as its interface within the circuit will be an output, and vice versa.)</dd>
+<dt>Type</dt>
+<dd>Specifies whether the component is used to input values into the circuit, or
+to output values from the circuit.</dd>
 
 <dt>Data Bits</dt>
 <dd>The number of bits for the value that the pin handles.</dd>
 
-<dt>Three-state?</dt>
-<dd>For an input pin, this configures whether the user can 
-instruct the pin to emit unspecified (i.e., floating) values.
-The attribute deals with the user interface only; it does not have
-any effect on how the pin behaves when the circuit layout is used as a
-subcircuit.
-For an output pin, the attribute has no effect.</dd>
-
-<dt>Pull Behavior</dt>
-<dd>For an input pin, the attribute specifies how floating values should
-be treated when received as an input, perhaps from a circuit using the
-layout as a subcircuit. With "unchanged," the floating values are sent
-into the layout as floating values; with "pull up," they are converted
-into 1 values before being sent into the circuit layout; and with "pull
-down," they are converted into 0 values before being sent into the
-circuit layout.</dd>
+<dt>Behavior</dt>
+<dd>Controls how an input pin behaves in several special cases, mostly involving
+error and unknown values. Output pins do not have a Behavior attribute, as they
+work the same in all circumstances: whatever value is carried by the connected
+wire is shown to the user and passed up to any parent circuit, and if no wire is
+connected, an 'X' is used instead to indicate a floating value. For input pins,
+several behaviors are available:
+<ul><li><b>Simple</b>. In most cases "Simple" behavior should be sufficient. 
+    For an input controled by the user, the user can select either zero or one
+    (or any combination of zeros and ones for a multi-bit input pin). For an
+    input controlled by a parent circuit, whatever value the parent sends (0, 1,
+    E, or X, or some combination of them) is passed to the circuit, or zero is
+    used if the parent does not have a wire connected to that pin. Note that
+    with "Simple" behavior, an input pin will never create a new floating value
+    (X) or error value (E), though it can passes them along from a parent
+    circuit.</li>
+    <li><b>Tri-State</b>. This behavior is nearly identical to "Simple"
+    behavior, except that for input pins controlled by the user, the user can
+    additional select "X" to indicate a floating input.</li>
+    <li><b>Pull Down</b> and <b>Pull Up</b>. This behavior is nearly identical
+    to "Simple" behavior, except that for input pins controlled by a parent
+    circuit: if the parent circuit attempts to send an unknown value (X) to this
+    pin, it will be converted automatically to either zero (for Pull Down) or one (for Pull
+    Up) before being sent into the circuit. Note that this does not affect the
+    parent circuit in any way&mdash;the parent circuit wire will still show X,
+    while the subcircuit will receive a zero or one.</li>
+</ul>
+</dd>
 
 <dt>Label</dt>
 <dd>The text within the label associated with the component.</dd>
@@ -94,6 +109,10 @@ circuit layout.</dd>
 <dt>Label Font</dt>
 <dd>The font with which to render the label.</dd>
 
+<dt>Radix</dt>
+<dd>The number base used for displaying values (and entering values for input
+pins).</dd>
+
 </dl>
 
 <h2>Poke Tool Behavior</h2>
@@ -101,24 +120,25 @@ circuit layout.</dd>
 <p>Clicking an output pin has no effect, although the pin's attributes
 will be displayed.</p>
 
-<p>Clicking an input pin will toggle the bit that is clicked. If it is a
-three-state pin, then the corresponding bit will rotate between the
-three states.</p>
+<p>Clicking an input pin will toggle the bit that is clicked or, when the
+'Radix' is set to something other than binary, iterate through different
+possible values. The keyboard can also be used to enter values using the Poke
+tool.</p>
 
-<p>If, however, the user is viewing the state of a subcircuit
+<p>When viewing the state of a subcircuit
 as described in the `<a href="../../guide/subcirc/debug.html">Debugging
 Subcircuits</a>' of the <em>User's Guide</em>,
-then the pin's value is pinned to whatever value the subcircuit is
-receiving from the containing circuit. The user cannot change the value
-without breaking this link between the subcircuit's state and the 
-containing circuit's state, and Logisim will prompt the user to verify
-that breaking this link is actually desired.</p>
+the value of each input pin is tied ("pinned") to whatever value the subcircuit
+is receiving from the containing parent circuit. Manually change the value of
+the input pin break this link between the subcircuit's state and the containing
+circuit's state, essentially creating a new isolated simulation of just this one
+circuit, independent from any parent circuit. In this situation, any attempting
+to change the input pin's value using the Poke Tool will cause Logisim to warn
+the user and confirm whether breaking this link is actually desired.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
 
-<p>Allows the label associated with the component to be edited.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

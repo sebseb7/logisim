@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>Clock</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -20,18 +21,26 @@
 <h2>Behavior</h2>
 
 <p>The clock toggles its output value on a regular schedule as long as
-ticks are enabled via the
-<a href="../../guide/menu/simulate.html">Simulate menu</a>.
-(Ticks are disabled by default.)
+auto-ticks are enabled via the
+<a href="../../guide/menu/simulate.html">Simulate menu</a>, or when a manual
+half-tick or full-tick is selected from the same menu.
+(Auto-ticking are disabled by default.)
 A "tick" is Logisim's unit of time; the speed at which ticks occur can
-be selected from the Simulate menu's Tick Frequency submenu.</p>
-The clock's cycle can be configured using
-its High Duration and Low Duration attributes.</p>
+be selected from the Simulate menu's Auto-Tick Frequency submenu.</p>
+Each clock component's duty cycle can be independently configured using its High
+Duration and Low Duration attributes.</p>
 
 <p>Note that Logisim's simulation of clocks is quite unrealistic: In
 real circuits, multiple clocks will drift from one another and will
 never move in lockstep. But in Logisim, all clocks experience ticks at
 the same rate.</p>
+
+<blockquote class="warning">Warning: The auto-tick frequency is best-effort&mdash;Logisim will
+    attempt to toggle the clocks at the selected frequency, but does not provide
+    any guarantees. Complex circuits will necessarily require more actual time
+    to simulate, and will not be able to keep up with high clock frequencies.
+    The actual simulated frequency can be displayed (see the 'Window' tab of the
+    Logisim Preferences).</blockquote>
 
 <h2>Pins</h2>
 
@@ -74,13 +83,13 @@ be 0.</dd>
 <h2>Poke Tool Behavior</h2>
 
 <p>Clicking a clock component will toggle its current output value
-immediately.</p>
+immediately. Note that <b>all clocks</b> are tied to the same simulated notion
+of time, so poking any one clock will toggle all clocks in the current
+simulation.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
 
-<p>Allows the label associated with the component to be edited.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

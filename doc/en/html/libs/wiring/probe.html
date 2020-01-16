@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>Probe</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -22,19 +23,17 @@
 <p>A probe is an element that simply displays the value at a given point
 in a circuit. It does not itself interact with other components.</p>
 
-<p>In most respects, the probe component duplicates the functionality
-found in a <a href="pin.html">Pin component</a> configured as an output
-pin. The primary difference is that if the circuit is used as a subcircuit
-component, then an output pin will be a part of that interface, whereas
-a probe is not. They also are different in that the probe does not have a Data Bits
-attribute to be configured: The bit width is inferred from whatever value it
-happens to see on its input. Graphically, they are similar but have slightly
-different borders: A pin has a thick, black border, whereas a probe has
-a thin, gray border.</p>
+<p>In most respects, the probe component duplicates the functionality found in a
+<a href="pin.html">Pin component</a> configured as an output pin. The difference
+is that if the circuit is used as a subcircuit component, then an output pin
+will be a part of that interface, whereas a probe is not. They also are
+different in that the probe automatically adapts its width to whatever it is
+connected to. Graphically, a probe looks like a pin but has a thinner, gray
+border and a yellow background.</p>
 
 <h2>Pins</h2>
 
-<p>A probe component has only one pin, which will acts as an input to
+<p>A probe component has only one pin, which acts as an input to
 the probe. The width that this pin accepts is adaptive: The probe will
 adapt to inputs of any width.</p>
 
@@ -59,7 +58,7 @@ the arrow keys alter its <q>Facing</q> attribute.</p>
 
 <dt>Radix</dt>
 <dd>The base (for example, binary, decimal, or hexadecimal) in which
-a value is displayed.</dd>
+the value is displayed.</dd>
 
 </dl>
 
@@ -67,11 +66,10 @@ a value is displayed.</dd>
 
 <p>None.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>None, but Probe components will be silently
+ignored during FPGA synthesis.
 
-<p>Allows the label associated with the component to be edited.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

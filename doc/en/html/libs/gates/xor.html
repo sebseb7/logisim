@@ -1,20 +1,16 @@
 <html>
 <head>
-<title>XOR/XNOR/Odd Parity/Even Parity Gate</title>
+<title>XOR, XNOR, Odd Parity, Even Parity Gate</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
 
-<table><tr><td>
-<img  align="center" src="../../../icons/xorGate.gif" width="32" height="32">
+<h1><img  align="center" src="../../../icons/xorGate.gif" width="32" height="32">
 <img  align="center" src="../../../icons/xnorGate.gif" width="32" height="32">
 <img  align="center" src="../../../icons/parityOddGate.gif" width="32" height="32">
-<img  align="center" src="../../../icons/parityEvenGate.gif" width="32" height="32"><br>
-<img  align="center" src="../../../icons/xorGateRect.gif" width="32" height="32">
-<img  align="center" src="../../../icons/xnorGateRect.gif" width="32" height="32">
-<img  align="center" src="../../../icons/parityOddGate.gif" width="32" height="32">
 <img  align="center" src="../../../icons/parityEvenGate.gif" width="32" height="32">
-</td><td valign="center"><h1><em>XOR/XNOR/Odd Parity/Even Parity Gate</em></h1></table>
+<em>XOR, XNOR, Odd Parity, Even Parity Gates</em></h1>
 
 <p><table>
 <tr><td><strong>Library:</strong></td>
@@ -28,17 +24,18 @@
 		<th width="60">XNOR</th>
 		<th width="50">Odd<br>Parity</th>
 		<th width="50">Even<br>Parity</th></tr>
-	<tr><th valign="middle" height="65" align="left">Shaped:</th>
+	<tr><th valign="middle" height="57" align="left">Shaped:</th>
 	    <td rowspan="3" colspan="4">
-	       <img src="../../../img-libs/xor.png" width="295" height="113">
+	       <img src="../../../img-libs/xor.png" width="295" height="172">
 	    </td></tr>
-	<tr><th valign="middle" height="65" align="left">Rectangular:</th></tr>
+	<tr><th valign="middle" height="57" align="left">Rectangular:</th></tr>
+	<tr><th valign="middle" height="57" align="left">DIN 40700:</th></tr>
 	</table></td></tr>
 </table></p>
 
 <h2>Behavior</h2>
 
-<p>The XOR, XNOR, Even Parity, and Odd Parity gates each compute
+<p>The XOR, XNOR, Odd Parity, and Even Parity gates each compute
 the respective function of the inputs, and emit the result on the
 output.</p>
 
@@ -49,7 +46,7 @@ In this way, you can insert a 5-input gate but only attach two inputs,
 and it will work as a 2-input gate;
 this relieves you from having to worry about configuring
 the number of inputs every time you create a gate.
-(If all inputs are unconnected, the output is the error value <em>X</em>.)
+(If all inputs are unconnected, the output is the error value <em>E</em>.)
 Some users, though, prefer that Logisim insist that all inputs be connected,
 since this is what corresponds to real-world gates.
 You can enable this behavior by going to the Project &gt; Options&hellip; menu item,
@@ -153,11 +150,17 @@ requested.</dd>
 side.</dd>
 
 <dt>Output Value</dt>
-<dd>Indicates how false and true results should be translated into output values.
-By default, false is indicated by a low voltage (0) and true by a high voltage (1),
-but one or the other can be replaced by a high-impedance (<q>floating</q>) value
-instead. This allows wired-or and wired-and connections, as illustrated in
-the <a href="basic.html">AND/OR/NAND/NOR Gate documentation</a>.</dd>
+<dd>Indicates the set of possible outputs.  When "0/1" is selected, both 0 and 1
+are possible outputs and the component behaves according to the table above.
+When "0/floating" is selected, the component will output a floating X value
+whenever it would normally output a 1. Similarly, when "floating/1" is selected,
+the component will output a floating X value whenever it would normally output
+a 0. The floating output options allow for wired-or and wired-and connections,
+as illustrated below: At left, the Buffers' Output Value attributes are floating/1
+and the resistor pulls to 0, giving wired-or behavior; at right, the Buffers'
+Output Value attributes are 0/floating and the resistor pulls to 1, giving
+wired-and behavior.
+<center><img src="../../../img-libs/wand-wor.png" width="220" height="91"></center></dd> 
 
 <dt>Label</dt>
 <dd>The text within the label associated with the gate.</dd>
@@ -170,17 +173,22 @@ the <a href="basic.html">AND/OR/NAND/NOR Gate documentation</a>.</dd>
 either be based on whether exactly one input is 1 (the default) or an odd number
 of inputs are 1.</dd>
 
+<dt>Negate <var>x</var></dt>
+<dd>If <q>yes</q>, the input is negated before it is fed into the gate.
+Inputs are counted from top-to-bottom if facing east or west,
+and left-to-right if facing north or south.</dd>
+
 </dl>
 
 <h2>Poke Tool Behavior</h2>
 
 <p>None.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>All basic gates support VHDL and Verilog synthesis.
+Floating outputs (selected with 'Output Value' attribute) are not supported for
+synthesis.</p>
 
-<p>Allows the label associated with the gate to be edited.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

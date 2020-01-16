@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>Keyboard</title>
+<link rel="stylesheet" type="text/css" href="../../help.css">
 </head>
 
 <body bgcolor="FFFFFF">
@@ -71,11 +72,23 @@ or 0 if the buffer is empty.</dd>
 <dt>Buffer Length</dt>
 <dd>The number of characters that the buffer can hold at once.</dd>
 
+<dt>ASCII Size</dt>
+<dd>The number of bits to use for the output port.</dd>
+
 <dt>Trigger</dt>
 <dd>If the value is <q>Rising Edge,</q> then when the clock input changes
 from 0 to 1, the leftmost character is consumed (when enabled by the Read
 Enable input). If it is <q>Falling Edge,</q>, then this happens when the
 clock input changes from 1 to 0.</dd>
+
+<dt>Label</dt>
+<dd>The text within the label associated with the component.</dd>
+
+<dt>Label Location</dt>
+<dd>The location of the label relative to the component.</dd>
+
+<dt>Label Font</dt>
+<dd>The font with which to render the label.</dd>
 
 </dl>
 
@@ -92,11 +105,10 @@ type the left-arrow and right-arrow keys to change the location of the cursor
 within the buffer, and the user may type the delete key to delete the buffer
 character (if any) just to the right of the cursor.</p>
 
-<h2>Text Tool Behavior</h2>
+<h2>FPGA Synthesis</h2><p>Supports VHDL synthesis. The Clear signal is not yet
+supported for synthesis.</p>
 
-<p>None.</p>
-
-<p><a href="../index.html">Back to <em>Library Reference</em></a></p>
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>
