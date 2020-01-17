@@ -38,11 +38,12 @@ In summary:
 
 <project name="logisim-evolution">
 
-    <target name="cleanall" depends="clean,gray-clean">
+    <target name="cleanall" depends="clean,gray-clean,turing-clean">
         <delete dir="bin/com/bfh/"/>
         <delete dir="bin/com/cburch/"/>
         <delete dir="bin/com/hepia/"/>
         <delete dir="gray-bin/com/cburch/"/>
+        <delete dir="turing-bin/edu/holycross/kwalsh/"/>
     </target>
 
     <target name="clean">
@@ -82,7 +83,7 @@ In summary:
     <target name="jarsrc" depends="jar">
         <jar destfile="logisim-evolution-src.jar">
             <fileset dir="bin" />
-            <fileset dir="." includes="doc/ src/ gray-src/ build.xml" />
+            <fileset dir="." includes="doc/ src/ gray-src/ turing-src/ build.xml" />
 			<zipgroupfileset dir="libs" includes="*.jar"/>
             <manifest>
                 <attribute name="Main-Class" value="com.cburch.logisim.Main"/>
@@ -184,6 +185,36 @@ In summary:
             </manifest>
         </jar>
     </target>
+    
+    <target name="turing-clean">
+        <delete file="logisim-turing.jar"/>
+    </target>
 
+
+    <target name="turing-compile" depends="turing-clean,jar">
+        <mkdir dir="turing-bin"/>
+        <javac srcdir="turing-src" includeantruntime="false" destdir="turing-bin" debug="true" source="11" target="11" classpath="logisim-evolution.jar" />
+    </target>
+	
+    <target name="turing-jar" depends="turing-compile">
+        <jar destfile="logisim-turing.jar">
+            <fileset dir="turing-bin" />
+            <fileset dir="turing-src" includes="resources/" />
+            <manifest>
+                <attribute name="Library-Class" value="edu.holycross.kwalsh.turing.Components"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="turing-jarsrc" depends="turing-jar">
+        <jar destfile="logisim-turing-src.jar">
+            <fileset dir="turing-bin" />
+            <fileset dir="turing-src" includes="resources/" />
+            <fileset dir="." includes="turing-src/ build.xml" />
+            <manifest>
+                <attribute name="Library-Class" value="edu.holycross.kwalsh.turing.Components"/>
+            </manifest>
+        </jar>
+    </target>
 
 </project>
