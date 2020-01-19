@@ -39,6 +39,7 @@ import javax.swing.ImageIcon;
 
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Attributes;
+import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
@@ -94,12 +95,17 @@ class PaperTape extends InstanceFactory {
   public static final Attribute<String> ATTR_INIT = Attributes.forString(
       "init", StringUtil.constantGetter("Initial Symbols"));
 
+  public static final Attribute<Integer> ATTR_SIZE = Attributes.forIntegerRange(
+      "cells", StringUtil.constantGetter("Display Width"), 5, 50);
+
 	public PaperTape() {
 		super("Paper Tape");
-		setOffsetBounds(Bounds.create(-180, -110, 360, 110));
+    int cells = 9;
+    int w = 90 + cells * 30;
+		setOffsetBounds(Bounds.create(-w/2, -110, w, 110));
     setAttributes(
-        new Attribute[] { ATTR_ALPHABET, ATTR_INIT, StdAttr.LABEL, StdAttr.LABEL_FONT },
-        new Object[] { ALAN, "", "", StdAttr.DEFAULT_LABEL_FONT });
+        new Attribute[] { ATTR_ALPHABET, ATTR_INIT, ATTR_SIZE, StdAttr.LABEL, StdAttr.LABEL_FONT },
+        new Object[] { ALAN, "", 9, "", StdAttr.DEFAULT_LABEL_FONT });
 
 		setInstancePoker(PaperPoker.class);
 
@@ -137,15 +143,19 @@ class PaperTape extends InstanceFactory {
   }
 
   private void updatePorts(Instance instance) {
+    int cells = instance.getAttributeValue(ATTR_SIZE);
+    if (cells % 2 == 0)
+      cells++;
+    int x = 90 + cells * 30;
     String alphabet = instance.getAttributeValue(ATTR_ALPHABET);
     int w = widthFor(alphabet);
     Port[] ps = new Port[] {
-      new Port(-150, 0, Port.INPUT, 1), // R
-      new Port(-20, 0, Port.INPUT, 1),  // CLK
-      new Port(-10, 0, Port.OUTPUT, w), // S
-      new Port(+10, 0, Port.INPUT, 1),  // P
-      new Port(+20, 0, Port.INPUT, w),  // V
-      new Port(+150, 0, Port.INPUT, 1), // L
+      new Port(-x/2+30, 0, Port.INPUT, 1), // R
+      new Port(-20, 0, Port.INPUT, 1),     // CLK
+      new Port(-10, 0, Port.OUTPUT, w),    // S
+      new Port(+10, 0, Port.INPUT, 1),     // P
+      new Port(+20, 0, Port.INPUT, w),     // V
+      new Port(x/2-30, 0, Port.INPUT, 1),  // L
     };
     ps[R].setToolTip(StringUtil.constantGetter("R: moves head one cell to the right"));
     ps[L].setToolTip(StringUtil.constantGetter("L: moves head one cell to the right"));
@@ -162,8 +172,21 @@ class PaperTape extends InstanceFactory {
       // PaperData state = PaperData.get(instance);
       // state.setAlphabet(instance.getAttributeValue(ATTR_ALPHABET));
       updatePorts(instance);
+    } else if (attr == ATTR_SIZE) {
+      instance.recomputeBounds();
+      updatePorts(instance);
     }
   }
+
+  @Override
+  public Bounds getOffsetBounds(AttributeSet attrsBase) {
+    int cells = attrsBase.getValue(ATTR_SIZE);
+    if (cells % 2 == 0)
+      cells++;
+    int w = 90 + cells * 30;
+    return Bounds.create(-w/2, -110, w, 110);
+  }
+
 
   private static final Color LIGHT_GREEN = new Color(0xc4, 0xe0, 0xca);
   private static final Color DARK_GREEN = LIGHT_GREEN.darker();
@@ -174,22 +197,23 @@ class PaperTape extends InstanceFactory {
   private static final Color DARK_SILVER = new Color(0x80, 0x80, 0x80);
   private static final Color RED = new Color(0xff, 0x47, 0x47, 0xcc);
 
-  private void drawTape(Graphics2D g, int x, int y, PaperData state) {
+  private void drawTape(Graphics2D g, int x, int y, int cells, PaperData state) {
+    int w = 90 + cells * 30;
     g.setColor(TAN);
-    g.fillRect(x, y, 360, 50);
+    g.fillRect(x, y, w, 50);
     g.setColor(LIGHT_GREEN);
-    g.fillRect(x, y, 360, 9);
-    g.fillRect(x, y+41, 360, 9);
+    g.fillRect(x, y, w, 9);
+    g.fillRect(x, y+41, w, 9);
     g.setColor(DARK_GREEN);
-    g.drawLine(x, y, x+360, y);
-    g.drawLine(x, y+50, x+360, y+50);
+    g.drawLine(x, y, x+w, y);
+    g.drawLine(x, y+50, x+w, y+50);
     g.setColor(Color.WHITE);
-    for (int xx = 5; xx < x+360-5; xx += 15) {
+    for (int xx = 5; xx < x+w-5; xx += 15) {
       g.fillRoundRect(xx, y+2, 4, 6, 3, 3);
       g.fillRoundRect(xx, y+43, 4, 6, 3, 3);
     }
     boolean moving = state != null && state.isMoving();
-    for (int xx = x+15 + (moving?15:0); xx < x+360-45; xx += 30) {
+    for (int xx = x+15 + (moving?15:0); xx < x+w-45; xx += 30) {
       g.setColor(DARK_TAN);
       g.drawRect(xx, y+10, 30, 30);
     }
@@ -199,9 +223,10 @@ class PaperTape extends InstanceFactory {
   private static final Font ERRFONT = new Font("Monospaced", Font.PLAIN, 9);
   private static final Font TINYFONT = new Font("Monospaced", Font.PLAIN, 7);
 
-  private void drawState(Graphics2D g, int x, int y, PaperData state) {
+  private void drawState(Graphics2D g, int x, int y, int cells, PaperData state) {
     if (state == null)
       return;
+    int w = 90 + cells * 30;
     Font oldFont = g.getFont();
     g.setFont(FONT);
     g.setColor(Color.BLACK);
@@ -210,8 +235,8 @@ class PaperTape extends InstanceFactory {
     else if (state.isMovingRight())
       x += 15;
     int pos = state.getPosition();
-    int i = pos - 4;
-    for (int xx = x+45; xx < x+360-45; xx += 30) {
+    int i = pos - (cells-1)/2;
+    for (int xx = x+45; xx < x+w-45; xx += 30) {
       int utf32 = state.getUtf32Symbol(i);
       if (utf32 != 0) {
         String s = null;
@@ -235,8 +260,8 @@ class PaperTape extends InstanceFactory {
     }
     g.setColor(VERY_GREEN);
     g.setFont(TINYFONT);
-    i = pos - 4;
-    for (int xx = x+45; xx < x+360-45; xx += 30) {
+    i = pos - (cells-1)/2;
+    for (int xx = x+45; xx < x+w-45; xx += 30) {
       g.drawString(""+i, xx+2, y+29);
       i++;
     }
@@ -340,19 +365,19 @@ class PaperTape extends InstanceFactory {
   }
   
   public static int inRoller(Bounds bds, int xx, int yy) {
-    int x = bds.getX(), y = bds.getY();
+    int x = bds.getX(), y = bds.getY(), w = bds.getWidth();
     if (inRoller(x+10, y+10, xx, yy))
       return +1;
-    else if (inRoller(x+310, y+10, xx, yy))
+    else if (inRoller(x+w-50, y+10, xx, yy))
       return -1;
     else
       return 0;
   }
 
   public static Bounds cellBounds(Bounds bds) {
-    int x = bds.getX(), y = bds.getY();
+    int cx = bds.getCenterX(), y = bds.getY();
     y += 20;
-    return Bounds.create(x+180-15, y+10, 30, 30);
+    return Bounds.create(cx-15, y+10, 30, 30);
   }
 
 	@Override
@@ -360,13 +385,17 @@ class PaperTape extends InstanceFactory {
     Graphics2D g = (Graphics2D)painter.getGraphics();
     Bounds bds = painter.getBounds();
     int x = bds.getX(), y = bds.getY();
+    int cells = painter.getAttributeValue(ATTR_SIZE);
+    if (cells % 2 == 0)
+      cells++;
+    int w = 90 + cells * 30;
 
     PaperData state = painter.getShowState()? PaperData.get(painter) : null;
-    drawTape(g, x, y+20, state);
-    drawState(g, x, y+30, state);
-    drawHead(g, x+180, y);
+    drawTape(g, x, y+20, cells, state);
+    drawState(g, x, y+30, cells, state);
+    drawHead(g, x+w/2, y);
     drawRoller(g, x+10, y+10, state);
-    drawRoller(g, x+310, y+10, state);
+    drawRoller(g, x+w-50, y+10, state);
 
     g.setColor(Color.BLACK);
 		painter.drawClock(CLK, Direction.NORTH);
