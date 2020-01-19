@@ -55,6 +55,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.wiring.Pin;
+import com.cburch.logisim.std.base.Text;
 
 public class Analyze {
   public static class LocationBit {
@@ -371,6 +372,8 @@ public class Analyze {
         ; // pins are handled elsewhere
       } else if (comp.getFactory() instanceof SplitterFactory) {
         ; // splitters are handled elsewhere
+      } else if (comp.getFactory() instanceof Text) {
+        ; // ignore
       } else {
         throw new AnalyzeException.CannotHandle(comp.getFactory().getDisplayName());
       }
