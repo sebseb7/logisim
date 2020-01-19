@@ -33,11 +33,12 @@ import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
@@ -141,12 +142,18 @@ public class ExportImage {
       height = 100;
     BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
     Graphics base = img.getGraphics();
-    Graphics g = base.create();
+    Graphics2D g = (Graphics2D)base.create();
+    g.setRenderingHint(
+        RenderingHints.KEY_TEXT_ANTIALIASING,
+        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+    g.setRenderingHint(
+        RenderingHints.KEY_ANTIALIASING,
+        RenderingHints.VALUE_ANTIALIAS_ON);
     g.setColor(Color.white);
     g.fillRect(0, 0, width, height);
     g.setColor(Color.black);
-    ((Graphics2D) g).scale(scale, scale);
-    ((Graphics2D) g).translate(-bds.getX(), -bds.getY());
+    g.scale(scale, scale);
+    g.translate(-bds.getX(), -bds.getY());
 
     CircuitState circuitState = canvas.getProject().getCircuitStateForPrinting(circuit);
     ComponentDrawContext context = new ComponentDrawContext(canvas,
