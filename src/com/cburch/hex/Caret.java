@@ -32,9 +32,10 @@ package com.cburch.hex;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
@@ -290,11 +291,13 @@ public class Caret {
 			int x = measures.toX(cursor);
 			int y = measures.toY(cursor);
 			Graphics2D g2 = (Graphics2D) g;
+      g2.setRenderingHint(
+          RenderingHints.KEY_STROKE_CONTROL,
+          RenderingHints.VALUE_STROKE_PURE);
 			Stroke oldStroke = g2.getStroke();
 			g2.setColor(hex.getForeground());
 			g2.setStroke(CURSOR_STROKE);
-			g2.drawRect(x, y, measures.getCellWidth() - 1,
-					measures.getCellHeight() - 1);
+			g2.drawRect(x, y, measures.getCellWidth(), measures.getCellHeight());
 			g2.setStroke(oldStroke);
 		}
 	}

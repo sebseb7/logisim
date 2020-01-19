@@ -547,6 +547,9 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
     List<Implicant> implicants = model.getOutputExpressions().getMinimalImplicants(output);
     if (implicants != null) {
       Graphics2D g2 = (Graphics2D)g.create(x, y, cellWidth * cols, cellHeight * rows);
+      g2.setRenderingHint(
+          RenderingHints.KEY_STROKE_CONTROL,
+          RenderingHints.VALUE_STROKE_PURE);
       g2.setStroke(new BasicStroke(IMP_BORDER));
       int index = 0;
       for (Implicant imp : implicants) {
