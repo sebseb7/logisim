@@ -31,9 +31,9 @@
 package com.cburch.logisim.circuit;
 import static com.cburch.logisim.circuit.Strings.S;
 
+import java.awt.BasicStroke;
 import java.awt.Graphics;
 import java.awt.Stroke;
-import java.awt.BasicStroke;
 import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.Iterator;

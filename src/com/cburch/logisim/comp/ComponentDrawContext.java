@@ -33,6 +33,7 @@ package com.cburch.logisim.comp;
 import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
@@ -52,8 +53,8 @@ public class ComponentDrawContext {
   private java.awt.Component dest;
   private Circuit circuit;
   private CircuitState circuitState;
-  private Graphics base;
-  private Graphics g;
+  private Graphics2D base;
+  private Graphics2D g;
   private boolean showState;
   private boolean showColor;
   private boolean printView;
@@ -71,8 +72,8 @@ public class ComponentDrawContext {
     this.dest = dest;
     this.circuit = circuit;
     this.circuitState = circuitState;
-    this.base = base;
-    this.g = g;
+    this.base = (Graphics2D)base;
+    this.g = (Graphics2D)g;
     this.showState = true;
     this.showColor = true;
     this.printView = printView;
@@ -282,7 +283,7 @@ public class ComponentDrawContext {
     return AppPreferences.GATE_SHAPE.get();
   }
 
-  public Graphics getGraphics() {
+  public Graphics2D getGraphics() {
     return g;
   }
 
@@ -303,7 +304,7 @@ public class ComponentDrawContext {
   }
 
   public void setGraphics(Graphics g) {
-    this.g = g;
+    this.g = (Graphics2D)g;
   }
 
   public void setHighlightedWires(WireSet value) {
