@@ -3,9 +3,9 @@ Logisim-Evolution (Holy Cross Edition)
 
 You can get the latest *stable version* of Logisim-Evolution (Holy Cross Edition) here:
 
-[![Download for Windows](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-windows.jpg)](http://mathcs.holycross.edu/~kwalsh/Logisim-Evolution-4.0.1hc.exe) 
-[![Download for Mac](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-mac.jpg)](http://mathcs.holycross.edu/~kwalsh/Logisim-Evolution-4.0.1-HC.pkg)
-[![Download for Linux](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-linux.jpg)](http://mathcs.holycross.edu/~kwalsh/logisim-evolution-4.0.1hc.jar)
+[![Download for Windows](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-windows.jpg)](https://mathcs.holycross.edu/~kwalsh/Logisim-Evolution-4.0.4hc.exe) 
+[![Download for Mac](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-mac.jpg)](https://mathcs.holycross.edu/~kwalsh/Logisim-Evolution-4.0.4-HC.pkg)
+[![Download for Linux](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-linux.jpg)](https://mathcs.holycross.edu/~kwalsh/logisim-evolution-4.0.4hc.jar)
 
 **MAC Security Warning**: On some recent MacOS versions, the OS security
 gatekeeper may prevent you from opening the PKG file above directly. Instead,
@@ -14,7 +14,7 @@ go to your download folder in the finder, right click the PKG file and "Open
 with... Installer (Default)". When given a security warning, click "Open". This
 should install the program.
 
-An alternative [ZIP format version for Windows](http://mathcs.holycross.edu/~kwalsh/Logisim-Evolution-4.0.1hc.zip) is
+An alternative [ZIP format version for Windows](https://mathcs.holycross.edu/~kwalsh/Logisim-Evolution-4.0.4hc.zip) is
 also available. After downloading it, extract the compressed contents to a directory of your choice and run the
 extracted exe file.
 
@@ -22,7 +22,7 @@ Windows and Mac versions will work only on Windows or Mac. The platform-independ
 platform, but requires that Java version 11 or above be installed separately (the AdoptOpenJDK version
 available [here](https://adoptopenjdk.net/releases.html?variant=openjdk11&jvmVariant=hotspot) is one possible choice).
 To run the JAR file, open a command line (or Mac Terminal or Windows CMD.exe
-prompt) and type `java -jar logisim-evolution-4.0.1hc.jar` from within the
+prompt) and type `java -jar logisim-evolution-4.0.4hc.jar` from within the
 directory where you have downloaded the JAR file.
 
 
@@ -37,17 +37,17 @@ revolve around:
 * support for VHDL _generics_;
 * UI changes to aid in HDL editing and FPGA downloading.
 * Performance has been improved in this version with help from the [YourKit java profiler](https://www.yourkit.com/java/profiler/).
-  ![YourKit Logo](http://mathcs.holycross.edu/~kwalsh/yklogo.png)
+  ![YourKit Logo](https://mathcs.holycross.edu/~kwalsh/yklogo.png)
 
 On a historical note: I am also the author of all the scattered code mentioning
 "Cornell's version of Logisim", both in the reds-heig fork and Carl Burch's
 version. That code was written when I taught cs3410 (previously cs314) as a grad
 student and, before that, as an undergrad at Cornell. Unsurprisingly, this new
 fork is to support the course I now teach, csci226, at
-[Holy Cross](http://mathcs.holycross.edu/~csci226/).
+[Holy Cross](https://mathcs.holycross.edu/~csci226/).
 
 This version, Logisim-evolution (Holy Cross Edition) is maintained by:
-* Kevin Walsh (kwalsh@holycross.edu), [College of the Holy Cross](http://holycross.edu) 
+* Kevin Walsh (kwalsh@holycross.edu), [College of the Holy Cross](https://holycross.edu) 
 
 
 Below is the README.md file from the upstream reds-heig fork.
