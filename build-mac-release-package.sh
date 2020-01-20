@@ -53,6 +53,33 @@
 #   file permissions).
 #   Workaround: use a postinstall script to chmod all the files to reasonable
 #   permissions.
+# - On my rarely-used mac, jpackage from jdk-14-ea-16 seems to have entirely
+#   disappeared, without a trace. Perhaps some auto update? The download links
+#   on oracle's site for that package are dead/404. The original download
+#   does not contain jpackage. The build scripts do not work without it.
+#   Workaround: Download and install new jdk-14-ea-32 release, which seems to
+#   have jpaackage again.
+# - The new jpackage has renamed lots of options, so fix those below:
+#    '--package-type' is now '--type'
+#    '--output' is now '--dest'
+#    '--mac-bundle-identifier' is now '--mac-package-identifier'
+#    '--mac-bundle-name' is now '--mac-package-name'
+#    '--identifier' isn ow '--mac-package-signing-prefix'
+#    '--add-modules' and '--runtime-image' are now mutually exclusive, so
+#       eliminate the former.
+# - Code signing may *appear* to fail with the new jpackage with this error:
+#   Running [codesign, --verify, /var/folders/kb/zswdtzg94bs52lqrts5sssdr0000gp/T/jdk.incubator.jpackage13637540241510693609/images/image-5430644754281798291/Logisim-Evolution.app/Contents/MacOS/libapplauncher.dylib]
+#   /var/folders/kb/zswdtzg94bs52lqrts5sssdr0000gp/T/jdk.incubator.jpackage13637540241510693609/images/image-5430644754281798291/Logisim-Evolution.app/Contents/MacOS/libapplauncher.dylib: code object is not signed at all
+#   In architecture: x86_64
+#   Running [codesign, -s, Developer ID Application: Kevin Walsh (GDM3S3ULJA), --prefix, edu.holycross.cs.kwalsh.logisim, -vvvv, /var/folders/kb/zswdtzg94bs52lqrts5sssdr0000gp/T/jdk.incubator.jpackage13637540241510693609/images/image-5430644754281798291/Logisim-Evolution.app/Contents/MacOS/libapplauncher.dylib]
+#   error: The specified item could not be found in the keychain.
+#   java.io.IOException: Command [codesign, -s, Developer ID Application: Kevin Walsh (GDM3S3ULJA), --prefix, edu.holycross.cs.kwalsh.logisim, -vvvv, /var/folders/kb/zswdtzg94bs52lqrts5sssdr0000gp/T/jdk.incubator.jpackage13637540241510693609/images/image-5430644754281798291/Logisim-Evolution.app/Contents/MacOS/libapplauncher.dylib] exited with 1 code
+#   	at jdk.incubator.jpackage/jdk.incubator.jpackage.internal.Executor.executeExpectSuccess(Executor.java:73)
+#   	at jdk.incubator.jpackage/jdk.incubator.jpackage.internal.IOUtils.exec(IOUtils.java:179)
+#   	at jdk.incubator.jpackage/jdk.incubator.jpackage.internal.IOUtils.exec(IOUtils.java:150)
+#   	at jdk.incubator.jpackage/jdk.incubator.jpackage.internal.MacAppImageBuilder.lambda$signAppBundle$16(MacAppImageBuilder.java:804)
+#   This, however, just means that the Developer ID Application and Developer ID Installer keys (not the certificates)
+#   are missing fro mthe keychain. This can be fixed by going into XCode, preferences, Keys, and create a new one of each.
 
 set -e # die on error
 #set -x # debug output
@@ -89,7 +116,7 @@ fi
 INSTALLER_TYPE="pkg" # Options: dmg or pkg
 OUTPUT="."
 JAR="logisim-evolution.jar"
-VERSION="4.0.1" # must be numerical x.y.z
+VERSION="4.0.4" # must be numerical x.y.z
 FILE_ASSOCIATIONS="file-associations.properties"
 APP_ICON="logisim.icns"
 JAVA_APP_IDENTIFIER="edu.holycross.cs.kwalsh.logisim"
@@ -115,10 +142,11 @@ chmod a+rx mac-resources/postinstall
 # Build the app and installer package
 echo "Building ${INSTALLER_TYPE} ..."
 PACKAGER=/Library/Java/JavaVirtualMachines/jdk-14.jdk/Contents/Home/bin/jpackage
+#PACKAGER=/Library/Java/JavaVirtualMachines/jdk-15-ea-6.jdk/Contents/Home/bin/jpackage
 ${PACKAGER} \
-  --package-type ${INSTALLER_TYPE} \
+  --type ${INSTALLER_TYPE} \
   --input mac-staging \
-  --output "${OUTPUT}" \
+  --dest "${OUTPUT}" \
   --name "Logisim-Evolution" \
   --main-class com.cburch.logisim.Main \
   --main-jar "${JAR}" \
@@ -126,17 +154,17 @@ ${PACKAGER} \
   --copyright "(c) 2019 Kevin Walsh" \
   --description "Digital logic designer and simulator." \
   --vendor "Kevin Walsh" \
-  --add-modules "${MODULES}" \
   --runtime-image "${JAVA_RUNTIME}" \
   --icon "${APP_ICON}" \
-  --mac-bundle-identifier "Logisim-Evolution-HC" \
-  --mac-bundle-name "Logisim HC" \
+  --mac-package-identifier "Logisim-Evolution-HC" \
+  --mac-package-name "Logisim HC" \
   --mac-sign \
   --file-associations "${FILE_ASSOCIATIONS}" \
-  --identifier "${JAVA_APP_IDENTIFIER}" \
+  --mac-package-signing-prefix "${JAVA_APP_IDENTIFIER}" \
   --resource-dir mac-resources \
-  --license-file LICENSE
-# --verbose
+  --license-file LICENSE \
+  --verbose
+# --add-modules "${MODULES}"
 
 rm -rf mac-staging
 rm -rf mac-resources
