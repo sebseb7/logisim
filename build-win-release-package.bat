@@ -12,9 +12,10 @@ rem   should not expect the user to have a Java 11 runtime preinstalled -- after
 rem   there is no downloadable JRE for Java 11.
 rem   
 rem   Workaround 1: Use Launch4j to build an EXE that references a jlink-produced Java
-rem   runtime in the same directry, then distribute that EXE with the runtime as a ZIP
+rem   runtime in the same directory, then distribute that EXE with the runtime as a ZIP
 rem   file. Users can unzip, put wherever they like, then click the exe. As long as
 rem   the JRE stays in the same directory, should work fine.
+rem     - Actually, Launch4j doesn't 
 rem   
 rem   Workaround 2: Use NSIS, as described here:
 rem     https://netnix.org/2018/07/19/windows-exe-bundled-with-openjdk/
@@ -68,7 +69,7 @@ rem   rem installer type can be exe or msi, but exe does not seem to work
 rem   set INSTALLER_TYPE="msi"
 rem   set OUTPUT=.
 rem   set JAR=logisim-evolution.jar
-rem   set VERSION=4.0.1
+rem   set VERSION=4.0.4
 rem   rem FILE_ASSOCIATIONS="file-associations.properties"
 rem   set APP_ICON="logisim.ico"
 rem   rem JAVA_APP_IDENTIFIER="edu.holycross.cs.kwalsh.logisim"
@@ -114,20 +115,33 @@ rem   rem rmdir /S /Q win-staging
 rem   rem rm -rf mac-resources
 rem   move Logisim-Evolution-%VERSION%.exe Logisim-Evolution-%VERSION%-HC.exe
 
-rem echo Creating executable wrapper...
-rem %LAUNCH4J% logisim-l4j.xml
+echo Creating executable wrapper...
+%LAUNCH4J% logisim-l4j.xml || goto :error
 
 echo Creating ZIP package for distribution...
-del Logisim-Evolution-4.0.1hc.zip
-rmdir /S /Q Logisim-Evolution-4.0.1hc
-mkdir Logisim-Evolution-4.0.1hc
-copy LICENSE Logisim-Evolution-4.0.1hc\LICENSE.txt
-copy logisim-evolution-4.0.1hc.exe Logisim-Evolution-4.0.1hc
-xcopy /s logisim-evolution-runtime Logisim-Evolution-4.0.1hc\logisim-evolution-runtime\
-powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('Logisim-Evolution-4.0.1hc', 'Logisim-Evolution-4.0.1hc.zip'); }"
-del logisim-evolution-4.0.1hc.exe
-rmdir /S /Q Logisim-Evolution-4.0.1hc
+IF EXIST Logisim-Evolution-4.0.4hc.zip del Logisim-Evolution-4.0.4hc.zip || goto :error
+IF EXIST Logisim-Evolution-4.0.4hc rmdir /S /Q Logisim-Evolution-4.0.4hc || goto :error
+mkdir Logisim-Evolution-4.0.4hc || goto :error
+copy LICENSE Logisim-Evolution-4.0.4hc\LICENSE.txt || goto :error
+copy logisim-evolution-4.0.4hc.exe Logisim-Evolution-4.0.4hc || goto :error
+xcopy /s logisim-evolution-runtime Logisim-Evolution-4.0.4hc\logisim-evolution-runtime\ || goto :error
+powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('Logisim-Evolution-4.0.4hc', 'Logisim-Evolution-4.0.4hc.zip'); }" || goto :error
+IF EXIST logisim-evolution-4.0.4hc.exe del logisim-evolution-4.0.4hc.exe || goto :error
+rmdir /S /Q Logisim-Evolution-4.0.4hc || goto :error
 
 echo Creating self-contained executable...
-copy logisim-evolution.jar logisim-evolution-4.0.1hc.jar
-%NSIS% logisim-win-install.nsi
+copy logisim-evolution.jar logisim-evolution-4.0.4hc.jar || goto :error
+%NSIS% logisim-win-install.nsi || goto :error
+
+echo =======================================
+echo Success, maybe?
+echo =======================================
+
+goto :EOF
+
+:error
+echo =======================================
+echo Failed with error #%errorlevel%.
+echo =======================================
+exit /b %errorlevel%
+
