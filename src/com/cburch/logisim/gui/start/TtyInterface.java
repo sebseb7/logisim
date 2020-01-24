@@ -333,6 +333,13 @@ public class TtyInterface {
     return 0;
   }
 
+	static String sanitize(String filename, String ext) {
+		// Simple for now...
+		filename = filename.replaceAll("[^a-zA-Z0-9_. -]", " ");
+		filename = filename.replaceAll("  *", " ").trim();
+		return filename + ext;
+	}
+
   static int doPng(String names[], LogisimFile.FileWithSimulations file) {
     double scale = 1.0;
     String format = ExportImage.FORMAT_PNG;
@@ -343,7 +350,7 @@ public class TtyInterface {
       for (String n : names) {
         if (!n.trim().equals("*") && !n.trim().equals(c.toString()))
           continue;
-        File dest = new File(c.toString() + ".png");
+        File dest = new File(sanitize(c.toString(), ".png"));
         System.out.println("Exporting " + c + " as " + dest);
         String msg = ExportImage.exportImage(canvas, c, scale, true, dest, format, null);
         if (msg != null) {
