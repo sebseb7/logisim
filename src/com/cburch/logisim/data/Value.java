@@ -33,6 +33,7 @@ import static com.cburch.logisim.data.Strings.S;
 
 import java.awt.Color;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import com.cburch.logisim.util.Cache;
 import com.cburch.logisim.circuit.CircuitWires.BusConnection;
@@ -247,18 +248,93 @@ public final class Value {
   public static final Value NIL = new Value(0, 0, 0, 0);
 
   public static final int MAX_WIDTH = 32;
-  public static final Color NIL_COLOR = Color.GRAY;
-  public static final Color FALSE_COLOR = new Color(0, 100, 0);
-  public static final Color TRUE_COLOR = new Color(0, 210, 0);
-  public static final Color UNKNOWN_COLOR = new Color(40, 40, 255);
-  public static final Color ERROR_COLOR = new Color(192, 0, 0);
 
-  public static final Color WIDTH_ERROR_COLOR = new Color(255, 123, 0);
-  public static final Color WIDTH_ERROR_CAPTION_COLOR = new Color(85, 0, 0);
-  public static final Color WIDTH_ERROR_HIGHLIGHT_COLOR = new Color(255, 255, 0);
-  public static final Color WIDTH_ERROR_CAPTION_BGCOLOR = new Color(255, 230, 210);
+  public static Color NIL_COLOR = Color.GRAY;
+  public static Color FALSE_COLOR = new Color(0, 100, 0);
+  public static Color TRUE_COLOR = new Color(0, 210, 0);
+  public static Color UNKNOWN_COLOR = new Color(40, 40, 255);
+  public static Color ERROR_COLOR = new Color(192, 0, 0);
 
-  public static final Color MULTI_COLOR = Color.BLACK;
+  public static Color WIDTH_ERROR_COLOR = new Color(255, 123, 0);
+  public static Color WIDTH_ERROR_CAPTION_COLOR = new Color(85, 0, 0);
+  public static Color WIDTH_ERROR_HIGHLIGHT_COLOR = new Color(255, 255, 0);
+  public static Color WIDTH_ERROR_CAPTION_BGCOLOR = new Color(255, 230, 210);
+
+  public static Color MULTI_COLOR = Color.BLACK;
+
+  public static HashMap<String, String> palettes;
+  static {
+    palettes = new HashMap<>();
+
+    Color[] palette = new Color[] {
+      NIL_COLOR,
+          UNKNOWN_COLOR,
+          TRUE_COLOR,
+          FALSE_COLOR,
+          ERROR_COLOR,
+          MULTI_COLOR,
+          WIDTH_ERROR_COLOR,
+          Color.WHITE // canvas
+    };
+    String s = String.format(
+        "nil=#%08x;"+
+        "unknown=#%08x;"+
+        "true=#%08x;"+
+        "false=#%08x;"+
+        "error=#%08x;"+
+        "bus=#%08x;"+
+        "incompatible=#%08x;"+
+        "canvas=#%08x",
+        palette[0].getRGB() & 0xFFFFFF,
+        palette[1].getRGB() & 0xFFFFFF,
+        palette[2].getRGB() & 0xFFFFFF,
+        palette[3].getRGB() & 0xFFFFFF,
+        palette[4].getRGB() & 0xFFFFFF,
+        palette[5].getRGB() & 0xFFFFFF,
+        palette[6].getRGB() & 0xFFFFFF,
+        palette[7].getRGB() & 0xFFFFFF);
+    palettes.put("standard", s);
+    System.out.println("standard:" + s);
+  }
+
+  public static void setPalette(String p) {
+    if (p == null || p.equals(""))
+      p = "standard";
+    if (palettes.containsKey(p))
+        p = palettes.get(p);
+    for (String spec : p.split(";")) {
+      String[] kv = spec.split("=");
+      if (kv.length != 2)
+        continue;
+      String k = kv[0];
+      String v = kv[1];
+      Color c;
+      try {
+        c = Color.decode(v);
+      } catch (NumberFormatException e) {
+        System.out.println("Error parsing circuit palette: bad color " + v);
+        continue;
+      }
+      if (k.equals("nil"))
+        NIL_COLOR = c;
+      else if (k.equals("unknown"))
+        UNKNOWN_COLOR = c;
+      else if (k.equals("true"))
+        TRUE_COLOR = c;
+      else if (k.equals("false"))
+        FALSE_COLOR = c;
+      else if (k.equals("error"))
+        ERROR_COLOR = c;
+      else if (k.equals("bus"))
+        MULTI_COLOR = c;
+      else if (k.equals("incompatible"))
+        WIDTH_ERROR_COLOR = c;
+      else if (k.equals("canvas"))
+        ; // CANVAS_COLOR = c; // todo
+      else
+        System.out.println("Error parsing circuit palette: bad key " + k);
+    }
+  }
 
 
   private final int width;

@@ -43,11 +43,11 @@ import com.cburch.logisim.prefs.PrefMonitor;
 import com.cburch.logisim.util.StringGetter;
 
 class PrefOptionList implements ActionListener, PropertyChangeListener {
-  private PrefMonitor<String> pref;
+  protected PrefMonitor<String> pref;
   private StringGetter labelStr;
 
   private JLabel label;
-  private JComboBox<PrefOption> combo;
+  protected JComboBox<PrefOption> combo;
 
   public PrefOptionList(PrefMonitor<String> pref, StringGetter labelStr,
       PrefOption[] options) {

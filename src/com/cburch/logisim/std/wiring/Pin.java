@@ -547,7 +547,7 @@ public class Pin extends InstanceFactory {
 
   private static final Font ICON_WIDTH_FONT = new Font("SansSerif", Font.BOLD, 9);
 
-  private static final Font DEFAULT_FONT = new Font("monospaced", Font.PLAIN, 12);
+  public static final Font DEFAULT_FONT = new Font("monospaced", Font.PLAIN, 12);
 
   private static final Color ICON_WIDTH_COLOR = Value.WIDTH_ERROR_COLOR.darker();
 

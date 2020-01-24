@@ -376,6 +376,24 @@ public class AppPreferences {
             Direction.EAST.toString(), Direction.WEST.toString(),
             TOOLBAR_DOWN_MIDDLE, TOOLBAR_HIDDEN },
           Direction.NORTH.toString());
+
+  public static final String PALETTE_STANDARD = "standard";
+  public static final String PALETTE_CONTRAST = "contrast";
+  public static final String PALETTE_GREEN = "green";
+  public static final String PALETTE_BLUE = "blue";
+  public static final String PALETTE_DARK = "dark";
+  public static final String PALETTE_CUSTOM = "custom";
+  public static final PrefMonitor<String>
+      CIRCUIT_PALETTE = new PrefMonitor("circuitPalette",
+          null /*new String[] {
+            PALETTE_STANDARD,
+            PALETTE_CONTRAST,
+            PALETTE_GREEN,
+            PALETTE_BLUE,
+            PALETTE_DARK,
+            PALETTE_CUSTOM }*/,
+            PALETTE_STANDARD);
+
   // Layout preferences
   public static final PrefMonitor<Boolean>
       PRINTER_VIEW = new PrefMonitor("printerView", false);

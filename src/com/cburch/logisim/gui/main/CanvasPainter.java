@@ -72,6 +72,7 @@ class CanvasPainter implements PropertyChangeListener {
 
     AppPreferences.PRINTER_VIEW.addPropertyChangeListener(this);
     AppPreferences.ATTRIBUTE_HALO.addPropertyChangeListener(this);
+    AppPreferences.CIRCUIT_PALETTE.addPropertyChangeListener(this);
   }
 
   private void drawWidthIncompatibilityData(Graphics base, Graphics g,
@@ -256,6 +257,11 @@ class CanvasPainter implements PropertyChangeListener {
   public void propertyChange(PropertyChangeEvent event) {
     if (AppPreferences.PRINTER_VIEW.isSource(event)
         || AppPreferences.ATTRIBUTE_HALO.isSource(event)) {
+      canvas.repaint();
+    } else if (AppPreferences.CIRCUIT_PALETTE.isSource(event)) {
+      String p = AppPreferences.CIRCUIT_PALETTE.get();
+      Value.setPalette(p);
+      // todo: canvas background
       canvas.repaint();
     }
   }

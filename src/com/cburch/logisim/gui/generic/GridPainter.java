@@ -125,7 +125,7 @@ public class GridPainter {
     }
   }
 
-  private void paintGridOld(Graphics g, int size, double f, Rectangle clip) {
+  public static void paintGridOld(Graphics g, int size, double f, Rectangle clip) {
     g.setColor(Color.GRAY);
     if (f == 1.0) {
       int start_x = ((clip.x + 9) / size) * size;
