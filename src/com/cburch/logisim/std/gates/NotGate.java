@@ -50,6 +50,7 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
@@ -254,7 +255,7 @@ class NotGate extends InstanceFactory {
   @Override
   public void paintIcon(InstancePainter painter) {
     Graphics g = painter.getGraphics();
-    g.setColor(Color.black);
+    g.setColor(Color.BLACK);
     if (painter.getGateShape() == AppPreferences.SHAPE_RECTANGULAR) {
       if (toolIconRect != null) {
         toolIconRect.paintIcon(painter.getDestination(), g, 2, 2);
@@ -293,7 +294,7 @@ class NotGate extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    painter.getGraphics().setColor(Color.BLACK);
+    painter.getGraphics().setColor(Palette.LINE_COLOR);
     paintBase(painter);
     painter.drawPorts();
     painter.drawLabel();

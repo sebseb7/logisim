@@ -38,6 +38,7 @@ import java.awt.Graphics2D;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.util.GraphicsUtil;
 
@@ -116,7 +117,7 @@ class SplitterPainter {
     int fanout = attrs.fanout;
     SplitterParameters parms = attrs.getParameters();
 
-    g.setColor(Color.BLACK);
+    g.setColor(Palette.MULTI_COLOR);
     int x0 = origin.getX();
     int y0 = origin.getY();
     int x1 = x0 + parms.getEnd0X();
@@ -142,10 +143,10 @@ class SplitterPainter {
       }
       if (fanout > 3) {
         GraphicsUtil.switchToWidth(g, SPINE_WIDTH);
-        g.setColor(Color.BLACK);
+        g.setColor(Palette.MULTI_COLOR);
         g.drawLine(x1 + (dx>0?10:-10), ySpine, x1 + (fanout - 1) * dx + (dx>0?-10:10), ySpine);
       } else {
-        g.setColor(Color.BLACK);
+        g.setColor(Palette.MULTI_COLOR);
         g.fillOval(x0 - SPINE_DOT / 2, ySpine - SPINE_DOT / 2,
             SPINE_DOT, SPINE_DOT);
       }
@@ -167,10 +168,10 @@ class SplitterPainter {
       }
       if (fanout >= 3) {
         GraphicsUtil.switchToWidth(g, SPINE_WIDTH);
-        g.setColor(Color.BLACK);
+        g.setColor(Palette.MULTI_COLOR);
         g.drawLine(xSpine, y1 + (dy>0?10:-10), xSpine, y1 + (fanout - 1) * dy + (dy>0?-10:10));
       } else {
-        g.setColor(Color.BLACK);
+        g.setColor(Palette.MULTI_COLOR);
         g.fillOval(xSpine - SPINE_DOT / 2, y0 - SPINE_DOT / 2,
             SPINE_DOT, SPINE_DOT);
       }
@@ -208,7 +209,7 @@ class SplitterPainter {
       y += dy;
     }
     GraphicsUtil.switchToWidth(g, SPINE_WIDTH);
-    g.setColor(oldColor);
+    g.setColor(Palette.MULTI_COLOR);
     int spine0x = x0 + parms.getSpine0X();
     int spine0y = y0 + parms.getSpine0Y();
     int spine1x = x0 + parms.getSpine1X();
@@ -249,6 +250,7 @@ class SplitterPainter {
       int[] ySpine = { spine0y, spine1y, y0 + parms.getSpine1Y() / 4 };
       g.drawPolyline(xSpine, ySpine, 3);
     }
+    g.setColor(oldColor);
   }
 
   private static final int SPINE_WIDTH = Wire.WIDTH + 2;

@@ -48,6 +48,7 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
@@ -126,8 +127,6 @@ public class Constant extends InstanceFactory {
       .forHexInteger("value", S.getter("constantValueAttr"));
 
   public static InstanceFactory FACTORY = new Constant();
-
-  private static final Color BACKGROUND_COLOR = new Color(230, 230, 230);
 
   private static final Font DEFAULT_FONT = new Font("monospaced", Font.PLAIN, 12);
 
@@ -256,7 +255,7 @@ public class Constant extends InstanceFactory {
 
     Graphics g = painter.getGraphics();
     if (painter.shouldDrawColor()) {
-      g.setColor(BACKGROUND_COLOR);
+      g.setColor(Palette.CONSTANT_BACKGROUND_COLOR);
       g.fillRect(x + bds.getX(), y + bds.getY(), bds.getWidth(),
           bds.getHeight());
     }

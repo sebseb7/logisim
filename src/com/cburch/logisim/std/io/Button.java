@@ -45,6 +45,7 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceDataSingleton;
@@ -195,7 +196,7 @@ public class Button extends InstanceFactory {
         int px = p.getX();
         int py = p.getY();
         GraphicsUtil.switchToWidth(g, Wire.WIDTH);
-        g.setColor(Value.TRUE_COLOR);
+        g.setColor(Palette.TRUE_COLOR);
         if (facing == Direction.NORTH)
           g.drawLine(px, py, px, py + 10);
         else

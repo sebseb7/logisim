@@ -65,6 +65,7 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.instance.Instance;
@@ -461,7 +462,7 @@ public class Pin extends InstanceFactory {
       Bounds bds = painter.getBounds();
       Graphics g = painter.getGraphics();
       GraphicsUtil.switchToWidth(g, 2);
-      g.setColor(Color.RED);
+      g.setColor(Palette.HALO_COLOR);
       int y = bds.getY() + bds.getHeight();
       int x = bds.getX() + bds.getWidth();
       if (radix == RadixOption.RADIX_2) {
@@ -546,10 +547,9 @@ public class Pin extends InstanceFactory {
   private static final Icon ICON_OUT = Icons.getIcon("pinOutput.gif");
 
   private static final Font ICON_WIDTH_FONT = new Font("SansSerif", Font.BOLD, 9);
+  private static final Color ICON_WIDTH_COLOR = new Color(153, 49, 0);
 
   public static final Font DEFAULT_FONT = new Font("monospaced", Font.PLAIN, 12);
-
-  private static final Color ICON_WIDTH_COLOR = Value.WIDTH_ERROR_COLOR.darker();
 
   public Pin() {
     super("Pin", S.getter("pinComponent"));
@@ -754,7 +754,7 @@ public class Pin extends InstanceFactory {
     int x = bds.getX();
     int y = bds.getY();
     GraphicsUtil.switchToWidth(g, 2);
-    g.setColor(Color.black);
+    g.setColor(Palette.LINE_COLOR);
     if (attrs.type == OUTPUT) {
       if (attrs.width.getWidth() == 1) {
         g.drawOval(x + 1, y + 1, bds.getWidth() - 1,
@@ -770,7 +770,7 @@ public class Pin extends InstanceFactory {
     painter.drawLabel();
 
     if (!painter.getShowState()) {
-      g.setColor(Color.BLACK);
+      g.setColor(Palette.LINE_COLOR);
       GraphicsUtil.drawCenteredText(g, "x" + attrs.width.getWidth(),
           bds.getX() + bds.getWidth() / 2,
           bds.getY() + bds.getHeight() / 2);
@@ -783,7 +783,7 @@ public class Pin extends InstanceFactory {
         g.fillOval(x + 4, y + 4, 13, 13);
 
         if (attrs.width.getWidth() == 1) {
-          g.setColor(Color.WHITE);
+          g.setColor(Palette.REVERSE_COLOR);
           g.setFont(DEFAULT_FONT);
           GraphicsUtil.drawCenteredText(g,
               value.toDisplayString(), x + 10, y + 9);

@@ -76,7 +76,7 @@ import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.data.Value;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
 import com.cburch.logisim.file.LogisimFile;
@@ -450,7 +450,7 @@ public class Canvas extends JPanel
     private static final long serialVersionUID = 1L;
     StringGetter errorMessage = null;
     String widthMessage = null;
-    Color errorColor = DEFAULT_ERROR_COLOR;
+    Color errorColor = Palette.HALO_COLOR;
     boolean isNorth = false;
     boolean isSouth = false;
     boolean isWest = false;
@@ -484,18 +484,18 @@ public class Canvas extends JPanel
       }
 
       if (proj.getSimulator().isOscillating()) {
-        g.setColor(OSC_ERR_COLOR);
+        g.setColor(Palette.OSCILLATING_COLOR);
         msgY = paintString(g, msgY, S.get("canvasOscillationError"));
       }
 
       if (proj.getSimulator().isExceptionEncountered()) {
-        g.setColor(SIM_EXCEPTION_COLOR);
+        g.setColor(Palette.CRASHED_COLOR);
         msgY = paintString(g, msgY, S.get("canvasExceptionError"));
       }
 
       computeViewportContents();
       Dimension sz = getSize();
-      g.setColor(Value.WIDTH_ERROR_COLOR);
+      g.setColor(Palette.WIDTH_ERROR_COLOR);
 
       if (widthMessage != null) {
         msgY = paintString(g, msgY, widthMessage);
@@ -526,7 +526,7 @@ public class Canvas extends JPanel
       if (AppPreferences.SHOW_TICK_RATE.get()) {
         String hz = tickCounter.getTickRate();
         if (hz != null && !hz.equals("")) {
-          g.setColor(TICK_RATE_COLOR);
+          g.setColor(Palette.TICK_RATE_COLOR);
           g.setFont(TICK_RATE_FONT);
           FontMetrics fm = g.getFontMetrics();
           int x = getWidth() - fm.stringWidth(hz) - 5;
@@ -538,15 +538,14 @@ public class Canvas extends JPanel
       GraphicsUtil.switchToWidth(g, 1);
 
       if (!proj.getSimulator().isAutoPropagating()) {
-        g.setColor(SINGLE_STEP_MSG_COLOR);
+        g.setColor(Palette.PENDING_COLOR);
         Font old = g.getFont();
         g.setFont(SINGLE_STEP_MSG_FONT);
         g.drawString(proj.getSimulator().getSingleStepMessage(), 10, 15);
         g.setFont(old);
       }
 
-      g.setColor(Color.BLACK);
-
+      g.setColor(Palette.LINE_COLOR);
     }
 
     private int paintString(Graphics g, int y, String msg) {
@@ -569,7 +568,7 @@ public class Canvas extends JPanel
     void setErrorMessage(StringGetter msg, Color color) {
       if (errorMessage != msg) {
         errorMessage = msg;
-        errorColor = color == null ? DEFAULT_ERROR_COLOR : color;
+        errorColor = color == null ? Palette.HALO_COLOR : color;
         paintThread.requestRepaint();
       }
     }
@@ -644,7 +643,6 @@ public class Canvas extends JPanel
   }
 
   private static final long serialVersionUID = 1L;
-  public static final Color HALO_COLOR = new Color(255, 0, 255);
   // don't bother to update the size if it hasn't changed more than this
   static final double SQRT_2 = Math.sqrt(2.0);
   private static final int BOUNDS_BUFFER = 70;
@@ -652,13 +650,8 @@ public class Canvas extends JPanel
   private static final int THRESH_SIZE_UPDATE = 10;
   private static final int BUTTONS_MASK = InputEvent.BUTTON1_DOWN_MASK
       | InputEvent.BUTTON2_DOWN_MASK | InputEvent.BUTTON3_DOWN_MASK;
-  private static final Color DEFAULT_ERROR_COLOR = new Color(192, 0, 0);
-  private static final Color OSC_ERR_COLOR = DEFAULT_ERROR_COLOR;
-  private static final Color SIM_EXCEPTION_COLOR = DEFAULT_ERROR_COLOR;
   private static final Font ERR_MSG_FONT = new Font("Sans Serif", Font.BOLD, 18);
-  private static final Color TICK_RATE_COLOR = new Color(0, 0, 92, 92);
   private static final Font TICK_RATE_FONT = new Font("Serif", Font.BOLD, 12);
-  private static final Color SINGLE_STEP_MSG_COLOR = Color.BLUE;
   private static final Font SINGLE_STEP_MSG_FONT = new Font("Sans Serif", Font.BOLD, 12);
 
   private Project proj;
@@ -694,7 +687,7 @@ public class Canvas extends JPanel
     this.canvasPane = null;
     this.tickCounter = new TickCounter();
 
-    setBackground(Color.white);
+    setBackground(Palette.CANVAS_COLOR);
     addMouseListener(myListener);
     addMouseMotionListener(myListener);
     setFocusTraversalKeysEnabled(false);
@@ -980,7 +973,7 @@ public class Canvas extends JPanel
           // semi-transparent (gray) pixels on the
           // edges of a line turn woudl darker if
           // painted a second time.
-          g.setColor(Color.WHITE);
+          g.setColor(Palette.CANVAS_COLOR);
           g.fillRect(0, 0, getWidth(), getHeight());
         }
         painter.paintContents(g, proj);

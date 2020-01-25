@@ -46,6 +46,7 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.file.Options;
 import com.cburch.logisim.instance.Instance;
@@ -194,7 +195,7 @@ class ControlledBuffer extends InstanceFactory {
       g.drawPolyline(xp, yp, 4);
       if (isInverter)
         g.drawOval(x + 13, 8, 4, 4);
-      g.setColor(Value.FALSE_COLOR);
+      g.setColor(Palette.FALSE_COLOR);
       g.drawLine(x + 8, 14, x + 8, 18);
     }
   }

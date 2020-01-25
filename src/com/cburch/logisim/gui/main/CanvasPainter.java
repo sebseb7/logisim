@@ -30,7 +30,6 @@
 
 package com.cburch.logisim.gui.main;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -50,7 +49,7 @@ import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.data.Value;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.gui.generic.GridPainter;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
@@ -73,6 +72,7 @@ class CanvasPainter implements PropertyChangeListener {
     AppPreferences.PRINTER_VIEW.addPropertyChangeListener(this);
     AppPreferences.ATTRIBUTE_HALO.addPropertyChangeListener(this);
     AppPreferences.CIRCUIT_PALETTE.addPropertyChangeListener(this);
+    Palette.setPalette(AppPreferences.CIRCUIT_PALETTE.get());
   }
 
   private void drawWidthIncompatibilityData(Graphics base, Graphics g,
@@ -110,21 +110,21 @@ class CanvasPainter implements PropertyChangeListener {
         }
         GraphicsUtil.switchToWidth(g, 2);
         if (common != null && !w.equals(common)) {
-          g.setColor(Value.WIDTH_ERROR_HIGHLIGHT_COLOR);
+          g.setColor(Palette.WIDTH_ERROR_HIGHLIGHT_COLOR);
           g.drawOval(p.getX() - 5, p.getY() - 5, 10, 10);
         }
-        g.setColor(Value.WIDTH_ERROR_COLOR);
+        g.setColor(Palette.WIDTH_ERROR_COLOR);
         g.drawOval(p.getX() - 4, p.getY() - 4, 8, 8);
         GraphicsUtil.switchToWidth(g, 3);
         GraphicsUtil.outlineText(g, caption, p.getX() + 4,
             p.getY() + 1 + fm.getAscent(),
-            Value.WIDTH_ERROR_CAPTION_COLOR,
+            Palette.WIDTH_ERROR_CAPTION_COLOR,
             common != null && !w.equals(common)
-            ? Value.WIDTH_ERROR_HIGHLIGHT_COLOR
-            : Value.WIDTH_ERROR_CAPTION_BGCOLOR);
+            ? Palette.WIDTH_ERROR_HIGHLIGHT_COLOR
+            : Palette.WIDTH_ERROR_CAPTION_BGCOLOR);
       }
     }
-    g.setColor(Color.BLACK);
+    g.setColor(Palette.LINE_COLOR);
     GraphicsUtil.switchToWidth(g, 1);
   }
 
@@ -160,11 +160,11 @@ class CanvasPainter implements PropertyChangeListener {
         y -= (h-15)/2;
         h = 15;
       }
-      g.setColor(Canvas.HALO_COLOR);
+      g.setColor(Palette.HALO_COLOR);
       GraphicsUtil.switchToWidth(g, 3);
       g.drawRoundRect(x, y, w, h, 5, 5);
       GraphicsUtil.switchToWidth(g, 1);
-      g.setColor(Color.BLACK);
+      g.setColor(Palette.LINE_COLOR);
     }
 
     // draw circuit and selection
@@ -227,12 +227,9 @@ class CanvasPainter implements PropertyChangeListener {
     if (canvas.ifPaintDirtyReset() || clip == null) {
       clip = new Rectangle(0, 0, size.width, size.height);
     }
-    // YSY removed to don't overwrite background image
-    // g.setColor(Color.magenta);
-    // g.fillRect(clip.x, clip.y, clip.width, clip.height);
 
     grid.paintGrid(g);
-    g.setColor(Color.black);
+    g.setColor(Palette.LINE_COLOR);
 
     Graphics gScaled = g.create();
     if (zoomFactor != 1.0)
@@ -245,11 +242,11 @@ class CanvasPainter implements PropertyChangeListener {
     ComponentDrawContext ptContext = new ComponentDrawContext(canvas, circ,
         circState, g, gScaled);
     ptContext.setHighlightedWires(highlightedWires);
-    gScaled.setColor(Color.RED);
+    gScaled.setColor(Palette.OSCILLATING_COLOR);
     circState.drawOscillatingPoints(ptContext);
-    gScaled.setColor(Color.BLUE);
+    gScaled.setColor(Palette.PENDING_COLOR);
     proj.getSimulator().drawStepPoints(ptContext);
-    gScaled.setColor(Color.MAGENTA);
+    gScaled.setColor(Palette.HALO_COLOR);
     proj.getSimulator().drawPendingInputs(ptContext);
     gScaled.dispose();
   }
@@ -260,7 +257,7 @@ class CanvasPainter implements PropertyChangeListener {
       canvas.repaint();
     } else if (AppPreferences.CIRCUIT_PALETTE.isSource(event)) {
       String p = AppPreferences.CIRCUIT_PALETTE.get();
-      Value.setPalette(p);
+      Palette.setPalette(p);
       // todo: canvas background
       canvas.repaint();
     }

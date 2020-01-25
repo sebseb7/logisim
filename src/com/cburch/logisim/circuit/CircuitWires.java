@@ -52,6 +52,7 @@ import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.StdAttr;
@@ -895,7 +896,7 @@ public class CircuitWires {
     boolean showState = context.getShowState();
     CircuitState state = context.getCircuitState();
     Graphics2D g = (Graphics2D)context.getGraphics();
-    g.setColor(Color.BLACK);
+    g.setColor(Palette.LINE_COLOR);
     GraphicsUtil.switchToWidth(g, Wire.WIDTH);
     WireSet highlighted = context.getHighlightedWires();
 
@@ -907,11 +908,11 @@ public class CircuitWires {
         Location t = w.e1;
         WireBundle wb = cmap.getBundleAt(s);
         if (!wb.isValid())
-          g.setColor(Value.WIDTH_ERROR_COLOR);
+          g.setColor(Palette.WIDTH_ERROR_COLOR);
         else if (!showState)
-          g.setColor(Color.BLACK);
+          g.setColor(Palette.LINE_COLOR);
         else if (!isValid)
-          g.setColor(Value.NIL_COLOR);
+          g.setColor(Palette.NIL_COLOR);
         else
           g.setColor(getBusValue(state, s).getColor());
         if (highlighted.containsWire(w)) {
@@ -925,7 +926,7 @@ public class CircuitWires {
 
           Stroke oldStroke = g.getStroke();
           g.setStroke(Wire.HIGHLIGHTED_STROKE);
-          g.setColor(Color.MAGENTA);
+          g.setColor(Palette.HALO_COLOR);
           g.drawLine(s.getX(), s.getY(), t.getX(), t.getY());
           g.setStroke(oldStroke);
         } else {
@@ -944,14 +945,14 @@ public class CircuitWires {
           WireBundle wb = cmap.getBundleAt(loc);
           if (wb != null) {
             if (!wb.isValid()) {
-              g.setColor(Value.WIDTH_ERROR_COLOR);
+              g.setColor(Palette.WIDTH_ERROR_COLOR);
             } else if (showState) {
               if (!isValid)
-                g.setColor(Value.NIL_COLOR);
+                g.setColor(Palette.NIL_COLOR);
               else
                 g.setColor(state.getValue(loc).getColor());
             } else {
-              g.setColor(Color.BLACK);
+              g.setColor(Palette.LINE_COLOR);
             }
             int radius;
             if (highlighted.containsLocation(loc)) {
@@ -971,14 +972,14 @@ public class CircuitWires {
           Location t = w.e1;
           WireBundle wb = cmap.getBundleAt(s);
           if (!wb.isValid()) {
-            g.setColor(Value.WIDTH_ERROR_COLOR);
+            g.setColor(Palette.WIDTH_ERROR_COLOR);
           } else if (showState) {
             if (!isValid)
-              g.setColor(Value.NIL_COLOR);
+              g.setColor(Palette.NIL_COLOR);
             else
               g.setColor(getBusValue(state, s).getColor());
           } else {
-            g.setColor(Color.BLACK);
+            g.setColor(Palette.LINE_COLOR);
           }
           if (highlighted.containsWire(w)) {
             GraphicsUtil.switchToWidth(g, Wire.WIDTH + 2);
@@ -1008,14 +1009,14 @@ public class CircuitWires {
             WireBundle wb = cmap.getBundleAt(loc);
             if (wb != null) {
               if (!wb.isValid()) {
-                g.setColor(Value.WIDTH_ERROR_COLOR);
+                g.setColor(Palette.WIDTH_ERROR_COLOR);
               } else if (showState) {
                 if (!isValid)
-                  g.setColor(Value.NIL_COLOR);
+                  g.setColor(Palette.NIL_COLOR);
                 else
                   g.setColor(getBusValue(state, loc).getColor());
               } else {
-                g.setColor(Color.BLACK);
+                g.setColor(Palette.LINE_COLOR);
               }
               int radius;
               if (highlighted.containsLocation(loc)) {

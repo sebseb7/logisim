@@ -30,7 +30,6 @@
 
 package com.cburch.logisim.gui.generic;
 
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Image;
@@ -40,6 +39,8 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.Arrays;
+
+import com.cburch.logisim.data.Palette;
 
 public class GridPainter {
   private class Listener implements PropertyChangeListener {
@@ -59,11 +60,6 @@ public class GridPainter {
   public static final String ZOOM_PROPERTY = "zoom";
 
   public static final String SHOW_GRID_PROPERTY = "showgrid";
-  private static final int GRID_DOT_COLOR = 0xFF777777;
-
-  private static final int GRID_DOT_ZOOMED_COLOR = 0xFFCCCCCC;
-
-  private static final Color GRID_ZOOMED_OUT_COLOR = new Color(210, 210, 210);
 
   private Component destination;
   private PropertyChangeSupport support;
@@ -126,7 +122,7 @@ public class GridPainter {
   }
 
   public static void paintGridOld(Graphics g, int size, double f, Rectangle clip) {
-    g.setColor(Color.GRAY);
+    g.setColor(Palette.GRID_DOT_COLOR);
     if (f == 1.0) {
       int start_x = ((clip.x + 9) / size) * size;
       int start_y = ((clip.y + 9) / size) * size;
@@ -142,7 +138,7 @@ public class GridPainter {
       int y0 = size * (int) Math.ceil(clip.y / f / size);
       int y1 = y0 + (int) (clip.height / f);
       if (f <= 0.5)
-        g.setColor(GRID_ZOOMED_OUT_COLOR);
+        g.setColor(Palette.GRID_ZOOMED_OUT_COLOR);
       for (double x = x0; x < x1; x += size) {
         for (double y = y0; y < y1; y += size) {
           int sx = (int) Math.round(f * x);
@@ -152,7 +148,7 @@ public class GridPainter {
       }
       if (f <= 0.5) { // make every 5th pixel darker
         int size5 = 5 * size;
-        g.setColor(Color.GRAY);
+        g.setColor(Palette.GRID_DOT_COLOR);
         x0 = size5 * (int) Math.ceil(clip.x / f / size5);
         y0 = size5 * (int) Math.ceil(clip.y / f / size5);
         for (double x = x0; x < x1; x += size5) {
@@ -164,19 +160,6 @@ public class GridPainter {
         }
       }
 
-      /*
-       * Original code by Carl Burch int x0 = 10 * (int) Math.ceil(clip.x
-       * / f / 10); int x1 = x0 + (int)(clip.width / f); int y0 = 10 *
-       * (int) Math.ceil(clip.y / f / 10); int y1 = y0 + (int)
-       * (clip.height / f); int s = f > 0.5 ? 1 : f > 0.25 ? 2 : 3; int i0
-       * = s - ((x0 + 10*s - 1) % (s * 10)) / 10 - 1; int j0 = s - ((y1 +
-       * 10*s - 1) % (s * 10)) / 10 - 1; for (int i = 0; i < s; i++) { for
-       * (int x = x0+i*10; x < x1; x += s*10) { for (int j = 0; j < s;
-       * j++) { g.setColor(i == i0 && j == j0 ? Color.gray :
-       * GRID_ZOOMED_OUT_COLOR); for (int y = y0+j*10; y < y1; y += s*10)
-       * { int sx = (int) Math.round(f * x); int sy = (int) Math.round(f *
-       * y); g.fillRect(sx, sy, 1, 1); } } } }
-       */
     }
   }
 
@@ -227,6 +210,8 @@ public class GridPainter {
   // creating the grid image
   //
   private void updateGridImage(int size, double f) {
+    int GRID_DOT_COLOR = Palette.GRID_DOT_COLOR.getRGB();
+    int GRID_DOT_ZOOMED_COLOR = Palette.GRID_DOT_ZOOMED_COLOR.getRGB();
     double ww = f * size * 5;
     while (2 * ww < 150)
       ww *= 2;

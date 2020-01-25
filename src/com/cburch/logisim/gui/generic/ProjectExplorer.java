@@ -254,7 +254,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       if (viewed || haloed) {
         Shape s = g.getClip();
         g.clipRect(x, y, 20, 20);
-        g.setColor(viewed ? VIEWED_TOOL_HALO_COLOR : Canvas.HALO_COLOR);
+        g.setColor(viewed ? VIEWED_TOOL_HALO_COLOR : Color.MAGENTA);
         g.fillOval(x-2, y-2, 23, 23);
         g.setColor(Color.BLACK);
         g.setClip(s);

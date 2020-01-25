@@ -493,7 +493,7 @@ abstract class AbstractGate extends InstanceFactory {
   @Override
   public final void paintIcon(InstancePainter painter) {
     Graphics g = painter.getGraphics();
-    g.setColor(Color.black);
+    g.setColor(Color.BLACK);
     if (painter.getGateShape() == AppPreferences.SHAPE_RECTANGULAR) {
       Icon iconRect = getIconRectangular();
       if (iconRect != null) {

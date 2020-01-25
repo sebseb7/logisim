@@ -48,7 +48,7 @@ import javax.swing.JPanel;
 import com.bric.swing.ColorPicker;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.data.Direction;
-import com.cburch.logisim.data.Value;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.gui.generic.GridPainter;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.std.wiring.Pin;
@@ -139,7 +139,7 @@ class WindowOptions extends OptionsPanel {
     static final int W = 340;
     static final int H = 130;
     static final int BH = 25;
-    static final int BW = 35;
+    int BW = 35;
 
     public PalettePanel() {
       setPreferredSize(new Dimension(W, H));
@@ -152,20 +152,15 @@ class WindowOptions extends OptionsPanel {
       repaint();
     }
 
-    Color contrast(Color c) {
-      double yy = (299 * c.getRed() + 587 * c.getGreen() + 114 * c.getBlue()) / 1000;
-      return yy >= 128 ? Color.BLACK : Color.WHITE;
-    }
-
-    void drawButton(Graphics2D g, int i, Color outline, Color fill, String s) {
+    void drawButton(Graphics2D g, int i, Color fill, String s) {
       int x = 5+(BW+5)*i;
       int y = H-BH-5;
       g.setColor(fill);
       g.fillRect(x+3, y+3, BW-6, BH-6);
-      g.setColor(outline);
+      g.setColor(Palette.LINE_COLOR);
       g.drawRect(x, y, BW-1, BH-1);
       if (s != null) {
-        g.setColor(contrast(fill));
+        g.setColor(Palette.contrast(fill));
         g.setFont(Pin.DEFAULT_FONT);
         GraphicsUtil.drawCenteredText(g, s, x+BW/2, y+BH/2);
       }
@@ -181,7 +176,7 @@ class WindowOptions extends OptionsPanel {
           RenderingHints.KEY_ANTIALIASING,
           RenderingHints.VALUE_ANTIALIAS_ON);
 
-      g.setColor(Color.WHITE);
+      g.setColor(Palette.CANVAS_COLOR);
       g.fillRect(0, 0, W, H);
       g.setColor(Color.BLACK);
       g.drawRect(0, 0, W-1, H-1);
@@ -189,7 +184,7 @@ class WindowOptions extends OptionsPanel {
       if (AppPreferences.LAYOUT_SHOW_GRID.get())
         GridPainter.paintGridOld(g, 10, 1.0, new Rectangle(0, 0, W, H));
 
-      g.setColor(Color.BLACK);
+      g.setColor(Palette.LINE_COLOR);
       GraphicsUtil.switchToWidth(g, 2);
       g.drawRect(20+1, 30+1, 20-2, 20-2);
       g.drawRect(20+1, 70+1, 20-2, 20-2);
@@ -214,49 +209,44 @@ class WindowOptions extends OptionsPanel {
         GraphicsUtil.drawCenteredArc(g, xo[i]+15, yo[i]+15, 15, -90, 180);
       }
 
-      Color outline = contrast(Color.WHITE); // canvas
-      drawButton(g, 0, outline, Value.NIL_COLOR, "-");
-      drawButton(g, 1, outline, Value.UNKNOWN_COLOR, "X");
-      drawButton(g, 2, outline, Value.TRUE_COLOR, "1");
-      drawButton(g, 3, outline, Value.FALSE_COLOR, "0");
-      drawButton(g, 4, outline, Value.ERROR_COLOR, "E");
-      drawButton(g, 5, outline, Value.MULTI_COLOR, "bus");
-      drawButton(g, 6, outline, Value.WIDTH_ERROR_COLOR, "2\u22601");
-      drawButton(g, 7, outline, Color.WHITE, "bg"); // canvas
+      Color[] palette = Palette.toArray();
+      BW = (W-5)/palette.length - 5;
+      for (int i = 0; i < palette.length; i++)
+        drawButton(g, i, palette[i], Palette.labels[i]);
 
       GraphicsUtil.switchToWidth(g, Wire.WIDTH);
-      g.setColor(Value.NIL_COLOR);
+      g.setColor(Palette.NIL_COLOR);
       g.drawLine(20, 20, 110, 20);
 
-      g.setColor(Value.UNKNOWN_COLOR);
+      g.setColor(Palette.UNKNOWN_COLOR);
       g.drawLine(120, 20, 210, 20);
       
-      g.setColor(Value.TRUE_COLOR);
+      g.setColor(Palette.TRUE_COLOR);
       g.drawLine(40, 40, 210, 40);
       g.drawLine(100, 40, 100, 70);
       g.drawLine(100, 70, 130, 70);
       g.fillOval(100-Wire.WIDTH, 40-Wire.WIDTH, 2*Wire.WIDTH, 2*Wire.WIDTH);
       g.fillOval(20 + 4, 40 - 6, 13, 13);
-      g.setColor(Color.WHITE);
+      g.setColor(Palette.REVERSE_COLOR);
       g.setFont(Pin.DEFAULT_FONT);
       GraphicsUtil.drawCenteredText(g, "1", 20 + 10, 40 - 1);
 
-      g.setColor(Value.FALSE_COLOR);
+      g.setColor(Palette.FALSE_COLOR);
       g.drawLine(40, 80, 130, 80);
       g.fillOval(20 + 4, 80 - 6, 13, 13);
-      g.setColor(Color.WHITE);
+      g.setColor(Palette.REVERSE_COLOR);
       g.setFont(Pin.DEFAULT_FONT);
       GraphicsUtil.drawCenteredText(g, "0", 20 + 10, 80 - 1);
 
-      g.setColor(Value.ERROR_COLOR);
+      g.setColor(Palette.ERROR_COLOR);
       g.drawLine(240, 30, 320, 30);
 
-      g.setColor(Value.MULTI_COLOR);
+      g.setColor(Palette.MULTI_COLOR);
       GraphicsUtil.switchToWidth(g, Wire.WIDTH_BUS);
       g.drawLine(140, 60, 210, 60);
       g.drawLine(170, 80, 210, 80);
 
-      g.setColor(Value.WIDTH_ERROR_COLOR);
+      g.setColor(Palette.WIDTH_ERROR_COLOR);
       GraphicsUtil.switchToWidth(g, Wire.WIDTH);
       g.drawLine(240, 70, 290, 70);
       GraphicsUtil.switchToWidth(g, 2);
@@ -265,38 +255,13 @@ class WindowOptions extends OptionsPanel {
     }
 
     void doColorChange(int i) {
-      Color[] palette = new Color[] {
-            Value.NIL_COLOR,
-            Value.UNKNOWN_COLOR,
-            Value.TRUE_COLOR,
-            Value.FALSE_COLOR,
-            Value.ERROR_COLOR,
-            Value.MULTI_COLOR,
-            Value.WIDTH_ERROR_COLOR,
-            Color.WHITE // canvas
-      };
+      Color[] palette = Palette.toArray();
       Color oldColor = palette[i];
       Color newColor = ColorPicker.showDialog(getPreferencesFrame(), oldColor, false);
       if (newColor == null || newColor.equals(oldColor))
         return;
       palette[i] = newColor;
-      String custom = String.format(
-              "nil=#%08x;"+
-              "unknown=#%08x;"+
-              "true=#%08x;"+
-              "false=#%08x;"+
-              "error=#%08x;"+
-              "bus=#%08x;"+
-              "incompatible=#%08x;"+
-              "canvas=#%08x",
-              palette[0].getRGB() & 0xFFFFFF,
-              palette[1].getRGB() & 0xFFFFFF,
-              palette[2].getRGB() & 0xFFFFFF,
-              palette[3].getRGB() & 0xFFFFFF,
-              palette[4].getRGB() & 0xFFFFFF,
-              palette[5].getRGB() & 0xFFFFFF,
-              palette[6].getRGB() & 0xFFFFFF,
-              palette[7].getRGB() & 0xFFFFFF);
+      String custom = Palette.toPrefString(palette);
       AppPreferences.CIRCUIT_PALETTE.set(custom);
     }
 

@@ -40,6 +40,7 @@ import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceData;
@@ -277,7 +278,7 @@ public class DotMatrix extends InstanceFactory {
           else if (val == Value.FALSE)
             c = offColor;
           else
-            c = Value.ERROR_COLOR;
+            c = Palette.ERROR_COLOR;
           g.setColor(c);
 
           if (drawSquare)

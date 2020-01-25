@@ -56,6 +56,7 @@ import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.file.Options;
 import com.cburch.logisim.file.ToolbarData;
@@ -198,7 +199,7 @@ class LayoutToolbarModel extends AbstractToolbarModel {
       // draw halo
       if (tool == haloedTool
           && AppPreferences.ATTRIBUTE_HALO.get()) {
-        g.setColor(Canvas.HALO_COLOR);
+        g.setColor(Palette.HALO_COLOR);
         g.fillRect(1, 1, 22, 22);
       }
 
