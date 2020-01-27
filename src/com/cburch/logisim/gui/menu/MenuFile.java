@@ -168,7 +168,7 @@ class MenuFile extends Menu implements ActionListener {
     } else if (src == saveAs && proj != null) {
       ProjectActions.doSaveAs(proj);
     } else if (src == prefs) {
-      PreferencesFrame.showPreferences();
+      PreferencesFrame.showPreferences("default");
     } else if (src == quit) {
       ProjectActions.doQuit();
     }

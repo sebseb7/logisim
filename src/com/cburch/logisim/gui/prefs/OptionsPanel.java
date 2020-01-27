@@ -57,4 +57,8 @@ abstract class OptionsPanel extends JPanel {
   public abstract String getTitle();
 
   public abstract void localeChanged();
+
+  private String tag = "misc";
+  public String getTag() { return tag; }
+  public OptionsPanel withTag(String t) { tag = t; return this; }
 }

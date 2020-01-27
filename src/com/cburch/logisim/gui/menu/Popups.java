@@ -51,12 +51,13 @@ import com.cburch.logisim.gui.main.LayoutClipboard;
 import com.cburch.logisim.gui.main.Selection;
 import com.cburch.logisim.gui.main.SelectionActions;
 import com.cburch.logisim.gui.main.StatisticsDialog;
+import com.cburch.logisim.gui.prefs.PreferencesFrame;
+import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
-import com.cburch.logisim.prefs.AppPreferences;
 
 public class Popups {
 
@@ -313,6 +314,7 @@ public class Popups {
 
     static final String customize = "toolbarCustomize";
     static final String hide = "toolbarHide";
+    static final String colors = "toolbarColors";
 
     JMenu location = new JMenu(S.get("toolbarLocation"));
     JRadioButtonMenuItem north = new JRadioButtonMenuItem(Direction.NORTH.toDisplayString());
@@ -348,6 +350,8 @@ public class Popups {
       addSeparator();
       add(hide, S.get(hide),
         e -> AppPreferences.TOOLBAR_PLACEMENT.set(AppPreferences.TOOLBAR_HIDDEN));
+      add(colors, S.get(colors),
+        e -> PreferencesFrame.showPreferences("window"));
     }
 
   }

@@ -424,7 +424,7 @@ public class Startup {
         System.out.println("Note [4]: no support for desktop file printing");
 
       if (desktop.isSupported(Desktop.Action.APP_PREFERENCES)) {
-        desktop.setPreferencesHandler(e -> PreferencesFrame.showPreferences());
+        desktop.setPreferencesHandler(e -> PreferencesFrame.showPreferences("default"));
         Main.PreferencesMenuAutomaticallyPresent = true;
       } else {
         System.out.println("Note [5]: no support for desktop preferences");

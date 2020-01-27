@@ -54,6 +54,7 @@ import com.cburch.logisim.gui.main.LayoutClipboard;
 import com.cburch.logisim.gui.main.LayoutEditHandler;
 import com.cburch.logisim.gui.main.Selection;
 import com.cburch.logisim.gui.main.SelectionActions;
+import com.cburch.logisim.gui.prefs.PreferencesFrame;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.StringUtil;
@@ -215,6 +216,7 @@ public final class MenuTool extends Tool {
 
     JMenuItem paste = new JMenuItem(S.get("circuitPasteItem"));
     JMenuItem all = new JMenuItem(S.get("circuitSelectAllItem"));
+    JMenuItem colors = new JMenuItem(S.get("circuitCustomizeColorsItem"));
 
     MenuCircuit(Project proj, Circuit circ) {
       this.proj = proj;
@@ -228,6 +230,10 @@ public final class MenuTool extends Tool {
       add(all);
       all.addActionListener(this);
       all.setEnabled(canChange);
+      addSeparator();
+      add(colors);
+      colors.addActionListener(this);
+      colors.setEnabled(true);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -236,6 +242,8 @@ public final class MenuTool extends Tool {
         LayoutEditHandler.paste(proj.getFrame());
       else if (src == all)
         LayoutEditHandler.selectAll(proj.getFrame());
+      else if (src == colors)
+        PreferencesFrame.showPreferences("window");
     }
   }
 

@@ -91,9 +91,6 @@ public class AppPreferences {
     }
   }
 
-  //
-  // methods for accessing preferences
-  //
   private static class MyListener
     implements PreferenceChangeListener, LocaleListener {
     public void localeChanged() {
@@ -233,16 +230,10 @@ public class AppPreferences {
     return prefs;
   }
 
-  //
-  // recent projects
-  //
   public static List<File> getRecentFiles() {
     return recentProjects.getRecentFiles();
   }
 
-  //
-  // template methods
-  //
   public static Template getTemplate() {
     getPrefs();
     switch (templateType) {
@@ -262,9 +253,6 @@ public class AppPreferences {
     return templateFile;
   }
 
-  //
-  // accessor methods
-  //
   public static int getTemplateType() {
     getPrefs();
     int ret = templateType;
@@ -326,8 +314,6 @@ public class AppPreferences {
     recentProjects.updateRecent(file);
   }
 
-  // class variables for maintaining consistency between properties,
-  // internal variables, and other classes
   private static Preferences prefs = null;
 
   private static MyListener myListener = null;
@@ -385,14 +371,7 @@ public class AppPreferences {
   public static final String PALETTE_CUSTOM = "custom";
   public static final PrefMonitor<String>
       CIRCUIT_PALETTE = new PrefMonitor("circuitPalette",
-          null /*new String[] {
-            PALETTE_STANDARD,
-            PALETTE_CONTRAST,
-            PALETTE_GREEN,
-            PALETTE_BLUE,
-            PALETTE_DARK,
-            PALETTE_CUSTOM }*/,
-            PALETTE_STANDARD);
+          null, PALETTE_STANDARD);
 
   // Layout preferences
   public static final PrefMonitor<Boolean>

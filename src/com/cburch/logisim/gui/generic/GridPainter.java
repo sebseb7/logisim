@@ -175,6 +175,10 @@ public class GridPainter {
     }
   }
 
+  public void refresh() {
+    updateGridImage(gridSize, zoomFactor);
+  }
+
   public void setZoomFactor(double value) {
     double oldValue = zoomFactor;
     if (oldValue != value) {
@@ -210,6 +214,7 @@ public class GridPainter {
   // creating the grid image
   //
   private void updateGridImage(int size, double f) {
+    int CANVAS_COLOR = Palette.CANVAS_COLOR.getRGB();
     int GRID_DOT_COLOR = Palette.GRID_DOT_COLOR.getRGB();
     int GRID_DOT_ZOOMED_COLOR = Palette.GRID_DOT_ZOOMED_COLOR.getRGB();
     double ww = f * size * 5;
@@ -217,7 +222,7 @@ public class GridPainter {
       ww *= 2;
     int w = (int) Math.round(ww);
     int[] pix = new int[w * w];
-    Arrays.fill(pix, 0xFFFFFF);
+    Arrays.fill(pix, CANVAS_COLOR);
 
     if (f == 1.0) {
       int lineStep = size * w;
@@ -274,8 +279,7 @@ public class GridPainter {
         }
       }
     }
-    gridImage = destination.createImage(new MemoryImageSource(w, w, pix, 0,
-          w));
+    gridImage = destination.createImage(new MemoryImageSource(w, w, pix, 0, w));
     gridImageWidth = w;
   }
 }

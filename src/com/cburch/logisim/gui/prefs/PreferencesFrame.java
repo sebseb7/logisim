@@ -85,8 +85,9 @@ public class PreferencesFrame extends LFrame.Dialog {
     MENU_MANAGER = new WindowMenuManager();
   }
 
-  public static void showPreferences() {
+  public static void showPreferences(String panel) {
     JFrame frame = MENU_MANAGER.getJFrame(true, null);
+    ((PreferencesFrame)frame).setSelectedPanel(panel);
     frame.setVisible(true);
   }
 
@@ -102,12 +103,12 @@ public class PreferencesFrame extends LFrame.Dialog {
     super(null); // not associated with a project
 
     panels = new OptionsPanel[] {
-      new TemplateOptions(this),
-      new IntlOptions(this), // index=1: see setSelectedIndex(1) below
-      new WindowOptions(this),
-      new LayoutOptions(this),
-      new ExperimentalOptions(this),
-      new SoftwaresOptions(this),
+      new TemplateOptions(this).withTag("templates"),
+      new IntlOptions(this).withTag("international"), // the default
+      new WindowOptions(this).withTag("window"),
+      new LayoutOptions(this).withTag("layout"),
+      new ExperimentalOptions(this).withTag("experimental"),
+      new SoftwaresOptions(this).withTag("fpga"),
     };
     tabbedPane = new JTabbedPane();
     for (int index = 0; index < panels.length; index++) {
@@ -120,10 +121,23 @@ public class PreferencesFrame extends LFrame.Dialog {
     tabbedPane.setPreferredSize(new Dimension(450, 300));
     contents.add(tabbedPane, BorderLayout.CENTER);
 
-    tabbedPane.setSelectedIndex(1);
+    setSelectedPanel("default");
 
     LocaleManager.addLocaleListener(myListener);
     myListener.localeChanged();
     pack();
   }
+
+  private void setSelectedPanel(String name) {
+    if (name.equals("default"))
+      name = "international";
+    for (int index = 0; index < panels.length; index++) {
+      OptionsPanel panel = panels[index];
+      if (panel.getTag().equals(name)) {
+        tabbedPane.setSelectedIndex(index);
+        break;
+      }
+    }
+  }
+
 }

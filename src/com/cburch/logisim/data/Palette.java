@@ -34,6 +34,8 @@ import static com.cburch.logisim.data.Strings.S;
 import java.awt.Color;
 import java.util.HashMap;
 
+import com.cburch.logisim.prefs.AppPreferences;
+
 public final class Palette {
 
   public static Color NIL_COLOR;
@@ -70,9 +72,17 @@ public final class Palette {
   public static HashMap<String, String> options;
   static {
     options = new HashMap<>();
-    options.put("standard", 
+    options.put(AppPreferences.PALETTE_STANDARD,
         "nil=#808080;unknown=#2828ff;true=#00d200;false=#006400;error=#c00000;bus=#000000;incompatible=#ff7b00;canvas=#ffffff");
-    setPalette("standard");
+    options.put(AppPreferences.PALETTE_CONTRAST,
+        "nil=#808080;unknown=#008bff;true=#00c400;false=#300001;error=#d40000;bus=#000000;incompatible=#c96100;canvas=#ffffff");
+    options.put(AppPreferences.PALETTE_GREEN,
+        "nil=#a8a8a8;unknown=#f7e2b2;true=#fcff12;false=#08fff4;error=#ff7975;bus=#ffffff;incompatible=#ffa0f3;canvas=#094d1c");
+    options.put(AppPreferences.PALETTE_BLUE,
+        "nil=#808080;unknown=#008bff;true=#00c400;false=#300001;error=#d40000;bus=#000000;incompatible=#c96100;canvas=#ffffff");
+//    options.put(AppPreferences.PALETTE_DARK,
+//        "nil=#a8a8a8;unknown=#f7e2b2;true=#fcff12;false=#08fff4;error=#ff7975;bus=#ffffff;incompatible=#ffa0f3;canvas=#1c094d");
+    setPalette(AppPreferences.PALETTE_STANDARD); // updated later
   }
 
   public static void setPalette(String specs) {

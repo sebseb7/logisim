@@ -73,6 +73,7 @@ class CanvasPainter implements PropertyChangeListener {
     AppPreferences.ATTRIBUTE_HALO.addPropertyChangeListener(this);
     AppPreferences.CIRCUIT_PALETTE.addPropertyChangeListener(this);
     Palette.setPalette(AppPreferences.CIRCUIT_PALETTE.get());
+    grid.refresh();
   }
 
   private void drawWidthIncompatibilityData(Graphics base, Graphics g,
@@ -258,7 +259,7 @@ class CanvasPainter implements PropertyChangeListener {
     } else if (AppPreferences.CIRCUIT_PALETTE.isSource(event)) {
       String p = AppPreferences.CIRCUIT_PALETTE.get();
       Palette.setPalette(p);
-      // todo: canvas background
+      grid.refresh();
       canvas.repaint();
     }
   }
