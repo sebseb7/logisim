@@ -31,7 +31,6 @@
 package com.cburch.logisim.std.wiring;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 
@@ -41,6 +40,7 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
@@ -163,6 +163,10 @@ public class Tunnel extends InstanceFactory {
   //
   @Override
   public void paintGhost(InstancePainter painter) {
+    paintShape(painter, false);
+  }
+
+  public void paintShape(InstancePainter painter, boolean solid) {
     TunnelAttributes attrs = (TunnelAttributes) painter.getAttributeSet();
     Direction facing = attrs.getFacing();
     String label = attrs.getLabel();
@@ -223,6 +227,11 @@ public class Tunnel extends InstanceFactory {
       }
     }
     GraphicsUtil.switchToWidth(g, 2);
+    if (solid) {
+      g.setColor(Palette.SOLID_COLOR);
+      g.fillPolygon(xp, yp, xp.length);
+      g.setColor(Palette.LINE_COLOR);
+    }
     g.drawPolygon(xp, yp, xp.length);
   }
 
@@ -233,8 +242,7 @@ public class Tunnel extends InstanceFactory {
     int y = loc.getY();
     Graphics g = painter.getGraphics();
     g.translate(x, y);
-    g.setColor(Color.BLACK);
-    paintGhost(painter);
+    paintShape(painter, true);
     g.translate(-x, -y);
     painter.drawPorts();
   }

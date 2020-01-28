@@ -38,7 +38,6 @@
 package com.cburch.logisim.std.gates;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Font;
 import java.awt.Window;
@@ -59,6 +58,7 @@ import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.instance.Instance;
@@ -67,9 +67,9 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.util.GraphicsUtil;
-import com.cburch.logisim.tools.MenuExtender;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.tools.MenuExtender;
+import com.cburch.logisim.util.GraphicsUtil;
 
 class PLA extends InstanceFactory {
   static final int IN_PORT = 0;
@@ -82,8 +82,6 @@ class PLA extends InstanceFactory {
   static Attribute<PLATable> ATTR_TABLE = new TruthTableAttribute();
 
   public static InstanceFactory FACTORY = new PLA();
-
-  private static final Color BACKGROUND_COLOR = new Color(230, 230, 230);
 
   private static final List<Attribute<?>> ATTRIBUTES = Arrays.asList(new Attribute<?>[] {
     StdAttr.FACING, ATTR_IN_WIDTH, ATTR_OUT_WIDTH, ATTR_TABLE,
@@ -252,15 +250,15 @@ class PLA extends InstanceFactory {
 
   @Override
   public void paintGhost(InstancePainter painter) {
-    paintInstance(painter, true);
+    paintShape(painter, false);
   }
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    paintInstance(painter, false);
+    paintShape(painter, true);
   }
 
-  void paintInstance(InstancePainter painter, boolean ghost) {
+  void paintShape(InstancePainter painter, boolean solid) {
     Graphics g = painter.getGraphics();
     Bounds bds = painter.getBounds();
     int x = bds.getX();
@@ -268,20 +266,19 @@ class PLA extends InstanceFactory {
     int w = bds.getWidth();
     int h = bds.getHeight();
 
-    if (!ghost && painter.shouldDrawColor()) {
-      g.setColor(BACKGROUND_COLOR);
+    if (solid && painter.shouldDrawColor()) {
+      g.setColor(Palette.SOLID_COLOR);
       g.fillRect(x, y, w, h);
+      g.setColor(Palette.LINE_COLOR);
     }
 
-    if (!ghost)
-      g.setColor(Color.BLACK);
     GraphicsUtil.switchToWidth(g, 2);
     g.drawRect(x, y, bds.getWidth(), bds.getHeight());
 
     g.setFont(painter.getAttributeValue(StdAttr.LABEL_FONT));
     String label = painter.getAttributeValue(StdAttr.LABEL);
     GraphicsUtil.drawCenteredText(g, label, x+w/2, y+h/3);
-    if (!ghost) {
+    if (solid) {
       if (painter.getShowState()) {
         PLATable tt = painter.getAttributeValue(ATTR_TABLE);
         Value input = painter.getPortValue(IN_PORT);

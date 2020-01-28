@@ -411,7 +411,7 @@ abstract class AbstractGate extends InstanceFactory {
     }
   }
 
-  private void paintBase(InstancePainter painter) {
+  private void paintBase(InstancePainter painter, boolean solid) {
     GateAttributes attrs = (GateAttributes) painter.getAttributeSet();
     Direction facing = attrs.facing;
     int inputs = attrs.inputs;
@@ -463,11 +463,11 @@ abstract class AbstractGate extends InstanceFactory {
     } else { // SHAPE_SHAPED
       if (negateOutput) {
         g.translate(-10, 0);
-        paintShape(painter, width - 10, height);
+        paintShape(painter, width - 10, height, solid);
         painter.drawDongle(5, 0);
         g.translate(10, 0);
       } else {
-        paintShape(painter, width, height);
+        paintShape(painter, width, height, solid);
       }
     }
 
@@ -487,7 +487,7 @@ abstract class AbstractGate extends InstanceFactory {
   //
   @Override
   public void paintGhost(InstancePainter painter) {
-    paintBase(painter);
+    paintBase(painter, false);
   }
 
   @Override
@@ -531,7 +531,7 @@ abstract class AbstractGate extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    paintBase(painter);
+    paintBase(painter, true);
     if (!painter.isPrintView()
         || painter.getGateShape() == AppPreferences.SHAPE_RECTANGULAR) {
       painter.drawPorts();
@@ -549,8 +549,7 @@ abstract class AbstractGate extends InstanceFactory {
     }
   }
 
-  protected abstract void paintShape(InstancePainter painter, int width,
-      int height);
+  protected abstract void paintShape(InstancePainter painter, int width, int height, boolean solid);
 
   @Override
   public void propagate(InstanceState state) {

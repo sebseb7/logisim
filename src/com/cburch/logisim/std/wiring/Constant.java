@@ -32,7 +32,6 @@ package com.cburch.logisim.std.wiring;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
-import java.awt.Color;
 import java.awt.Graphics;
 import java.util.Arrays;
 import java.util.List;
@@ -197,8 +196,11 @@ public class Constant extends InstanceFactory {
 
   @Override
   public void paintGhost(InstancePainter painter) {
-    int v = painter.getAttributeValue(ATTR_VALUE).intValue();
-    String vStr = Integer.toHexString(v);
+    BitWidth width = painter.getAttributeValue(StdAttr.WIDTH);
+    int intValue = painter.getAttributeValue(ATTR_VALUE).intValue();
+    Value v = Value.createKnown(width, intValue);
+
+    String vStr = v.getWidth() == 1 ? v.toString() : v.toHexString();
     Bounds bds = getOffsetBounds(painter.getAttributeSet());
 
     Graphics g = painter.getGraphics();
@@ -255,7 +257,7 @@ public class Constant extends InstanceFactory {
 
     Graphics g = painter.getGraphics();
     if (painter.shouldDrawColor()) {
-      g.setColor(Palette.CONSTANT_BACKGROUND_COLOR);
+      g.setColor(Palette.SOLID_COLOR);
       g.fillRect(x + bds.getX(), y + bds.getY(), bds.getWidth(),
           bds.getHeight());
     }
@@ -267,7 +269,7 @@ public class Constant extends InstanceFactory {
           x + bds.getX() + bds.getWidth() / 2,
           y + bds.getY() + bds.getHeight() / 2 - 2);
     } else {
-      g.setColor(Color.BLACK);
+      g.setColor(Palette.LINE_COLOR);
       g.setFont(DEFAULT_FONT);
       GraphicsUtil.drawCenteredText(g, v.toHexString(), x + bds.getX()
           + bds.getWidth() / 2, y + bds.getY() + bds.getHeight() / 2

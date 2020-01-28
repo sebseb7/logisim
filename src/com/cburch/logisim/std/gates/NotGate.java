@@ -214,7 +214,7 @@ class NotGate extends InstanceFactory {
     }
   }
 
-  private void paintBase(InstancePainter painter) {
+  private void paintBase(InstancePainter painter, boolean solid) {
     Graphics g = painter.getGraphics();
     Direction facing = painter.getAttributeValue(StdAttr.FACING);
     Location loc = painter.getLocation();
@@ -231,11 +231,10 @@ class NotGate extends InstanceFactory {
     if (shape == AppPreferences.SHAPE_RECTANGULAR) {
       paintRectangularBase(g, painter);
     } else if (shape == AppPreferences.SHAPE_DIN40700) {
-      int width = painter.getAttributeValue(ATTR_SIZE) == SIZE_NARROW ? 20
-          : 30;
+      int width = painter.getAttributeValue(ATTR_SIZE) == SIZE_NARROW ? 20 : 30;
       PainterDin.paintAnd(painter, width, 18, true);
     } else {
-      PainterShaped.paintNot(painter);
+      PainterShaped.paintNot(painter, solid);
     }
 
     if (rotate != 0.0) {
@@ -246,7 +245,7 @@ class NotGate extends InstanceFactory {
 
   @Override
   public void paintGhost(InstancePainter painter) {
-    paintBase(painter);
+    paintBase(painter, false);
   }
 
   //
@@ -295,7 +294,7 @@ class NotGate extends InstanceFactory {
   @Override
   public void paintInstance(InstancePainter painter) {
     painter.getGraphics().setColor(Palette.LINE_COLOR);
-    paintBase(painter);
+    paintBase(painter, true);
     painter.drawPorts();
     painter.drawLabel();
   }

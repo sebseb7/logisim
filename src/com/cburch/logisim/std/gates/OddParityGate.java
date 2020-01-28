@@ -105,7 +105,7 @@ class OddParityGate extends AbstractGate {
   }
 
   @Override
-  protected void paintShape(InstancePainter painter, int width, int height) {
+  protected void paintShape(InstancePainter painter, int width, int height, boolean solid) {
     paintRectangular(painter, width, height);
   }
 

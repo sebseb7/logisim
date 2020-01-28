@@ -67,7 +67,7 @@ public final class Palette {
   public static Color GRID_DOT_ZOOMED_COLOR; // contrasts CANVAS_COLOR
   public static Color GRID_ZOOMED_OUT_COLOR; // contrasts CANVAS_COLOR
 
-  public static Color CONSTANT_BACKGROUND_COLOR; // contrasts CANVAS_COLOR
+  public static Color SOLID_COLOR; // contrasts CANVAS_COLOR
 
   public static HashMap<String, String> options;
   static {
@@ -79,10 +79,10 @@ public final class Palette {
     options.put(AppPreferences.PALETTE_GREEN,
         "nil=#a8a8a8;unknown=#f7e2b2;true=#fcff12;false=#08fff4;error=#ff7975;bus=#ffffff;incompatible=#ffa0f3;canvas=#094d1c");
     options.put(AppPreferences.PALETTE_BLUE,
-        "nil=#808080;unknown=#008bff;true=#00c400;false=#300001;error=#d40000;bus=#000000;incompatible=#c96100;canvas=#ffffff");
-//    options.put(AppPreferences.PALETTE_DARK,
-//        "nil=#a8a8a8;unknown=#f7e2b2;true=#fcff12;false=#08fff4;error=#ff7975;bus=#ffffff;incompatible=#ffa0f3;canvas=#1c094d");
-    setPalette(AppPreferences.PALETTE_STANDARD); // updated later
+        "nil=#a8a8a8;unknown=#f7e2b2;true=#fcff12;false=#08fff4;error=#ff7975;bus=#ffffff;incompatible=#ffa0f3;canvas=#0f214d");
+    options.put(AppPreferences.PALETTE_DARK,
+        "nil=#a8a8a8;unknown=#f7e2b2;true=#fcff12;false=#08fff4;error=#ff7975;bus=#ffffff;incompatible=#ffa0f3;canvas=#000000");
+    setPalette(AppPreferences.PALETTE_STANDARD); // later changed to user's current choice
   }
 
   public static void setPalette(String specs) {
@@ -115,9 +115,11 @@ public final class Palette {
         TRUE_COLOR = c;
       else if (k.equals("false"))
         FALSE_COLOR = c;
-      else if (k.equals("error"))
+      else if (k.equals("error")) {
         ERROR_COLOR = c;
-      else if (k.equals("bus"))
+        OSCILLATING_COLOR = c;
+        CRASHED_COLOR = c;
+      } else if (k.equals("bus"))
         MULTI_COLOR = c;
       else if (k.equals("incompatible")) {
         WIDTH_ERROR_COLOR = c;
@@ -128,12 +130,18 @@ public final class Palette {
         GRID_DOT_COLOR = contrast(c, 53f);
         GRID_DOT_ZOOMED_COLOR = contrast(c, 20f);
         GRID_ZOOMED_OUT_COLOR = contrast(c, 18f);
-        CONSTANT_BACKGROUND_COLOR = contrast(c, 5f);
-        HALO_COLOR = lighten(tint(c, 270f), 75f);
-        PENDING_COLOR = lighten(tint(c, 180f), 75f);
-        OSCILLATING_COLOR = lighten(tint(c, 90f), 75f);
-        CRASHED_COLOR = OSCILLATING_COLOR; // lighten(tint(c, 310f), 75f);
-        Color c2 = new Color(0x92000000 | (contrast(c, 10f).getRGB() & 0xffffff));
+
+        // SOLID_COLOR = contrast(c, 5f);
+        SOLID_COLOR = contrast(c, 25f);
+
+        if (isLight(c)) {
+          HALO_COLOR = rotate(c, 50f, 100f, 300f);
+          PENDING_COLOR = rotate(c, 50f, 100f, 240f);
+        } else {
+          HALO_COLOR = rotate(c, 50f, 100f, 300f);
+          PENDING_COLOR = rotate(c, 50f, 100f, 130f);
+        }
+        Color c2 = new Color(0x92000000 | (contrast(c, 80f).getRGB() & 0xffffff));
         TICK_RATE_COLOR = c2;
       }
       else
@@ -207,10 +215,29 @@ public final class Palette {
 		return fromHSL(hsl, c.getAlpha() / 255.0f);
 	}
 
+  public static Color rotate(Color c, float bold, float vivid, float rotation) {
+    float[] hsl = toHSL(c);
+    hsl[0] += rotation;
+    hsl[1] = vivid;
+    hsl[2] = bold;
+    return fromHSL(hsl, c.getAlpha() / 255.0f);
+  }
+
 	public static Color tint(Color c, float degrees)
 	{
     float[] hsl = toHSL(c);
+    // System.out.printf("tinting %s (%s %s %s) by %s\n",
+      //  c, hsl[0], hsl[1], hsl[2], degrees);
 		hsl[0] += degrees;
+		return fromHSL(hsl, c.getAlpha() / 255.0f);
+	}
+
+	public static Color saturate(Color c, float amount)
+	{
+    float[] hsl = toHSL(c);
+    // System.out.printf("saturating %s (%s %s %s) by %s\n",
+      //  c, hsl[0], hsl[1], hsl[2], degrees);
+		hsl[1] = amount;
 		return fromHSL(hsl, c.getAlpha() / 255.0f);
 	}
 

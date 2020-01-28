@@ -40,6 +40,7 @@ import java.util.HashMap;
 
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.util.GraphicsUtil;
@@ -127,13 +128,21 @@ public class PainterShaped {
     return lengths;
   }
 
-  static void paintAnd(InstancePainter painter, int width, int height) {
+  static void paintAnd(InstancePainter painter, int width, int height, boolean solid) {
     Graphics g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
     int[] xp = new int[] { -width / 2, -width + 1, -width + 1, -width / 2 };
     int[] yp = new int[] { -width / 2, -width / 2, width / 2, width / 2 };
-    GraphicsUtil.drawCenteredArc(g, -width / 2, 0, width / 2, -90, 180);
-
+    if (solid) {
+      g.setColor(Palette.SOLID_COLOR);
+      xp[0]++; xp[3]++; // box fill doesn't quite overlap curve fill
+      g.fillPolygon(xp, yp, 4);
+      xp[0]--; xp[3]--;
+      GraphicsUtil.drawSolidCenteredArc(g, -width / 2, 0, width / 2, -90, 180);
+      g.setColor(Palette.LINE_COLOR);
+    } else {
+      GraphicsUtil.drawCenteredArc(g, -width / 2, 0, width / 2, -90, 180);
+    }
     g.drawPolyline(xp, yp, 4);
     if (height > width) {
       g.drawLine(-width + 1, -height / 2, -width + 1, height / 2);
@@ -187,7 +196,7 @@ public class PainterShaped {
     }
   }
 
-  static void paintNot(InstancePainter painter) {
+  static void paintNot(InstancePainter painter, boolean solid) {
     Graphics g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
     if (painter.getAttributeValue(NotGate.ATTR_SIZE) == NotGate.SIZE_NARROW) {
@@ -202,6 +211,12 @@ public class PainterShaped {
       yp[2] = 6;
       xp[3] = -6;
       yp[3] = 0;
+      if (solid) {
+        g.setColor(Palette.SOLID_COLOR);
+        g.fillPolygon(xp, yp, 4);
+        g.fillOval(-6, -3, 6, 6);
+        g.setColor(Palette.LINE_COLOR);
+      }
       g.drawPolyline(xp, yp, 4);
       g.drawOval(-6, -3, 6, 6);
     } else {
@@ -215,25 +230,20 @@ public class PainterShaped {
       yp[2] = 7;
       xp[3] = -10;
       yp[3] = 0;
+      if (solid) {
+        g.setColor(Palette.SOLID_COLOR);
+        g.fillPolygon(xp, yp, 4);
+        g.fillOval(-9, -4, 9, 9);
+        g.setColor(Palette.LINE_COLOR);
+      }
       g.drawPolyline(xp, yp, 4);
       g.drawOval(-9, -4, 9, 9);
     }
   }
 
-  static void paintOr(InstancePainter painter, int width, int height) {
+  static void paintOr(InstancePainter painter, int width, int height, boolean solid) {
     Graphics g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
-    /*
-     * The following, used previous to version 2.5.1, didn't use GeneralPath
-     * g.setColor(Color.LIGHT_GRAY); if (width < 40) {
-     * GraphicsUtil.drawCenteredArc(g, -30, -21, 36, -90, 53);
-     * GraphicsUtil.drawCenteredArc(g, -30, 21, 36, 90, -53); } else if
-     * (width < 60) { GraphicsUtil.drawCenteredArc(g, -50, -37, 62, -90,
-     * 53); GraphicsUtil.drawCenteredArc(g, -50, 37, 62, 90, -53); } else {
-     * GraphicsUtil.drawCenteredArc(g, -70, -50, 85, -90, 53);
-     * GraphicsUtil.drawCenteredArc(g, -70, 50, 85, 90, -53); }
-     * paintShield(g, -width, 0, width, height);
-     */
 
     GeneralPath path;
     if (width < 40) {
@@ -242,6 +252,11 @@ public class PainterShaped {
       path = PATH_MEDIUM;
     } else {
       path = PATH_WIDE;
+    }
+    if (solid) {
+      g.setColor(Palette.SOLID_COLOR);
+      ((Graphics2D) g).fill(path);
+      g.setColor(Palette.LINE_COLOR);
     }
     ((Graphics2D) g).draw(path);
     if (height > width) {
@@ -254,22 +269,11 @@ public class PainterShaped {
     g.translate(xlate, 0);
     ((Graphics2D) g).draw(computeShield(width, height));
     g.translate(-xlate, 0);
-
-    /*
-     * The following, used previous to version 2.5.1, didn't use GeneralPath
-     * if (width < 40) { GraphicsUtil.drawCenteredArc(g, x - 26, y, 30, -30,
-     * 60); } else if (width < 60) { GraphicsUtil.drawCenteredArc(g, x - 43,
-     * y, 50, -30, 60); } else { GraphicsUtil.drawCenteredArc(g, x - 60, y,
-     * 70, -30, 60); } if (height > width) { // we need to draw the shield
-     * GraphicsUtil.drawCenteredArc(g, x - dx, y - (width + extra) / 2,
-     * extra, -30, 60); GraphicsUtil.drawCenteredArc(g, x - dx, y + (width +
-     * extra) / 2, extra, -30, 60); }
-     */
   }
 
-  static void paintXor(InstancePainter painter, int width, int height) {
+  static void paintXor(InstancePainter painter, int width, int height, boolean solid) {
     Graphics g = painter.getGraphics();
-    paintOr(painter, width - 10, width - 10);
+    paintOr(painter, width - 10, width - 10, solid);
     paintShield(g, -10, width - 10, height);
   }
 

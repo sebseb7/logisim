@@ -31,7 +31,6 @@
 package com.cburch.logisim.std.wiring;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.event.KeyEvent;
@@ -47,6 +46,7 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceData;
@@ -57,9 +57,9 @@ import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.tools.key.DirectionConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.Icons;
-import com.cburch.logisim.tools.key.DirectionConfigurator;
 
 public class Clock extends InstanceFactory {
   public static class ClockLogger extends InstanceLogger {
@@ -260,8 +260,10 @@ public class Clock extends InstanceFactory {
     int x = bds.getX();
     int y = bds.getY();
     GraphicsUtil.switchToWidth(g, 2);
-    g.setColor(Color.BLACK);
-    g.drawRect(x, y, bds.getWidth(), bds.getHeight());
+    g.setColor(Palette.SOLID_COLOR);
+    g.fillRect(x, y, bds.getWidth(), bds.getHeight());
+    g.setColor(Palette.LINE_COLOR);
+    g.drawRect(x, y, bds.getWidth()-1, bds.getHeight()-1);
 
     painter.drawLabel();
 
@@ -271,7 +273,7 @@ public class Clock extends InstanceFactory {
       g.setColor(state.sending.getColor());
       drawUp = state.sending == Value.TRUE;
     } else {
-      g.setColor(Color.BLACK);
+      g.setColor(Palette.LINE_COLOR);
       drawUp = true;
     }
     x += 10;

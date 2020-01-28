@@ -31,7 +31,6 @@
 package com.cburch.logisim.std.gates;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
@@ -44,6 +43,7 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.file.Options;
 import com.cburch.logisim.instance.Instance;
@@ -177,7 +177,7 @@ class Buffer extends InstanceFactory {
     }
   }
 
-  private void paintBase(InstancePainter painter) {
+  private void paintBase(InstancePainter painter, boolean solid) {
     Direction facing = painter.getAttributeValue(StdAttr.FACING);
     Location loc = painter.getLocation();
     int x = loc.getX();
@@ -201,6 +201,11 @@ class Buffer extends InstanceFactory {
     yp[2] = 7;
     xp[3] = 0;
     yp[3] = 0;
+    if (solid) {
+      g.setColor(Palette.SOLID_COLOR);
+      g.fillPolygon(xp, yp, 4);
+      g.setColor(Palette.LINE_COLOR);
+    }
     g.drawPolyline(xp, yp, 4);
 
     if (rotate != 0.0) {
@@ -214,14 +219,13 @@ class Buffer extends InstanceFactory {
   //
   @Override
   public void paintGhost(InstancePainter painter) {
-    paintBase(painter);
+    paintBase(painter, false);
   }
 
   @Override
   public void paintInstance(InstancePainter painter) {
     Graphics g = painter.getGraphics();
-    g.setColor(Color.BLACK);
-    paintBase(painter);
+    paintBase(painter, true);
     painter.drawPorts();
     painter.drawLabel();
   }

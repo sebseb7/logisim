@@ -51,6 +51,7 @@ import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.gui.generic.Callout;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.prefs.AppPreferences;
@@ -166,7 +167,7 @@ public final class WiringTool extends Tool {
       int x1 = e1.x;
       int y1 = e1.y;
 
-      g.setColor(Color.BLACK);
+      g.setColor(Palette.LINE_COLOR);
       GraphicsUtil.switchToWidth(g, 3);
       if (extraWireFromSplitting != null) {
         Location a = extraWireFromSplitting.getEnd0();
@@ -193,7 +194,7 @@ public final class WiringTool extends Tool {
           g.drawLine(x0, y1, x1, y1);
       }
     } else if (AppPreferences.ADD_SHOW_GHOSTS.get() && inCanvas) {
-      g.setColor(Color.GRAY);
+      g.setColor(Palette.NIL_COLOR);
       g.fillOval(cur.x - 2, cur.y - 2, 5, 5);
     }
   }

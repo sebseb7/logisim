@@ -98,8 +98,8 @@ class NandGate extends AbstractGate {
   }
 
   @Override
-  protected void paintShape(InstancePainter painter, int width, int height) {
-    PainterShaped.paintAnd(painter, width, height);
+  protected void paintShape(InstancePainter painter, int width, int height, boolean solid) {
+    PainterShaped.paintAnd(painter, width, height, solid);
   }
 
 }

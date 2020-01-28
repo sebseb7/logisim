@@ -42,6 +42,7 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.GraphicsUtil;
@@ -86,15 +87,17 @@ public class ComponentDrawContext {
   //
   public void drawBounds(Component comp) {
     GraphicsUtil.switchToWidth(g, 2);
-    g.setColor(Color.BLACK);
     Bounds bds = comp.getBounds();
+    g.setColor(Palette.SOLID_COLOR);
+    g.fillRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
+    g.setColor(Palette.LINE_COLOR);
     g.drawRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
     GraphicsUtil.switchToWidth(g, 1);
   }
 
   public void drawClock(Component comp, int i, Direction dir) {
     Color curColor = g.getColor();
-    g.setColor(Color.BLACK);
+    g.setColor(Palette.LINE_COLOR);
     GraphicsUtil.switchToWidth(g, 2);
 
     EndData e = comp.getEnd(i);
@@ -130,13 +133,16 @@ public class ComponentDrawContext {
 
   public void drawDongle(int x, int y) {
     GraphicsUtil.switchToWidth(g, 2);
+    g.setColor(Palette.SOLID_COLOR);
+    g.fillOval(x - 4, y - 4, 9, 9);
+    g.setColor(Palette.LINE_COLOR);
     g.drawOval(x - 4, y - 4, 9, 9);
   }
 
   public void drawHandle(int x, int y) {
-    g.setColor(Color.white);
+    g.setColor(Color.WHITE);
     g.fillRect(x - 3, y - 3, 7, 7);
-    g.setColor(Color.black);
+    g.setColor(Color.BLACK);
     g.drawRect(x - 3, y - 3, 7, 7);
   }
 
@@ -164,7 +170,7 @@ public class ComponentDrawContext {
       CircuitState state = getCircuitState();
       g.setColor(state.getValue(pt).getColor());
     } else {
-      g.setColor(Color.BLACK);
+      g.setColor(Palette.LINE_COLOR);
     }
     g.fillOval(pt.getX() - PIN_OFFS, pt.getY() - PIN_OFFS, PIN_RAD, PIN_RAD);
     g.setColor(curColor);
@@ -182,7 +188,7 @@ public class ComponentDrawContext {
       CircuitState state = getCircuitState();
       g.setColor(state.getValue(pt).getColor());
     } else {
-      g.setColor(Color.BLACK);
+      g.setColor(Palette.LINE_COLOR);
     }
     g.fillOval(x - PIN_OFFS, y - PIN_OFFS, PIN_RAD, PIN_RAD);
     g.setColor(curColor);
@@ -209,7 +215,7 @@ public class ComponentDrawContext {
         CircuitState state = getCircuitState();
         g.setColor(state.getValue(pt).getColor());
       } else {
-        g.setColor(Color.BLACK);
+        g.setColor(Palette.LINE_COLOR);
       }
       g.fillOval(pt.getX() - PIN_OFFS, pt.getY() - PIN_OFFS, PIN_RAD,
           PIN_RAD);

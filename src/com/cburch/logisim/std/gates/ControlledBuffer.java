@@ -178,7 +178,7 @@ class ControlledBuffer extends InstanceFactory {
   //
   @Override
   public void paintGhost(InstancePainter painter) {
-    paintShape(painter);
+    paintShape(painter, false);
   }
 
   @Override
@@ -221,8 +221,7 @@ class ControlledBuffer extends InstanceFactory {
     g.drawLine(pt0.getX(), pt0.getY(), pt1.getX(), pt1.getY());
 
     // draw triangle
-    g.setColor(Color.BLACK);
-    paintShape(painter);
+    paintShape(painter, true);
 
     // draw input and output pins
     if (!painter.isPrintView()) {
@@ -232,7 +231,7 @@ class ControlledBuffer extends InstanceFactory {
     painter.drawLabel();
   }
 
-  private void paintShape(InstancePainter painter) {
+  private void paintShape(InstancePainter painter, boolean solid) {
     Direction facing = painter.getAttributeValue(StdAttr.FACING);
     Location loc = painter.getLocation();
     int x = loc.getX();
@@ -246,12 +245,17 @@ class ControlledBuffer extends InstanceFactory {
     }
 
     if (isInverter) {
-      PainterShaped.paintNot(painter);
+      PainterShaped.paintNot(painter, solid);
     } else {
       GraphicsUtil.switchToWidth(g, 2);
       int d = isInverter ? 10 : 0;
       int[] xp = new int[] { -d, -19 - d, -19 - d, -d };
       int[] yp = new int[] { 0, -7, 7, 0 };
+      if (solid) {
+        g.setColor(Palette.SOLID_COLOR);
+        g.fillPolygon(xp, yp, 4);
+        g.setColor(Palette.LINE_COLOR);
+      }
       g.drawPolyline(xp, yp, 4);
       // if (isInverter) g.drawOval(-9, -4, 9, 9);
     }

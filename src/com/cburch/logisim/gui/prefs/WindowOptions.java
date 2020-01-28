@@ -32,20 +32,23 @@ package com.cburch.logisim.gui.prefs;
 import static com.cburch.logisim.gui.prefs.Strings.S;
 
 import java.awt.Color;
-import java.awt.RenderingHints;
-import java.awt.Rectangle;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Graphics;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseEvent;
 import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import javax.swing.BorderFactory;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import com.bric.swing.ColorPicker;
+import com.bric.swing.ColorPickerDialog;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Palette;
@@ -108,11 +111,14 @@ class WindowOptions extends OptionsPanel {
     panel.add(circuitPalette.getJComboBox());
 
     JPanel colors = new PalettePanel();
+    JPanel space = new JPanel();
+    space.setSize(10, 10);
 
     setLayout(new TableLayout(1));
     for (int i = 0; i < checks.length; i++)
       add(checks[i]);
     add(panel);
+    add(space);
     add(colors);
   }
 
@@ -135,15 +141,43 @@ class WindowOptions extends OptionsPanel {
     circuitPalette.localeChanged();
   }
 
+  static class HitBox {
+    Rectangle rect;
+    String key;
+    HitBox(int x0, int y0, int x1, int y1, int e, String k) {
+      rect = new Rectangle(x0-e, y0-e, (x1-x0)+2*(e+1), (y1-y0)+2*(e+1));
+      key = k;
+    }
+  }
+
   class PalettePanel extends JPanel implements PropertyChangeListener {
     static final int W = 340;
     static final int H = 130;
     static final int BH = 25;
     int BW = 35;
+    final HitBox[] hitbox = new HitBox[] {
+      new HitBox(20, 30, 40, 50, 0, "true"),
+      new HitBox(20, 70, 40, 90, 0, "false"),
+      new HitBox(20, 20, 110, 20, 5, "nil"),
+      new HitBox(120, 20, 210, 20, 5, "unknown"),
+      new HitBox(40, 40, 210, 40, 5, "true"),
+      new HitBox(100, 40, 100, 70, 5, "true"),
+      new HitBox(100, 70, 130, 70, 5, "true"),
+      new HitBox(40, 80, 130, 80, 5, "false"),
+      new HitBox(240, 30, 320, 30, 5, "error"),
+      new HitBox(140, 60, 210, 60, 5, "bus"),
+      new HitBox(170, 80, 210, 80, 5, "bus"),
+      new HitBox(240, 70, 290, 70, 5, "incompatible"),
+      new HitBox(240, 70, 240, 70, 8, "incompatible"),
+      new HitBox(290, 70, 290, 70, 8, "incompatible"),
+      new HitBox(210, 15, 240, 45, 0, null),
+      new HitBox(210, 55, 240, 85, 0, null),
+    };
 
     public PalettePanel() {
       setPreferredSize(new Dimension(W, H));
       addMouseListener(new Listener());
+      addMouseMotionListener(new Listener());
       AppPreferences.LAYOUT_SHOW_GRID.addPropertyChangeListener(this);
       AppPreferences.CIRCUIT_PALETTE.addPropertyChangeListener(this);
     }
@@ -152,9 +186,19 @@ class WindowOptions extends OptionsPanel {
       repaint();
     }
 
+    String hilight = null;
+    public void hilight(String k) {
+      hilight = k;
+      repaint();
+    }
+
     void drawButton(Graphics2D g, int i, Color fill, String s) {
       int x = 5+(BW+5)*i;
       int y = H-BH-5;
+      if (Palette.keys[i].equals(hilight)) {
+        g.setColor(Palette.contrast(Palette.LINE_COLOR, 20));
+        g.drawRect(x+2, y+2, BW-5, BH-5);
+      }
       g.setColor(fill);
       g.fillRect(x+3, y+3, BW-6, BH-6);
       g.setColor(Palette.LINE_COLOR);
@@ -184,8 +228,11 @@ class WindowOptions extends OptionsPanel {
       if (AppPreferences.LAYOUT_SHOW_GRID.get())
         GridPainter.paintGridOld(g, 10, 1.0, new Rectangle(0, 0, W, H));
 
-      g.setColor(Palette.LINE_COLOR);
       GraphicsUtil.switchToWidth(g, 2);
+      g.setColor(Palette.SOLID_COLOR);
+      g.fillRect(20+1, 30+1, 20-2, 20-2);
+      g.fillRect(20+1, 70+1, 20-2, 20-2);
+      g.setColor(Palette.LINE_COLOR);
       g.drawRect(20+1, 30+1, 20-2, 20-2);
       g.drawRect(20+1, 70+1, 20-2, 20-2);
 
@@ -196,6 +243,10 @@ class WindowOptions extends OptionsPanel {
       {
         int[] xp = new int[] { 290+20, 290+1,  290+1, 290+20 };
         int[] yp = new int[] {  60+10,  60+3,  60+17,  60+10 };
+        g.setColor(Palette.SOLID_COLOR);
+        g.fillPolygon(xp, yp, 4);
+        g.fillOval(290+21, 70-4, 8, 8);
+        g.setColor(Palette.LINE_COLOR);
         g.drawPolyline(xp, yp, 4);
         g.drawOval(290+21, 70-4, 8, 8);
       }
@@ -205,15 +256,18 @@ class WindowOptions extends OptionsPanel {
       for (int i = 0; i < 2; i++) {
         int[] xp = new int[] { xo[i]+15, xo[i]+1, xo[i]+ 1, xo[i]+15 };
         int[] yp = new int[] { yo[i]+ 0, yo[i]+0, yo[i]+30, yo[i]+30 };
+        g.setColor(Palette.SOLID_COLOR);
+        g.fillPolygon(xp, yp, 4);
+        GraphicsUtil.drawSolidCenteredArc(g, xo[i]+15, yo[i]+15, 15, -90, 180);
+        g.setColor(Palette.LINE_COLOR);
         g.drawPolyline(xp, yp, 4);
-        GraphicsUtil.drawCenteredArc(g, xo[i]+15, yo[i]+15, 15, -90, 180);
       }
 
       Color[] palette = Palette.toArray();
       BW = (W-5)/palette.length - 5;
       for (int i = 0; i < palette.length; i++)
         drawButton(g, i, palette[i], Palette.labels[i]);
-
+      
       GraphicsUtil.switchToWidth(g, Wire.WIDTH);
       g.setColor(Palette.NIL_COLOR);
       g.drawLine(20, 20, 110, 20);
@@ -255,17 +309,83 @@ class WindowOptions extends OptionsPanel {
     }
 
     void doColorChange(int i) {
+      String old = AppPreferences.CIRCUIT_PALETTE.get();
       Color[] palette = Palette.toArray();
       Color oldColor = palette[i];
-      Color newColor = ColorPicker.showDialog(getPreferencesFrame(), oldColor, false);
-      if (newColor == null || newColor.equals(oldColor))
+      JFrame parent = getPreferencesFrame();
+      ColorPickerDialog p = new ColorPickerDialog(parent, oldColor, false);
+      p.setTitle(S.get(Palette.keys[i] + "ColorTitle"));
+      p.getPicker().getPreviewSwatch().setSize(150, 75);
+      p.pack();
+      p.setLocationRelativeTo(parent);
+      // try to place to right or left of prefs window
+      Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
+      Rectangle r = parent.getBounds();
+      int w = p.getWidth();
+      int h = p.getHeight();
+      int x = r.x + r.width;
+      int y = r.y;
+      if (x + w > d.width) { // too small to right of prefs
+        if (r.x >= w) // plenty of room to left of prefs
+          x = r.x - w;
+        else if (r.x > d.width - w) // prefs is near right of screen
+          x = 0;
+        else // prefs is near left of screen
+          x = d.width - w;
+      }
+      p.setLocation(x, y);
+      p.getPicker().addPropertyChangeListener(new PropertyChangeListener() {
+        public void propertyChange(PropertyChangeEvent event) {
+          Color newColor = (Color)event.getNewValue();
+          if (newColor == null)
+            return;
+          palette[i] = newColor;
+          String custom = Palette.toPrefString(palette);
+          AppPreferences.CIRCUIT_PALETTE.set(custom);
+        }
+      });
+      p.setVisible(true);
+      Color newColor = p.getColor();
+      if (newColor == null || newColor.equals(oldColor)) {
+        AppPreferences.CIRCUIT_PALETTE.set(old);
         return;
+      }
       palette[i] = newColor;
       String custom = Palette.toPrefString(palette);
       AppPreferences.CIRCUIT_PALETTE.set(custom);
     }
 
     class Listener extends MouseAdapter {
+      @Override
+      public void mouseExited(MouseEvent e)
+      {
+        hilight(null);
+      }
+      @Override
+      public void mouseMoved(MouseEvent e)
+      {
+        int x = e.getX();
+        int y = e.getY();
+        if (y >= H-BH-5-5) {
+          for (int i = 0; i <= 7; i++) {
+            int xb = 5+(BW+5)*i;
+            int yb = H-BH-5;
+            if (x >= xb && x < xb+BW && y >= yb && y < yb+BH) {
+              hilight(Palette.keys[i]);
+              return;
+            }
+          }
+          hilight(null);
+        } else {
+          for (int i = 0; i < hitbox.length; i++) {
+            if (hitbox[i].rect.contains(x, y)) {
+              hilight(hitbox[i].key);
+              return;
+            }
+          }
+          hilight("canvas");
+        }
+      }
       @Override
       public void mouseClicked(MouseEvent e)
       {
@@ -275,6 +395,10 @@ class WindowOptions extends OptionsPanel {
           int xb = 5+(BW+5)*i;
           int yb = H-BH-5;
           if (x >= xb && x < xb+BW && y >= yb && y < yb+BH) {
+            doColorChange(i);
+            return;
+          }
+          if (hilight != null && Palette.keys[i].equals(hilight)) {
             doColorChange(i);
             return;
           }

@@ -754,16 +754,26 @@ public class Pin extends InstanceFactory {
     int x = bds.getX();
     int y = bds.getY();
     GraphicsUtil.switchToWidth(g, 2);
-    g.setColor(Palette.LINE_COLOR);
     if (attrs.type == OUTPUT) {
       if (attrs.width.getWidth() == 1) {
+        g.setColor(Palette.SOLID_COLOR);
+        g.fillOval(x + 1, y + 1, bds.getWidth() - 1,
+            bds.getHeight() - 1);
+        g.setColor(Palette.LINE_COLOR);
         g.drawOval(x + 1, y + 1, bds.getWidth() - 1,
             bds.getHeight() - 1);
       } else {
+        g.setColor(Palette.SOLID_COLOR);
+        g.fillRoundRect(x + 1, y + 1, bds.getWidth() - 1,
+            bds.getHeight() - 1, 12, 12);
+        g.setColor(Palette.LINE_COLOR);
         g.drawRoundRect(x + 1, y + 1, bds.getWidth() - 1,
             bds.getHeight() - 1, 12, 12);
       }
     } else {
+      g.setColor(Palette.SOLID_COLOR);
+      g.fillRect(x + 1, y + 1, bds.getWidth() - 1, bds.getHeight() - 1);
+      g.setColor(Palette.LINE_COLOR);
       g.drawRect(x + 1, y + 1, bds.getWidth() - 1, bds.getHeight() - 1);
     }
 

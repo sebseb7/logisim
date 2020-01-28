@@ -82,9 +82,9 @@ public class SplitterFactory extends AbstractComponentFactory {
     context.getGraphics().setColor(color);
     Location loc = Location.create(x, y);
     if (attrs.appear == SplitterAttributes.APPEAR_LEGACY) {
-      SplitterPainter.drawLegacy(context, attrs, loc);
+      SplitterPainter.drawLegacy(context, attrs, loc, false);
     } else {
-      SplitterPainter.drawLines(context, attrs, loc);
+      SplitterPainter.drawLines(context, attrs, loc, false);
     }
   }
 
