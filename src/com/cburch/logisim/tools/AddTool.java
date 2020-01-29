@@ -31,7 +31,6 @@
 package com.cburch.logisim.tools;
 import static com.cburch.logisim.tools.Strings.S;
 
-import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -58,7 +57,9 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.file.LogisimFile;
+import com.cburch.logisim.file.LogisimFileActions;
 import com.cburch.logisim.file.XmlWriter;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.gui.main.LayoutClipboard;
@@ -76,7 +77,6 @@ import com.cburch.logisim.tools.key.KeyConfigurationEvent;
 import com.cburch.logisim.tools.key.KeyConfigurationResult;
 import com.cburch.logisim.tools.key.KeyConfigurator;
 import com.cburch.logisim.util.DragDrop;
-import com.cburch.logisim.file.LogisimFileActions;
 
 public class AddTool extends Tool {
 
@@ -221,9 +221,15 @@ public class AddTool extends Tool {
     if (source == null)
       return;
     if (state == SHOW_GHOST) {
-      source.drawGhost(context, Color.GRAY, x, y, getBaseAttributes());
+      Palette ghost = Palette.ghostVery();
+      Palette old = context.setPalette(ghost);
+      source.drawGhost(context, ghost.LINE, x, y, getBaseAttributes());
+      context.setPalette(old);
     } else if (state == SHOW_ADD) {
-      source.drawGhost(context, Color.BLACK, x, y, getBaseAttributes());
+      Palette ghost = Palette.ghostSome();
+      Palette old = context.setPalette(ghost);
+      source.drawGhost(context, ghost.LINE, x, y, getBaseAttributes());
+      context.setPalette(old);
     }
   }
 

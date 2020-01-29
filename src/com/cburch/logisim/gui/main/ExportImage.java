@@ -67,6 +67,7 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.GifEncoder;
@@ -155,9 +156,13 @@ public class ExportImage {
     g.scale(scale, scale);
     g.translate(-bds.getX(), -bds.getY());
 
+    // FIXME: allow user to choose palette to use for image export
+    Palette palette = printerView ?
+      Palette.MONOCHROME : Palette.current().stateless();
+
     CircuitState circuitState = canvas.getProject().getCircuitStateForPrinting(circuit);
     ComponentDrawContext context = new ComponentDrawContext(canvas,
-        circuit, circuitState, base, g, printerView);
+        circuit, circuitState, base, g, palette, printerView);
     circuit.draw(context, null);
 
     try {

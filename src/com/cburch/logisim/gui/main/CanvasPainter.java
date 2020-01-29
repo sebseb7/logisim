@@ -109,23 +109,24 @@ class CanvasPainter implements PropertyChangeListener {
             break;
           }
         }
+        // FIXME: use alternate palette
         GraphicsUtil.switchToWidth(g, 2);
         if (common != null && !w.equals(common)) {
-          g.setColor(Palette.WIDTH_ERROR_HIGHLIGHT_COLOR);
+          g.setColor(Palette.current().WIDTH_ERROR_HIGHLIGHT);
           g.drawOval(p.getX() - 5, p.getY() - 5, 10, 10);
         }
-        g.setColor(Palette.WIDTH_ERROR_COLOR);
+        g.setColor(Palette.current().WIDTH_ERROR);
         g.drawOval(p.getX() - 4, p.getY() - 4, 8, 8);
         GraphicsUtil.switchToWidth(g, 3);
         GraphicsUtil.outlineText(g, caption, p.getX() + 4,
             p.getY() + 1 + fm.getAscent(),
-            Palette.WIDTH_ERROR_CAPTION_COLOR,
+            Palette.current().WIDTH_ERROR_CAPTION,
             common != null && !w.equals(common)
-            ? Palette.WIDTH_ERROR_HIGHLIGHT_COLOR
-            : Palette.WIDTH_ERROR_CAPTION_BGCOLOR);
+            ? Palette.current().WIDTH_ERROR_HIGHLIGHT
+            : Palette.current().WIDTH_ERROR_CAPTION_BG);
       }
     }
-    g.setColor(Palette.LINE_COLOR);
+    g.setColor(Palette.current().LINE);
     GraphicsUtil.switchToWidth(g, 1);
   }
 
@@ -161,18 +162,18 @@ class CanvasPainter implements PropertyChangeListener {
         y -= (h-15)/2;
         h = 15;
       }
-      g.setColor(Palette.HALO_COLOR);
+      g.setColor(Palette.current().HALO);
       GraphicsUtil.switchToWidth(g, 3);
       g.drawRoundRect(x, y, w, h, 5, 5);
       GraphicsUtil.switchToWidth(g, 1);
-      g.setColor(Palette.LINE_COLOR);
+      g.setColor(Palette.current().LINE);
     }
 
     // draw circuit and selection
     CircuitState circState = proj.getCircuitState();
     boolean printerView = AppPreferences.PRINTER_VIEW.get();
     ComponentDrawContext context = new ComponentDrawContext(canvas, circ,
-        circState, base, g, printerView);
+        circState, base, g, Palette.current(), printerView);
     context.setHighlightedWires(highlightedWires);
     circ.draw(context, hidden);
     sel.draw(context, hidden);
@@ -230,7 +231,7 @@ class CanvasPainter implements PropertyChangeListener {
     }
 
     grid.paintGrid(g);
-    g.setColor(Palette.LINE_COLOR);
+    g.setColor(Palette.current().LINE);
 
     Graphics gScaled = g.create();
     if (zoomFactor != 1.0)
@@ -241,13 +242,13 @@ class CanvasPainter implements PropertyChangeListener {
 
     CircuitState circState = proj.getCircuitState();
     ComponentDrawContext ptContext = new ComponentDrawContext(canvas, circ,
-        circState, g, gScaled);
+        circState, g, gScaled, Palette.current(), false);
     ptContext.setHighlightedWires(highlightedWires);
-    gScaled.setColor(Palette.OSCILLATING_COLOR);
+    gScaled.setColor(Palette.current().OSCILLATING);
     circState.drawOscillatingPoints(ptContext);
-    gScaled.setColor(Palette.PENDING_COLOR);
+    gScaled.setColor(Palette.current().PENDING);
     proj.getSimulator().drawStepPoints(ptContext);
-    gScaled.setColor(Palette.HALO_COLOR);
+    gScaled.setColor(Palette.current().HALO);
     proj.getSimulator().drawPendingInputs(ptContext);
     gScaled.dispose();
   }

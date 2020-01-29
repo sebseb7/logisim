@@ -212,17 +212,13 @@ public class Multiplexer extends InstanceFactory {
     }
     if (inputs == 2 || (!wide && oddside)) { // draw select wire
       Location pt = painter.getInstance().getPortLocation(inputs);
-      if (painter.getShowState()) {
-        g.setColor(painter.getPortValue(inputs).getColor());
-      }
+      g.setColor(painter.getPortColor(inputs));
       int len = (wide ? 2 : 1);
       g.drawLine(pt.getX() - len*dx, pt.getY() - len*dy, pt.getX(), pt.getY());
     }
     if (enable) {
       Location en = painter.getInstance().getPortLocation(inputs + 1);
-      if (painter.getShowState()) {
-        g.setColor(painter.getPortValue(inputs + 1).getColor());
-      }
+      g.setColor(painter.getPortColor(inputs + 1));
       int len = (inputs == 2) ? 3 : wide ? 2 : oddside ? 4 : 2;
       g.drawLine(en.getX() - len * dx, en.getY() - len * dy, en.getX(), en.getY());
     }

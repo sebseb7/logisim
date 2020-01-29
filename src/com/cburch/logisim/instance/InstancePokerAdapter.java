@@ -38,6 +38,7 @@ import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentUserEvent;
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.tools.AbstractCaret;
 import com.cburch.logisim.tools.Caret;
@@ -106,7 +107,8 @@ class InstancePokerAdapter extends AbstractCaret implements Pokable {
       if (isAccepted) {
         this.state = state;
         this.context = new ComponentDrawContext(event.getCanvas(),
-            event.getCanvas().getCircuit(), circState, null, null);
+            event.getCanvas().getCircuit(), circState, null, null,
+            Palette.current(), false);
         mousePressed(e);
         return this;
       } else {

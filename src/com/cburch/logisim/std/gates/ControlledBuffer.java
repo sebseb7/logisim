@@ -195,7 +195,7 @@ class ControlledBuffer extends InstanceFactory {
       g.drawPolyline(xp, yp, 4);
       if (isInverter)
         g.drawOval(x + 13, 8, 4, 4);
-      g.setColor(Palette.FALSE_COLOR);
+      g.setColor(painter.getPalette().FALSE);
       g.drawLine(x + 8, 14, x + 8, 18);
     }
   }
@@ -215,8 +215,8 @@ class ControlledBuffer extends InstanceFactory {
     } else {
       pt1 = pt0.translate(face, 0, -6);
     }
-    if (painter.getShowState()) {
-      g.setColor(painter.getPortValue(2).getColor());
+    if (!painter.isPrintView()) {
+      g.setColor(painter.getPortValue(2).getColor(painter.getPalette()));
     }
     g.drawLine(pt0.getX(), pt0.getY(), pt1.getX(), pt1.getY());
 
@@ -252,9 +252,9 @@ class ControlledBuffer extends InstanceFactory {
       int[] xp = new int[] { -d, -19 - d, -19 - d, -d };
       int[] yp = new int[] { 0, -7, 7, 0 };
       if (solid) {
-        g.setColor(Palette.SOLID_COLOR);
+        g.setColor(painter.getPalette().SOLID);
         g.fillPolygon(xp, yp, 4);
-        g.setColor(Palette.LINE_COLOR);
+        g.setColor(painter.getPalette().LINE);
       }
       g.drawPolyline(xp, yp, 4);
       // if (isInverter) g.drawOval(-9, -4, 9, 9);

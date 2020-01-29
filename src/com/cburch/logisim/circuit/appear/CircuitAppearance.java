@@ -273,7 +273,7 @@ public class CircuitAppearance extends Drawing {
     Location offset = findAnchorLocation();
     g.translate(-offset.getX(), -offset.getY());
     CircuitState state = null;
-    if (painter.getShowState()) {
+    if (!painter.isPrintView()) {
       try { state = (CircuitState)painter.getData(); }
       catch (UnsupportedOperationException e) { }
     }

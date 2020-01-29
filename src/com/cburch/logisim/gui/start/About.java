@@ -48,7 +48,6 @@ import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 
 import com.cburch.logisim.Main;
-import com.cburch.logisim.data.Value;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.UniquelyNamedThread;
 
@@ -205,8 +204,8 @@ public class About {
       }
     }
 
-    static final Color color0 = Value.FALSE.getColor();
-    static final Color color1 = Value.TRUE.getColor();
+    static final Color color0 = new Color(0, 0x64, 0);
+    static final Color color1 = new Color(0, 0xd2, 0);
 
     private static void setColor(Graphics g, boolean b) {
       g.setColor(b ? color1 : color0);

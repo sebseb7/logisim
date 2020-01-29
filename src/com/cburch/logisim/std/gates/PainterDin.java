@@ -71,10 +71,8 @@ class PainterDin {
     GraphicsUtil.switchToWidth(g, 2);
     int x0 = xMid - diam / 2;
     Color oldColor = g.getColor();
-    if (painter.getShowState()) {
-      Value val = painter.getPortValue(0);
-      g.setColor(val.getColor());
-    }
+    if (painter.getShowState())
+      g.setColor(painter.getPortColor(0));
     g.drawLine(x0 + diam, 0, 0, 0);
     g.setColor(oldColor);
     if (height <= diam) {

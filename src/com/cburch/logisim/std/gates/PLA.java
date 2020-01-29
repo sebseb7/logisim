@@ -266,10 +266,10 @@ class PLA extends InstanceFactory {
     int w = bds.getWidth();
     int h = bds.getHeight();
 
-    if (solid && painter.shouldDrawColor()) {
-      g.setColor(Palette.SOLID_COLOR);
+    if (solid) {
+      g.setColor(painter.getPalette().SOLID);
       g.fillRect(x, y, w, h);
-      g.setColor(Palette.LINE_COLOR);
+      g.setColor(painter.getPalette().LINE);
     }
 
     GraphicsUtil.switchToWidth(g, 2);
@@ -279,7 +279,7 @@ class PLA extends InstanceFactory {
     String label = painter.getAttributeValue(StdAttr.LABEL);
     GraphicsUtil.drawCenteredText(g, label, x+w/2, y+h/3);
     if (solid) {
-      if (painter.getShowState()) {
+      if (!painter.isPrintView()) {
         PLATable tt = painter.getAttributeValue(ATTR_TABLE);
         Value input = painter.getPortValue(IN_PORT);
         String comment = input.isFullyDefined() ? tt.commentFor(input.toIntValue()) : "-";

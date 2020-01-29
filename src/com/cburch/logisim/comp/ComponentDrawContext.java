@@ -56,8 +56,7 @@ public class ComponentDrawContext {
   private CircuitState circuitState;
   private Graphics2D base;
   private Graphics2D g;
-  // private boolean showState;
-  // private boolean showColor;
+  private Palette palette;
   private boolean printView;
   private WireSet highlightedWires;
   private InstancePainter instancePainter;
@@ -69,51 +68,52 @@ public class ComponentDrawContext {
   // hidden as well, but the canvas background (usually plain white) is shown.
   // Other palettes are possible, resulting in more colorful graphics.
   //  - simulator state is not shown (some components show their width instead)
-  //  - constants are drawn using LINE_COLOR instead of value-dependent color
-  //  - wires are drawn using LINE_COLOR instead of value-dependent color
-  //  - resistors, etc., use LINE_COLOR instead of value-dependent color
+  //  - constants are drawn using LINE color instead of value-dependent color
+  //  - wires are drawn using LINE color instead of value-dependent color
+  //  - resistors, etc., use LINE color instead of value-dependent color
   //  - grid is not shown, but canvas background color is used
   //  - some components don't show their pins, or hide unconnected pins
   //
-  // LayoutThumbnailView (miniature view seen at lower right when designing a
-  // custom appearance) means the same thing, but uses the standard palette.
-
+  // LayoutThumbnail (miniature view seen at lower right when designing a
+  // custom appearance) uses PrintView as well, but uses the standard palette.
+  //
+  // InstancePainter also has a Ghost mode, which does all the same things as
+  // print view, using a palette with translucent LINE color and
+  // mostly-transparent SOLID color. Some components are also drawn in
+  // simplified form.
+  
   public ComponentDrawContext(java.awt.Component dest, Circuit circuit,
       CircuitState circuitState, Graphics base, Graphics g) {
-    this(dest, circuit, circuitState, base, g, false);
+      this(dest, circuit, circuitState, base, g, Palette.STANDARD, false);
   }
 
   public ComponentDrawContext(java.awt.Component dest, Circuit circuit,
       CircuitState circuitState, Graphics base, Graphics g,
-      boolean printView) {
+      Palette palette, boolean printView) {
     this.dest = dest;
     this.circuit = circuit;
     this.circuitState = circuitState;
     this.base = (Graphics2D)base;
     this.g = (Graphics2D)g;
-    this.showState = true;
-    this.showColor = true;
+    this.palette = palette;
     this.printView = printView;
     this.highlightedWires = WireSet.EMPTY;
     this.instancePainter = new InstancePainter(this, null);
   }
 
-  //
-  // helper methods
-  //
   public void drawBounds(Component comp) {
     GraphicsUtil.switchToWidth(g, 2);
     Bounds bds = comp.getBounds();
-    g.setColor(Palette.SOLID_COLOR);
+    g.setColor(palette.SOLID);
     g.fillRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
-    g.setColor(Palette.LINE_COLOR);
+    g.setColor(palette.LINE);
     g.drawRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
     GraphicsUtil.switchToWidth(g, 1);
   }
 
   public void drawClock(Component comp, int i, Direction dir) {
     Color curColor = g.getColor();
-    g.setColor(Palette.LINE_COLOR);
+    g.setColor(palette.LINE);
     GraphicsUtil.switchToWidth(g, 2);
 
     EndData e = comp.getEnd(i);
@@ -149,9 +149,9 @@ public class ComponentDrawContext {
 
   public void drawDongle(int x, int y) {
     GraphicsUtil.switchToWidth(g, 2);
-    g.setColor(Palette.SOLID_COLOR);
+    g.setColor(palette.SOLID);
     g.fillOval(x - 4, y - 4, 9, 9);
-    g.setColor(Palette.LINE_COLOR);
+    g.setColor(palette.LINE);
     g.drawOval(x - 4, y - 4, 9, 9);
   }
 
@@ -182,12 +182,10 @@ public class ComponentDrawContext {
     EndData e = comp.getEnd(i);
     Location pt = e.getLocation();
     Color curColor = g.getColor();
-    if (getShowState()) {
-      CircuitState state = getCircuitState();
-      g.setColor(state.getValue(pt).getColor());
-    } else {
-      g.setColor(Palette.LINE_COLOR);
-    }
+    if (!printView)
+      g.setColor(getCircuitState().getValue(pt).getColor(palette));
+    else
+      g.setColor(palette.LINE);
     g.fillOval(pt.getX() - PIN_OFFS, pt.getY() - PIN_OFFS, PIN_RAD, PIN_RAD);
     g.setColor(curColor);
   }
@@ -200,12 +198,10 @@ public class ComponentDrawContext {
     Location pt = e.getLocation();
     int x = pt.getX();
     int y = pt.getY();
-    if (getShowState()) {
-      CircuitState state = getCircuitState();
-      g.setColor(state.getValue(pt).getColor());
-    } else {
-      g.setColor(Palette.LINE_COLOR);
-    }
+    if (!printView)
+      g.setColor(getCircuitState().getValue(pt).getColor(palette));
+    else
+      g.setColor(palette.LINE);
     g.fillOval(x - PIN_OFFS, y - PIN_OFFS, PIN_RAD, PIN_RAD);
     g.setColor(curColor);
     if (dir == Direction.EAST) {
@@ -227,12 +223,10 @@ public class ComponentDrawContext {
     Color curColor = g.getColor();
     for (EndData e : comp.getEnds()) {
       Location pt = e.getLocation();
-      if (getShowState()) {
-        CircuitState state = getCircuitState();
-        g.setColor(state.getValue(pt).getColor());
-      } else {
-        g.setColor(Palette.LINE_COLOR);
-      }
+      if (!printView)
+        g.setColor(getCircuitState().getValue(pt).getColor(palette));
+      else
+        g.setColor(palette.LINE);
       g.fillOval(pt.getX() - PIN_OFFS, pt.getY() - PIN_OFFS, PIN_RAD,
           PIN_RAD);
     }
@@ -317,12 +311,16 @@ public class ComponentDrawContext {
     return instancePainter;
   }
 
-  public boolean getShowState() {
-    return !printView && showState;
-  }
+  public boolean isPrintView() { return printView; }
+  
+  // deprecated, but maybe keep just for Jar libraries?
+  public boolean shouldDrawColor() { return !printView; }
+  public boolean getShowState() { return !printView; }
 
-  public boolean isPrintView() {
-    return printView;
+  public boolean setPrintView(boolean p) {
+    boolean old = printView;
+    printView = p;
+    return old;
   }
 
   public void setGraphics(Graphics g) {
@@ -333,16 +331,14 @@ public class ComponentDrawContext {
     this.highlightedWires = value == null ? WireSet.EMPTY : value;
   }
 
-  public void setShowColor(boolean value) {
-    showColor = value;
+  public Palette getPalette() {
+    return palette;
   }
 
-  public void setShowState(boolean value) {
-    showState = value;
-  }
-
-  public boolean shouldDrawColor() {
-    return !printView && showColor;
+  public Palette setPalette(Palette p) {
+    Palette old = palette;
+    palette = p;
+    return old;
   }
 
 }

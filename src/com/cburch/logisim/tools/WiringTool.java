@@ -167,7 +167,7 @@ public final class WiringTool extends Tool {
       int x1 = e1.x;
       int y1 = e1.y;
 
-      g.setColor(Palette.LINE_COLOR);
+      g.setColor(context.getPalette().LINE);
       GraphicsUtil.switchToWidth(g, 3);
       if (extraWireFromSplitting != null) {
         Location a = extraWireFromSplitting.getEnd0();
@@ -194,7 +194,7 @@ public final class WiringTool extends Tool {
           g.drawLine(x0, y1, x1, y1);
       }
     } else if (AppPreferences.ADD_SHOW_GHOSTS.get() && inCanvas) {
-      g.setColor(Palette.NIL_COLOR);
+      g.setColor(context.getPalette().NIL);
       g.fillOval(cur.x - 2, cur.y - 2, 5, 5);
     }
   }

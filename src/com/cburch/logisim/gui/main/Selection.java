@@ -30,7 +30,6 @@
 
 package com.cburch.logisim.gui.main;
 
-import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,6 +46,7 @@ import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
@@ -180,8 +180,10 @@ public class Selection extends SelectionBase {
         Graphics g_new = g.create();
         context.setGraphics(g_new);
         context.getInstancePainter().setComponent(c);
-        c.getFactory().drawGhost(context, Color.GRAY, loc.getX(),
-            loc.getY(), c.getAttributeSet());
+        Palette ghost = Palette.ghostVery();
+        Palette old = context.setPalette(ghost);
+        c.getFactory().drawGhost(context, ghost.LINE, loc.x, loc.y, c.getAttributeSet());
+        context.setPalette(old);
         g_new.dispose();
       }
     }
@@ -216,7 +218,10 @@ public class Selection extends SelectionBase {
       int y = loc.getY() + dy;
       context.setGraphics(g.create());
       context.getInstancePainter().setComponent(comp);
-      comp.getFactory().drawGhost(context, Color.gray, x, y, attrs);
+      Palette ghost = Palette.ghostVery();
+      Palette old = context.setPalette(ghost);
+      comp.getFactory().drawGhost(context, ghost.LINE, x, y, attrs);
+      context.setPalette(old);
       context.getGraphics().dispose();
     }
     context.setGraphics(g);

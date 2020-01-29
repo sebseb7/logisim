@@ -284,7 +284,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
       if (myState != null) {
         int x = loc.getX();
         int y = loc.getY();
-        g.setColor(myState.curValue.getColor());
+        g.setColor(myState.curValue.getColor(painter.getPalette()));
         g.fillOval(x - 26, y + 4, 13, 13);
         g.setColor(Color.WHITE);
         GraphicsUtil.drawCenteredText(g, MemState.FONT,
@@ -324,7 +324,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
     if (painter.getShowState()) {
       StateData myState = (StateData) painter.getData();
       if (myState != null) {
-        g.setColor(myState.curValue.getColor());
+        g.setColor(myState.curValue.getColor(painter.getPalette()));
         g.fillOval(x + 13, y + 23, 14, 14);
         g.setColor(Color.WHITE);
         GraphicsUtil.drawCenteredText(g, MemState.FONT,

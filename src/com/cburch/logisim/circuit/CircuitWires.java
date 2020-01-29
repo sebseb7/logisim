@@ -30,7 +30,6 @@
 
 package com.cburch.logisim.circuit;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Stroke;
 import java.util.ArrayList;
@@ -893,10 +892,10 @@ public class CircuitWires {
   }
 
   void draw(ComponentDrawContext context, Collection<Component> hidden) {
-    boolean showState = context.getShowState();
+    boolean showState = !context.isPrintView();
     CircuitState state = context.getCircuitState();
-    Graphics2D g = (Graphics2D)context.getGraphics();
-    g.setColor(Palette.LINE_COLOR);
+    Graphics2D g = context.getGraphics();
+    g.setColor(context.getPalette().LINE);
     GraphicsUtil.switchToWidth(g, Wire.WIDTH);
     WireSet highlighted = context.getHighlightedWires();
 
@@ -908,13 +907,13 @@ public class CircuitWires {
         Location t = w.e1;
         WireBundle wb = cmap.getBundleAt(s);
         if (!wb.isValid())
-          g.setColor(Palette.WIDTH_ERROR_COLOR);
+          g.setColor(context.getPalette().WIDTH_ERROR);
         else if (!showState)
-          g.setColor(Palette.LINE_COLOR);
+          g.setColor(context.getPalette().LINE); // maybe BUS?
         else if (!isValid)
-          g.setColor(Palette.NIL_COLOR);
+          g.setColor(context.getPalette().NIL);
         else
-          g.setColor(getBusValue(state, s).getColor());
+          g.setColor(getBusValue(state, s).getColor(context.getPalette()));
         if (highlighted.containsWire(w)) {
           int width;
           if (wb.isBus())
@@ -926,7 +925,7 @@ public class CircuitWires {
 
           Stroke oldStroke = g.getStroke();
           g.setStroke(Wire.HIGHLIGHTED_STROKE);
-          g.setColor(Palette.HALO_COLOR);
+          g.setColor(context.getPalette().HALO);
           g.drawLine(s.getX(), s.getY(), t.getX(), t.getY());
           g.setStroke(oldStroke);
         } else {
@@ -944,16 +943,14 @@ public class CircuitWires {
         if (points.getComponentCount(loc) > 2) {
           WireBundle wb = cmap.getBundleAt(loc);
           if (wb != null) {
-            if (!wb.isValid()) {
-              g.setColor(Palette.WIDTH_ERROR_COLOR);
-            } else if (showState) {
-              if (!isValid)
-                g.setColor(Palette.NIL_COLOR);
-              else
-                g.setColor(state.getValue(loc).getColor());
-            } else {
-              g.setColor(Palette.LINE_COLOR);
-            }
+            if (!wb.isValid())
+              g.setColor(context.getPalette().WIDTH_ERROR);
+            else if (showState && isValid)
+              g.setColor(state.getValue(loc).getColor(context.getPalette()));
+            else if (showState)
+              g.setColor(context.getPalette().NIL);
+            else
+              g.setColor(context.getPalette().LINE);
             int radius;
             if (highlighted.containsLocation(loc)) {
               radius = wb.isBus() ? Wire.HIGHLIGHTED_WIDTH_BUS : Wire.HIGHLIGHTED_WIDTH;
@@ -971,16 +968,14 @@ public class CircuitWires {
           Location s = w.e0;
           Location t = w.e1;
           WireBundle wb = cmap.getBundleAt(s);
-          if (!wb.isValid()) {
-            g.setColor(Palette.WIDTH_ERROR_COLOR);
-          } else if (showState) {
-            if (!isValid)
-              g.setColor(Palette.NIL_COLOR);
-            else
-              g.setColor(getBusValue(state, s).getColor());
-          } else {
-            g.setColor(Palette.LINE_COLOR);
-          }
+          if (!wb.isValid())
+            g.setColor(context.getPalette().WIDTH_ERROR);
+          else if (showState && isValid)
+            g.setColor(getBusValue(state, s).getColor(context.getPalette()));
+          else if (showState)
+            g.setColor(context.getPalette().NIL);
+          else
+            g.setColor(context.getPalette().LINE);
           if (highlighted.containsWire(w)) {
             GraphicsUtil.switchToWidth(g, Wire.WIDTH + 2);
             g.drawLine(s.getX(), s.getY(), t.getX(), t.getY());
@@ -1008,16 +1003,14 @@ public class CircuitWires {
           if (icount > 2) {
             WireBundle wb = cmap.getBundleAt(loc);
             if (wb != null) {
-              if (!wb.isValid()) {
-                g.setColor(Palette.WIDTH_ERROR_COLOR);
-              } else if (showState) {
-                if (!isValid)
-                  g.setColor(Palette.NIL_COLOR);
-                else
-                  g.setColor(getBusValue(state, loc).getColor());
-              } else {
-                g.setColor(Palette.LINE_COLOR);
-              }
+              if (!wb.isValid())
+                g.setColor(context.getPalette().WIDTH_ERROR);
+              else if (showState && isValid)
+                  g.setColor(getBusValue(state, loc).getColor(context.getPalette()));
+              if (showState)
+                  g.setColor(context.getPalette().NIL);
+              else
+                g.setColor(context.getPalette().LINE);
               int radius;
               if (highlighted.containsLocation(loc)) {
                 radius = wb.isBus() ? Wire.HIGHLIGHTED_WIDTH_BUS : Wire.HIGHLIGHTED_WIDTH;

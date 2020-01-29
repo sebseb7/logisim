@@ -278,7 +278,7 @@ public class DotMatrix extends InstanceFactory {
           else if (val == Value.FALSE)
             c = offColor;
           else
-            c = Palette.ERROR_COLOR;
+            c = painter.getPalette().ERROR;
           g.setColor(c);
 
           if (drawSquare)

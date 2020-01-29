@@ -81,10 +81,10 @@ public class DynamicClock extends InstanceFactory {
 
   private static void drawTicks(Graphics g, int x, int y, int label, int w, int h, int n) {
     GraphicsUtil.switchToWidth(g, 2);
-    g.setColor(h > 0 ? Palette.TRUE_COLOR : Palette.FALSE_COLOR);
+    g.setColor(h > 0 ? Palette.current().TRUE : Palette.current().FALSE);
     g.drawLine(x, y, x, y-h);
     for (int i = 0; i < n; i++) {
-      g.setColor(h > 0 ? Palette.TRUE_COLOR : Palette.FALSE_COLOR);
+      g.setColor(h > 0 ? Palette.current().TRUE : Palette.current().FALSE);
       g.drawLine(x, y-h, x-w, y-h);
       if (i != n-1)
         g.drawLine(x-w, y-h, x-w, y+h);

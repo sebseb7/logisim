@@ -236,7 +236,7 @@ public class Constant extends InstanceFactory {
     if (w == 1) {
       int v = painter.getAttributeValue(ATTR_VALUE).intValue();
       Value val = v == 1 ? Value.TRUE : Value.FALSE;
-      g.setColor(val.getColor());
+      g.setColor(val.getColor(painter.getPalette()));
       GraphicsUtil.drawCenteredText(g, "" + v, 10, 9);
     } else {
       g.setFont(g.getFont().deriveFont(9.0f));
@@ -257,19 +257,19 @@ public class Constant extends InstanceFactory {
 
     Graphics g = painter.getGraphics();
     if (painter.shouldDrawColor()) {
-      g.setColor(Palette.SOLID_COLOR);
+      g.setColor(painter.getPalette().SOLID);
       g.fillRect(x + bds.getX(), y + bds.getY(), bds.getWidth(),
           bds.getHeight());
     }
     if (v.getWidth() == 1) {
       if (painter.shouldDrawColor())
-        g.setColor(v.getColor());
+        g.setColor(v.getColor(painter.getPalette()));
       g.setFont(DEFAULT_FONT);
       GraphicsUtil.drawCenteredText(g, v.toString(),
           x + bds.getX() + bds.getWidth() / 2,
           y + bds.getY() + bds.getHeight() / 2 - 2);
     } else {
-      g.setColor(Palette.LINE_COLOR);
+      g.setColor(painter.getPalette().LINE);
       g.setFont(DEFAULT_FONT);
       GraphicsUtil.drawCenteredText(g, v.toHexString(), x + bds.getX()
           + bds.getWidth() / 2, y + bds.getY() + bds.getHeight() / 2

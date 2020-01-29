@@ -30,7 +30,8 @@
 
 package com.cburch.logisim.instance;
 
-import java.awt.Graphics;
+import java.awt.Color;
+import java.awt.Graphics2D;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
@@ -43,10 +44,16 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.proj.Project;
 
 // This is more like ComponentPainter maybe?
+// It combines a ComponentDrawContext together with data about a specific
+// component that is being drawn. That component can be defined
+// as either:
+//  - a Component object (which has attributes, location, and state)
+//  - a ComponentFactory and AttributeSet together (no location, no state)
 public class InstancePainter implements InstanceState {
   private ComponentDrawContext context;
   private Component comp;
@@ -56,6 +63,8 @@ public class InstancePainter implements InstanceState {
   public InstancePainter(ComponentDrawContext context, Component comp) {
     this.context = context;
     this.comp = comp;
+    this.factory = null;
+    this.attrs = null;
   }
 
   //
@@ -176,7 +185,7 @@ public class InstancePainter implements InstanceState {
     return context.getGateShape();
   }
 
-  public Graphics getGraphics() {
+  public Graphics2D getGraphics() {
     return context.getGraphics();
   }
 
@@ -221,16 +230,27 @@ public class InstancePainter implements InstanceState {
     }
   }
 
+  public Color getPortColor(int portIndex) {
+    // if (getShowState())
+      return getPortValue(portIndex).getColor(getPalette());
+    // else
+    //  return getPalette().LINE;
+  }
+
   //
   // methods related to the circuit state
   //
   public Project getProject() {
     return context.getCircuitState().getProject();
   }
-
-  public boolean getShowState() {
-    return context.getShowState();
+  
+  public boolean isPrintView() {
+    return context.isPrintView();
   }
+
+  // deprecated, but maybe keep just for Jar libraries?
+  public boolean getShowState() { return context.getShowState(); }
+  public boolean shouldDrawColor() { return context.shouldDrawColor(); }
 
   public int getTickCount() {
     return context.getCircuitState().getPropagator().getTickCount();
@@ -244,10 +264,6 @@ public class InstancePainter implements InstanceState {
     Circuit circ = context.getCircuit();
     Location loc = comp.getEnd(index).getLocation();
     return circ.isConnected(loc, comp);
-  }
-
-  public boolean isPrintView() {
-    return context.isPrintView();
   }
 
   public void setData(InstanceData value) {
@@ -281,7 +297,7 @@ public class InstancePainter implements InstanceState {
     throw new UnsupportedOperationException("setValue on InstancePainter");
   }
 
-  public boolean shouldDrawColor() {
-    return context.shouldDrawColor();
+  public Palette getPalette() {
+    return context.getPalette();
   }
 }

@@ -228,9 +228,9 @@ public class Tunnel extends InstanceFactory {
     }
     GraphicsUtil.switchToWidth(g, 2);
     if (solid) {
-      g.setColor(Palette.SOLID_COLOR);
+      g.setColor(painter.getPalette().SOLID);
       g.fillPolygon(xp, yp, xp.length);
-      g.setColor(Palette.LINE_COLOR);
+      g.setColor(painter.getPalette().LINE);
     }
     g.drawPolygon(xp, yp, xp.length);
   }

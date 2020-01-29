@@ -178,17 +178,13 @@ public class Demultiplexer extends InstanceFactory {
     int dy = vertical ? 0 : -selMult;
     if (outputs == 2) { // draw select wire
       Location sel = painter.getInstance().getPortLocation(outputs);
-      if (painter.getShowState()) {
-        g.setColor(painter.getPortValue(outputs).getColor());
-      }
+      g.setColor(painter.getPortColor(outputs));
       g.drawLine(sel.getX(), sel.getY(), sel.getX() + 2 * dx, sel.getY()
           + 2 * dy);
     }
     if (enable) {
       Location en = painter.getInstance().getPortLocation(outputs + 1);
-      if (painter.getShowState()) {
-        g.setColor(painter.getPortValue(outputs + 1).getColor());
-      }
+        g.setColor(painter.getPortColor(outputs + 1));
       int len = outputs == 2 ? 6 : 4;
       g.drawLine(en.getX(), en.getY(), en.getX() + len * dx, en.getY()
           + len * dy);

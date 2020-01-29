@@ -230,7 +230,7 @@ public class Clock extends InstanceFactory {
       toolIcon.paintIcon(painter.getDestination(), g, 2, 2);
     } else {
       g.drawRect(4, 4, 13, 13);
-      g.setColor(Value.FALSE.getColor());
+      g.setColor(Value.FALSE.getColor(painter.getPalette()));
       g.drawPolyline(new int[] { 6, 6, 10, 10, 14, 14 }, new int[] { 10,
         6, 6, 14, 14, 10 }, 6);
     }
@@ -248,7 +248,7 @@ public class Clock extends InstanceFactory {
       pinx = 8;
       piny = 15;
     }
-    g.setColor(Value.TRUE.getColor());
+    g.setColor(Value.TRUE.getColor(painter.getPalette()));
     g.fillOval(pinx, piny, 3, 3);
   }
 
@@ -260,9 +260,9 @@ public class Clock extends InstanceFactory {
     int x = bds.getX();
     int y = bds.getY();
     GraphicsUtil.switchToWidth(g, 2);
-    g.setColor(Palette.SOLID_COLOR);
+    g.setColor(painter.getPalette().SOLID);
     g.fillRect(x, y, bds.getWidth(), bds.getHeight());
-    g.setColor(Palette.LINE_COLOR);
+    g.setColor(painter.getPalette().LINE);
     g.drawRect(x, y, bds.getWidth()-1, bds.getHeight()-1);
 
     painter.drawLabel();
@@ -270,10 +270,10 @@ public class Clock extends InstanceFactory {
     boolean drawUp;
     if (painter.getShowState()) {
       ClockState state = getState(painter);
-      g.setColor(state.sending.getColor());
+      g.setColor(state.sending.getColor(painter.getPalette()));
       drawUp = state.sending == Value.TRUE;
     } else {
-      g.setColor(Palette.LINE_COLOR);
+      g.setColor(painter.getPalette().LINE);
       drawUp = true;
     }
     x += 10;

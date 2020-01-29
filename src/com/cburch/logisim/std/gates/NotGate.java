@@ -293,7 +293,7 @@ class NotGate extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    painter.getGraphics().setColor(Palette.LINE_COLOR);
+    painter.getGraphics().setColor(painter.getPalette().LINE);
     paintBase(painter, true);
     painter.drawPorts();
     painter.drawLabel();

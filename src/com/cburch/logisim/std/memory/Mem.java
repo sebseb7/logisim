@@ -231,7 +231,7 @@ public abstract class Mem extends InstanceFactory {
 
     // draw contents
     int dataLines = lineSize(painter.getAttributeSet());
-    if (painter.getShowState()) {
+    if (!painter.isPrintView()) {
       MemState state = getState(painter);
       state.paint(painter.getGraphics(), bds.getX(), bds.getY(),
           15, 15, bds.getWidth() - 30, bds.getHeight() - 20, true, dataLines);

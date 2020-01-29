@@ -41,10 +41,12 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Area;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
-import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
@@ -196,12 +198,12 @@ class WindowOptions extends OptionsPanel {
       int x = 5+(BW+5)*i;
       int y = H-BH-5;
       if (Palette.keys[i].equals(hilight)) {
-        g.setColor(Palette.contrast(Palette.LINE_COLOR, 20));
+        g.setColor(Palette.contrast(Palette.current().LINE, 20));
         g.drawRect(x+2, y+2, BW-5, BH-5);
       }
       g.setColor(fill);
       g.fillRect(x+3, y+3, BW-6, BH-6);
-      g.setColor(Palette.LINE_COLOR);
+      g.setColor(Palette.current().LINE);
       g.drawRect(x, y, BW-1, BH-1);
       if (s != null) {
         g.setColor(Palette.contrast(fill));
@@ -220,7 +222,7 @@ class WindowOptions extends OptionsPanel {
           RenderingHints.KEY_ANTIALIASING,
           RenderingHints.VALUE_ANTIALIAS_ON);
 
-      g.setColor(Palette.CANVAS_COLOR);
+      g.setColor(Palette.current().CANVAS);
       g.fillRect(0, 0, W, H);
       g.setColor(Color.BLACK);
       g.drawRect(0, 0, W-1, H-1);
@@ -229,10 +231,10 @@ class WindowOptions extends OptionsPanel {
         GridPainter.paintGridOld(g, 10, 1.0, new Rectangle(0, 0, W, H));
 
       GraphicsUtil.switchToWidth(g, 2);
-      g.setColor(Palette.SOLID_COLOR);
+      g.setColor(Palette.current().SOLID);
       g.fillRect(20+1, 30+1, 20-2, 20-2);
       g.fillRect(20+1, 70+1, 20-2, 20-2);
-      g.setColor(Palette.LINE_COLOR);
+      g.setColor(Palette.current().LINE);
       g.drawRect(20+1, 30+1, 20-2, 20-2);
       g.drawRect(20+1, 70+1, 20-2, 20-2);
 
@@ -243,64 +245,64 @@ class WindowOptions extends OptionsPanel {
       {
         int[] xp = new int[] { 290+20, 290+1,  290+1, 290+20 };
         int[] yp = new int[] {  60+10,  60+3,  60+17,  60+10 };
-        g.setColor(Palette.SOLID_COLOR);
+        g.setColor(Palette.current().SOLID);
         g.fillPolygon(xp, yp, 4);
         g.fillOval(290+21, 70-4, 8, 8);
-        g.setColor(Palette.LINE_COLOR);
+        g.setColor(Palette.current().LINE);
         g.drawPolyline(xp, yp, 4);
         g.drawOval(290+21, 70-4, 8, 8);
       }
 
-      int[] xo = new int[] { 210, 210 };
-      int[] yo = new int[] {  15,  55 };
+      int[] xo = new int[] { 240, 240 };
+      int[] yo = new int[] {  30,  70 };
       for (int i = 0; i < 2; i++) {
-        int[] xp = new int[] { xo[i]+15, xo[i]+1, xo[i]+ 1, xo[i]+15 };
-        int[] yp = new int[] { yo[i]+ 0, yo[i]+0, yo[i]+30, yo[i]+30 };
-        g.setColor(Palette.SOLID_COLOR);
-        g.fillPolygon(xp, yp, 4);
-        GraphicsUtil.drawSolidCenteredArc(g, xo[i]+15, yo[i]+15, 15, -90, 180);
-        g.setColor(Palette.LINE_COLOR);
-        g.drawPolyline(xp, yp, 4);
+        int x = xo[i], y = yo[i];
+        Area and = new Area(new Rectangle2D.Float(x-30, y-15, 15, 30));
+        and.add(new Area(new Ellipse2D.Float(x-30, y-15, 30, 30)));
+        g.setColor(Palette.current().SOLID);
+        g.fill(and);
+        g.setColor(Palette.current().LINE);
+        g.draw(and);
       }
 
-      Color[] palette = Palette.toArray();
+      Color[] palette = Palette.current().toArray();
       BW = (W-5)/palette.length - 5;
       for (int i = 0; i < palette.length; i++)
         drawButton(g, i, palette[i], Palette.labels[i]);
       
       GraphicsUtil.switchToWidth(g, Wire.WIDTH);
-      g.setColor(Palette.NIL_COLOR);
+      g.setColor(Palette.current().NIL);
       g.drawLine(20, 20, 110, 20);
 
-      g.setColor(Palette.UNKNOWN_COLOR);
+      g.setColor(Palette.current().UNKNOWN);
       g.drawLine(120, 20, 210, 20);
       
-      g.setColor(Palette.TRUE_COLOR);
+      g.setColor(Palette.current().TRUE);
       g.drawLine(40, 40, 210, 40);
       g.drawLine(100, 40, 100, 70);
       g.drawLine(100, 70, 130, 70);
       g.fillOval(100-Wire.WIDTH, 40-Wire.WIDTH, 2*Wire.WIDTH, 2*Wire.WIDTH);
       g.fillOval(20 + 4, 40 - 6, 13, 13);
-      g.setColor(Palette.REVERSE_COLOR);
+      g.setColor(Palette.current().REVERSE);
       g.setFont(Pin.DEFAULT_FONT);
       GraphicsUtil.drawCenteredText(g, "1", 20 + 10, 40 - 1);
 
-      g.setColor(Palette.FALSE_COLOR);
+      g.setColor(Palette.current().FALSE);
       g.drawLine(40, 80, 130, 80);
       g.fillOval(20 + 4, 80 - 6, 13, 13);
-      g.setColor(Palette.REVERSE_COLOR);
+      g.setColor(Palette.current().REVERSE);
       g.setFont(Pin.DEFAULT_FONT);
       GraphicsUtil.drawCenteredText(g, "0", 20 + 10, 80 - 1);
 
-      g.setColor(Palette.ERROR_COLOR);
+      g.setColor(Palette.current().ERROR);
       g.drawLine(240, 30, 320, 30);
 
-      g.setColor(Palette.MULTI_COLOR);
+      g.setColor(Palette.current().MULTI);
       GraphicsUtil.switchToWidth(g, Wire.WIDTH_BUS);
       g.drawLine(140, 60, 210, 60);
       g.drawLine(170, 80, 210, 80);
 
-      g.setColor(Palette.WIDTH_ERROR_COLOR);
+      g.setColor(Palette.current().WIDTH_ERROR);
       GraphicsUtil.switchToWidth(g, Wire.WIDTH);
       g.drawLine(240, 70, 290, 70);
       GraphicsUtil.switchToWidth(g, 2);
@@ -310,7 +312,7 @@ class WindowOptions extends OptionsPanel {
 
     void doColorChange(int i) {
       String old = AppPreferences.CIRCUIT_PALETTE.get();
-      Color[] palette = Palette.toArray();
+      Color[] palette = Palette.current().toArray();
       Color oldColor = palette[i];
       JFrame parent = getPreferencesFrame();
       ColorPickerDialog p = new ColorPickerDialog(parent, oldColor, false);

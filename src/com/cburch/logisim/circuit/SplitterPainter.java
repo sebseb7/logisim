@@ -117,7 +117,7 @@ class SplitterPainter {
     int fanout = attrs.fanout;
     SplitterParameters parms = attrs.getParameters();
 
-    g.setColor(Palette.MULTI_COLOR);
+    g.setColor(context.getPalette().MULTI);
     int x0 = origin.getX();
     int y0 = origin.getY();
     int x1 = x0 + parms.getEnd0X();
@@ -132,10 +132,8 @@ class SplitterPainter {
       int xi = x1;
       int yi = y1;
       for (int i = 1; i <= fanout; i++) {
-        if (context.getShowState()) {
-          g.setColor(state.getValue(Location.create(xi, yi))
-              .getColor());
-        }
+        if (!context.isPrintView())
+          g.setColor(state.getValue(Location.create(xi, yi)).getColor(context.getPalette()));
         int xSpine = xi + (xi == x0 ? 0 : (xi < x0 ? 10 : -10));
         g.drawLine(xi, yi, xSpine, ySpine);
         xi += dx;
@@ -143,10 +141,10 @@ class SplitterPainter {
       }
       if (fanout > 3) {
         GraphicsUtil.switchToWidth(g, SPINE_WIDTH);
-        g.setColor(Palette.MULTI_COLOR);
+        g.setColor(context.getPalette().MULTI);
         g.drawLine(x1 + (dx>0?10:-10), ySpine, x1 + (fanout - 1) * dx + (dx>0?-10:10), ySpine);
       } else {
-        g.setColor(Palette.MULTI_COLOR);
+        g.setColor(context.getPalette().MULTI);
         g.fillOval(x0 - SPINE_DOT / 2, ySpine - SPINE_DOT / 2,
             SPINE_DOT, SPINE_DOT);
       }
@@ -157,9 +155,8 @@ class SplitterPainter {
       int xi = x1;
       int yi = y1;
       for (int i = 1; i <= fanout; i++) {
-        if (context.getShowState()) {
-          g.setColor(state.getValue(Location.create(xi, yi))
-              .getColor());
+        if (!context.isPrintView()) {
+          g.setColor(state.getValue(Location.create(xi, yi)).getColor(context.getPalette()));
         }
         int ySpine = yi + (yi == y0 ? 0 : (yi < y0 ? 10 : -10));
         g.drawLine(xi, yi, xSpine, ySpine);
@@ -168,10 +165,10 @@ class SplitterPainter {
       }
       if (fanout >= 3) {
         GraphicsUtil.switchToWidth(g, SPINE_WIDTH);
-        g.setColor(Palette.MULTI_COLOR);
+        g.setColor(context.getPalette().MULTI);
         g.drawLine(xSpine, y1 + (dy>0?10:-10), xSpine, y1 + (fanout - 1) * dy + (dy>0?-10:10));
       } else {
-        g.setColor(Palette.MULTI_COLOR);
+        g.setColor(context.getPalette().MULTI);
         g.fillOval(xSpine - SPINE_DOT / 2, y0 - SPINE_DOT / 2,
             SPINE_DOT, SPINE_DOT);
       }
@@ -181,7 +178,7 @@ class SplitterPainter {
 
   static void drawLines(ComponentDrawContext context,
       SplitterAttributes attrs, Location origin) {
-    boolean showState = context.getShowState();
+    boolean showState = !context.isPrintView();
     CircuitState state = showState ? context.getCircuitState() : null;
     if (state == null)
       showState = false;
@@ -202,14 +199,14 @@ class SplitterPainter {
     for (int i = 0, n = attrs.fanout; i < n; i++) {
       if (showState) {
         Value val = state.getValue(Location.create(x, y));
-        g.setColor(val.getColor());
+        g.setColor(val.getColor(context.getPalette()));
       }
       g.drawLine(x, y, x + dxEndSpine, y + dyEndSpine);
       x += dx;
       y += dy;
     }
     GraphicsUtil.switchToWidth(g, SPINE_WIDTH);
-    g.setColor(Palette.MULTI_COLOR);
+    g.setColor(context.getPalette().MULTI);
     int spine0x = x0 + parms.getSpine0X();
     int spine0y = y0 + parms.getSpine0Y();
     int spine1x = x0 + parms.getSpine1X();

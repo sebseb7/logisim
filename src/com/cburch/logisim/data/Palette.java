@@ -37,11 +37,7 @@ import java.util.HashMap;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public final class Palette {
-
-  // The primary palette, as selected in app preferences.
-  private static Palette COLOR;
-  public static Palette COLOR() { return COLOR; }
-
+  
   // Palettes are defined by just a handful of base colors.
   // Other auxiliary colors are derived from the base colors
   public static final String[] keys = new String[] {
@@ -59,7 +55,47 @@ public final class Palette {
     return -1;
   }
 
+  // Pre-defined palettes.
+  public static HashMap<String, String> options;
+  static {
+    options = new HashMap<>();
+    options.put(AppPreferences.PALETTE_STANDARD,
+        "nil=#808080;unknown=#2828ff;true=#00d200;false=#006400;error=#c00000;bus=#000000;incompatible=#ff7b00;canvas=#ffffff");
+    options.put(AppPreferences.PALETTE_CONTRAST,
+        "nil=#808080;unknown=#008bff;true=#00c400;false=#300001;error=#d40000;bus=#000000;incompatible=#c96100;canvas=#ffffff");
+    options.put(AppPreferences.PALETTE_GREEN,
+        "nil=#a8a8a8;unknown=#f7e2b2;true=#fcff12;false=#08fff4;error=#ff7975;bus=#ffffff;incompatible=#ffa0f3;canvas=#094d1c");
+    options.put(AppPreferences.PALETTE_BLUE,
+        "nil=#a8a8a8;unknown=#f7e2b2;true=#fcff12;false=#08fff4;error=#ff7975;bus=#ffffff;incompatible=#ffa0f3;canvas=#0f214d");
+    options.put(AppPreferences.PALETTE_DARK,
+        "nil=#a8a8a8;unknown=#f7e2b2;true=#fcff12;false=#08fff4;error=#ff7975;bus=#ffffff;incompatible=#ffa0f3;canvas=#000000");
+  }
+
+  public static final Palette MONOCHROME = new Palette(new Color[] {
+    Color.BLACK, Color.BLACK, Color.BLACK, Color.BLACK,
+      Color.BLACK, Color.BLACK, Color.BLACK, Color.WHITE,
+  });
+
+  // The standard palette, used in toolbars, project explorer,
+  // and the default for layout and printing as well.
+  public static final Palette STANDARD =
+    MONOCHROME.derive(AppPreferences.PALETTE_STANDARD);
+
+  // The current palette, as selected in app preferences.
+  public static Palette current() { return cur; }
+  private static Palette cur = STANDARD; // later changed to user's current choice
+  public static Palette ghostVery() { return ghostVery; }
+  private static Palette ghostVery = STANDARD.translucent(50);
+  public static Palette ghostSome() { return ghostSome; }
+  private static Palette ghostSome = STANDARD.translucent(65);
+  public static Palette selected() { return selected; }
+  private static Palette selected = STANDARD.makeSelected();
+
   public Palette(Color[] base) {
+    this(base, null);
+  }
+
+  public Palette(Color[] base, Color lineColor) {
     // base colors
     NIL = base[0];
     UNKNOWN = base[1];
@@ -73,7 +109,7 @@ public final class Palette {
     // auxiliary colors
     OSCILLATING = ERROR;
     CRASHED = ERROR;
-    LINE = contrast(CANVAS);
+    LINE = lineColor == null ? contrast(CANVAS) : lineColor;
     REVERSE = contrast(LINE);
     GRID_DOT = contrast(CANVAS, 53f);
     GRID_DOT_ZOOMED = contrast(CANVAS, 20f);
@@ -89,10 +125,18 @@ public final class Palette {
     TICK_RATE = new Color(0x92000000 | (contrast(CANVAS, 80f).getRGB() & 0xffffff));
 
     // todo: derive these auxiliary colors, or eliminate them
-    WIDTH_ERROR_CAPTION = new Color(85, 0, 0);
-    WIDTH_ERROR_HIGHLIGHT = new Color(255, 255, 0);
-    WIDTH_ERROR_CAPTION_BGCOLOR = new Color(255, 230, 210);
-    ICON_WIDTH = new Color(153, 49, 0);
+    WIDTH_ERROR_CAPTION = new Color(85, 0, 0, CANVAS.getAlpha());
+    WIDTH_ERROR_HIGHLIGHT = new Color(255, 255, 0, CANVAS.getAlpha());
+    WIDTH_ERROR_CAPTION_BG = new Color(255, 230, 210, CANVAS.getAlpha());
+    ICON_WIDTH = new Color(153, 49, 0, CANVAS.getAlpha());
+  }
+
+  public Palette stateless() {
+    Color[] base = toArray();
+    // Use LINE in place of UNKNOWN, TRUE, FALSE, and ERROR
+    // Or maybe use MULTI_COLOR instead?
+    base[1] = base[2] = base[3] = base[4] = LINE;
+    return new Palette(base);
   }
 
   public Color[] toArray() {
@@ -106,8 +150,11 @@ public final class Palette {
   public final Color UNKNOWN;
   public final Color ERROR;
 
-  public final Color WIDTH_ERROR;
   public final Color ICON_WIDTH;
+  public final Color WIDTH_ERROR;
+  public final Color WIDTH_ERROR_CAPTION;
+  public final Color WIDTH_ERROR_HIGHLIGHT;
+  public final Color WIDTH_ERROR_CAPTION_BG;
 
   public final Color MULTI; // bus color
 
@@ -128,28 +175,24 @@ public final class Palette {
 
   public final Color SOLID; // contrasts CANVAS
 
-  public static HashMap<String, String> options;
-  static {
-    options = new HashMap<>();
-    options.put(AppPreferences.PALETTE_STANDARD,
-        "nil=#808080;unknown=#2828ff;true=#00d200;false=#006400;error=#c00000;bus=#000000;incompatible=#ff7b00;canvas=#ffffff");
-    options.put(AppPreferences.PALETTE_CONTRAST,
-        "nil=#808080;unknown=#008bff;true=#00c400;false=#300001;error=#d40000;bus=#000000;incompatible=#c96100;canvas=#ffffff");
-    options.put(AppPreferences.PALETTE_GREEN,
-        "nil=#a8a8a8;unknown=#f7e2b2;true=#fcff12;false=#08fff4;error=#ff7975;bus=#ffffff;incompatible=#ffa0f3;canvas=#094d1c");
-    options.put(AppPreferences.PALETTE_BLUE,
-        "nil=#a8a8a8;unknown=#f7e2b2;true=#fcff12;false=#08fff4;error=#ff7975;bus=#ffffff;incompatible=#ffa0f3;canvas=#0f214d");
-    options.put(AppPreferences.PALETTE_DARK,
-        "nil=#a8a8a8;unknown=#f7e2b2;true=#fcff12;false=#08fff4;error=#ff7975;bus=#ffffff;incompatible=#ffa0f3;canvas=#000000");
-    setPalette(AppPreferences.PALETTE_STANDARD); // later changed to user's current choice
-  }
 
   public static void setPalette(String specs) {
+    setPalette(cur.derive(specs));
+  }
+
+  public static void setPalette(Palette p) {
+    cur = p;
+    ghostVery = cur.translucent(50);
+    ghostSome = cur.translucent(65);
+    selected = cur.makeSelected(); // fixme: also replace wire colors
+  }
+
+  public Palette derive(String specs) {
     if (specs == null || specs.equals(""))
-      specs = "standard";
+      return this;
     if (options.containsKey(specs))
       specs = options.get(specs);
-    Color[] base = COLOR.toArray();
+    Color[] base = toArray();
     for (String spec : specs.split(";")) {
       if (spec.equals(""))
         continue;
@@ -174,7 +217,24 @@ public final class Palette {
       }
       base[idx] = c;
     }
-    COLOR = new Palette(base);
+    return new Palette(base);
+  }
+
+  public Palette translucent(float percent) {
+    Color[] base = toArray();
+    for (int i = 0; i < base.length; i++)
+      base[i] = new Color(base[i].getRed(),
+          base[i].getBlue(),
+          base[i].getGreen(),
+          Math.max(0, Math.min(255, (int)(255 * percent/100))));
+    return new Palette(base);
+  }
+
+  private static final Color COLOR_RECT_SELECT = new Color(0, 64, 128, 255);
+  public Palette makeSelected() {
+    Color[] base = toArray();
+    base[1] = base[2] = base[3] = base[4] = COLOR_RECT_SELECT;
+    return new Palette(base, COLOR_RECT_SELECT);
   }
 
   public String toPrefString() {
@@ -195,7 +255,11 @@ public final class Palette {
   }
 
   public static Color contrast(Color c) {
-    return isLight(c) ? Color.BLACK : Color.WHITE;
+    int a = c.getAlpha();
+    if (a == 255)
+      return isLight(c) ? Color.BLACK : Color.WHITE;
+    else
+      return isLight(c) ? new Color(0,0,0,a) : new Color(255,255,255,a);
   }
 
   public static Color contrast(Color c, float percent) {

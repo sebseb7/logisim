@@ -42,7 +42,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.Shape;
 
 import com.cburch.draw.util.TextMetrics;
-import com.cburch.logisim.data.Palette;
 
 public class GraphicsUtil {
   static public void drawArrow(Graphics g, int x0, int y0, int x1, int y1,
@@ -66,14 +65,6 @@ public class GraphicsUtil {
 
   static public void drawCenteredArc(Graphics g, int x, int y, int r,
       int start, int dist) {
-    g.drawArc(x - r, y - r, 2 * r, 2 * r, start, dist);
-  }
-
-  static public void drawSolidCenteredArc(Graphics g, int x, int y, int r,
-      int start, int dist) {
-    g.setColor(Palette.SOLID_COLOR);
-    g.fillArc(x - r, y - r, 2 * r, 2 * r, start, dist);
-    g.setColor(Palette.LINE_COLOR);
     g.drawArc(x - r, y - r, 2 * r, 2 * r, start, dist);
   }
 

@@ -61,8 +61,7 @@ public class SimulationTreeRenderer extends DefaultTreeCellRenderer {
     public int getIconWidth() { return 20; }
 
     public void paintIcon(Component c, Graphics g, int x, int y) {
-      ComponentDrawContext context = new ComponentDrawContext(c, null,
-          null, g, g);
+      ComponentDrawContext context = new ComponentDrawContext(c, null, null, g, g);
       
       // draw current-viewed-halo if appropriate
       if (isCurrentView) {

@@ -139,11 +139,11 @@ public class TransmissionGate extends InstanceFactory {
     Color output = gate0;
     Color platform = gate0;
     if (!isGhost && painter.getShowState()) {
-      gate0 = painter.getPortValue(GATE0).getColor();
-      gate1 = painter.getPortValue(GATE0).getColor();
-      input = painter.getPortValue(INPUT).getColor();
-      output = painter.getPortValue(OUTPUT).getColor();
-      platform = computeOutput(painter).getColor();
+      gate0 = painter.getPortColor(GATE0);
+      gate1 = painter.getPortColor(GATE0);
+      input = painter.getPortColor(INPUT);
+      output = painter.getPortColor(OUTPUT);
+      platform = computeOutput(painter).getColor(painter.getPalette());
     }
 
     g.setColor(flip ? input : output);

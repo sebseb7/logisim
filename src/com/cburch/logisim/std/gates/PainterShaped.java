@@ -34,13 +34,15 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.geom.Area;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.util.HashMap;
 
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.util.GraphicsUtil;
@@ -129,21 +131,23 @@ public class PainterShaped {
   }
 
   static void paintAnd(InstancePainter painter, int width, int height, boolean solid) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
-    int[] xp = new int[] { -width / 2, -width + 1, -width + 1, -width / 2 };
-    int[] yp = new int[] { -width / 2, -width / 2, width / 2, width / 2 };
-    if (solid) {
-      g.setColor(Palette.SOLID_COLOR);
-      xp[0]++; xp[3]++; // box fill doesn't quite overlap curve fill
-      g.fillPolygon(xp, yp, 4);
-      xp[0]--; xp[3]--;
-      GraphicsUtil.drawSolidCenteredArc(g, -width / 2, 0, width / 2, -90, 180);
-      g.setColor(Palette.LINE_COLOR);
+
+    Area path;
+    if (width < 40) {
+      path = AND_PATH_NARROW;
+    } else if (width < 60) {
+      path = AND_PATH_MEDIUM;
     } else {
-      GraphicsUtil.drawCenteredArc(g, -width / 2, 0, width / 2, -90, 180);
+      path = AND_PATH_WIDE;
     }
-    g.drawPolyline(xp, yp, 4);
+    if (solid) {
+      g.setColor(painter.getPalette().SOLID);
+      g.fill(path);
+      g.setColor(painter.getPalette().LINE);
+    }
+    g.draw(path);
     if (height > width) {
       g.drawLine(-width + 1, -height / 2, -width + 1, height / 2);
     }
@@ -177,12 +181,7 @@ public class PainterShaped {
         Location src = loc.translate(offs.getX(), offs.getY());
         int len = lengths[i];
         if (len != 0 && (!printView || painter.isPortConnected(i + 1))) {
-          if (painter.getShowState()) {
-            Value val = painter.getPortValue(i + 1);
-            g.setColor(val.getColor());
-          } else {
-            g.setColor(baseColor);
-          }
+          g.setColor(painter.getPortColor(i + 1));
           Location dst = src.translate(facing, len);
           g.drawLine(src.getX(), src.getY(), dst.getX(), dst.getY());
         }
@@ -212,10 +211,10 @@ public class PainterShaped {
       xp[3] = -6;
       yp[3] = 0;
       if (solid) {
-        g.setColor(Palette.SOLID_COLOR);
+        g.setColor(painter.getPalette().SOLID);
         g.fillPolygon(xp, yp, 4);
         g.fillOval(-6, -3, 6, 6);
-        g.setColor(Palette.LINE_COLOR);
+        g.setColor(painter.getPalette().LINE);
       }
       g.drawPolyline(xp, yp, 4);
       g.drawOval(-6, -3, 6, 6);
@@ -231,10 +230,10 @@ public class PainterShaped {
       xp[3] = -10;
       yp[3] = 0;
       if (solid) {
-        g.setColor(Palette.SOLID_COLOR);
+        g.setColor(painter.getPalette().SOLID);
         g.fillPolygon(xp, yp, 4);
         g.fillOval(-9, -4, 9, 9);
-        g.setColor(Palette.LINE_COLOR);
+        g.setColor(painter.getPalette().LINE);
       }
       g.drawPolyline(xp, yp, 4);
       g.drawOval(-9, -4, 9, 9);
@@ -242,23 +241,23 @@ public class PainterShaped {
   }
 
   static void paintOr(InstancePainter painter, int width, int height, boolean solid) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
 
     GeneralPath path;
     if (width < 40) {
-      path = PATH_NARROW;
+      path = OR_PATH_NARROW;
     } else if (width < 60) {
-      path = PATH_MEDIUM;
+      path = OR_PATH_MEDIUM;
     } else {
-      path = PATH_WIDE;
+      path = OR_PATH_WIDE;
     }
     if (solid) {
-      g.setColor(Palette.SOLID_COLOR);
-      ((Graphics2D) g).fill(path);
-      g.setColor(Palette.LINE_COLOR);
+      g.setColor(painter.getPalette().SOLID);
+      g.fill(path);
+      g.setColor(painter.getPalette().LINE);
     }
-    ((Graphics2D) g).draw(path);
+    g.draw(path);
     if (height > width) {
       paintShield(g, 0, width, height);
     }
@@ -277,39 +276,38 @@ public class PainterShaped {
     paintShield(g, -10, width - 10, height);
   }
 
-  private static final GeneralPath PATH_NARROW;
-
-  private static final GeneralPath PATH_MEDIUM;
-
-  private static final GeneralPath PATH_WIDE;
-
+  private static final GeneralPath OR_PATH_NARROW;
+  private static final GeneralPath OR_PATH_MEDIUM;
+  private static final GeneralPath OR_PATH_WIDE;
   private static final GeneralPath SHIELD_NARROW;
-
   private static final GeneralPath SHIELD_MEDIUM;
-
   private static final GeneralPath SHIELD_WIDE;
 
+  private static final Area AND_PATH_NARROW;
+  private static final Area AND_PATH_MEDIUM;
+  private static final Area AND_PATH_WIDE;
+
   static {
-    PATH_NARROW = new GeneralPath();
-    PATH_NARROW.moveTo(0, 0);
-    PATH_NARROW.quadTo(-10, -15, -30, -15);
-    PATH_NARROW.quadTo(-22, 0, -30, 15);
-    PATH_NARROW.quadTo(-10, 15, 0, 0);
-    PATH_NARROW.closePath();
+    OR_PATH_NARROW = new GeneralPath();
+    OR_PATH_NARROW.moveTo(0, 0);
+    OR_PATH_NARROW.quadTo(-10, -15, -30, -15);
+    OR_PATH_NARROW.quadTo(-22, 0, -30, 15);
+    OR_PATH_NARROW.quadTo(-10, 15, 0, 0);
+    OR_PATH_NARROW.closePath();
 
-    PATH_MEDIUM = new GeneralPath();
-    PATH_MEDIUM.moveTo(0, 0);
-    PATH_MEDIUM.quadTo(-20, -25, -50, -25);
-    PATH_MEDIUM.quadTo(-37, 0, -50, 25);
-    PATH_MEDIUM.quadTo(-20, 25, 0, 0);
-    PATH_MEDIUM.closePath();
+    OR_PATH_MEDIUM = new GeneralPath();
+    OR_PATH_MEDIUM.moveTo(0, 0);
+    OR_PATH_MEDIUM.quadTo(-20, -25, -50, -25);
+    OR_PATH_MEDIUM.quadTo(-37, 0, -50, 25);
+    OR_PATH_MEDIUM.quadTo(-20, 25, 0, 0);
+    OR_PATH_MEDIUM.closePath();
 
-    PATH_WIDE = new GeneralPath();
-    PATH_WIDE.moveTo(0, 0);
-    PATH_WIDE.quadTo(-25, -35, -70, -35);
-    PATH_WIDE.quadTo(-50, 0, -70, 35);
-    PATH_WIDE.quadTo(-25, 35, 0, 0);
-    PATH_WIDE.closePath();
+    OR_PATH_WIDE = new GeneralPath();
+    OR_PATH_WIDE.moveTo(0, 0);
+    OR_PATH_WIDE.quadTo(-25, -35, -70, -35);
+    OR_PATH_WIDE.quadTo(-50, 0, -70, 35);
+    OR_PATH_WIDE.quadTo(-25, 35, 0, 0);
+    OR_PATH_WIDE.closePath();
 
     SHIELD_NARROW = new GeneralPath();
     SHIELD_NARROW.moveTo(-30, -15);
@@ -322,6 +320,15 @@ public class PainterShaped {
     SHIELD_WIDE = new GeneralPath();
     SHIELD_WIDE.moveTo(-70, -35);
     SHIELD_WIDE.quadTo(-50, 0, -70, 35);
+
+    AND_PATH_NARROW = new Area(new Rectangle2D.Float(-30, -15, 15, 30));
+    AND_PATH_NARROW.add(new Area(new Ellipse2D.Float(-30, -15, 30, 30)));
+
+    AND_PATH_MEDIUM = new Area(new Rectangle2D.Float(-50, -25, 25, 50));
+    AND_PATH_MEDIUM.add(new Area(new Ellipse2D.Float(-50, -25, 50, 50)));
+
+    AND_PATH_WIDE = new Area(new Rectangle2D.Float(-70, -35, 35, 70));
+    AND_PATH_WIDE.add(new Area(new Ellipse2D.Float(-70, -35, 70, 70)));
   }
 
   private static HashMap<Integer, int[]> INPUT_LENGTHS = new HashMap<Integer, int[]>();

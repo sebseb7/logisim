@@ -72,19 +72,16 @@ public class SplitterFactory extends AbstractComponentFactory {
     return new Splitter(loc, attrs);
   }
 
-  //
-  // user interface methods
-  //
   @Override
-  public void drawGhost(ComponentDrawContext context, Color color, int x,
+  public void drawGhost(ComponentDrawContext context, Color colorIgnored, int x,
       int y, AttributeSet attrsBase) {
     SplitterAttributes attrs = (SplitterAttributes) attrsBase;
-    context.getGraphics().setColor(color);
+    context.getGraphics().setColor(context.getPalette().LINE);
     Location loc = Location.create(x, y);
     if (attrs.appear == SplitterAttributes.APPEAR_LEGACY) {
-      SplitterPainter.drawLegacy(context, attrs, loc, false);
+      SplitterPainter.drawLegacy(context, attrs, loc);
     } else {
-      SplitterPainter.drawLines(context, attrs, loc, false);
+      SplitterPainter.drawLines(context, attrs, loc);
     }
   }
 

@@ -135,18 +135,23 @@ public abstract class InstanceFactory extends AbstractComponentFactory {
   // }
 
   @Override
-  public final void drawGhost(ComponentDrawContext context, Color color,
+  public final void drawGhost(ComponentDrawContext context, Color lineColorIgnored,
       int x, int y, AttributeSet attrs) {
+    // note: palette has already been changed to translucent
+    boolean old = context.setPrintView(true);
     InstancePainter painter = context.getInstancePainter();
     Graphics g = painter.getGraphics();
-    g.setColor(color);
+    g.setColor(context.getPalette().LINE); // lineColorIgnored
     g.translate(x, y);
     painter.setFactory(this, attrs);
-    paintGhost(painter);
+    paintInstance(painter);
+    // paintGhost(painter); // by default, sets painter.factory back to null
     g.translate(-x, -y);
-    if (painter.getFactory() == null) {
-      super.drawGhost(context, color, x, y, attrs);
-    }
+    // if (painter.getFactory() == null) {
+    //  // call parent if subclass did not override paintGhost() call
+    //  super.drawGhost(context, color, x, y, attrs);
+    //}
+    context.setPrintView(old);
   }
 
   @Override
@@ -256,6 +261,7 @@ public abstract class InstanceFactory extends AbstractComponentFactory {
     return true;
   }
 
+  // TODO: deprecate ghost drawing, just paint component instead
   public void paintGhost(InstancePainter painter) {
     painter.setFactory(null, null);
   }

@@ -425,20 +425,20 @@ public final class Value {
     return BitWidth.create(width);
   }
 
-  public Color getColor() {
+  public Color getColor(Palette palette) {
     if (error != 0) {
-      return Palette.ERROR_COLOR;
+      return palette.ERROR;
     } else if (width == 0) {
-      return Palette.NIL_COLOR;
+      return palette.NIL;
     } else if (width == 1) {
       if (this == UNKNOWN)
-        return Palette.UNKNOWN_COLOR;
+        return palette.UNKNOWN;
       else if (this == TRUE)
-        return Palette.TRUE_COLOR;
+        return palette.TRUE;
       else
-        return Palette.FALSE_COLOR;
+        return palette.FALSE;
     } else {
-      return Palette.MULTI_COLOR;
+      return palette.MULTI;
     }
   }
 

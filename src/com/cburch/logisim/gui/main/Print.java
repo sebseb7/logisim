@@ -60,6 +60,7 @@ import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.proj.Project;
 
 public class Print {
@@ -146,11 +147,15 @@ public class Print {
       clip.add(bds.getX(), bds.getY());
       clip.add(bds.getX() + bds.getWidth(), bds.getY() + bds.getHeight());
       g.setClip(clip);
+    
+      // FIXME: allow user to choose palette to use for printing
+      Palette palette = printerView ?
+        Palette.MONOCHROME : Palette.current().stateless();
 
       // And finally draw the circuit onto the page
-      ComponentDrawContext context = new ComponentDrawContext(proj
-          .getFrame().getCanvas(), circ, circState, base, g,
-          printerView);
+      ComponentDrawContext context = new ComponentDrawContext(
+          proj.getFrame().getCanvas(), circ, circState, base, g,
+          palette, printerView);
       Collection<Component> noComps = Collections.emptySet();
       circ.draw(context, noComps);
       g.dispose();

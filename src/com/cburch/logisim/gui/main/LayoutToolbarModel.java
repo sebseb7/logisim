@@ -199,7 +199,7 @@ class LayoutToolbarModel extends AbstractToolbarModel {
       // draw halo
       if (tool == haloedTool
           && AppPreferences.ATTRIBUTE_HALO.get()) {
-        g.setColor(Palette.HALO_COLOR);
+        g.setColor(Palette.STANDARD.HALO);
         g.fillRect(1, 1, 22, 22);
       }
 

@@ -121,8 +121,9 @@ public class GridPainter {
     }
   }
 
+  // FIXME: use different palette, e.g. for printing
   public static void paintGridOld(Graphics g, int size, double f, Rectangle clip) {
-    g.setColor(Palette.GRID_DOT_COLOR);
+    g.setColor(Palette.current().GRID_DOT);
     if (f == 1.0) {
       int start_x = ((clip.x + 9) / size) * size;
       int start_y = ((clip.y + 9) / size) * size;
@@ -138,7 +139,7 @@ public class GridPainter {
       int y0 = size * (int) Math.ceil(clip.y / f / size);
       int y1 = y0 + (int) (clip.height / f);
       if (f <= 0.5)
-        g.setColor(Palette.GRID_ZOOMED_OUT_COLOR);
+        g.setColor(Palette.current().GRID_ZOOMED_OUT);
       for (double x = x0; x < x1; x += size) {
         for (double y = y0; y < y1; y += size) {
           int sx = (int) Math.round(f * x);
@@ -148,7 +149,7 @@ public class GridPainter {
       }
       if (f <= 0.5) { // make every 5th pixel darker
         int size5 = 5 * size;
-        g.setColor(Palette.GRID_DOT_COLOR);
+        g.setColor(Palette.current().GRID_DOT);
         x0 = size5 * (int) Math.ceil(clip.x / f / size5);
         y0 = size5 * (int) Math.ceil(clip.y / f / size5);
         for (double x = x0; x < x1; x += size5) {
@@ -214,9 +215,9 @@ public class GridPainter {
   // creating the grid image
   //
   private void updateGridImage(int size, double f) {
-    int CANVAS_COLOR = Palette.CANVAS_COLOR.getRGB();
-    int GRID_DOT_COLOR = Palette.GRID_DOT_COLOR.getRGB();
-    int GRID_DOT_ZOOMED_COLOR = Palette.GRID_DOT_ZOOMED_COLOR.getRGB();
+    int CANVAS_COLOR = Palette.current().CANVAS.getRGB();
+    int GRID_DOT_COLOR = Palette.current().GRID_DOT.getRGB();
+    int GRID_DOT_ZOOMED_COLOR = Palette.current().GRID_DOT_ZOOMED.getRGB();
     double ww = f * size * 5;
     while (2 * ww < 150)
       ww *= 2;

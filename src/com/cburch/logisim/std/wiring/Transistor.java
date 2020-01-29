@@ -159,12 +159,13 @@ public class Transistor extends InstanceFactory {
     Color output;
     Color platform;
     if (!isGhost && painter.getShowState()) {
-      gate = painter.getPortValue(GATE).getColor();
-      input = painter.getPortValue(INPUT).getColor();
-      output = painter.getPortValue(OUTPUT).getColor();
+      gate = painter.getPortColor(GATE);
+      input = painter.getPortColor(INPUT);
+      output = painter.getPortColor(OUTPUT);
       Value out = computeOutput(painter);
-      platform = out.isUnknown() ? Value.UNKNOWN.getColor() : out
-          .getColor();
+      platform = out.isUnknown() ?
+        Value.UNKNOWN.getColor(painter.getPalette()) :
+        out.getColor(painter.getPalette());
     } else {
       Color base = g.getColor();
       gate = base;

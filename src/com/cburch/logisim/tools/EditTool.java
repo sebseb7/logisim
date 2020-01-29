@@ -166,10 +166,10 @@ public final class EditTool extends Tool {
       int x = loc.getX();
       int y = loc.getY();
       Graphics g = context.getGraphics();
-      g.setColor(Palette.TRUE_COLOR);
+      g.setColor(context.getPalette().TRUE);
       GraphicsUtil.switchToWidth(g, 2);
       g.drawOval(x - 5, y - 5, 10, 10);
-      g.setColor(Color.BLACK);
+      g.setColor(context.getPalette().LINE);
       GraphicsUtil.switchToWidth(g, 1);
     }
     current.draw(canvas, context);

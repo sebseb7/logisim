@@ -148,7 +148,7 @@ public final class Wire
     CircuitState state = context.getCircuitState();
     Graphics g = context.getGraphics();
     GraphicsUtil.switchToWidth(g, WIDTH);
-    g.setColor(state.getValue(e0).getColor());
+    g.setColor(state.getValue(e0).getColor(context.getPalette()));
     g.drawLine(e0.x, e0.y, e1.x, e1.y);
   }
 

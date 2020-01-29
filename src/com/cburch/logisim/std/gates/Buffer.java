@@ -202,9 +202,9 @@ class Buffer extends InstanceFactory {
     xp[3] = 0;
     yp[3] = 0;
     if (solid) {
-      g.setColor(Palette.SOLID_COLOR);
+      g.setColor(painter.getPalette().SOLID);
       g.fillPolygon(xp, yp, 4);
-      g.setColor(Palette.LINE_COLOR);
+      g.setColor(painter.getPalette().LINE);
     }
     g.drawPolyline(xp, yp, 4);
 

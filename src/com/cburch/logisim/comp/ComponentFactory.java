@@ -61,8 +61,8 @@ public interface ComponentFactory extends AttributeDefaultProvider {
 
   public Component createComponent(Location loc, AttributeSet attrs);
 
-  public void drawGhost(ComponentDrawContext context, Color color, int x,
-      int y, AttributeSet attrs);
+  public void drawGhost(ComponentDrawContext context, Color lineColor,
+      int x, int y, AttributeSet attrs);
 
   default public void drawLabel(ComponentDrawContext context) { }
 

@@ -84,14 +84,15 @@ public class Power extends InstanceFactory {
 
     GraphicsUtil.switchToWidth(g, Wire.WIDTH);
     if (!isGhost && painter.getShowState()) {
-      g.setColor(painter.getPortValue(0).getColor());
+      g.setColor(painter.getPortColor(0));
     }
     g.drawLine(0, 0, 5, 0);
 
     GraphicsUtil.switchToWidth(g, 1);
     if (!isGhost && painter.shouldDrawColor()) {
       BitWidth width = painter.getAttributeValue(StdAttr.WIDTH);
-      g.setColor(Value.repeat(Value.TRUE, width.getWidth()).getColor());
+      g.setColor(Value.repeat(Value.TRUE, width.getWidth()).getColor(
+            painter.getPalette()));
     }
     g.drawPolygon(new int[] { 6, 14, 6 }, new int[] { -8, 0, 8 }, 3);
 

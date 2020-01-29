@@ -57,6 +57,7 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.gui.main.Selection;
 import com.cburch.logisim.gui.main.Selection.Event;
@@ -242,8 +243,11 @@ public final class SelectTool extends Tool {
         Location cloc = c.getLocation();
         Graphics gDup = gBase.create();
         context.setGraphics(gDup);
-        c.getFactory().drawGhost(context, COLOR_RECT_SELECT,
+        Palette ghost = Palette.selected();
+        Palette old = context.setPalette(ghost);
+        c.getFactory().drawGhost(context, ghost.LINE,
             cloc.getX(), cloc.getY(), c.getAttributeSet());
+        context.setPalette(old);
         gDup.dispose();
       }
 

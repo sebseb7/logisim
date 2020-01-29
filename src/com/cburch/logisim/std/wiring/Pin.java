@@ -462,7 +462,7 @@ public class Pin extends InstanceFactory {
       Bounds bds = painter.getBounds();
       Graphics g = painter.getGraphics();
       GraphicsUtil.switchToWidth(g, 2);
-      g.setColor(Palette.HALO_COLOR);
+      g.setColor(painter.getPalette().HALO);
       int y = bds.getY() + bds.getHeight();
       int x = bds.getX() + bds.getWidth();
       if (radix == RadixOption.RADIX_2) {
@@ -694,7 +694,7 @@ public class Pin extends InstanceFactory {
     BitWidth w = painter.getAttributeValue(StdAttr.WIDTH);
     if (!w.equals(BitWidth.ONE)) {
       Graphics g = painter.getGraphics();
-      g.setColor(Palette.ICON_WIDTH_COLOR);
+      g.setColor(painter.getPalette().ICON_WIDTH);
       g.setFont(ICON_WIDTH_FONT);
       GraphicsUtil.drawCenteredText(g, "" + w.getWidth(), 10, 9);
       g.setColor(Color.BLACK);
@@ -734,13 +734,13 @@ public class Pin extends InstanceFactory {
       piny = 9;
     }
 
-    g.setColor(Color.black);
+    g.setColor(painter.getPalette().LINE);
     if (output) {
       g.drawOval(4, 4, 13, 13);
     } else {
       g.drawRect(4, 4, 13, 13);
     }
-    g.setColor(Value.TRUE.getColor());
+    g.setColor(Value.TRUE.getColor(painter.getPalette()));
     g.fillOval(7, 7, 8, 8);
     g.fillOval(pinx, piny, 3, 3);
   }
@@ -749,37 +749,37 @@ public class Pin extends InstanceFactory {
   public void paintInstance(InstancePainter painter) {
     PinAttributes attrs = (PinAttributes) painter.getAttributeSet();
     Graphics g = painter.getGraphics();
-    Bounds bds = painter.getInstance().getBounds();
+    Bounds bds = painter.getBounds();
     int x = bds.getX();
     int y = bds.getY();
     GraphicsUtil.switchToWidth(g, 2);
     if (attrs.type == OUTPUT) {
       if (attrs.width.getWidth() == 1) {
-        g.setColor(Palette.SOLID_COLOR);
+        g.setColor(painter.getPalette().SOLID);
         g.fillOval(x + 1, y + 1, bds.getWidth() - 1,
             bds.getHeight() - 1);
-        g.setColor(Palette.LINE_COLOR);
+        g.setColor(painter.getPalette().LINE);
         g.drawOval(x + 1, y + 1, bds.getWidth() - 1,
             bds.getHeight() - 1);
       } else {
-        g.setColor(Palette.SOLID_COLOR);
+        g.setColor(painter.getPalette().SOLID);
         g.fillRoundRect(x + 1, y + 1, bds.getWidth() - 1,
             bds.getHeight() - 1, 12, 12);
-        g.setColor(Palette.LINE_COLOR);
+        g.setColor(painter.getPalette().LINE);
         g.drawRoundRect(x + 1, y + 1, bds.getWidth() - 1,
             bds.getHeight() - 1, 12, 12);
       }
     } else {
-      g.setColor(Palette.SOLID_COLOR);
+      g.setColor(painter.getPalette().SOLID);
       g.fillRect(x + 1, y + 1, bds.getWidth() - 1, bds.getHeight() - 1);
-      g.setColor(Palette.LINE_COLOR);
+      g.setColor(painter.getPalette().LINE);
       g.drawRect(x + 1, y + 1, bds.getWidth() - 1, bds.getHeight() - 1);
     }
 
     painter.drawLabel();
 
     if (!painter.getShowState()) {
-      g.setColor(Palette.LINE_COLOR);
+      g.setColor(painter.getPalette().LINE);
       GraphicsUtil.drawCenteredText(g, "x" + attrs.width.getWidth(),
           bds.getX() + bds.getWidth() / 2,
           bds.getY() + bds.getHeight() / 2);
@@ -788,11 +788,11 @@ public class Pin extends InstanceFactory {
       Value value = pull(attrs, state.intendedValue);
       if (attrs.width.getWidth() <= 1) {
         Value found = state.foundValue;
-        g.setColor(found.getColor());
+        g.setColor(found.getColor(painter.getPalette()));
         g.fillOval(x + 4, y + 4, 13, 13);
 
         if (attrs.width.getWidth() == 1) {
-          g.setColor(Palette.REVERSE_COLOR);
+          g.setColor(painter.getPalette().REVERSE);
           g.setFont(DEFAULT_FONT);
           GraphicsUtil.drawCenteredText(g,
               value.toDisplayString(), x + 10, y + 9);

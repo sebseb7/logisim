@@ -180,9 +180,7 @@ public class Decoder extends InstanceFactory {
     int dx = vertical ? selMult : 0;
     int dy = vertical ? 0 : -selMult;
     if (outputs == 2) { // draw select wire
-      if (painter.getShowState()) {
-        g.setColor(painter.getPortValue(outputs).getColor());
-      }
+      g.setColor(painter.getPortColor(outputs));
       Location pt = painter.getInstance().getPortLocation(outputs);
       g.drawLine(pt.getX(), pt.getY(), pt.getX() + 2 * dx, pt.getY() + 2
           * dy);
@@ -190,9 +188,7 @@ public class Decoder extends InstanceFactory {
     if (enable) {
       Location en = painter.getInstance().getPortLocation(outputs + 1);
       int len = outputs == 2 ? 6 : 4;
-      if (painter.getShowState()) {
-        g.setColor(painter.getPortValue(outputs + 1).getColor());
-      }
+      g.setColor(painter.getPortColor(outputs + 1));
       g.drawLine(en.getX(), en.getY(), en.getX() + len * dx, en.getY()
           + len * dy);
     }

@@ -248,9 +248,11 @@ public class PortIO extends InstanceFactory {
       return pin[i/32].get(i%32);
     }
 
-    public Color getColor(int i) {
+    public Color getColor(int i, InstancePainter painter) {
       Value v = get(i);
-      return (v == Value.UNKNOWN ? Color.LIGHT_GRAY : v.getColor());
+      if (v == Value.UNKNOWN)
+        v = Value.NIL;
+      return v.getColor(painter.getPalette());
     }
 
     @Override
@@ -322,7 +324,7 @@ public class PortIO extends InstanceFactory {
     }  else {
       PortState data = getState(painter);
       for (int i = 0; i < size; i++) {
-        g.setColor(data.getColor(i));
+        g.setColor(data.getColor(i, painter));
         g.fillRect(7 + ((i/2) * 10),  25 + (i%2)*10, 6, 6);
       }
     }

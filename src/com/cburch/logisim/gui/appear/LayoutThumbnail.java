@@ -47,6 +47,7 @@ import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.std.io.Led;
@@ -97,9 +98,7 @@ public class LayoutThumbnail extends JComponent {
       gCopy.translate(-bds.getX(), -bds.getY());
 
       ComponentDrawContext context = new ComponentDrawContext(this,
-          circuit, circuitState, g, gCopy);
-      context.setShowState(false);
-      context.setShowColor(false);
+          circuit, circuitState, g, gCopy, Palette.current(), false);
       circuit.draw(context, Collections.<Component>emptySet());
       if (ports != null && ports.size() > 0) {
         gCopy.setColor(AppearancePort.COLOR);
