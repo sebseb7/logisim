@@ -130,7 +130,7 @@ public class PreferencesFrame extends LFrame.Dialog {
 
   private void setSelectedPanel(String name) {
     if (name.equals("default"))
-      name = "international";
+      name = "window";
     for (int index = 0; index < panels.length; index++) {
       OptionsPanel panel = panels[index];
       if (panel.getTag().equals(name)) {

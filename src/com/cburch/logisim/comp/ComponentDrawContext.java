@@ -56,11 +56,27 @@ public class ComponentDrawContext {
   private CircuitState circuitState;
   private Graphics2D base;
   private Graphics2D g;
-  private boolean showState;
-  private boolean showColor;
+  // private boolean showState;
+  // private boolean showColor;
   private boolean printView;
   private WireSet highlightedWires;
   private InstancePainter instancePainter;
+
+  // PrintView (available when printing, when exporting as an image, and from
+  // the app preferences frame) means the image will not depend on the current
+  // simulation state or othe values, and it will typically use a dark-on-white
+  // palette so that most things are plain black or gray on white. The grid is
+  // hidden as well, but the canvas background (usually plain white) is shown.
+  // Other palettes are possible, resulting in more colorful graphics.
+  //  - simulator state is not shown (some components show their width instead)
+  //  - constants are drawn using LINE_COLOR instead of value-dependent color
+  //  - wires are drawn using LINE_COLOR instead of value-dependent color
+  //  - resistors, etc., use LINE_COLOR instead of value-dependent color
+  //  - grid is not shown, but canvas background color is used
+  //  - some components don't show their pins, or hide unconnected pins
+  //
+  // LayoutThumbnailView (miniature view seen at lower right when designing a
+  // custom appearance) means the same thing, but uses the standard palette.
 
   public ComponentDrawContext(java.awt.Component dest, Circuit circuit,
       CircuitState circuitState, Graphics base, Graphics g) {

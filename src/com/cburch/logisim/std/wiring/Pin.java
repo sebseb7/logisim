@@ -547,7 +547,6 @@ public class Pin extends InstanceFactory {
   private static final Icon ICON_OUT = Icons.getIcon("pinOutput.gif");
 
   private static final Font ICON_WIDTH_FONT = new Font("SansSerif", Font.BOLD, 9);
-  private static final Color ICON_WIDTH_COLOR = new Color(153, 49, 0);
 
   public static final Font DEFAULT_FONT = new Font("monospaced", Font.PLAIN, 12);
 
@@ -695,7 +694,7 @@ public class Pin extends InstanceFactory {
     BitWidth w = painter.getAttributeValue(StdAttr.WIDTH);
     if (!w.equals(BitWidth.ONE)) {
       Graphics g = painter.getGraphics();
-      g.setColor(ICON_WIDTH_COLOR);
+      g.setColor(Palette.ICON_WIDTH_COLOR);
       g.setFont(ICON_WIDTH_FONT);
       GraphicsUtil.drawCenteredText(g, "" + w.getWidth(), 10, 9);
       g.setColor(Color.BLACK);

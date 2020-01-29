@@ -38,36 +38,95 @@ import com.cburch.logisim.prefs.AppPreferences;
 
 public final class Palette {
 
-  public static Color NIL_COLOR;
-  public static Color FALSE_COLOR;
-  public static Color TRUE_COLOR;
-  public static Color UNKNOWN_COLOR;
-  public static Color ERROR_COLOR;
+  // The primary palette, as selected in app preferences.
+  private static Palette COLOR;
+  public static Palette COLOR() { return COLOR; }
 
-  public static Color WIDTH_ERROR_COLOR;
-  public static Color WIDTH_ERROR_CAPTION_COLOR = new Color(85, 0, 0);
-  public static Color WIDTH_ERROR_HIGHLIGHT_COLOR = new Color(255, 255, 0);
-  public static Color WIDTH_ERROR_CAPTION_BGCOLOR = new Color(255, 230, 210);
-  public static Color ICON_WIDTH_COLOR; // WIDTH_ERROR_COLOR.darker();
+  // Palettes are defined by just a handful of base colors.
+  // Other auxiliary colors are derived from the base colors
+  public static final String[] keys = new String[] {
+    "nil", "unknown", "true", "false",
+      "error", "bus", "incompatible", "canvas" };
 
-  public static Color MULTI_COLOR; // bus color
+  public static final String[] labels = new String[] {
+    "-", "X", "1", "0",
+      "E", "bus", "2\u22601", "bg" };
 
-  public static Color CANVAS_COLOR;
+  public static int index(String key) {
+    for (int i = 0; i < keys.length; i++)
+      if (keys[i].equals(key))
+        return i;
+    return -1;
+  }
 
-  public static Color HALO_COLOR; // complements CANVAS_COLOR, but magenta
-  public static Color PENDING_COLOR; // complements CANVAS_COLOR, but cyan
-  public static Color OSCILLATING_COLOR; // complements CANVAS_COLOR, but red
-  public static Color CRASHED_COLOR; // complements CANVAS_COLOR, but blue
-  public static Color TICK_RATE_COLOR; // contrasts CANVAS_COLOR
+  public Palette(Color[] base) {
+    // base colors
+    NIL = base[0];
+    UNKNOWN = base[1];
+    TRUE = base[2];
+    FALSE = base[3];
+    ERROR = base[4];
+    MULTI = base[5];
+    WIDTH_ERROR = base[6];
+    CANVAS = base[7];
 
-  public static Color LINE_COLOR; // contrast(CANVAS_COLOR)
-  public static Color REVERSE_COLOR; // contrast(LINE_COLOR))
+    // auxiliary colors
+    OSCILLATING = ERROR;
+    CRASHED = ERROR;
+    LINE = contrast(CANVAS);
+    REVERSE = contrast(LINE);
+    GRID_DOT = contrast(CANVAS, 53f);
+    GRID_DOT_ZOOMED = contrast(CANVAS, 20f);
+    GRID_ZOOMED_OUT = contrast(CANVAS, 18f);
+    SOLID = contrast(CANVAS, 25f); // contrast(CANVAS, 5f);
+    if (isLight(CANVAS)) {
+      HALO = rotate(CANVAS, 50f, 100f, 300f);
+      PENDING = rotate(CANVAS, 50f, 100f, 240f);
+    } else {
+      HALO = rotate(CANVAS, 50f, 100f, 300f);
+      PENDING = rotate(CANVAS, 50f, 100f, 130f);
+    }
+    TICK_RATE = new Color(0x92000000 | (contrast(CANVAS, 80f).getRGB() & 0xffffff));
+
+    // todo: derive these auxiliary colors, or eliminate them
+    WIDTH_ERROR_CAPTION = new Color(85, 0, 0);
+    WIDTH_ERROR_HIGHLIGHT = new Color(255, 255, 0);
+    WIDTH_ERROR_CAPTION_BGCOLOR = new Color(255, 230, 210);
+    ICON_WIDTH = new Color(153, 49, 0);
+  }
+
+  public Color[] toArray() {
+    return new Color[] { NIL, UNKNOWN, TRUE, FALSE,
+      ERROR, MULTI, WIDTH_ERROR, CANVAS };
+  }
+
+  public final Color NIL;
+  public final Color FALSE;
+  public final Color TRUE;
+  public final Color UNKNOWN;
+  public final Color ERROR;
+
+  public final Color WIDTH_ERROR;
+  public final Color ICON_WIDTH;
+
+  public final Color MULTI; // bus color
+
+  public final Color CANVAS;
+
+  public final Color HALO; // complements CANVAS, but magenta
+  public final Color PENDING; // complements CANVAS, but blue
+  public final Color OSCILLATING; // same as ERROR
+  public final Color CRASHED; // same as ERROR
+  public final Color TICK_RATE; // contrasts CANVAS, but translucent
+
+  public final Color LINE; // contrast(CANVAS)
+  public final Color REVERSE; // contrast(LINE))
   
-  public static Color GRID_DOT_COLOR; // contrasts CANVAS_COLOR
-  public static Color GRID_DOT_ZOOMED_COLOR; // contrasts CANVAS_COLOR
-  public static Color GRID_ZOOMED_OUT_COLOR; // contrasts CANVAS_COLOR
+  public final Color GRID_DOT; // contrasts CANVAS
+  public final Color GRID_DOT_ZOOMED; // contrasts CANVAS
+  public final Color GRID_ZOOMED_OUT; // contrasts CANVAS
 
-  public static Color SOLID_COLOR; // contrasts CANVAS_COLOR
+  public final Color SOLID; // contrasts CANVAS
 
   public static HashMap<String, String> options;
   static {
@@ -89,7 +148,8 @@ public final class Palette {
     if (specs == null || specs.equals(""))
       specs = "standard";
     if (options.containsKey(specs))
-        specs = options.get(specs);
+      specs = options.get(specs);
+    Color[] base = COLOR.toArray();
     for (String spec : specs.split(";")) {
       if (spec.equals(""))
         continue;
@@ -100,6 +160,11 @@ public final class Palette {
       }
       String k = kv[0];
       String v = kv[1];
+      int idx = index(k);
+      if (idx < 0) {
+        System.out.println("Error parsing circuit palette: bad key: " + k);
+        continue;
+      }
       Color c;
       try {
         c = Color.decode(v);
@@ -107,75 +172,19 @@ public final class Palette {
         System.out.println("Error parsing circuit palette: bad color " + v);
         continue;
       }
-      if (k.equals("nil"))
-        NIL_COLOR = c;
-      else if (k.equals("unknown"))
-        UNKNOWN_COLOR = c;
-      else if (k.equals("true"))
-        TRUE_COLOR = c;
-      else if (k.equals("false"))
-        FALSE_COLOR = c;
-      else if (k.equals("error")) {
-        ERROR_COLOR = c;
-        OSCILLATING_COLOR = c;
-        CRASHED_COLOR = c;
-      } else if (k.equals("bus"))
-        MULTI_COLOR = c;
-      else if (k.equals("incompatible")) {
-        WIDTH_ERROR_COLOR = c;
-      } else if (k.equals("canvas")) {
-        CANVAS_COLOR = c;
-        LINE_COLOR = contrast(c);
-        REVERSE_COLOR = contrast(LINE_COLOR);
-        GRID_DOT_COLOR = contrast(c, 53f);
-        GRID_DOT_ZOOMED_COLOR = contrast(c, 20f);
-        GRID_ZOOMED_OUT_COLOR = contrast(c, 18f);
-
-        // SOLID_COLOR = contrast(c, 5f);
-        SOLID_COLOR = contrast(c, 25f);
-
-        if (isLight(c)) {
-          HALO_COLOR = rotate(c, 50f, 100f, 300f);
-          PENDING_COLOR = rotate(c, 50f, 100f, 240f);
-        } else {
-          HALO_COLOR = rotate(c, 50f, 100f, 300f);
-          PENDING_COLOR = rotate(c, 50f, 100f, 130f);
-        }
-        Color c2 = new Color(0x92000000 | (contrast(c, 80f).getRGB() & 0xffffff));
-        TICK_RATE_COLOR = c2;
-      }
-      else
-        System.out.println("Error parsing circuit palette: bad key " + k);
+      base[idx] = c;
     }
+    COLOR = new Palette(base);
   }
 
-  public static final String[] keys = new String[] {
-    "nil", "unknown", "true", "false",
-      "error", "bus", "incompatible", "canvas" };
-  public static final String[] labels = new String[] {
-    "-", "X", "1", "0",
-      "E", "bus", "2\u22601", "bg" };
-  public static Color[] toArray() {
-      return new Color[] {
-            NIL_COLOR,
-            UNKNOWN_COLOR,
-            TRUE_COLOR,
-            FALSE_COLOR,
-            ERROR_COLOR,
-            MULTI_COLOR,
-            WIDTH_ERROR_COLOR,
-            CANVAS_COLOR
-      };
-  }
-
-  public static String toPrefString() {
+  public String toPrefString() {
     return toPrefString(toArray());
   }
 
-  public static String toPrefString(Color[] palette) {
+  public static String toPrefString(Color[] base) {
     String s = "";
-    for (int i = 0; i < palette.length; i++) {
-      int rgb = palette[i].getRGB() & 0xffffff;
+    for (int i = 0; i < base.length; i++) {
+      int rgb = base[i].getRGB() & 0xffffff;
       s += (i == 0 ? "" : ";") + String.format("%s=#%06x", keys[i], rgb); 
     }
     return s;
