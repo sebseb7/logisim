@@ -251,7 +251,7 @@ class NotGate extends InstanceFactory {
     painter.paintWithLocRotPortLabel(p -> {
       Object shape = painter.getGateShape();
       if (shape == AppPreferences.SHAPE_RECTANGULAR) {
-        paintRectangularBase(g, painter);
+        paintRectangularBase(painter);
       } else if (shape == AppPreferences.SHAPE_DIN40700) {
         int width = painter.getAttributeValue(ATTR_SIZE) == SIZE_NARROW ? 20 : 30;
         PainterDin.paintAnd(painter, width, 18, true);
@@ -261,8 +261,9 @@ class NotGate extends InstanceFactory {
     });
   }
 
-  private void paintRectangularBase(Graphics2D g, InstancePainter painter) {
-    painteer.switchToWidth(2);
+  private void paintRectangularBase(InstancePainter painter) {
+    Graphics2D g = painter.getGraphics();
+    painter.switchToWidth(2);
     if (painter.getAttributeValue(ATTR_SIZE) == SIZE_NARROW) {
       g.drawRect(-20, -9, 14, 18);
       painter.drawCenteredText(RECT_LABEL, -13, 0);

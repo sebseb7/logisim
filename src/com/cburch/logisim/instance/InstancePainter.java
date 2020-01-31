@@ -76,8 +76,7 @@ public class InstancePainter extends GraphicsUtil implements InstanceState {
   // helper methods for drawing common elements in components
   //
   public void drawBounds() {
-    if (comp != null)
-      context.drawBounds(comp);
+    context.drawBounds(getBounds());
   }
 
   public void drawClock(int i, Direction dir) {

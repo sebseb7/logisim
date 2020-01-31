@@ -31,9 +31,6 @@
 package com.cburch.logisim.std.gates;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.circuit.ExpressionComputer;
@@ -99,9 +96,6 @@ class Buffer extends InstanceFactory {
       new Port(0, -20, Port.INPUT, StdAttr.WIDTH), });
   }
 
-  //
-  // methods for instances
-  //
   @Override
   protected void configureNewInstance(Instance instance) {
     configurePorts(instance);
@@ -175,19 +169,15 @@ class Buffer extends InstanceFactory {
     }
   }
 
-  //
-  // painting methods
-  //
-
   @Override
   public void paintInstance(InstancePainter painter) {
-    painter.paintWithLocRotPortLabel(PainterShaped.paintBuffer);
+    painter.paintWithLocRotPortLabel(PainterShaped::paintBuffer);
   }
 
   @Override
   public void propagate(InstanceState state) {
     Value in = state.getPortValue(1);
-    in = Buffer.repair(state, in);
+    in = repair(state, in);
     state.setPort(0, in, GateAttributes.DELAY);
   }
 }

@@ -255,7 +255,7 @@ public class Clock extends InstanceFactory {
   @Override
   public void paintInstance(InstancePainter painter) {
     java.awt.Graphics g = painter.getGraphics();
-    Bounds bds = painter.getInstance().getBounds(); // intentionally with no
+    Bounds bds = painter.getBounds(); // intentionally with no
     // graphics object - we don't want label included
     int x = bds.getX();
     int y = bds.getY();

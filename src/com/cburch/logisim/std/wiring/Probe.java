@@ -224,15 +224,14 @@ public class Probe extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    Value value = getValue(painter);
-
+    ProbeAttributes attrs = (ProbeAttributes) painter.getAttributeSet();
+    int width = attrs.width.getWidth();
     Graphics g = painter.getGraphics();
-    Bounds bds = painter.getBounds(); // intentionally with no graphics
-    // object - we don't want label included
+    Bounds bds = painter.getBounds(); // intentionally with no graphics object - we don't want label included
     int x = bds.getX();
     int y = bds.getY();
-    Color back = new Color(0xff, 0xf0, 0x99);
-    if (value.getWidth() <= 1) {
+    Color back = new Color(0xff, 0xf0, 0x99); // TODO: put in palette
+    if (width <= 1) {
       g.setColor(back);
       g.fillOval(x + 1, y + 1, bds.getWidth() - 2, bds.getHeight() - 2);
       g.setColor(Color.lightGray);
@@ -241,23 +240,23 @@ public class Probe extends InstanceFactory {
       g.setColor(back);
       g.fillRoundRect(x + 1, y + 1, bds.getWidth() - 2,
           bds.getHeight() - 2, 20, 20);
-      g.setColor(Color.lightGray);
+      g.setColor(Color.lightGray); // TODO: palette
       g.drawRoundRect(x + 1, y + 1, bds.getWidth() - 2,
           bds.getHeight() - 2, 20, 20);
     }
 
-    g.setColor(Color.GRAY);
+    g.setColor(Color.GRAY); // TODO: palette
     painter.drawLabel();
-    g.setColor(Color.DARK_GRAY);
+    g.setColor(Color.DARK_GRAY); // TODO: palette
 
     if (!painter.getShowState()) {
-      if (value.getWidth() > 0) {
-        GraphicsUtil.drawCenteredText(g, "x" + value.getWidth(),
+      if (width > 0) {
+        GraphicsUtil.drawCenteredText(g, "x" + width,
             bds.getX() + bds.getWidth() / 2,
             bds.getY() + bds.getHeight() / 2);
       }
     } else {
-      paintValue(painter, value);
+      paintValue(painter, getValue(painter));
     }
 
     painter.drawPorts();

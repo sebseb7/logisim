@@ -309,31 +309,6 @@ public abstract class InstanceFactory extends AbstractComponentFactory {
 
   public abstract void paintInstance(InstancePainter painter);
 
-  public interface PainterInterface {
-    public void paint(InstancePainter painter);
-  }
-
-  // Convenience method for translating, rotating, then painting,
-  // and also drawing ports and label.
-  public void paintWithLocRotPortLabel(PainterInterface f) {
-    Graphics2D g = getGraphics();
-    Direction facing = getAttributeValue(StdAttr.FACING);
-    Location loc = getLocation();
-    g.translate(loc.x, loc.y);
-    double rotate = 0.0;
-    if (facing != null && facing != Direction.EAST) {
-      rotate = -facing.toRadians();
-      g.rotate(rotate);
-    }
-    g.setColor(getPalette().LINE);
-    f.paint(this);
-    if (rotate != 0.0)
-      g.rotate(-rotate);
-    g.translate(-loc.x, -loc.y);
-    drawPorts();
-    drawLabel();
-  }
-
   public abstract void propagate(InstanceState state);
 
   public void setAttributes(Attribute<?>[] attrs, Object[] defaults) {

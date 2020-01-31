@@ -102,12 +102,15 @@ public class ComponentDrawContext {
   }
 
   public void drawBounds(Component comp) {
+    drawBounds(comp.getBounds());
+  }
+
+  public void drawBounds(Bounds bds) {
     GraphicsUtil.switchToWidth(g, 2);
-    Bounds bds = comp.getBounds();
     g.setColor(palette.SOLID);
-    g.fillRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
+    g.fillRect(bds.x, bds.y, bds.width, bds.height);
     g.setColor(palette.LINE);
-    g.drawRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
+    g.drawRect(bds.x, bds.y, bds.width, bds.height);
     GraphicsUtil.switchToWidth(g, 1);
   }
 

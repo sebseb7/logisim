@@ -33,7 +33,6 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 
 import javax.swing.Icon;
 
@@ -46,7 +45,6 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.file.Options;
 import com.cburch.logisim.instance.Instance;
@@ -115,20 +113,24 @@ class ControlledBuffer extends InstanceFactory {
     Direction facing = instance.getAttributeValue(StdAttr.FACING);
     Bounds bds = getOffsetBounds(instance.getAttributeSet());
     int d = Math.max(bds.getWidth(), bds.getHeight()) - 20;
-    Location loc0 = Location.create(0, 0);
-    Location loc1 = loc0.translate(facing.reverse(), 20 + d);
-    Location loc2;
-    if (instance.getAttributeValue(ATTR_CONTROL) == LEFT_HANDED) {
-      loc2 = loc0.translate(facing.reverse(), 10 + d, 10);
-    } else {
-      loc2 = loc0.translate(facing.reverse(), 10 + d, -10);
-    }
+    Location loc1 = Location.ORIGIN.translate(facing.reverse(), 20 + d);
+    Location loc2 = getControlPortLocation(instance.getAttributeSet());
 
     Port[] ports = new Port[3];
     ports[0] = new Port(0, 0, Port.OUTPUT, StdAttr.WIDTH);
-    ports[1] = new Port(loc1.getX(), loc1.getY(), Port.INPUT, StdAttr.WIDTH);
-    ports[2] = new Port(loc2.getX(), loc2.getY(), Port.INPUT, 1);
+    ports[1] = new Port(loc1.x, loc1.y, Port.INPUT, StdAttr.WIDTH);
+    ports[2] = new Port(loc2.x, loc2.y, Port.INPUT, 1);
     instance.setPorts(ports);
+  }
+
+  private Location getControlPortLocation(AttributeSet attrs) {
+    Direction facing = attrs.getValue(StdAttr.FACING);
+    Bounds bds = getOffsetBounds(attrs);
+    int d = Math.max(bds.getWidth(), bds.getHeight()) - 20;
+    if (attrs.getValue(ATTR_CONTROL) == LEFT_HANDED)
+      return Location.ORIGIN.translate(facing.reverse(), 10 + d, 10);
+    else
+      return Location.ORIGIN.translate(facing.reverse(), 10 + d, -10);
   }
 
   @Override
@@ -204,59 +206,23 @@ class ControlledBuffer extends InstanceFactory {
 
     // draw control wire
     GraphicsUtil.switchToWidth(g, 3);
-    Location pt0 = painter.getInstance().getPortLocation(2);
+    Location pt0 = getControlPortLocation(painter.getAttributeSet());
+    Location p = painter.getLocation();
+    pt0 = pt0.translate(p.x, p.y);
     Location pt1;
-    if (painter.getAttributeValue(ATTR_CONTROL) == LEFT_HANDED) {
+    if (painter.getAttributeValue(ATTR_CONTROL) == LEFT_HANDED)
       pt1 = pt0.translate(face, 0, 6);
-    } else {
+    else
       pt1 = pt0.translate(face, 0, -6);
-    }
-    if (!painter.isPrintView()) {
+    if (!painter.isPrintView())
       g.setColor(painter.getPortValue(2).getColor(painter.getPalette()));
-    }
-    g.drawLine(pt0.getX(), pt0.getY(), pt1.getX(), pt1.getY());
+    g.drawLine(pt0.x, pt0.y, pt1.x, pt1.y);
 
-    // draw triangle
-    paintShape(painter);
-
-    // draw input and output pins
-    if (!painter.isPrintView()) {
-      painter.drawPort(0);
-      painter.drawPort(1);
-    }
-    painter.drawLabel();
-  }
-
-  private void paintShape(InstancePainter painter) {
-    Direction facing = painter.getAttributeValue(StdAttr.FACING);
-    Location loc = painter.getLocation();
-    int x = loc.getX();
-    int y = loc.getY();
-    double rotate = 0.0;
-    Graphics g = painter.getGraphics();
-    g.translate(x, y);
-    if (facing != Direction.EAST) {
-      rotate = -facing.toRadians();
-      ((Graphics2D) g).rotate(rotate);
-    }
-
-    if (isInverter) {
-      PainterShaped.paintNot(painter);
-    } else {
-      GraphicsUtil.switchToWidth(g, 2);
-      int d = isInverter ? 10 : 0;
-      int[] xp = new int[] { -d, -19 - d, -19 - d, -d };
-      int[] yp = new int[] { 0, -7, 7, 0 };
-      g.setColor(painter.getPalette().SOLID);
-      g.fillPolygon(xp, yp, 4);
-      g.setColor(painter.getPalette().LINE);
-      g.drawPolyline(xp, yp, 4);
-    }
-
-    if (rotate != 0.0) {
-      ((Graphics2D) g).rotate(-rotate);
-    }
-    g.translate(-x, -y);
+    // draw triangle, ports, and labels
+    if (isInverter)
+      painter.paintWithLocRotPortLabel(PainterShaped::paintNot);
+    else
+      painter.paintWithLocRotPortLabel(PainterShaped::paintBuffer);
   }
 
   @Override
