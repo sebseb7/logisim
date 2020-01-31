@@ -31,7 +31,11 @@
 package com.cburch.logisim.instance;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.Graphics;
+import java.awt.Rectangle;
+import java.awt.Shape;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
@@ -47,6 +51,7 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.util.GraphicsUtil;
 
 // This is more like ComponentPainter maybe?
 // It combines a ComponentDrawContext together with data about a specific
@@ -54,7 +59,7 @@ import com.cburch.logisim.proj.Project;
 // as either:
 //  - a Component object (which has attributes, location, and state)
 //  - a ComponentFactory and AttributeSet together (no location, no state)
-public class InstancePainter implements InstanceState {
+public class InstancePainter extends GraphicsUtil implements InstanceState {
   private ComponentDrawContext context;
   private Component comp;
   private ComponentFactory factory;
@@ -129,6 +134,15 @@ public class InstancePainter implements InstanceState {
 
   public void drawRectangle(int x, int y, int width, int height, String label) {
     context.drawRectangle(x, y, width, height, label);
+  }
+
+  public void drawAndFill(Shape shape) {
+    switchToWidth(2);
+    Graphics2D g = getGraphics();
+    g.setColor(getPalette().SOLID);
+    g.fill(shape);
+    g.setColor(getPalette().LINE);
+    g.draw(shape);
   }
 
   @Override
@@ -299,5 +313,118 @@ public class InstancePainter implements InstanceState {
 
   public Palette getPalette() {
     return context.getPalette();
+  }
+
+  // Convenience method for translating, rotating, then painting,
+  // and also drawing ports and label.
+  public interface PainterInterface {
+    public void paint(InstancePainter painter);
+  }
+  public void paintWithLocRotPortLabel(PainterInterface f) {
+    Graphics2D g = getGraphics();
+    Direction facing = getAttributeValue(StdAttr.FACING);
+    Location loc = getLocation();
+    g.translate(loc.x, loc.y);
+    double rotate = 0.0;
+    if (facing != null && facing != Direction.EAST) {
+      rotate = -facing.toRadians();
+      g.rotate(rotate);
+    }
+    g.setColor(getPalette().LINE);
+    f.paint(this);
+    if (rotate != 0.0)
+      g.rotate(-rotate);
+    g.translate(-loc.x, -loc.y);
+    drawPorts();
+    drawLabel();
+  }
+
+
+  // non-static versions of everyting in GraphicsUtil
+  
+  public void drawArrow(int x0, int y0, int x1, int y1,
+      int stemWidth, int headLength, int headAngle) {
+    drawArrow(getGraphics(), x0, y0, x1, y1, stemWidth, headLength, headAngle);
+  }
+
+  public void drawCenteredArc(int x, int y, int r,
+      int start, int dist) {
+    drawCenteredArc(getGraphics(), x, y, r, start, dist);
+  }
+
+  public void drawCenteredText(String text, int x, int y) {
+    drawCenteredText(getGraphics(), text, x, y);
+  }
+
+  public void drawCenteredText(Font font, String text, int x, int y) {
+    drawCenteredText(getGraphics(), font, text, x, y);
+  }
+
+  public Rectangle getTextCursor(Font font, String text,
+      int x, int y, int pos, int halign, int valign) {
+    return getTextCursor(getGraphics(), font, text, x, y, pos, halign, valign);
+  }
+
+  public int getTextPosition(Font font, String text,
+      int x, int y, int halign, int valign) {
+    return getTextPosition(getGraphics(), font, text, x, y, halign, valign);
+  }
+
+  public void drawText(Font font, String text, int x,
+      int y, int halign, int valign) {
+    drawText(getGraphics(), font, text, x, y, halign, valign);
+  }
+
+  public void drawText(String text, int x, int y,
+      int halign, int valign) {
+    drawText(getGraphics(), text, x, y, halign, valign);
+  }
+
+  public Rectangle getTextBounds(String text, int x,
+      int y, int halign, int valign) {
+    return getTextBounds(getGraphics(), text, x, y, halign, valign);
+  }
+
+  public Rectangle getTextBounds(Font font, String text,
+      int x, int y, int halign, int valign) {
+    return getTextBounds(getGraphics(), font, text, x, y, halign, valign);
+  }
+
+  public void outlineText(String text, int x, int y, Color fg, Color bg) {
+    outlineText(getGraphics(), text, x, y, fg, bg);
+  }
+
+  public Rectangle getTextCursor(Font font, String text[],
+      int x, int y, int pos, int halign, int valign) {
+    return getTextCursor(getGraphics(), font, text, x, y, pos, halign, valign);
+  }
+
+  public int getTextPosition(Font font, String text[],
+      int x, int y, int halign, int valign) {
+    return getTextPosition(getGraphics(), font, text, x, y, halign, valign);
+  }
+
+  public void drawText(Font font, String text[], int x,
+      int y, int halign, int valign) {
+    drawText(getGraphics(), font, text, x, y, halign, valign);
+  }
+
+  public void drawText(String text[], int x, int y,
+      int halign, int valign) {
+    drawText(getGraphics(), text, x, y, halign, valign);
+  }
+
+  public Rectangle getTextBounds(String text[], int x,
+      int y, int halign, int valign) {
+    return getTextBounds(getGraphics(), text, x, y, halign, valign);
+  }
+
+  public Rectangle getTextBounds(Font font, String text[],
+      int x, int y, int halign, int valign) {
+    return getTextBounds(getGraphics(), font, text, x, y, halign, valign);
+  }
+
+  public void switchToWidth(int width) {
+    switchToWidth(getGraphics(), width);
   }
 }

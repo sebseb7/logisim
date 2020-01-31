@@ -137,20 +137,22 @@ public abstract class InstanceFactory extends AbstractComponentFactory {
   @Override
   public final void drawGhost(ComponentDrawContext context, Color lineColorIgnored,
       int x, int y, AttributeSet attrs) {
-    // note: palette has already been changed to translucent
+    // Note: palette has already been changed to translucent
     boolean old = context.setPrintView(true);
     InstancePainter painter = context.getInstancePainter();
     Graphics g = painter.getGraphics();
     g.setColor(context.getPalette().LINE); // lineColorIgnored
     g.translate(x, y);
     painter.setFactory(this, attrs);
-    paintInstance(painter);
-    // paintGhost(painter); // by default, sets painter.factory back to null
+    // paintGhost(painter); // subclass specific code (deprecated)
+    paintInstance(painter); // replacement for paintGhost
     g.translate(-x, -y);
+    // Note: paintGhost below is now deprecated, it just calls paintInstance
+    // instead.
     // if (painter.getFactory() == null) {
-    //  // call parent if subclass did not override paintGhost() call
+    //  // subclass did not override paintGhost below, so draw a default ghost
     //  super.drawGhost(context, color, x, y, attrs);
-    //}
+    // }
     context.setPrintView(old);
   }
 
@@ -261,9 +263,14 @@ public abstract class InstanceFactory extends AbstractComponentFactory {
     return true;
   }
 
-  // TODO: deprecate ghost drawing, just paint component instead
+  // paintGhost is deprecated for most components (except wires and
+  // splitters, which don't use LINE color for drawing). Just
+  // call paintInstance instead. The painter will already be
+  // configured in PrintView mode with an appropriate translucent
+  // palette (and possibly with a different LINE color for selections).
   public void paintGhost(InstancePainter painter) {
-    painter.setFactory(null, null);
+    paintInstance(painter);
+    // painter.setFactory(null, null); // causes drawGhost above to paint a default ghost
   }
 
   @Override
@@ -273,10 +280,11 @@ public abstract class InstanceFactory extends AbstractComponentFactory {
     painter.setFactory(this, attrs);
     Graphics g = painter.getGraphics();
     g.translate(x, y);
-    paintIcon(painter);
+    paintIcon(painter); // subclass specific code
     g.translate(-x, -y);
 
     if (painter.getFactory() == null) {
+      // subclass did not override paintIcon below, so paint a default icon
       Icon i = icon;
       if (i == null) {
         String n = iconName;
@@ -296,10 +304,35 @@ public abstract class InstanceFactory extends AbstractComponentFactory {
   }
 
   public void paintIcon(InstancePainter painter) {
-    painter.setFactory(null, null);
+    painter.setFactory(null, null); // causes paintIcon above to paint a default icon
   }
 
   public abstract void paintInstance(InstancePainter painter);
+
+  public interface PainterInterface {
+    public void paint(InstancePainter painter);
+  }
+
+  // Convenience method for translating, rotating, then painting,
+  // and also drawing ports and label.
+  public void paintWithLocRotPortLabel(PainterInterface f) {
+    Graphics2D g = getGraphics();
+    Direction facing = getAttributeValue(StdAttr.FACING);
+    Location loc = getLocation();
+    g.translate(loc.x, loc.y);
+    double rotate = 0.0;
+    if (facing != null && facing != Direction.EAST) {
+      rotate = -facing.toRadians();
+      g.rotate(rotate);
+    }
+    g.setColor(getPalette().LINE);
+    f.paint(this);
+    if (rotate != 0.0)
+      g.rotate(-rotate);
+    g.translate(-loc.x, -loc.y);
+    drawPorts();
+    drawLabel();
+  }
 
   public abstract void propagate(InstanceState state);
 

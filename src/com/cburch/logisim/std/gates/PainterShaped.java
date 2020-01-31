@@ -195,49 +195,15 @@ public class PainterShaped {
     }
   }
 
-  static void paintNot(InstancePainter painter, boolean solid) {
-    Graphics g = painter.getGraphics();
-    GraphicsUtil.switchToWidth(g, 2);
-    if (painter.getAttributeValue(NotGate.ATTR_SIZE) == NotGate.SIZE_NARROW) {
-      GraphicsUtil.switchToWidth(g, 2);
-      int[] xp = new int[4];
-      int[] yp = new int[4];
-      xp[0] = -6;
-      yp[0] = 0;
-      xp[1] = -19;
-      yp[1] = -6;
-      xp[2] = -19;
-      yp[2] = 6;
-      xp[3] = -6;
-      yp[3] = 0;
-      if (solid) {
-        g.setColor(painter.getPalette().SOLID);
-        g.fillPolygon(xp, yp, 4);
-        g.fillOval(-6, -3, 6, 6);
-        g.setColor(painter.getPalette().LINE);
-      }
-      g.drawPolyline(xp, yp, 4);
-      g.drawOval(-6, -3, 6, 6);
-    } else {
-      int[] xp = new int[4];
-      int[] yp = new int[4];
-      xp[0] = -10;
-      yp[0] = 0;
-      xp[1] = -29;
-      yp[1] = -7;
-      xp[2] = -29;
-      yp[2] = 7;
-      xp[3] = -10;
-      yp[3] = 0;
-      if (solid) {
-        g.setColor(painter.getPalette().SOLID);
-        g.fillPolygon(xp, yp, 4);
-        g.fillOval(-9, -4, 9, 9);
-        g.setColor(painter.getPalette().LINE);
-      }
-      g.drawPolyline(xp, yp, 4);
-      g.drawOval(-9, -4, 9, 9);
-    }
+  static void paintNot(InstancePainter painter) {
+    if (painter.getAttributeValue(NotGate.ATTR_SIZE) == NotGate.SIZE_NARROW)
+      painter.drawAndFill(NOT_PATH_NARROW);
+    else
+      painter.drawAndFill(NOT_PATH_WIDE);
+  }
+
+  static void paintBuffer(InstancePainter painter) {
+    painter.drawAndFill(BUFFER_PATH);
   }
 
   static void paintOr(InstancePainter painter, int width, int height, boolean solid) {
@@ -287,6 +253,11 @@ public class PainterShaped {
   private static final Area AND_PATH_MEDIUM;
   private static final Area AND_PATH_WIDE;
 
+  private static final Area NOT_PATH_NARROW;
+  private static final Area NOT_PATH_WIDE;
+
+  private static final GeneralPath BUFFER_PATH;
+
   static {
     OR_PATH_NARROW = new GeneralPath();
     OR_PATH_NARROW.moveTo(0, 0);
@@ -329,6 +300,28 @@ public class PainterShaped {
 
     AND_PATH_WIDE = new Area(new Rectangle2D.Float(-70, -35, 35, 70));
     AND_PATH_WIDE.add(new Area(new Ellipse2D.Float(-70, -35, 70, 70)));
+
+    GeneralPath tri = new GeneralPath();
+    tri.moveTo(-6, 0);
+    tri.lineTo(-19,-6);
+    tri.lineTo(-19, 6);
+    tri.closePath();
+    NOT_PATH_NARROW = new Area(tri);
+    NOT_PATH_NARROW.add(new Area(new Ellipse2D.Float(-6, -3, 6, 6)));
+
+    tri = new GeneralPath();
+    tri.moveTo(-10, 0);
+    tri.lineTo(-29,-7);
+    tri.lineTo(-29, 7);
+    tri.closePath();
+    NOT_PATH_WIDE = new Area(tri);
+    NOT_PATH_WIDE.add(new Area(new Ellipse2D.Float(-9, -4, 9, 9)));
+
+    BUFFER_PATH = new GeneralPath();
+    BUFFER_PATH.moveTo(0, 0);
+    BUFFER_PATH.lineTo(-19, -7);
+    BUFFER_PATH.lineTo(-19,  7);
+    BUFFER_PATH.closePath();
   }
 
   private static HashMap<Integer, int[]> INPUT_LENGTHS = new HashMap<Integer, int[]>();

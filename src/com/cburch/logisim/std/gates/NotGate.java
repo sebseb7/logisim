@@ -32,7 +32,6 @@ package com.cburch.logisim.std.gates;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 
 import javax.swing.Icon;
@@ -50,7 +49,6 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
@@ -60,7 +58,6 @@ import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
-import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.Icons;
 
 class NotGate extends InstanceFactory {
@@ -214,53 +211,19 @@ class NotGate extends InstanceFactory {
     }
   }
 
-  private void paintBase(InstancePainter painter, boolean solid) {
-    Graphics g = painter.getGraphics();
-    Direction facing = painter.getAttributeValue(StdAttr.FACING);
-    Location loc = painter.getLocation();
-    int x = loc.getX();
-    int y = loc.getY();
-    g.translate(x, y);
-    double rotate = 0.0;
-    if (facing != null && facing != Direction.EAST) {
-      rotate = -facing.toRadians();
-      ((Graphics2D) g).rotate(rotate);
-    }
-
-    Object shape = painter.getGateShape();
-    if (shape == AppPreferences.SHAPE_RECTANGULAR) {
-      paintRectangularBase(g, painter);
-    } else if (shape == AppPreferences.SHAPE_DIN40700) {
-      int width = painter.getAttributeValue(ATTR_SIZE) == SIZE_NARROW ? 20 : 30;
-      PainterDin.paintAnd(painter, width, 18, true);
-    } else {
-      PainterShaped.paintNot(painter, solid);
-    }
-
-    if (rotate != 0.0) {
-      ((Graphics2D) g).rotate(-rotate);
-    }
-    g.translate(-x, -y);
-  }
-
-  @Override
-  public void paintGhost(InstancePainter painter) {
-    paintBase(painter, false);
-  }
-
   //
   // painting methods
   //
   @Override
   public void paintIcon(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     g.setColor(Color.BLACK);
     if (painter.getGateShape() == AppPreferences.SHAPE_RECTANGULAR) {
       if (toolIconRect != null) {
         toolIconRect.paintIcon(painter.getDestination(), g, 2, 2);
       } else {
         g.drawRect(0, 2, 16, 16);
-        GraphicsUtil.drawCenteredText(g, RECT_LABEL, 8, 8);
+        painter.drawCenteredText(RECT_LABEL, 8, 8);
         g.drawOval(16, 8, 4, 4);
       }
     } else if (painter.getGateShape() == AppPreferences.SHAPE_DIN40700) {
@@ -268,23 +231,15 @@ class NotGate extends InstanceFactory {
         toolIconDin.paintIcon(painter.getDestination(), g, 2, 2);
       } else {
         g.drawRect(0, 2, 16, 16);
-        GraphicsUtil.drawCenteredText(g, RECT_LABEL, 8, 8);
+        painter.drawCenteredText(RECT_LABEL, 8, 8);
         g.drawOval(16, 8, 4, 4);
       }
     } else {
       if (toolIcon != null) {
         toolIcon.paintIcon(painter.getDestination(), g, 2, 2);
       } else {
-        int[] xp = new int[4];
-        int[] yp = new int[4];
-        xp[0] = 15;
-        yp[0] = 10;
-        xp[1] = 1;
-        yp[1] = 3;
-        xp[2] = 1;
-        yp[2] = 17;
-        xp[3] = 15;
-        yp[3] = 10;
+        int[] xp = new int[] { 15, 1,  1, 15 };
+        int[] yp = new int[] { 10, 3, 17, 10 };
         g.drawPolyline(xp, yp, 4);
         g.drawOval(15, 8, 4, 4);
       }
@@ -293,24 +248,31 @@ class NotGate extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    painter.getGraphics().setColor(painter.getPalette().LINE);
-    paintBase(painter, true);
-    painter.drawPorts();
-    painter.drawLabel();
+    painter.paintWithLocRotPortLabel(p -> {
+      Object shape = painter.getGateShape();
+      if (shape == AppPreferences.SHAPE_RECTANGULAR) {
+        paintRectangularBase(g, painter);
+      } else if (shape == AppPreferences.SHAPE_DIN40700) {
+        int width = painter.getAttributeValue(ATTR_SIZE) == SIZE_NARROW ? 20 : 30;
+        PainterDin.paintAnd(painter, width, 18, true);
+      } else {
+        PainterShaped.paintNot(painter);
+      }
+    });
   }
 
-  private void paintRectangularBase(Graphics g, InstancePainter painter) {
-    GraphicsUtil.switchToWidth(g, 2);
+  private void paintRectangularBase(Graphics2D g, InstancePainter painter) {
+    painteer.switchToWidth(2);
     if (painter.getAttributeValue(ATTR_SIZE) == SIZE_NARROW) {
       g.drawRect(-20, -9, 14, 18);
-      GraphicsUtil.drawCenteredText(g, RECT_LABEL, -13, 0);
+      painter.drawCenteredText(RECT_LABEL, -13, 0);
       g.drawOval(-6, -3, 6, 6);
     } else {
       g.drawRect(-30, -9, 20, 18);
-      GraphicsUtil.drawCenteredText(g, RECT_LABEL, -20, 0);
+      painter.drawCenteredText(RECT_LABEL, -20, 0);
       g.drawOval(-10, -5, 9, 9);
     }
-    GraphicsUtil.switchToWidth(g, 1);
+    painter.switchToWidth(1);
   }
 
   @Override

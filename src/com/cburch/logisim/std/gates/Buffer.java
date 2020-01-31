@@ -43,7 +43,6 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.data.Palette;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.file.Options;
 import com.cburch.logisim.instance.Instance;
@@ -53,7 +52,6 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
-import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.Icons;
 
 class Buffer extends InstanceFactory {
@@ -177,57 +175,13 @@ class Buffer extends InstanceFactory {
     }
   }
 
-  private void paintBase(InstancePainter painter, boolean solid) {
-    Direction facing = painter.getAttributeValue(StdAttr.FACING);
-    Location loc = painter.getLocation();
-    int x = loc.getX();
-    int y = loc.getY();
-    Graphics g = painter.getGraphics();
-    g.translate(x, y);
-    double rotate = 0.0;
-    if (facing != Direction.EAST) {
-      rotate = -facing.toRadians();
-      ((Graphics2D) g).rotate(rotate);
-    }
-
-    GraphicsUtil.switchToWidth(g, 2);
-    int[] xp = new int[4];
-    int[] yp = new int[4];
-    xp[0] = 0;
-    yp[0] = 0;
-    xp[1] = -19;
-    yp[1] = -7;
-    xp[2] = -19;
-    yp[2] = 7;
-    xp[3] = 0;
-    yp[3] = 0;
-    if (solid) {
-      g.setColor(painter.getPalette().SOLID);
-      g.fillPolygon(xp, yp, 4);
-      g.setColor(painter.getPalette().LINE);
-    }
-    g.drawPolyline(xp, yp, 4);
-
-    if (rotate != 0.0) {
-      ((Graphics2D) g).rotate(-rotate);
-    }
-    g.translate(-x, -y);
-  }
-
   //
   // painting methods
   //
-  @Override
-  public void paintGhost(InstancePainter painter) {
-    paintBase(painter, false);
-  }
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
-    paintBase(painter, true);
-    painter.drawPorts();
-    painter.drawLabel();
+    painter.paintWithLocRotPortLabel(PainterShaped.paintBuffer);
   }
 
   @Override
