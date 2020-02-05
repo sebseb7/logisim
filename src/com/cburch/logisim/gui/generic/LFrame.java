@@ -30,10 +30,18 @@
 
 package com.cburch.logisim.gui.generic;
 
+import java.awt.Frame;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.Window;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,6 +51,7 @@ import javax.swing.JFrame;
 
 import com.cburch.logisim.Main;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.WindowClosable;
 
@@ -159,6 +168,18 @@ public class LFrame extends JFrame implements WindowClosable {
         }
       });
     }
+    addComponentListener(new ComponentListener() {
+      @Override
+      public void componentMoved(ComponentEvent evt) {
+        updateGeometryUponChangingDevice();
+      }
+      @Override
+      public void componentShown(ComponentEvent evt) { }
+      @Override
+      public void componentResized(ComponentEvent evt) { }
+      @Override
+      public void componentHidden(ComponentEvent evt) { }
+    });
   }
 
   @Override
@@ -177,5 +198,101 @@ public class LFrame extends JFrame implements WindowClosable {
 
   public LogisimMenuBar getLogisimMenuBar() {
     return menubar;
+  }
+
+  private static String str(Rectangle r) {
+    return String.format("at (%d, %d) size %d x %d",
+        r.x, r.y, r.width, r.height);
+  }
+
+  // Attempt to address issue #45, "Black screen when program is on Primary
+  // Monitor".
+  // See also: 
+  // https://stackoverflow.com/questions/42367058/application-turns-black-when-dragged-from-a-4k-monitor-to-a-fullhd-monitor
+  // https://bugs.openjdk.java.net/browse/JDK-8175527
+  private int curDeviceIdx = -1;
+  private GraphicsDevice curDevice = null;
+  private GraphicsConfiguration curConfiguration = null;
+  private void updateGeometryUponChangingDevice() {
+    String pref = AppPreferences.DUALSCREEN.get();
+    if (pref.equals(AppPreferences.DUALSCREEN_NONE))
+      return;
+
+    Rectangle wb = getBounds();
+    int width = getWidth();
+    int height = getHeight();
+    GraphicsConfiguration newConf = getGraphicsConfiguration();
+    GraphicsDevice newDevice = newConf.getDevice();
+    GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
+
+    int newDeviceIdx = -1;
+    GraphicsDevice[] allDevices = env.getScreenDevices();
+    for (int i = 0; i < allDevices.length; i++) {
+      if (allDevices[i].equals(newDevice)) {
+        if (newDeviceIdx == -1)
+          newDeviceIdx = i;
+        else
+          System.out.printf("DUAL SCREEN ERROR: %d and %d are both the same device: %s\n", newDeviceIdx, i, newDevice);
+      }
+    }
+
+    if (newDeviceIdx == -1)
+      System.out.printf("DUAL SCREEN ERROR: device is not listed: %s\n", newDevice);
+
+    if (newDeviceIdx == curDeviceIdx && newDevice.equals(curDevice) && newConf.equals(curConfiguration))
+      return; // no change in device or configuration
+
+    Rectangle sb = newConf.getBounds();
+    // It is important to set the bounds somewhere on the new display before
+    // setting the extended state to maximized
+            
+    System.out.printf("Dual Screen Fix [%s]:\n"
+        + "  moved from device: (%d) %s\n"
+        + "                     %s\n"
+        + "      to new device: (%d) %s\n"
+        + "                     %s\n"
+        + "  new screen bounds: %s\n"
+        + "   current geometry: %s\n",
+        pref, curDeviceIdx, curDevice, curConfiguration,
+        newDeviceIdx, newDevice, newConf,
+        str(sb), str(wb));
+      
+    int x = wb.x, y = wb.y;
+    if (pref.equals(AppPreferences.DUALSCREEN_FIX)) {
+      // fix #1 - if current geom is fully within the new display, then save
+      // geom, hide, refresh geom, maximize, unhide, and remember display
+      if (!sb.contains(wb)) {
+        System.out.printf("  --> not refreshing, because window splits across screens\n");
+        return;
+      }
+    } else if (pref.equals(AppPreferences.DUALSCREEN_MORE)) {
+      // fix #2 - save current geom, hide, adjust geom to force it to be
+      // fully within new display, maximize, unhide, and remember display
+      width = Math.min(sb.width, width);
+      height = Math.min(sb.height, height);
+      if (x < sb.x) x = sb.x;
+      else if (x > sb.x + sb.width - width) x = sb.x + sb.width - width;
+      if (y < sb.y) y = sb.y;
+      else if (y > sb.y + sb.height - height) y = sb.y + sb.height - height;
+    } else if (pref.equals(AppPreferences.DUALSCREEN_MOST)) {
+      // fix #3 - ignore current position, hide, pick a new position fully
+      // within new display, maximize, unhide, and remember display
+      width = Math.min(sb.width, Math.max(100, width));
+      height = Math.min(sb.height, Math.max(100, height));
+      x = sb.x + (sb.width - width) / 2;
+      y = sb.y + (sb.height - height) / 2;
+    }
+
+    System.out.printf("  adjusted geometry: at (%d, %d) size %d x %d\n", x, y, width, height);
+    System.out.printf("  --> refreshing geometry due to device change\n");
+
+    setVisible(false);
+    setBounds(x, y, width, height);
+    setExtendedState(Frame.MAXIMIZED_BOTH);
+    setVisible(true);
+
+    curDeviceIdx = newDeviceIdx;
+    curDevice = newDevice;
+    curConfiguration = newConf;
   }
 }

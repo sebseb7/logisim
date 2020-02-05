@@ -413,10 +413,18 @@ public class AppPreferences {
   public static final String ACCEL_NONE = "none";
   public static final String ACCEL_OPENGL = "opengl";
   public static final String ACCEL_D3D = "d3d";
-  public static final PrefMonitor<String>
-      GRAPHICS_ACCELERATION = new PrefMonitor("graphicsAcceleration",
+  public static final PrefMonitor<String> GRAPHICS_ACCELERATION =
+    new PrefMonitor("graphicsAcceleration",
           new String[] { ACCEL_DEFAULT, ACCEL_NONE, ACCEL_OPENGL, ACCEL_D3D },
           ACCEL_DEFAULT);
+  public static final String DUALSCREEN_NONE = "none";
+  public static final String DUALSCREEN_FIX = "fixBlackWindows";
+  public static final String DUALSCREEN_MORE = "fixBlackWindowsMore";
+  public static final String DUALSCREEN_MOST = "fixBlackWindowsBest";
+  public static final PrefMonitor<String> DUALSCREEN =
+    new PrefMonitor("dualScreenFixes",
+          new String[] { DUALSCREEN_NONE, DUALSCREEN_FIX, DUALSCREEN_MORE, DUALSCREEN_MOST },
+          DUALSCREEN_NONE);
 
   // Third party softwares preferences
   public static final PrefMonitor<String>

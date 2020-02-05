@@ -45,6 +45,8 @@ class ExperimentalOptions extends OptionsPanel {
   private static final long serialVersionUID = 1L;
   private JLabel accelRestart = new JLabel();
   private PrefOptionList accel;
+  // private JLabel dualScreenRestart = new JLabel();
+  private PrefOptionList dualScreen;
 
   public ExperimentalOptions(PreferencesFrame window) {
     super(window);
@@ -65,12 +67,40 @@ class ExperimentalOptions extends OptionsPanel {
     accelPanel.add(accel.getJComboBox(), BorderLayout.CENTER);
     accelPanel.add(accelRestart, BorderLayout.PAGE_END);
     accelRestart.setFont(accelRestart.getFont().deriveFont(Font.ITALIC));
+    accelRestart.setVisible(false);
+    accel.getJComboBox().addActionListener((ae) -> accelRestart.setVisible(true));
     JPanel accelPanel2 = new JPanel();
     accelPanel2.add(accelPanel);
+
+    dualScreen = new PrefOptionList(AppPreferences.DUALSCREEN,
+        S.getter("dualScreenLabel"), new PrefOption[] {
+          new PrefOption(AppPreferences.DUALSCREEN_NONE,
+              S.getter("dualScreenNone")),
+          new PrefOption(AppPreferences.DUALSCREEN_FIX,
+              S.getter("dualScreenFix")),
+          new PrefOption(AppPreferences.DUALSCREEN_MORE,
+              S.getter("dualScreenMore")),
+          new PrefOption(AppPreferences.DUALSCREEN_MOST,
+              S.getter("dualScreenMost")), });
+
+    JPanel dualScreenPanel = new JPanel(new BorderLayout());
+    dualScreenPanel.add(dualScreen.getJLabel(), BorderLayout.LINE_START);
+    dualScreenPanel.add(dualScreen.getJComboBox(), BorderLayout.CENTER);
+    // dualScreenPanel.add(dualScreenRestart, BorderLayout.PAGE_END);
+    // dualScreenRestart.setFont(dualScreenRestart.getFont().deriveFont(Font.ITALIC));
+    // dualScreenRestart.setVisible(false);
+    // dualScreen.getJComboBox().addActionListener(new ActionListener() {
+    //   public void actionPerformed(ActionEvent ae) {
+    //     dualScreenRestart.setVisible(true);
+    //   }
+    // });
+    JPanel dualScreenPanel2 = new JPanel();
+    dualScreenPanel2.add(dualScreenPanel);
 
     setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
     add(Box.createGlue());
     add(accelPanel2);
+    add(dualScreenPanel2);
     add(Box.createGlue());
   }
 
@@ -88,5 +118,7 @@ class ExperimentalOptions extends OptionsPanel {
   public void localeChanged() {
     accel.localeChanged();
     accelRestart.setText(S.get("accelRestartLabel"));
+    dualScreen.localeChanged();
+    // dualScreenRestart.setText(S.get("dualScreenRestartLabel"));
   }
 }
