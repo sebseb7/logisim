@@ -184,6 +184,13 @@ public class Startup {
           String fmt = fmts[j].trim();
           if (fmt.equals("table"))
             ret.ttyFormat |= TtyInterface.FORMAT_TABLE;
+          else if (fmt.startsWith("rows:")) {
+            TtyInterface.turingMaxSteps = Integer.parseInt(fmt.substring(5));
+          }
+          else if (fmt.startsWith("turing:")) {
+            ret.ttyFormat |= TtyInterface.FORMAT_TURING;
+            TtyInterface.turingInitialTape = fmt.substring(7);
+          }
           else if (fmt.equals("speed"))
             ret.ttyFormat |= TtyInterface.FORMAT_SPEED;
           else if (fmt.equals("tty"))

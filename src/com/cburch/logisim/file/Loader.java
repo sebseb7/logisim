@@ -152,6 +152,7 @@ public class Loader implements LibraryLoader {
       String msg = (file != null && file.exists())
           ? S.fmt("fileLibraryUnreadableError", name, circName)
           : S.fmt("fileLibraryMissingError", name, circName);
+      System.out.println(msg);
       System.exit(1);
     }
     while (file == null || !file.canRead()) {

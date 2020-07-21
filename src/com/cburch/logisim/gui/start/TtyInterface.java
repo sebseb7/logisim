@@ -56,6 +56,7 @@ import com.cburch.logisim.file.LoadFailedException;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.hex.HexFile;
+import com.cburch.logisim.gui.log.Loggable;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.gui.main.ExportImage;
 import com.cburch.logisim.instance.Instance;
@@ -66,11 +67,19 @@ import com.cburch.logisim.std.io.Keyboard;
 import com.cburch.logisim.std.io.Tty;
 import com.cburch.logisim.std.memory.MemContents;
 import com.cburch.logisim.std.memory.Ram;
+import com.cburch.logisim.std.memory.Register;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.util.UniquelyNamedThread;
 
 public class TtyInterface {
+
+  public interface PaperTape {
+    public void set(String s);
+    public String[] getHeaders();
+    public Object[] getValues();
+    // public boolean isHalted(Value state, Object vals[]);
+  }
 
   // It's possible to avoid using the separate thread using
   // System.in.available(),
@@ -176,15 +185,15 @@ public class TtyInterface {
         S.get("statsTotalWith"));
   }
 
-  private static boolean displayTableRow(boolean showHeader, ArrayList<Value> prevOutputs,
-      ArrayList<Value> curOutputs, ArrayList<String> headers, ArrayList<String> formats, int format) {
+  private static boolean displayTableRow(boolean showHeader, ArrayList<Object> prevOutputs,
+      ArrayList<Object> curOutputs, ArrayList<String> headers, ArrayList<String> formats, int format) {
     boolean shouldPrint = false;
     if (prevOutputs == null) {
       shouldPrint = true;
     } else {
       for (int i = 0; i < curOutputs.size(); i++) {
-        Value a = prevOutputs.get(i);
-        Value b = curOutputs.get(i);
+        Object a = prevOutputs.get(i);
+        Object b = curOutputs.get(i);
         if (!a.equals(b)) {
           shouldPrint = true;
           break;
@@ -207,6 +216,7 @@ public class TtyInterface {
             formats.add("%s");
           else { // if ((format & FORMAT_TABLE_PRETTY) != 0)
             int w = headers.get(i).length();
+            Object o = curOutputs.get(i);
             w = Math.max(w, valueFormat(curOutputs.get(i), format).length());
             formats.add("%" + w + "s");
           }
@@ -228,7 +238,10 @@ public class TtyInterface {
     return shouldPrint;
   }
 
-  private static String valueFormat(Value v, int format) {
+  private static String valueFormat(Object o, int format) {
+    if (!(o instanceof Value))
+      return o.toString();
+    Value v = (Value)o;
     if ((format & FORMAT_TABLE_BIN) != 0) {
       // everything in binary
       return v.toString();
@@ -308,6 +321,10 @@ public class TtyInterface {
       return;
     } catch (LoadFailedException e) {
       System.out.println(S.fmt("ttyLoadError", fileToOpen.getName()));
+      System.exit(-1);
+      return;
+    } catch (Throwable t) {
+      t.printStackTrace();
       System.exit(-1);
       return;
     }
@@ -395,9 +412,42 @@ public class TtyInterface {
         }
       }
     }
-    if (haltPin == null && (format & FORMAT_TABLE) != 0) {
+    if (haltPin == null && (format & FORMAT_TABLE) != 0 && (format & FORMAT_TURING) == 0) {
       doTableAnalysis(proj, circuit, pinNames, format, head, body, tail);
       return 0;
+    }
+
+    Component sreg = null, tape = null;
+    if ((format & FORMAT_TURING) != 0) {
+      // There should be one register, and one paper tape.
+      for (Component comp : circuit.getNonWires()) {
+        // if (comp.getFactory() instanceof SubcircuitFactory)
+        //   continue;
+        if (!(comp.getFactory() instanceof Register))
+          continue;
+        if (sreg != null) {
+          System.out.println("found too many registers");
+          System.exit(1);
+        }
+        sreg = comp;
+      }
+      if (sreg == null) {
+        System.out.println("Could not find state register for turing machine");
+        System.exit(1);
+      }
+      for (Component comp : circuit.getNonWires()) {
+        if (!comp.getFactory().getName().equals("Paper Tape"))
+          continue;
+        if (tape != null) {
+          System.out.println("found too many paper tapes");
+          System.exit(1);
+        }
+        tape = comp;
+      }
+      if (tape == null) {
+        System.out.println("Could not find paper tape for turing machine");
+        System.exit(1);
+      }
     }
 
     CircuitState circState = CircuitState.createRootState(proj, circuit);
@@ -416,16 +466,24 @@ public class TtyInterface {
         System.exit(-1);
       }
     }
-    int simCode = runSimulation(circState, outputPins, pinNames, haltPin, format);
+    if ((format & FORMAT_TURING) != 0) {
+      InstanceState tapeState = circState.getInstanceState(tape);
+      PaperTape p = (PaperTape)tapeState.getData();
+      p.set(turingInitialTape);
+      tapeState.fireInvalidated();
+      circState.getPropagator().propagate();
+    }
+    int simCode = runSimulation(circState, outputPins, pinNames, haltPin, sreg, tape, format);
     return simCode;
   }
 
   private static int runSimulation(CircuitState circState,
       ArrayList<Instance> outputPins, Map<Instance, String> pinNames,
-      Instance haltPin, int format) {
+      Instance haltPin, Component sreg, Component tape, int format) {
     boolean showTable = (format & FORMAT_TABLE) != 0;
     boolean showSpeed = (format & FORMAT_SPEED) != 0;
     boolean showTty = (format & FORMAT_TTY) != 0;
+    boolean showTuring = (format & FORMAT_TURING) != 0;
     boolean showHalt = (format & FORMAT_HALT) != 0;
 
     ArrayList<InstanceState> keyboardStates = null;
@@ -445,11 +503,24 @@ public class TtyInterface {
       }
     }
 
+    // ArrayList<InstanceState> turingStates = null;
+    /* if (showTuring) {
+      turingStates = new ArrayList<InstanceState>();
+      boolean turingFound = prepareForTuring(circState, turingStates);
+      if (!turingFound) {
+        System.out.println("No paper tape found");
+        System.exit(-1);
+      }
+      if (turingStates.isEmpty()) {
+        turingStates = null;
+      }
+    } */
+
     int retCode;
     long tickCount = 0;
     long start = System.currentTimeMillis();
     boolean halted = false;
-    ArrayList<Value> prevOutputs = null;
+    ArrayList<Object> prevOutputs = null;
     ArrayList<String> headers = new ArrayList<String>();
     ArrayList<String> formats = new ArrayList<String>();
     Propagator prop = circState.getPropagator();
@@ -459,8 +530,18 @@ public class TtyInterface {
         continue;
       headers.add(pinNames.get(pin));
     }
+    PaperTape p = null;
+    if ((format & FORMAT_TURING) != 0) {
+      headers.add("state");
+      InstanceState tapeState = circState.getInstanceState(tape);
+      p = (PaperTape)tapeState.getData();
+      for (String s: p.getHeaders())
+        headers.add(s);
+    }
+
+    int nrows = 0, ndup = 0;
     while (true) {
-      ArrayList<Value> curOutputs = new ArrayList<Value>();
+      ArrayList<Object> curOutputs = new ArrayList<>();
       for (Instance pin : outputPins) {
         InstanceState pinState = circState.getInstanceState(pin);
         Value val = Pin.FACTORY.getValue(pinState);
@@ -470,9 +551,33 @@ public class TtyInterface {
           curOutputs.add(val);
         }
       }
+      String curtape = null;
+      if (tape != null) {
+        Loggable log = (Loggable)sreg.getFeature(Loggable.class);
+        Value val = log.getLogValue(circState, null);
+        curOutputs.add(val);
+        Object vals[] = p.getValues();
+        for (Object v : vals)
+          curOutputs.add(v);
+        // halted |= p.isHalted(val, vals);
+      }
       if (showTable) {
-        if (displayTableRow(needTableHeader, prevOutputs, curOutputs, headers, formats, format))
+        if (displayTableRow(needTableHeader, prevOutputs, curOutputs, headers, formats, format)) {
           needTableHeader = false;
+          ndup = 0;
+          nrows++;
+        } else {
+          ndup++;
+          if (tape != null && ndup > 4) {
+            halted = true;
+            System.out.println("Turing machine appears to have halted after " + nrows + " steps.");
+          }
+        }
+      }
+
+      if (turingMaxSteps > 0 && nrows >= turingMaxSteps && !halted) {
+        System.out.println("Halting after executing for " + turingMaxSteps + " steps.");
+        halted = true;
       }
 
       if (halted) {
@@ -678,7 +783,7 @@ public class TtyInterface {
           valueMap.put(pin, outValue);
         }
       }
-      ArrayList<Value> currValues = new ArrayList<>();
+      ArrayList<Object> currValues = new ArrayList<>();
       for (Instance pin : pinList) {
         currValues.add(valueMap.get(pin));
       }
@@ -704,6 +809,10 @@ public class TtyInterface {
   public static final int FORMAT_TABLE_BIN = 128;
   public static final int FORMAT_TABLE_HEX = 256;
   public static final int FORMAT_RANDOMIZE = 256;
+
+  public static final int FORMAT_TURING = 1 << 9;
+  public static String turingInitialTape = "";
+  public static int turingMaxSteps = -1;
 
   private static boolean lastIsNewline = true;
 }
