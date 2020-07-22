@@ -38,24 +38,57 @@ import java.net.URL;
 import javax.swing.ImageIcon;
 
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
+import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringUtil;
+import com.cburch.logisim.gui.start.TtyInterface;
 
 /**
  * A paper tape, as might be used to build a turing machine.
  */
 class PaperTape extends InstanceFactory {
+
+  /* public static class Logger extends InstanceLogger implements TtyInterface.PaperTape {
+
+    public Object[] getLogOptions(InstanceState state) {
+      return new Object[] { "L", "R", "P", "V" };
+    }
+
+
+    static final BitWidth one = BitWidth.create(1);
+    static final BitWidth one = BitWidth.create(1);
+    @Override
+    public String getLogName(InstanceState state, Object option) {
+      return state.getAttributeValue(StdAttr.LABEL);
+    }
+
+    @Override
+    public BitWidth getBitWidth(InstanceState state, Object option) {
+      return bitwidth;
+    }
+
+    @Override
+    public Value getLogValue(InstanceState state, Object option) {
+      InstanceDataSingleton data = (InstanceDataSingleton) state.getData();
+      int rgb = 0;
+      if (data != null)
+        return Value.createUnknown(bitwidth);
+      else
+        return Value.createKnown(bitwidth, ((Integer)data.getValue()).intValue());
+    }
+  }
+  */
 
   private static final int R = 0;
   private static final int CLK = 1;
@@ -411,6 +444,7 @@ class PaperTape extends InstanceFactory {
 	public void propagate(InstanceState s) {
 		PaperData state = PaperData.get(s);
 		boolean trigger = state.updateClock(s.getPortValue(CLK));
+    state.setLRPV(new Value[] { s.getPortValue(L), s.getPortValue(R), s.getPortValue(P), s.getPortValue(V)});
 		if (trigger) {
       if (s.getPortValue(P) == Value.TRUE) {
         Value v = s.getPortValue(V);

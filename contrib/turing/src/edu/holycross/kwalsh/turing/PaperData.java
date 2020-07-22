@@ -34,11 +34,12 @@ import java.util.ArrayList;
 
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Value;
+import com.cburch.logisim.gui.start.TtyInterface;
 import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceState;
 
 /** Represents the state of a paper tape. */
-class PaperData implements InstanceData, Cloneable {
+class PaperData implements InstanceData, Cloneable, TtyInterface.PaperTape {
 
 	public static PaperData get(InstanceState s) {
 		PaperData ret = (PaperData)s.getData();
@@ -135,9 +136,9 @@ class PaperData implements InstanceData, Cloneable {
       else return false;
     } else if (alphabet == PaperTape.ABC) {
       if ('a' <= utf32 && utf32 <= 'c')
-        print(Value.createKnown(w, utf32-'a'));
+        print(Value.createKnown(w, utf32-'a'+1));
       else if ('A' <= utf32 && utf32 <= 'C')
-        print(Value.createKnown(w, utf32-'A'));
+        print(Value.createKnown(w, utf32-'A'+1));
       else if (utf32 == ' ')
         print(blank);
       else return false;
@@ -323,4 +324,71 @@ class PaperData implements InstanceData, Cloneable {
       movingLeft = movingRight = false;
 		return old == Value.FALSE && value == Value.TRUE;
 	}
+
+  // hack: TtyInterface.PaperTape
+  public void set(String s) { setAlphabet(alphabet, s); }
+
+  Object lrpv[] = new Object[] { Value.FALSE, Value.FALSE, Value.FALSE, Value.FALSE };
+  void setLRPV(Value v[]) { lrpv = v; }
+
+  public String[] getHeaders() {
+    return new String[] { "S", "L", "R", "P", "V", "pos", "tape" };
+  }
+  public Object[] getValues() {
+    return new Object[] {
+      getValue(), lrpv[0], lrpv[1], lrpv[2], lrpv[3],
+      String.format("%4d", getPosition()),
+      getTapeString()
+    };
+  }
+
+  /*
+  Object[] prevVals = null;
+  Value prevState =  null;
+  int dupcount = 0;
+  public boolean isHalted(Value state, Object vals[]) {
+    System.out.println("dupcount " + dupcount);
+    if (prevVals != null && prevState != null) {
+      boolean same = prevState.equals(state);
+      System.out.println("prev? " + same);
+      for (int i = 0; same && i < vals.length; i++)
+        same = same && prevVals[i].equals(vals[i]);
+      if (same && dupcount > 3) {
+        return true;
+      } else if (same) {
+        dupcount++;
+        return false;
+      }
+    }
+    dupcount = 0;
+    prevVals = vals;
+    prevState = state;
+    return false;
+  }
+  */
+
+  int lbound = 0, rbound = -1;
+  String getTapeString() {
+    if (lbound > rbound) {
+      lbound = pos - left.size();
+      rbound = pos + right.size();
+      while (rbound - lbound < 15)
+        rbound ++;
+    }
+    while (pos < lbound-3) { lbound--; rbound--; }
+    while (pos > rbound+3) { lbound++; rbound++; }
+    String s = "";
+    for (int i = lbound - 4; i <= rbound + 4; i++) {
+      int utf32 = getUtf32Symbol(i);
+      String c = utf32 == 0 ? "_" : new String(new int[]{ utf32 }, 0, 1);
+      if (i == pos)
+        s += c + "]";
+      else if (i == pos-1)
+        s += c + "[";
+      else
+        s += c + " ";
+    }
+    return s.substring(0, s.length()-1);
+  }
+
 }

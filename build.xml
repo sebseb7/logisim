@@ -38,12 +38,10 @@ In summary:
 
 <project name="logisim-evolution">
 
-    <target name="cleanall" depends="clean,gray-clean,turing-clean">
+    <target name="cleanall" depends="clean">
         <delete dir="bin/com/bfh/"/>
         <delete dir="bin/com/cburch/"/>
         <delete dir="bin/com/hepia/"/>
-        <delete dir="gray-bin/com/cburch/"/>
-        <delete dir="turing-bin/edu/holycross/kwalsh/"/>
     </target>
 
     <target name="clean">
@@ -55,14 +53,6 @@ In summary:
 
     <target name="compile" depends="clean">
         <mkdir dir="bin"/>
-        <!--
-        <condition property="platform" value="mac" else="nonmac">
-            <os family="Mac"/>
-        </condition>
-        <copy file="src/com/cburch/logisim/gui/start/MacOsAdapter.java_${platform}"
-            toFile="src/com/cburch/logisim/gui/start/MacOsAdapter.java">
-        </copy>
-        -->
         <depend srcdir="src" destdir="bin" cache="depcache" closure="no"/>
         <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" source="11" target="11" classpath="libs/xswingx.jar:libs/lablib-checkboxtree-3.3.jar:libs/colorpicker.jar:libs/fontchooser.jar:libs/jh.jar:libs/rsyntaxtextarea-stripped.jar">
             <compilerarg line="-Xmaxerrs 10000"/>
@@ -83,7 +73,7 @@ In summary:
     <target name="jarsrc" depends="jar">
         <jar destfile="logisim-evolution-src.jar">
             <fileset dir="bin" />
-            <fileset dir="." includes="doc/ src/ gray-src/ turing-src/ build.xml" />
+            <fileset dir="." includes="doc/ src/ build.xml" />
 			<zipgroupfileset dir="libs" includes="*.jar"/>
             <manifest>
                 <attribute name="Main-Class" value="com.cburch.logisim.Main"/>
@@ -113,108 +103,6 @@ In summary:
             <arg value="search_lookup_${lang}"/>
             <arg value="${lang}"/>
         </exec>
-    </target>
-
-    <!--
-    <property environment="env" />
-    <taskdef name="bundleapp"
-        classname="com.oracle.appbundler.AppBundlerTask"   
-        classpath="build-libs/appbundler-1.0ome.jar" />
-    <target name="mac-bundle">
-        <bundleapp outputdirectory="."
-            name="Logisim-Evolution 4.0.0 HC"
-            displayname="Logisim Evolution 4.0.0 HC"
-            identifier="com.cburch.logisim.Main"
-            signature="LGSM"
-            shortversion="4.0.0-hc"
-            icon="logisim.icns"
-            mainclassname="com.cburch.logisim.Main">
-            <runtime dir="${env.JAVA_HOME}" />
-            <classpath file="./logisim-evolution.jar" />
-            <bundledocument extensions="circ,circ.xml"
-                icon="circfile.icns"
-                name="Logisim Circuit"
-                role="editor">
-                <! - - handlerRank="owner" - - >
-            </bundledocument>
-            <bundledocument extensions="xml"
-                name="Maybe Logisim Circuit"
-                role="editor">
-                <! - - handlerRank="alternative" - - >
-            </bundledocument>
-            <option value="-Xdock:name=Logisim-Evolution"/>
-            <option value="-Dcom.apple.mrj.application.apple.menu.about.name=Logisim-Evolution"/>
-        </bundleapp>
-    </target>
-    -->
-
-    <!--
-    <target name="mac-dmg">
-        <exec executable="appdmg">
-            <arg value="mac-appdmg-spec.json"/>
-            <arg value="Logisim-Evolution 4.0.0 HC.dmg"/>
-        </exec>
-    </target>
-    -->
-
-    <target name="gray-clean">
-        <delete file="logisim-gray.jar"/>
-    </target>
-
-
-    <target name="gray-compile" depends="gray-clean,jar">
-        <mkdir dir="gray-bin"/>
-        <javac srcdir="gray-src" includeantruntime="false" destdir="gray-bin" debug="true" source="11" target="11" classpath="logisim-evolution.jar" />
-    </target>
-	
-    <target name="gray-jar" depends="gray-compile">
-        <jar destfile="logisim-gray.jar">
-            <fileset dir="gray-bin" />
-            <manifest>
-                <attribute name="Library-Class" value="com.cburch.gray.Components"/>
-            </manifest>
-        </jar>
-    </target>
-
-    <target name="gray-jarsrc" depends="gray-jar">
-        <jar destfile="logisim-gray-src.jar">
-            <fileset dir="gray-bin" />
-            <fileset dir="." includes="gray-src/ build.xml" />
-            <manifest>
-                <attribute name="Library-Class" value="com.cburch.gray.Components"/>
-            </manifest>
-        </jar>
-    </target>
-    
-    <target name="turing-clean">
-        <delete file="logisim-turing.jar"/>
-    </target>
-
-
-    <target name="turing-compile" depends="turing-clean,jar">
-        <mkdir dir="turing-bin"/>
-        <javac srcdir="turing-src" includeantruntime="false" destdir="turing-bin" debug="true" source="11" target="11" classpath="logisim-evolution.jar" />
-    </target>
-	
-    <target name="turing-jar" depends="turing-compile">
-        <jar destfile="logisim-turing.jar">
-            <fileset dir="turing-bin" />
-            <fileset dir="turing-src" includes="resources/" />
-            <manifest>
-                <attribute name="Library-Class" value="edu.holycross.kwalsh.turing.Components"/>
-            </manifest>
-        </jar>
-    </target>
-
-    <target name="turing-jarsrc" depends="turing-jar">
-        <jar destfile="logisim-turing-src.jar">
-            <fileset dir="turing-bin" />
-            <fileset dir="turing-src" includes="resources/" />
-            <fileset dir="." includes="turing-src/ build.xml" />
-            <manifest>
-                <attribute name="Library-Class" value="edu.holycross.kwalsh.turing.Components"/>
-            </manifest>
-        </jar>
     </target>
 
 </project>

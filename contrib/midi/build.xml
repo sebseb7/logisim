@@ -1,0 +1,27 @@
+<project name="logisim-evolution-midi">
+
+    <target name="cleanall" depends="clean">
+        <delete dir="bin/kahdeg/"/>
+    </target>
+
+    <target name="clean">
+        <delete file="logisim-midi.jar"/>
+    </target>
+
+    <target name="compile" depends="clean">
+        <mkdir dir="bin"/>
+        <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" source="11" target="11" classpath="../../logisim-evolution.jar" />
+    </target>
+	
+    <target name="jar" depends="compile">
+        <jar destfile="logisim-midi.jar">
+            <fileset dir="bin" />
+            <fileset dir="demo" />
+            <fileset dir="." includes="src/ build.xml README.md" />
+            <manifest>
+                <attribute name="Library-Class" value="kahdeg.test.library"/>
+            </manifest>
+        </jar>
+    </target>
+
+</project>

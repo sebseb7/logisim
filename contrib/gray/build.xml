@@ -1,0 +1,26 @@
+<project name="logisim-evolution-contrib-gray">
+
+    <target name="cleanall" depends="clean">
+        <delete dir="bin/com/cburch/"/>
+    </target>
+
+    <target name="clean">
+        <delete file="logisim-gray.jar"/>
+    </target>
+
+    <target name="compile" depends="clean">
+        <mkdir dir="bin"/>
+        <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" source="11" target="11" classpath="../../logisim-evolution.jar" />
+    </target>
+	
+    <target name="jar" depends="compile">
+        <jar destfile="logisim-gray.jar">
+            <fileset dir="bin" />
+            <fileset dir="." includes="src/ build.xml README.md" />
+            <manifest>
+                <attribute name="Library-Class" value="com.cburch.gray.Components"/>
+            </manifest>
+        </jar>
+    </target>
+
+</project>

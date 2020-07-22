@@ -1,0 +1,27 @@
+<project name="logisim-evolution-turing">
+
+    <target name="cleanall" depends="clean">
+        <delete dir="bin/edu/holycross/kwalsh/"/>
+    </target>
+
+    <target name="clean">
+        <delete file="logisim-turing.jar"/>
+    </target>
+
+    <target name="compile" depends="clean">
+        <mkdir dir="bin"/>
+        <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" source="11" target="11" classpath="../../logisim-evolution.jar" />
+    </target>
+	
+    <target name="jar" depends="compile">
+        <jar destfile="logisim-turing.jar">
+            <fileset dir="bin" />
+            <fileset dir="src" includes="resources/" />
+            <fileset dir="." includes="src/ build.xml README.md" />
+            <manifest>
+                <attribute name="Library-Class" value="edu.holycross.kwalsh.turing.Components"/>
+            </manifest>
+        </jar>
+    </target>
+
+</project>
