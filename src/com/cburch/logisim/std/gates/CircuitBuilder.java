@@ -491,6 +491,8 @@ public class CircuitBuilder {
           }
         }
         int subOutputX = subDest.getX() - 20 - 10 * back;
+        if (layout.attrs.getValue(new NegateAttribute(i, null)) == Boolean.TRUE)
+          subOutputX += 10;
         subOutput = Location.create(subOutputX, subOutputY);
         Location mid = Location.create(subOutputX, subDest.getY());
         result.add(Wire.create(subOutput, mid));
