@@ -172,7 +172,8 @@ public class Rom extends Mem {
   @Override
   void configurePorts(Instance instance) {
     int dataLines = Mem.lineSize(instance.getAttributeSet());
-    Port[] ps = new Port[MEM_INPUTS + dataLines-1];
+    Port[] ps = new Port[MEM_INPUTS +1+ dataLines-1];
+	int EN = MEM_INPUTS+ (dataLines-1);
     ps[ADDR] = new Port(0, 10, Port.INPUT, ADDR_ATTR);
     ps[ADDR].setToolTip(S.getter("memAddrTip"));
     int ypos = (instance.getAttributeValue(Mem.DATA_ATTR).getWidth() == 1) ? getControlHeight(instance
@@ -184,6 +185,7 @@ public class Rom extends Mem {
       ps[MEM_INPUTS+i-1] = new Port(SymbolWidth + 40, ypos+i*10, Port.OUTPUT, DATA_ATTR);
       ps[MEM_INPUTS+i-1].setToolTip(S.getter("memDataTip"+i));
     }
+    ps[EN] = new Port(0, 30, Port.INPUT, 1);
     instance.setPorts(ps);
   }
 
@@ -226,6 +228,8 @@ public class Rom extends Mem {
     int realypos = ypos + getControlHeight(painter.getAttributeSet()) + bit
         * 20;
     int realxpos = xpos + 20;
+    int lineSize = Mem.lineSize(painter.getAttributeSet());
+	int EN = MEM_INPUTS+ (lineSize-1);
     boolean FirstBlock = bit == 0;
     boolean LastBlock = bit == (NrOfBits - 1);
     Graphics g = painter.getGraphics();
@@ -235,7 +239,7 @@ public class Rom extends Mem {
     GraphicsUtil.drawText(g, "A", realxpos + SymbolWidth - 3,
         realypos + 10, GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER);
     painter.drawPort(DATA);
-    int lineSize = Mem.lineSize(painter.getAttributeSet());
+    painter.drawPort(EN);
     for (int i = 1; i < lineSize; i++)
       painter.drawPort(MEM_INPUTS+i-1);
     if (FirstBlock && LastBlock) {
@@ -358,6 +362,9 @@ public class Rom extends Mem {
 
   public void DrawRomClassic(InstancePainter painter) {
     DrawMemClassic(painter);
+    int lineSize = Mem.lineSize(painter.getAttributeSet());
+	int EN = MEM_INPUTS+ (lineSize-1);
+    painter.drawPort(EN);
   }
 
   @Override
@@ -397,6 +404,17 @@ public class Rom extends Mem {
     int dataLines = Mem.lineSize(state.getAttributeSet());
 
     Value addrValue = state.getPortValue(ADDR);
+	int EN = MEM_INPUTS+ (dataLines-1);
+	boolean enable = state.getPortValue(EN) == Value.TRUE;
+
+	if(!enable){
+      myState.setCurrent(0);
+      myState.scrollToShow(0);
+      state.setPort(DATA, Value.createUnknown(dataBits), DELAY);
+      for (int i = 1; i < dataLines; i++)
+        state.setPort(MEM_INPUTS+i-1, Value.createUnknown(dataBits), DELAY);
+	  return;
+	}
 
     int addr = addrValue.toIntValue();
     if (addrValue.isErrorValue() || (addrValue.isFullyDefined() && addr < 0)) {
